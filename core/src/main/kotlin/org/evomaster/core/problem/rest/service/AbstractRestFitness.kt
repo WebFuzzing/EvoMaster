@@ -8,6 +8,8 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.ObjectGenerator
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -23,6 +25,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.SearchTimeController
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -56,6 +59,9 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
     @Inject
     private lateinit var searchTimeController: SearchTimeController
+
+    @Inject
+    private lateinit var writer: TestSuiteWriter
 
     private val clientConfiguration = ClientConfig()
             .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
@@ -350,6 +356,16 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         fv.updateTarget(bugId, 1.0, it)
                         result.setLastStatementWhen500(source)
                     }
+                    /*
+                        Objectives for the two partial oracles implemented thus far.
+                    */
+                    val call = actions[it] as RestCallAction
+                    val oracles = writer.getPartialOracles().activeOracles(call, result)
+                    oracles.filter { it.value }.forEach { entry ->
+                        val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
+                        val bugId = idMapper.handleLocalTarget(oracleId)
+                        fv.updateTarget(bugId, 1.0, it)
+                    }
                 }
     }
 
@@ -438,12 +454,17 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     client.close() //make sure to release any resource
                     client = ClientBuilder.newClient()
 
-                    val seconds = 30
-                    log.warn("Running out of ephemeral ports. Waiting $seconds seconds before re-trying connection")
-                    Thread.sleep(seconds * 1000L)
+                    TcpUtils.handleEphemeralPortIssue()
 
                     createInvocation(a, chainState, cookies).invoke()
-
+                }
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
+                    /*
+                        This should not really happen... but it does :( at least on Windows...
+                     */
+                    log.warn("TCP connection to SUT problem: ${e.cause!!.message}")
+                    rcr.setTcpProblem(true)
+                    return false
                 }
                 else -> throw e
             }
@@ -714,5 +735,24 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         }
 
         return map
+    }
+
+    override fun targetsToEvaluate(targets: Set<Int>, individual: T): Set<Int> {
+        /*
+            We cannot request all non-covered targets, because:
+            1) performance hit
+            2) might not be possible to have a too long URL
+         */
+        //TODO prioritized list
+//        val ids = randomness.choose(
+//                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
+//                100).toSet()
+        val ts = targets.filter { !IdMapper.isLocal(it) }.toMutableSet()
+        val nc = archive.notCoveredTargets().filter { !IdMapper.isLocal(it) && !ts.contains(it)}
+        return when {
+            ts.size > 100 -> randomness.choose(ts, 100)
+            nc.isEmpty() -> ts
+            else -> ts.plus(randomness.choose(nc, 100 - ts.size))
+        }
     }
 }

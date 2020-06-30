@@ -10,6 +10,7 @@ import javax.ws.rs.core.MediaType
 class RestCallResult : ActionResult {
 
     constructor(stopping: Boolean = false) : super(stopping)
+
     @VisibleForTesting
     internal constructor(other: ActionResult) : super(other)
 
@@ -23,6 +24,7 @@ class RestCallResult : ActionResult {
         const val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
         const val TIMEDOUT = "TIMEDOUT"
         const val LAST_STATEMENT_WHEN_500 = "LAST_STATEMENT_WHEN_500"
+        const val TCP_PROBLEM = "TCP_PROBLEM"
     }
 
 
@@ -118,4 +120,7 @@ class RestCallResult : ActionResult {
         addResultValue(LAST_STATEMENT_WHEN_500, statement)
     }
     fun getLastStatementWhen500() : String? = getResultValue(LAST_STATEMENT_WHEN_500)
+
+    fun setTcpProblem(tcpProblem: Boolean) = addResultValue(TCP_PROBLEM, tcpProblem.toString())
+    fun getTcpProblem() : Boolean = getResultValue(TCP_PROBLEM)?.toBoolean() ?: false
 }

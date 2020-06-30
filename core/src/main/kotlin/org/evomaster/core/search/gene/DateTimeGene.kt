@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactInfoCollection.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -76,23 +77,21 @@ open class DateTimeGene(
         throw IllegalArgumentException("impact is null or not DateTimeGeneImpact")
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is DateTimeGene){
-                log.warn("original ({}) should be DateTimeGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is DateTimeGene){
-                log.warn("mutated ({}) should be DateTimeGene", mutated::class.java.simpleName)
-                return
-            }
-
-            if (!mutated.date.containsSameValueAs(original.date)){
-                date.archiveMutationUpdate(original.date, mutated.date, targetsEvaluated, archiveMutator)
-            }
-            if (!mutated.time.containsSameValueAs(original.time))
-                time.archiveMutationUpdate(original.time, mutated.time, targetsEvaluated, archiveMutator)
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (original !is DateTimeGene){
+            log.warn("original ({}) should be DateTimeGene", original::class.java.simpleName)
+            return
         }
+        if (mutated !is DateTimeGene){
+            log.warn("mutated ({}) should be DateTimeGene", mutated::class.java.simpleName)
+            return
+        }
+
+        if (!mutated.date.containsSameValueAs(original.date)){
+            date.archiveMutationUpdate(original.date, mutated.date, targetsEvaluated, archiveMutator)
+        }
+        if (!mutated.time.containsSameValueAs(original.time))
+            time.archiveMutationUpdate(original.time, mutated.time, targetsEvaluated, archiveMutator)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {

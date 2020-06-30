@@ -23,7 +23,7 @@ class BlackBoxRestFitness : RestFitness() {
     private lateinit var rc: RemoteController
 
 
-    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
 
         if(config.bbExperiments){
             /*
@@ -62,7 +62,7 @@ class BlackBoxRestFitness : RestFitness() {
 
         handleResponseTargets(fv, individual.seeActions(), actionResults)
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
     protected fun handleResponseTargets(

@@ -16,7 +16,6 @@ class ImpactsOfIndividual private constructor(
         /**
          * list of impacts per action in initialization of an individual
          */
-        //private val initializationGeneImpacts : MutableList<ImpactsOfAction>,
         private val initializationGeneImpacts: InitializationActionImpacts,
 
         /**
@@ -29,11 +28,6 @@ class ImpactsOfIndividual private constructor(
          */
         val impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize"),
 
-        /**
-         * key -> target id
-         * value -> fitness value
-         */
-        val reachedTargets: MutableMap<Int, Double> = mutableMapOf(),
 
         private val maxSqlInitActionsPerMissingData: Int
 ) {
@@ -45,9 +39,6 @@ class ImpactsOfIndividual private constructor(
     ) {
         if (fitnessValue != null) {
             impactsOfStructure.updateStructure(individual, fitnessValue)
-            fitnessValue.getViewOfData().forEach { (t, u) ->
-                reachedTargets[t] = u.distance
-            }
         }
     }
 
@@ -60,7 +51,6 @@ class ImpactsOfIndividual private constructor(
                 initializationGeneImpacts.copy(),
                 actionGeneImpacts.map { it.copy() }.toMutableList(),
                 impactsOfStructure.copy(),
-                reachedTargets.map { it.key to it.value }.toMap().toMutableMap(),
                 maxSqlInitActionsPerMissingData
         )
     }
@@ -70,7 +60,6 @@ class ImpactsOfIndividual private constructor(
                 initializationGeneImpacts.clone(),
                 actionGeneImpacts.map { it.clone() }.toMutableList(),
                 impactsOfStructure.clone(),
-                reachedTargets.map { it.key to it.value }.toMap().toMutableMap(),
                 maxSqlInitActionsPerMissingData
         )
     }

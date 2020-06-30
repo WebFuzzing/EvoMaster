@@ -1,6 +1,7 @@
 package org.evomaster.core.output.oracles
 
 import com.google.gson.Gson
+import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.*
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
@@ -159,7 +160,7 @@ class SchemaOracle : ImplementedOracle() {
 
     fun getSupportedResponse(call: RestCallAction): MutableMap<String, String>{
         val verb = call.verb
-        val path = objectGenerator.getSwagger().paths.get(call.path.toString())
+        val path = retrievePath(objectGenerator, call)
         val specificPath = when(verb){
             HttpVerb.GET -> path?.get
             HttpVerb.POST -> path?.post

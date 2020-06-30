@@ -4,6 +4,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import kotlin.math.min
 
 /**
@@ -110,6 +111,7 @@ class FitnessValue(
 
     fun getHeuristic(target: Int): Double = targets[target]?.distance ?: 0.0
 
+    fun reachedTargets() : Set<Int> = getViewOfData().filter { it.value.distance > 0.0 }.keys
 
     fun computeFitnessScore(): Double {
 
@@ -189,7 +191,8 @@ class FitnessValue(
             other: FitnessValue,
             targetSubset: Set<Int>,
             strategy: EMConfig.SecondaryObjectiveStrategy,
-            bloatControlForSecondaryObjective: Boolean)
+            bloatControlForSecondaryObjective: Boolean,
+            minimumSize: Int)
             : Boolean {
 
         var atLeastOneBetter = false
@@ -202,90 +205,86 @@ class FitnessValue(
                 return false
             }
 
-            val extra = compareExtraToMinimize(k, other, strategy)
-
-            //FIXME this is inconsistent with what used in Archive. Should be
-            //refactored, avoiding copy&paste
-            if(bloatControlForSecondaryObjective){
-                if (v > z ||
-                        (v == z && this.size < other.size) ||
-                        (v == z && this.size == other.size && extra > 0)) {
-                    atLeastOneBetter = true
-                }
-            } else {
-                if (v > z ||
-                        (v == z && extra > 0) ||
-                        (v == z && extra == 0 && this.size < other.size)) {
-                    atLeastOneBetter = true
-                }
-            }
+            atLeastOneBetter = atLeastOneBetter || betterThan(k, other, strategy, bloatControlForSecondaryObjective, minimumSize)
         }
 
         return atLeastOneBetter
     }
 
+    fun subsumes(
+            other: FitnessValue,
+            targetSubset: Set<Int>,
+            config : EMConfig)
+            : Boolean {
+
+        return subsumes(other, targetSubset, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective, config.minimumSizeControl)
+    }
+
     /**
-     * Check if current does differ from [other] regarding [targetSubset].
-     *
-     * Recall: during the search, we might not calculate all targets, eg once they
-     * are covered.
-     *
+     * @return [this] is better than [other] for [target].
+     */
+    fun betterThan(target: Int, other: FitnessValue, strategy: EMConfig.SecondaryObjectiveStrategy, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
+        val z = other.getHeuristic(target)
+        val v = getHeuristic(target)
+        if (v < z) return false
+
+        val extra = compareExtraToMinimize(target, other, strategy)
+
+        return betterThan(target =target, heuristics = z, size = other.size, extra = extra, minimumSize = minimumSize, bloatControlForSecondaryObjective = bloatControlForSecondaryObjective)
+    }
+
+    /**
+     * @return [this] equivalent with [other] for [target].
+     */
+    fun equivalent(target: Int, other: FitnessValue, strategy: EMConfig.SecondaryObjectiveStrategy) : Boolean{
+        val z = other.getHeuristic(target)
+        val v = getHeuristic(target)
+        if (z != v) return false
+
+        val extra = compareExtraToMinimize(target, other, strategy)
+        return extra == 0 && this.size == other.size
+    }
+
+    private fun betterThan(target: Int, heuristics: Double, size: Double, extra: Int, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
+        val v = getHeuristic(target)
+        if (v < heuristics) return false
+
+        return if(bloatControlForSecondaryObjective
+
+                && min(this.size, size) >= minimumSize){
+            v > heuristics ||
+                    (v == heuristics && this.size <  size) ||
+                    (v == heuristics &&  this.size ==  size && extra > 0)
+        } else {
+            v > heuristics ||
+                    (v == heuristics && extra > 0) ||
+                    (v == heuristics && extra == 0 && this.size <  size)
+        }
+    }
+
+    fun reachMoreTargets(other: FitnessValue) = targets.size > other.getViewOfData().size
+
+
+    /**
      * @param other, the one we compare to
      * @param targetSubset, only calculate subsumption on these testing targets
-     * @param improved indicates which targets are improved compared with [other]
-     * @param different indicates which targets are different with [other]
+     * @param targetInfo, comparison results for each of [targetSubset]
+     * @param config, includes setting for comparison
      */
     fun isDifferent(
             other: FitnessValue,
             targetSubset: Set<Int>,
-//            improved : MutableSet<Int>,
-//            different : MutableSet<Int>,
-            targetInfo: MutableMap<Int, Int>,
-            withExtra : Boolean = false,
-            strategy: EMConfig.SecondaryObjectiveStrategy,
-            bloatControlForSecondaryObjective: Boolean)  {
+            targetInfo: MutableMap<Int, EvaluatedMutation>,
+            config: EMConfig)  {
 
         for (k in targetSubset) {
-
-            /**
-             * we set distance -1.0 instead of 0.0 to avoid a side-effect of no impacts caused by randomly chosen target sets for fitness
-             */
-            val v = this.targets[k]?.distance ?: 0.0
-            val z = other.targets[k]?.distance ?: 0.0
-
-            /**
-             * if the target is not covered by both v and z,
-             * we ignore this impact info of target in this comparision.
-             */
-            if (v == 0.0 || z == 0.0 || v == z)
-                continue
-
-            if (v != z) {
-                targetInfo.merge(k, -1){_,_->-1}//different.add(k)
-                if (v > z)
-                    targetInfo.merge(k, 1){_,_->1}//improved.add(k)
-                continue
+            val value = when {
+                betterThan(target = k, other = other, strategy = config.secondaryObjectiveStrategy,bloatControlForSecondaryObjective = config.bloatControlForSecondaryObjective, minimumSize = config.minimumSizeControl) -> EvaluatedMutation.WORSE_THAN
+                equivalent(k, other, strategy = config.secondaryObjectiveStrategy) -> EvaluatedMutation.EQUAL_WITH
+                else -> EvaluatedMutation.BETTER_THAN
             }
-
-            if (withExtra){
-                val extra = compareExtraToMinimize(k, other, strategy)
-
-                if (this.size != other.size || extra != 0) {
-                    targetInfo.merge(k, -1){_,_->-1}//different.add(k)
-
-                    if(bloatControlForSecondaryObjective){
-                        if (this.size < other.size || (this.size == other.size && extra > 0)) {
-                            targetInfo.merge(k, 1){_,_->1}//improved.add(k)
-                        }
-                    } else {
-                        if (extra > 0 ||
-                                (extra == 0 && this.size < other.size)) {
-                            targetInfo.merge(k, 1){_,_->1}//improved.add(k)
-                        }
-                    }
-                }
-            }
-
+            targetInfo.merge(
+                    k, value){ old, new -> if (old.value > new.value) old else new }
         }
     }
 

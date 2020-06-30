@@ -13,6 +13,7 @@ import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -541,8 +542,8 @@ class StringGene(
         return mutationInfo.reachOptimal(targets)
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (!archiveMutator.enableArchiveGeneMutation() || targetsEvaluated.isEmpty())
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (targetsEvaluated.isEmpty())
             return
 
         original as? StringGene ?: throw IllegalStateException("$original should be StringGene")
@@ -586,18 +587,20 @@ class StringGene(
                 }
             }
 
+            val becomeBetter = u == EvaluatedMutation.BETTER_THAN
             if (doLengthMutation) {
                 if (!isMutated && marchiveMutationInfo.lengthMutation.reached) {
                     archiveMutationInfo.lengthMutation.reached = marchiveMutationInfo.lengthMutation.reached
                 }
-                archiveMutationInfo.lengthUpdate(previous = previous, current = current, thisGene = this, doesCurrentBetter = (u==1), archiveMutator = archiveMutator)
+                archiveMutationInfo.lengthUpdate(previous = previous, current = current, thisGene = this, mutatedBetter = becomeBetter, archiveMutator = archiveMutator)
             } else {
                 if (diffIndex.isEmpty()){
                     log.info("nothing to mutate for the gene {}", current)
                 }else if (diffIndex.size > 1){
                     log.info("multiple chars are mutated from {} to {}", previous, current)
                 }
-                archiveMutationInfo.charUpdate(previous = previous, current = current, diffIndex = diffIndex, thisValue = value, invalidChars = invalidChars, isMutated = isMutated, mutatedArchiveMutationInfo = marchiveMutationInfo, doesCurrentBetter = (u == 1), archiveMutator = archiveMutator)
+                archiveMutationInfo.charUpdate(previous = previous, current = current, diffIndex = diffIndex, thisValue = value, invalidChars = invalidChars, isMutated = isMutated, mutatedArchiveMutationInfo = marchiveMutationInfo,
+                        mutatedBetter = becomeBetter, archiveMutator = archiveMutator)
             }
         }
     }

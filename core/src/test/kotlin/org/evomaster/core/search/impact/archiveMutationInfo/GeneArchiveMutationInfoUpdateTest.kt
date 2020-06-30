@@ -10,6 +10,7 @@ import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.archive.StringGeneArchiveMutationInfo
@@ -61,7 +62,7 @@ class GeneArchiveMutationInfoUpdateTest {
         val target = 9
 
         // mutated is not this. from foo to f2oo, fitness becomes worse, ie, -1 for targets
-        foo.archiveMutationUpdate(original = foo, mutated = f2oo, targetsEvaluated = mutableMapOf(target to -1), archiveMutator = archiveMutator)
+        foo.archiveMutationUpdate(original = foo, mutated = f2oo, targetsEvaluated = mutableMapOf(target to EvaluatedMutation.WORSE_THAN), archiveMutator = archiveMutator)
         assertEquals(1, foo.mutationInfo.map.size)
 
         val gmi = foo.mutationInfo.map[target] as? StringGeneArchiveMutationInfo
@@ -78,7 +79,7 @@ class GeneArchiveMutationInfoUpdateTest {
         f3oo.value = "${f3.toChar()}oo"
 
         //mutated is this. from foo to f3oo, fitness becomes worse
-        f3oo.archiveMutationUpdate(original = foo, mutated = f3oo, targetsEvaluated = mutableMapOf(target to -1), archiveMutator = archiveMutator)
+        f3oo.archiveMutationUpdate(original = foo, mutated = f3oo, targetsEvaluated = mutableMapOf(target to EvaluatedMutation.WORSE_THAN), archiveMutator = archiveMutator)
         f3oo.apply {
             assertEquals(1, mutationInfo.map.size)
             assertNotNull(mutationInfo.map[target])
@@ -98,7 +99,7 @@ class GeneArchiveMutationInfoUpdateTest {
         val target = 9
 
         // mutated is not this. from foo to f2oo, fitness becomes worse, ie, -1 for targets
-        foo.archiveMutationUpdate(original = foo, mutated = f2oo, targetsEvaluated = mutableMapOf(target to -1), archiveMutator = archiveMutator)
+        foo.archiveMutationUpdate(original = foo, mutated = f2oo, targetsEvaluated = mutableMapOf(target to EvaluatedMutation.WORSE_THAN), archiveMutator = archiveMutator)
         assertEquals(1, foo.mutationInfo.map.size)
 
         (foo.mutationInfo.map[target] as? StringGeneArchiveMutationInfo).apply {
@@ -112,7 +113,7 @@ class GeneArchiveMutationInfoUpdateTest {
         val f3oo = foo.copy() as StringGene
         f3oo.value = ""
 
-        f3oo.archiveMutationUpdate(original = foo, mutated = f3oo, targetsEvaluated = mutableMapOf(target to 1), archiveMutator = archiveMutator)
+        f3oo.archiveMutationUpdate(original = foo, mutated = f3oo, targetsEvaluated = mutableMapOf(target to EvaluatedMutation.BETTER_THAN), archiveMutator = archiveMutator)
         (f3oo.mutationInfo.map[target] as? StringGeneArchiveMutationInfo).apply {
             assertNotNull(this)
             assertEquals(-1, this!!.mutatedIndex)
@@ -132,7 +133,7 @@ class GeneArchiveMutationInfoUpdateTest {
         val i10 = i1.copy() as IntegerGene
         i10.value = 10
 
-        i1.archiveMutationUpdate(i1, i10, targetsEvaluated = mutableMapOf(target to -1), archiveMutator = archiveMutator)
+        i1.archiveMutationUpdate(i1, i10, targetsEvaluated = mutableMapOf(target to EvaluatedMutation.WORSE_THAN), archiveMutator = archiveMutator)
 
         (i1.mutationInfo.map[target] as? IntegerGeneArchiveMutationInfo).apply {
             assertNotNull(this)
@@ -149,7 +150,7 @@ class GeneArchiveMutationInfoUpdateTest {
             assertEquals((i1.mutationInfo.map[target] as IntegerGeneArchiveMutationInfo).valueMutation.preferMin, valueMutation.preferMin)
         }
 
-        im1000.archiveMutationUpdate(i1, im1000, targetsEvaluated = mutableMapOf(target to 1), archiveMutator = archiveMutator)
+        im1000.archiveMutationUpdate(i1, im1000, targetsEvaluated = mutableMapOf(target to EvaluatedMutation.BETTER_THAN), archiveMutator = archiveMutator)
         (im1000.mutationInfo.map[target] as? IntegerGeneArchiveMutationInfo).apply {
             assertNotNull(this)
             assertNotEquals((i1.mutationInfo.map[target] as IntegerGeneArchiveMutationInfo).valueMutation.preferMax, this!!.valueMutation.preferMax)

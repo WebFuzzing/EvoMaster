@@ -10,6 +10,7 @@ import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.impact.impactInfoCollection.ImpactUtils
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
@@ -47,51 +48,50 @@ class IndividualGeneImpactTest {
     @Test
     fun testGeneImpactUpdate(){
         val simulatedMutator = SimulatedMutator()
+        val config = EMConfig()
 
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividual()
+        evi_ind1.wrapWithTracking(null, 10, mutableListOf(evi_ind1.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT)))
 
         assert(evi_ind1.getSizeOfImpact(fromInitialization = false) == 2)
         val mutatedIndex = 1
         val spec = MutatedGeneSpecification()
 
-        val evi_ind2 = simulatedMutator.fakeMutator(evi_ind1, mutatedIndex, spec)
+        val evi_ind2 = simulatedMutator.fakeMutator(evi_ind1, mutatedIndex, spec, 1)
 
         assert(spec.mutatedIndividual != null)
         assert(spec.mutatedGenes.size == 1)
-        val mutatedGeneId = ImpactUtils.generateGeneId(spec.mutatedIndividual!!, spec.mutatedGenes.first())
+        val mutatedGeneId = ImpactUtils.generateGeneId(spec.mutatedIndividual!!, spec.mutatedGenes.first().gene)
 
-        val evaluatedTargets = mutableMapOf<Int, Int>()
-        evaluatedTargets[simulatedMutator.getNewTarget()] = 1
+        val evaluatedTargets = mutableMapOf<Int, EvaluatedMutation>()
+        evaluatedTargets[simulatedMutator.getNewTarget()] = EvaluatedMutation.BETTER_THAN
 
 
-        evi_ind2.fitness.isDifferent(
-                other = evi_ind1.fitness,
+        evi_ind1.fitness.isDifferent(
+                other = evi_ind2.fitness,
                 targetSubset = simulatedMutator.getInitialTargets(),
                 targetInfo = evaluatedTargets,
-                withExtra = false,
-                strategy = EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE_SAME_N_ACTIONS,
-                bloatControlForSecondaryObjective = false
+                config = config
         )
-        val improvedTarget = evaluatedTargets.filter { it.value == 1 }
-        val impactTarget = evaluatedTargets.filter { it.value != 0 }
-        assert(improvedTarget.size == 2)
-        assert(impactTarget.size == 2)
+
+        val improvedTarget = evaluatedTargets.filter { it.value == EvaluatedMutation.BETTER_THAN }
+        val impactTarget = evaluatedTargets.filter { it.value != EvaluatedMutation.EQUAL_WITH }
+
+        assertEquals(2, impactTarget.size)
+        assertEquals(2, improvedTarget.size)
 
         assert(improvedTarget.keys.containsAll(setOf(2,3)))
         assert(impactTarget.keys.containsAll(setOf(2,3)))
 
-        val copyFilter = object : TraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT){}
-
         val tracked_evi_ind2 = evi_ind1.next(
-                trackOperator = simulatedMutator,
                 next = evi_ind2,
-                copyFilter = copyFilter
+                copyFilter = TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT,
+                evaluatedResult = EvaluatedMutation.BETTER_THAN
         )
 
         assert(tracked_evi_ind2 != null)
 
         tracked_evi_ind2!!.updateImpactOfGenes(
-                inTrack = true,
                 mutatedGenes = spec,
                 targetsInfo = evaluatedTargets
         )
@@ -129,48 +129,46 @@ class IndividualGeneImpactTest {
         val simulatedMutator = SimulatedMutator()
 
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividual()
+        evi_ind1.wrapWithTracking(null, 10, mutableListOf(evi_ind1.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT)))
 
         assert(evi_ind1.getSizeOfImpact(false) == 2)
         val mutatedIndex = 1
         val spec = MutatedGeneSpecification()
 
-        val evi_ind2 = simulatedMutator.fakeStructureMutator(evi_ind1, mutatedIndex, true, spec)
-        val evaluatedTargets = mutableMapOf<Int, Int>()
-        evaluatedTargets[simulatedMutator.getNewTarget()] = 1
+        val evi_ind2 = simulatedMutator.fakeStructureMutator(evi_ind1, mutatedIndex, true, spec, 1)
+        val evaluatedTargets = mutableMapOf<Int, EvaluatedMutation>()
+        evaluatedTargets[simulatedMutator.getNewTarget()] = EvaluatedMutation.BETTER_THAN
 
-        evi_ind2.fitness.isDifferent(
-                other = evi_ind1.fitness,
+        evi_ind1.fitness.isDifferent(
+                other = evi_ind2.fitness,
                 targetSubset = simulatedMutator.getInitialTargets(),
                 targetInfo = evaluatedTargets,
-                withExtra = false,
-                strategy = EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE_SAME_N_ACTIONS,
-                bloatControlForSecondaryObjective = false
+                config = EMConfig()
         )
 
-        val improvedTarget = evaluatedTargets.filter { it.value == 1 }
-        val impactTarget = evaluatedTargets.filter { it.value != 0 }
+        val improvedTarget = evaluatedTargets.filter { it.value == EvaluatedMutation.BETTER_THAN }
+        val impactTarget = evaluatedTargets.filter { it.value != EvaluatedMutation.EQUAL_WITH }
 
-        assert(improvedTarget.size == 2)
-        assert(impactTarget.size == 2)
+
+        assertEquals(2, impactTarget.size)
+        assertEquals(2, improvedTarget.size)
 
         assert(improvedTarget.keys.containsAll(setOf(2,3)))
         assert(impactTarget.keys.containsAll(setOf(2,3)))
 
-        val copyFilter = object : TraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT){}
 
         val tracked_evi_ind2 = evi_ind1.next(
-                trackOperator = simulatedMutator, next = evi_ind2, copyFilter = copyFilter
+                next = evi_ind2, copyFilter = TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT, evaluatedResult = EvaluatedMutation.BETTER_THAN
         )
 
         assert(tracked_evi_ind2 != null)
 
         tracked_evi_ind2!!.updateImpactOfGenes(
-                inTrack = true,
                 mutatedGenes = spec,
                 targetsInfo = evaluatedTargets
         )
 
-        assert(tracked_evi_ind2.getSizeOfImpact(false) == 1)
+        assertEquals(1, tracked_evi_ind2.getSizeOfImpact(false))
 
 
     }
@@ -185,24 +183,29 @@ class IndividualGeneImpactTest {
             config.doCollectImpact = true
         }
 
-        fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification) : EvaluatedIndividual<Ind>{
+        fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification, index: Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
 
             val mutatedGene = (ind2.seeActions()[mutatedIndex].seeGenes()[1] as StringGene)
-            mutatedGene.value = "mutated_index2"
 
-            mutatedGeneSpecification.mutatedGenes.add(mutatedGene)
-            mutatedGeneSpecification.mutatedPosition.add(mutatedIndex)
+            mutatedGeneSpecification.addMutatedGene(
+                    isDb = false,
+                    position = mutatedIndex,
+                    valueBeforeMutation = mutatedGene.value,
+                    gene = mutatedGene
+            )
+
+            mutatedGene.value = "mutated_index2"
             mutatedGeneSpecification.setMutatedIndividual(ind2)
 
             val fv2 = evaluatedIndividual.fitness.copy()
             fv2.updateTarget(getNewTarget(), 0.5, mutatedIndex)
             fv2.updateTarget(getExistingImprovedTarget(), 0.5, mutatedIndex)
 
-            return EvaluatedIndividual(fv2, ind2, listOf())
+            return EvaluatedIndividual(fv2, ind2, listOf(), index = index)
         }
 
-        fun fakeStructureMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, remove: Boolean, mutatedGeneSpecification: MutatedGeneSpecification) : EvaluatedIndividual<Ind>{
+        fun fakeStructureMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, remove: Boolean, mutatedGeneSpecification: MutatedGeneSpecification, index : Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
             if (ind2.seeActions().size == 1 && remove)
                 throw IllegalArgumentException("action cannot be removed since there is only one action")
@@ -236,7 +239,7 @@ class IndividualGeneImpactTest {
 
             fv2.updateTarget(getNewTarget(), 0.5, actionIndex)
             fv2.updateTarget(getExistingImprovedTarget(), 0.5, actionIndex)
-            return EvaluatedIndividual(fv2, ind2, listOf())
+            return EvaluatedIndividual(fv2, ind2, listOf(), index = index)
         }
 
         fun getNewTarget() = 3

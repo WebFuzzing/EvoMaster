@@ -5,6 +5,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.system.measureTimeMillis
 
 
@@ -34,17 +36,22 @@ abstract class FitnessFunction<T>  where T : Individual {
     @Inject
     protected lateinit var config: EMConfig
 
+    companion object{
+        private val log : Logger = LoggerFactory.getLogger(FitnessFunction::class.java)
+    }
+
     /**
      * @return [null] if there were problems in calculating the coverage
      */
-    fun calculateCoverage(individual: T) : EvaluatedIndividual<T>?{
+    fun calculateCoverage(individual: T, targets: Set<Int> = setOf()) : EvaluatedIndividual<T>?{
 
         val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
 
         var ei = time.measureTimeMillis(
                 {time.reportExecutedIndividualTime(it, a)},
-                {doCalculateCoverage(individual)}
+                {doCalculateCoverage(individual, targets)}
         )
+
         processMonitor.eval = ei
 
         if(ei == null){
@@ -52,14 +59,20 @@ abstract class FitnessFunction<T>  where T : Individual {
                 try again, once. Working with TCP connections and remote servers,
                 it is not impossible that sometimes things fail
              */
+            log.warn("Failed to evaluate individual. Restarting the SUT before trying again")
             reinitialize()
+
+            //let's wait a little, just in case...
+            Thread.sleep(5_000)
+
             ei = time.measureTimeMillis(
                     {time.reportExecutedIndividualTime(it, a)},
-                    {doCalculateCoverage(individual)}
+                    {doCalculateCoverage(individual, targets)}
             )
 
             if(ei == null){
                 //give up, but record it
+                log.warn("Failed twice in a row to evaluate individual. Giving up on it.")
                 statistics.reportCoverageFailure()
             }
         }
@@ -73,13 +86,23 @@ abstract class FitnessFunction<T>  where T : Individual {
 
 
     /**
+     * calculated coverage with specified targets
+     *
      * @return [null] if there were problems in calculating the coverage
      */
-    protected abstract fun doCalculateCoverage(individual: T) : EvaluatedIndividual<T>?
+    protected abstract fun doCalculateCoverage(individual: T, targets: Set<Int>) : EvaluatedIndividual<T>?
 
     /**
      * Try to reinitialize the SUT. This is done when there are issues
      * in calculating coverage
      */
     protected open fun reinitialize() = false
+
+    /**
+     * decide what targets to evaluate during fitness evaluation
+     */
+    open fun targetsToEvaluate(targets: Set<Int>, individual: T) : Set<Int>{
+        if (targets.isEmpty()) throw IllegalArgumentException("none of the targets to evaluate")
+        return targets
+    }
 }

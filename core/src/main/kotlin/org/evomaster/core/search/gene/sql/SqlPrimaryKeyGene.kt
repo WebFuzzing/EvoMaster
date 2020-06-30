@@ -6,6 +6,7 @@ import org.evomaster.core.search.impact.impactInfoCollection.sql.SqlPrimaryKeyGe
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -73,18 +74,16 @@ class SqlPrimaryKeyGene(name: String,
         return true
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is SqlPrimaryKeyGene){
-                log.warn("original ({}) should be SqlPrimaryKeyGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is SqlPrimaryKeyGene){
-                log.warn("mutated ({}) should be SqlPrimaryKeyGene", mutated::class.java.simpleName)
-                return
-            }
-            gene.archiveMutationUpdate(original.gene, mutated.gene, targetsEvaluated, archiveMutator)
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (original !is SqlPrimaryKeyGene){
+            log.warn("original ({}) should be SqlPrimaryKeyGene", original::class.java.simpleName)
+            return
         }
+        if (mutated !is SqlPrimaryKeyGene){
+            log.warn("mutated ({}) should be SqlPrimaryKeyGene", mutated::class.java.simpleName)
+            return
+        }
+        gene.archiveMutationUpdate(original.gene, mutated.gene, targetsEvaluated, archiveMutator)
     }
 
     override fun reachOptimal(targets: Set<Int>): Boolean {

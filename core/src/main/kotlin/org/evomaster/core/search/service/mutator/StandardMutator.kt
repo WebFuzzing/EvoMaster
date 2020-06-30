@@ -40,7 +40,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
         val mutable = individual.seeGenes(filterMutate).filter { it.isMutable() }
-        if (!archiveMutator.enableArchiveGeneMutation())
+        if (!config.enableArchiveGeneMutation())
             return mutable
         mutable.filter { !it.reachOptimal(targets) || !archiveMutator.withinNormal()}.let {
             if (it.isNotEmpty()) return it
@@ -67,7 +67,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 }
             }
         }else{
-            val enableAPC = config.weightBasedMutationRate && archiveMutator.enableArchiveSelection()
+            val enableAPC = config.weightBasedMutationRate && config.enableArchiveGeneSelection()
             while (mutated.isEmpty()){
                 if (config.specializeSQLGeneSelection){
                     val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
@@ -80,17 +80,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             }
         }
         return mutated
-    }
-
-    private fun copyIndividualWithTracking(individual: EvaluatedIndividual<T>) : T{
-
-        val individualToMutate = individual.individual
-
-        val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
-            individualToMutate.next(this, maxLength = config.maxLengthOfTraces)
-        else individualToMutate.copy()) as T
-
-        return copy
     }
 
     private fun mutationPreProcessing(individual: T){
@@ -110,7 +99,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun innerMutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : T{
 
-        val copy = copyIndividualWithTracking(individual)
+        val copy = individual.individual.copy() as T
+
 
         if(doesStructureMutation(individual.individual)){
             structureMutator.mutateStructure(copy, mutatedGene)
@@ -128,13 +118,18 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         for (gene in selectGeneToMutate){
             val isDb = copy.seeInitializingActions().any { it.seeGenes().contains(gene) }
-            if (isDb){
-                mutatedGene?.mutatedDbGenes?.add(gene)
-                mutatedGene?.mutatedDbActionPosition?.add(copy.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) })
-            } else{
-                mutatedGene?.mutatedGenes?.add(gene)
-                mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
+
+            val value = try {
+                if(gene.isPrintable()) gene.getValueAsPrintableString() else "null"
+            } catch (e: Exception){
+                "exception"
             }
+            val position = if (isDb){
+                copy.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
+            } else{
+                copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) }
+            }
+            mutatedGene?.addMutatedGene(isDb, valueBeforeMutation = value, gene = gene, position = position)
 
             val selectionStrategy = if (!config.weightBasedMutationRate) SubsetGeneSelectionStrategy.DEFAULT
                         else if (archiveMutator.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
@@ -145,11 +140,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 //root gene impact
                 val impact = individual.getImpact(copy, gene)
                 AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveMutator, individual,targets)
-            }else if(archiveMutator.enableArchiveGeneMutation()){
+            }else if(config.enableArchiveGeneMutation()){
                 AdditionalGeneSelectionInfo(GeneMutationSelectionMethod.NONE, null, null, archiveMutator, individual,targets)
             }else null
 
-            gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, archiveMutator.enableArchiveGeneMutation(), additionalGeneMutationInfo = additionInfo)
+            gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, config.enableArchiveGeneMutation(), additionalGeneMutationInfo = additionInfo)
         }
         return copy
     }
@@ -161,6 +156,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         postActionAfterMutation(mutatedIndividual)
 
+        if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
         return mutatedIndividual
     }
 

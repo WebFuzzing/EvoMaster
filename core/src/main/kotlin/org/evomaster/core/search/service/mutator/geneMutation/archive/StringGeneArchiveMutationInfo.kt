@@ -61,7 +61,7 @@ class StringGeneArchiveMutationInfo(
         return charsMutation[mutatedIndex].compareTo(other.charsMutation[mutatedIndex])
     }
 
-    fun charUpdate(previous: String, current: String, thisValue: String, diffIndex : List<Int>, invalidChars: List<Char>,isMutated : Boolean, mutatedArchiveMutationInfo : StringGeneArchiveMutationInfo, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    fun charUpdate(previous: String, current: String, thisValue: String, diffIndex : List<Int>, invalidChars: List<Char>, isMutated : Boolean, mutatedArchiveMutationInfo : StringGeneArchiveMutationInfo, mutatedBetter: Boolean, archiveMutator: ArchiveMutator) {
 
         diffIndex.forEach {
             val charUpdate = charsMutation[it]
@@ -80,7 +80,7 @@ class StringGeneArchiveMutationInfo(
                 1) current char is not in min..max, but current is better -> reset
                 2) cmutation is optimal, but current is better -> reset
              */
-            val reset = doesCurrentBetter && (
+            val reset = mutatedBetter && (
                     cchar !in charUpdate.preferMin..charUpdate.preferMax ||
                             charUpdate.reached
                     )
@@ -90,7 +90,7 @@ class StringGeneArchiveMutationInfo(
                 plusDependencyInfo()
                 return
             }
-            charUpdate.updateBoundary(pchar, cchar, doesCurrentBetter)
+            charUpdate.updateBoundary(pchar, cchar, mutatedBetter)
 
             //val exclude = thisValue[it].toInt()
             val excludes = invalidChars.map { it.toInt() }.plus(cchar).plus(pchar).toSet()
@@ -101,7 +101,7 @@ class StringGeneArchiveMutationInfo(
         }
     }
 
-    fun lengthUpdate(previous: String, current: String, thisGene: StringGene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    fun lengthUpdate(previous: String, current: String, thisGene: StringGene, mutatedBetter: Boolean, archiveMutator: ArchiveMutator) {
         //update charsMutation regarding value
         val added = thisGene.value.length - charsMutation.size
         if (added != 0) {
@@ -123,7 +123,7 @@ class StringGeneArchiveMutationInfo(
             1) current.length is not in min..max, but current is better -> reset
             2) lengthMutation is optimal, but current is better -> reset
          */
-        val reset = doesCurrentBetter && (
+        val reset = mutatedBetter && (
                 current.length !in lengthMutation.preferMin..lengthMutation.preferMax ||
                         lengthMutation.reached
                 )
@@ -134,7 +134,7 @@ class StringGeneArchiveMutationInfo(
             if (doesDependOnOthers()) setDefaultLikelyDependent()
             return
         }
-        lengthMutation.updateBoundary(previous.length, current.length, doesCurrentBetter)
+        lengthMutation.updateBoundary(previous.length, current.length, mutatedBetter)
 
         if (0 == archiveMutator.validateCandidates(lengthMutation.preferMin, lengthMutation.preferMax, exclude = setOf(previous.length, current.length, thisGene.value.length).toList())) {
             lengthMutation.reached = true

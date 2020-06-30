@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -42,18 +43,16 @@ class Base64StringGene(
     override fun reachOptimal(targets: Set<Int>): Boolean {
         return data.reachOptimal(targets)
     }
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is Base64StringGene){
-                log.warn("original ({}) should be Base64StringGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is Base64StringGene){
-                log.warn("mutated ({}) should be Base64StringGene", mutated::class.java.simpleName)
-                return
-            }
-            data.archiveMutationUpdate(original.data, mutated.data, targetsEvaluated, archiveMutator)
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (original !is Base64StringGene){
+            log.warn("original ({}) should be Base64StringGene", original::class.java.simpleName)
+            return
         }
+        if (mutated !is Base64StringGene){
+            log.warn("mutated ({}) should be Base64StringGene", mutated::class.java.simpleName)
+            return
+        }
+        data.archiveMutationUpdate(original.data, mutated.data, targetsEvaluated, archiveMutator)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {

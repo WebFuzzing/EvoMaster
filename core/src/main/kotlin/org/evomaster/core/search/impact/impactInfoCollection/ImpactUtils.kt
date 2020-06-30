@@ -142,9 +142,9 @@ class ImpactUtils {
                     if (manipulated){
                         a.seeGenes().filter {
                             if (fromInitialization)
-                                mutatedGeneSpecification.mutatedDbGenes.contains(it)
+                                mutatedGeneSpecification.mutatedDbGeneInfo().contains(it)
                             else
-                                mutatedGeneSpecification.mutatedGenes.contains(it)
+                                mutatedGeneSpecification.mutatedGeneInfo().contains(it)
                         }.forEach { mutatedg->
                             val id = generateGeneId(a, mutatedg)
                             val previous = findGeneById(
@@ -166,7 +166,7 @@ class ImpactUtils {
 
             Lazy.assert { !fromInitialization }
 
-            individual.seeGenes().filter { mutatedGeneSpecification.mutatedGenes.contains(it) }.forEach { g->
+            individual.seeGenes().filter { mutatedGeneSpecification.mutatedGeneInfo().contains(it) }.forEach { g->
                 val id = generateGeneId(individual, g)
                 val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
                 list.add(MutatedGeneWithContext(g, previous = previous))

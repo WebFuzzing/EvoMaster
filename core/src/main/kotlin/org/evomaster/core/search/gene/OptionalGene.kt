@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactInfoCollection.value.OptionalGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -92,7 +93,7 @@ class OptionalGene(name: String,
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
 
-        if (!isActive) return emptyList()
+        if (!isActive || !gene.isMutable()) return emptyList()
 
         if (!enableAdaptiveGeneMutation){
             return if (randomness.nextBoolean(INACTIVE)) emptyList() else listOf(gene)
@@ -151,22 +152,20 @@ class OptionalGene(name: String,
 
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is OptionalGene){
-                log.warn("original ({}) should be OptionalGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is OptionalGene){
-                log.warn("mutated ({}) should be OptionalGene", mutated::class.java.simpleName)
-                return
-            }
-            if (original.isActive == mutated.isActive && mutated.isActive)
-                gene.archiveMutationUpdate(original.gene, mutated.gene, targetsEvaluated, archiveMutator)
-            /**
-             * may handle Boolean Mutation in the future
-             */
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (original !is OptionalGene){
+            log.warn("original ({}) should be OptionalGene", original::class.java.simpleName)
+            return
         }
+        if (mutated !is OptionalGene){
+            log.warn("mutated ({}) should be OptionalGene", mutated::class.java.simpleName)
+            return
+        }
+        if (original.isActive == mutated.isActive && mutated.isActive)
+            gene.archiveMutationUpdate(original.gene, mutated.gene, targetsEvaluated, archiveMutator)
+        /**
+         * may handle Boolean Mutation in the future
+         */
     }
 
     override fun mutationWeight(): Double {

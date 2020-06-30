@@ -14,6 +14,7 @@ import org.evomaster.core.search.FitnessValue;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.IntegerGene;
 import org.evomaster.core.search.service.FitnessFunction;
+import org.evomaster.core.search.tracer.TraceableElement;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -94,16 +95,15 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         };
 
         Injector injector = Main.init(args);
-
         //start from creating and evaluating a random individual
         RestSampler sampler = injector.getInstance(RestSampler.class);
         RestIndividual ind = sampler.sampleAtRandom();
-
+        Main.initPartialOracles(injector);
 
         FitnessFunction<RestIndividual> ff = injector.getInstance(Key.get(
                 new TypeLiteral<FitnessFunction<RestIndividual>>() {
                 }));
-        EvaluatedIndividual ei = ff.calculateCoverage(ind);
+        EvaluatedIndividual ei = ff.calculateCoverage(ind, Collections.emptySet());
         assertNotNull(ei);
 
         FitnessValue noDataFV = ei.getFitness();
@@ -144,9 +144,9 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                     }
                 });
 
-        RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, null);
+        RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, TraceableElement.DEFAULT_INDEX);
 
-        ei = ff.calculateCoverage(withSQL);
+        ei = ff.calculateCoverage(withSQL, Collections.emptySet());
         assertNotNull(ei);
 
         //should have better heuristic
@@ -177,7 +177,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                     }
                 });
 
-        ei = ff.calculateCoverage(withSQL);
+        ei = ff.calculateCoverage(withSQL, Collections.emptySet());
         assertNotNull(ei);
 
         //As SQL data is returned, we get no heuristic, and so worst value

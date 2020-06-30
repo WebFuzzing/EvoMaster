@@ -8,6 +8,7 @@ import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact
 import org.evomaster.core.search.impact.impactInfoCollection.sql.SqlUUIDGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -91,23 +92,21 @@ class SqlUUIDGene(
     }
 
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is SqlUUIDGene){
-                log.warn("original ({}) should be SqlUUIDGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is SqlUUIDGene){
-                log.warn("mutated ({}) should be SqlUUIDGene", mutated::class.java.simpleName)
-                return
-            }
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (original !is SqlUUIDGene){
+            log.warn("original ({}) should be SqlUUIDGene", original::class.java.simpleName)
+            return
+        }
+        if (mutated !is SqlUUIDGene){
+            log.warn("mutated ({}) should be SqlUUIDGene", mutated::class.java.simpleName)
+            return
+        }
 
-            if (!mutated.leastSigBits.containsSameValueAs(original.leastSigBits)){
-                leastSigBits.archiveMutationUpdate(original.leastSigBits, mutated.leastSigBits, targetsEvaluated, archiveMutator)
-            }
-            if (!mutated.mostSigBits.containsSameValueAs(original.mostSigBits)){
-                mostSigBits.archiveMutationUpdate(original.mostSigBits, mutated.mostSigBits, targetsEvaluated, archiveMutator)
-            }
+        if (!mutated.leastSigBits.containsSameValueAs(original.leastSigBits)){
+            leastSigBits.archiveMutationUpdate(original.leastSigBits, mutated.leastSigBits, targetsEvaluated, archiveMutator)
+        }
+        if (!mutated.mostSigBits.containsSameValueAs(original.mostSigBits)){
+            mostSigBits.archiveMutationUpdate(original.mostSigBits, mutated.mostSigBits, targetsEvaluated, archiveMutator)
         }
     }
 

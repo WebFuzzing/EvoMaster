@@ -6,6 +6,7 @@ import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact
 import org.evomaster.core.search.impact.impactInfoCollection.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
@@ -68,7 +69,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
-        return fields
+        return fields.filter { it.isMutable() }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -76,7 +77,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         val buffer = StringBuffer()
 
         val includedFields = fields.filter {
-            it !is CycleObjectGene && (it !is OptionalGene || it.isActive)
+            it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
         }
 
         //by default, return in JSON format
@@ -151,18 +152,16 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     }
 
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()) {
-            original as? ObjectGene ?: throw IllegalStateException("$original should be ObjectGene")
-            mutated as? ObjectGene ?: throw IllegalStateException("$mutated should be ObjectGene")
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        original as? ObjectGene ?: throw IllegalStateException("$original should be ObjectGene")
+        mutated as? ObjectGene ?: throw IllegalStateException("$mutated should be ObjectGene")
 
-            mutated.fields.zip(original.fields) { cf, pf ->
-                Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
-            }.filter { !it.second }.map { it.first }.forEach { g ->
-                val current = fields.find { it.name == g.first.name }
-                        ?: throw IllegalArgumentException("mismatched field")
-                current.archiveMutationUpdate(original = g.second, mutated = g.first, targetsEvaluated = targetsEvaluated, archiveMutator = archiveMutator)
-            }
+        mutated.fields.zip(original.fields) { cf, pf ->
+            Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
+        }.filter { !it.second }.map { it.first }.forEach { g ->
+            val current = fields.find { it.name == g.first.name }
+                    ?: throw IllegalArgumentException("mismatched field")
+            current.archiveMutationUpdate(original = g.second, mutated = g.first, targetsEvaluated = targetsEvaluated, archiveMutator = archiveMutator)
         }
     }
 

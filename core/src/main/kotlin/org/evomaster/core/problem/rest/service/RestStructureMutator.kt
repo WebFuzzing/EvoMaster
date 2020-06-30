@@ -13,7 +13,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -25,10 +24,8 @@ class RestStructureMutator : StructureMutator() {
     }
 
     @Inject
-    private lateinit var archiveMutator: ArchiveMutator
-
-    @Inject
     private lateinit var sampler: RestSampler
+
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
 
@@ -112,7 +109,7 @@ class RestStructureMutator : StructureMutator() {
             mutatedGenes.addedInitializationGenes.addAll(diff.flatMap { it.seeGenes() })
 
             // update impact due to newly added initialization actions
-            if(archiveMutator.enableArchiveSelection()){
+            if(config.enableArchiveGeneSelection()){
                 val modified =  if (addedInsertions!!.flatten().size == diff.size)
                     addedInsertions
                 else if (addedInsertions.flatten().size > diff.size){
@@ -123,20 +120,18 @@ class RestStructureMutator : StructureMutator() {
                 }else{
                     log.warn("unexpected handling on Initialization Action after repair")
                     return
-                    //throw IllegalArgumentException("unexpected handling on Initialization Action")
                 }
 
                 if(modified.flatten().size != diff.size){
                     log.warn("unexpected handling on Initialization Action")
                     return
                 }
-                if (archiveMutator.enableArchiveSelection()){
+                if (config.enableArchiveGeneSelection()){
                     if(old.isEmpty()){
                         individual.initAddedInitializationGenes(modified, allExistingData.size)
                     }else{
                         individual.updateImpactGeneDueToAddedInitializationGenes(modified, allExistingData.size)
                     }
-
                 }
 
                 mutatedGenes.addedInitializationGroup.addAll(modified)
@@ -188,6 +183,8 @@ class RestStructureMutator : StructureMutator() {
             //this would be a bug
             else -> throw IllegalStateException("Cannot handle sample type ${individual.sampleType}")
         }
+
+        if (config.trackingEnabled()) tag(individual, time.evaluatedIndividuals)
     }
 
     private fun mutateForSmartGetCollection(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?) {

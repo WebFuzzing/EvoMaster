@@ -767,6 +767,10 @@ class EMConfig {
     @Cfg("Whether secondary objectives are less important than test bloat control")
     var bloatControlForSecondaryObjective = false
 
+    @Cfg("Specify minimum size when bloatControlForSecondaryObjective")
+    @Min(0.0)
+    var minimumSizeControl = 2
+
     @Cfg("Probability of applying a mutation that can change the structure of a test")
     @Probability
     var structureMutationProbability = 0.5
@@ -965,6 +969,41 @@ class EMConfig {
     var doesApplyNameMatching = false
 
     @Experimental
+    @Cfg("Specify a path to save mutation details which is useful for debugging mutation")
+    var saveMutatedGeneFile = ""
+
+    @Experimental
+    @Cfg("Specify a strategy to select targets for evaluating mutation")
+    var mutationTargetsSelectionStrategy = MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET
+
+    enum class MutationTargetsSelectionStrategy{
+        /**
+         * employ not covered target obtained by archive at first for all upTimesMutations
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is still {A, B}
+         */
+        FIRST_NOT_COVERED_TARGET,
+        /**
+         * expand targets with updated not covered targets
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is {A, B, C}
+         */
+        EXPANDED_UPDATED_NOT_COVERED_TARGET,
+        /**
+         * only employ current not covered targets obtainedby archive
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is {B, C}
+         */
+        UPDATED_NOT_COVERED_TARGET
+    }
+
+    @Experimental
     @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
     @Probability(false)
     var S1iR: Double = 0.25
@@ -1019,11 +1058,6 @@ class EMConfig {
     var doCollectImpact = false
 
     @Experimental
-    @Cfg("Specify a percentage of used budget to start archive-based mutation when archive-based mutation is enabled")
-    @PercentageAsProbability
-    var startArchiveMutation = 0.0
-
-    @Experimental
     @Cfg("whether to abstract genes that exist initialization actions to mutate")
     var abstractInitializationGeneToMutate = false
 
@@ -1042,10 +1076,6 @@ class EMConfig {
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
     var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.NONE
-
-    @Experimental
-    @Cfg("Specify file path to save mutated genes, only useful for debugging")
-    var saveMutatedGeneFile = ""
 
     @Experimental
     @Cfg("Specify whether to save archive after each mutation during search, only useful for debugging")
@@ -1149,5 +1179,25 @@ class EMConfig {
 
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
+
+    fun trackingEnabled() = enableTrackEvaluatedIndividual || enableTrackIndividual
+
+    /**
+     * impact info can be collected when archive-based solution is enabled or doCollectImpact
+     */
+    fun collectImpact() = doCollectImpact || enableArchiveGeneSelection()
+
+    /**
+     * @return whether archive-based gene selection is enabled
+     */
+    fun enableArchiveGeneSelection() = probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+
+    /**
+     * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
+     */
+    fun enableArchiveGeneMutation() = archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+
+
+    fun enableArchiveSolution() = enableArchiveGeneMutation() || enableArchiveGeneSelection()
 
 }

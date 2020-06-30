@@ -2,7 +2,9 @@ package org.evomaster.core.search
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 
 /**
@@ -12,12 +14,8 @@ import org.evomaster.core.search.tracer.TrackOperator
  * a single test case, composed by 1 or more "actions" (eg, calls
  * to a RESTful API, SQL operations on a database or WireMock setup)
  *
- * Individual allows to track its evolution, created by sampler, changed by mutator or crossover
- * @property trackOperator presents an operatorTag to change an individual, e.g., mutator
- * @property traces is a list of Individual, indicating its evolution
  */
-abstract class Individual (trackOperator: TrackOperator? = null, traces : MutableList<out Individual>? = null)
-    : TraceableElement (trackOperator, traces){
+abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DEFAULT_INDEX) : TraceableElement(trackOperator, index){
 
     /**
      * Make a deep copy of this individual
@@ -74,6 +72,41 @@ abstract class Individual (trackOperator: TrackOperator? = null, traces : Mutabl
      */
     abstract fun repairInitializationActions(randomness: Randomness)
 
+    override fun copy(options: TraceableElementCopyFilter): TraceableElement {
+        val copy = copy()
+        when(options){
+            TraceableElementCopyFilter.NONE -> return copy
+            TraceableElementCopyFilter.WITH_TRACK->{
+                copy.wrapWithTracking(evaluatedResult, tracking?.copy())
+                return copy
+            }
+            TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT ->{
+                copy.wrapWithEvaluatedResults(evaluatedResult)
+                return copy
+            }
+            else -> throw IllegalArgumentException("NOT support $options")
+        }
+    }
+
+    override fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): TraceableElement? {
+        tracking?: throw IllegalStateException("cannot create next due to unavailable tracking info")
+
+        val nextInTracking = (next.copy(copyFilter) as Individual).also { this.wrapWithEvaluatedResults(evaluatedResult) }
+        pushLatest(nextInTracking)
+
+        val new = (next as Individual).copy()
+//        new.wrapWithTracking(
+//                evaluatedResult = evaluatedResult,
+//                trackingHistory = tracking?.copy(copyFilter)
+//        )
+
+        new.wrapWithTracking(
+                evaluatedResult = evaluatedResult,
+                trackingHistory = tracking
+        )
+
+        return new
+    }
     /**
      * @return whether this individual has same actions with [other]
      */

@@ -15,6 +15,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.geneMutation.archive.ArchiveMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
@@ -68,7 +69,7 @@ class ArchiveMutator {
     /**
      * calculate weights of genes (ie, [map]) based on impacts
      */
-    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Double> ,individual: Individual?, impacts: List<Impact>?, evi: EvaluatedIndividual<*>, targets : Set<Int>){
+    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Double>, individual: Individual?, impacts: List<Impact>?, evi: EvaluatedIndividual<*>, targets : Set<Int>){
 
         val geneImpacts = if(individual != null) genesToMutate.map { g ->
             evi.getImpact(individual, g)
@@ -80,6 +81,7 @@ class ArchiveMutator {
         val method = decideArchiveGeneSelectionMethod()
         if (method.adaptive)
             throw IllegalArgumentException("the decided method should be a fixed method")
+//        mutatedGenes?.geneSelectionStrategy = method
 
         val weights = impactBasedOnWeights(geneImpacts, method, targets).toMutableList()
 
@@ -558,12 +560,12 @@ class ArchiveMutator {
     }
 
 
-    fun <T: Individual> updateArchiveMutationInfo(trackedCurrent: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification, targetsEvaluated: Map<Int, Int>){
+    fun <T: Individual> updateArchiveMutationInfo(trackedCurrent: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification, targetsEvaluated: Map<Int, EvaluatedMutation>){
 
         updateArchiveMutationInfoWithSpecificInfo(
                 trackedCurrent,
                 current,
-                mutatedGenes = mutatedGenes.mutatedGenes,
+                mutatedGenes = mutatedGenes.mutatedGeneInfo(),
                 genesAtActionIndex = mutatedGenes.mutatedPosition,
                 mutatedIndividual = mutatedGenes.mutatedIndividual!!,
                 addedInitializingActions = mutatedGenes.addedInitializationGenes.isNotEmpty(),
@@ -574,7 +576,7 @@ class ArchiveMutator {
         updateArchiveMutationInfoWithSpecificInfo(
                 trackedCurrent,
                 current,
-                mutatedGenes = mutatedGenes.mutatedDbGenes,
+                mutatedGenes = mutatedGenes.mutatedDbGeneInfo(),
                 genesAtActionIndex = mutatedGenes.mutatedDbActionPosition,
                 mutatedIndividual = mutatedGenes.mutatedIndividual!!,
                 addedInitializingActions = mutatedGenes.addedInitializationGenes.isNotEmpty(),
@@ -590,7 +592,7 @@ class ArchiveMutator {
             genesAtActionIndex:List<Int>,
             mutatedIndividual : Individual,
             addedInitializingActions: Boolean,
-            isSqlGene: Boolean , targetsEvaluated: Map<Int, Int>){
+            isSqlGene: Boolean , targetsEvaluated: Map<Int, EvaluatedMutation>){
 
         Lazy.assert{
             mutatedGenes.size == genesAtActionIndex.size
@@ -616,7 +618,11 @@ class ArchiveMutator {
                     log.warn("cannot find gene{} at {} of (is newly added?{}) initializationActions", id, index, addedInitializingActions)
                 }
             }else{
-                savedGene.archiveMutationUpdate(original = previousValue, mutated = s, targetsEvaluated = targetsEvaluated.filter { it.key >=0 && it.value != 0 }, archiveMutator = this)
+                savedGene.archiveMutationUpdate(
+                        original = previousValue,
+                        mutated = s,
+                        targetsEvaluated = targetsEvaluated.filter { it.key >=0 && it.value != EvaluatedMutation.EQUAL_WITH },
+                        archiveMutator = this)
             }
         }
 
@@ -626,25 +632,8 @@ class ArchiveMutator {
     /**
      * @return whether apply archive-based gene selection for individual or eg, ObjectGene
      */
-    fun applyArchiveSelection() = enableArchiveSelection()
-            && time.percentageUsedBudget() > config.startArchiveMutation //fixed time to start archive-based mio or based on how many impacts have been collected?
-            && randomness.nextBoolean(config.probOfArchiveMutation)
+    fun applyArchiveSelection() = config.enableArchiveGeneSelection() && randomness.nextBoolean(config.probOfArchiveMutation)
 
-
-    /**
-     * @return whether archive-based gene selection is enabled based on the configuration, ie, EMConfig
-     */
-    fun enableArchiveSelection() = config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
-
-    /**
-     * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
-     */
-    fun enableArchiveGeneMutation() = config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE && config.probOfArchiveMutation > 0.0
-
-    /**
-     * @return whether collect impacts info after each mutation during search
-     */
-    fun doCollectImpact() = enableArchiveSelection() || config.doCollectImpact
 
     //FIXME MAN
     fun createCharMutationUpdate() = IntMutationUpdate(getDefaultCharMin(), getDefaultCharMax())
@@ -660,79 +649,39 @@ class ArchiveMutator {
         content.add(mutableListOf("test", "actionIndex", "rootGene").plus(Impact.toCSVHeader()).joinToString(","))
         solution.individuals.forEachIndexed { index, e ->
             e.getInitializationGeneImpact().forEachIndexed { aindex, mutableMap ->
-                mutableMap.forEach { t, geneImpact ->
+                mutableMap.forEach { (t, geneImpact) ->
                     content.add(mutableListOf(index.toString(), "Initialization$aindex", t).plus(geneImpact.toCSVCell()).joinToString(","))
                     geneImpact.flatViewInnerImpact().forEach { (name, impact) ->
                         content.add(mutableListOf(index.toString(), "Initialization$aindex", "$t-$name").plus(impact.toCSVCell()).joinToString(","))
                     }
                 }
             }
-
             e.getActionGeneImpact().forEachIndexed { aindex, mutableMap ->
-                mutableMap.forEach { t, geneImpact ->
+                mutableMap.forEach { (t, geneImpact) ->
                     content.add(mutableListOf(index.toString(), "Action$aindex", t).plus(geneImpact.toCSVCell()).joinToString(","))
                     geneImpact.flatViewInnerImpact().forEach { (name, impact) ->
                         content.add(mutableListOf(index.toString(), "Action$aindex", "$t-$name").plus(impact.toCSVCell()).joinToString(","))
                     }
                 }
             }
-
         }
         if (content.size > 1) {
             Files.write(path, content)
         }
     }
 
-    fun saveImpactSnapshot(index : Int, checkedTargets: Set<Int>, targetsInfo : MutableMap<Int, Int>, addedToArchive: Boolean, evaluatedIndividual: EvaluatedIndividual<*>) {
-        if (!doCollectImpact()) return
+    // TODO refactor this method
+    fun saveImpactSnapshot(index : Int, checkedTargets: Set<Int>, targetsInfo : Map<Int, EvaluatedMutation>, result: EvaluatedMutation, evaluatedIndividual: EvaluatedIndividual<*>) {
+        if (!config.collectImpact()) return
         if(config.saveImpactAfterMutationFile.isBlank()) return
 
         val path = Paths.get(config.saveImpactAfterMutationFile)
         if (path.parent != null) Files.createDirectories(path.parent)
         if (Files.notExists(path)) Files.createFile(path)
-        val text = "$index,${checkedTargets.joinToString("-")},${targetsInfo.filterValues { it >=0 }.keys.joinToString("-")},${targetsInfo.filterValues { it == 1 }.keys.joinToString("-")},$addedToArchive,"
+        val text = "$index,${checkedTargets.joinToString("-")},${targetsInfo.filterValues { it.value >=0 }.keys.joinToString("-")},${targetsInfo.filterValues { it == EvaluatedMutation.BETTER_THAN }.keys.joinToString("-")},$result,"
         val content = evaluatedIndividual.exportImpactAsListString().map { "$text,$it" }
         if (content.isNotEmpty()) Files.write(path, content, StandardOpenOption.APPEND)
 
-    }
-
-    fun saveMutatedGene(mutatedGenes: MutatedGeneSpecification?, individual: Individual,index : Int, improve:Boolean){
-        mutatedGenes?:return
-        if(config.saveMutatedGeneFile.isBlank()) return
-
-        val path = Paths.get(config.saveMutatedGeneFile)
-        if (path.parent != null) Files.createDirectories(path.parent)
-        if (Files.notExists(path)) Files.createFile(path)
-
-        val content = mutableListOf<String>()
-        content.addAll(mutatedGenes.mutatedGenes.mapIndexed { gindex, gene -> listOf(
-                index,
-                improve,
-                gene.name,
-                gene.getValueAsPrintableString(),
-                mutatedGenes.mutatedPosition[gindex],
-                getActionInfo(individual.seeActions()[mutatedGenes.mutatedPosition[gindex]])).joinToString(",")})
-
-        content.addAll(mutatedGenes.mutatedDbGenes.mapIndexed { gindex, gene -> listOf(
-                index,
-                improve,
-                gene.name,
-                gene.getValueAsPrintableString(),
-                mutatedGenes.mutatedDbActionPosition[gindex],
-                getActionInfo(individual.seeInitializingActions()[mutatedGenes.mutatedDbActionPosition[gindex]])).joinToString(",")})
-
-        if (content.isNotEmpty()) {
-            try {
-                Files.write(path, content, StandardOpenOption.APPEND)
-            }catch (e :java.nio.charset.MalformedInputException){
-                print("")
-            }
-        }
-    }
-
-    private fun getActionInfo(action : Action) : String{
-        return if (action is RestCallAction) action.resolvedPath()
-        else action.getName()
     }
 
     fun initCharMutation(charsMutation: MutableList<IntMutationUpdate>, length: Int) {
@@ -771,7 +720,48 @@ class ArchiveMutator {
         }
     }
 
-    fun doApplyAGM(gene: Gene) : Boolean = gene is StringGene
+    fun saveMutatedGene(mutatedGenes: MutatedGeneSpecification?, individual: Individual, index : Int, evaluatedMutation : EvaluatedMutation, targets: Set<Int>){
+        mutatedGenes?:return
+        if(config.saveMutatedGeneFile.isBlank()) return
+
+        val path = Paths.get(config.saveMutatedGeneFile)
+        if (path.parent != null) Files.createDirectories(path.parent)
+        if (Files.notExists(path)) Files.createFile(path)
+
+        val content = mutableListOf<String>()
+        content.addAll(mutatedGenes.mutatedGenes.mapIndexed { gindex, geneInfo -> listOf(
+                index,
+                evaluatedMutation,
+                geneInfo.gene.name,
+                geneInfo.previousValue,
+                geneInfo.gene.getValueAsPrintableString(),
+                "#${targets.joinToString("#")}",
+                if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[gindex] else "",
+                if (mutatedGenes.mutatedPosition.isNotEmpty() && individual.seeActions().isNotEmpty())
+                    getActionInfo(individual.seeActions()[mutatedGenes.mutatedPosition[gindex]])
+                else "").joinToString(",")} )
+
+        content.addAll(mutatedGenes.mutatedDbGenes.mapIndexed { gindex, geneInfo -> listOf(
+                index,
+                evaluatedMutation,
+                geneInfo.gene.name,
+                geneInfo.previousValue,
+                geneInfo.gene.getValueAsPrintableString(),
+                "#${targets.joinToString("#")}",
+                if (mutatedGenes.mutatedDbActionPosition.isNotEmpty()) mutatedGenes.mutatedDbActionPosition[gindex] else "",
+                if (mutatedGenes.mutatedDbActionPosition.isNotEmpty() && individual.seeInitializingActions().isNotEmpty())
+                    getActionInfo(individual.seeInitializingActions()[mutatedGenes.mutatedDbActionPosition[gindex]])
+                else "" ).joinToString(",")})
+
+        if (content.isNotEmpty()) {
+            Files.write(path, content, StandardOpenOption.APPEND)
+        }
+    }
+
+    private fun getActionInfo(action : Action) : String{
+        return if (action is RestCallAction) action.resolvedPath()
+        else action.getName()
+    }
 }
 
 enum class CharPool {

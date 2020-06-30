@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -109,8 +110,7 @@ class IntegerGene(
         return value.toString()
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (!archiveMutator.enableArchiveGeneMutation()) return
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
 
         original as? IntegerGene ?: throw IllegalStateException("$original should be IntegerGene")
         mutated as? IntegerGene ?: throw IllegalStateException("$mutated should be IntegerGene")
@@ -132,7 +132,7 @@ class IntegerGene(
                 1) current.length is not in min..max, but current is better -> reset
                 2) lengthMutation is optimal, but current is better -> reset
             */
-            val becomeBetter = u == 1
+            val becomeBetter = u == EvaluatedMutation.BETTER_THAN
             if (becomeBetter && (
                             current !in archiveMutationInfo.valueMutation.preferMin..archiveMutationInfo.valueMutation.preferMax
                             )) {

@@ -8,6 +8,7 @@ import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -21,16 +22,20 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                               * results than actions
                               */
                              val results: List<out ActionResult>,
+
+                             // for tracking its history
                              trackOperator: TrackOperator? = null,
-                             tracking : MutableList<EvaluatedIndividual<T>>? = null,
-                             undoTracking : MutableList<EvaluatedIndividual<T>>? = null,
+                             index: Int = -1,
                              val impactInfo : ImpactsOfIndividual ?= null
-) : TraceableElement(trackOperator,  tracking, undoTracking) where T : Individual {
+
+) : TraceableElement(trackOperator, index) where T : Individual {
 
     companion object{
-        const val ONLY_INDIVIDUAL = "ONLY_INDIVIDUAL"
+        const val ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED = "ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED"
         const val WITH_TRACK_WITH_CLONE_IMPACT = "WITH_TRACK_WITH_CLONE_IMPACT"
         const val WITH_TRACK_WITH_COPY_IMPACT = "WITH_TRACK_WITH_COPY_IMPACT"
+        const val ONLY_WITH_COPY_IMPACT = "ONLY_WITH_COPY_IMPACT"
+        const val ONLY_WITH_CLONE_IMPACT = "ONLY_WITH_CLONE_IMPACT"
     }
 
     /**
@@ -38,7 +43,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      */
     var hasImprovement = false
 
-    var mutatedGeneSpecification : MutatedGeneSpecification? = null
     val clusterAssignments : MutableSet<String> = mutableSetOf<String>()
 
     init{
@@ -47,23 +51,22 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
     }
 
-    constructor(fitness: FitnessValue, individual: T, results: List<out ActionResult>,
-                trackOperator: TrackOperator?, config : EMConfig?=null):
+    constructor(fitness: FitnessValue, individual: T, results: List<out ActionResult>, trackOperator: TrackOperator? = null, index: Int = -1, config : EMConfig):
             this(fitness, individual, results,
                     trackOperator = trackOperator,
-                    tracking = if (config != null && config.enableTrackEvaluatedIndividual) mutableListOf() else null,
-                    undoTracking = if (config != null && config.enableTrackEvaluatedIndividual) mutableListOf() else null,
-                    impactInfo = if (config != null && ((config.probOfArchiveMutation > 0.0 && config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE) || config.doCollectImpact))
+                    index = index,
+                    impactInfo = if ((config.collectImpact()))
                         ImpactsOfIndividual(individual, config.abstractInitializationGeneToMutate, config.maxSqlInitActionsPerMissingData, fitness)
                     else
-                        null
-            )
+                        null)
+
     fun copy(): EvaluatedIndividual<T> {
         return EvaluatedIndividual(
                 fitness.copy(),
                 individual.copy() as T,
                 results.map(ActionResult::copy),
-                trackOperator
+                trackOperator,
+                index
         )
     }
 
@@ -86,175 +89,110 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     }
 
     override fun copy(copyFilter: TraceableElementCopyFilter): EvaluatedIndividual<T> {
+        if(copyFilter.name == ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED){
+            return EvaluatedIndividual(
+                    fitness.copy(),
+                    individual.copy(TraceableElementCopyFilter.WITH_TRACK) as T,
+                    results.map(ActionResult::copy),
+                    trackOperator
+            )
+        }
+
         when(copyFilter){
             TraceableElementCopyFilter.NONE -> return copy()
+            TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT ->{
+                return copy().also {
+                    it.wrapWithEvaluatedResults(evaluatedResult)
+                }
+            }
+            TraceableElementCopyFilter.DEEP_TRACK -> throw IllegalArgumentException("there is no need to track individual when evaluated indivdual is tracked")
             TraceableElementCopyFilter.WITH_TRACK ->{
-                return EvaluatedIndividual(
-                        fitness.copy(),
-                        individual.copy() as T,
-                        results.map(ActionResult::copy),
-                        trackOperator?:individual.trackOperator,
-                        getTracking()?.map { it.copy() }?.toMutableList()?: mutableListOf(),
-                        getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()
-                ).also { current->
-                    mutatedGeneSpecification?.let {
-                        current.mutatedGeneSpecification = it.copyFrom(current)
-                    }
-                }
+                // the copy includes tracking info, but it is no need to include tracking info for the element in the tracking.
+                return copy().also { it.wrapWithTracking(evaluatedResult, trackingHistory = tracking) }
             }
-
-            TraceableElementCopyFilter.DEEP_TRACK -> {
-                throw IllegalArgumentException("${copyFilter.name} should be not applied for EvaluatedIndividual")
-            }
-            else ->{
+            else -> {
                 when {
-                    copyFilter.name == ONLY_INDIVIDUAL -> return EvaluatedIndividual(
+                    copyFilter.name == ONLY_WITH_COPY_IMPACT -> return EvaluatedIndividual(
                             fitness.copy(),
-                            individual.copy(TraceableElementCopyFilter.WITH_TRACK) as T,
+                            individual.copy() as T,
                             results.map(ActionResult::copy),
-                            trackOperator
+                            trackOperator,
+                            index,
+                            impactInfo?.copy()
                     )
-                    copyFilter.name == WITH_TRACK_WITH_CLONE_IMPACT -> {
-                        return EvaluatedIndividual(
-                                fitness.copy(),
-                                individual.copy(TraceableElementCopyFilter.NONE) as T,
-                                results.map(ActionResult::copy),
-                                trackOperator?:individual.trackOperator,
-                                getTracking()?.map { it.copy() }?.toMutableList()?: mutableListOf(),
-                                getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf(),
-                                impactInfo = impactInfo!!.clone()
-                        ).also { current->
-                            mutatedGeneSpecification?.let {
-                                current.mutatedGeneSpecification = it.copyFrom(current)
-                            }
-                        }
+                    copyFilter.name == ONLY_WITH_CLONE_IMPACT-> return EvaluatedIndividual(
+                            fitness.copy(),
+                            individual.copy() as T,
+                            results.map(ActionResult::copy),
+                            trackOperator,
+                            index,
+                            impactInfo?.clone()
+                    )
+                    copyFilter.name == WITH_TRACK_WITH_COPY_IMPACT -> return EvaluatedIndividual(
+                            fitness.copy(),
+                            individual.copy() as T,
+                            results.map(ActionResult::copy),
+                            trackOperator,
+                            index,
+                            impactInfo?.copy()
+                    ).also {
+                        it.wrapWithTracking(evaluatedResult, trackingHistory = tracking)
                     }
-                    copyFilter.name == WITH_TRACK_WITH_COPY_IMPACT -> {
-                        return EvaluatedIndividual(
-                                fitness.copy(),
-                                individual.copy(TraceableElementCopyFilter.NONE) as T,
-                                results.map(ActionResult::copy),
-                                trackOperator?:individual.trackOperator,
-                                getTracking()?.map { it.copy() }?.toMutableList()?: mutableListOf(),
-                                getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf(),
-                                impactInfo = impactInfo!!.copy()
-                        ).also { current->
-                            mutatedGeneSpecification?.let {
-                                current.mutatedGeneSpecification = it.copyFrom(current)
-                            }
-                        }
+                    copyFilter.name == WITH_TRACK_WITH_CLONE_IMPACT -> return EvaluatedIndividual(
+                            fitness.copy(),
+                            individual.copy() as T,
+                            results.map(ActionResult::copy),
+                            trackOperator,
+                            index,
+                            impactInfo?.clone()
+                    ).also {
+                        it.wrapWithTracking(evaluatedResult, trackingHistory = tracking)
                     }
-                    else -> throw IllegalStateException("${copyFilter.name} is not implemented!")
+                    else -> throw IllegalStateException("${copyFilter.name} is not available")
                 }
             }
         }
+
     }
 
-    private fun getReachedTarget() : MutableMap<Int, Double>{
-        if (impactInfo == null) throw IllegalStateException("this method should be invoked")
-        return impactInfo.reachedTargets
+    fun nextForIndividual(next: TraceableElement, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
+        (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
+
+        val nextIndividual = individual.next(next.individual, TraceableElementCopyFilter.WITH_TRACK, evaluatedResult)!!
+
+        return EvaluatedIndividual(
+                next.fitness.copy(),
+                (nextIndividual as T).copy(TraceableElementCopyFilter.WITH_TRACK) as T,
+                next.results.map(ActionResult::copy),
+                next.trackOperator,
+                next.index,
+                impactInfo?.clone()
+        )
+
     }
 
-    fun updateUndoTracking(evaluatedIndividual: EvaluatedIndividual<T>, maxLength: Int){
-        if (getUndoTracking()?.size?:0 == maxLength && maxLength > 0){
-            getUndoTracking()?.removeAt(0)
-        }
-        getUndoTracking()?.add(evaluatedIndividual)
-    }
+    override fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
 
-    override fun next(trackOperator: TrackOperator, next: TraceableElement, copyFilter: TraceableElementCopyFilter, maxLength : Int): EvaluatedIndividual<T>? {
-        if (next !is EvaluatedIndividual<*>) throw  IllegalArgumentException("the type of next is mismatched")
+        tracking?: throw IllegalStateException("cannot create next due to unavailable tracking info")
+        (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
 
-        when(copyFilter){
-            TraceableElementCopyFilter.NONE, TraceableElementCopyFilter.DEEP_TRACK -> throw IllegalArgumentException("incorrect invocation")
-            TraceableElementCopyFilter.WITH_TRACK -> {
-                return EvaluatedIndividual(
-                        next.fitness.copy(),
-                        next.individual.copy() as T,
-                        next.results.map(ActionResult::copy),
-                        trackOperator,
-                        tracking = (getTracking()?.plus(this)?.map { it.copy()}?.toMutableList()?: mutableListOf(this.copy())).run {
-                            if (size == maxLength && maxLength > 0){
-                                this.removeAt(0)
-                                this
-                            }else
-                                this
-                        },
-                        undoTracking = (getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()).run {
-                            if (size == maxLength && maxLength > 0){
-                                this.removeAt(0)
-                                this
-                            }else
-                                this
-                        }
-                ).also { current->
-                    mutatedGeneSpecification?.let {
-                        current.mutatedGeneSpecification = it.copyFrom(current)
-                    }
-                }
-            }else ->{
-            when {
-                copyFilter.name == WITH_TRACK_WITH_CLONE_IMPACT -> return EvaluatedIndividual(
-                        next.fitness.copy(),
-                        next.individual.copy() as T,
-                        next.results.map(ActionResult::copy),
-                        trackOperator,
-                        tracking = (getTracking()?.plus(this)?.map { it.copy()}?.toMutableList()?: mutableListOf(this.copy())).run {
-                            if (size == maxLength && maxLength > 0){
-                                this.removeAt(0)
-                                this
-                            }else
-                                this
-                        },
-                        undoTracking = (getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()).run {
-                            if (size == maxLength && maxLength > 0){
-                                this.removeAt(0 )
-                                this
-                            }else
-                                this
-                        },
-                        impactInfo = impactInfo!!.clone()
-                ).also { current->
-                    mutatedGeneSpecification?.let {
-                        current.mutatedGeneSpecification = it.copyFrom(current)
-                    }
-                }
-                copyFilter.name == WITH_TRACK_WITH_COPY_IMPACT -> return EvaluatedIndividual(
-                        next.fitness.copy(),
-                        next.individual.copy() as T,
-                        next.results.map(ActionResult::copy),
-                        trackOperator,
-                        tracking = (getTracking()?.plus(this)?.map { it.copy()}?.toMutableList()?: mutableListOf(this.copy())).run {
-                            if (size == maxLength && maxLength > 0){
-                                this.removeAt(0)
-                                this
-                            }else
-                                this
-                        },
-                        undoTracking = (getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()).run {
-                            if (size == maxLength && maxLength > 0){
-                                this.removeAt(0 )
-                                this
-                            }else
-                                this
-                        },
-                        impactInfo = impactInfo!!.copy()
-                ).also { current->
-                    mutatedGeneSpecification?.let {
-                        current.mutatedGeneSpecification = it.copyFrom(current)
-                    }
-                }
-                copyFilter.name == ONLY_INDIVIDUAL -> IllegalArgumentException("incorrect invocation")
-            }
+        val nextInTracking = next.copy(copyFilter)
+        pushLatest(nextInTracking)
 
-                throw IllegalStateException("${copyFilter.name} is not implemented!")
-            }
-        }
-    }
+        val new = EvaluatedIndividual(
+                next.fitness.copy(),
+                next.individual.copy() as T,
+                next.results.map(ActionResult::copy),
+                next.trackOperator,
+                next.index,
+                impactInfo = impactInfo?.clone()
+        )
 
-    override fun getUndoTracking(): MutableList<EvaluatedIndividual<T>>? {
-        if(super.getUndoTracking() == null) return null
-        return super.getUndoTracking() as MutableList<EvaluatedIndividual<T>>
+        // tracking is shared with all mutated individual originated from same sampled ind
+        new.wrapWithTracking(evaluatedResult, tracking)
+
+
+        return new
     }
 
 
@@ -264,32 +202,31 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      * For instance, if the latest modification does not improve the fitness, it will be saved in [undoTracking].
      * in this case, the latest is the last of [undoTracking], not [this]
      */
-    fun updateImpactOfGenes(
-            inTrack : Boolean,
-            mutatedGenes : MutatedGeneSpecification,
-            targetsInfo : MutableMap<Int, Int>
-    ){
+    fun updateImpactOfGenes(mutatedGenes: MutatedGeneSpecification, targetsInfo: Map<Int, EvaluatedMutation>){
 
         Lazy.assert{mutatedGenes.mutatedIndividual != null}
-        Lazy.assert{getTracking() != null}
-        Lazy.assert{getUndoTracking() != null}
 
-        if(inTrack) Lazy.assert{getTracking()!!.isNotEmpty()}
-        else Lazy.assert{getUndoTracking()!!.isNotEmpty()}
+        Lazy.assert {
+            mutatedGenes.mutatedIndividual != null
+            tracking != null
+        }
 
-        val previous = if(inTrack) getTracking()!!.last() else this
-        val next = if(inTrack) this else getUndoTracking()!!.last()
+        val lastTwo = getLast<EvaluatedIndividual<T>>(2, null)
+        Lazy.assert {
+            lastTwo.size == 2
+        }
 
-        updateReachedTargets(fitness)
+        val current = lastTwo.first()
+        val mutated = lastTwo.last()
 
-        compareWithLatest(next, previous, improvedTargets = targetsInfo.filter { it.value == 1 }.keys, impactTargets = targetsInfo.filter { it.value >=0 }.keys, mutatedGenes = mutatedGenes)
+        compareWithLatest(next = mutated, previous = current, targetsInfo = targetsInfo, mutatedGenes = mutatedGenes)
     }
 
+    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, targetsInfo: Map<Int, EvaluatedMutation>, mutatedGenes: MutatedGeneSpecification){
 
-
-    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, improvedTargets : Set<Int>, impactTargets: Set<Int>, mutatedGenes: MutatedGeneSpecification){
-
-        val noImpactTargets = next.fitness.getViewOfData().keys.filterNot { impactTargets.contains(it) }.toSet()
+        val noImpactTargets = targetsInfo.filterValues { it == EvaluatedMutation.EQUAL_WITH || it == EvaluatedMutation.UNSURE }.keys
+        val impactTargets = targetsInfo.filterValues {  it == EvaluatedMutation.BETTER_THAN || it == EvaluatedMutation.WORSE_THAN }.keys
+        val improvedTargets = targetsInfo.filterValues { it == EvaluatedMutation.BETTER_THAN }.keys
 
         val didStructureMutation = mutatedGenes.didStructureMutation()
         if (didStructureMutation){ // structure mutated
@@ -322,7 +259,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val sizeChanged = (mutatedGenes.mutatedIndividual!!.seeActions().size != previous.seeActions().size)
 
         //we update genes impact regarding structure only if structure mutated individual is 'next'
-        if(this == next){
+        if(this.index == next.index){
             if (mutatedGenes.removedGene.isNotEmpty()){ //delete an action
                 impactInfo!!.deleteActionGeneImpacts(actionIndex = mutatedGenes.mutatedPosition.toSet())
             }else if (mutatedGenes.addedGenes.isNotEmpty()){ //add new action
@@ -361,7 +298,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             }
         }
         //TODO handle other kinds of mutation if it has e.g., replace, exchange
-        impactInfo!!.impactsOfStructure?.countImpact(next, sizeChanged, noImpactTargets= noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
+        impactInfo!!.impactsOfStructure.countImpact(next, sizeChanged, noImpactTargets= noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
 
     }
     private fun updateImpactsAfterStandardMutation(
@@ -408,36 +345,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return individual.seeInitializingActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
     }
 
-    /**
-     * update fitness archived by [this]
-     * return whether [fitness] archive new targets or improve distance
-     */
-    private fun updateReachedTargets(fitness: FitnessValue) : List<Int>{
-        val difference = mutableListOf<Int>()
-        fitness.getViewOfData().forEach { (t, u) ->
-            var previous = getReachedTarget()[t]
-            if(previous == null){
-                difference.add(t)
-                previous = 0.0
-                getReachedTarget()[t] = previous
-            }else{
-                if(u.distance > previous){
-                    difference.add(t)
-                    getReachedTarget()[t] = u.distance
-                }
-            }
-        }
-        return difference
-    }
-
-    override fun getTracking(): List<EvaluatedIndividual<T>>? {
-        val tacking = super.getTracking()?:return null
-        if(tacking.all { it is EvaluatedIndividual<*> })
-            return tacking as List<EvaluatedIndividual<T>>
-        else
-            throw IllegalArgumentException("tracking has elements with mismatched type")
-    }
-
 
     //**************** for impact *******************//
 
@@ -450,7 +357,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         mutatedGenes.mutatedGenes.forEachIndexed { index, gene ->
             val actionIndex = mutatedGenes.mutatedPosition[index]
             val action = mutatedGenes.mutatedIndividual!!.seeActions()[actionIndex]
-            val id = ImpactUtils.generateGeneId(action, gene)
+            val id = ImpactUtils.generateGeneId(action, gene.gene)
             val found = impactInfo.getGene(
                     actionName = action.getName(),
                     actionIndex = actionIndex,
@@ -463,7 +370,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         mutatedGenes.mutatedDbGenes.forEachIndexed { index, gene ->
             val actionIndex = mutatedGenes.mutatedDbActionPosition[index]
             val action = mutatedGenes.mutatedIndividual!!.seeInitializingActions()[actionIndex]
-            val id = ImpactUtils.generateGeneId(action, gene)
+            val id = ImpactUtils.generateGeneId(action, gene.gene)
             val found = impactInfo.getGene(
                     actionName = action.getName(),
                     actionIndex = actionIndex,

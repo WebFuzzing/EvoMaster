@@ -7,6 +7,7 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.impact.impactInfoCollection.sql.SqlXmlGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -89,18 +90,16 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
             listOf(this).plus(objectGene.flatView(excludePredicate))
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is SqlXMLGene){
-                log.warn("original ({}) should be SqlXMLGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is SqlXMLGene){
-                log.warn("mutated ({}) should be SqlXMLGene", mutated::class.java.simpleName)
-                return
-            }
-            objectGene.archiveMutationUpdate(original.objectGene, mutated.objectGene, targetsEvaluated, archiveMutator)
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (original !is SqlXMLGene){
+            log.warn("original ({}) should be SqlXMLGene", original::class.java.simpleName)
+            return
         }
+        if (mutated !is SqlXMLGene){
+            log.warn("mutated ({}) should be SqlXMLGene", mutated::class.java.simpleName)
+            return
+        }
+        objectGene.archiveMutationUpdate(original.objectGene, mutated.objectGene, targetsEvaluated, archiveMutator)
     }
 
     override fun reachOptimal(targets: Set<Int>): Boolean {

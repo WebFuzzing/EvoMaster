@@ -7,6 +7,7 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
@@ -14,7 +15,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -31,7 +31,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
     @Inject
     private lateinit var sampler: RestSampler
 
-    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
 
@@ -68,15 +68,21 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             }
         }
 
-        /*
-            We cannot request all non-covered targets, because:
-            1) performance hit
-            2) might not be possible to have a too long URL
-         */
-        //TODO prioritized list
-        val ids = randomness.choose(
-                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
-                100).toSet()
+        if(actionResults.any { it is RestCallResult && it.getTcpProblem() }){
+            /*
+                If there are socket issues, we avoid trying to compute any coverage.
+                The caller might restart the SUT and try again.
+                Hopefully, this should be just a glitch...
+                TODO if we see this happening often, we need to find a proper solution.
+                For example, we could re-run the test, and see if this one always fails,
+                while others in the archive do pass.
+                It could be handled specially in the archive.
+             */
+            return null
+        }
+
+
+        val ids = targetsToEvaluate(targets, individual)
 
         val dto = rc.getTestResults(ids)
         if (dto == null) {
@@ -114,12 +120,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }
 
-        return EvaluatedIndividual(
-                fv, individual.copy() as RestIndividual,
-                actionResults,
-                trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null,
-                config = config)
-
+        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
     private fun registerNewAction(action: RestAction, index: Int){

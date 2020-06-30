@@ -5,6 +5,7 @@ import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact
 import org.evomaster.core.search.impact.impactInfoCollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -81,25 +82,23 @@ class TimeGene(
         throw IllegalArgumentException("impact is null or not TimeGeneImpact")
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is TimeGene){
-                log.warn("original ({}) should be TimeGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is TimeGene){
-                log.warn("mutated ({}) should be TimeGene", mutated::class.java.simpleName)
-                return
-            }
-
-            if (!mutated.hour.containsSameValueAs(original.hour)){
-                hour.archiveMutationUpdate(original.hour, mutated.hour, targetsEvaluated, archiveMutator)
-            }
-            if (!mutated.minute.containsSameValueAs(original.minute))
-                minute.archiveMutationUpdate(original.minute, mutated.minute, targetsEvaluated, archiveMutator)
-            if (!mutated.second.containsSameValueAs(original.second))
-                second.archiveMutationUpdate(original.second, mutated.second, targetsEvaluated, archiveMutator)
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (original !is TimeGene){
+            log.warn("original ({}) should be TimeGene", original::class.java.simpleName)
+            return
         }
+        if (mutated !is TimeGene){
+            log.warn("mutated ({}) should be TimeGene", mutated::class.java.simpleName)
+            return
+        }
+
+        if (!mutated.hour.containsSameValueAs(original.hour)){
+            hour.archiveMutationUpdate(original.hour, mutated.hour, targetsEvaluated, archiveMutator)
+        }
+        if (!mutated.minute.containsSameValueAs(original.minute))
+            minute.archiveMutationUpdate(original.minute, mutated.minute, targetsEvaluated, archiveMutator)
+        if (!mutated.second.containsSameValueAs(original.second))
+            second.archiveMutationUpdate(original.second, mutated.second, targetsEvaluated, archiveMutator)
     }
 
     override fun reachOptimal(targets: Set<Int>): Boolean {

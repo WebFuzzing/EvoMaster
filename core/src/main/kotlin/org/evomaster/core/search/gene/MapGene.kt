@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -93,13 +94,14 @@ class MapGene<T>(
         if(!isMutable()){
             throw IllegalStateException("Cannot mutate a immutable array")
         }
-        if ( elements.isEmpty() || elements.size > maxSize){
+        val mutable = elements.filter { it.isMutable() }
+        if ( mutable.isEmpty() || mutable.size > maxSize){
             return listOf()
         }
 
         val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
 
-        return if (randomness.nextBoolean(p)) listOf() else elements
+        return if (randomness.nextBoolean(p)) listOf() else mutable
     }
 
     /**
@@ -138,31 +140,29 @@ class MapGene<T>(
         else listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is MapGene<*>){
-                log.warn("original ({}) should be MapGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is MapGene<*>){
-                log.warn("mutated ({}) should be MapGene", mutated::class.java.simpleName)
-                return
-            }
-            if (original.elements.size != mutated.elements.size) return
-            val mutatedElements = mutated.elements.filterIndexed { index, gene ->
-                !gene.containsSameValueAs(original.elements[index])
-            }
-            if (mutatedElements.size > 1){
-                log.warn("size of mutated elements is more than 1, i.e.,{}", mutatedElements.size)
-                return
-            }
-            val index = mutated.elements.indexOf(mutatedElements.first())
-            if (index > elements.size - 1){
-                log.warn("cannot find element at index {}", index)
-                return
-            }
-            elements[index].archiveMutationUpdate(original.elements[index], mutated.elements[index], targetsEvaluated, archiveMutator)
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (original !is MapGene<*>){
+            log.warn("original ({}) should be MapGene", original::class.java.simpleName)
+            return
         }
+        if (mutated !is MapGene<*>){
+            log.warn("mutated ({}) should be MapGene", mutated::class.java.simpleName)
+            return
+        }
+        if (original.elements.size != mutated.elements.size) return
+        val mutatedElements = mutated.elements.filterIndexed { index, gene ->
+            !gene.containsSameValueAs(original.elements[index])
+        }
+        if (mutatedElements.size > 1){
+            log.warn("size of mutated elements is more than 1, i.e.,{}", mutatedElements.size)
+            return
+        }
+        val index = mutated.elements.indexOf(mutatedElements.first())
+        if (index > elements.size - 1){
+            log.warn("cannot find element at index {}", index)
+            return
+        }
+        elements[index].archiveMutationUpdate(original.elements[index], mutated.elements[index], targetsEvaluated, archiveMutator)
     }
 
     /**

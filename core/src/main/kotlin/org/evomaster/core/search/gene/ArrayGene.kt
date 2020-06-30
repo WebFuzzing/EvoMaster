@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -104,11 +105,12 @@ class ArrayGene<T>(
         if(!isMutable()){
             throw IllegalStateException("Cannot mutate a immutable array")
         }
-        if ( elements.isEmpty() || elements.size > maxSize){
+        val mutable = elements.filter { it.isMutable() }
+        if ( mutable.isEmpty() || mutable.size > maxSize){
             return listOf()
         }
         val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
-        return if (randomness.nextBoolean(p)) listOf() else elements
+        return if (randomness.nextBoolean(p)) listOf() else mutable
     }
 
     /**
@@ -129,31 +131,29 @@ class ArrayGene<T>(
     }
 
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is ArrayGene<*>){
-                log.warn("original ({}) should be ArrayGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is ArrayGene<*>){
-                log.warn("mutated ({}) should be ArrayGene", mutated::class.java.simpleName)
-                return
-            }
-            if (original.elements.size != mutated.elements.size) return
-            val mutatedElements = mutated.elements.filterIndexed { index, gene ->
-                !gene.containsSameValueAs(original.elements[index])
-            }
-            if (mutatedElements.size > 1){
-                log.warn("size of mutated elements is more than 1, i.e.,{}", mutatedElements.size)
-                return
-            }
-            val index = mutated.elements.indexOf(mutatedElements.first())
-            if (index > elements.size - 1){
-                log.warn("cannot find element at index {}", index)
-                return
-            }
-            elements[index].archiveMutationUpdate(original.elements[index], mutated.elements[index], targetsEvaluated, archiveMutator)
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (original !is ArrayGene<*>){
+            log.warn("original ({}) should be ArrayGene", original::class.java.simpleName)
+            return
         }
+        if (mutated !is ArrayGene<*>){
+            log.warn("mutated ({}) should be ArrayGene", mutated::class.java.simpleName)
+            return
+        }
+        if (original.elements.size != mutated.elements.size) return
+        val mutatedElements = mutated.elements.filterIndexed { index, gene ->
+            !gene.containsSameValueAs(original.elements[index])
+        }
+        if (mutatedElements.size > 1){
+            log.warn("size of mutated elements is more than 1, i.e.,{}", mutatedElements.size)
+            return
+        }
+        val index = mutated.elements.indexOf(mutatedElements.first())
+        if (index > elements.size - 1){
+            log.warn("cannot find element at index {}", index)
+            return
+        }
+        elements[index].archiveMutationUpdate(original.elements[index], mutated.elements[index], targetsEvaluated, archiveMutator)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {

@@ -104,6 +104,10 @@ public class ExecutionTracer {
                 return;
             }
 
+            if(! TaintInputName.isTaintInput(left) || !TaintInputName.isTaintInput(right)){
+                return;
+            }
+
             //TODO could have EQUAL_IGNORE_CASE
             String id = left + "___" + right;
             addStringSpecialization(left, new StringSpecializationInfo(StringSpecialization.EQUAL, id));

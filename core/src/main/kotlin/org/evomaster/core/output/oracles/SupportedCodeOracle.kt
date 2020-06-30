@@ -1,9 +1,9 @@
 package org.evomaster.core.output.oracles
 
+import io.swagger.v3.oas.models.PathItem
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
-import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -54,15 +54,22 @@ class SupportedCodeOracle : ImplementedOracle() {
             }
             val supportedCode = supportedCodes.joinToString(", ")
 
-            if(supportedCode.equals("default", ignoreCase = true)){
+            if(supportedCode.equals("default", ignoreCase = true)
+                    || supportedCode.equals("")){
                 lines.add("/*")
                 lines.add(" Note: The default code seems to be the only one defined. https://swagger.io/docs/specification/describing-responses/.")
                 lines.add(" This is somewhat unexpected, so the code below is likely to lead to a failed expectation")
                 lines.add("*/")
-                lines.add(".that($variableName, Arrays.asList().contains($name.extract().statusCode()))")
+                when {
+                    format.isJava() -> lines.add(".that($variableName, Arrays.asList().contains($name.extract().statusCode()))")
+                    format.isKotlin() -> lines.add(".that($variableName, listOf<Int>().contains($name.extract().statusCode()))")
+                }
             }
             //TODO: check here if supported code contains 0 (or maybe check against a list of "acceptable" codes
-            else lines.add(".that($variableName, Arrays.asList($supportedCode).contains($name.extract().statusCode()))")
+            else when {
+                format.isJava() -> lines.add(".that($variableName, Arrays.asList($supportedCode).contains($name.extract().statusCode()))")
+                format.isKotlin() -> lines.add(".that($variableName, listOf<Int>($supportedCode).contains($name.extract().statusCode()))")
+            }
         }
     }
     fun supportedCode(call: RestCallAction, res: RestCallResult): Boolean{
@@ -73,7 +80,7 @@ class SupportedCodeOracle : ImplementedOracle() {
 
     fun getSupportedCode(call: RestCallAction): MutableSet<String>{
         val verb = call.verb
-        val path = objectGenerator.getSwagger().paths.get(call.path.toString())
+        val path = retrievePath(objectGenerator, call)
         val result = when (verb){
             HttpVerb.GET -> path?.get
             HttpVerb.POST -> path?.post
@@ -119,5 +126,4 @@ class SupportedCodeOracle : ImplementedOracle() {
     override fun getName(): String {
         return "CodeOracle"
     }
-
 }

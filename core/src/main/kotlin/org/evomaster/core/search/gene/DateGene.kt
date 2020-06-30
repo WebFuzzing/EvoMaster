@@ -5,6 +5,7 @@ import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact
 import org.evomaster.core.search.impact.impactInfoCollection.value.date.DateGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -82,25 +83,23 @@ class DateGene(
     }
 
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is DateGene){
-                log.warn("original ({}) should be DateGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is DateGene){
-                log.warn("mutated ({}) should be DateGene", mutated::class.java.simpleName)
-                return
-            }
-
-            if (!mutated.year.containsSameValueAs(original.year)){
-                year.archiveMutationUpdate(original.year, mutated.year, targetsEvaluated, archiveMutator)
-            }
-            if (!mutated.month.containsSameValueAs(original.month))
-                month.archiveMutationUpdate(original.month, mutated.month, targetsEvaluated, archiveMutator)
-            if (!mutated.day.containsSameValueAs(original.day))
-                day.archiveMutationUpdate(original.day, mutated.day, targetsEvaluated, archiveMutator)
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+        if (original !is DateGene){
+            log.warn("original ({}) should be DateGene", original::class.java.simpleName)
+            return
         }
+        if (mutated !is DateGene){
+            log.warn("mutated ({}) should be DateGene", mutated::class.java.simpleName)
+            return
+        }
+
+        if (!mutated.year.containsSameValueAs(original.year)){
+            year.archiveMutationUpdate(original.year, mutated.year, targetsEvaluated, archiveMutator)
+        }
+        if (!mutated.month.containsSameValueAs(original.month))
+            month.archiveMutationUpdate(original.month, mutated.month, targetsEvaluated, archiveMutator)
+        if (!mutated.day.containsSameValueAs(original.day))
+            day.archiveMutationUpdate(original.day, mutated.day, targetsEvaluated, archiveMutator)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
