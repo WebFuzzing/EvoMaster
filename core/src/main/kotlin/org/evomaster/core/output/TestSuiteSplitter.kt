@@ -31,7 +31,7 @@ object TestSuiteSplitter {
 
         val type = config.testSuiteSplitType
         val sol = solution as Solution<RestIndividual>
-        val metrics = mutableListOf(DistanceMetricErrorText(), DistanceMetricLastLine())
+        val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon), DistanceMetricLastLine(config.lastLineEpsilon))
         val errs = sol.individuals.filter {ind ->
             if (ind.individual is RestIndividual) {
                 ind.evaluatedActions().any {ac ->

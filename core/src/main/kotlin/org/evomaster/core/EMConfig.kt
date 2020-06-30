@@ -653,6 +653,18 @@ class EMConfig {
     @Cfg("Generate an executive summary, containing an example of each category of potential fault found")
     var executiveSummary = false
 
+    @Experimental
+    @Cfg("The Distance Metric Last Line may use several values for epsilon." +
+            "During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results." +
+            "Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8.")
+    var lastLineEpsilon = 0.8
+
+    @Experimental
+    @Cfg("The Distance Metric Error Text may use several values for epsilon." +
+            "During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results." +
+            "Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8.")
+    var errorTextEpsilon = 0.8
+
     @Cfg("The seed for the random generator used during the search. " +
             "A negative value means the CPU clock time will be rather used as seed")
     var seed: Long = -1
