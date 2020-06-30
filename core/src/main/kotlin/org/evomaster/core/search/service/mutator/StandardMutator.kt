@@ -104,6 +104,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 a.parameters.removeIf{ it is UpdateForBodyParam}
                 a.parameters.add(update.body)
             }
+
+            a.seeGenes().flatMap { it.flatView()}
+                    .filterIsInstance<OptionalGene>()
+                    .filter { it.selectable && it.requestSelection }
+                    .forEach{ it.isActive = true; it.requestSelection = false}
         }
     }
 
