@@ -624,6 +624,7 @@
 
                 <!-- To run unit tests -->
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.0.0-M4</version>
                     <configuration>
@@ -645,6 +646,7 @@
 
                 <!-- To run integration tests -->
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>3.0.0-M4</version>
                     <configuration>
@@ -654,7 +656,14 @@
                         <argLine>@{argLine} -Xms1024m -Xmx2048m -Djdk.attach.allowAttachSelf=true</argLine>
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
-
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
 
                 <!-- To compile Kotlin code -->
