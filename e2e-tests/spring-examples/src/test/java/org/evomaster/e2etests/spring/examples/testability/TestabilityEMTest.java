@@ -7,8 +7,8 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.evomaster.e2etests.utils.CIUtils;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -23,46 +23,33 @@ public class TestabilityEMTest extends SpringTestBase {
     }
 
     @Test
-    public void testRunEM() throws Throwable {
-
+    public void testWithDefault() throws Throwable {
         CIUtils.skipIfOnCircleCI();
 
-        defaultSeed = 0;
-
-        runTestHandlingFlakyAndCompilation(
-                "TestabilityEM",
-                "org.bar.TestabilityEM",
-                15_000,
-                true,
-                (args) -> {
-
-                    args.add("--baseTaintAnalysisProbability");
-                    args.add("0.9");
-
-                    args.add("--saveMutatedGeneFile");
-                    args.add("target/testability/targetsFirst.csv");
-
-                    Solution<RestIndividual> solution = initAndRun(args);
-
-                    assertTrue(solution.getIndividuals().size() >= 1);
-
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/testability/{date}/{number}/{setting}", null);
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "ERROR");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "OK");
-                },
-                10);
+        testRunEM("FIRST_NOT_COVERED_TARGET", "");
     }
 
     @Test
-    public void testRunEMWithUpdatedTargets() throws Throwable {
-
+    public void testWithExpand() throws Throwable {
         CIUtils.skipIfOnCircleCI();
 
+        testRunEM("EXPANDED_UPDATED_NOT_COVERED_TARGET", "Expand");
+    }
+
+    @Test
+    public void testWithUpdated() throws Throwable {
+        CIUtils.skipIfOnCircleCI();
+
+        testRunEM("UPDATED_NOT_COVERED_TARGET", "Update");
+    }
+
+    private void testRunEM(String mutationTargetsSelectionStrategy, String packageSuffix) throws Throwable {
+
         defaultSeed = 0;
-        
+
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
-                "org.bar.TestabilityEM",
+                "org.bar.TestabilityEM"+packageSuffix,
                 15_000,
                 true,
                 (args) -> {
@@ -71,49 +58,15 @@ public class TestabilityEMTest extends SpringTestBase {
                     args.add("0.9");
 
                     args.add("--mutationTargetsSelectionStrategy");
-                    args.add("UPDATED_NOT_COVERED_TARGET");
-
-                    args.add("--saveMutatedGeneFile");
-                    args.add("target/testability/targetsUpdate.csv");
+                    args.add(mutationTargetsSelectionStrategy);
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/testability/{date}/{number}/{setting}", null);
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "ERROR");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "OK");
-                },
-                10);
-    }
-
-    @Test
-    public void testRunEMWithExpandedUpdatedTargets() throws Throwable {
-
-        CIUtils.skipIfOnCircleCI();
-
-        defaultSeed = 0;
-
-        runTestHandlingFlakyAndCompilation(
-                "TestabilityEM",
-                "org.bar.TestabilityEM",
-                15_000,
-                true,
-                (args) -> {
-
-                    args.add("--baseTaintAnalysisProbability");
-                    args.add("0.9");
-
-                    args.add("--mutationTargetsSelectionStrategy");
-                    args.add("EXPANDED_UPDATED_NOT_COVERED_TARGET");
-
-                    args.add("--saveMutatedGeneFile");
-                    args.add("target/testability/targetsExpand.csv");
-
-                    Solution<RestIndividual> solution = initAndRun(args);
-
-                    assertTrue(solution.getIndividuals().size() >= 1);
-
+                    /*
+                        there seem exist some dependency among tests. After executing the first test, SUT fails to throw the exception in following two tests.
+                     */
                     assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/testability/{date}/{number}/{setting}", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "ERROR");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "OK");
