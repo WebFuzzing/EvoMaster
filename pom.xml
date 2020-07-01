@@ -20,6 +20,7 @@
     <modules>
         <module>dbconstraint</module>
         <module>core</module>
+        <module>core-driver-it</module>
         <module>core-it</module>
         <module>client-java</module>
         <module>e2e-tests</module>
@@ -138,6 +139,7 @@
                 <artifactId>evomaster-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!--  Note: adding here also the one for  <type>test-jar</type> gives a lot of problems -->
             <dependency>
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-dbconstraint</artifactId>
@@ -616,6 +618,7 @@
 
                 <!-- To run unit tests -->
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.0.0-M4</version>
                     <configuration>
@@ -633,7 +636,28 @@
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
+                </plugin>
 
+                <!-- To run integration tests -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>3.0.0-M4</version>
+                    <configuration>
+                        <forkCount>1</forkCount>
+                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <rerunFailingTestsCount>2</rerunFailingTestsCount>
+                        <argLine>@{argLine} -Xms1024m -Xmx2048m -Djdk.attach.allowAttachSelf=true</argLine>
+                        <useSystemClassLoader>false</useSystemClassLoader>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
 
                 <!-- To compile Kotlin code -->
@@ -837,6 +861,21 @@
                         </execution>
                     </executions>
                 </plugin>
+
+                <plugin>
+                    <!-- Need to create self-executable uber/fat jars for Spring-->
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${springboot.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
             </plugins>
         </pluginManagement>
 
