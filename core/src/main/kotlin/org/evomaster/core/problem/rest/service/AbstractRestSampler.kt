@@ -77,7 +77,8 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
         }
 
         actionCluster.clear()
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf())
+        val skip = getEndpointsToSkip(swagger, infoDto)
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip)
 
         setupAuthentication(infoDto)
         initSqlInfo(infoDto)
@@ -108,6 +109,31 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
 
     override fun resetSpecialInit() {
         initAdHocInitialIndividuals()
+    }
+
+    protected fun getEndpointsToSkip(swagger: OpenAPI, infoDto: SutInfoDto)
+            : List<String>{
+
+        /*
+            If we are debugging, and focusing on a single endpoint, we skip
+            everything but it.
+            Otherwise, we just look at what configured in the SUT EM Driver.
+         */
+
+        if(configuration.endpointFocus != null){
+
+            val all = swagger.paths.map{it.key}
+
+            if(all.none { it == configuration.endpointFocus }){
+                throw IllegalArgumentException(
+                        "Invalid endpointFocus: ${configuration.endpointFocus}. " +
+                                "\nAvailable:\n${all.joinToString("\n")}")
+            }
+
+            return all.filter { it != configuration.endpointFocus }
+        }
+
+        return  infoDto.restProblem?.endpointsToSkip ?: listOf()
     }
 
     private fun initForBlackBox() {
