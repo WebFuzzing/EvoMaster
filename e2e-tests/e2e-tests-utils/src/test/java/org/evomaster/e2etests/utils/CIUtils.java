@@ -16,4 +16,19 @@ public class CIUtils {
     public static void skipIfOnCircleCI(){
         assumeTrue(!CIUtils.isRunningOnCircleCI());
     }
+
+
+    public static boolean isRunningTravis(){
+        String ci = System.getenv("CI_env");
+        return ci != null && ci.trim().toLowerCase().equals("travis");
+    }
+
+    /**
+     *  Some tests pass locally on Mac, Windows and also on CircleCI, but then fail on
+     *  Travis... seen this when dealing with spawn processes.
+     *  This might be an issue, as we measure coverage on Travis, not CircleCI
+     */
+    public static void skipIfOnTravis(){
+        assumeTrue(!CIUtils.isRunningTravis());
+    }
 }
