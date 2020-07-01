@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -101,7 +101,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         return if(excludePredicate(this)) listOf(this) else listOf(this).plus(gene.flatView(excludePredicate))
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
         if (original !is DisruptiveGene<*>){
             log.warn("original ({}) should be DisruptiveGene", original::class.java.simpleName)
             return

@@ -11,7 +11,8 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneSelector
 import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.archive.StringGeneArchiveMutationInfo
 import org.junit.jupiter.api.Assertions.*
@@ -28,7 +29,7 @@ class GeneArchiveMutationInfoUpdateTest {
     private lateinit var config: EMConfig
     private lateinit var time : SearchTimeController
     private lateinit var apc: AdaptiveParameterControl
-    private lateinit var archiveMutator: ArchiveMutator
+    private lateinit var archiveMutator: ArchiveGeneMutator
     private lateinit var randomness: Randomness
 
     @BeforeEach
@@ -41,7 +42,7 @@ class GeneArchiveMutationInfoUpdateTest {
         config = injector.getInstance(EMConfig::class.java)
         time = injector.getInstance(SearchTimeController::class.java)
         apc = injector.getInstance(AdaptiveParameterControl::class.java)
-        archiveMutator = injector.getInstance(ArchiveMutator::class.java)
+        archiveMutator = injector.getInstance(ArchiveGeneMutator::class.java)
 
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         config.focusedSearchActivationTime = 0.5

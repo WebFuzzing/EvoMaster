@@ -42,7 +42,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val mutable = individual.seeGenes(filterMutate).filter { it.isMutable() }
         if (!config.enableArchiveGeneMutation())
             return mutable
-        mutable.filter { !it.reachOptimal(targets) || !archiveMutator.withinNormal()}.let {
+        /**
+         * be able to jump from local optimal,
+         * we allow an exception to mutate the gene which has reached 'possible' optimal
+         */
+        mutable.filter { !it.reachOptimal(targets) || archiveGeneMutator.applyException()}.let {
             if (it.isNotEmpty()) return it
         }
         return mutable
@@ -132,16 +136,16 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             mutatedGene?.addMutatedGene(isDb, valueBeforeMutation = value, gene = gene, position = position)
 
             val selectionStrategy = if (!config.weightBasedMutationRate) SubsetGeneSelectionStrategy.DEFAULT
-                        else if (archiveMutator.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
+                        else if (archiveGeneSelector.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
                         else SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
 
             val additionInfo = if(selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
                 val id = ImpactUtils.generateGeneId(copy, gene)
                 //root gene impact
                 val impact = individual.getImpact(copy, gene)
-                AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveMutator, individual,targets)
+                AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveGeneSelector, archiveGeneMutator, individual,targets)
             }else if(config.enableArchiveGeneMutation()){
-                AdditionalGeneSelectionInfo(GeneMutationSelectionMethod.NONE, null, null, archiveMutator, individual,targets)
+                AdditionalGeneSelectionInfo(GeneMutationSelectionMethod.NONE, null, null, archiveGeneSelector, archiveGeneMutator, individual,targets)
             }else null
 
             gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, config.enableArchiveGeneMutation(), additionalGeneMutationInfo = additionInfo)

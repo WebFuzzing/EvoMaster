@@ -1,12 +1,6 @@
 package org.evomaster.core.search.service.mutator.geneMutation.archive
 
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneIndependenceInfo
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.StringGene
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
-import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
-import org.evomaster.core.search.service.mutator.geneMutation.MutationBoundaryUpdate
 
 /**
  * created by manzh on 2020-06-10

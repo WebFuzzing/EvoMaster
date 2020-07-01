@@ -1,7 +1,5 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
-
 /**
  * used to collect gene independency degree
  * @property mutatedtimes mutation times of a gene
@@ -9,7 +7,7 @@ import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
  * @property degreeOfIndependence a degree of gene independency that may be derived based on [mutatedtimes] and [resetTimes]
  */
 class GeneIndependenceInfo(
-        var degreeOfIndependence : Double = 0.0,
+        var degreeOfIndependence : Double = 0.8,
         var mutatedtimes : Int = 0,
         var resetTimes: Int = 0
 ){

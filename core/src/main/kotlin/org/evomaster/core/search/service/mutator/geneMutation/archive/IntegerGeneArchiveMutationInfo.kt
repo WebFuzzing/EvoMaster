@@ -2,7 +2,7 @@ package org.evomaster.core.search.service.mutator.geneMutation.archive
 
 import org.evomaster.core.search.gene.GeneIndependenceInfo
 import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneSelector
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 
 /**
@@ -11,7 +11,7 @@ import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 
 class IntegerGeneArchiveMutationInfo(
         val valueMutation : IntMutationUpdate,
-        dependencyInfo: GeneIndependenceInfo = GeneIndependenceInfo(degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL)) : ArchiveMutationInfo(dependencyInfo){
+        dependencyInfo: GeneIndependenceInfo = GeneIndependenceInfo()) : ArchiveMutationInfo(dependencyInfo){
 
 
     constructor(minValue : Int, maxValue : Int) : this(valueMutation = IntMutationUpdate(minValue, maxValue))

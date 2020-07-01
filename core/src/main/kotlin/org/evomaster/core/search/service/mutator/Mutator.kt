@@ -8,9 +8,9 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.*
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneSelector
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
@@ -39,7 +39,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     private lateinit var tracker : ArchiveMutationTrackService
 
     @Inject
-    protected lateinit var archiveMutator : ArchiveMutator
+    protected lateinit var archiveGeneSelector : ArchiveGeneSelector
+
+    @Inject
+    protected lateinit var archiveGeneMutator : ArchiveGeneMutator
 
     @Inject
     protected lateinit var mwc : MutationWeightControl
@@ -120,7 +123,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             update(currentWithTraces, mutated, mutatedGenes, result)
 
             //save mutationInfo
-            archiveMutator.saveMutatedGene(mutatedGenes, index = time.evaluatedIndividuals, individual = mutatedInd, evaluatedMutation = result, targets = targets)
+            archiveGeneMutator.saveMutatedGene(mutatedGenes, index = time.evaluatedIndividuals, individual = mutatedInd, evaluatedMutation = result, targets = targets)
             archive.saveSnapshot()
 
             val mutatedWithTraces = when{
@@ -146,10 +149,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             // gene mutation evaluation
             if (config.enableArchiveGeneMutation()){
-                archiveMutator.updateArchiveMutationInfo(currentWithTraces, current, mutatedGenes, targetsInfo)
+                archiveGeneMutator.updateArchiveMutationInfo(currentWithTraces, current, mutatedGenes, targetsInfo)
             }
 
-            archiveMutator.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,targetsInfo = targetsInfo, result = result, evaluatedIndividual = current)
+            archiveGeneSelector.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,targetsInfo = targetsInfo, result = result, evaluatedIndividual = current)
 
             when(config.mutationTargetsSelectionStrategy){
                 EMConfig.MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET ->{}

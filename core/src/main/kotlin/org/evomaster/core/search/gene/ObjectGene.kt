@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact
 import org.evomaster.core.search.impact.impactInfoCollection.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -9,6 +8,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -134,7 +134,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     }
 
     override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
-        val canFields = fields.filter { !it.reachOptimal(additionalGeneMutationInfo.targets) || !additionalGeneMutationInfo.archiveMutator.withinNormal() }.run {
+        val canFields = fields.filter { !it.reachOptimal(additionalGeneMutationInfo.targets) || additionalGeneMutationInfo.archiveGeneMutator.applyException() }.run {
             if (isEmpty())
                 fields
             else this
@@ -152,7 +152,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     }
 
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
         original as? ObjectGene ?: throw IllegalStateException("$original should be ObjectGene")
         mutated as? ObjectGene ?: throw IllegalStateException("$mutated should be ObjectGene")
 

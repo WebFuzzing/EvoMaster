@@ -83,6 +83,10 @@ public abstract class RestTestBase {
         return Main.init(args.toArray(new String[0]));
     }
 
+    protected void initPartialOracles(Injector injector) {
+        Main.initPartialOracles(injector);
+    }
+
     protected String outputFolderPath(String outputFolderName){
         return "target/em-tests/" + outputFolderName;
     }

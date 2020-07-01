@@ -5,7 +5,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
 
 
 class SqlAutoIncrementGene(name: String) : Gene(name) {
@@ -49,7 +49,7 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
 
     override fun isPrintable() = false
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }
 

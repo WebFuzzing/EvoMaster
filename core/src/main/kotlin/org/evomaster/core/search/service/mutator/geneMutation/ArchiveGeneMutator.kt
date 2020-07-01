@@ -8,13 +8,11 @@ import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.impactInfoCollection.*
+import org.evomaster.core.search.impact.impactInfoCollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
-import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.geneMutation.archive.ArchiveMutationInfo
@@ -29,15 +27,10 @@ import kotlin.math.abs
 import kotlin.math.max
 
 /**
- * Archive-based mutator which handle
- * - archive-based gene selection to mutate
- * - mutate the selected genes based on their performance (i.e., results of fitness evaluation)
- * - besides, string mutation is designed regarding fitness evaluation using LeftAlignmentDistance
+ * created by manzh on 2020-07-01
  */
-class ArchiveMutator {
 
-    @Inject
-    private lateinit var time : SearchTimeController
+class ArchiveGeneMutator{
 
     @Inject
     private lateinit var randomness: Randomness
@@ -48,11 +41,9 @@ class ArchiveMutator {
     @Inject
     lateinit var apc: AdaptiveParameterControl
 
-    companion object {
 
-        private val log: Logger = LoggerFactory.getLogger(ArchiveMutator::class.java)
-
-        const val WITHIN_NORMAL = 0.9
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(ArchiveGeneMutator::class.java)
 
         const val DEP_THRESHOLD = 0
 
@@ -64,192 +55,37 @@ class ArchiveMutator {
         const val MAX_STRING_LEN_MUTATION = 64
     }
 
-    /**************************** gene selection ********************************************/
+    fun applyException() = randomness.nextBoolean(0.1)
 
     /**
-     * calculate weights of genes (ie, [map]) based on impacts
+     * identify mutationInfo for [gene] with specified [targets]
      */
-    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Double>, individual: Individual?, impacts: List<Impact>?, evi: EvaluatedIndividual<*>, targets : Set<Int>){
-
-        val geneImpacts = if(individual != null) genesToMutate.map { g ->
-            evi.getImpact(individual, g)
-                    ?: throw IllegalArgumentException("mismatched gene and impact info during mutation")
-
-        }else impacts?:throw IllegalArgumentException("missing impacts info")
-
-        //TODO later adaptive decide selection method
-        val method = decideArchiveGeneSelectionMethod()
-        if (method.adaptive)
-            throw IllegalArgumentException("the decided method should be a fixed method")
-//        mutatedGenes?.geneSelectionStrategy = method
-
-        val weights = impactBasedOnWeights(geneImpacts, method, targets).toMutableList()
-
-        genesToMutate.forEachIndexed { index, gene ->
-            map[gene] = weights[index]
+    fun identifyMutation(gene: Gene, targets: Set<Int>) : ArchiveMutationInfo {
+        return when (gene) {
+            is StringGene -> gene.mutationInfo.sort(targets).lastOrNull() as? StringGeneArchiveMutationInfo ?: StringGeneArchiveMutationInfo(gene)
+            is IntegerGene -> gene.mutationInfo.sort(targets).lastOrNull() as? IntegerGeneArchiveMutationInfo ?: IntegerGeneArchiveMutationInfo(gene)
+            else -> throw IllegalArgumentException("don't support to get archiveMutationInfo for the gene")
         }
     }
 
     /**
-     * @return weights calculated based on [impacts]
-     * @param impacts a list of impacts
-     * @param method a method to calculate weights of [impacts]
-     * @param targets applied targets to assess their impact
+     * apply archiveGeneMutator for [gene] regarding specified [targets]
      */
-    private fun impactBasedOnWeights(impacts: List<Impact>, method: GeneMutationSelectionMethod, targets: Set<Int>): Array<Double> {
-        return when (method) {
-            GeneMutationSelectionMethod.AWAY_NOIMPACT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET))
-            GeneMutationSelectionMethod.APPROACH_IMPACT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT))
-            GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT))
-            GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPROVEMENT))
-            GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET))
-            else -> {
-                throw IllegalArgumentException("invalid gene selection method: method cannot be NONE or adaptive, but $method")
-            }
-        }
-    }
-
-    /**
-     * ideally, candidates should shrink with search for a focused mutation.
-     * but if there is no enough info for deciding whether the gene is impactful, we need expand budget to explore.
-     */
-    private fun expandBudgetToExplore(impacts: List<Impact>, targets: Set<Int>, method: GeneMutationSelectionMethod): Boolean {
-        return getImpactPropertiesByMethod(method).map { ImpactUtils.getImpactDistribution(impacts, it, targets) }.any { it == ImpactPropertyDistribution.NONE || it == ImpactPropertyDistribution.FEW }
-    }
-
-    private fun getImpactPropertiesByMethod(method : GeneMutationSelectionMethod) : Array<ImpactProperty>{
-        return when (method) {
-            GeneMutationSelectionMethod.AWAY_NOIMPACT -> arrayOf(ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET)
-            GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT -> {
-                arrayOf(ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET, ImpactProperty.TIMES_IMPACT)
-            }
-            GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT -> {
-                arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPROVEMENT)
-            }
-            GeneMutationSelectionMethod.APPROACH_IMPACT -> arrayOf(ImpactProperty.TIMES_IMPACT)
-
-            GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT -> {
-                arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT)
-            }else -> {
-                throw IllegalArgumentException("invalid gene selection method: method cannot be NONE or adaptive, but $method")
-            }
-        }
-    }
-
-
-    /**
-     * decide an archive-based gene selection method when the selection is adaptive (i.e., [GeneMutationSelectionMethod.adaptive])
-     */
-    private fun decideArchiveGeneSelectionMethod() : GeneMutationSelectionMethod {
-        return when (config.adaptiveGeneSelectionMethod) {
-            GeneMutationSelectionMethod.ALL_FIXED_RAND -> randomGeneSelectionMethod()
-            else -> config.adaptiveGeneSelectionMethod
-        }
-    }
-
-    private fun randomGeneSelectionMethod(): GeneMutationSelectionMethod = randomness.choose(GeneMutationSelectionMethod.values().filter { !it.adaptive && it.archive })
-
-    /**
-     * this fun is used by [Archive] to sample an individual from population (i.e., [individuals])
-     * if [ArchiveMutator.enableArchiveSelection] is true.
-     * In order to identify impacts of genes, we prefer to select an individual which has some impact info.
-     */
-    fun <T : Individual> selectIndividual(individuals: List<EvaluatedIndividual<T>>): EvaluatedIndividual<T> {
-        if (randomness.nextBoolean(0.1)) return randomness.choose(individuals)
-        val impacts = individuals.filter { it.anyImpactfulGene() }
-        if (impacts.isNotEmpty()) return randomness.choose(impacts)
-        return randomness.choose(individuals)
-    }
-
-    private fun <T> prioritizeNoVisit(genes: List<Pair<T, Impact>>): List<Pair<T, Impact>> {
-        val noVisit = genes.filter { it.second.getTimesToManipulate() == 0 }.toMutableList()
-        noVisit.shuffle()
-        return noVisit
-    }
-
-
-    private fun impactBasedOnWeights(impacts : List<Impact>, targets: Set<Int>, properties: Array<ImpactProperty>) : Array<Double>{
-
-        val values : List<MutableList<Double>> = impacts.map { impact ->
-            properties.map { p->
-                when(config.geneWeightBasedOnImpactsBy){
-                    EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER -> getCounterByProperty(impact, p, targets).toDouble()
-                    EMConfig.GeneWeightBasedOnImpact.RATIO, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> getDegreeByProperty(impact, p, targets)
-                }
-            }.toMutableList()
-        }
-
-        handleNotVisit(values, properties.size)
-
-        //Man: shall we normalize data?
-        return when(config.geneWeightBasedOnImpactsBy){
-            EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.RATIO -> values.map { it.sum() + 1.0 }.toTypedArray()
-            EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> {
-                val weights = Array(impacts.size){Array(properties.size){0.0}}
-                (0 until properties.size).map {pi->
-                    values.mapIndexed { index, list -> Pair(index, list[pi]) }.sortedBy { it.second }.forEachIndexed { index, pair ->
-                        weights[pair.first][pi] = index + 1.0
-                    }
-                }
-                weights.map { it.average() }.toTypedArray()
-            }
-        }
-    }
-
-
-    private fun handleNotVisit(values : List<MutableList<Double>>, sizeOfProperty: Int){
-
-        (0 until sizeOfProperty).forEach {pi->
-            val r = max(0.0,values.map { v->v[pi] }.max()?:0.0)
-            values.forEachIndexed { index, list -> if (list[pi] < 0) values[index][pi] = r }
-        }
-    }
-
-    /**
-     * the more，the better
-     */
-    private fun getCounterByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>): Int {
-        val value = impact.getCounter(property, targets, By.MAX)
-
-        if (value < 0) return value
-
-        return when (property) {
-            ImpactProperty.TIMES_IMPACT -> value
-            else -> impact.getTimesToManipulate() - value
-        }
-    }
-
-    /**
-     * the more，the better
-     */
-    private fun getDegreeByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>): Double {
-        val value = impact.getDegree(property, targets, By.MAX)
-        if (value < 0) return value
-
-        return when (property) {
-            ImpactProperty.TIMES_IMPACT -> value
-            else -> 1.0 - value
-        }
-    }
-
-
-    /**************************** gene mutation ********************************************/
-
-    fun withinNormal(prob: Double = WITHIN_NORMAL): Boolean {
-        return randomness.nextBoolean(prob)
-    }
-
     fun mutate(gene: Gene, targets: Set<Int>) {
-        val employedTargets = targets.filter { it >= 0 }.toSet()
+        val employedTargets = targets.filter {!IdMapper.isLocal(it)}.toSet()
         val p = gene.copy()
+
+        // identify ArchiveMutationInfo
+        val mutationInfo = identifyMutation(gene, employedTargets)
+
         when (gene) {
-            is StringGene -> mutate(gene, probOfModifyChar = probabilityToMutateChar(gene), priorLengthMutation = priorLengthMutation(gene), targets = employedTargets)
+            is StringGene -> mutateString(mutationInfo, gene, probOfModifyingChar = probabilityToMutateChar(gene), priorLengthMutation = priorLengthMutation(gene))
 //            is IntegerGene -> mutate(gene, employedTargets)
 //            is EnumGene<*> -> mutate(gene)
             else -> {
                 if (ParamUtil.getValueGene(gene) is StringGene) {
                     val g = ParamUtil.getValueGene(gene) as StringGene
-                    mutate(g, probOfModifyChar = probabilityToMutateChar(g), priorLengthMutation = priorLengthMutation(g), targets = employedTargets)
+                    mutateString(identifyMutation(g, employedTargets), g, probOfModifyingChar = probabilityToMutateChar(g), priorLengthMutation = priorLengthMutation(g))
                 } else {
                     log.warn("not implemented error")
                 }
@@ -259,32 +95,9 @@ class ArchiveMutator {
             log.warn("value of gene shouldn't be same with previous")
     }
 
-    fun identifyMutation(gene: Gene, targets: Set<Int>) : ArchiveMutationInfo{
-        return when (gene) {
-            is StringGene -> gene.mutationInfo.sort(targets).lastOrNull() as? StringGeneArchiveMutationInfo ?: StringGeneArchiveMutationInfo(gene)
-            is IntegerGene -> gene.mutationInfo.sort(targets).lastOrNull() as? IntegerGeneArchiveMutationInfo ?: IntegerGeneArchiveMutationInfo(gene)
-            else -> throw IllegalArgumentException("don't support to get archiveMutationInfo for the gene")
-        }
-    }
+    /**************************** String Gene ********************************************/
 
-//    private fun mutate(gene: IntegerGene, targets: Set<Int>){
-//        // identify ArchiveMutationInfo
-//        val mutationInfo = gene.mutationInfo.sort(targets).lastOrNull() as? IntegerGeneArchiveMutationInfo ?: IntegerGeneArchiveMutationInfo(gene)
-//        gene.value = randomFromCurrentAdaptively(gene.value,mutationInfo.valueMutation.preferMin, mutationInfo.valueMutation.preferMax, gene.min, gene.max, 6, 3)
-//    }
-
-    /**
-     * mutate StringGene [gene] using archive-based method
-     *
-     * after sampling, it is likely that a length of the [gene] is close to optima. Thus, mutate length with a relative low probability.
-     * consequently, we set a relative high value for [probOfModifyChar], i.e., default is 0.8.
-     * regarding [priorLengthMutation], it might achieve a worse performance when [gene] is related to other gene,
-     * e.g., fitness is about how the [gene] is close to other [Gene]. so we disable it by default.
-     */
-    private fun mutate(gene: StringGene, probOfModifyChar: Double, priorLengthMutation: Boolean, targets: Set<Int>) {
-        // identify ArchiveMutationInfo
-        val mutationInfo = identifyMutation(gene, targets) as StringGeneArchiveMutationInfo
-
+    private fun preHandlingMutationInfo(mutationInfo: StringGeneArchiveMutationInfo, gene: StringGene){
         if (mutationInfo.neverArchiveMutate()) {
             if (mutationInfo.charsMutation.isNotEmpty()) {
                 log.warn("duplicated Initialized")
@@ -295,44 +108,39 @@ class ArchiveMutator {
             } else
                 mutationInfo.charsMutation.addAll((0 until gene.value.length).map { createCharMutationUpdate() })
         }
+    }
+
+    /**
+     * mutate StringGene [gene] using archive-based method
+     *
+     * after sampling, it is likely that a length of the [gene] is close to optima. Thus, mutate length with a relative low probability.
+     * consequently, we set a relative high value for [probOfModifyingChar], i.e., default is 0.8.
+     * regarding [priorLengthMutation], it might achieve a worse performance when [gene] is related to other gene,
+     * e.g., fitness is about how the [gene] is close to other [Gene]. so we disable it by default.
+     */
+    private fun mutateString(mutationInfo: ArchiveMutationInfo, gene: StringGene, probOfModifyingChar: Double, priorLengthMutation: Boolean) {
+        mutationInfo as? StringGeneArchiveMutationInfo ?: throw IllegalArgumentException("mismatched mutationInfo for StringGene")
+        preHandlingMutationInfo(mutationInfo = mutationInfo, gene = gene)
 
         /*
         if value is blank, prefer appending a new string
          */
         if (gene.value.isBlank()) {
-            append(gene, mutationInfo= mutationInfo, charPool = getCharPool(), modifyCharMutation = true)
+            append(gene, mutationInfo= mutationInfo, charPool = getCharPool(), modifyCharMutation = false)
             return
         }
-
         /*
             if enable priorLengthMutation
             char mutation would be applied until length mutation reaches its optimal
          */
         if (priorLengthMutation) {
             if (!mutationInfo.lengthMutation.reached) {
-                modifyLength(gene, mutationInfo=mutationInfo, strictAfter = -1, modifyCharMutation = true)
+                modifyLength(gene, mutationInfo=mutationInfo, strictAfter = -1, modifyCharMutation = false)
                 return
             }
         }
 
-        val p = withinNormal()
-
-        val normalCharMutation = randomness.nextBoolean(probOfModifyChar)
-        /**
-         * with 10% probability, mutate char even all genes reach optima
-         */
-        var doCharMutation = if (mutationInfo.charsMutation.all { it.reached }) !p else normalCharMutation
-        /**
-         * with 10% probability, mutate length even current is optimal
-         */
-        var doLenMutation = if (mutationInfo.lengthMutation.reached) !p else !normalCharMutation
-
-        if (doCharMutation == doLenMutation) {
-            if (randomness.nextBoolean())
-                doCharMutation = !doCharMutation
-            else
-                doLenMutation = !doLenMutation
-        }
+        val doCharMutation = mutationInfo.lengthMutation.reached || randomness.nextBoolean(probOfModifyingChar)
 
         if (doCharMutation) {
             // ensure size of charMutation equals with value.length
@@ -343,18 +151,18 @@ class ArchiveMutator {
             val index = decideIndex(gene, mutationInfo = mutationInfo)
             modify(gene,  mutationInfo = mutationInfo,
                     index = index, charMutation = mutationInfo.charsMutation[index])
-        } else if (doLenMutation) {
-            val exclude = mutationInfo.charsMutation.mapIndexed { index, intMutationUpdate -> if (intMutationUpdate.reached && randomness.nextBoolean(WITHIN_NORMAL)) index else -1 }.filter { it > -1 }
+        } else {
+            val exclude = mutationInfo.charsMutation.mapIndexed { index, intMutationUpdate -> if (intMutationUpdate.reached) index else -1 }.filter { it > -1 }
+            //TODO
             val last = if (exclude.isNotEmpty()) exclude.max()!! else -1
-            modifyLength(gene, mutationInfo = mutationInfo, strictAfter = last, modifyCharMutation = true)
-        } else
-            log.warn("at least one of doCharMutation {} and doLenMutation {} should be enabled", doCharMutation, doLenMutation)
+            modifyLength(gene, mutationInfo = mutationInfo, strictAfter = last, modifyCharMutation = false)
+        }
     }
 
     private fun approachPrefer(gene: StringGene, mutationInfo: ArchiveMutationInfo): Boolean {
         return when (config.archiveGeneMutation) {
-            EMConfig.ArchiveGeneMutation.SPECIFIED -> withinNormal()
-            EMConfig.ArchiveGeneMutation.ADAPTIVE -> withinNormal(mutationInfo.dependencyInfo.degreeOfIndependence)
+            EMConfig.ArchiveGeneMutation.SPECIFIED -> !applyException()
+            EMConfig.ArchiveGeneMutation.ADAPTIVE -> randomness.nextBoolean(mutationInfo.dependencyInfo.degreeOfIndependence)
             EMConfig.ArchiveGeneMutation.NONE -> throw IllegalArgumentException("bug!")
         }
     }
@@ -366,7 +174,7 @@ class ArchiveMutator {
             if Independence is higher, far away from approachSlightMutation
             if Independence is lower, close to approachSlightMutation
             */
-            EMConfig.ArchiveGeneMutation.ADAPTIVE -> mutationInfo.dependencyInfo.resetTimes > DEP_THRESHOLD && withinNormal()
+            EMConfig.ArchiveGeneMutation.ADAPTIVE -> mutationInfo.dependencyInfo.resetTimes > DEP_THRESHOLD
             EMConfig.ArchiveGeneMutation.NONE -> throw IllegalStateException("bug!")
         }
     }
@@ -374,7 +182,7 @@ class ArchiveMutator {
     private fun approachSlightMutation(info: GeneIndependenceInfo): Boolean {
         return when (config.archiveGeneMutation) {
             EMConfig.ArchiveGeneMutation.SPECIFIED -> randomness.nextBoolean()
-            EMConfig.ArchiveGeneMutation.ADAPTIVE -> info.resetTimes > 0 && withinNormal()
+            EMConfig.ArchiveGeneMutation.ADAPTIVE -> info.resetTimes > 0
             EMConfig.ArchiveGeneMutation.NONE -> throw IllegalArgumentException("bug!")
         }
     }
@@ -476,14 +284,15 @@ class ArchiveMutator {
         else if (current in min..max) (min until current).plus((current + 1)..max)
         else min..max).toList()
 
-        return if (withinNormal()) cand[cand.size / 2] else randomness.choose(cand)
+        return cand[cand.size / 2]
+       // return randomness.choose(cand)
     }
 
     /**
      * during later phase of search, modify char/int with relative close genes
      */
     private fun randomFromCurrentAdaptively(current: Int, minValue: Int, maxValue: Int, hardMinValue: Int, hardMaxValue: Int, start: Int, end: Int): Int {
-        val prefer = withinNormal()
+        val prefer = !applyException()//withinNormal()
         val range = max(abs((if (prefer) maxValue else hardMaxValue) - current), abs((if (prefer) minValue else hardMinValue) - current)).toLong()
         val delta = GeneUtils.getDelta(randomness, apc, range = range, start = start, end = end)
         val value = if (prefer && current + delta > maxValue)
@@ -592,7 +401,7 @@ class ArchiveMutator {
             genesAtActionIndex:List<Int>,
             mutatedIndividual : Individual,
             addedInitializingActions: Boolean,
-            isSqlGene: Boolean , targetsEvaluated: Map<Int, EvaluatedMutation>){
+            isSqlGene: Boolean, targetsEvaluated: Map<Int, EvaluatedMutation>){
 
         Lazy.assert{
             mutatedGenes.size == genesAtActionIndex.size
@@ -627,62 +436,9 @@ class ArchiveMutator {
         }
 
     }
-    /**************************** utilities ********************************************/
-
-    /**
-     * @return whether apply archive-based gene selection for individual or eg, ObjectGene
-     */
-    fun applyArchiveSelection() = config.enableArchiveGeneSelection() && randomness.nextBoolean(config.probOfArchiveMutation)
-
 
     //FIXME MAN
     fun createCharMutationUpdate() = IntMutationUpdate(getDefaultCharMin(), getDefaultCharMax())
-
-    /**
-     * export impact info collected during search that is normally used for experiment
-     */
-    fun exportImpacts(solution: Solution<*>) {
-        val path = Paths.get(config.impactFile)
-        if (path.parent != null) Files.createDirectories(path.parent)
-
-        val content = mutableListOf<String>()
-        content.add(mutableListOf("test", "actionIndex", "rootGene").plus(Impact.toCSVHeader()).joinToString(","))
-        solution.individuals.forEachIndexed { index, e ->
-            e.getInitializationGeneImpact().forEachIndexed { aindex, mutableMap ->
-                mutableMap.forEach { (t, geneImpact) ->
-                    content.add(mutableListOf(index.toString(), "Initialization$aindex", t).plus(geneImpact.toCSVCell()).joinToString(","))
-                    geneImpact.flatViewInnerImpact().forEach { (name, impact) ->
-                        content.add(mutableListOf(index.toString(), "Initialization$aindex", "$t-$name").plus(impact.toCSVCell()).joinToString(","))
-                    }
-                }
-            }
-            e.getActionGeneImpact().forEachIndexed { aindex, mutableMap ->
-                mutableMap.forEach { (t, geneImpact) ->
-                    content.add(mutableListOf(index.toString(), "Action$aindex", t).plus(geneImpact.toCSVCell()).joinToString(","))
-                    geneImpact.flatViewInnerImpact().forEach { (name, impact) ->
-                        content.add(mutableListOf(index.toString(), "Action$aindex", "$t-$name").plus(impact.toCSVCell()).joinToString(","))
-                    }
-                }
-            }
-        }
-        if (content.size > 1) {
-            Files.write(path, content)
-        }
-    }
-
-    // TODO refactor this method
-    fun saveImpactSnapshot(index : Int, checkedTargets: Set<Int>, targetsInfo : Map<Int, EvaluatedMutation>, result: EvaluatedMutation, evaluatedIndividual: EvaluatedIndividual<*>) {
-        if (!config.collectImpact()) return
-        if(config.saveImpactAfterMutationFile.isBlank()) return
-
-        val path = Paths.get(config.saveImpactAfterMutationFile)
-        if (path.parent != null) Files.createDirectories(path.parent)
-        if (Files.notExists(path)) Files.createFile(path)
-        val text = "$index,${checkedTargets.joinToString("-")},${targetsInfo.filterValues { it.value >=0 }.keys.joinToString("-")},${targetsInfo.filterValues { it == EvaluatedMutation.BETTER_THAN }.keys.joinToString("-")},$result,"
-        val content = evaluatedIndividual.exportImpactAsListString().map { "$text,$it" }
-        if (content.isNotEmpty()) Files.write(path, content, StandardOpenOption.APPEND)
-
-    }
 
     fun initCharMutation(charsMutation: MutableList<IntMutationUpdate>, length: Int) {
         charsMutation.clear()

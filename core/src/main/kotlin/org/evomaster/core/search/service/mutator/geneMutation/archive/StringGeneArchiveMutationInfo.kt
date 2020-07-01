@@ -2,7 +2,8 @@ package org.evomaster.core.search.service.mutator.geneMutation.archive
 
 import org.evomaster.core.search.gene.GeneIndependenceInfo
 import org.evomaster.core.search.gene.StringGene
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneSelector
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 
 /**
@@ -19,7 +20,7 @@ class StringGeneArchiveMutationInfo(
         val lengthMutation: IntMutationUpdate,
 
 
-        dependencyInfo: GeneIndependenceInfo = GeneIndependenceInfo(degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL)) : ArchiveMutationInfo(dependencyInfo){
+        dependencyInfo: GeneIndependenceInfo = GeneIndependenceInfo()) : ArchiveMutationInfo(dependencyInfo){
 
     /**
      * when [mutatedIndex] = -2, it means that chars of [this] have not be mutated yet
@@ -61,7 +62,7 @@ class StringGeneArchiveMutationInfo(
         return charsMutation[mutatedIndex].compareTo(other.charsMutation[mutatedIndex])
     }
 
-    fun charUpdate(previous: String, current: String, thisValue: String, diffIndex : List<Int>, invalidChars: List<Char>, isMutated : Boolean, mutatedArchiveMutationInfo : StringGeneArchiveMutationInfo, mutatedBetter: Boolean, archiveMutator: ArchiveMutator) {
+    fun charUpdate(previous: String, current: String, thisValue: String, diffIndex: List<Int>, invalidChars: List<Char>, isMutated: Boolean, mutatedArchiveMutationInfo: StringGeneArchiveMutationInfo, mutatedBetter: Boolean, archiveMutator: ArchiveGeneMutator) {
 
         diffIndex.forEach {
             val charUpdate = charsMutation[it]
@@ -101,7 +102,7 @@ class StringGeneArchiveMutationInfo(
         }
     }
 
-    fun lengthUpdate(previous: String, current: String, thisGene: StringGene, mutatedBetter: Boolean, archiveMutator: ArchiveMutator) {
+    fun lengthUpdate(previous: String, current: String, thisGene: StringGene, mutatedBetter: Boolean, archiveMutator: ArchiveGeneMutator) {
         //update charsMutation regarding value
         val added = thisGene.value.length - charsMutation.size
         if (added != 0) {

@@ -1,12 +1,12 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 
@@ -251,7 +251,7 @@ abstract class Gene(var name: String) {
      * @param targetsEvaluated updated targets after the gene is mutated. the key is target and the value indicates 0 -- no change, -1 -- become worse, 1 -- become better
      * @param archiveMutator archive mutator
      */
-    open fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator){
+    open fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator){
         //do nothing
     }
 }

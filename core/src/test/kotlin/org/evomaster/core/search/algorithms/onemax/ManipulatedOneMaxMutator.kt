@@ -22,7 +22,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
         val mutable = individual.seeGenes(Individual.GeneFilter.ALL).filter { it.isMutable() }
         if (!config.enableArchiveGeneMutation())
             return mutable
-        mutable.filter { !it.reachOptimal(targets) || !archiveMutator.withinNormal()}.let {
+        mutable.filter { !it.reachOptimal(targets) || archiveGeneMutator.applyException()}.let {
             if (it.isNotEmpty()) return it
         }
         return mutable

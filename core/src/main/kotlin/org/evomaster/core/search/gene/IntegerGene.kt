@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.evomaster.core.search.service.mutator.geneMutation.archive.GeneArchieMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
@@ -79,7 +79,7 @@ class IntegerGene(
         //check maximum range. no point in having a delta greater than such range
         val range: Long = if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
-            (additionalGeneMutationInfo.archiveMutator.identifyMutation(this, additionalGeneMutationInfo.targets) as IntegerGeneArchiveMutationInfo).run {
+            (additionalGeneMutationInfo.archiveGeneMutator.identifyMutation(this, additionalGeneMutationInfo.targets) as IntegerGeneArchiveMutationInfo).run {
                 this.valueMutation.preferMax.toLong() - this.valueMutation.preferMin.toLong()
             }
         } else max.toLong() - min.toLong()
@@ -110,7 +110,7 @@ class IntegerGene(
         return value.toString()
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
 
         original as? IntegerGene ?: throw IllegalStateException("$original should be IntegerGene")
         mutated as? IntegerGene ?: throw IllegalStateException("$mutated should be IntegerGene")
