@@ -14,7 +14,11 @@ import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 
-
+/**
+ *
+ * @property trackOperator indicates which operator create this individual.
+ * @property index indicates when the individual is created, ie, using num of evaluated individual.
+ */
 class RestIndividual(
         //val actions: MutableList<RestAction>,
         private val resourceCalls: MutableList<RestResourceCalls>,

@@ -968,6 +968,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a path to save mutation details which is useful for debugging mutation")
+    @FilePath
     var saveMutatedGeneFile = ""
 
     @Experimental

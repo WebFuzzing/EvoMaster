@@ -1,4 +1,4 @@
-package org.evomaster.core.mutatorTest
+package org.evomaster.core.mutatortest
 
 import com.google.inject.Injector
 import com.google.inject.Key
