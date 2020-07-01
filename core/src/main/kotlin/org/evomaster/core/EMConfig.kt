@@ -967,9 +967,13 @@ class EMConfig {
     var doesApplyNameMatching = false
 
     @Experimental
+    @Cfg("Whether to save mutated gene info, which is typically used for debugging mutation")
+    var saveMutationInfo = false
+
+    @Experimental
     @Cfg("Specify a path to save mutation details which is useful for debugging mutation")
     @FilePath
-    var saveMutatedGeneFile = ""
+    var mutatedGeneFile = "mutatedGeneInfo.csv"
 
     @Experimental
     @Cfg("Specify a strategy to select targets for evaluating mutation")

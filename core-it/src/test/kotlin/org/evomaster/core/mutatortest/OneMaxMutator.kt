@@ -95,8 +95,8 @@ class OneMaxMutator {
 
         val expId = listOf("${config.mutationTargetsSelectionStrategy}", "budget-$budget","#targets-$n", "improvingMutator-$improve").joinToString("_")
 
-        config.saveMutatedGeneFile = "target/mutatorWithOneMaxTest/${expId}_runs$runs.csv"
-        Files.deleteIfExists(Paths.get(config.saveMutatedGeneFile))
+        config.mutatedGeneFile = "target/mutatorWithOneMaxTest/${expId}_runs$runs.csv"
+        Files.deleteIfExists(Paths.get(config.mutatedGeneFile))
 
 
         val m = injector.getInstance(LifecycleManager::class.java)
@@ -104,7 +104,7 @@ class OneMaxMutator {
         val solution = mio.search()
         m.close()
 
-        val tp = reportFP(config.saveMutatedGeneFile, improve)
+        val tp = reportFP(config.mutatedGeneFile, improve)
         val covered = solution.overall.coveredTargets() * 1.0 /n
 
         val result = Pair(tp, covered)

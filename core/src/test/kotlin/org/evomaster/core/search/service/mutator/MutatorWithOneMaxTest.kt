@@ -54,8 +54,9 @@ class MutatorWithOneMaxTest {
         config.maxActionEvaluations = budget
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
 
-        config.saveMutatedGeneFile = "target/MutatorWithOneMaxTest/targets${n}And${improve}ImproveMutationAnd${strategy}First.csv"
-        Files.deleteIfExists(Paths.get(config.saveMutatedGeneFile))
+        config.saveMutationInfo = true
+        config.mutatedGeneFile = "target/MutatorWithOneMaxTest/targets${n}And${improve}ImproveMutationAnd${strategy}First.csv"
+        Files.deleteIfExists(Paths.get(config.mutatedGeneFile))
 
         val mio = injector.getInstance(Key.get(
                 object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
@@ -64,7 +65,7 @@ class MutatorWithOneMaxTest {
         mio.search()
         manager.close()
 
-        return reportFP(config.saveMutatedGeneFile, improve)
+        return reportFP(config.mutatedGeneFile, improve)
     }
     // 50 targets with worsening mutation (F) with FIRST_NOT_COVERED_TARGET
     @Test
