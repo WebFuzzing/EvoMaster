@@ -29,6 +29,7 @@ class RestSampler : AbstractRestSampler(){
         }
     }
 
+
     fun canInsertInto(tableName: String) : Boolean {
         //TODO might need to refactor/remove once we deal with VIEWs
 

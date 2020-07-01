@@ -104,6 +104,11 @@ public class ExecutionTracer {
                 return;
             }
 
+            /*
+                We consider binding only for base versions of taint, ie we ignore
+                the special strings provided by the Core, as it would lead to nasty
+                side-effects
+             */
             if(! TaintInputName.isTaintInput(left) || !TaintInputName.isTaintInput(right)){
                 return;
             }
