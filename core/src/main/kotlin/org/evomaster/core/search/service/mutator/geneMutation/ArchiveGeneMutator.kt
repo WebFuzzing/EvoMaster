@@ -506,9 +506,9 @@ class ArchiveGeneMutator{
 
     fun saveMutatedGene(mutatedGenes: MutatedGeneSpecification?, individual: Individual, index : Int, evaluatedMutation : EvaluatedMutation, targets: Set<Int>){
         mutatedGenes?:return
-        if(config.saveMutatedGeneFile.isBlank()) return
+        if(!config.saveMutationInfo) return
 
-        val path = Paths.get(config.saveMutatedGeneFile)
+        val path = Paths.get(config.mutatedGeneFile)
         if (path.parent != null) Files.createDirectories(path.parent)
         if (Files.notExists(path)) Files.createFile(path)
 

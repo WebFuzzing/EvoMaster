@@ -17,7 +17,17 @@ import org.slf4j.LoggerFactory
 class OptionalGene(name: String,
                    val gene: Gene,
                    var isActive: Boolean = true,
-                   val activeMutationInfo : IntMutationUpdate = IntMutationUpdate(0, 1))
+                   val activeMutationInfo : IntMutationUpdate = IntMutationUpdate(0, 1),
+                   /**
+                    * In some cases, we might add new optional genes that are off by default.
+                    * This is the case for we "expand" the genotype of an individual with new
+                    * info coming from the search.
+                    * But, in these cases, to avoid modifying the phenotype, we must leave them off
+                    * by default.
+                    * However, we might want to tell the search that, at the next mutation, we should
+                    * put them on.
+                    */
+                   var requestSelection: Boolean = false)
     : Gene(name) {
 
 
@@ -33,6 +43,7 @@ class OptionalGene(name: String,
         private set
 
 
+
     init{
         gene.parent = this
     }
@@ -44,7 +55,7 @@ class OptionalGene(name: String,
     }
 
     override fun copy(): Gene {
-        val copy = OptionalGene(name, gene.copy(), isActive, activeMutationInfo.copy())
+        val copy = OptionalGene(name, gene.copy(), isActive, activeMutationInfo.copy(), requestSelection)
         copy.selectable = this.selectable
         return copy
     }
@@ -58,6 +69,8 @@ class OptionalGene(name: String,
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.isActive = other.isActive
+        this.selectable = other.selectable
+        this.requestSelection = other.requestSelection
         this.gene.copyValueFrom(other.gene)
     }
 

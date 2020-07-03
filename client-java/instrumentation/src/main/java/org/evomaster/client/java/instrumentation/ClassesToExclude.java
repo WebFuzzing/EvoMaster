@@ -6,29 +6,24 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class ClassesToExclude {
 
-    private static final List<String> excludedClasses;
-    private static final List<String> includedClasses;
-
+    private static final Set<String> excludedClasses;
+    private static final Set<String> includedClasses;
 
     static  {
 
         InputStream excludedClassesStream =
-                ClassesToExclude.class.getClassLoader()
-                        .getResourceAsStream("skipInstrumentationList.txt");
+                ClassesToExclude.class.getClassLoader().getResourceAsStream("skipInstrumentationList.txt");
 
-        excludedClasses = getNotCommentedLines(excludedClassesStream);
+        excludedClasses = Collections.unmodifiableSet(new HashSet<>(getNotCommentedLines(excludedClassesStream)));
 
         InputStream includedClassesStream =
-                ClassesToExclude.class.getClassLoader()
-                        .getResourceAsStream("keepInstrumentationList.txt");
+                ClassesToExclude.class.getClassLoader().getResourceAsStream("keepInstrumentationList.txt");
 
-        includedClasses = getNotCommentedLines(includedClassesStream);
+        includedClasses = Collections.unmodifiableSet(new HashSet<>(getNotCommentedLines(includedClassesStream)));
     }
 
     private static List<String> getNotCommentedLines(InputStream excludedClassesStream) {
@@ -50,7 +45,7 @@ public class ClassesToExclude {
         return Collections.unmodifiableList(list);
     }
 
-    public static List<String> getPackagePrefixesShouldNotBeInstrumented() {
+    public static Set<String> getPackagePrefixesShouldNotBeInstrumented() {
         return excludedClasses;
     }
 

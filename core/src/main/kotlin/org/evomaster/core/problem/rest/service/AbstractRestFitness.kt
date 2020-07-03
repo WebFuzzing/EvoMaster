@@ -197,7 +197,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         !action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach {
-                        action.parameters.add(HeaderParam(it, OptionalGene(it, StringGene(it), false)))
+                        action.parameters.add(HeaderParam(it, OptionalGene(it, StringGene(it), false, requestSelection = true)))
                     }
 
             info.queryParameters
@@ -205,7 +205,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach { name ->
-                        action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false)))
+                        action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false, requestSelection = true)))
                     }
 
             if(result.getStatusCode() == 415){

@@ -24,8 +24,10 @@ class LongGene(
 
         var k = if (randomness.nextBoolean(0.1)) {
             randomness.nextLong()
-        } else {
+        } else if (randomness.nextBoolean(0.1)) {
             randomness.nextInt().toLong()
+        } else {
+            randomness.nextInt(1000).toLong()
         }
 
         while (forceNewValue && k == value) {
