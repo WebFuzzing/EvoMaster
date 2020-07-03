@@ -401,15 +401,27 @@ def closeJob(port, sut_name):
 
 class State:
     def __init__(self, budget):
+        # total budget for the search which is left
         self.budget = budget
 
+    # number of generated script files, so far
     generated = 0
+    # each job will have a different time duration, and we keep track
+    # of those durations for every single generated script
     waits = []
+    # how many jobs/scripts we still need to create
     jobsLeft = NJOBS
+    # how many SUTs we still need to create jobs/scripts for.
+    # recall that in a script there can be only 1 SUT
     sutsLeft = len(SUTS)
+    # how much budget we have used for the current opened job/script
     counter = 0
+    # whether we are adding a new run in an existing script.
+    # if not, need to make sure to create all the right header / init methods
     opened = False
+    # budget left for each remaining job/script
     perJob = 0
+    # to avoid TCP conflicts, each job uses a different port range
     port = BASE_SEED
 
     def updatePerJob(self):
@@ -422,10 +434,15 @@ class State:
         self.port += 10
 
     def updateBudget(self, weight):
+        # the used budget for current script increases...
         self.counter += weight
+        # ... whereas the total left budget decreases by the same amount
         self.budget -= weight
 
     def getTimeoutMinutes(self):
+        # the timeout we want to wait for does depend not only on the number of runs, but
+        # also on the weights of the SUT (this is captured by self.counter).
+        # Note: we add a 10% just in case...
         timeoutMinutes = TIMEOUT_SUT_START_MINUTES + int(math.ceil(1.1 * self.counter * MINUTES_PER_RUN))
         self.waits.append(timeoutMinutes)
         return timeoutMinutes
@@ -515,8 +532,13 @@ def createJobs():
 
     NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * len(CONFIGS)
     SUT_WEIGHTS = sum(map(lambda x: x.timeWeight, SUTS))
+    # For example, if we have 30 runs and 5 SUTs, the total budget
+    # to distribute among the different jobs/scripts is 150.
+    # However, some SUTs might have weights greater than 1 (ie, they run slower, so
+    # need more budget)
+    TOTAL_BUDGET = NRUNS_PER_SUT * SUT_WEIGHTS
 
-    state = State(NRUNS_PER_SUT * SUT_WEIGHTS)
+    state = State(TOTAL_BUDGET)
 
     SUTS.sort(key=lambda x: -x.timeWeight)
 
@@ -534,12 +556,24 @@ def createJobs():
 
             for config in CONFIGS:
 
+                # first run in current script: we need to create all the initializing preambles
                 if state.counter == 0:
                     code = createOneJob(state, sut, seed, config)
 
-                elif (state.counter + sut.timeWeight) < state.perJob \
-                        or not state.hasSpareJobs() or \
-                        (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight):
+                # can we add this new run to the current opened script?
+                elif(
+                        # we need to check if we would not exceed the budget limit per job
+                        (state.counter + sut.timeWeight) <= state.perJob
+                        # however, that check must be ignored if we cannot open/create any new script file
+                        # for the current SUT
+                        or not state.hasSpareJobs() or
+                        # this case is bit more tricky... let's say only few runs are left that
+                        # we need to allocate in a script, but they are so few that they would need
+                        # only a small percentage of a new script capacity (eg, less than 30%).
+                        # In such a case, to avoid getting very imbalanced execution times,
+                        # we could just add those few runs to the current script.
+                        (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight)
+                     ):
                     code += addJobBody(state.port, sut, seed, config)
                     state.updateBudget(sut.timeWeight)
 
@@ -547,6 +581,8 @@ def createJobs():
                     writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
                     state.resetTmpForNewRun()
                     code = createOneJob(state, sut, seed, config)
+
+                # keep track that a new run has been handled
                 completedForSut += 1
 
         if state.opened:
