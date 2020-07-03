@@ -11,6 +11,8 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact
+import org.evomaster.core.search.impact.impactInfoCollection.value.StringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -165,8 +167,12 @@ class StringGene(
                 //not all specializations are useful
                 selectedSpecialization = -1
             } else {
+                //extract impact of specialization of String
+                val impact = if (enableAdaptiveGeneMutation || selectionStrategy != SubsetGeneSelectionStrategy.DEFAULT)
+                    (additionalGeneMutationInfo?.impact as? StringGeneImpact)?.specializationGeneImpact?.get(selectedSpecialization) as? GeneImpact
+                    else null
                 //just mutate current selection
-                specializationGene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation)
+                specializationGene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo?.copyFoInnerGene(impact = impact))
             }
             selectionUpdatedSinceLastMutation = false
             handleBinding(allGenes)

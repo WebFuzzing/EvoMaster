@@ -3,6 +3,8 @@ package org.evomaster.core.search.impact.impactInfoCollection.value.numeric
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactInfoCollection.*
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneSelector
 
 /**
  * created by manzh on 2019-09-09
@@ -66,4 +68,12 @@ class BinaryGeneImpact (
     }
 
     override fun maxTimesOfNoImpact(): Int = 3
+
+    fun select(minManipulatedTimes : Int, preferTrue : Boolean, times : Int, targets: Set<Int>, selector: ArchiveGeneSelector) : Boolean{
+        if (shared.timesToManipulate < minManipulatedTimes) return preferTrue
+        val list = if (preferTrue) listOf(trueValue, falseValue) else listOf(falseValue, trueValue)
+        val weights = selector.impactBasedOnWeights(list, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT), usingCounter = true)
+
+        return if (weights[1]/weights[0] > times) !preferTrue else preferTrue
+    }
 }

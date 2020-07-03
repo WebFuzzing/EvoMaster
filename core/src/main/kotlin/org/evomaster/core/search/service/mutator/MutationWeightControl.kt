@@ -2,6 +2,7 @@ package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
@@ -62,16 +63,28 @@ class MutationWeightControl {
             }
         }
 
-        do {
-            val sw = weights.values.sum()
-            candidateGenesToMutate.forEach { g->
-                val m = calculatedAdaptiveMutationRate(candidateGenesToMutate.size, config.d, numToMutate, sw, weights.getValue(g))
-                if (randomness.nextBoolean(m))
-                    mutated.add(g)
-            }
-        }while (forceNotEmpty && mutated.isEmpty())
+        Lazy.assert {
+            weights.size == candidateGenesToMutate.size
+        }
+
+        mutated.addAll(selectSubsetWithWeight(weights, forceNotEmpty, numToMutate))
 
         return mutated
+    }
+
+    fun <T>selectSubsetWithWeight(weights : MutableMap<T, Double>, forceNotEmpty: Boolean, numToMutate : Double) : List<T>{
+        val results  = mutableListOf<T>()
+        do {
+            val sw = weights.values.sum()
+            val size = weights.size
+            weights.keys.forEach { g->
+                val m = calculatedAdaptiveMutationRate(size, config.d, numToMutate, sw, weights.getValue(g))
+                if (randomness.nextBoolean(m))
+                    results.add(g)
+            }
+        }while (forceNotEmpty && results.isEmpty())
+
+        return results
     }
 
     /**

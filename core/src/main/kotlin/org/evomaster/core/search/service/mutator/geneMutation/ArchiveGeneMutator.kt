@@ -10,11 +10,13 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactInfoCollection.ImpactUtils
+import org.evomaster.core.search.impact.impactInfoCollection.value.StringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
+import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.archive.ArchiveMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.archive.StringGeneArchiveMutationInfo
@@ -40,6 +42,12 @@ class ArchiveGeneMutator{
 
     @Inject
     lateinit var apc: AdaptiveParameterControl
+
+    @Inject
+    lateinit var mwc : MutationWeightControl
+
+    @Inject
+    lateinit var ags : ArchiveGeneSelector
 
 
     companion object{
@@ -108,6 +116,26 @@ class ArchiveGeneMutator{
             } else
                 mutationInfo.charsMutation.addAll((0 until gene.value.length).map { createCharMutationUpdate() })
         }
+    }
+
+
+    /**
+     *
+     * TODO
+     * decide a specialization with impact info
+     */
+    private fun mutateStringWithSpecialization(gene: StringGene, additionalGeneMutationInfo: AdditionalGeneSelectionInfo, enableAdaptiveGeneMutation: Boolean){
+        (additionalGeneMutationInfo.impact as? StringGeneImpact)?: throw IllegalArgumentException("mismatched GeneImpact for StringGene")
+
+        val specializationGene = gene.getSpecializationGene()
+
+        val impact = additionalGeneMutationInfo.impact
+        val targets = additionalGeneMutationInfo.targets
+
+        val weights = ags.impactBasedOnWeights(impacts = impact.specializationGeneImpact, targets = targets)
+
+
+
     }
 
     /**

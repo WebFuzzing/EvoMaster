@@ -35,11 +35,6 @@ class ArchiveGeneSelector {
     @Inject
     lateinit var apc: AdaptiveParameterControl
 
-    companion object {
-
-        private val log: Logger = LoggerFactory.getLogger(ArchiveGeneSelector::class.java)
-    }
-
     /**
      * calculate weights of genes (ie, [map]) based on impacts
      */
@@ -51,17 +46,20 @@ class ArchiveGeneSelector {
 
         }else impacts?:throw IllegalArgumentException("missing impacts info")
 
+        val weights = impactBasedOnWeights(geneImpacts, targets)
+
+        genesToMutate.forEachIndexed { index, gene ->
+            map[gene] = weights[index]
+        }
+    }
+    fun impactBasedOnWeights(impacts: List<Impact>, targets: Set<Int>): Array<Double> {
         //TODO later adaptive decide selection method
         val method = decideArchiveGeneSelectionMethod()
         if (method.adaptive)
             throw IllegalArgumentException("the decided method should be a fixed method")
 //        mutatedGenes?.geneSelectionStrategy = method
 
-        val weights = impactBasedOnWeights(geneImpacts, method, targets).toMutableList()
-
-        genesToMutate.forEachIndexed { index, gene ->
-            map[gene] = weights[index]
-        }
+        return impactBasedOnWeights(impacts, method, targets)
     }
 
     /**
@@ -142,13 +140,18 @@ class ArchiveGeneSelector {
     }
 
 
-    private fun impactBasedOnWeights(impacts : List<Impact>, targets: Set<Int>, properties: Array<ImpactProperty>) : Array<Double>{
+    fun impactBasedOnWeights(impacts : List<Impact>, targets: Set<Int>, properties: Array<ImpactProperty>, usingCounter: Boolean? = null) : Array<Double>{
 
         val values : List<MutableList<Double>> = impacts.map { impact ->
             properties.map { p->
-                when(config.geneWeightBasedOnImpactsBy){
-                    EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER -> getCounterByProperty(impact, p, targets).toDouble()
-                    EMConfig.GeneWeightBasedOnImpact.RATIO, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> getDegreeByProperty(impact, p, targets)
+                if (usingCounter == null){
+                    when(config.geneWeightBasedOnImpactsBy){
+                        EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER -> getCounterByProperty(impact, p, targets).toDouble()
+                        EMConfig.GeneWeightBasedOnImpact.RATIO, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> getDegreeByProperty(impact, p, targets)
+                    }
+                }else{
+                    if (usingCounter) getCounterByProperty(impact, p, targets).toDouble()
+                    else getDegreeByProperty(impact, p, targets)
                 }
             }.toMutableList()
         }
