@@ -82,7 +82,9 @@ class BaseIT {
         info = remote.getSutInfo()
         assertNull(info)
 
+
         //start it again
+        driver.sutPort++ //let's try to avoid issue with TCP port taking too long to be released
         assertTrue(remote.startSUT())
         info = remote.getSutInfo()
         assertNotNull(info)
@@ -93,6 +95,7 @@ class BaseIT {
         assertNull(info)
 
         //start it again
+        driver.sutPort++
         assertTrue(remote.startSUT())
         info = remote.getSutInfo()
         assertNotNull(info)

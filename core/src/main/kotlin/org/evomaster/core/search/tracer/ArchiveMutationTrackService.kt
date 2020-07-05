@@ -14,10 +14,10 @@ class ArchiveMutationTrackService : TrackService(){
     private lateinit var config: EMConfig
 
     @PostConstruct
-    private fun postConstruct(){
+    fun postConstruct(){
 
-        if (config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) {
-            initTraceableElementCopyFilter(EvaluatedIndividual.ONLY_INDIVIDUAL)
+        if (config.trackingEnabled()) {
+            initTraceableElementCopyFilter(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED)
         }
 
         if (config.enableTrackEvaluatedIndividual && config.probOfArchiveMutation > 0.0){
@@ -36,17 +36,15 @@ class ArchiveMutationTrackService : TrackService(){
         return if (config.enableTrackEvaluatedIndividual && config.probOfArchiveMutation > 0.0){
             if (!exists(EvaluatedIndividual.WITH_TRACK_WITH_IMPACT)){
                 throw IllegalStateException("WITH_TRACK_WITH_IMPACT should be registered.")
-                //initTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_IMPACT)
             }
             getTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_IMPACT, chosen)
         }else if (config.enableTrackEvaluatedIndividual)
             TraceableElementCopyFilter.WITH_TRACK
         else if (config.enableTrackIndividual) {
-            if (!exists(EvaluatedIndividual.ONLY_INDIVIDUAL)){
-                throw IllegalStateException("ONLY_INDIVIDUAL should be registered.")
-                //initTraceableElementCopyFilter(EvaluatedIndividual.ONLY_INDIVIDUAL)
+            if (!exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED)){
+                throw IllegalStateException("ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED should be registered.")
             }
-            getTraceableElementCopyFilter(EvaluatedIndividual.ONLY_INDIVIDUAL, chosen)
+            getTraceableElementCopyFilter(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED, chosen)
         }
         else TraceableElementCopyFilter.NONE
     }

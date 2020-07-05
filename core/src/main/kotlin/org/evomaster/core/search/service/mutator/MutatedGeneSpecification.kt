@@ -1,10 +1,8 @@
 package org.evomaster.core.search.service.mutator
 
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
-import org.evomaster.core.search.impact.ImpactUtils
 
 /**
  * created by manzh on 2019-09-10
@@ -17,8 +15,8 @@ import org.evomaster.core.search.impact.ImpactUtils
  * not rest action.
  */
 open class MutatedGeneSpecification (
-        val mutatedGenes : MutableList<Gene> = mutableListOf(),
-        val mutatedDbGenes : MutableList<Gene> = mutableListOf(),
+        val mutatedGenes : MutableList<MutatedGene> = mutableListOf(),
+        val mutatedDbGenes : MutableList<MutatedGene> = mutableListOf(),
         val addedGenes : MutableList<Gene> = mutableListOf(),
         val addedInitializationGenes : MutableList<Gene> = mutableListOf(),
         val removedGene: MutableList<Gene> = mutableListOf(),
@@ -36,32 +34,22 @@ open class MutatedGeneSpecification (
         mutatedIndividual = individual
     }
 
-    fun copyFrom(current: EvaluatedIndividual<*>) : MutatedGeneSpecification{
-        val spec = MutatedGeneSpecification()
-        addedInitializationGenes.forEach { s->
-            val id = ImpactUtils.generateGeneId(mutatedIndividual!!, s)
-            val savedGene = (current.findGeneById(id, isDb = true) ?: throw IllegalStateException("mismatched genes"))
-            spec.addedInitializationGenes.add(savedGene)
+    fun addMutatedGene(isDb : Boolean, valueBeforeMutation : String, gene : Gene, position : Int?){
+        if (isDb){
+            mutatedDbGenes.add(MutatedGene(valueBeforeMutation, gene))
+            if (position != null) mutatedDbActionPosition.add(position)
+        }else{
+            mutatedGenes.add(MutatedGene(valueBeforeMutation, gene))
+            if (position != null) mutatedPosition.add(position)
         }
-        addedGenes.forEach { s->
-            val id = ImpactUtils.generateGeneId(mutatedIndividual!!, s)
-            val savedGene = (current.findGeneById(id, isDb = false) ?: throw IllegalStateException("mismatched genes"))
-            spec.addedGenes.add(savedGene)
-        }
-        mutatedGenes.forEachIndexed { index, s->
-            val id = ImpactUtils.generateGeneId(mutatedIndividual!!, s)
-            val savedGene = (current.findGeneById(id, if (mutatedPosition.size == mutatedGenes.size) mutatedPosition[index] else -1, isDb = false) ?: throw IllegalStateException("mismatched genes"))
-            spec.mutatedGenes.add(savedGene)
-        }
-        mutatedDbGenes.forEachIndexed {index, s->
-            val id = ImpactUtils.generateGeneId(mutatedIndividual!!, s)
-            val savedGene = (current.findGeneById(id, if (mutatedDbActionPosition.size == mutatedDbGenes.size) mutatedDbActionPosition[index] else -1,isDb = true) ?: throw IllegalStateException("mismatched genes"))
-            spec.mutatedDbGenes.add(savedGene)
-        }
-        spec.mutatedPosition.addAll(mutatedPosition.toMutableList())
-        spec.mutatedPosition.addAll(mutatedDbActionPosition.toMutableList())
-        spec.setMutatedIndividual(current.individual)
-        spec.geneSelectionStrategy = geneSelectionStrategy
-        return spec
+
     }
+
+    fun mutatedGeneInfo() = mutatedGenes.map { it.gene }
+    fun mutatedDbGeneInfo() = mutatedDbGenes.map { it.gene }
+
+    data class MutatedGene(
+            val previousValue : String,
+            val gene:  Gene
+    )
 }

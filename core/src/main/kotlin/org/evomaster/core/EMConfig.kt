@@ -761,6 +761,10 @@ class EMConfig {
     @Cfg("Whether secondary objectives are less important than test bloat control")
     var bloatControlForSecondaryObjective = false
 
+    @Cfg("Specify minimum size when bloatControlForSecondaryObjective")
+    @Min(0.0)
+    var minimumSizeControl = 2
+
     @Cfg("Probability of applying a mutation that can change the structure of a test")
     @Probability
     var structureMutationProbability = 0.5
@@ -963,6 +967,46 @@ class EMConfig {
     var doesApplyNameMatching = false
 
     @Experimental
+    @Cfg("Whether to save mutated gene info, which is typically used for debugging mutation")
+    var saveMutationInfo = false
+
+    @Experimental
+    @Cfg("Specify a path to save mutation details which is useful for debugging mutation")
+    @FilePath
+    var mutatedGeneFile = "mutatedGeneInfo.csv"
+
+    @Experimental
+    @Cfg("Specify a strategy to select targets for evaluating mutation")
+    var mutationTargetsSelectionStrategy = MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET
+
+    enum class MutationTargetsSelectionStrategy{
+        /**
+         * employ not covered target obtained by archive at first for all upTimesMutations
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is still {A, B}
+         */
+        FIRST_NOT_COVERED_TARGET,
+        /**
+         * expand targets with updated not covered targets
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is {A, B, C}
+         */
+        EXPANDED_UPDATED_NOT_COVERED_TARGET,
+        /**
+         * only employ current not covered targets obtainedby archive
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is {B, C}
+         */
+        UPDATED_NOT_COVERED_TARGET
+    }
+
+    @Experimental
     @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
     @Probability(false)
     var S1iR: Double = 0.25
@@ -1118,5 +1162,7 @@ class EMConfig {
 
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
+
+    fun trackingEnabled() = enableTrackEvaluatedIndividual || enableTrackIndividual
 
 }

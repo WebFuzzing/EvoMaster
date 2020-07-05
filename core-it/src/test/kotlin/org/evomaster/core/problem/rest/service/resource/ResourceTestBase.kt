@@ -25,14 +25,11 @@ import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeAll
-import java.sql.Connection
-import java.sql.DriverManager
 
 abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterface {
 
@@ -422,7 +419,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         }
         val fakeEvalInd2 = EvaluatedIndividual(fake2fitnessValue, ind2With2Resources, mutableListOf())
 
-        dm.detectDependencyAfterStructureMutation(fakeEvalInd1, fakeEvalInd2, 1)
+        dm.detectDependencyAfterStructureMutation(fakeEvalInd1, fakeEvalInd2, EvaluatedMutation.BETTER_THAN)
         assert(dm.getRelatedResource(resourceA).contains(resourceC))
     }
 

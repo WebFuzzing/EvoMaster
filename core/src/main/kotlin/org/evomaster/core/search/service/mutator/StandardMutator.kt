@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
@@ -14,8 +15,10 @@ import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import java.lang.Exception
 import kotlin.math.max
 
 /**
@@ -81,17 +84,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return mutated
     }
 
-    private fun copyIndividualWithTracking(individual: EvaluatedIndividual<T>) : T{
-
-        val individualToMutate = individual.individual
-
-        val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
-            individualToMutate.next(this, maxLength = config.maxLengthOfTraces)
-        else individualToMutate.copy()) as T
-
-        return copy
-    }
-
     private fun mutationPreProcessing(individual: T){
 
         for(a in individual.seeActions()){
@@ -114,7 +106,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun innerMutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : T{
 
-        val copy = copyIndividualWithTracking(individual)
+        val copy = individual.individual.copy() as T
+
 
         if(doesStructureMutation(individual.individual)){
             structureMutator.mutateStructure(copy, mutatedGene)
@@ -132,13 +125,18 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         for (gene in selectGeneToMutate){
             val isDb = copy.seeInitializingActions().any { it.seeGenes().contains(gene) }
-            if (isDb){
-                mutatedGene?.mutatedDbGenes?.add(gene)
-                mutatedGene?.mutatedDbActionPosition?.add(copy.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) })
-            } else{
-                mutatedGene?.mutatedGenes?.add(gene)
-                mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
+
+            val value = try {
+                if(gene.isPrintable()) gene.getValueAsPrintableString() else "null"
+            } catch (e: Exception){
+                "exception"
             }
+            val position = if (isDb){
+                copy.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
+            } else{
+                copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) }
+            }
+            mutatedGene?.addMutatedGene(isDb, valueBeforeMutation = value, gene = gene, position = position)
 
             val selectionStrategy = if (!config.weightBasedMutationRate) SubsetGeneSelectionStrategy.DEFAULT
                         else if (archiveMutator.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
@@ -150,7 +148,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 //root gene reference
                 val id = ImpactUtils.generateGeneId(copy, gene)
                 //root gene impact
-                val impact = individual.getImpactOfGenes()[id]
+                val impact = individual.getImpactOfGenes(id)
                 gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveMutation, AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveMutator, individual,targets ))
             } else {
                 gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy)
@@ -161,13 +159,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun mutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?): T {
 
-
-
         //  mutate the individual
         val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)
 
         postActionAfterMutation(mutatedIndividual)
 
+        if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
         return mutatedIndividual
     }
 

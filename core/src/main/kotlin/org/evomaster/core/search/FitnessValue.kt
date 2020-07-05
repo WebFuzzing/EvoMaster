@@ -110,6 +110,7 @@ class FitnessValue(
 
     fun getHeuristic(target: Int): Double = targets[target]?.distance ?: 0.0
 
+    fun reachedTargets() : Set<Int> = getViewOfData().filter { it.value.distance > 0.0 }.keys
 
     fun computeFitnessScore(): Double {
 
@@ -189,7 +190,8 @@ class FitnessValue(
             other: FitnessValue,
             targetSubset: Set<Int>,
             strategy: EMConfig.SecondaryObjectiveStrategy,
-            bloatControlForSecondaryObjective: Boolean)
+            bloatControlForSecondaryObjective: Boolean,
+            minimumSize: Int)
             : Boolean {
 
         var atLeastOneBetter = false
@@ -202,27 +204,65 @@ class FitnessValue(
                 return false
             }
 
-            val extra = compareExtraToMinimize(k, other, strategy)
-
-            //FIXME this is inconsistent with what used in Archive. Should be
-            //refactored, avoiding copy&paste
-            if(bloatControlForSecondaryObjective){
-                if (v > z ||
-                        (v == z && this.size < other.size) ||
-                        (v == z && this.size == other.size && extra > 0)) {
-                    atLeastOneBetter = true
-                }
-            } else {
-                if (v > z ||
-                        (v == z && extra > 0) ||
-                        (v == z && extra == 0 && this.size < other.size)) {
-                    atLeastOneBetter = true
-                }
-            }
+            atLeastOneBetter = atLeastOneBetter || betterThan(k, other, strategy, bloatControlForSecondaryObjective, minimumSize)
         }
 
         return atLeastOneBetter
     }
+
+    fun subsumes(
+            other: FitnessValue,
+            targetSubset: Set<Int>,
+            config : EMConfig)
+            : Boolean {
+
+        return subsumes(other, targetSubset, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective, config.minimumSizeControl)
+    }
+
+    /**
+     * @return [this] is better than [other] for [target].
+     */
+    fun betterThan(target: Int, other: FitnessValue, strategy: EMConfig.SecondaryObjectiveStrategy, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
+        val z = other.getHeuristic(target)
+        val v = getHeuristic(target)
+        if (v < z) return false
+
+        val extra = compareExtraToMinimize(target, other, strategy)
+
+        return betterThan(target =target, heuristics = z, size = other.size, extra = extra, minimumSize = minimumSize, bloatControlForSecondaryObjective = bloatControlForSecondaryObjective)
+    }
+
+    /**
+     * @return [this] equivalent with [other] for [target].
+     */
+    fun equivalent(target: Int, other: FitnessValue, strategy: EMConfig.SecondaryObjectiveStrategy) : Boolean{
+        val z = other.getHeuristic(target)
+        val v = getHeuristic(target)
+        if (z != v) return false
+
+        val extra = compareExtraToMinimize(target, other, strategy)
+        return extra == 0 && this.size == other.size
+    }
+
+    private fun betterThan(target: Int, heuristics: Double, size: Double, extra: Int, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
+        val v = getHeuristic(target)
+        if (v < heuristics) return false
+
+        return if(bloatControlForSecondaryObjective
+
+                && min(this.size, size) >= minimumSize){
+            v > heuristics ||
+                    (v == heuristics && this.size <  size) ||
+                    (v == heuristics &&  this.size ==  size && extra > 0)
+        } else {
+            v > heuristics ||
+                    (v == heuristics && extra > 0) ||
+                    (v == heuristics && extra == 0 && this.size <  size)
+        }
+    }
+
+    fun reachMoreTargets(other: FitnessValue) = targets.size > other.getViewOfData().size
+
 
     /**
      * Check if current does differ from [other] regarding [targetSubset].

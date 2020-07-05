@@ -43,13 +43,13 @@ abstract class FitnessFunction<T>  where T : Individual {
     /**
      * @return [null] if there were problems in calculating the coverage
      */
-    fun calculateCoverage(individual: T) : EvaluatedIndividual<T>?{
+    fun calculateCoverage(individual: T, targets: Set<Int> = setOf()) : EvaluatedIndividual<T>?{
 
         val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
 
         var ei = time.measureTimeMillis(
                 {time.reportExecutedIndividualTime(it, a)},
-                {doCalculateCoverage(individual)}
+                {doCalculateCoverage(individual, targets)}
         )
         processMonitor.eval = ei
 
@@ -66,7 +66,7 @@ abstract class FitnessFunction<T>  where T : Individual {
 
             ei = time.measureTimeMillis(
                     {time.reportExecutedIndividualTime(it, a)},
-                    {doCalculateCoverage(individual)}
+                    {doCalculateCoverage(individual, targets)}
             )
 
             if(ei == null){
@@ -85,13 +85,23 @@ abstract class FitnessFunction<T>  where T : Individual {
 
 
     /**
+     * calculated coverage with specified targets
+     *
      * @return [null] if there were problems in calculating the coverage
      */
-    protected abstract fun doCalculateCoverage(individual: T) : EvaluatedIndividual<T>?
+    protected abstract fun doCalculateCoverage(individual: T, targets: Set<Int>) : EvaluatedIndividual<T>?
 
     /**
      * Try to reinitialize the SUT. This is done when there are issues
      * in calculating coverage
      */
     protected open fun reinitialize() = false
+
+    /**
+     * decide what targets to evaluate during fitness evaluation
+     */
+    open fun targetsToEvaluate(targets: Set<Int>, individual: T) : Set<Int>{
+        if (targets.isEmpty()) throw IllegalArgumentException("none of the targets to evaluate")
+        return targets
+    }
 }

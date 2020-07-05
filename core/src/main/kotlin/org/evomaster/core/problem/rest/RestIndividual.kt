@@ -10,34 +10,39 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 
-
+/**
+ *
+ * @property trackOperator indicates which operator create this individual.
+ * @property index indicates when the individual is created, ie, using num of evaluated individual.
+ */
 class RestIndividual(
         //val actions: MutableList<RestAction>,
         private val resourceCalls: MutableList<RestResourceCalls>,
         val sampleType: SampleType,
         val sampleSpec: SamplerSpecification? = null,
         val dbInitialization: MutableList<DbAction> = mutableListOf(),
+
         trackOperator: TrackOperator? = null,
-        traces: MutableList<out RestIndividual>? = null
-): Individual (trackOperator, traces) {
+        index : Int = -1
+): Individual (trackOperator, index) {
 
     constructor(
             actions: MutableList<out Action>,
             sampleType: SampleType,
             dbInitialization: MutableList<DbAction> = mutableListOf(),
-            //usedObjects: UsedObjects = UsedObjects(),
             trackOperator: TrackOperator? = null,
-            traces: MutableList<out RestIndividual>? = null) :
+            index : Int = TraceableElement.DEFAULT_INDEX) :
             this(
                     actions.map { RestResourceCalls(actions= mutableListOf(it as RestAction)) }.toMutableList(),
                     sampleType,
                     null,
                     dbInitialization,
                     trackOperator,
-                    traces
+                    index
             )
 
 
@@ -110,37 +115,15 @@ class RestIndividual(
         }
     }
 
-    override fun next(trackOperator: TrackOperator, maxLength : Int) : RestIndividual?{
-        return RestIndividual(
-                resourceCalls.map { it.copy() }.toMutableList(),
-                sampleType,
-                sampleSpec?.copy(),
-                dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                trackOperator,
-                if (getTracking() == null)
-                    mutableListOf()
-                else if (getTracking()!!.size == maxLength) {
-                    getTracking()!!.subList(1, maxLength).plus(this).map { (it as RestIndividual).copy() as RestIndividual }.toMutableList()
-                }else
-                    getTracking()!!.plus(this).map { (it as RestIndividual).copy() as RestIndividual }.toMutableList()
-        )
-    }
-
     override fun copy(copyFilter: TraceableElementCopyFilter): RestIndividual {
-        return when(copyFilter){
-            TraceableElementCopyFilter.NONE-> copy() as RestIndividual
+        val copy = copy() as RestIndividual
+        when(copyFilter){
+            TraceableElementCopyFilter.NONE-> {}
             TraceableElementCopyFilter.WITH_TRACK, TraceableElementCopyFilter.DEEP_TRACK  ->{
-                getTracking()?: throw IllegalStateException("the individual is initialized or invoked incorrectly regarding tracking")
-                RestIndividual(
-                        resourceCalls.map { it.copy() }.toMutableList(),
-                        sampleType,
-                        sampleSpec?.copy(),
-                        dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                        trackOperator,
-                        getTracking()!!.map { (it as RestIndividual).copy() as RestIndividual }.toMutableList()
-                )
+                copy.wrapWithTracking(null, tracking!!.copy())
             }else -> throw IllegalStateException("${copyFilter.name} is not implemented!")
         }
+        return copy
     }
 
     /**

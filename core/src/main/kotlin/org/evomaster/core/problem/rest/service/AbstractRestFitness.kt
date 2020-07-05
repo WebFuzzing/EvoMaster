@@ -25,6 +25,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.SearchTimeController
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -734,5 +735,24 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         }
 
         return map
+    }
+
+    override fun targetsToEvaluate(targets: Set<Int>, individual: T): Set<Int> {
+        /*
+            We cannot request all non-covered targets, because:
+            1) performance hit
+            2) might not be possible to have a too long URL
+         */
+        //TODO prioritized list
+//        val ids = randomness.choose(
+//                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
+//                100).toSet()
+        val ts = targets.filter { !IdMapper.isLocal(it) }.toMutableSet()
+        val nc = archive.notCoveredTargets().filter { !IdMapper.isLocal(it) && !ts.contains(it)}
+        return when {
+            ts.size > 100 -> randomness.choose(ts, 100)
+            nc.isEmpty() -> ts
+            else -> ts.plus(randomness.choose(nc, 100 - ts.size))
+        }
     }
 }
