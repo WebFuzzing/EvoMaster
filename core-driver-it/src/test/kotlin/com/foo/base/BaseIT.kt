@@ -37,7 +37,7 @@ class BaseIT {
         @BeforeAll
         fun beforeAll() {
             //Travis does not like spawn processes... :(
-            CIUtils.skipIfOnTravis()
+            //CIUtils.skipIfOnTravis()
 
             setupJarAgent()
             driver.controllerPort = 0

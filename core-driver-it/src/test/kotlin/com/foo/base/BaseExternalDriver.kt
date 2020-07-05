@@ -23,7 +23,7 @@ class BaseExternalDriver : ExternalSutController(){
     }
 
     override fun getMaxAwaitForInitializationInSeconds(): Long {
-        return 30
+        return 90
     }
 
     override fun getConnection(): Connection? {
