@@ -41,7 +41,6 @@ jobs: # a collection of steps
           no_output_timeout: 20m
           environment:
             - CI_env: CircleCI
-            - POSTGRES_HOST_AUTH_METHOD: trust
 
       - store_artifacts: # store the uberjar as an artifact
           path: core/target/evomaster.jar
