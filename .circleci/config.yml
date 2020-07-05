@@ -37,7 +37,7 @@ jobs: # a collection of steps
 
       # do the actual build
       - run:
-          command: mvn clean verify --fae
+          command: mvn clean install --fae  -DskipTests
           no_output_timeout: 20m
           environment:
             - CI_env: CircleCI
