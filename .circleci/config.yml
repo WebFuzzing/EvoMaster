@@ -52,7 +52,7 @@ jobs: # a collection of steps
           name: Save test results
           command: |
             mkdir -p ~/test-results/junit/
-            find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/test-results/junit/ \;
+            find . -type f -regex ".*/target/.*-reports/.*xml" -exec cp {} ~/test-results/junit/ \;
           when: always
       - store_test_results:
           path: ~/test-results
@@ -65,7 +65,7 @@ jobs: # a collection of steps
           name: Save test outputs
           command: |
                   mkdir -p ~/test-results/outputs/
-                  find . -type f -regex ".*/target/surefire-reports/.*txt" -exec cp {} ~/test-results/outputs/ \;
+                  find . -type f -regex ".*/target/.*-reports/.*txt" -exec cp {} ~/test-results/outputs/ \;
           when: always
       - store_artifacts:
           path: ~/test-results/outputs
