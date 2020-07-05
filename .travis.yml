@@ -36,7 +36,9 @@ install: mvn de.qaware.maven:go-offline-maven-plugin:1.2.5:resolve-dependencies
 
 
 env:
-  CI_env: Travis
+  global:
+   -  CI_env: Travis
+   -  POSTGRES_HOST_AUTH_METHOD: trust
 
 
 # As Travis has a 50 minute limit per script, we need to split the build in different stages.
