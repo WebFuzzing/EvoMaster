@@ -12,7 +12,7 @@ class BaseExternalDriver : ExternalSutController(){
 
     //not great to fix a port... but no other option :(
     //trying to setup an ephemeral one here would be a mess
-    private val sutPort = 43125
+    var sutPort = 43125
 
     override fun getJVMParameters(): Array<String> {
         return emptyArray()
@@ -23,7 +23,7 @@ class BaseExternalDriver : ExternalSutController(){
     }
 
     override fun getMaxAwaitForInitializationInSeconds(): Long {
-        return 30
+        return 90
     }
 
     override fun getConnection(): Connection? {

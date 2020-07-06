@@ -15,7 +15,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -32,7 +31,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
     @Inject
     private lateinit var sampler: RestSampler
 
-    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
 
@@ -82,15 +81,8 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             return null
         }
 
-        /*
-            We cannot request all non-covered targets, because:
-            1) performance hit
-            2) might not be possible to have a too long URL
-         */
-        //TODO prioritized list
-        val ids = randomness.choose(
-                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
-                100).toSet()
+
+        val ids = targetsToEvaluate(targets, individual)
 
         val dto = rc.getTestResults(ids)
         if (dto == null) {
@@ -128,7 +120,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, enableTracking = config.enableTrackEvaluatedIndividual, trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null, enableImpact = (config.probOfArchiveMutation > 0.0))
+        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
     private fun registerNewAction(action: RestAction, index: Int){

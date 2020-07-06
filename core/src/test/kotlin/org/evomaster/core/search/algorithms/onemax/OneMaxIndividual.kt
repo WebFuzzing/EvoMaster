@@ -13,48 +13,12 @@ import org.evomaster.core.search.tracer.TrackOperator
 class OneMaxIndividual(
         val n : Int,
         trackOperator: TrackOperator? = null,
-        traces : MutableList<OneMaxIndividual>? = null)
-    : Individual (trackOperator,traces) {
+        index : Int = -1)
+    : Individual (trackOperator, index) {
 
     private val list : MutableList<EnumGene<Double>> = mutableListOf()
 
     init {
-        (0 until n).forEach {
-            list.add(EnumGene<Double>("$it", listOf(0.0, 0.25, 0.5, 0.75, 1.0), 0))
-        }
-    }
-
-    override fun next(trackOperator: TrackOperator, maxLength : Int): TraceableElement? {
-        getTracking()?: return OneMaxIndividual(n, trackOperator)
-        return OneMaxIndividual(
-                n,
-                trackOperator,
-                (getTracking()!!.plus(this).map { (it as OneMaxIndividual).copy() as OneMaxIndividual }.toMutableList()).run {
-                    if (size == maxLength){
-                        this.removeAt(0)
-                        this
-                    }else
-                        this
-                }
-        )
-    }
-
-    override fun copy(copyFilter: TraceableElementCopyFilter): TraceableElement {
-        when(copyFilter){
-            TraceableElementCopyFilter.NONE-> return copy()
-            TraceableElementCopyFilter.WITH_TRACK, TraceableElementCopyFilter.DEEP_TRACK ->{
-                getTracking()?:return copy()
-                return OneMaxIndividual(
-                        n,
-                        trackOperator,
-                        getTracking()!!.map { (it as OneMaxIndividual).copy() as OneMaxIndividual }.toMutableList()
-                )
-            }else -> throw IllegalStateException("${copyFilter.name} is not implemented!")
-        }
-    }
-
-
-    private fun init() {
         (0 until n).forEach {
             list.add(EnumGene<Double>("$it", listOf(0.0, 0.25, 0.5, 0.75, 1.0), 0))
         }

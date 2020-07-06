@@ -16,14 +16,17 @@ class ResourceRestModule : AbstractModule(){
 
     override fun configure() {
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})
-                .to(RestResourceSampler::class.java)
+                .to(ResourceSampler::class.java)
+                .asEagerSingleton()
+        bind(object : TypeLiteral<AbstractRestSampler>() {})
+                .to(ResourceSampler::class.java)
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Sampler<*>>() {})
-                .to(RestResourceSampler::class.java)
+                .to(ResourceSampler::class.java)
                 .asEagerSingleton()
 
-        bind(RestResourceSampler::class.java)
+        bind(ResourceSampler::class.java)
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<RestIndividual>>() {})

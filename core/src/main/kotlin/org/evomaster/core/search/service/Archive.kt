@@ -14,8 +14,6 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 
-import java.lang.Integer.min
-
 
 class Archive<T> where T : Individual {
 
@@ -67,6 +65,13 @@ class Archive<T> where T : Individual {
      */
     private val lastImprovement = mutableMapOf<Int, Int>()
 
+
+    /**
+     * Key -> id of the target
+     *
+     * Value -> latest evaluated individual there was an improvement for this target.
+     */
+    //private val latestImprovement = mutableMapOf<Int, Int>()
 
     /**
      * Id of last target used for sampling
@@ -206,6 +211,8 @@ class Archive<T> where T : Individual {
         val counter = samplingCounter.getOrDefault(target, 0)
         lastImprovement.put(target, counter)
         samplingCounter.put(target, 0)
+
+        //latestImprovement[target] = time.evaluatedIndividuals
     }
 
     /**
@@ -235,6 +242,8 @@ class Archive<T> where T : Individual {
     fun numberOfReachedButNotCoveredTargets(): Int {
         return populations.keys.stream().filter { ! isCovered(it) }.count().toInt()
     }
+
+    fun numberOfReachedTargets() : Int = populations.size
 
     fun averageTestSizeForReachedButNotCovered() : Double {
         return populations.entries
@@ -354,26 +363,19 @@ class Archive<T> where T : Individual {
                 as the population are internally sorted by fitness, the individual
                 at position [0] would be the worst
              */
-            val currh = current[0].fitness.getHeuristic(k)
-            val currsize = current[0].individual.size()
-            val copySize = copy.individual.size()
-            val extra = copy.fitness.compareExtraToMinimize(k, current[0].fitness, config.secondaryObjectiveStrategy)
 
-            val better = if(config.bloatControlForSecondaryObjective
-                    /*
-                        Avoid reducing tests to size 1 if extra was better.
-                        With at least 2 actions, we can have a WRITE followed by a READ
-                     */
-                    && min(copySize, currsize) >= 2){
-                v.distance > currh ||
-                        (v.distance == currh && copySize < currsize) ||
-                        (v.distance == currh &&  copySize == currsize && extra > 0)
-            } else {
-                v.distance > currh ||
-                        (v.distance == currh && extra > 0) ||
-                        (v.distance == currh && extra == 0 && copySize < currsize)
+            val curr = current[0]
+            Lazy.assert {
+                curr.fitness.size == curr.individual.size().toDouble()
+                copy.fitness.size == copy.individual.size().toDouble()
             }
 
+            /*
+              config.minimumSizeControl = 2 is to
+                avoid reducing tests to size 1 if extra was better.
+                With at least 2 actions, we can have a WRITE followed by a READ
+            */
+            val better = copy.fitness.betterThan(k, curr.fitness, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective, config.minimumSizeControl)
             anyBetter = anyBetter || better
 
             if (better) {
@@ -396,7 +398,7 @@ class Archive<T> where T : Individual {
                 continue
             }
 
-            val equivalent = (v.distance == currh && extra == 0 && copySize == currsize)
+            val equivalent = copy.fitness.equivalent(k, curr.fitness, config.secondaryObjectiveStrategy)
 
             if (better || equivalent) {
                 /*
@@ -475,4 +477,11 @@ class Archive<T> where T : Individual {
                     Pair(idMapper.getDescriptiveId(t), solution.individuals.mapIndexed { index, f-> if (f.fitness.doesCover(t)) index else -1 }.filter { it != -1 })
                 }.toList()
     }
+
+//    fun chooseLatestImprovedTargets(size : Int) : Set<Int>{
+//        return latestImprovement.asSequence().sortedByDescending { it.value }.toList().subList(0, min(size, latestImprovement.size)).map { it.key }.toSet()
+//    }
+//
+//    fun chooseImproveTargetsAfter(index : Int) : Set<Int> = latestImprovement.filterValues { it >= index }.keys
+
 }

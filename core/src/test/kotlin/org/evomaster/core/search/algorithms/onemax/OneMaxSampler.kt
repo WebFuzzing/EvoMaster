@@ -9,7 +9,7 @@ class OneMaxSampler : Sampler<OneMaxIndividual>(){
 
     override fun sampleAtRandom(): OneMaxIndividual {
 
-        val sampled =  OneMaxIndividual(n, if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
+        val sampled =  OneMaxIndividual(n, if(config.trackingEnabled()) this else null)
 
         (0 until n).forEach {
             sampled.setValue(it, randomness.choose(listOf(0.0, 0.25, 0.5, 0.75, 1.0)))

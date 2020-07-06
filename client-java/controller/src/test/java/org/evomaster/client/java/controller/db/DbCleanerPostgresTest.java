@@ -16,7 +16,8 @@ public class DbCleanerPostgresTest extends DbCleanerTestBase{
 
 
     private static final GenericContainer postgres = new GenericContainer("postgres:9")
-            .withExposedPorts(5432);
+            .withExposedPorts(5432)
+            .withEnv("POSTGRES_HOST_AUTH_METHOD","trust");
 
     private static Connection connection;
 
