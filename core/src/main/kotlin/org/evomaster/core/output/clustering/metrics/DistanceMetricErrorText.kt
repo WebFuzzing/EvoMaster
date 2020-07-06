@@ -23,7 +23,7 @@ class DistanceMetricErrorText(
 ) : DistanceMetric<RestCallResult>() {
     private val name = "ErrorText"
     private val recommendedEpsilon = if (epsilon in 0.0..1.0) epsilon
-                                    else 0.6
+                                    else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
     override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         val message1 = if (includeInClustering(first)){
             Gson().fromJson(first.getBody(), Map::class.java)?.get("message") ?: ""

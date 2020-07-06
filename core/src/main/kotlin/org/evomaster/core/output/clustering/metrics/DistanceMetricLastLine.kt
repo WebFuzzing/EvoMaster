@@ -18,7 +18,7 @@ class DistanceMetricLastLine(
 ) : DistanceMetric<RestCallResult>() {
     private val name = "LastLine"
     private var recommendedEpsilon = if(epsilon in 0.0..1.0)  epsilon
-                                        else 0.8
+                                        else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
     override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         val lastLine1 = first.getLastStatementWhen500() ?: ""
         val lastLine2 = second.getLastStatementWhen500() ?: ""
@@ -34,5 +34,6 @@ class DistanceMetricLastLine(
     }
     fun setRecommendedEpsilon(epsilon: Double){
         if(epsilon in 0.0..1.0) recommendedEpsilon = epsilon
+        else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
     }
 }

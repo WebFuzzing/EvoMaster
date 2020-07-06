@@ -657,12 +657,16 @@ class EMConfig {
     @Cfg("The Distance Metric Last Line may use several values for epsilon." +
             "During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results." +
             "Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8.")
+    @Min(0.0)
+    @Max(1.0)
     var lastLineEpsilon = 0.8
 
     @Experimental
     @Cfg("The Distance Metric Error Text may use several values for epsilon." +
             "During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results." +
             "Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8.")
+    @Min(0.0)
+    @Max(1.0)
     var errorTextEpsilon = 0.8
 
     @Cfg("The seed for the random generator used during the search. " +
