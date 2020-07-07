@@ -119,7 +119,7 @@ public class CollectImpactXYZInfoTest extends ImpactXYZTestBase {
         String id = getGeneIdByName(name, ind);
         for (GeneImpact gi : ind.getGeneImpact(id)){
             int m = gi.getTimesToManipulate();
-            for (Map.Entry<Integer, Integer> e : gi.getTimesOfImpacts().entrySet()){
+            for (Map.Entry<Integer, Double> e : gi.getTimesOfImpacts().entrySet()){
                 double d = (e.getValue() * 1.0)/m;
                 impacts.merge(e.getKey(), d, (prev, one) -> Math.max(prev, one));
             }
