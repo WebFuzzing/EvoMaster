@@ -13,9 +13,12 @@ import org.evomaster.core.problem.rest.RestCallResult
  *
  */
 
-class DistanceMetricLastLine : DistanceMetric<RestCallResult>() {
+class DistanceMetricLastLine(
+        epsilon: Double = 0.8
+) : DistanceMetric<RestCallResult>() {
     private val name = "LastLine"
-    private var recommendedEpsilon = 0.8
+    private var recommendedEpsilon = if(epsilon in 0.0..1.0)  epsilon
+                                        else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
     override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         val lastLine1 = first.getLastStatementWhen500() ?: ""
         val lastLine2 = second.getLastStatementWhen500() ?: ""
@@ -28,5 +31,9 @@ class DistanceMetricLastLine : DistanceMetric<RestCallResult>() {
 
     override fun getName(): String {
         return name
+    }
+    fun setRecommendedEpsilon(epsilon: Double){
+        if(epsilon in 0.0..1.0) recommendedEpsilon = epsilon
+        else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
     }
 }
