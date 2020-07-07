@@ -9,8 +9,10 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.value.numeric.BinaryGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
@@ -80,18 +82,18 @@ class ArchiveGeneMutator{
     /**
      * apply archiveGeneMutator for [gene] regarding specified [targets]
      */
-    fun mutate(gene: Gene, targets: Set<Int>) {
-        val employedTargets = targets.filter {!IdMapper.isLocal(it)}.toSet()
+    fun mutate(gene: Gene, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneSelectionInfo) {
+        val employedTargets = additionalGeneMutationInfo.targets.filter {!IdMapper.isLocal(it)}.toSet()
         val p = gene.copy()
 
         when (gene) {
-            is StringGene -> mutateString(gene, probOfModifyingChar = probabilityToMutateChar(gene), priorLengthMutation = priorLengthMutation(gene), targets = employedTargets)
+            is StringGene -> mutateString(gene, employedTargets, allGenes, selectionStrategy, additionalGeneMutationInfo)
             is IntegerGene -> mutateInteger(gene, employedTargets)
 //            is EnumGene<*> -> mutate(gene)
             else -> {
                 val g = ParamUtil.getValueGene(gene)
                 if (g is StringGene) {
-                    mutateString(g, probOfModifyingChar = probabilityToMutateChar(g), priorLengthMutation = priorLengthMutation(g), targets = employedTargets)
+                    mutateStringValue(g, probOfModifyingChar = probabilityToMutateChar(g), priorLengthMutation = priorLengthMutation(g), targets = employedTargets)
                 } else if(g is IntegerGene){
                     mutateInteger(g, employedTargets)
                 } else {
@@ -129,21 +131,68 @@ class ArchiveGeneMutator{
 
     /**************************** String Gene ********************************************/
     /**
-     *
-     * TODO
-     * decide a specialization with impact info
+     * adaptive mutate string gene with specialization
      */
-    private fun mutateStringWithSpecialization(gene: StringGene, additionalGeneMutationInfo: AdditionalGeneSelectionInfo, enableAdaptiveGeneMutation: Boolean){
-
-
+    private fun mutateString(gene: StringGene, targets: Set<Int>, allGenes : List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneSelectionInfo){
         (additionalGeneMutationInfo.impact as? StringGeneImpact)?: throw IllegalArgumentException("mismatched GeneImpact for StringGene")
+        val impact = additionalGeneMutationInfo.impact
 
+        val preferSpec = gene.specializationGenes.isNotEmpty()
         val specializationGene = gene.getSpecializationGene()
 
-        val impact = additionalGeneMutationInfo.impact
-        val targets = additionalGeneMutationInfo.targets
+        val employSpec = doEmploy(impact = impact.employSpecialization, targets = targets)
+        val employBinding = doEmploy(impact = impact.employBinding, targets = targets)
+        if (preferSpec && employSpec){
+            val selected = selectSpec(gene, impact, targets)
+            if (specializationGene == null){
+                gene.selectedSpecialization = selected
+            }else {
+                val currentImpact = impact.specializationGeneImpact[gene.selectedSpecialization]
+                if (selected == gene.selectedSpecialization || currentImpact.recentImprovement()){
+                    specializationGene.standardMutation(
+                            randomness, apc, mwc, allGenes,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as GeneImpact)
+                    )
+                }else{
+                    gene.selectedSpecialization = selected
+                }
+            }
+            if (employBinding) gene.handleBinding(allGenes = allGenes)
+            return
+        }else if (specializationGene != null){
+            gene.selectedSpecialization = -1
+            if (employBinding) gene.handleBinding(allGenes = allGenes)
+            return
+        }
+        if (gene.redoTaint(apc, randomness, allGenes)) return
 
-        val weights = ags.impactBasedOnWeights(impacts = impact.specializationGeneImpact, targets = targets)
+        mutateStringValue(gene, probOfModifyingChar = probabilityToMutateChar(gene), priorLengthMutation = priorLengthMutation(gene), targets = targets)
+        gene.repair()
+        if (employBinding) gene.handleBinding(allGenes = allGenes)
+    }
+
+    private fun doEmploy(impact: BinaryGeneImpact, targets: Set<Int>) : Boolean{
+        val list =  listOf(true, false)
+        val weights = ags.impactBasedOnWeights(
+                impacts = listOf(impact.trueValue, impact.falseValue),
+                targets = targets)
+
+
+        val employSpec = mwc.selectSubsetWithWeight(weights = weights.mapIndexed { index, w ->  list[index] to w}.toMap(), forceNotEmpty = true, numToMutate = 1.0)
+        return randomness.choose(employSpec)
+    }
+
+    private fun selectSpec(gene: StringGene, impact: StringGeneImpact, targets: Set<Int>) : Int{
+        if (impact.specializationGeneImpact.size != gene.specializationGenes.size){
+            log.warn("mismatched specialization impacts")
+        }
+        val weights = ags.impactBasedOnWeights(impacts = impact.specializationGeneImpact.subList(0, gene.specializationGenes.size), targets = targets)
+
+        val selected = mwc.selectSubsetWithWeight(
+                weights = weights.mapIndexed { index, d -> index to d }.toMap(),
+                forceNotEmpty = true,
+                numToMutate = 1.0
+        )
+        return randomness.choose(selected)
     }
 
     /**
@@ -154,7 +203,7 @@ class ArchiveGeneMutator{
      * regarding [priorLengthMutation], it might achieve a worse performance when [gene] is related to other gene,
      * e.g., fitness is about how the [gene] is close to other [Gene]. so we disable it by default.
      */
-    private fun mutateString( gene: StringGene, probOfModifyingChar: Double, priorLengthMutation: Boolean, targets: Set<Int>) {
+    private fun mutateStringValue(gene: StringGene, probOfModifyingChar: Double, priorLengthMutation: Boolean, targets: Set<Int>) {
         // identify ArchiveMutationInfo
         val mutationInfo = identifyMutation(gene, targets)
 

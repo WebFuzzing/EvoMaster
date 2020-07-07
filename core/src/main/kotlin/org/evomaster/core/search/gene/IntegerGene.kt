@@ -78,7 +78,7 @@ class IntegerGene(
 
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
-            additionalGeneMutationInfo.archiveGeneMutator.mutate(this, additionalGeneMutationInfo.targets)
+            additionalGeneMutationInfo.archiveGeneMutator.mutate(this, allGenes, selectionStrategy, additionalGeneMutationInfo)
             return true
         }
 

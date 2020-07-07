@@ -141,7 +141,7 @@ class StringGene(
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
             //TODO consider bindingIds
-            additionalGeneMutationInfo.archiveGeneMutator.mutate(this, additionalGeneMutationInfo.targets)
+            additionalGeneMutationInfo.archiveGeneMutator.mutate(this, allGenes, selectionStrategy, additionalGeneMutationInfo)
             return true
         }
 
@@ -180,35 +180,7 @@ class StringGene(
             return true
         }
 
-        val minPforTaint = 0.1
-        val tp = apc.getBaseTaintAnalysisProbability(minPforTaint)
-
-        if (
-                !apc.doesFocusSearch() &&
-                (
-                        (!tainted && randomness.nextBoolean(tp))
-                                ||
-                                /*
-                                    if this has already be tainted, but that lead to no specialization,
-                                    we do not want to reset with a new taint value, and so skipping all
-                                    standard mutation on strings.
-                                    but we might want to use a taint value at a later stage, in case its
-                                    specialization depends on code paths executed depending on other inputs
-                                    in the test case
-                                 */
-                                (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
-                        )
-        ) {
-
-            value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-            tainted = true
-            return true
-        }
-
-        if (tainted && randomness.nextBoolean(0.5) && TaintInputName.isTaintInput(value)) {
-            randomize(randomness, true, allGenes)
-            return true
-        }
+        if (redoTaint(apc, randomness, allGenes)) return true
 
         val p = randomness.nextDouble()
         val s = value
@@ -271,11 +243,45 @@ class StringGene(
         return true
     }
 
+    fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness, allGenes: List<Gene>) : Boolean{
+        val minPforTaint = 0.1
+        val tp = apc.getBaseTaintAnalysisProbability(minPforTaint)
+
+        if (
+                !apc.doesFocusSearch() &&
+                (
+                        (!tainted && randomness.nextBoolean(tp))
+                                ||
+                                /*
+                                    if this has already be tainted, but that lead to no specialization,
+                                    we do not want to reset with a new taint value, and so skipping all
+                                    standard mutation on strings.
+                                    but we might want to use a taint value at a later stage, in case its
+                                    specialization depends on code paths executed depending on other inputs
+                                    in the test case
+                                 */
+                                (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
+                        )
+        ) {
+
+            value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+            tainted = true
+            return true
+        }
+
+        if (tainted && randomness.nextBoolean(0.5) && TaintInputName.isTaintInput(value)) {
+            randomize(randomness, true, allGenes)
+            return true
+        }
+
+        return false
+    }
+
     /**
      * This should be called after each mutation, to check if any other genes must be updated after
      * this one has been mutated
      */
-    private fun handleBinding(allGenes: List<Gene>){
+    fun handleBinding(allGenes: List<Gene>){
 
         if(bindingIds.isEmpty()){
             return

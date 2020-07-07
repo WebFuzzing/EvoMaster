@@ -72,7 +72,7 @@ class MutationWeightControl {
         return mutated
     }
 
-    fun <T>selectSubsetWithWeight(weights : MutableMap<T, Double>, forceNotEmpty: Boolean, numToMutate : Double) : List<T>{
+    fun <T>selectSubsetWithWeight(weights : Map<T, Double>, forceNotEmpty: Boolean, numToMutate : Double) : List<T>{
         val results  = mutableListOf<T>()
         do {
             val sw = weights.values.sum()

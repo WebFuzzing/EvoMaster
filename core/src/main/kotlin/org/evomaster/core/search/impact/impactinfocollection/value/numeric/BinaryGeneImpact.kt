@@ -68,11 +68,13 @@ class BinaryGeneImpact (
 
     override fun maxTimesOfNoImpact(): Int = 3
 
-    fun select(minManipulatedTimes : Int, preferTrue : Boolean, times : Double, targets: Set<Int>, selector: ArchiveGeneSelector) : Boolean{
+    fun determinateSelect(minManipulatedTimes : Int, preferTrue : Boolean, times : Double, targets: Set<Int>, selector: ArchiveGeneSelector) : Boolean{
         if (shared.timesToManipulate < minManipulatedTimes) return preferTrue
+        if (trueValue.getTimesToManipulate() == 0) return true
+        if (falseValue.getTimesToManipulate() == 0) return false
+
         val list = if (preferTrue) listOf(trueValue, falseValue) else listOf(falseValue, trueValue)
         val weights = selector.impactBasedOnWeights(list, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT), usingCounter = null)
-
-        return if (weights[1]/weights[0] > times) !preferTrue else preferTrue
+        return if (weights[1] > times * weights[0]) !preferTrue else preferTrue
     }
 }

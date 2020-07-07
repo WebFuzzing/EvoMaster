@@ -110,7 +110,7 @@ class OptionalGene(name: String,
         }
         if (additionalGeneMutationInfo?.impact != null && additionalGeneMutationInfo.impact is OptionalGeneImpact){
             //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
-            val inactive = additionalGeneMutationInfo.impact.activeImpact.select(
+            val inactive = additionalGeneMutationInfo.impact.activeImpact.determinateSelect(
                     minManipulatedTimes = 5,
                     times = 1.5,
                     preferTrue = true,

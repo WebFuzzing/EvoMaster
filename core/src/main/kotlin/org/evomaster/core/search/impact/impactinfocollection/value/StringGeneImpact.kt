@@ -17,6 +17,8 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
                         /**
                          * impacts on its specific type
                          * it might lead to an issue when the type of gene is dynamic, thus the type of the current might differ from the type of the previous
+                         *
+                         * ? we might need to copy [specializationGeneImpact] for each Gene instead of clone
                          */
                         val specializationGeneImpact : MutableList<Impact>
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
