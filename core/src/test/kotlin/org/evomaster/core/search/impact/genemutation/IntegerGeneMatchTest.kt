@@ -8,6 +8,7 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.MioAlgorithm
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.matchproblem.*
 import org.junit.jupiter.api.Test
@@ -17,12 +18,12 @@ import org.junit.jupiter.api.BeforeEach
 /**
  * created by manzh on 2020-06-16
  */
-class StringMatchTest {
+class IntegerGeneMatchTest {
 
     private lateinit var config: EMConfig
     private lateinit var mio: MioAlgorithm<PrimitiveTypeMatchIndividual>
 
-    private val budget = 500
+    private val budget = 300
 
     @BeforeEach
     fun init(){
@@ -39,7 +40,7 @@ class StringMatchTest {
         config.focusedSearchActivationTime = 0.0
 
         val sampler = injector.getInstance(PrimitiveTypeMatchSampler::class.java)
-        sampler.template = PrimitiveTypeMatchIndividual.stringTemplate()
+        sampler.template = PrimitiveTypeMatchIndividual.intTemplate()
 
         val ff = injector.getInstance(PrimitiveTypeMatchFitness::class.java)
         ff.type = ONE2M.ONE_EQUAL_WITH_MANY
@@ -55,9 +56,9 @@ class StringMatchTest {
         val solution = mio.search()
 
         assert(solution.individuals.size > 1)
-        val info = (solution.individuals.first().individual.gene as StringGene).mutationInfo
+        val info = (solution.individuals.first().individual.gene as IntegerGene).mutationInfo
 
-        assert(solution.individuals.all { (it.individual.gene as StringGene).mutationInfo == info })
+        assert(solution.individuals.all { (it.individual.gene as IntegerGene).mutationInfo == info })
 
     }
 
@@ -69,7 +70,7 @@ class StringMatchTest {
 
         val solution = mio.search()
 
-        assertEquals(3, solution.overall.coveredTargets())
+        assertEquals(5, solution.overall.coveredTargets())
     }
 
     @Test
@@ -77,6 +78,6 @@ class StringMatchTest {
 
         val solution = mio.search()
 
-        assert(solution.overall.coveredTargets() < 3)
+        assert(solution.overall.coveredTargets() < 5)
     }
 }

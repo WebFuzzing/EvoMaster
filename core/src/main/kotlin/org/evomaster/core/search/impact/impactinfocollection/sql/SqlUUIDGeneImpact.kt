@@ -16,10 +16,10 @@ class SqlUUIDGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo:
             degree: Double = 0.0,
             timesToManipulate : Int = 0,
             timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Int> = mutableMapOf(),
+            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
             mostSigBitsImpact: LongGeneImpact,
             leastSigBitsImpact : LongGeneImpact
     ) : this(
@@ -55,7 +55,7 @@ class SqlUUIDGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo:
     }
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext,noImpactTargets :Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
-        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.previous != null && gc.previous !is SqlUUIDGene){
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlNullable")
@@ -64,11 +64,15 @@ class SqlUUIDGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo:
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlNullable")
         }
 
-        if (gc.previous == null || !gc.current.mostSigBits.containsSameValueAs((gc.previous as SqlUUIDGene).mostSigBits)){
-            mostSigBitsImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+        val mutatedMost = gc.previous == null || !gc.current.mostSigBits.containsSameValueAs((gc.previous as SqlUUIDGene).mostSigBits)
+        val mutatedLeast = gc.previous == null || !gc.current.leastSigBits.containsSameValueAs((gc.previous as SqlUUIDGene).leastSigBits)
+        val num = (if (mutatedLeast) 1 else 0) + (if (mutatedMost) 1 else 0)
+
+        if (mutatedMost){
+            mostSigBitsImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = num)
         }
-        if (gc.previous == null || !gc.current.leastSigBits.containsSameValueAs((gc.previous as SqlUUIDGene).leastSigBits)){
-            leastSigBitsImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+        if (mutatedLeast){
+            leastSigBitsImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num =  num)
         }
     }
 

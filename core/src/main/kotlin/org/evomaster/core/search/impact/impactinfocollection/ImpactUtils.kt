@@ -109,7 +109,7 @@ class ImpactUtils {
                     val id = generateGeneId(individual, g)
                     val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
                     val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
-                    contexts.add(MutatedGeneWithContext(g, previous = previous))
+                    contexts.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = mutatedGenes.size))
                 }
             }else{
                 individual.seeActions().forEachIndexed { index, action ->
@@ -117,7 +117,7 @@ class ImpactUtils {
                         val id = generateGeneId(action, g)
                         val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
                         val previous = findGeneById(previousIndividual, id, action.getName(), index, false)?: throw IllegalArgumentException("mismatched previous individual")
-                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous))
+                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous, mutatedGenes.size))
                     }
                 }
             }
@@ -133,6 +133,8 @@ class ImpactUtils {
                                           individual: Individual,
                                           previousIndividual: Individual,
                                           fromInitialization : Boolean) : MutableList<MutatedGeneWithContext>{
+            val num = mutatedGeneSpecification.numOfMutatedGeneInfo()
+
             val actions = if (fromInitialization) individual.seeInitializingActions() else individual.seeActions()
             val list = mutableListOf<MutatedGeneWithContext>()
             if (actions.isNotEmpty()){
@@ -154,7 +156,7 @@ class ImpactUtils {
                                     indexOfAction = index,
                                     isDb = fromInitialization
                             )
-                            list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, position = index, action = a.getName()))
+                            list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, position = index, action = a.getName(), numOfMutatedGene = num))
                         }
                     }
                 }
@@ -169,7 +171,7 @@ class ImpactUtils {
             individual.seeGenes().filter { mutatedGeneSpecification.mutatedGeneInfo().contains(it) }.forEach { g->
                 val id = generateGeneId(individual, g)
                 val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
-                list.add(MutatedGeneWithContext(g, previous = previous))
+                list.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = num))
             }
             Lazy.assert {
                 list.size == mutatedGeneSpecification.mutatedGenes.size

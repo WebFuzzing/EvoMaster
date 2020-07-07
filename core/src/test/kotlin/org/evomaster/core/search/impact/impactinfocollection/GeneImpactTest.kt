@@ -109,11 +109,11 @@ abstract class GeneImpactTest {
                         assertEquals(expectedImpact, getTimesOfImpacts()[t]?:0)
 
 
-                        val expectedNoImpact = (previous.getNoImpactsFromImpactCounter()[t]?:-1) + 1
-                        assertEquals(expectedNoImpact , getNoImpactsFromImpactCounter()[t]?:0)
+                        val expectedNoImpact = (previous.getNoImpactsFromImpactCounter()[t]?:-1.0) + 1
+                        assertEquals(expectedNoImpact , getNoImpactsFromImpactCounter()[t]?:0.0)
 
-                        val expected = (previous.getNoImprovementCounter()[t]?:-1) + 1
-                        assertEquals(expected, getNoImprovementCounter()[t]?:0)
+                        val expected = (previous.getNoImprovementCounter()[t]?:-1.0) + 1
+                        assertEquals(expected, getNoImprovementCounter()[t]?:0.0)
                     }
                 }
 
@@ -127,7 +127,7 @@ abstract class GeneImpactTest {
 
                     fakeImpactTargets.forEach { t->
                         assertNotNull(getTimesOfImpacts()[t])
-                        val expectedImpact = previous.getTimesOfImpacts()[t]?:0
+                        val expectedImpact = previous.getTimesOfImpacts()[t]?:0.0
                         if (doesDeepCopy)
                              assertEquals(expectedImpact + 1, getTimesOfImpacts()[t])
                         else
@@ -135,10 +135,10 @@ abstract class GeneImpactTest {
 
 
                         assertNotNull(getNoImpactsFromImpactCounter()[t])
-                        assertEquals(0, getNoImpactsFromImpactCounter()[t])
+                        assertEquals(0.0, getNoImpactsFromImpactCounter()[t])
 
                         assertNotNull(getNoImprovementCounter()[t])
-                        val expected = previous.getNoImprovementCounter()[t]?:0
+                        val expected = previous.getNoImprovementCounter()[t]?:0.0
                         assertEquals(expected + 1, getNoImprovementCounter()[t])
                     }
 
@@ -155,18 +155,18 @@ abstract class GeneImpactTest {
 
                     fakeImpactTargets.forEach { t->
                         assertNotNull(getTimesOfImpacts()[t])
-                        val expectedImpact = previous.getTimesOfImpacts()[t]?:0
+                        val expectedImpact = previous.getTimesOfImpacts()[t]?:0.0
                         if (doesDeepCopy)
                             assertEquals(expectedImpact + 1, getTimesOfImpacts()[t])
                         else
                             assertEquals(expectedImpact, getTimesOfImpacts()[t])
 
                         assertNotNull(getNoImpactsFromImpactCounter()[t])
-                        assertEquals(0, getNoImpactsFromImpactCounter()[t])
+                        assertEquals(0.0, getNoImpactsFromImpactCounter()[t])
 
                         if (!fakeImprovedTarget.contains(t)){
                             assertNotNull(getNoImprovementCounter()[t])
-                            val expected = previous.getNoImprovementCounter()[t]?:0
+                            val expected = previous.getNoImprovementCounter()[t]?:0.0
                             assertEquals(expected + 1, getNoImprovementCounter()[t])
                         }
 
@@ -174,7 +174,7 @@ abstract class GeneImpactTest {
 
                     fakeImprovedTarget.forEach { t->
                         assertNotNull(getNoImprovementCounter()[t])
-                        assertEquals(0, getNoImprovementCounter()[t])
+                        assertEquals(0.0, getNoImprovementCounter()[t])
                     }
 
                 }

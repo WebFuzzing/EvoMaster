@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.DateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
+import kotlin.math.log
 
 /**
  * created by manzh on 2019-09-09
@@ -19,10 +20,10 @@ class DateGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Sp
             degree: Double = 0.0,
             timesToManipulate : Int = 0,
             timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Int> = mutableMapOf(),
+            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
             yearGeneImpact: IntegerGeneImpact,
             monthGeneImpact: IntegerGeneImpact,
             dayGeneImpact : IntegerGeneImpact
@@ -56,7 +57,6 @@ class DateGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Sp
     override fun validate(gene: Gene): Boolean = gene is DateGene
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets:Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
-        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.current !is DateGene)
@@ -64,12 +64,22 @@ class DateGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Sp
         if (gc.previous !=null && gc.previous !is DateGene)
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be DateGene")
 
+        val impacts = mutableListOf<IntegerGeneImpact>()
         if (gc.previous == null || !gc.current.year.containsSameValueAs((gc.previous as DateGene).year))
-            yearGeneImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            impacts.add(yearGeneImpact)
         if (gc.previous == null || !gc.current.month.containsSameValueAs((gc.previous as DateGene).month))
-            monthGeneImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            impacts.add(monthGeneImpact)
         if (gc.previous == null || !gc.current.day.containsSameValueAs((gc.previous as DateGene).day))
-            dayGeneImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            impacts.add(dayGeneImpact)
+
+        val num = impacts.size
+        if (impacts.isEmpty()) return
+
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
+
+        impacts.forEach {
+            it.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = num)
+        }
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {

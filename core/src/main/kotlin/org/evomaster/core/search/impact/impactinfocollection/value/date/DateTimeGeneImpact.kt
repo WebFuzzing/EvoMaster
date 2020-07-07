@@ -18,10 +18,10 @@ class DateTimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo:
             degree: Double = 0.0,
             timesToManipulate : Int = 0,
             timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Int> = mutableMapOf(),
+            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
             dateGeneImpact: DateGeneImpact,
             timeGeneImpact: TimeGeneImpact
     ) : this(
@@ -51,7 +51,6 @@ class DateTimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo:
     override fun validate(gene: Gene): Boolean = gene is DateTimeGene
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets : Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
-        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
 
@@ -61,12 +60,20 @@ class DateTimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo:
         if (gc.previous != null && gc.previous !is DateTimeGene)
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be DateTimeGene")
 
-        if (gc.previous == null || !gc.current.date.containsSameValueAs((gc.previous as DateTimeGene).date)){
-            val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).date, current = gc.current.date)
+        val dateMutated = gc.previous == null || !gc.current.date.containsSameValueAs((gc.previous as DateTimeGene).date)
+        val timeMutated = gc.previous == null || !gc.current.time.containsSameValueAs((gc.previous as DateTimeGene).time)
+
+        val num = (if (dateMutated) 1 else 0 ) + (if (timeMutated) 1 else 0)
+        if (num == 0) return
+
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
+
+        if (dateMutated){
+            val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).date, current = gc.current.date, numOfMutatedGene = num)
             dateGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets=noImpactTargets,impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
-        if (gc.previous == null || !gc.current.time.containsSameValueAs((gc.previous as DateTimeGene).time)){
-            val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).time, current = gc.current.time)
+        if (timeMutated){
+            val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).time, current = gc.current.time, numOfMutatedGene = num)
             timeGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets =noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
     }

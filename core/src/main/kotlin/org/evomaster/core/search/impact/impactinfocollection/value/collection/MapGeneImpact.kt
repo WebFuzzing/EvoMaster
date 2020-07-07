@@ -17,10 +17,10 @@ class MapGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spec
             degree: Double = 0.0,
             timesToManipulate : Int = 0,
             timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Int> = mutableMapOf(),
+            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
             sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size")
 
     ) : this(SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact), SpecificImpactInfo(noImpactFromImpact, noImprovement),sizeImpact)
@@ -43,7 +43,7 @@ class MapGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spec
     }
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets: Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
-        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if(gc.current !is MapGene<*>)
@@ -52,7 +52,9 @@ class MapGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spec
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be MapGene")
 
         if (gc.previous != null && (gc.previous as MapGene<*>).elements.size != gc.current.elements.size)
-            sizeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            sizeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num =  1)
+
+        //TODO for elements
     }
 
     override fun validate(gene: Gene): Boolean = gene is MapGene<*>

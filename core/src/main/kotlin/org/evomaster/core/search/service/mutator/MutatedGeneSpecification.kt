@@ -49,6 +49,8 @@ open class MutatedGeneSpecification (
     fun mutatedGeneInfo() = mutatedGenes.map { it.gene }
     fun mutatedDbGeneInfo() = mutatedDbGenes.map { it.gene }
 
+    fun numOfMutatedGeneInfo() = mutatedGenes.size + mutatedDbGenes.size
+
     data class MutatedGene(
             val previousValue : String,
             val gene:  Gene

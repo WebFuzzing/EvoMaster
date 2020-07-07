@@ -184,7 +184,7 @@ class ArchiveGeneSelector {
     /**
      * the more，the better
      */
-    private fun getCounterByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>): Int {
+    private fun getCounterByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>): Double {
         val value = impact.getCounter(property, targets, By.MAX)
 
         if (value < 0) return value

@@ -20,10 +20,10 @@ class OptionalGeneImpact  (
             degree: Double = 0.0,
             timesToManipulate : Int = 0,
             timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Int> = mutableMapOf(),
+            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
             activeImpact : BinaryGeneImpact = BinaryGeneImpact("isActive"),
             geneImpact: GeneImpact
 
@@ -53,7 +53,7 @@ class OptionalGeneImpact  (
     }
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets: Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
-        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
 
         if (gc.current !is OptionalGene)
             throw IllegalStateException("gc.current(${gc.current::class.java.simpleName}) should be OptionalGene")
@@ -62,11 +62,11 @@ class OptionalGeneImpact  (
             throw IllegalStateException("gc.pervious (${gc.previous::class.java.simpleName}) should be OptionalGene")
 
         if (gc.previous == null || (gc.previous as OptionalGene).isActive != gc.current.isActive){
-            activeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            activeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
             if (gc.current.isActive)
-                activeImpact.trueValue.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+                activeImpact.trueValue.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
             else
-                activeImpact.falseValue.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+                activeImpact.falseValue.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
 
             if (gc.previous != null){
                 return
@@ -78,7 +78,8 @@ class OptionalGeneImpact  (
         if (gc.current.isActive){
             val mutatedGeneWithContext = MutatedGeneWithContext(
                     previous = if (gc.previous==null) null else (gc.previous as OptionalGene).gene,
-                    current = gc.current.gene
+                    current = gc.current.gene,
+                    numOfMutatedGene = gc.numOfMutatedGene
             )
             geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }

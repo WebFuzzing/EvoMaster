@@ -61,11 +61,14 @@ class SqlNullable(name: String,
         }
         if (additionalGeneMutationInfo?.impact != null && additionalGeneMutationInfo.impact is SqlNullableImpact){
             //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
-            val inactive = additionalGeneMutationInfo.impact.presentImpact.run {
-                this.getTimesToManipulate() > 5
-                        &&
-                        (this.falseValue.getTimesOfImpacts().filter { additionalGeneMutationInfo.targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.getTimesOfImpacts().filter { additionalGeneMutationInfo.targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
-            }
+            val inactive = additionalGeneMutationInfo.impact.presentImpact.select(
+                    minManipulatedTimes = 5,
+                    times = 1.5,
+                    preferTrue = true,
+                    targets = additionalGeneMutationInfo.targets,
+                    selector = additionalGeneMutationInfo.archiveGeneSelector
+            )
+
             if (inactive) return emptyList() else listOf(gene)
         }
         throw IllegalArgumentException("impact is null or not OptionalGeneImpact")

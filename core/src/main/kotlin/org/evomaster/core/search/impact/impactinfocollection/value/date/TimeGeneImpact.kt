@@ -19,10 +19,10 @@ class TimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
             degree: Double = 0.0,
             timesToManipulate : Int = 0,
             timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Int> = mutableMapOf(),
+            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
             hourGeneImpact: IntegerGeneImpact,
             minuteGeneImpact: IntegerGeneImpact,
             secondGeneImpact : IntegerGeneImpact
@@ -57,7 +57,6 @@ class TimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
 
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets : Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
-        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
 
@@ -67,12 +66,21 @@ class TimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
         if (gc.previous != null && gc.previous !is TimeGene )
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be TimeGene")
 
+        val innerImpacts = mutableListOf<IntegerGeneImpact>()
+
         if (gc.previous == null || !gc.current.hour.containsSameValueAs((gc.previous as TimeGene).hour))
-            hourGeneImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            innerImpacts.add(hourGeneImpact)
         if (gc.previous == null || !gc.current.minute.containsSameValueAs((gc.previous as TimeGene).minute))
-            minuteGeneImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            innerImpacts.add(minuteGeneImpact)
         if (gc.previous == null || !gc.current.second.containsSameValueAs((gc.previous as TimeGene).second))
-            secondGeneImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            innerImpacts.add(secondGeneImpact)
+
+        if (innerImpacts.isEmpty()) return
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
+        innerImpacts.forEach {
+            it.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation,num = innerImpacts.size)
+        }
+
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {

@@ -22,10 +22,10 @@ open class Impact(
             degree: Double = 0.0,
             timesToManipulate : Int = 0,
             timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Int> = mutableMapOf()
+            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Double> = mutableMapOf()
     ) : this(SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact), SpecificImpactInfo(noImpactFromImpact, noImprovement))
 
     fun getId() = shared.id
@@ -52,13 +52,13 @@ open class Impact(
         }
     }
 
-    fun getCounter(property: ImpactProperty, targets: Set<Int>, by: By) : Int{
-        val list = targets.map { getCounter(property, it) }.filter { it != -1 }
-        if (list.isEmpty()) return -1
+    fun getCounter(property: ImpactProperty, targets: Set<Int>, by: By) : Double{
+        val list = targets.map { getCounter(property, it) }.filter { it != -1.0 }
+        if (list.isEmpty()) return -1.0
         return when(by){
             By.MIN -> list.min()?: throw IllegalArgumentException("min is null")
             By.MAX -> list.max()?: throw IllegalArgumentException("max is null")
-            By.AVG -> list.average().toInt()
+            By.AVG -> list.average()
         }
     }
 
@@ -80,7 +80,7 @@ open class Impact(
         )
     }
 
-    fun countImpactAndPerformance(noImpactTargets: Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean){
+    fun countImpactAndPerformance(noImpactTargets: Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean, num: Int){
         shared.timesToManipulate += 1
         val hasImpact = impactTargets.isNotEmpty()
 
@@ -89,10 +89,10 @@ open class Impact(
                 if (onlyManipulation){
                     initMap(target, shared.timesOfImpact)
                 }else{
-                    plusMap(target, shared.timesOfImpact)
-                    assignMap(target, specific.noImpactFromImpact, 0)
+                    plusMap(target, shared.timesOfImpact, num)
+                    assignMap(target, specific.noImpactFromImpact, 0.0)
                     if (improvedTargets.contains(target))
-                        assignMap(target,specific.noImprovement, 0)
+                        assignMap(target,specific.noImprovement, 0.0)
                     else
                         plusMap(target, specific.noImprovement)
                 }
@@ -119,19 +119,17 @@ open class Impact(
         }
     }
 
-    private fun plusMap(key : Int, map: MutableMap<Int, Int>){
-//        map.getOrPut(key){0}
-//        map.replace(key, map[key]!! + 1)
-        map.merge(key, 1){old, delta -> (old + delta)}
+    private fun plusMap(key : Int, map: MutableMap<Int, Double>, num: Int = 1){
+        map.merge(key, 1.0/num){old, delta -> (old + delta)}
     }
 
-    private fun assignMap(key : Int, map: MutableMap<Int, Int>, value : Int){
-        map.getOrPut(key){0}
+    private fun assignMap(key : Int, map: MutableMap<Int, Double>, value : Double){
+        map.getOrPut(key){0.0}
         map.replace(key, value)
     }
 
-    private fun initMap(key : Int, map: MutableMap<Int, Int>){
-        map.getOrPut(key){0}
+    private fun initMap(key : Int, map: MutableMap<Int, Double>){
+        map.getOrPut(key){0.0}
     }
 
     fun increaseDegree(delta : Double){
@@ -155,16 +153,16 @@ open class Impact(
             "NV:${getNoImprovementCounter().map { "${it.key}->${it.value}" }.joinToString(";")}"
     )
 
-    fun getMaxImpact() : Int = shared.timesOfImpact.values.max()?:0
+    fun getMaxImpact() : Double = shared.timesOfImpact.values.max()?:0.0
 
-    fun getValueByImpactProperty(property: ImpactProperty, target : Int) : Int{
+    fun getValueByImpactProperty(property: ImpactProperty, target : Int) : Double{
         return when(property){
-            ImpactProperty.TIMES_NO_IMPACT -> shared.timesOfNoImpacts
-            ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET -> shared.timesOfNoImpactWithTargets[target]?:-1
-            ImpactProperty.TIMES_IMPACT -> shared.timesOfImpact[target]?:-1
-            ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT -> specific.noImpactFromImpact[target]?:-1
-            ImpactProperty.TIMES_CONS_NO_IMPROVEMENT -> specific.noImpactFromImpact[target]?:-1
-        }
+            ImpactProperty.TIMES_NO_IMPACT -> shared.timesOfNoImpacts.toDouble()
+            ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET -> shared.timesOfNoImpactWithTargets[target]
+            ImpactProperty.TIMES_IMPACT -> shared.timesOfImpact[target]
+            ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT -> specific.noImpactFromImpact[target]
+            ImpactProperty.TIMES_CONS_NO_IMPROVEMENT -> specific.noImpactFromImpact[target]
+        }?: -1.0
     }
 }
 
@@ -180,8 +178,8 @@ class SharedImpactInfo(
         var degree: Double,
         var timesToManipulate: Int,
         var timesOfNoImpacts: Int,
-        val timesOfNoImpactWithTargets : MutableMap<Int, Int> ,
-        val timesOfImpact: MutableMap<Int, Int>){
+        val timesOfNoImpactWithTargets: MutableMap<Int, Double>,
+        val timesOfImpact: MutableMap<Int, Double>){
 
     fun copy() : SharedImpactInfo{
         return SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact.toMutableMap())
@@ -195,8 +193,9 @@ class SharedImpactInfo(
  * @property noImprovement continuous times [value] of results which does not contribute to an improvement with regards to target id [key]
  */
 class SpecificImpactInfo(
-        val noImpactFromImpact: MutableMap<Int, Int> = mutableMapOf(),
-        val noImprovement: MutableMap<Int, Int> = mutableMapOf()
+
+        val noImpactFromImpact: MutableMap<Int, Double> = mutableMapOf(),
+        val noImprovement: MutableMap<Int, Double> = mutableMapOf()
 ){
     fun copy() : SpecificImpactInfo{
         return SpecificImpactInfo(noImpactFromImpact.toMutableMap(), noImprovement.toMutableMap())

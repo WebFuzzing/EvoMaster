@@ -1,9 +1,8 @@
-package org.evomaster.core.search.service.mutator.geneMutation.archive
+package org.evomaster.core.search.service.mutator.genemutation.archive
 
 import org.evomaster.core.search.gene.GeneIndependenceInfo
 import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneSelector
-import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
+import org.evomaster.core.search.service.mutator.genemutation.IntMutationUpdate
 
 /**
  * created by manzh on 2020-06-12
