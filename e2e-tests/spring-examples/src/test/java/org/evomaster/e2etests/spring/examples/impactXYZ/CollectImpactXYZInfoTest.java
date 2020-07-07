@@ -6,9 +6,9 @@ import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact;
-import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod;
-import org.evomaster.core.search.impact.impactInfoCollection.ImpactUtils;
+import org.evomaster.core.search.impact.impactinfocollection.GeneImpact;
+import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod;
+import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -49,15 +49,20 @@ public class CollectImpactXYZInfoTest extends ImpactXYZTestBase {
                     args.add("0.0");
 
                     // only for the test
-                    args.add("--saveImpactAfterMutationFile");
+                    args.add("--saveImpactAfterMutation");
+                    args.add("true");
+                    args.add("--impactAfterMutationFile");
                     args.add("target/impactXYZ/impactInfo/Impacts_ImpactXYZ_"+method.toString()+".csv");
 
-                    // only for the test
-                    args.add("--saveMutatedGeneFile");
+                    args.add("--saveMutationInfo");
+                    args.add("true");
+                    args.add("--mutatedGeneFile");
                     args.add("target/impactXYZ/mutatedGeneInfo/MutatedGenes_ImpactXYZ_"+method.toString()+".csv");
 
                     // only for the test
-                    args.add("--saveArchiveAfterMutationFile");
+                    args.add("--saveArchiveAfterMutation");
+                    args.add("true");
+                    args.add("--archiveAfterMutationFile");
                     args.add("target/impactXYZ/archiveInfo/ArchiveNotCoveredSnapshot_ImpactXYZ_"+method.toString()+".csv");
 
                     args.add("--exportCoveredTarget");

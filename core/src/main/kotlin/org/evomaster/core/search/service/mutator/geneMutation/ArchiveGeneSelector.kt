@@ -6,13 +6,11 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.impactInfoCollection.*
+import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
@@ -147,11 +145,12 @@ class ArchiveGeneSelector {
                 if (usingCounter == null){
                     when(config.geneWeightBasedOnImpactsBy){
                         EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER -> getCounterByProperty(impact, p, targets).toDouble()
-                        EMConfig.GeneWeightBasedOnImpact.RATIO, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> getDegreeByProperty(impact, p, targets)
+                        // weight = degree * 100, otherwise the difference is quite minor
+                        EMConfig.GeneWeightBasedOnImpact.RATIO, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> getDegreeByProperty(impact, p, targets) * 100
                     }
                 }else{
                     if (usingCounter) getCounterByProperty(impact, p, targets).toDouble()
-                    else getDegreeByProperty(impact, p, targets)
+                    else getDegreeByProperty(impact, p, targets) * 100
                 }
             }.toMutableList()
         }
@@ -251,9 +250,9 @@ class ArchiveGeneSelector {
     // TODO refactor this method
     fun saveImpactSnapshot(index : Int, checkedTargets: Set<Int>, targetsInfo : Map<Int, EvaluatedMutation>, result: EvaluatedMutation, evaluatedIndividual: EvaluatedIndividual<*>) {
         if (!config.collectImpact()) return
-        if(config.saveImpactAfterMutationFile.isBlank()) return
+        if(!config.saveImpactAfterMutation) return
 
-        val path = Paths.get(config.saveImpactAfterMutationFile)
+        val path = Paths.get(config.impactAfterMutationFile)
         if (path.parent != null) Files.createDirectories(path.parent)
         if (Files.notExists(path)) Files.createFile(path)
         val text = "$index,${checkedTargets.joinToString("-")},${targetsInfo.filterValues { it.value >=0 }.keys.joinToString("-")},${targetsInfo.filterValues { it == EvaluatedMutation.BETTER_THAN }.keys.joinToString("-")},$result,"

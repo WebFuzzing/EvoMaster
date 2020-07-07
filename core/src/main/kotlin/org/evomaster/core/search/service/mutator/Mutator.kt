@@ -94,8 +94,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         for (i in 0 until upToNTimes) {
 
-            //save ei before its individual is mutated
-            val currentWithTraces = current.copy(tracker.getCopyFilterForEvalInd(current, deepCopyForImpacts = false))
+            //save ei (i.e., impact and traces) before its individual is mutated
+            val currentWithTraces = current.copy(tracker.getCopyFilterForEvalInd(current))
 
             if (!time.shouldContinueSearch()) {
                 break
@@ -142,14 +142,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 if (mutatedGenes.addedInitializationGenes.isNotEmpty())
                     mutatedWithTraces.updateGeneDueToAddedInitializationGenes(current)
                 //update impact info
-                mutatedWithTraces.updateImpactOfGenes(mutatedGenes, targetsInfo)
+                mutatedWithTraces.updateImpactOfGenes(previous = currentWithTraces, mutated = mutatedWithTraces, mutatedGenes = mutatedGenes, targetsInfo = targetsInfo)
             }
 
             current = saveMutation(result, archive, currentWithTraces, mutatedWithTraces)
 
             // gene mutation evaluation
             if (config.enableArchiveGeneMutation()){
-                archiveGeneMutator.updateArchiveMutationInfo(currentWithTraces, current, mutatedGenes, targetsInfo)
+                archiveGeneMutator.updateArchiveMutationInfo(currentWithTraces, mutatedWithTraces, mutatedGenes, targetsInfo)
             }
 
             archiveGeneSelector.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,targetsInfo = targetsInfo, result = result, evaluatedIndividual = current)

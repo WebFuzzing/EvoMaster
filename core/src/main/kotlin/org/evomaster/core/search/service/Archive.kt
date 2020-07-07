@@ -11,12 +11,11 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.impact.impactInfoCollection.ImpactsOfIndividual
+import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 
-import java.lang.Integer.min
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
@@ -290,7 +289,7 @@ class Archive<T> where T : Individual {
         ei.fitness.getViewOfData()
                 .filter { it.value.distance > 0.0 && populations[it.key]?.isEmpty() ?: true}
                 .forEach { t->
-                    targetInfo[t.key] = EvaluatedMutation.BETTER_THAN
+                    targetInfo[t.key] = EvaluatedMutation.NEWLY_IDENTIFIED
                 }
     }
 
@@ -517,12 +516,12 @@ class Archive<T> where T : Individual {
 
 
     fun saveSnapshot(){
-        if (config.saveArchiveAfterMutationFile.isBlank()) return
+        if (!config.saveArchiveAfterMutation) return
 
         val index = time.evaluatedIndividuals
         val archiveContent = notCoveredTargets().filter { it >= 0 }.map { "$index,${it to getReachedTargetHeuristics(it)},${idMapper.getDescriptiveId(it)}" }
 
-        val apath = Paths.get(config.saveArchiveAfterMutationFile)
+        val apath = Paths.get(config.archiveAfterMutationFile)
         if (apath.parent != null) Files.createDirectories(apath.parent)
         if (Files.notExists(apath)) Files.createFile(apath)
 

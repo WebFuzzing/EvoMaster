@@ -2,7 +2,7 @@ package org.evomaster.core.search
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.impactInfoCollection.*
+import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -168,7 +168,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 next.index,
                 impactInfo?.clone()
         )
-
     }
 
     override fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
@@ -191,7 +190,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         // tracking is shared with all mutated individual originated from same sampled ind
         new.wrapWithTracking(evaluatedResult, tracking)
 
-
         return new
     }
 
@@ -202,7 +200,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      * For instance, if the latest modification does not improve the fitness, it will be saved in [undoTracking].
      * in this case, the latest is the last of [undoTracking], not [this]
      */
-    fun updateImpactOfGenes(mutatedGenes: MutatedGeneSpecification, targetsInfo: Map<Int, EvaluatedMutation>){
+    fun updateImpactOfGenes(previous : EvaluatedIndividual<T>, mutated : EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification, targetsInfo: Map<Int, EvaluatedMutation>){
 
         Lazy.assert{mutatedGenes.mutatedIndividual != null}
 
@@ -211,22 +209,15 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             tracking != null
         }
 
-        val lastTwo = getLast<EvaluatedIndividual<T>>(2, null)
-        Lazy.assert {
-            lastTwo.size == 2
-        }
 
-        val current = lastTwo.first()
-        val mutated = lastTwo.last()
-
-        compareWithLatest(next = mutated, previous = current, targetsInfo = targetsInfo, mutatedGenes = mutatedGenes)
+        compareWithLatest(next = mutated, previous = previous, targetsInfo = targetsInfo, mutatedGenes = mutatedGenes)
     }
 
     private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, targetsInfo: Map<Int, EvaluatedMutation>, mutatedGenes: MutatedGeneSpecification){
 
-        val noImpactTargets = targetsInfo.filterValues { it == EvaluatedMutation.EQUAL_WITH || it == EvaluatedMutation.UNSURE }.keys
-        val impactTargets = targetsInfo.filterValues {  it == EvaluatedMutation.BETTER_THAN || it == EvaluatedMutation.WORSE_THAN }.keys
-        val improvedTargets = targetsInfo.filterValues { it == EvaluatedMutation.BETTER_THAN }.keys
+        val noImpactTargets = targetsInfo.filterValues { !it.isImpactful() }.keys
+        val impactTargets = targetsInfo.filterValues {  it.isImpactful() }.keys
+        val improvedTargets = targetsInfo.filterValues { it.isImproved() }.keys
 
         val didStructureMutation = mutatedGenes.didStructureMutation()
         if (didStructureMutation){ // structure mutated

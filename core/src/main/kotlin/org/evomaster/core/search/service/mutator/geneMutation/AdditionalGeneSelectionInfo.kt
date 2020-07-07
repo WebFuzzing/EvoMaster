@@ -1,8 +1,8 @@
 package org.evomaster.core.search.service.mutator.geneMutation
 
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact
-import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 
 /**
  * created by manzh on 2020-05-25

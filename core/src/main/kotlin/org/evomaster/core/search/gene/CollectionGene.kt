@@ -1,7 +1,7 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.search.impact.impactInfoCollection.CollectionImpact
-import org.evomaster.core.search.impact.impactInfoCollection.Impact
+import org.evomaster.core.search.impact.impactinfocollection.CollectionImpact
+import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 /**

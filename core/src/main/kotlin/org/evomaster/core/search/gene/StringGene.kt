@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -11,8 +12,8 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.gene.GeneUtils.getDelta
-import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact
-import org.evomaster.core.search.impact.impactInfoCollection.value.StringGeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -100,7 +101,7 @@ class StringGene(
 
 
     override fun copy(): Gene {
-        val copy = StringGene(name, value, minLength, maxLength, invalidChars, mutationInfo.copy())
+        val copy = StringGene(name, value, minLength, maxLength, invalidChars, mutationInfo.clone())
                 .also {
                     it.specializationGenes = this.specializationGenes.map { g -> g.copy() }.toMutableList()
                     it.specializations.addAll(this.specializations)
@@ -555,58 +556,43 @@ class StringGene(
         original as? StringGene ?: throw IllegalStateException("$original should be StringGene")
         mutated as? StringGene ?: throw IllegalStateException("$mutated should be StringGene")
 
-        val previous = original.value
-        val current = mutated.value
+        val previousValue = original.value
+        val mutatedValue = mutated.value
 
-        val isMutated = (this == mutated)
+        val doLengthMutation = previousValue.length != mutatedValue.length
 
         val diffIndex = mutableListOf<Int>()
-
-        val doLengthMutation = previous.length != current.length
-
         if (!doLengthMutation){
-            current.toCharArray().forEachIndexed { index, c ->
-                if (c != previous[index])
+            mutatedValue.toCharArray().forEachIndexed { index, c ->
+                if (c != previousValue[index])
                     diffIndex.add(index)
             }
         }
+
         if (!doLengthMutation && diffIndex.isEmpty())
             log.warn("charMutation (applied = {}) and lengthMutation (applied{}) are not recommended to apply at same time.", diffIndex.isNotEmpty(), doLengthMutation)
 
 
         targetsEvaluated.forEach { (t, u) ->
-            val archiveMutationInfo = mutationInfo.getArchiveMutationInfo(this, t) as? StringGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be StringGeneArchiveMutationInfo")
-            val marchiveMutationInfo = mutated.mutationInfo.getArchiveMutationInfo(this, t) as? StringGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be StringGeneArchiveMutationInfo")
 
-            /*
-                if mutated is not added to archive, then update 'this' based on mutated.
-             */
-            if (!isMutated) {
-                archiveMutationInfo.plusMutatedTimes()
-                // check whether archivemutation is initialized
-                if (archiveMutationInfo.neverArchiveMutate()) {
-                    archiveMutator.initCharMutation(archiveMutationInfo.charsMutation, value.length)
-                    archiveMutationInfo.charMutationInitialized()
-                }
-                if (marchiveMutationInfo > archiveMutationInfo){
-                    archiveMutationInfo.mutatedIndex = marchiveMutationInfo.mutatedIndex
-                }
-            }
+            val archiveMutationInfo = mutationInfo.getArchiveMutationInfo(this, t, archiveMutator) as? StringGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be StringGeneArchiveMutationInfo")
 
-            val becomeBetter = u == EvaluatedMutation.BETTER_THAN
+            archiveMutationInfo.synCharMutation(value, doLengthMutation, u.isImproved(), archiveMutator)
+
             if (doLengthMutation) {
-                if (!isMutated && marchiveMutationInfo.lengthMutation.reached) {
-                    archiveMutationInfo.lengthMutation.reached = marchiveMutationInfo.lengthMutation.reached
-                }
-                archiveMutationInfo.lengthUpdate(previous = previous, current = current, thisGene = this, mutatedBetter = becomeBetter, archiveMutator = archiveMutator)
+                //gene is mutated at first time
+                archiveMutationInfo.lengthUpdate(previous = previousValue, mutated = mutatedValue, mutatedBetter = u.isImproved(), archiveMutator = archiveMutator, template = this)
             } else {
                 if (diffIndex.isEmpty()){
-                    log.info("nothing to mutate for the gene {}", current)
+                    log.info("nothing to mutate for the gene {}", mutatedValue)
                 }else if (diffIndex.size > 1){
-                    log.info("multiple chars are mutated from {} to {}", previous, current)
+                    log.info("multiple chars are mutated from {} to {}", previousValue, mutatedValue)
                 }
-                archiveMutationInfo.charUpdate(previous = previous, current = current, diffIndex = diffIndex, thisValue = value, invalidChars = invalidChars, isMutated = isMutated, mutatedArchiveMutationInfo = marchiveMutationInfo,
-                        mutatedBetter = becomeBetter, archiveMutator = archiveMutator)
+                archiveMutationInfo.charUpdate(previous = previousValue, mutated = mutatedValue, diffIndex = diffIndex, invalidChars = invalidChars,
+                        mutatedBetter = u.isImproved(), archiveMutator = archiveMutator)
+            }
+            Lazy.assert {
+                archiveMutationInfo.charsMutation.size >= value.length
             }
         }
     }

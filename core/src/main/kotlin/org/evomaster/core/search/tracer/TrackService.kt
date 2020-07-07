@@ -24,6 +24,7 @@ abstract class TrackService {
         register(TraceableElementCopyFilter.NONE)
         register(TraceableElementCopyFilter.WITH_TRACK)
         register(TraceableElementCopyFilter.DEEP_TRACK)
+        register(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT)
     }
 
     /**

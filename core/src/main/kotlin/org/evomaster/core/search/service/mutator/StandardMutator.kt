@@ -13,8 +13,8 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod
-import org.evomaster.core.search.impact.impactInfoCollection.ImpactUtils
+import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import kotlin.math.max

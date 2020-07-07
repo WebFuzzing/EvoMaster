@@ -25,7 +25,7 @@ class IntegerGene(
 ) : NumberGene<Int>(name, value) {
 
     override fun copy(): Gene {
-        return IntegerGene(name, value, min, max, mutationInfo.copy())
+        return IntegerGene(name, value, min, max, mutationInfo.clone())
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -76,13 +76,14 @@ class IntegerGene(
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
 
-        //check maximum range. no point in having a delta greater than such range
-        val range: Long = if (enableAdaptiveGeneMutation){
+        if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
-            (additionalGeneMutationInfo.archiveGeneMutator.identifyMutation(this, additionalGeneMutationInfo.targets) as IntegerGeneArchiveMutationInfo).run {
-                this.valueMutation.preferMax.toLong() - this.valueMutation.preferMin.toLong()
-            }
-        } else max.toLong() - min.toLong()
+            additionalGeneMutationInfo.archiveGeneMutator.mutate(this, additionalGeneMutationInfo.targets)
+            return true
+        }
+
+        //check maximum range. no point in having a delta greater than such range
+        val range = max.toLong() - min.toLong()
 
         //choose an i for 2^i modification
         val delta = getDelta(randomness, apc, range)
@@ -101,7 +102,6 @@ class IntegerGene(
             else -> res.toInt()
         }
 
-        //TODO MAN add archive-based mutation
         return true
     }
 
@@ -115,32 +115,26 @@ class IntegerGene(
         original as? IntegerGene ?: throw IllegalStateException("$original should be IntegerGene")
         mutated as? IntegerGene ?: throw IllegalStateException("$mutated should be IntegerGene")
 
-
         val previous = original.value
         val current = mutated.value
 
-        val isMutated = this == mutated
-
         targetsEvaluated.forEach { (t, u) ->
-            val archiveMutationInfo = mutationInfo.getArchiveMutationInfo(this, t) as? IntegerGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be IntegerGeneArchiveMutationInfo")
-            val marchiveMutationInfo = mutated.mutationInfo.getArchiveMutationInfo(this, t) as? IntegerGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be IntegerGeneArchiveMutationInfo")
-
-            if (!isMutated && marchiveMutationInfo.valueMutation.reached)
-                archiveMutationInfo.valueMutation.reached = marchiveMutationInfo.valueMutation.reached
+            val archiveMutationInfo = mutationInfo.getArchiveMutationInfo(this, t, archiveMutator) as? IntegerGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be IntegerGeneArchiveMutationInfo")
 
             /*
                 1) current.length is not in min..max, but current is better -> reset
                 2) lengthMutation is optimal, but current is better -> reset
             */
-            val becomeBetter = u == EvaluatedMutation.BETTER_THAN
-            if (becomeBetter && (
+            if (u.isImproved() && (
                             current !in archiveMutationInfo.valueMutation.preferMin..archiveMutationInfo.valueMutation.preferMax
                             )) {
                 archiveMutationInfo.valueMutation.reset(min, max)
                 archiveMutationInfo.plusDependencyInfo()
                 return
             }
-            archiveMutationInfo.valueMutation.updateBoundary(original.value, mutated.value, becomeBetter)
+
+
+            archiveMutationInfo.valueMutation.updateBoundary(previous = original.value,current =  mutated.value, doesCurrentBetter = u.isImproved())
 
             if (0 == archiveMutator.validateCandidates(archiveMutationInfo.valueMutation.preferMin, archiveMutationInfo.valueMutation.preferMax, exclude = setOf(previous, current).toList())) {
                 archiveMutationInfo.valueMutation.reached = true

@@ -6,7 +6,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.impactInfoCollection.Impact
+import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneSelector

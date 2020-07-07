@@ -5,6 +5,7 @@ package org.evomaster.core.search.service.mutator
  *  [BETTER_THAN] means that the mutated is better than the current.
  */
 enum class EvaluatedMutation(val value : Int){
+    NEWLY_IDENTIFIED(2),
     BETTER_THAN(1),
     EQUAL_WITH(0),
     WORSE_THAN(-1),
@@ -12,4 +13,13 @@ enum class EvaluatedMutation(val value : Int){
 
     fun isEffective() = value >=0
 
+    fun isImpactful() = value !=0 && value != -2
+
+    fun isImproved() = value > 0
+
+    companion object{
+
+        fun range() = -2..2
+
+    }
 }

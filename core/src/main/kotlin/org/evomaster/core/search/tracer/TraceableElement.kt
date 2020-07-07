@@ -82,6 +82,7 @@ abstract class TraceableElement {
      */
     fun <T : TraceableElement> pushLatest(next: T){
         (tracking as? TrackingHistory<T>)?.update(next)
+                ?: throw IllegalStateException("tracking history should not be null")
     }
 
     fun <T : TraceableElement> getLast(n : Int, resultRange: IntRange? = null) : List<T>{
@@ -92,6 +93,12 @@ abstract class TraceableElement {
             else
                 subList(size - n, size)
         } ?: throw IllegalStateException("the element is not tracked")
+    }
+
+    fun <T: TraceableElement> getByIndex(index : Int) : T?{
+        return ((tracking as? TrackingHistory<T>)?: throw IllegalStateException("tracking should not be null")).history?.find {
+            it.index == index
+        }
     }
 
 }

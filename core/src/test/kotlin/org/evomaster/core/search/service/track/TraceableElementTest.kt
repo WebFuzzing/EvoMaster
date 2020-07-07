@@ -102,7 +102,7 @@ class TraceableElementTest {
         assertFalse(eval3.tracking!!.history.contains(first))
         assertEquals(eval2.tracking, eval3.tracking)
 
-        assert(eval3.getLast<EvaluatedIndividual<OneMaxIndividual>>(5, -2..1).none { it.evaluatedResult == EvaluatedMutation.WORSE_THAN })
+        assert(eval3.getLast<EvaluatedIndividual<OneMaxIndividual>>(5, EvaluatedMutation.range()).none { it.evaluatedResult == EvaluatedMutation.WORSE_THAN })
     }
 
     // enable tracking individual and but disable evaluated individual

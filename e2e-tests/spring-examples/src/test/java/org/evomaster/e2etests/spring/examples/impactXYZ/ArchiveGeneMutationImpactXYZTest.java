@@ -3,7 +3,7 @@ package org.evomaster.e2etests.spring.examples.impactXYZ;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
-import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod;
+import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod;
 import org.junit.jupiter.api.Test;
 
 
@@ -13,7 +13,7 @@ public class ArchiveGeneMutationImpactXYZTest extends ImpactXYZTestBase {
 
     @Test
     public void testOnlyArchiveMutation() throws Throwable {
-        testRunEM(GeneMutationSelectionMethod.NONE);
+        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT);
     }
 
     public void testRunEM(GeneMutationSelectionMethod method) throws Throwable {
@@ -34,10 +34,6 @@ public class ArchiveGeneMutationImpactXYZTest extends ImpactXYZTestBase {
                     args.add("--archiveGeneMutation");
                     args.add("SPECIFIED");
 
-                    //since there only exist one endpoint, we set the population for each target 3
-                    args.add("--archiveTargetLimit");
-                    args.add("3");
-
                     args.add("--enableTrackEvaluatedIndividual");
                     args.add("true");
 
@@ -45,15 +41,21 @@ public class ArchiveGeneMutationImpactXYZTest extends ImpactXYZTestBase {
                     args.add("0.0");
 
                     // only for the test
-                    args.add("--saveImpactAfterMutationFile");
+                    args.add("--saveImpactAfterMutation");
+                    args.add("true");
+                    args.add("--impactAfterMutationFile");
                     args.add("target/"+folder+"/impactInfo/Impacts_ImpactXYZ_"+method.toString()+".csv");
 
                     // only for the test
-                    args.add("--saveMutatedGeneFile");
+                    args.add("--saveMutationInfo");
+                    args.add("true");
+                    args.add("--mutatedGeneFile");
                     args.add("target/"+folder+"/mutatedGeneInfo/MutatedGenes_ImpactXYZ_"+method.toString()+".csv");
 
                     // only for the test
-                    args.add("--saveArchiveAfterMutationFile");
+                    args.add("--saveArchiveAfterMutation");
+                    args.add("true");
+                    args.add("--archiveAfterMutationFile");
                     args.add("target/"+folder+"/archiveInfo/ArchiveNotCoveredSnapshot_ImpactXYZ_"+method.toString()+".csv");
 
                     args.add("--exportCoveredTarget");

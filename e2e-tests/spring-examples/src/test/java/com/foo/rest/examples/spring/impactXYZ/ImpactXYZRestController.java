@@ -1,6 +1,7 @@
 package com.foo.rest.examples.spring.impactXYZ;
 
 import com.foo.rest.examples.spring.SpringController;
+import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 
@@ -11,15 +12,14 @@ import java.util.List;
  */
 public class ImpactXYZRestController extends SpringController {
 
-    private List<String> skip = null;
 
     public ImpactXYZRestController() {
         super(ImpactXYZApplication.class);
     }
 
-    public ImpactXYZRestController(List<String> skip) {
+    public ImpactXYZRestController(int port) {
         super(ImpactXYZApplication.class);
-        this.skip = skip;
+        setControllerPort(port);
     }
 
     @Override
@@ -28,11 +28,11 @@ public class ImpactXYZRestController extends SpringController {
     }
 
 
-    @Override
-    public ProblemInfo getProblemInfo() {
-        return new RestProblem(
-                "http://localhost:" + getSutPort() + "/v2/api-docs",
-                skip
-        );
+    public static void main(String[] args) {
+
+        ImpactXYZRestController controller = new ImpactXYZRestController(40100);
+        InstrumentedSutStarter starter = new InstrumentedSutStarter(controller);
+
+        starter.start();
     }
 }

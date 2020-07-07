@@ -6,7 +6,7 @@ import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import java.net.MalformedURLException
 import java.net.URL
 import java.nio.file.Files
@@ -278,7 +278,7 @@ class EMConfig {
             throw IllegalArgumentException("archive-based solution is only applicable when enable of tracking of EvaluatedIndividual.")
 
         if (doCollectImpact && !enableTrackEvaluatedIndividual)
-            throw IllegalArgumentException("collecting impact innfo is only applicable when enable of tracking of EvaluatedIndividual.")
+            throw IllegalArgumentException("impact collection should be applied together with tracking EvaluatedIndividual")
 
         if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
@@ -1009,6 +1009,15 @@ class EMConfig {
     }
 
     @Experimental
+    @Cfg("Whether to record targets when the number is more than 100")
+    var recordExceededTargets = false
+
+    @Experimental
+    @Cfg("Specify a path to save all not covered targets when the number is more than 100")
+    @FilePath
+    var exceedTargetsFile = "exceedTargets.txt"
+
+    @Experimental
     @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
     @Probability(false)
     var S1iR: Double = 0.25
@@ -1072,9 +1081,21 @@ class EMConfig {
     var geneWeightBasedOnImpactsBy = GeneWeightBasedOnImpact.SORT_COUNTER
 
     enum class GeneWeightBasedOnImpact{
+        /**
+         * using rank of counter
+         */
         SORT_COUNTER,
+        /**
+         * using rank of ratio
+         */
         SORT_RATIO,
+        /**
+         * using counter
+         */
         COUNTER,
+        /**
+         * using ratio, ie, counter/total manipulated times
+         */
         RATIO
     }
 
@@ -1083,16 +1104,22 @@ class EMConfig {
     var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.NONE
 
     @Experimental
-    @Cfg("Specify whether to save archive after each mutation during search, only useful for debugging")
-    var saveArchiveAfterMutationFile = ""
+    @Cfg("Whether to save archive info after each of mutation, which is typically useful for debugging mutation and archive")
+    var saveArchiveAfterMutation = false
 
     @Experimental
-    @Cfg("Specify whether to save collected impact info after each mutation during search, only useful for debugging")
-    var saveImpactAfterMutationFile = ""
+    @Cfg("Specify a path to save archive after each mutation during search, only useful for debugging")
+    @FilePath
+    var archiveAfterMutationFile = "archive.csv"
 
     @Experimental
-    @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate inside a gene, e.g., ObjectGene")
-    var enableGeneSelectionMethodForGene = true
+    @Cfg("Whether to save impact info after each of mutation, which is typically useful debugging impact driven solutions and mutation")
+    var saveImpactAfterMutation = false
+
+    @Experimental
+    @Cfg("Specify a path to save collected impact info after each mutation during search, only useful for debugging")
+    @FilePath
+    var impactAfterMutationFile = "impact.csv"
 
     @Experimental
     @Cfg("Whether to enable archive-based gene mutation")
@@ -1109,7 +1136,7 @@ class EMConfig {
     var exportImpacts = false
 
     @Experimental
-    @Cfg("Specify a file that saves derived genes")
+    @Cfg("Specify a path to save derived genes")
     @FilePath
     var impactFile = "impact.csv"
 

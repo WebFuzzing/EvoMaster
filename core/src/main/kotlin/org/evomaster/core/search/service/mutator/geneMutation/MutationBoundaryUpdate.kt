@@ -1,5 +1,7 @@
 package org.evomaster.core.search.service.mutator.geneMutation
 
+import org.evomaster.core.Lazy
+
 /**
  * created by manzh on 2019-09-19
  */
@@ -33,10 +35,12 @@ class IntMutationUpdate(preferMin: Int, preferMax: Int, counter: Int = 0, reache
     override fun copy(): IntMutationUpdate = IntMutationUpdate(preferMin, preferMax, counter, reached)
 
     override fun updateBoundary(previous: Int, current: Int, doesCurrentBetter: Boolean) {
-        val value = (previous + current) / 2.0
+        if (previous !in preferMin..preferMax || current !in preferMin..preferMax) return
+        val value = ( previous.toLong() + current.toLong())/2.0
         updateCounter(doesCurrentBetter)
+
         if ( (doesCurrentBetter && current > previous) || (!doesCurrentBetter && current < previous)){
-            preferMin = if (value > value.toInt()) value.toInt()+1 else value.toInt()
+            preferMin = if (value > value.toInt() && value < preferMax) value.toInt()+1 else value.toInt()
         }else
             preferMax = value.toInt()
     }
@@ -46,7 +50,7 @@ class DoubleMutationUpdate(preferMin: Double, preferMax: Double, counter: Int = 
     override fun copy(): DoubleMutationUpdate = DoubleMutationUpdate(preferMin,preferMax,counter,reached)
 
     override fun updateBoundary(previous: Double, current: Double, doesCurrentBetter: Boolean) {
-        val value = (previous + current) / 2.0
+        val value = listOf(previous, current).average()
         updateCounter(doesCurrentBetter)
         if ( (doesCurrentBetter && current > previous) || (!doesCurrentBetter && current < previous)){
             preferMin = value
