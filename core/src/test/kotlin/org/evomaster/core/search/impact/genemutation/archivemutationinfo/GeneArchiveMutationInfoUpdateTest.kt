@@ -11,9 +11,9 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
-import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
-import org.evomaster.core.search.service.mutator.geneMutation.archive.StringGeneArchiveMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.genemutation.archive.IntegerGeneArchiveMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.archive.StringGeneArchiveMutationInfo
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

@@ -1,9 +1,9 @@
-package org.evomaster.core.search.service.mutator.geneMutation.archive
+package org.evomaster.core.search.service.mutator.genemutation.archive
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 
 /**
  * This class contains archive-based info for a gene

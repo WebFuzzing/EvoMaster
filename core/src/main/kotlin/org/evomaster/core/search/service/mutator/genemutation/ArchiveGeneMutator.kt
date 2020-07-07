@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service.mutator.geneMutation
+package org.evomaster.core.search.service.mutator.genemutation
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
@@ -17,9 +17,9 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.archive.ArchiveMutationInfo
-import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
-import org.evomaster.core.search.service.mutator.geneMutation.archive.StringGeneArchiveMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.archive.ArchiveMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.archive.IntegerGeneArchiveMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.archive.StringGeneArchiveMutationInfo
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files

@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service.mutator.geneMutation.archive
+package org.evomaster.core.search.service.mutator.genemutation.archive
 
 import org.evomaster.core.search.gene.GeneIndependenceInfo
 

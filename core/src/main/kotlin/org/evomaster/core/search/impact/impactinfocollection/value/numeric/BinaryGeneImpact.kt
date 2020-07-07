@@ -3,7 +3,7 @@ package org.evomaster.core.search.impact.impactinfocollection.value.numeric
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.*
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneSelector
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
 
 /**
  * created by manzh on 2019-09-09

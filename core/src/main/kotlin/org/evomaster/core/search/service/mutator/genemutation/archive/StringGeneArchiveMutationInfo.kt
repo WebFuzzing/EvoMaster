@@ -1,10 +1,10 @@
-package org.evomaster.core.search.service.mutator.geneMutation.archive
+package org.evomaster.core.search.service.mutator.genemutation.archive
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.GeneIndependenceInfo
 import org.evomaster.core.search.gene.StringGene
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
-import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.genemutation.IntMutationUpdate
 
 /**
  * created by manzh on 2020-06-12

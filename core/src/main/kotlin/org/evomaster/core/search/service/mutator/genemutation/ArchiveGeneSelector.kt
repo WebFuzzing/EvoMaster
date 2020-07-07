@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service.mutator.geneMutation
+package org.evomaster.core.search.service.mutator.genemutation
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig

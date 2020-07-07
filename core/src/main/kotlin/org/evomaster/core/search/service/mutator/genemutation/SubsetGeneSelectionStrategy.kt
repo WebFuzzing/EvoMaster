@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service.mutator.geneMutation
+package org.evomaster.core.search.service.mutator.genemutation
 
 /**
  * created by manzh on 2020-05-27

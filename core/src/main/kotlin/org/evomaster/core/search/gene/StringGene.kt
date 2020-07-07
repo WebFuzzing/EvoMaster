@@ -20,11 +20,11 @@ import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
-import org.evomaster.core.search.service.mutator.geneMutation.archive.GeneArchieMutationInfo
-import org.evomaster.core.search.service.mutator.geneMutation.archive.StringGeneArchiveMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.archive.GeneArchieMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.archive.StringGeneArchiveMutationInfo
 
 
 class StringGene(

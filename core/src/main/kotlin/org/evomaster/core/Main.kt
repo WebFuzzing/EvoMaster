@@ -31,7 +31,7 @@ import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneSelector
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
 import java.lang.reflect.InvocationTargetException
 
 

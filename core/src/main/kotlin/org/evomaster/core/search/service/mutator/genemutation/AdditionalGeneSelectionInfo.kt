@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service.mutator.geneMutation
+package org.evomaster.core.search.service.mutator.genemutation
 
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact

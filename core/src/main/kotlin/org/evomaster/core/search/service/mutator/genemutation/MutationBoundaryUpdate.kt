@@ -1,6 +1,4 @@
-package org.evomaster.core.search.service.mutator.geneMutation
-
-import org.evomaster.core.Lazy
+package org.evomaster.core.search.service.mutator.genemutation
 
 /**
  * created by manzh on 2019-09-19

@@ -2,7 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.impact.impactinfocollection.CollectionImpact
 import org.evomaster.core.search.impact.impactinfocollection.Impact
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 /**
  * created by manzh on 2020-06-06

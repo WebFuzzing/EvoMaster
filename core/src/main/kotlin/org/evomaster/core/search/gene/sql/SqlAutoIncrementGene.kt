@@ -5,7 +5,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 
 
 class SqlAutoIncrementGene(name: String) : Gene(name) {

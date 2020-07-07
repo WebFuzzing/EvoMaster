@@ -1,9 +1,9 @@
 package org.evomaster.core.search.impact.genemutation.archivemutationinfo
 
-import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
-import org.evomaster.core.search.service.mutator.geneMutation.archive.GeneArchieMutationInfo
-import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
-import org.evomaster.core.search.service.mutator.geneMutation.archive.StringGeneArchiveMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.IntMutationUpdate
+import org.evomaster.core.search.service.mutator.genemutation.archive.GeneArchieMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.archive.IntegerGeneArchiveMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.archive.StringGeneArchiveMutationInfo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 
