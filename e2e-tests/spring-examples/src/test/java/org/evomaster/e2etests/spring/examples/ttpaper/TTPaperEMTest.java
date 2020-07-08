@@ -25,20 +25,43 @@ public class TTPaperEMTest  extends SpringTestBase {
 
         defaultSeed = 0;
 
-        CIUtils.skipIfOnCircleCI();
-
         runTestHandlingFlakyAndCompilation(
-                "TTPaperNumeric",
+                "TTPaper",
                 "org.bar.ttpaper.TTPaperNumeric",
                 10_000,
                 true,
                 (args) -> {
+
+                    args.add("--endpointFocus=/api/numeric/{x}");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/numeric/{x}", "OK");
+                },
+                3);
+    }
+
+    @Test
+    public void testParam() throws Throwable {
+
+        defaultSeed = 0;
+
+        runTestHandlingFlakyAndCompilation(
+                "TTPaper",
+                "org.bar.ttpaper.TTPaperParam",
+                1_000,
+                true,
+                (args) -> {
+
+                    args.add("--endpointFocus=/api/param");
+
+                    Solution<RestIndividual> solution = initAndRun(args);
+
+                    assertTrue(solution.getIndividuals().size() >= 1);
+
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/param", "OK");
                 },
                 3);
     }
