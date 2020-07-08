@@ -66,4 +66,27 @@ public class TTPaperEMTest  extends SpringTestBase {
                 3);
     }
 
+
+    @Test
+    public void testBody() throws Throwable {
+
+        defaultSeed = 0;
+
+        runTestHandlingFlakyAndCompilation(
+                "TTPaper",
+                "org.bar.ttpaper.TTPaperBody",
+                1_000,
+                true,
+                (args) -> {
+
+                    args.add("--endpointFocus=/api/body");
+
+                    Solution<RestIndividual> solution = initAndRun(args);
+
+                    assertTrue(solution.getIndividuals().size() >= 1);
+
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/body", "OK");
+                },
+                3);
+    }
 }
