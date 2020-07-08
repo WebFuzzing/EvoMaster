@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionRxGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -76,7 +77,24 @@ class DisjunctionRxGene(
     }
 
     override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
-        TODO()
+        if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is DisjunctionRxGeneImpact)
+            throw IllegalArgumentException("mismatched gene impact")
+
+        if (!terms.containsAll(internalGenes))
+            throw IllegalArgumentException("mismatched internal genes")
+
+        val impacts = internalGenes.map {
+            additionalGeneMutationInfo.impact.termsImpact[terms.indexOf(it)]
+        }
+
+        val selected = mwc.selectSubGene(
+                candidateGenesToMutate = internalGenes,
+                impacts = impacts,
+                targets = additionalGeneMutationInfo.targets,
+                forceNotEmpty = true,
+                adaptiveWeight = true
+        )
+        return selected.map { it to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.termsImpact[terms.indexOf(it)]) }.toList()
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {

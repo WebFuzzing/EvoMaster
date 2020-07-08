@@ -28,6 +28,8 @@ open class Impact(
             noImprovement : MutableMap<Int, Double> = mutableMapOf()
     ) : this(SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact), SpecificImpactInfo(noImpactFromImpact, noImprovement))
 
+
+
     fun getId() = shared.id
     fun getTimesOfNoImpact() = shared.timesOfNoImpacts
     fun getTimesOfNoImpactWithTargets() = shared.timesOfNoImpactWithTargets
@@ -89,6 +91,7 @@ open class Impact(
                 if (onlyManipulation){
                     initMap(target, shared.timesOfImpact)
                 }else{
+                    shared.singleImpact.merge(target, num == 1){old, delta -> (old || delta)}
                     plusMap(target, shared.timesOfImpact, num)
                     assignMap(target, specific.noImpactFromImpact, 0.0)
                     if (improvedTargets.contains(target))
@@ -175,14 +178,17 @@ open class Impact(
  */
 class SharedImpactInfo(
         val id: String,
-        var degree: Double,
-        var timesToManipulate: Int,
-        var timesOfNoImpacts: Int,
-        val timesOfNoImpactWithTargets: MutableMap<Int, Double>,
-        val timesOfImpact: MutableMap<Int, Double>){
+        var degree: Double = 0.0,
+        var timesToManipulate: Int = 0,
+        var timesOfNoImpacts: Int = 0,
+        val timesOfNoImpactWithTargets: MutableMap<Int, Double> = mutableMapOf(),
+        val timesOfImpact: MutableMap<Int, Double> = mutableMapOf(),
+        val singleImpact : MutableMap<Int, Boolean> = mutableMapOf()){
+
+
 
     fun copy() : SharedImpactInfo{
-        return SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact.toMutableMap())
+        return SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact.toMutableMap(), singleImpact.toMutableMap())
     }
 
     fun clone() = this

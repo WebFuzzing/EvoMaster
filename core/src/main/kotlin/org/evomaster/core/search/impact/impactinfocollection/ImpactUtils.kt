@@ -14,6 +14,8 @@ import org.evomaster.core.search.impact.impactinfocollection.value.date.DateTime
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.search.impact.impactinfocollection.regex.*
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -56,8 +58,14 @@ class ImpactUtils {
                 is SqlUUIDGene -> SqlUUIDGeneImpact(id, gene)
                 is SqlPrimaryKeyGene -> SqlPrimaryKeyGeneImpact(id, gene)
                 is SqlForeignKeyGene -> SqlForeignKeyGeneImpact(id)
+                // regex
+                is RegexGene -> RegexGeneImpact(id, gene)
+                is DisjunctionListRxGene -> DisjunctionListRxGeneImpact(id, gene)
+                is DisjunctionRxGene -> DisjunctionRxGeneImpact(id, gene)
+                is RxAtom -> RxAtomImpact(id)
+                is RxTerm -> RxTermImpact(id)
+
                 else ->{
-                    //TODO for RegexGene
                     GeneImpact(id)
                 }
             }

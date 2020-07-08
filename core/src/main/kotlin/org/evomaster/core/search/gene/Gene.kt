@@ -112,18 +112,21 @@ abstract class Gene(var name: String) {
             enableAdaptiveGeneMutation: Boolean = false,
             additionalGeneMutationInfo: AdditionalGeneSelectionInfo? = null
     ){
-        val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        val inselect = if (unavailableForAdaptiveSelection()) SubsetGeneSelectionStrategy.DEFAULT else internalGeneSelectionStrategy
+        //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
+        val inmutate = unavailableForAdaptiveSelection() && enableAdaptiveGeneMutation
+        val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, inselect, inmutate, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
-            val mutated = mutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            val mutated = mutate(randomness, apc, mwc, allGenes, inselect, inmutate, additionalGeneMutationInfo)
             if (!mutated) throw IllegalStateException("leaf mutation is not implemented")
         }else{
-            val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, inselect, inmutate, additionalGeneMutationInfo)
             if (selected.isEmpty())
                 throw IllegalStateException("none is selected to mutate")
 
             selected.forEach{
                 do {
-                    it.first.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
+                    it.first.standardMutation(randomness, apc, mwc, allGenes, inselect, inmutate, it.second)
                 }while (!mutationCheck())
             }
         }
@@ -171,6 +174,8 @@ abstract class Gene(var name: String) {
     open fun adaptiveSelectSubset(internalGenes: List<Gene>,
                                   mwc: MutationWeightControl,
                                   additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> = listOf()
+
+    open fun unavailableForAdaptiveSelection() = false
 
     /**
      * mutate the current gene if there is no need to apply selection, i.e., when [candidatesInternalGenes] is empty

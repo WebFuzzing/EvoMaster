@@ -266,7 +266,7 @@ class EMConfig {
             TODO if required
          */
         if (resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)) {
-            throw IllegalArgumentException(" resource-mio does not support SQL strategies for the moment")
+            throw IllegalArgumentException("Resource-mio does not support SQL strategies for the moment")
         }
 
         //archive-based mutation
@@ -274,11 +274,14 @@ class EMConfig {
             throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
         }
 
+        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && probOfArchiveMutation > 0 && !weightBasedMutationRate)
+            throw IllegalArgumentException("When applying adaptive gene selection, weight-based mutation rate should be enabled")
+
         if (probOfArchiveMutation > 0 && !enableTrackEvaluatedIndividual)
-            throw IllegalArgumentException("archive-based solution is only applicable when enable of tracking of EvaluatedIndividual.")
+            throw IllegalArgumentException("Archive-based solution is only applicable when enable of tracking of EvaluatedIndividual.")
 
         if (doCollectImpact && !enableTrackEvaluatedIndividual)
-            throw IllegalArgumentException("impact collection should be applied together with tracking EvaluatedIndividual")
+            throw IllegalArgumentException("Impact collection should be applied together with tracking EvaluatedIndividual")
 
         if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")

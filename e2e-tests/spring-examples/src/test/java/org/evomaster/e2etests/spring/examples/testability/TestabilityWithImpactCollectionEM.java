@@ -40,8 +40,14 @@ public class TestabilityWithImpactCollectionEM extends SpringTestBase {
                     args.add("--enableTrackEvaluatedIndividual");
                     args.add("true");
 
-                    args.add("--doCollectImpact");
+                    args.add("--weightBasedMutationRate");
                     args.add("true");
+
+                    args.add("--adaptiveGeneSelectionMethod");
+                    args.add("AWAY_NOIMPACT");
+
+                    args.add("--probOfArchiveMutation");
+                    args.add("0.5");
 
                     args.add("--saveImpactAfterMutation");
                     args.add("true");

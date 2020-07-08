@@ -83,7 +83,7 @@ abstract class GeneImpactTest {
         return  impact
     }
 
-    fun countImpact(impact: GeneImpact, gc : MutatedGeneWithContext, option : ImpactOptions){
+    private fun countImpact(impact: GeneImpact, gc : MutatedGeneWithContext, option : ImpactOptions){
         when(option){
             ImpactOptions.NO_IMPACT -> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(setOf()), impactTargets = setOf(), improvedTargets =  setOf(), onlyManipulation = false)
             ImpactOptions.ONLY_IMPACT -> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(fakeImpactTargets), impactTargets = fakeImpactTargets, improvedTargets = setOf(), onlyManipulation = false)

@@ -9,7 +9,9 @@ import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImp
  */
 class StringGeneImpactTest : GeneImpactTest() {
     override fun getGene(): Gene {
-        return StringGene("s","hello")
+        return StringGene("s","hello").also {
+
+        }
     }
 
     override fun checkImpactType(impact: GeneImpact) {

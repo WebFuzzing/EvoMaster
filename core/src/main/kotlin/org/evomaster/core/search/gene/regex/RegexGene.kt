@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -38,7 +39,12 @@ class RegexGene(
     }
 
     override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
-        TODO()
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is RegexGeneImpact){
+            if (internalGenes.size != 1 || !internalGenes.contains(disjunctions))
+                throw IllegalArgumentException("mismatched internal gene")
+            return listOf(disjunctions to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.listRxGeneImpact))
+        }
+        throw IllegalArgumentException("mismatched gene impact")
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {

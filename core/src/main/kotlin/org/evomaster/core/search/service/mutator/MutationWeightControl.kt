@@ -54,9 +54,14 @@ class MutationWeightControl {
             eg, only depends on static weight, or impact derived based on archive (archive-based solution)
          */
         if(adaptiveWeight){
-            if (targets == null || (individual == null && impacts == null) || evi == null)
-                throw IllegalArgumentException("invalid inputs: when adaptive weight is applied, targets, evi and individual(or impacts) should not be null")
-            archiveMutator.calculateWeightByArchive(candidateGenesToMutate, weights, individual = individual, impacts = impacts, evi = evi, targets = targets)
+            if (targets == null)
+                throw IllegalArgumentException("invalid inputs: when adaptive weight is applied, targets should not be null")
+            else if(evi != null && individual != null)
+                archiveMutator.calculateWeightByArchive(candidateGenesToMutate, weights, individual = individual, evi = evi, targets = targets)
+            else if (impacts != null)
+                archiveMutator.calculateWeightByArchive(candidateGenesToMutate, weights, impacts, targets = targets)
+            else
+                throw IllegalArgumentException("invalid inputs: when adaptive weight is applied, individual and evaluated individual (or impacts) should not be null")
         } else{
             candidateGenesToMutate.forEach {
                 weights[it] = it.mutationWeight().toDouble()
@@ -73,6 +78,8 @@ class MutationWeightControl {
     }
 
     fun <T>selectSubsetWithWeight(weights : Map<T, Double>, forceNotEmpty: Boolean, numToMutate : Double) : List<T>{
+        if (weights.isEmpty()) throw IllegalArgumentException("Cannot select with an empty list")
+        if (weights.size == 1) return weights.keys.toList()
         val results  = mutableListOf<T>()
         do {
             val sw = weights.values.sum()

@@ -233,7 +233,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         if (didStructureMutation) return
 
-        if (mutatedGenes.addedInitializationGenes.isNotEmpty()) return
+        if (mutatedGenes.addedInitializationGenes.isNotEmpty()) {
+            //TODO there is no any impact with added initialization, we may record this case.
+            return
+        }
 
         updateImpactsAfterStandardMutation(previous = previous.individual, mutatedGenes = mutatedGenes, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
 
@@ -292,6 +295,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         impactInfo!!.impactsOfStructure.countImpact(next, sizeChanged, noImpactTargets= noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
 
     }
+
     private fun updateImpactsAfterStandardMutation(
             previous: Individual,
             mutatedGenes: MutatedGeneSpecification,
@@ -299,7 +303,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             impactTargets: Set<Int>,
             improvedTargets: Set<Int>
     ){
-
+        // update rest action genes and/or sql genes
         mutatedGenes.mutatedActionOrDb().forEach { db->
             val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(
                     mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous, fromInitialization = db)

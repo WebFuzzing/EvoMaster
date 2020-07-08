@@ -119,6 +119,11 @@ class QuantifierRxGene(
         }
     }
 
+    /**
+     * atoms is dynamically modified, then we do not collect impacts for it.
+     * thus for the internal genes, adaptive gene selection for mutation is not applicable
+     */
+    override fun unavailableForAdaptiveSelection(): Boolean = true
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
         val length = atoms.size

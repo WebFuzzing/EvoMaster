@@ -141,10 +141,13 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             if (config.collectImpact()){
                 if (mutatedGenes.addedInitializationGenes.isNotEmpty())
                     mutatedWithTraces.updateGeneDueToAddedInitializationGenes(current)
-                //update impact info
-                mutatedWithTraces.updateImpactOfGenes(previous = currentWithTraces, mutated = mutatedWithTraces, mutatedGenes = mutatedGenes, targetsInfo = targetsInfo)
+                /*
+                    update impact info regarding targets.
+                    To avoid side-effect to impactful gene, remove covered targets
+                 */
+                mutatedWithTraces.updateImpactOfGenes(previous = currentWithTraces, mutated = mutatedWithTraces, mutatedGenes = mutatedGenes, targetsInfo = targetsInfo.filter { !archive.isCovered(it.key) && !IdMapper.isLocal(it.key) })
             }
-
+            // update archive based on mutated individual
             current = saveMutation(result, archive, currentWithTraces, mutatedWithTraces)
 
             // gene mutation evaluation
