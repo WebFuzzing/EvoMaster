@@ -145,15 +145,15 @@ open class Impact(
     companion object{
         fun toCSVHeader() : List<String> = listOf("id", "degree", "timesToManipulate", "timesOfNoImpacts","timesOfImpact","noImpactFromImpact","noImprovement")
     }
-    fun toCSVCell() : List<String> = listOf(
+    fun toCSVCell(targets : Set<Int>? = null) : List<String> = listOf(
             getId(),
             getDegree().toString(),
             "CM:${getTimesToManipulate()}",
-            "CN:${getTimesOfNoImpact()}",
-            "I:${getTimesOfImpacts().map { "${it.key}->${it.value}" }.joinToString(";")}",
-            "NI:${getTimesOfNoImpactWithTargets().map { "${it.key}->${it.value}" }.joinToString(";")}",
-            "I->NI:${getNoImpactsFromImpactCounter().map { "${it.key}->${it.value}" }.joinToString(";")}",
-            "NV:${getNoImprovementCounter().map { "${it.key}->${it.value}" }.joinToString(";")}"
+            "CNI:${getTimesOfNoImpact()}",
+            "I:${getTimesOfImpacts().filter { targets?.contains(it.key)?:true }.map { "${it.key}->${it.value}" }.joinToString(";")}",
+            "NI:${getTimesOfNoImpactWithTargets().filter { targets?.contains(it.key)?:true }.map { "${it.key}->${it.value}" }.joinToString(";")}",
+            "I->NI:${getNoImpactsFromImpactCounter().filter { targets?.contains(it.key)?:true }.map { "${it.key}->${it.value}" }.joinToString(";")}",
+            "NV:${getNoImprovementCounter().filter { targets?.contains(it.key)?:true }.map { "${it.key}->${it.value}" }.joinToString(";")}"
     )
 
     fun getMaxImpact() : Double = shared.timesOfImpact.values.max()?:0.0

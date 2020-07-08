@@ -475,13 +475,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return impactInfo.getGeneImpact(geneId)
     }
 
-    fun exportImpactAsListString() : MutableList<String>{
+    fun exportImpactAsListString(targets: Set<Int>? = null) : MutableList<String>{
         impactInfo?: throw IllegalArgumentException("do not enable collecting impacts info")
 
         val content = mutableListOf<String>()
 
-        impactInfo.exportImpactInfo(false, content)
-        impactInfo.exportImpactInfo(true, content)
+        impactInfo.exportImpactInfo(false, content, targets)
+        impactInfo.exportImpactInfo(true, content, targets)
 
         return content
     }

@@ -172,14 +172,14 @@ class ImpactsOfIndividual private constructor(
         return initializationGeneImpacts.getAll().map { it.geneImpacts }
     }
 
-    fun exportImpactInfo(areInitializationGeneImpact: Boolean, content : MutableList<String>){
+    fun exportImpactInfo(areInitializationGeneImpact: Boolean, content : MutableList<String>, targets : Set<Int>? = null){
         val impacts = if (areInitializationGeneImpact) getInitializationGeneImpact() else getActionGeneImpact()
         val prefix = if (areInitializationGeneImpact) "Initialization" else "Action"
         impacts.forEachIndexed { aindex, mutableMap ->
             mutableMap.forEach { (t, geneImpact) ->
-                content.add(mutableListOf("$prefix$aindex", t).plus(geneImpact.toCSVCell()).joinToString(","))
+                content.add(mutableListOf("$prefix$aindex", t).plus(geneImpact.toCSVCell(targets)).joinToString(","))
                 geneImpact.flatViewInnerImpact().forEach { (name, impact) ->
-                    content.add(mutableListOf("$prefix$aindex", "$t-$name").plus(impact.toCSVCell()).joinToString(","))
+                    content.add(mutableListOf("$prefix$aindex", "$t-$name").plus(impact.toCSVCell(targets)).joinToString(","))
                 }
             }
         }

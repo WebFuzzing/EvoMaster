@@ -261,8 +261,8 @@ class ArchiveGeneSelector {
         val path = Paths.get(config.impactAfterMutationFile)
         if (path.parent != null) Files.createDirectories(path.parent)
         if (Files.notExists(path)) Files.createFile(path)
-        val text = "$index,${checkedTargets.joinToString("-")},${targetsInfo.filterValues { it.value >=0 }.keys.joinToString("-")},${targetsInfo.filterValues { it == EvaluatedMutation.BETTER_THAN }.keys.joinToString("-")},$result,"
-        val content = evaluatedIndividual.exportImpactAsListString().map { "$text,$it" }
+        val text = "$index,${checkedTargets.joinToString("-")},${targetsInfo.filterValues { it.value >=0 }.keys.joinToString("-")},${targetsInfo.filterValues { it.isImproved() }.keys.joinToString("-")},$result,"
+        val content = evaluatedIndividual.exportImpactAsListString(checkedTargets.plus(targetsInfo.keys).toSet()).map { "$text,$it" }
         if (content.isNotEmpty()) Files.write(path, content, StandardOpenOption.APPEND)
 
     }
