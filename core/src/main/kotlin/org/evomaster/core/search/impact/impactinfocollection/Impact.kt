@@ -38,29 +38,31 @@ open class Impact(
 
     fun recentImprovement() = getNoImprovementCounter().any { it.value < 2 }
 
-    fun getDegree(property: ImpactProperty, target: Int) = if (getTimesToManipulate() == 0) -1.0 else getValueByImpactProperty(property, target)/getTimesToManipulate().toDouble()
-    fun getCounter(property: ImpactProperty, target: Int) = getValueByImpactProperty(property, target)
+    fun getDegree(property: ImpactProperty, target: Int, singleImpactReward : Boolean) = if (manipulateTimesForTargets(target, singleImpactReward) == 0.0) -1.0 else getValueByImpactProperty(property, target, singleImpactReward)/manipulateTimesForTargets(target, singleImpactReward)
+    fun getCounter(property: ImpactProperty, target: Int, singleImpactReward : Boolean) = getValueByImpactProperty(property, target, singleImpactReward)
 
-    fun getDegree(property: ImpactProperty, targets: Set<Int>, by: By) : Double{
-        return targets.map { getDegree(property, it) }.filter { it != -1.0 }.run {
+    fun getDegree(property: ImpactProperty, targets: Set<Int>, by: By, singleImpactReward: Boolean) : Double{
+        return targets.map { getDegree(property, it, singleImpactReward = singleImpactReward) }.filter { it != -1.0 }.run {
             if (isEmpty()) -1.0
             else{
                 when(by){
                     By.MIN -> this.min()!!
                     By.MAX -> this.max()!!
                     By.AVG -> this.average()!!
+                    By.SUM -> this.sum()
                 }
             }
         }
     }
 
-    fun getCounter(property: ImpactProperty, targets: Set<Int>, by: By) : Double{
-        val list = targets.map { getCounter(property, it) }.filter { it != -1.0 }
+    fun getCounter(property: ImpactProperty, targets: Set<Int>, by: By, singleImpactReward: Boolean) : Double{
+        val list = targets.map { getCounter(property, it, singleImpactReward) }.filter { it != -1.0 }
         if (list.isEmpty()) return -1.0
         return when(by){
             By.MIN -> list.min()?: throw IllegalArgumentException("min is null")
             By.MAX -> list.max()?: throw IllegalArgumentException("max is null")
             By.AVG -> list.average()
+            By.SUM -> list.sum()
         }
     }
 
@@ -158,15 +160,19 @@ open class Impact(
 
     fun getMaxImpact() : Double = shared.timesOfImpact.values.max()?:0.0
 
-    fun getValueByImpactProperty(property: ImpactProperty, target : Int) : Double{
+    private fun getValueByImpactProperty(property: ImpactProperty, target : Int, singleImpactReward: Boolean) : Double{
         return when(property){
             ImpactProperty.TIMES_NO_IMPACT -> shared.timesOfNoImpacts.toDouble()
             ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET -> shared.timesOfNoImpactWithTargets[target]
-            ImpactProperty.TIMES_IMPACT -> shared.timesOfImpact[target]
+            ImpactProperty.TIMES_IMPACT -> shared.timesOfImpact[target]?.times(singleReward(singleImpactReward))
             ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT -> specific.noImpactFromImpact[target]
             ImpactProperty.TIMES_CONS_NO_IMPROVEMENT -> specific.noImpactFromImpact[target]
         }?: -1.0
     }
+
+    private fun manipulateTimesForTargets(target: Int, singleImpactReward: Boolean) : Double = (shared.timesOfNoImpactWithTargets[target]?:0.0) + (shared.timesOfImpact[target]?:0.0) * singleReward(singleImpactReward)
+
+    private fun singleReward(reward : Boolean) = if (reward) 1.5 else 1.0
 }
 
 /**
@@ -221,5 +227,6 @@ enum class ImpactProperty{
 enum class By{
     MIN,
     MAX,
-    AVG
+    AVG,
+    SUM
 }

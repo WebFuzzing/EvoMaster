@@ -1,6 +1,7 @@
 package org.evomaster.core.search.service.mutator.genemutation
 
 import com.google.inject.Inject
+import org.apache.commons.lang3.mutable.Mutable
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
@@ -10,6 +11,7 @@ import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -33,6 +35,9 @@ class ArchiveGeneSelector {
     @Inject
     lateinit var apc: AdaptiveParameterControl
 
+    @Inject
+    lateinit var time : SearchTimeController
+
     /**
      * calculate weights of genes (ie, [map]) based on impacts
      */
@@ -41,10 +46,17 @@ class ArchiveGeneSelector {
         val geneImpacts =  genesToMutate.map { g ->
             evi.getImpact(individual, g)
                     ?: throw IllegalArgumentException("mismatched gene and impact info during mutation")
-
         }
 
         calculateWeightByArchive(genesToMutate, map, geneImpacts, targets)
+
+        //FIXME man tmp
+        ArchiveMutationUtils.saveWeight(
+                config = config,
+                map = map,
+                targets = targets,
+                index = time.evaluatedIndividuals
+        )
     }
 
     fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Double>, impacts: List<Impact>, targets : Set<Int>){
@@ -191,7 +203,7 @@ class ArchiveGeneSelector {
      * the more，the better
      */
     private fun getCounterByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>): Double {
-        val value = impact.getCounter(property, targets, By.MAX)
+        val value = impact.getCounter(property, targets, By.SUM, true)
 
         if (value < 0) return value
 
@@ -205,7 +217,7 @@ class ArchiveGeneSelector {
      * the more，the better
      */
     private fun getDegreeByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>): Double {
-        val value = impact.getDegree(property, targets, By.MAX)
+        val value = impact.getDegree(property, targets, By.SUM, true)
         if (value < 0) return value
 
         return when (property) {
@@ -253,7 +265,6 @@ class ArchiveGeneSelector {
         }
     }
 
-    // TODO refactor this method
     fun saveImpactSnapshot(index : Int, checkedTargets: Set<Int>, targetsInfo : Map<Int, EvaluatedMutation>, result: EvaluatedMutation, evaluatedIndividual: EvaluatedIndividual<*>) {
         if (!config.collectImpact()) return
         if(!config.saveImpactAfterMutation) return

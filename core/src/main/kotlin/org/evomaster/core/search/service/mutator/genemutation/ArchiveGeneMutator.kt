@@ -1,6 +1,7 @@
 package org.evomaster.core.search.service.mutator.genemutation
 
 import com.google.inject.Inject
+import org.apache.commons.lang3.mutable.Mutable
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.rest.RestCallAction
@@ -25,6 +26,7 @@ import org.evomaster.core.search.service.mutator.genemutation.archive.StringGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import kotlin.math.abs
@@ -576,48 +578,8 @@ class ArchiveGeneMutator{
             throw IllegalArgumentException("invalid char")
         }
     }
-
     fun saveMutatedGene(mutatedGenes: MutatedGeneSpecification?, individual: Individual, index : Int, evaluatedMutation : EvaluatedMutation, targets: Set<Int>){
-        mutatedGenes?:return
-        if(!config.saveMutationInfo) return
-
-        val path = Paths.get(config.mutatedGeneFile)
-        if (path.parent != null) Files.createDirectories(path.parent)
-        if (Files.notExists(path)) Files.createFile(path)
-
-        val content = mutableListOf<String>()
-        content.addAll(mutatedGenes.mutatedGenes.mapIndexed { gindex, geneInfo -> listOf(
-                index,
-                evaluatedMutation,
-                geneInfo.gene.name,
-                geneInfo.previousValue,
-                geneInfo.gene.getValueAsPrintableString(),
-                "#${targets.joinToString("#")}",
-                if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[gindex] else "",
-                if (mutatedGenes.mutatedPosition.isNotEmpty() && individual.seeActions().isNotEmpty())
-                    getActionInfo(individual.seeActions()[mutatedGenes.mutatedPosition[gindex]])
-                else "").joinToString(",")} )
-
-        content.addAll(mutatedGenes.mutatedDbGenes.mapIndexed { gindex, geneInfo -> listOf(
-                index,
-                evaluatedMutation,
-                geneInfo.gene.name,
-                geneInfo.previousValue,
-                geneInfo.gene.getValueAsPrintableString(),
-                "#${targets.joinToString("#")}",
-                if (mutatedGenes.mutatedDbActionPosition.isNotEmpty()) mutatedGenes.mutatedDbActionPosition[gindex] else "",
-                if (mutatedGenes.mutatedDbActionPosition.isNotEmpty() && individual.seeInitializingActions().isNotEmpty())
-                    getActionInfo(individual.seeInitializingActions()[mutatedGenes.mutatedDbActionPosition[gindex]])
-                else "" ).joinToString(",")})
-
-        if (content.isNotEmpty()) {
-            Files.write(path, content, StandardOpenOption.APPEND)
-        }
-    }
-
-    private fun getActionInfo(action : Action) : String{
-        return if (action is RestCallAction) action.resolvedPath()
-        else action.getName()
+        ArchiveMutationUtils.saveMutatedGene(config, mutatedGenes, individual, index, evaluatedMutation, targets)
     }
 }
 

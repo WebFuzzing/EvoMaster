@@ -1081,7 +1081,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a strategy to calculate a weight of a gene based on impacts")
-    var geneWeightBasedOnImpactsBy = GeneWeightBasedOnImpact.SORT_COUNTER
+    var geneWeightBasedOnImpactsBy = GeneWeightBasedOnImpact.RATIO
 
     enum class GeneWeightBasedOnImpact{
         /**
@@ -1103,8 +1103,12 @@ class EMConfig {
     }
 
     @Experimental
-    @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
+    @Cfg("Specify a strategy to select genes for mutation adaptively")
     var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.NONE
+
+    @Experimental
+    @Cfg("Specify whether to enable weight-based mutation selection for selecting genes to mutate for a gene")
+    var enableWeightBasedMutationRateSelectionForGene = true
 
     @Experimental
     @Cfg("Whether to save archive info after each of mutation, which is typically useful for debugging mutation and archive")
@@ -1122,7 +1126,7 @@ class EMConfig {
     @Experimental
     @Cfg("Specify a path to save collected impact info after each mutation during search, only useful for debugging")
     @FilePath
-    var impactAfterMutationFile = "impact.csv"
+    var impactAfterMutationFile = "impactSnapshot.csv"
 
     @Experimental
     @Cfg("Whether to enable archive-based gene mutation")

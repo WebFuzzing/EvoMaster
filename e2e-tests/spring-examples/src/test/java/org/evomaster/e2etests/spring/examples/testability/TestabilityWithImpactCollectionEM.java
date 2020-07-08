@@ -30,7 +30,7 @@ public class TestabilityWithImpactCollectionEM extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
                 "org.bar.TestabilityWithImpactCollectionEM",
-                15_000,
+                5_000,
                 true,
                 (args) -> {
 
@@ -43,21 +43,17 @@ public class TestabilityWithImpactCollectionEM extends SpringTestBase {
                     args.add("--weightBasedMutationRate");
                     args.add("true");
 
+                    args.add("--d");
+                    args.add("0.0");
+
                     args.add("--adaptiveGeneSelectionMethod");
-                    args.add("AWAY_NOIMPACT");
+                    args.add("APPROACH_IMPACT");
 
                     args.add("--probOfArchiveMutation");
-                    args.add("0.5");
+                    args.add("0.9");
 
-                    args.add("--saveImpactAfterMutation");
-                    args.add("true");
-                    args.add("--impactAfterMutationFile");
-                    args.add("target/TestabilityWithImpactCollectionEM/impactInfo.csv");
-
-                    args.add("--saveMutationInfo");
-                    args.add("true");
-                    args.add("--mutatedGeneFile");
-                    args.add("target/TestabilityWithImpactCollectionEM/mutatedWithImpact.csv");
+                    args.add("--enableWeightBasedMutationRateSelectionForGene");
+                    args.add("false");
 
 
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -71,6 +67,6 @@ public class TestabilityWithImpactCollectionEM extends SpringTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "ERROR");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "OK");
                 },
-                20);
+                10);
     }
 }

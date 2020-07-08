@@ -140,7 +140,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             }
             mutatedGene?.addMutatedGene(isDb, valueBeforeMutation = value, gene = gene, position = position)
 
-            val selectionStrategy = if (!config.weightBasedMutationRate) SubsetGeneSelectionStrategy.DEFAULT
+            val selectionStrategy = if (!config.weightBasedMutationRate || !config.enableWeightBasedMutationRateSelectionForGene) SubsetGeneSelectionStrategy.DEFAULT
                         else if (archiveGeneSelector.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
                         else SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
 
