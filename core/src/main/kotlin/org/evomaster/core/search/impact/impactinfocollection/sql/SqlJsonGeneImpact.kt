@@ -8,21 +8,13 @@ import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImp
 /**
  * created by manzh on 2019-09-29
  */
-class SqlJsonGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo, val geneImpact: ObjectGeneImpact) : GeneImpact(sharedImpactInfo, specificImpactInfo){
+class SqlJsonGeneImpact(
+        sharedImpactInfo: SharedImpactInfo,
+        specificImpactInfo: SpecificImpactInfo,
+        val geneImpact: ObjectGeneImpact) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
-    constructor(
-            id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
-            geneImpact: ObjectGeneImpact
-    ) : this(SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact), SpecificImpactInfo(noImpactFromImpact, noImprovement), geneImpact)
 
-    constructor(id : String, sqlJSONGene: SqlJSONGene) : this(id, geneImpact = ImpactUtils.createGeneImpact(sqlJSONGene.objectGene, id) as? ObjectGeneImpact?:throw IllegalStateException("geneImpact of SqlJSONImpact should be ObjectGeneImpact"))
+    constructor(id : String, sqlJSONGene: SqlJSONGene) : this(SharedImpactInfo(id), SpecificImpactInfo() ,geneImpact = ImpactUtils.createGeneImpact(sqlJSONGene.objectGene, id) as? ObjectGeneImpact?:throw IllegalStateException("geneImpact of SqlJSONImpact should be ObjectGeneImpact"))
 
     override fun copy(): SqlJsonGeneImpact {
         return SqlJsonGeneImpact(
@@ -63,6 +55,15 @@ class SqlJsonGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: 
     override fun validate(gene: Gene): Boolean = gene is SqlJSONGene
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
-        return mutableMapOf("${getId()}-geneImpact" to geneImpact).plus(geneImpact.flatViewInnerImpact())
+        return mutableMapOf("${getId()}-${geneImpact.getId()}" to geneImpact).plus(geneImpact.flatViewInnerImpact().map { "${getId()}-${it.key}" to it.value })
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return listOf(geneImpact)
+    }
+
+    override fun syncImpact(previous: Gene?, current: Gene) {
+        check(previous,current)
+        geneImpact.syncImpact((previous as SqlJSONGene).objectGene, (current as SqlJSONGene).objectGene)
     }
 }

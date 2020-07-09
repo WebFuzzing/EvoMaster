@@ -13,24 +13,9 @@ class DateTimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo:
                          val timeGeneImpact: TimeGeneImpact
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
-    constructor(
-            id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
-            dateGeneImpact: DateGeneImpact,
-            timeGeneImpact: TimeGeneImpact
-    ) : this(
-            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
-            SpecificImpactInfo(noImpactFromImpact, noImprovement),
-            dateGeneImpact, timeGeneImpact)
 
     constructor(id: String, gene : DateTimeGene)
-            : this(id,
+            : this(SharedImpactInfo(id), SpecificImpactInfo(),
             dateGeneImpact = ImpactUtils.createGeneImpact(gene.date, gene.date.name) as? DateGeneImpact ?:throw IllegalStateException("IntegerGeneImpact should be created"),
             timeGeneImpact = ImpactUtils.createGeneImpact(gene.time, gene.time.name)as? TimeGeneImpact ?:throw IllegalStateException("IntegerGeneImpact should be created")
     )
@@ -79,7 +64,14 @@ class DateTimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo:
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
-        return mutableMapOf("${getId()}-dateGeneImpact" to dateGeneImpact).plus(dateGeneImpact.flatViewInnerImpact()).plus(mapOf("${getId()}-timeGeneImpact" to timeGeneImpact)).plus(timeGeneImpact.flatViewInnerImpact())
+        return mutableMapOf("${getId()}-${dateGeneImpact.getId()}" to dateGeneImpact).plus("${getId()}-${timeGeneImpact.getId()}" to timeGeneImpact)
+                .plus(dateGeneImpact.flatViewInnerImpact().plus(timeGeneImpact.flatViewInnerImpact()).map {
+                    "${getId()}-${it.key}" to it.value
+                })
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return listOf(dateGeneImpact, timeGeneImpact)
     }
 
 }

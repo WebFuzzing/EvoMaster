@@ -80,8 +80,12 @@ class SqlUUIDGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo:
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
         return mutableMapOf(
-                "${getId()}-mostSigBitsImpact" to mostSigBitsImpact,
-                "${getId()}-leastSigBitsImpact" to leastSigBitsImpact
+                "${getId()}-${mostSigBitsImpact.getId()}" to mostSigBitsImpact,
+                "${getId()}-${leastSigBitsImpact.getId()}" to leastSigBitsImpact
         )
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return listOf(mostSigBitsImpact, leastSigBitsImpact)
     }
 }

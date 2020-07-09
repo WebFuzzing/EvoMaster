@@ -98,7 +98,7 @@ class ImpactsOfIndividual private constructor(
         //for initialization due to db action fixing
         val diff = individual.seeInitializingActions().size - mutatedGene.addedExistingDataInitialization.size - initializationGeneImpacts.getOriginalSize()
         if (diff != 0) { //truncation
-            log.warn("structure of initializingAction should not be changed")
+            //log.warn("structure of initializingAction should not be changed")
             initializationGeneImpacts.truncation(mutatedGene.addedInitializationGroup, individual.seeInitializingActions())
         }
 

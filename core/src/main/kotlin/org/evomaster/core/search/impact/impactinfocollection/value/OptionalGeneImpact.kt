@@ -89,9 +89,19 @@ class OptionalGeneImpact  (
 
     override fun validate(gene: Gene): Boolean = gene is OptionalGene
 
-    override fun flatViewInnerImpact(): Map<String, Impact> {
-        return mutableMapOf(
-                "${getId()}-activeImpact" to activeImpact
-        ).plus(activeImpact.flatViewInnerImpact()).plus("${getId()}-geneImpact" to geneImpact).plus(geneImpact.flatViewInnerImpact())
+    override fun syncImpact(previous: Gene?, current: Gene) {
+        check(previous, current)
+        geneImpact.syncImpact((previous as OptionalGene).gene, (current as OptionalGene).gene)
     }
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf("${getId()}-${geneImpact.getId()}" to geneImpact)
+                .plus("${getId()}-${activeImpact.getId()}" to activeImpact)
+                .plus(activeImpact.flatViewInnerImpact().plus(geneImpact.flatViewInnerImpact()).map { "${getId()}-${it.key}" to it.value })
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return listOf(activeImpact, geneImpact)
+    }
+
 }

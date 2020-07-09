@@ -149,7 +149,7 @@ class ArchiveGeneMutator{
             if (specializationGene == null){
                 gene.selectedSpecialization = selected
             }else {
-                val currentImpact = impact.specializationGeneImpact[gene.selectedSpecialization]
+                val currentImpact = impact.getSpecializationImpacts()[gene.selectedSpecialization]
                 if (selected == gene.selectedSpecialization || currentImpact.recentImprovement()){
                     specializationGene.standardMutation(
                             randomness, apc, mwc, allGenes,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as GeneImpact)
@@ -184,10 +184,10 @@ class ArchiveGeneMutator{
     }
 
     private fun selectSpec(gene: StringGene, impact: StringGeneImpact, targets: Set<Int>) : Int{
-        if (impact.specializationGeneImpact.size != gene.specializationGenes.size){
+        if (impact.getSpecializationImpacts().size != gene.specializationGenes.size){
             log.warn("mismatched specialization impacts")
         }
-        val weights = ags.impactBasedOnWeights(impacts = impact.specializationGeneImpact.subList(0, gene.specializationGenes.size), targets = targets)
+        val weights = ags.impactBasedOnWeights(impacts = impact.getSpecializationImpacts().subList(0, gene.specializationGenes.size), targets = targets)
 
         val selected = mwc.selectSubsetWithWeight(
                 weights = weights.mapIndexed { index, d -> index to d }.toMap(),

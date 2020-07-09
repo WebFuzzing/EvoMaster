@@ -11,23 +11,7 @@ class EnumGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Sp
                       val values : List<Impact>
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
-    constructor(
-            id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
-            values : List<Impact> = listOf()
-
-    ) : this(
-            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
-            SpecificImpactInfo(noImpactFromImpact, noImprovement),
-            values)
-
-    constructor(id: String, gene: EnumGene<*>) : this (id, values = gene.values.mapIndexed { index, _ -> Impact(index.toString()) }.toList())
+    constructor(id: String, gene: EnumGene<*>) : this (SharedImpactInfo(id), SpecificImpactInfo(), values = gene.values.mapIndexed { index, _ -> Impact(index.toString()) }.toList())
 
     override fun copy(): EnumGeneImpact {
         return EnumGeneImpact(
@@ -61,4 +45,8 @@ class EnumGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Sp
     }
 
     override fun maxTimesOfNoImpact(): Int = values.size * 2
+
+    override fun innerImpacts(): List<Impact> {
+        return values
+    }
 }

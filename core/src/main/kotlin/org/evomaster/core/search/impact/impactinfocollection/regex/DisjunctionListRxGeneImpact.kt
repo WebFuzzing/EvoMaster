@@ -1,11 +1,9 @@
 package org.evomaster.core.search.impact.impactinfocollection.regex
 
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
-import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
-import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
-import org.evomaster.core.search.impact.impactinfocollection.SharedImpactInfo
-import org.evomaster.core.search.impact.impactinfocollection.SpecificImpactInfo
+import org.evomaster.core.search.impact.impactinfocollection.*
 
 /**
  * created by manzh on 2020-07-08
@@ -36,4 +34,8 @@ class DisjunctionListRxGeneImpact (
     }
 
     override fun validate(gene: Gene): Boolean = gene is DisjunctionListRxGene
+
+    override fun innerImpacts(): List<Impact> {
+        return disjunctions
+    }
 }

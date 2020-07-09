@@ -15,25 +15,8 @@ class DateGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Sp
                       val dayGeneImpact : IntegerGeneImpact
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
-    constructor(
-            id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
-            yearGeneImpact: IntegerGeneImpact,
-            monthGeneImpact: IntegerGeneImpact,
-            dayGeneImpact : IntegerGeneImpact
-    ) : this(
-            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
-            SpecificImpactInfo(noImpactFromImpact, noImprovement),
-            yearGeneImpact, monthGeneImpact, dayGeneImpact)
-
     constructor(id: String, gene : DateGene)
-            : this(id,
+            : this(SharedImpactInfo(id), SpecificImpactInfo(),
             yearGeneImpact = ImpactUtils.createGeneImpact(gene.year, gene.year.name) as? IntegerGeneImpact?:throw IllegalStateException("IntegerGeneImpact should be created"),
             monthGeneImpact = ImpactUtils.createGeneImpact(gene.month, gene.month.name)as? IntegerGeneImpact?:throw IllegalStateException("IntegerGeneImpact should be created"),
             dayGeneImpact = ImpactUtils.createGeneImpact(gene.day, gene.day.name) as? IntegerGeneImpact?:throw IllegalStateException("IntegerGeneImpact should be created")
@@ -84,9 +67,13 @@ class DateGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Sp
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
         return mutableMapOf(
-                "${getId()}-yearGeneImpact" to yearGeneImpact,
-                "${getId()}-monthGeneImpact" to monthGeneImpact,
-                "${getId()}-dayGeneImpact" to dayGeneImpact
+                "${getId()}-${yearGeneImpact.getId()}" to yearGeneImpact,
+                "${getId()}-${monthGeneImpact.getId()}" to monthGeneImpact,
+                "${getId()}-${dayGeneImpact.getId()}" to dayGeneImpact
         )
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return listOf(yearGeneImpact, monthGeneImpact, dayGeneImpact)
     }
 }

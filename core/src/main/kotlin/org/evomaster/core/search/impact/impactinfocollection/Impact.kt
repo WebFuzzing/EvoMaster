@@ -28,8 +28,6 @@ open class Impact(
             noImprovement : MutableMap<Int, Double> = mutableMapOf()
     ) : this(SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact), SpecificImpactInfo(noImpactFromImpact, noImprovement))
 
-
-
     fun getId() = shared.id
     fun getTimesOfNoImpact() = shared.timesOfNoImpacts
     fun getTimesOfNoImpactWithTargets() = shared.timesOfNoImpactWithTargets

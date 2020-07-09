@@ -7,22 +7,16 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.Integ
 
 /**
  * created by manzh on 2019-09-09
+ *
+ * TODO need to further extend for elements
  */
 class ArrayGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
-                       val sizeImpact : IntegerGeneImpact
+                       val sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size")
 ) : CollectionImpact, GeneImpact(sharedImpactInfo, specificImpactInfo){
-    constructor(
-            id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
-            sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size")
 
-    ) : this(SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact), SpecificImpactInfo(noImpactFromImpact, noImprovement),sizeImpact)
+    constructor(
+            id : String
+    ) : this(SharedImpactInfo(id), SpecificImpactInfo())
 
     override fun getSizeImpact(): Impact = sizeImpact
 
@@ -59,6 +53,10 @@ class ArrayGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: S
     override fun validate(gene: Gene): Boolean = gene is ArrayGene<*>
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
-        return mutableMapOf("${getId()}-sizeImpact" to sizeImpact)
+        return mutableMapOf("${getId()}-${sizeImpact.getId()}" to sizeImpact)
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return listOf(sizeImpact)
     }
 }

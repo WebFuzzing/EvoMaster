@@ -170,7 +170,7 @@ class StringGene(
             } else {
                 //extract impact of specialization of String
                 val impact = if (enableAdaptiveGeneMutation || selectionStrategy != SubsetGeneSelectionStrategy.DEFAULT)
-                    (additionalGeneMutationInfo?.impact as? StringGeneImpact)?.specializationGeneImpact?.get(selectedSpecialization) as? GeneImpact
+                    (additionalGeneMutationInfo?.impact as? StringGeneImpact)?.hierarchySpecializationImpactInfo?.flattenImpacts()?.get(selectedSpecialization) as? GeneImpact
                     else null
                 //just mutate current selection
                 specializationGene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo?.copyFoInnerGene(impact = impact))

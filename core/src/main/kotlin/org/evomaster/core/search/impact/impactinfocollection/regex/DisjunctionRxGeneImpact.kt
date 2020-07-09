@@ -41,4 +41,8 @@ class DisjunctionRxGeneImpact (
 
     override fun validate(gene: Gene): Boolean = gene is DisjunctionRxGene
 
+    override fun innerImpacts(): List<Impact> {
+        return termsImpact.plus(extraPostfix).plus(extraPostfix)
+    }
+
 }

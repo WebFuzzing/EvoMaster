@@ -69,8 +69,16 @@ class DisruptiveGeneImpact (
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
-        return mutableMapOf(
-                "${getId()}-geneImpact" to geneImpact
-        ).plus(geneImpact.flatViewInnerImpact())
+        return mutableMapOf("${getId()}-${geneImpact.getId()}" to geneImpact)
+                .plus(geneImpact.flatViewInnerImpact().map { "${getId()}-${it.key}" to it.value })
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return listOf(geneImpact)
+    }
+
+    override fun syncImpact(previous: Gene?, current: Gene) {
+        check(previous,current)
+        geneImpact.syncImpact((previous as DisruptiveGene<*>).gene, (current as DisruptiveGene<*>).gene)
     }
 }

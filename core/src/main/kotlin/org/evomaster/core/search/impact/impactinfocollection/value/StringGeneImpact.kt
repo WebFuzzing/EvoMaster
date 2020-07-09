@@ -12,45 +12,31 @@ import org.slf4j.LoggerFactory
  */
 class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
                         specificImpactInfo: SpecificImpactInfo,
-                        val employBinding : BinaryGeneImpact,
-                        val employSpecialization : BinaryGeneImpact,
+                        val employBinding : BinaryGeneImpact = BinaryGeneImpact("employBinding"),
+                        val employSpecialization : BinaryGeneImpact = BinaryGeneImpact("employSpecialization"),
                         /**
                          * impacts on its specific type
                          * it might lead to an issue when the type of gene is dynamic, thus the type of the current might differ from the type of the previous
                          *
                          * ? we might need to copy [specializationGeneImpact] for each Gene instead of clone
                          */
-                        val specializationGeneImpact : MutableList<Impact>
+                        //var specializationGeneImpact : MutableList<Impact>
+                        var hierarchySpecializationImpactInfo: HierarchySpecializationImpactInfo? = null
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(StringGeneImpact::class.java)
     }
 
-    constructor(
-            id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
-            employBinding: BinaryGeneImpact = BinaryGeneImpact("employBinding"),
-            employSpecialization: BinaryGeneImpact = BinaryGeneImpact("employSpecialization"),
-            specializationGeneImpact : MutableList<Impact> = mutableListOf()
-    ) : this(
-            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
-            SpecificImpactInfo(noImpactFromImpact, noImprovement),
-            employBinding,
-            employSpecialization,
-            specializationGeneImpact
-    )
-
     constructor(id: String, gene : StringGene)
             : this(
-            id,
-            specializationGeneImpact = gene.specializationGenes.map { ImpactUtils.createGeneImpact(it, it.name) }.toMutableList())
+            sharedImpactInfo = SharedImpactInfo(id),
+            specificImpactInfo = SpecificImpactInfo(),
+            hierarchySpecializationImpactInfo =
+                if (gene.specializationGenes.isEmpty()) null
+                else HierarchySpecializationImpactInfo(null, gene.specializationGenes.map { ImpactUtils.createGeneImpact(it, it.name) }.toMutableList()))
+
+    fun getSpecializationImpacts() = hierarchySpecializationImpactInfo?.flattenImpacts()?: listOf<Impact>()
 
     override fun copy(): StringGeneImpact {
         return StringGeneImpact(
@@ -58,7 +44,7 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
                 specific.copy(),
                 employBinding.copy(),
                 employSpecialization.copy(),
-                specializationGeneImpact = specializationGeneImpact.map { it.copy()}.toMutableList())
+                hierarchySpecializationImpactInfo?.copy())
     }
 
     override fun clone(): StringGeneImpact {
@@ -67,7 +53,7 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
                 specific.clone(),
                 employBinding.clone(),
                 employSpecialization.clone(),
-                specializationGeneImpact = specializationGeneImpact.map { it.clone()}.toMutableList())
+                hierarchySpecializationImpactInfo)
     }
 
     override fun validate(gene: Gene): Boolean = gene is StringGene
@@ -75,26 +61,25 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets : Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
 
-        //update specialization with current
-        if ((gc.current as StringGene).specializationGenes.size > specializationGeneImpact.size){
-            val starting = specializationGeneImpact.size
-            (starting until gc.current.specializationGenes.size).forEach {
-                val gene = gc.current.specializationGenes[it]
-                specializationGeneImpact.add(it, ImpactUtils.createGeneImpact(gene, gene.name))
-            }
-        }else if (gc.current.specializationGenes.size < specializationGeneImpact.size){
-            log.warn("some specializations of StringGene are removed")
+        if(gc.current !is StringGene) throw IllegalArgumentException("incorrect mutation info for the gene")
+
+        if (gc.previous != null){
+            if (gc.previous !is StringGene)
+                throw IllegalArgumentException("incorrect mutation info for the gene")
         }
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
+
+        val allImpacts = hierarchySpecializationImpactInfo?.flattenImpacts()
 
         val currentSelect = gc.current.selectedSpecialization
         employSpecialization.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
         val taintImpact = if (currentSelect == -1){ employSpecialization.falseValue }else employSpecialization.trueValue
         taintImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
 
-        if (currentSelect != -1){
-            val sImpact = specializationGeneImpact[gc.current.selectedSpecialization]
+        if (currentSelect != -1 && allImpacts?.size == gc.current.specializationGenes.size){
+
+            val sImpact = allImpacts[gc.current.selectedSpecialization]
             val previousSelect = (gc.previous as StringGene).selectedSpecialization
 
             val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (previousSelect == currentSelect) gc.previous.specializationGenes[previousSelect] else null, current =  gc.current.specializationGenes[currentSelect], action = "none", position = -1, numOfMutatedGene = 1)
@@ -107,5 +92,36 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
         val ft = if (gc.current.bindingIds.isEmpty()) employBinding.falseValue else employBinding.trueValue
         ft.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
 
+    }
+
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        val map = mutableMapOf<String, Impact>()
+
+        listOf(employBinding, employSpecialization).plus((hierarchySpecializationImpactInfo?.flattenImpacts()?: listOf<Impact>())).forEach { s ->
+            map.putIfAbsent("${getId()}-${s.getId()}", s)
+            if (s is GeneImpact && s.flatViewInnerImpact().isNotEmpty())
+                s.flatViewInnerImpact().forEach { (t, u) ->
+                    map.putIfAbsent("${getId()}-$t", u)
+                }
+        }
+
+        return map
+    }
+
+    override fun syncImpact(previous: Gene?, current: Gene) {
+        check(previous, current)
+        if (hierarchySpecializationImpactInfo == null){
+            if ((current as StringGene).specializationGenes.isNotEmpty()){
+                hierarchySpecializationImpactInfo = HierarchySpecializationImpactInfo(null, current.specializationGenes.map { ImpactUtils.createGeneImpact(it, it.name) }.toMutableList())
+            }
+        }else{
+            if ((current as StringGene).specializationGenes.size > (previous as StringGene).specializationGenes.size){
+                val added = current.specializationGenes.subList(previous.specializationGenes.size, current.specializationGenes.size)
+                hierarchySpecializationImpactInfo = hierarchySpecializationImpactInfo!!.next(added.toMutableList())
+            }else if (current.specializationGenes.size < previous.specializationGenes.size){
+                log.warn("some specializations of StringGene are removed {},{}", current.specializationGenes.size, previous.specializationGenes.size)
+            }
+        }
     }
 }

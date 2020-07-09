@@ -13,24 +13,9 @@ class ObjectGeneImpact  (
         val fields : MutableMap<String, Impact> = mutableMapOf()
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
-    constructor(
-            id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
-            fields : MutableMap<String, Impact> = mutableMapOf()
 
-    ) : this(
-            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
-            SpecificImpactInfo(noImpactFromImpact, noImprovement),
-            fields
-    )
 
-    constructor(id: String, objectGene: ObjectGene) : this (id, fields = objectGene.fields.map { Pair(it.name, ImpactUtils.createGeneImpact(it, it.name)) }.toMap().toMutableMap())
+    constructor(id: String, objectGene: ObjectGene) : this (SharedImpactInfo(id), SpecificImpactInfo(), fields = objectGene.fields.map { Pair(it.name, ImpactUtils.createGeneImpact(it, it.name)) }.toMap().toMutableMap())
 
     override fun copy(): ObjectGeneImpact {
         return ObjectGeneImpact(
@@ -88,5 +73,26 @@ class ObjectGeneImpact  (
                 map.putAll(u.flatViewInnerImpact())
         }
         return map
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return fields.values.toList()
+    }
+
+    override fun syncImpact(previous: Gene?, current: Gene) {
+        check(previous,current)
+
+        (current as ObjectGene).fields.forEach { f ->
+            if (!fields.containsKey(f.name)){
+                fields.putIfAbsent(f.name, ImpactUtils.createGeneImpact(f, f.name))
+            }
+        }
+
+        fields.forEach { (t, u) ->
+            val p = (previous as ObjectGene).fields.find { it.name == t }
+            val c = (current as ObjectGene).fields.find { it.name == t }?: throw IllegalArgumentException("the matched field for impact cannot be found")
+            (u as GeneImpact).syncImpact(p, c)
+        }
+
     }
 }

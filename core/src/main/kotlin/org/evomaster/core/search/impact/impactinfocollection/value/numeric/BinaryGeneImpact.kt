@@ -63,7 +63,7 @@ class BinaryGeneImpact (
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
-        return mutableMapOf("${getId()}-false" to falseValue, "${getId()}-true" to trueValue)
+        return mutableMapOf("${getId()}-${falseValue.getId()}" to falseValue, "${getId()}-${trueValue.getId()}" to trueValue)
     }
 
     override fun maxTimesOfNoImpact(): Int = 3
@@ -76,5 +76,9 @@ class BinaryGeneImpact (
         val list = if (preferTrue) listOf(trueValue, falseValue) else listOf(falseValue, trueValue)
         val weights = selector.impactBasedOnWeights(list, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT), usingCounter = null)
         return if (weights[1] > times * weights[0]) !preferTrue else preferTrue
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return listOf(trueValue, falseValue)
     }
 }

@@ -8,6 +8,7 @@ import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 
 /**
@@ -238,6 +239,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             return
         }
 
+        //we only sync impact info according to latest individual when next is this
+        if (next == this){
+            syncImpact(previous.individual, mutatedGenes.mutatedIndividual!!)
+        }
         updateImpactsAfterStandardMutation(previous = previous.individual, mutatedGenes = mutatedGenes, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
 
     }
@@ -303,6 +308,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             impactTargets: Set<Int>,
             improvedTargets: Set<Int>
     ){
+
         // update rest action genes and/or sql genes
         mutatedGenes.mutatedActionOrDb().forEach { db->
             val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(
@@ -325,6 +331,21 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 )
             }
         }
+    }
+
+    /**
+     * sync impact info based on [mutated]
+     */
+    private fun syncImpact(previous : Individual, mutated : Individual) {
+
+        mutated.seeGenes().forEach {sg->
+            val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
+            val p = previous.seeGenes().find { rootGeneId == ImpactUtils.generateGeneId(previous, it) }
+            val impact = impactInfo!!.getGeneImpact(rootGeneId).firstOrNull()
+                    ?: throw IllegalArgumentException("mismatched impact for StringGene")
+            impact.syncImpact(p, sg)
+        }
+
     }
 
     fun findGeneById(id : String, index : Int = -1, isDb: Boolean=false) : Gene?{

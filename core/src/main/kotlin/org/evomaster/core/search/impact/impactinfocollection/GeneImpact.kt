@@ -21,9 +21,31 @@ open class GeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: S
 
     open fun validate(gene : Gene) : Boolean = true
 
+    fun check(previous: Gene?, current: Gene){
+        if (previous != null && !validate(previous))
+            throw IllegalArgumentException("mismatched gene impact for previous ${previous::class.java}")
+        if (!validate(current))
+            throw IllegalArgumentException("mismatched gene impact for previous ${current::class.java}")
+    }
+
+    fun check(gc: MutatedGeneWithContext){
+        check(gc.previous, gc.current)
+    }
+
     open fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets: Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean){
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
     }
+
+    /**
+     * during search, Gene might be changed due to
+     *  e.g., taint analysis, additional info from SUT
+     *  thus, we need to sync impact based on current gene
+     */
+    open fun syncImpact(previous: Gene?, current: Gene){
+        check(previous, current)
+    }
+
+    open fun innerImpacts() = listOf<Impact>()
 
     open fun flatViewInnerImpact(): Map<String, Impact> = mutableMapOf()
 

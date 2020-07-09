@@ -9,26 +9,11 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.Binar
  * created by manzh on 2019-09-29
  */
 class SqlNullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
-                        val presentImpact : BinaryGeneImpact,
+                        val presentImpact : BinaryGeneImpact = BinaryGeneImpact("isPresent"),
                         val geneImpact: GeneImpact) : GeneImpact(sharedImpactInfo, specificImpactInfo){
-    constructor(
-            id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
-            presentImpact : BinaryGeneImpact = BinaryGeneImpact("isPresent"),
-            geneImpact: GeneImpact
-    ) : this(
-            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
-            SpecificImpactInfo(noImpactFromImpact, noImprovement),
-            presentImpact,
-            geneImpact)
 
-    constructor(id : String, sqlnullGene: SqlNullable) : this(id, geneImpact = ImpactUtils.createGeneImpact(sqlnullGene.gene, id))
+
+    constructor(id : String, sqlnullGene: SqlNullable) : this(SharedImpactInfo(id), SpecificImpactInfo(), geneImpact = ImpactUtils.createGeneImpact(sqlnullGene.gene, id))
 
     override fun copy(): SqlNullableImpact {
         return SqlNullableImpact(
@@ -82,8 +67,17 @@ class SqlNullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: 
     override fun validate(gene: Gene): Boolean = gene is SqlNullable
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
-        return mutableMapOf(
-                "${getId()}-presentImpact" to presentImpact
-        ).plus(presentImpact.flatViewInnerImpact()).plus("${getId()}-geneImpact" to geneImpact).plus(geneImpact.flatViewInnerImpact())
+        return mutableMapOf("${getId()}-${geneImpact.getId()}" to geneImpact)
+                .plus("${getId()}-${presentImpact.getId()}" to presentImpact)
+                .plus(presentImpact.flatViewInnerImpact().plus(geneImpact.flatViewInnerImpact()).map { "${getId()}-${it.key}" to it.value })
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return listOf(presentImpact, geneImpact)
+    }
+
+    override fun syncImpact(previous: Gene?, current: Gene) {
+        check(previous,current)
+        geneImpact.syncImpact((previous as SqlNullable).gene, (current as SqlNullable).gene)
     }
 }

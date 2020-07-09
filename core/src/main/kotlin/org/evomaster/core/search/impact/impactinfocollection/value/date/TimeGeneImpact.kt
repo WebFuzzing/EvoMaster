@@ -14,25 +14,8 @@ class TimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
                      val secondGeneImpact : IntegerGeneImpact
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
-    constructor(
-            id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
-            hourGeneImpact: IntegerGeneImpact,
-            minuteGeneImpact: IntegerGeneImpact,
-            secondGeneImpact : IntegerGeneImpact
-    ) : this(
-            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
-            SpecificImpactInfo(noImpactFromImpact, noImprovement),
-            hourGeneImpact, minuteGeneImpact, secondGeneImpact)
-
     constructor(id: String, gene : TimeGene)
-            : this(id,
+            : this(SharedImpactInfo(id), SpecificImpactInfo(),
             hourGeneImpact = ImpactUtils.createGeneImpact(gene.hour, gene.hour.name) as? IntegerGeneImpact ?:throw IllegalStateException("IntegerGeneImpact should be created"),
             minuteGeneImpact = ImpactUtils.createGeneImpact(gene.minute, gene.minute.name)as? IntegerGeneImpact ?:throw IllegalStateException("IntegerGeneImpact should be created"),
             secondGeneImpact = ImpactUtils.createGeneImpact(gene.second, gene.second.name) as? IntegerGeneImpact ?:throw IllegalStateException("IntegerGeneImpact should be created")
@@ -85,9 +68,13 @@ class TimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
         return mutableMapOf(
-                "${getId()}-hourGeneImpact" to hourGeneImpact,
-                "${getId()}-minuteGeneImpact" to minuteGeneImpact,
-                "${getId()}-secondGeneImpact" to secondGeneImpact
+                "${getId()}-${hourGeneImpact.getId()}" to hourGeneImpact,
+                "${getId()}-${minuteGeneImpact.getId()}" to minuteGeneImpact,
+                "${getId()}-${secondGeneImpact.getId()}" to secondGeneImpact
         )
+    }
+
+    override fun innerImpacts(): List<Impact> {
+        return listOf(hourGeneImpact, minuteGeneImpact, secondGeneImpact)
     }
 }
