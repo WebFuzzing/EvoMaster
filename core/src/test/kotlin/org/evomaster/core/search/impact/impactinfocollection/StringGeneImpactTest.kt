@@ -9,9 +9,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImp
  */
 class StringGeneImpactTest : GeneImpactTest() {
     override fun getGene(): Gene {
-        return StringGene("s","hello").also {
-
-        }
+        return StringGene("s","hello")
     }
 
     override fun checkImpactType(impact: GeneImpact) {
@@ -29,6 +27,4 @@ class StringGeneImpactTest : GeneImpactTest() {
 
         return MutatedGeneWithContext(current = geneToMutate, previous = original)
     }
-
-    //TODO for specialization
 }

@@ -58,7 +58,7 @@ class ObjectGeneImpact  (
 
         mutatedFields.forEach {g->
             val fImpact = fields.getValue(g.first.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
-            val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1, numOfMutatedGene = mutatedFields.size)
+            val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1, numOfMutatedGene = gc.numOfMutatedGene * mutatedFields.size)
             fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
     }

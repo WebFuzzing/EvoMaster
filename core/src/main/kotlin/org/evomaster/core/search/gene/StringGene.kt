@@ -140,7 +140,6 @@ class StringGene(
 
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
-            //TODO consider bindingIds
             additionalGeneMutationInfo.archiveGeneMutator.mutate(this, allGenes, selectionStrategy, additionalGeneMutationInfo)
             return true
         }

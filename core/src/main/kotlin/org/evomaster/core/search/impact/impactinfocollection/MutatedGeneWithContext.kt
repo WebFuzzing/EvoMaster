@@ -20,4 +20,8 @@ class MutatedGeneWithContext (
         const val NO_ACTION = "NONE"
         const val NO_POSITION = -1
     }
+
+    fun mainPosition(current: Gene, previous: Gene?, numOfMutatedGene: Int) : MutatedGeneWithContext{
+        return MutatedGeneWithContext(current = current, previous = previous,action = this.action, position = this.position, numOfMutatedGene = numOfMutatedGene)
+    }
 }

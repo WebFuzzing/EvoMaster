@@ -38,4 +38,37 @@ class DisjunctionListRxGeneImpact (
     override fun innerImpacts(): List<Impact> {
         return disjunctions
     }
+
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets: Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(
+                noImpactTargets = noImpactTargets,
+                impactTargets = impactTargets,
+                improvedTargets = improvedTargets,
+                onlyManipulation = onlyManipulation,
+                num = gc.numOfMutatedGene
+        )
+
+        check(gc)
+
+        val cActive = (gc.current as DisjunctionListRxGene).activeDisjunction
+        if (cActive < 0)
+            throw IllegalStateException("none of disjunction is active, i.e., activeDisjunction < 0")
+
+        val cImpact = disjunctions[cActive]
+
+        val pActive = (gc.previous as? DisjunctionListRxGene)?.activeDisjunction?:-1
+
+        val cgc = gc.mainPosition(
+                previous = if (pActive < 0 || pActive != cActive )
+                    null
+                else
+                    (gc.previous as DisjunctionListRxGene).disjunctions[pActive],
+                current = gc.current.disjunctions[cActive],
+                numOfMutatedGene = 1
+        )
+        cImpact.countImpactWithMutatedGeneWithContext(
+                cgc, noImpactTargets, impactTargets, improvedTargets, onlyManipulation
+        )
+
+    }
 }

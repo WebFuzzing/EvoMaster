@@ -114,7 +114,7 @@ abstract class Gene(var name: String) {
     ){
         val inselect = if (unavailableForAdaptiveSelection()) SubsetGeneSelectionStrategy.DEFAULT else internalGeneSelectionStrategy
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
-        val inmutate = unavailableForAdaptiveSelection() && enableAdaptiveGeneMutation
+        val inmutate = !unavailableForAdaptiveSelection() && enableAdaptiveGeneMutation
         val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, inselect, inmutate, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
             val mutated = mutate(randomness, apc, mwc, allGenes, inselect, inmutate, additionalGeneMutationInfo)

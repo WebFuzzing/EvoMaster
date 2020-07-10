@@ -136,6 +136,12 @@ class ArchiveGeneMutator{
      * adaptive mutate string gene with specialization
      */
     private fun mutateString(gene: StringGene, targets: Set<Int>, allGenes : List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneSelectionInfo){
+        if (additionalGeneMutationInfo.impact == null){
+            mutateStringValue(gene, probOfModifyingChar = probabilityToMutateChar(gene), priorLengthMutation = priorLengthMutation(gene), targets = targets)
+            gene.repair()
+            return
+        }
+
         (additionalGeneMutationInfo.impact as? StringGeneImpact)?: throw IllegalArgumentException("mismatched GeneImpact for StringGene")
         val impact = additionalGeneMutationInfo.impact
 

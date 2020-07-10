@@ -36,4 +36,24 @@ class RegexGeneImpact(
         return listOf(listRxGeneImpact)
     }
 
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mapOf("${getId()}-${listRxGeneImpact.getId()}" to listRxGeneImpact).plus(listRxGeneImpact.flatViewInnerImpact().map { "${getId()}-${it.key}" to it.value })
+    }
+
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext,
+                                                       noImpactTargets: Set<Int>,
+                                                       impactTargets: Set<Int>,
+                                                       improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
+        check(gc)
+        listRxGeneImpact.countImpactWithMutatedGeneWithContext(
+                gc = gc.mainPosition(
+                        current = (gc.current as RegexGene).disjunctions,
+                        previous = (gc.previous as? RegexGene)?.disjunctions, numOfMutatedGene = gc.numOfMutatedGene),
+                noImpactTargets = noImpactTargets,
+                improvedTargets = improvedTargets,
+                impactTargets = impactTargets,
+                onlyManipulation = onlyManipulation
+        )
+    }
 }
