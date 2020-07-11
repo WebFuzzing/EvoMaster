@@ -94,7 +94,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         for (i in 0 until upToNTimes) {
 
-            //save ei (i.e., impact and traces) before its individual is mutated
+            //save ei (i.e., impact and traces) before its individual is mutated, because the impact info might be updated during mutation
             val currentWithTraces = current.copy(tracker.getCopyFilterForEvalInd(current))
 
             if (!time.shouldContinueSearch()) {
@@ -103,6 +103,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             val mutatedGenes = MutatedGeneSpecification()
 
+            // impact info is updated due to newly added initialization actions
             structureMutator.addInitializingActions(current, mutatedGenes)
 
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
@@ -127,10 +128,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             archive.saveSnapshot()
 
             val mutatedWithTraces = when{
-                config.enableTrackEvaluatedIndividual-> currentWithTraces.next(
+                config.enableTrackEvaluatedIndividual-> current.next(
                         next = mutated, copyFilter = TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT, evaluatedResult = result)!!
                 config.enableTrackIndividual -> {
-                    currentWithTraces.nextForIndividual(next = mutated,  evaluatedResult = result)!!
+                    current.nextForIndividual(next = mutated,  evaluatedResult = result)!!
                 }
                 else -> mutated
             }
@@ -139,16 +140,19 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 evaluateMutationInDetails(mutated = mutated, current = current, targets = targets, archive = archive)
 
             if (config.collectImpact()){
-                if (mutatedGenes.addedInitializationGenes.isNotEmpty())
-                    mutatedWithTraces.updateGeneDueToAddedInitializationGenes(current)
                 /*
                     update impact info regarding targets.
                     To avoid side-effect to impactful gene, remove covered targets
                  */
-                mutatedWithTraces.updateImpactOfGenes(previous = currentWithTraces, mutated = mutatedWithTraces, mutatedGenes = mutatedGenes, targetsInfo = targetsInfo.filter { !archive.isCovered(it.key) && !IdMapper.isLocal(it.key) })
+                mutatedWithTraces.updateImpactOfGenes(previous = currentWithTraces,
+                        mutated = mutatedWithTraces, mutatedGenes = mutatedGenes,
+                        targetsInfo = targetsInfo.filter { !archive.isCovered(it.key) && !IdMapper.isLocal(it.key) })
             }
-            // update archive based on mutated individual
-            current = saveMutation(result, archive, currentWithTraces, mutatedWithTraces)
+            /*
+                update archive based on mutated individual
+                for next, we use [current] that contains latest updated initialization instead of [currentWithTraces]
+             */
+            current = saveMutation(result, archive, current, mutatedWithTraces)
 
             // gene mutation evaluation
             if (config.enableArchiveGeneMutation()){

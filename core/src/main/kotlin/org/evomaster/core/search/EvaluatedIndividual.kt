@@ -8,8 +8,12 @@ import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.problem.rest.service.RestStructureMutator
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -37,6 +41,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         const val WITH_TRACK_WITH_COPY_IMPACT = "WITH_TRACK_WITH_COPY_IMPACT"
         const val ONLY_WITH_COPY_IMPACT = "ONLY_WITH_COPY_IMPACT"
         const val ONLY_WITH_CLONE_IMPACT = "ONLY_WITH_CLONE_IMPACT"
+
+        private val log: Logger = LoggerFactory.getLogger(EvaluatedIndividual::class.java)
     }
 
     /**
@@ -225,10 +231,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             updateImpactsAfterStructureMutation(next, previous.individual, mutatedGenes, noImpactTargets, impactTargets, improvedTargets)
         }
 
-        /*
-            impact info should be always accord with [this].
-         */
-        if ((!didStructureMutation) || next == this){
+        if ((!didStructureMutation)){
             impactInfo!!.syncBasedOnIndividual(individual, mutatedGenes)
         }
 
@@ -240,9 +243,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
 
         //we only sync impact info according to latest individual when next is this
-        if (next == this){
-            syncImpact(previous.individual, mutatedGenes.mutatedIndividual!!)
-        }
+        syncImpact(previous.individual, mutatedGenes.mutatedIndividual!!)
+
         updateImpactsAfterStandardMutation(previous = previous.individual, mutatedGenes = mutatedGenes, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
 
     }
@@ -309,6 +311,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             improvedTargets: Set<Int>
     ){
 
+        if (mutatedGenes.didAddInitializationGenes()){
+            Lazy.assert {
+                impactInfo!!.getSQLExistingData() == individual.seeInitializingActions().count { it is DbAction && it.representExistingData }
+            }
+        }
         // update rest action genes and/or sql genes
         mutatedGenes.mutatedActionOrDb().forEach { db->
             val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(
@@ -338,13 +345,23 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      */
     private fun syncImpact(previous : Individual, mutated : Individual) {
 
-        mutated.seeGenes().forEach {sg->
-            val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
-            val p = previous.seeGenes().find { rootGeneId == ImpactUtils.generateGeneId(previous, it) }
-            val impact = impactInfo!!.getGeneImpact(rootGeneId).firstOrNull()
-                    ?: throw IllegalArgumentException("mismatched impact for StringGene")
-            impact.syncImpact(p, sg)
+        // rest action
+        mutated.seeActions().forEachIndexed { index, action ->
+            action.seeGenes().filter { it.isMutable() }.forEach { sg->
+                val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
+
+                val p = previous.seeActions()[index].seeGenes().find { rootGeneId == ImpactUtils.generateGeneId(previous, it) }
+                val impact = impactInfo!!.getGene(
+                                actionName = action.getName(),
+                                actionIndex = index,
+                                fromInitialization = false,
+                                geneId = rootGeneId
+                        )?:throw IllegalArgumentException("fail to identify impact info for the gene $rootGeneId at $index of actions11")
+                impact.syncImpact(p, sg)
+            }
         }
+
+
 
     }
 
@@ -436,16 +453,54 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         )
     }
 
-    fun updateImpactGeneDueToAddedInitializationGenes(group: List<List<Action>>, existingSize : Int){
-        impactInfo!!.updateInitializationImpactsAtBeginning(group, existingSize)
+    fun updateImpactGeneDueToAddedInitializationGenes(mutatedGenes: MutatedGeneSpecification, old : List<Action>, addedInsertions : List<List<Action>>?){
+        impactInfo?:throw IllegalStateException("there is no any impact initialized")
+
+        val allExistingData = individual.seeInitializingActions().filter { it is DbAction && it.representExistingData }
+        val diff = individual.seeInitializingActions().filter { !old.contains(it) && it is DbAction && !it.representExistingData}
+
+        if (allExistingData.isNotEmpty())
+            impactInfo.updateExistingSQLData(allExistingData.size)
+
+        if (diff.isEmpty()) {
+            return
+        }
+        mutatedGenes.addedInitializationGenes.addAll(diff.flatMap { it.seeGenes() })
+
+        // update impact due to newly added initialization actions
+        val modified =  if (addedInsertions!!.flatten().size == diff.size)
+            addedInsertions
+        else if (addedInsertions.flatten().size > diff.size){
+            addedInsertions.mapNotNull {
+                val m = it.filter { a-> diff.contains(a) }
+                if (m.isEmpty()) null else m
+            }
+        }else{
+            log.warn("unexpected handling on Initialization Action after repair")
+            return
+        }
+
+        if(modified.flatten().size != diff.size){
+            log.warn("unexpected handling on Initialization Action")
+            return
+        }
+
+        if(old.isEmpty()){
+            initAddedInitializationGenes(modified, allExistingData.size)
+        }else{
+            impactInfo.updateInitializationImpactsAtBeginning(modified, allExistingData.size)
+        }
+
+        mutatedGenes.addedInitializationGroup.addAll(modified)
+
+        Lazy.assert {
+            individual.seeInitializingActions().size == impactInfo.getSizeOfActionImpacts(true)
+        }
     }
+
 
     fun initAddedInitializationGenes(group: List<List<Action>>, existingSize : Int){
         impactInfo!!.initInitializationImpacts(group, existingSize)
-    }
-
-    fun updateExistingSQLSize(existingSize : Int){
-        impactInfo!!.updateExistingSQLData(existingSize)
     }
 
     fun anyImpactInfo() : Boolean{
@@ -456,15 +511,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     fun flattenAllGeneImpact() : List<GeneImpact>{
         impactInfo?:return listOf()
         return impactInfo.flattenAllGeneImpact()
-    }
-
-    fun updateGeneDueToAddedInitializationGenes(evaluatedIndividual: EvaluatedIndividual<*>){
-        Lazy.assert {
-            impactInfo != null
-            evaluatedIndividual.impactInfo != null
-        }
-        impactInfo!!.updateInitializationGeneImpacts(evaluatedIndividual.impactInfo!!)
-
     }
 
     fun getSizeOfImpact(fromInitialization : Boolean) : Int{

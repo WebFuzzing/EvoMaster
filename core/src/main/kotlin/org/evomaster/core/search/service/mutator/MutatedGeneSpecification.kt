@@ -51,6 +51,8 @@ open class MutatedGeneSpecification (
 
     fun numOfMutatedGeneInfo() = mutatedGenes.size + mutatedDbGenes.size
 
+    fun didAddInitializationGenes() = addedInitializationGenes.isNotEmpty() || addedExistingDataInitialization.isNotEmpty()
+
     data class MutatedGene(
             val previousValue : String,
             val gene:  Gene

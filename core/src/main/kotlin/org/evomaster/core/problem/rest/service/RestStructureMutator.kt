@@ -52,7 +52,7 @@ class RestStructureMutator : StructureMutator() {
             ind.dbInitialization.addAll(0, sampler.existingSqlData)
 
             //record newly added existing sql data
-            mutatedGenes?.addedExistingDataInitialization?.addAll(sampler.existingSqlData)
+            mutatedGenes?.addedExistingDataInitialization?.addAll(0, sampler.existingSqlData)
         }
 
         val max = config.maxSqlInitActionsPerMissingData
@@ -96,46 +96,13 @@ class RestStructureMutator : StructureMutator() {
 
         ind.repairInitializationActions(randomness)
 
-        // update added gene
-        if(mutatedGenes != null){
-            val allExistingData = ind.seeInitializingActions().filter { it is DbAction && it.representExistingData }
-            val diff = ind.seeInitializingActions().filter { !old.contains(it) || (it is DbAction && it.representExistingData)}
-
-            if (diff.isEmpty()) {
-                if (allExistingData.isNotEmpty())
-                    individual.updateExistingSQLSize(allExistingData.size)
-                return
-            }
-            mutatedGenes.addedInitializationGenes.addAll(diff.flatMap { it.seeGenes() })
-
-            // update impact due to newly added initialization actions
-            if(config.enableArchiveGeneSelection()){
-                val modified =  if (addedInsertions!!.flatten().size == diff.size)
+        // update impact based on added genes
+        if(mutatedGenes != null && config.enableArchiveGeneSelection()){
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                    mutatedGenes,
+                    old,
                     addedInsertions
-                else if (addedInsertions.flatten().size > diff.size){
-                    addedInsertions.mapNotNull {
-                        val m = it.filter { a-> diff.contains(a) }
-                        if (m.isEmpty()) null else m
-                    }
-                }else{
-                    log.warn("unexpected handling on Initialization Action after repair")
-                    return
-                }
-
-                if(modified.flatten().size != diff.size){
-                    log.warn("unexpected handling on Initialization Action")
-                    return
-                }
-                if (config.enableArchiveGeneSelection()){
-                    if(old.isEmpty()){
-                        individual.initAddedInitializationGenes(modified, allExistingData.size)
-                    }else{
-                        individual.updateImpactGeneDueToAddedInitializationGenes(modified, allExistingData.size)
-                    }
-                }
-
-                mutatedGenes.addedInitializationGroup.addAll(modified)
-            }
+            )
         }
     }
 

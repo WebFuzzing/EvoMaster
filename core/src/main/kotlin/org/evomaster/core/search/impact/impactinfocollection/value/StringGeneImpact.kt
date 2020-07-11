@@ -116,10 +116,11 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
                 hierarchySpecializationImpactInfo = HierarchySpecializationImpactInfo(null, current.specializationGenes.map { ImpactUtils.createGeneImpact(it, it.name) }.toMutableList())
             }
         }else{
-            if ((current as StringGene).specializationGenes.size > (previous as StringGene).specializationGenes.size){
-                val added = current.specializationGenes.subList(previous.specializationGenes.size, current.specializationGenes.size)
+            val currentImpact = hierarchySpecializationImpactInfo!!.flattenImpacts().size
+            if ((current as StringGene).specializationGenes.size > currentImpact){
+                val added = current.specializationGenes.subList(currentImpact, current.specializationGenes.size)
                 hierarchySpecializationImpactInfo = hierarchySpecializationImpactInfo!!.next(added.toMutableList())
-            }else if (current.specializationGenes.size < previous.specializationGenes.size){
+            }else if (current.specializationGenes.size < (previous as StringGene).specializationGenes.size){
                 log.warn("some specializations of StringGene are removed {},{}", current.specializationGenes.size, previous.specializationGenes.size)
             }
         }

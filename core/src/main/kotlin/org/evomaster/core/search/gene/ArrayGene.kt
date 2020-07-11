@@ -113,6 +113,14 @@ class ArrayGene<T>(
         return if (randomness.nextBoolean(p)) listOf() else mutable
     }
 
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+        /*
+            element is dynamically modified, then we do not collect impacts for it now.
+            thus for the internal genes, adaptive gene selection for mutation is not applicable
+        */
+        return listOf(randomness.choose(internalGenes) to additionalGeneMutationInfo.copyFoInnerGene(null))
+    }
+
     /**
      * leaf mutation for arrayGene is size mutation, i.e., 'remove' or 'add'
      */

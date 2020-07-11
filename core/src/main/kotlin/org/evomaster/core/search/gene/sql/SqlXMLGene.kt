@@ -39,7 +39,7 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
         return if (objectGene.isMutable()) listOf(objectGene) else emptyList()
     }
 
-    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlXmlGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(objectGene))
                 throw IllegalStateException("mismatched input: the internalGenes should only contain objectGene")

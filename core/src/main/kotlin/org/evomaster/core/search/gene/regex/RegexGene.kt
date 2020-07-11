@@ -38,7 +38,7 @@ class RegexGene(
         return if (!isMutable()) emptyList() else listOf(disjunctions)
     }
 
-    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is RegexGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(disjunctions))
                 throw IllegalArgumentException("mismatched internal gene")

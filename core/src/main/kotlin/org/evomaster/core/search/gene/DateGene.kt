@@ -69,7 +69,7 @@ class DateGene(
         return !onlyValidDates || isValidDate()
     }
 
-    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateGeneImpact){
             val maps = mapOf<Gene, GeneImpact>(
                     year to additionalGeneMutationInfo.impact.yearGeneImpact,

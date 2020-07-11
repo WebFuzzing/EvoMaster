@@ -64,6 +64,8 @@ class ImpactsOfIndividual private constructor(
         )
     }
 
+    fun getSQLExistingData() = initializationGeneImpacts.getExistingData()
+
 
     fun getSizeOfActionImpacts(fromInitialization: Boolean) = if (fromInitialization) initializationGeneImpacts.getSize() else actionGeneImpacts.size
 
@@ -96,10 +98,11 @@ class ImpactsOfIndividual private constructor(
 
     fun syncBasedOnIndividual(individual: Individual, mutatedGene: MutatedGeneSpecification) {
         //for initialization due to db action fixing
-        val diff = individual.seeInitializingActions().size - mutatedGene.addedExistingDataInitialization.size - initializationGeneImpacts.getOriginalSize()
-        if (diff != 0) { //truncation
-            //log.warn("structure of initializingAction should not be changed")
-            initializationGeneImpacts.truncation(mutatedGene.addedInitializationGroup, individual.seeInitializingActions())
+        val diff = individual.seeInitializingActions().size - initializationGeneImpacts.getFullSize()//mutatedGene.addedExistingDataInitialization.size - initializationGeneImpacts.getOriginalSize()
+        if (diff < 0) { //truncation
+            initializationGeneImpacts.truncation(individual.seeInitializingActions())
+        }else if (diff > 0){
+            throw IllegalArgumentException("impact is out of sync")
         }
 
         //for action
@@ -321,9 +324,33 @@ class ImpactsOfIndividual private constructor(
 
         private var existingSQLData = 0
 
+        private fun getGroupedSequence() : List<List<ImpactsOfAction>>{
+            if (indexMap.size != completeSequence.size)
+                throw IllegalStateException("indexMap is out of sync ${indexMap.size} vs. ${completeSequence.size}")
+
+            return getGroupedSequenceWithIndexMap(completeSequence)
+        }
+
+        private fun getGroupedSequenceWithIndexMap(list : List<ImpactsOfAction>) : List<List<ImpactsOfAction>>{
+            if (indexMap.size < list.size)
+                throw IllegalStateException("list contains more elements than IndexMap")
+
+            val group = list.mapIndexed { index, impactsOfAction ->
+                impactsOfAction to indexMap[index].second
+            }.groupBy {
+                it.second
+            }
+            val result = mutableListOf<List<ImpactsOfAction>>()
+
+            group.forEach { (t, u) ->
+                result.add(t, u.map { it.first })
+            }
+            return  result
+        }
+
 
         private fun initPreCheck() {
-            if (completeSequence.isNotEmpty() || template.isNotEmpty() || indexMap.isNotEmpty() || existingSQLData != 0)
+            if (completeSequence.isNotEmpty() || template.isNotEmpty() || indexMap.isNotEmpty())
                 throw IllegalStateException("duplicated initialization")
         }
 
@@ -380,7 +407,6 @@ class ImpactsOfIndividual private constructor(
             }
             indexMap.addAll(0, newIndex)
             completeSequence.addAll(0, newCompleteSequence)
-
         }
 
         fun initInitializationActions(impact: InitializationActionImpacts) {
@@ -389,52 +415,57 @@ class ImpactsOfIndividual private constructor(
         }
 
         /**
-         * @param groupedActions original initialized actions
          * @param list actions after truncation
          */
-        fun truncation(groupedActions: List<List<Action>>, list: List<Action>) {
-            val ignoreExisting = list.filterIsInstance<DbAction>().filterNot { it.representExistingData }
+        fun truncation(list: List<Action>) {
+            val ignoreExisting = list.filterIsInstance<DbAction>().count{it.representExistingData }
+            if (ignoreExisting != getExistingData()){
+                log.warn("mismatched existing data")
+            }
 
             val original = completeSequence.size
-
-            if (ignoreExisting.size > original) {
+            val seq = list.filterIsInstance<DbAction>().filter{ !it.representExistingData }
+            if (seq.size > original) {
                 log.warn("there are more db actions after the truncation")
                 return
             }
-            if (ignoreExisting.size == original) return
+            if (seq.size == original) return
 
-            val newCompleteSequence = list.mapIndexed { index, db ->
+            val newCompleteSequence = seq.mapIndexed { index, db ->
                 val name = db.getName()
                 //FIXME Man: further check null case
-                getImpactOfAction(name, index) ?: ImpactsOfAction(db)
+                getImpactOfAction(name, index + ignoreExisting) ?: ImpactsOfAction(db)
             }
 
-            if (!abstract) {
-                completeSequence.clear()
-                completeSequence.addAll(newCompleteSequence)
-                return
-            }
+            completeSequence.clear()
+            completeSequence.addAll(newCompleteSequence)
 
-            //update template
-            indexMap.clear()
-            val removal = groupedActions.flatten().subList(ignoreExisting.size, original)
-            val newKeys = groupedActions.mapNotNull { g ->
-                val inner = g.filter { a -> !removal.contains(a) }
-                if (inner.isEmpty()) null
-                else {
-                    val key = generateTemplateKey(inner.map { a -> a.getName() })
-                    if (!template.containsKey(key)) {
-                        template[key] = inner.map { ImpactsOfAction(it) }
-                    }
-                    indexMap.addAll(inner.mapIndexed { index, _ -> Pair(key, index) })
-                    key
+            if (!abstract) return
+
+
+            val middle = indexMap[seq.size - 1].second == indexMap[seq.size].second
+            if (middle){
+                val starting = indexMap.indexOfFirst {
+                    it.second == indexMap[seq.size].second
                 }
+                val newkey = generateTemplateKey(seq.subList(starting, seq.size).map { it.getName() })
+                indexMap.removeAll(indexMap.subList(starting, original))
+                (starting until seq.size).forEach {
+                    indexMap.add(
+                            newkey to it
+                    )
+                }
+                template.putIfAbsent(newkey, newCompleteSequence.subList(starting, original))
+                if (enableImpactOnDuplicatedTimes)
+                    templateDuplicateTimes.putIfAbsent(newkey, Impact(id = newkey))
+            }else{
+                indexMap.removeAll(indexMap.subList(seq.size, original))
+            }
 
-            }.toSet()
-
-            //remove template
-            template.keys.filterNot { newKeys.contains(it) }.forEach {
+            val extracted = indexMap.map { it.first }.toSet()
+            template.filterKeys { !extracted.contains(it) }.keys.forEach {
                 template.remove(it)
+                templateDuplicateTimes.remove(it)
             }
         }
 
@@ -451,6 +482,8 @@ class ImpactsOfIndividual private constructor(
             new.indexMap.addAll(indexMap.map { Pair(it.first, it.second) })
             if (enableImpactOnDuplicatedTimes)
                 new.templateDuplicateTimes.putAll(templateDuplicateTimes.mapValues { it.value.copy() })
+
+            new.existingSQLData = existingSQLData
             return new
         }
 
@@ -463,6 +496,8 @@ class ImpactsOfIndividual private constructor(
 
             if (enableImpactOnDuplicatedTimes)
                 new.templateDuplicateTimes.putAll(templateDuplicateTimes.mapValues { it.value.clone() })
+
+            new.existingSQLData = existingSQLData
             return new
         }
 
@@ -517,6 +552,8 @@ class ImpactsOfIndividual private constructor(
             if (abstract) return template.size
             return completeSequence.size
         }
+
+        fun getFullSize() = getSize() + existingSQLData
 
         fun getAll(): List<ImpactsOfAction> {
             if (abstract) return template.values.flatten()
