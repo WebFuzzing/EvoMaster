@@ -17,6 +17,10 @@ _EvoMaster_ Java client library. For example, in Maven:
 </dependency>
 ```
 
+In Gradle, it would be:
+
+`testCompile('org.evomaster:evomaster-client-java-controller:LATEST')`.
+
 For the latest version, check [Maven Central Repository](https://mvnrepository.com/artifact/org.evomaster/evomaster-client-java-controller).
 The latest version number should also appear at the top of the main readme page.
 If you are compiling directly from the _EvoMaster_ source code, make sure to use `mvn install` to 
