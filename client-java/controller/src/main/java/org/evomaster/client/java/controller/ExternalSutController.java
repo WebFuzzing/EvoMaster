@@ -424,13 +424,14 @@ public abstract class ExternalSutController extends SutController {
                         this could happen if it was started with some misconfiguration, or
                         if it has been stopped
                      */
-                    if(process == null || ! process.isAlive()){
-                        SimpleLogger.warn("SUT has terminated");
+                    if(process == null){
+                        SimpleLogger.warn("SUT was manually terminated ('process' reference is null)");
+                    } else if(! process.isAlive()){
+                        SimpleLogger.warn("SUT was terminated before initialization. Exit code: " + process.exitValue());
                     } else {
                         SimpleLogger.warn("SUT is still alive, but its output was closed before" +
                                 " producing the initialization message.");
                     }
-
 
                     latch.countDown();
 
