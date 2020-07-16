@@ -4,6 +4,7 @@ import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 
@@ -11,6 +12,7 @@ public class ArchiveGeneMutationImpactXYZTest extends ImpactXYZTestBase {
 
     private final String folder = "AGM-ImpactXYZ";
 
+    @Disabled("enable when archive gene mutation is done")
     @Test
     public void testOnlyArchiveMutation() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT);

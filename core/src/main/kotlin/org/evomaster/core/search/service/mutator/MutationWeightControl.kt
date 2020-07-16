@@ -10,6 +10,8 @@ import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.math.max
 
 /**
@@ -29,6 +31,9 @@ class MutationWeightControl {
     @Inject
     lateinit var archiveMutator : ArchiveGeneSelector
 
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(MutationWeightControl::class.java)
+    }
 
     /**
      * @return a subset of [candidateGenesToMutate] to mutate with weight-based solution.
@@ -42,6 +47,16 @@ class MutationWeightControl {
             evi: EvaluatedIndividual<*>?= null,
             forceNotEmpty : Boolean = true,
             numOfGroup: Int = 1) : List<Gene>{
+
+        if (candidateGenesToMutate.isEmpty()){
+            if (forceNotEmpty)
+                throw IllegalArgumentException("candidate is empty")
+            else {
+                return emptyList()
+            }
+        }
+        if (candidateGenesToMutate.size == 1 && forceNotEmpty)
+            return candidateGenesToMutate
 
         val numToMutate = apc.getExploratoryValue(max(1.0, config.startingPerOfGenesToMutate * candidateGenesToMutate.size), 1.0/numOfGroup)
         val mutated = mutableListOf<Gene>()
@@ -73,6 +88,9 @@ class MutationWeightControl {
         }
 
         mutated.addAll(selectSubsetWithWeight(weights, forceNotEmpty, numToMutate))
+        if (mutated.isEmpty() && forceNotEmpty) {
+           throw IllegalStateException("with ${candidateGenesToMutate.size} candidates, none to be selected")
+        }
 
         return mutated
     }

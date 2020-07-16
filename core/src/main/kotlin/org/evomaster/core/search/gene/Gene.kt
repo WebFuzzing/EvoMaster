@@ -176,8 +176,6 @@ abstract class Gene(var name: String) {
 
     /**
      * mutate the current gene if there is no need to apply selection, i.e., when [candidatesInternalGenes] is empty
-     *
-     * TODO Man if Specialization of String is handled properly, params might be simplified
      */
     open fun mutate(randomness: Randomness,
                     apc: AdaptiveParameterControl,

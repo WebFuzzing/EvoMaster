@@ -64,6 +64,27 @@ class DisjunctionListRxGene(
         }
     }
 
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+        if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is DisjunctionListRxGeneImpact)
+            throw IllegalArgumentException("mismatched gene impact")
+
+        if (!disjunctions.containsAll(internalGenes))
+            throw IllegalArgumentException("mismatched internal genes")
+
+        val impacts = internalGenes.map {
+            additionalGeneMutationInfo.impact.disjunctions[disjunctions.indexOf(it)]
+        }
+
+        val selected = mwc.selectSubGene(
+                candidateGenesToMutate = internalGenes,
+                impacts = impacts,
+                targets = additionalGeneMutationInfo.targets,
+                forceNotEmpty = true,
+                adaptiveWeight = true
+        )
+        return selected.map { it to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.disjunctions[disjunctions.indexOf(it)]) }.toList()
+    }
+
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
         // select another disjunction based on impact
         if (enableAdaptiveGeneMutation || selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){

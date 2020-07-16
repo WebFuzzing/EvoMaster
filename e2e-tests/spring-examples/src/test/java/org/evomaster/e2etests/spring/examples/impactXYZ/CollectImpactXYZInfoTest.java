@@ -20,16 +20,16 @@ public class CollectImpactXYZInfoTest extends ImpactXYZTestBase {
 
     @Test
     public void testOnlyCollectImpact() throws Throwable {
-        testRunEM(GeneMutationSelectionMethod.NONE);
+        testRunEM(GeneMutationSelectionMethod.NONE, 1000, false);
     }
 
-    public void testRunEM(GeneMutationSelectionMethod method) throws Throwable {
+    public void testRunEM(GeneMutationSelectionMethod method, int iterations, boolean checkImpactCollection) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "none",
-                "none",
-                1000,
-                false,
+                "ImpactXYZ_"+method,
+                "org.bar.ImpactXYZ"+method,
+                iterations,
+                true,
                 (args) -> {
 
                     args.add("--doCollectImpact");
@@ -48,22 +48,24 @@ public class CollectImpactXYZInfoTest extends ImpactXYZTestBase {
                     args.add("--focusedSearchActivationTime");
                     args.add("0.0");
 
-                    // only for the test
-                    args.add("--saveImpactAfterMutation");
-                    args.add("true");
-                    args.add("--impactAfterMutationFile");
-                    args.add("target/impactXYZ/impactInfo/Impacts_ImpactXYZ_"+method.toString()+".csv");
+                    if (checkImpactCollection){
+                        // only for the test
+                        args.add("--saveImpactAfterMutation");
+                        args.add("true");
+                        args.add("--impactAfterMutationFile");
+                        args.add("target/impactXYZ/impactInfo/Impacts_ImpactXYZ_"+method.toString()+".csv");
 
-                    args.add("--saveMutationInfo");
-                    args.add("true");
-                    args.add("--mutatedGeneFile");
-                    args.add("target/impactXYZ/mutatedGeneInfo/MutatedGenes_ImpactXYZ_"+method.toString()+".csv");
+                        args.add("--saveMutationInfo");
+                        args.add("true");
+                        args.add("--mutatedGeneFile");
+                        args.add("target/impactXYZ/mutatedGeneInfo/MutatedGenes_ImpactXYZ_"+method.toString()+".csv");
 
-                    // only for the test
-                    args.add("--saveArchiveAfterMutation");
-                    args.add("true");
-                    args.add("--archiveAfterMutationFile");
-                    args.add("target/impactXYZ/archiveInfo/ArchiveNotCoveredSnapshot_ImpactXYZ_"+method.toString()+".csv");
+                        // only for the test
+                        args.add("--saveArchiveAfterMutation");
+                        args.add("true");
+                        args.add("--archiveAfterMutationFile");
+                        args.add("target/impactXYZ/archiveInfo/ArchiveNotCoveredSnapshot_ImpactXYZ_"+method.toString()+".csv");
+                    }
 
                     args.add("--exportCoveredTarget");
                     args.add("true");
