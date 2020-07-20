@@ -119,8 +119,6 @@ abstract class Gene(var name: String) {
             if (!mutated) throw IllegalStateException("leaf mutation is not implemented")
         }else{
             val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
-            if (selected.isEmpty())
-                throw IllegalStateException("none is selected to mutate")
 
             selected.forEach{
                 do {
@@ -159,20 +157,25 @@ abstract class Gene(var name: String) {
                           selectionStrategy: SubsetGeneSelectionStrategy,
                           enableAdaptiveGeneMutation: Boolean,
                           additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
-        return when(selectionStrategy){
+        return  when(selectionStrategy){
             SubsetGeneSelectionStrategy.DEFAULT -> listOf(Pair(randomness.choose(internalGenes), additionalGeneMutationInfo))
             SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT -> mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to additionalGeneMutationInfo }
             SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
                 additionalGeneMutationInfo?: throw IllegalArgumentException("additionalGeneSelectionInfo should not be null")
                 adaptiveSelectSubset(randomness, internalGenes, mwc, additionalGeneMutationInfo)
             }
+        }.also {
+            if (it.isEmpty())
+                throw IllegalStateException("with $selectionStrategy strategy and ${internalGenes.size} candidates, none is selected to mutate")
         }
     }
 
     open fun adaptiveSelectSubset(randomness: Randomness,
                                   internalGenes: List<Gene>,
                                   mwc: MutationWeightControl,
-                                  additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> = listOf()
+                                  additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+        throw IllegalStateException("adaptive gene selection is unavailable for the gene")
+    }
 
     /**
      * mutate the current gene if there is no need to apply selection, i.e., when [candidatesInternalGenes] is empty

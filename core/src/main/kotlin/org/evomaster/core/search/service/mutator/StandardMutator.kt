@@ -72,10 +72,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             }
         }else{
             val enableAPC = config.weightBasedMutationRate && config.enableArchiveGeneSelection()
+            val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
+            val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
             while (mutated.isEmpty()){
-                if (config.specializeSQLGeneSelection){
-                    val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
-                    val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
+                //TODO all genes are SQL if possible
+                if (config.specializeSQLGeneSelection && noSQLGenes.isNotEmpty()){
                     mutated.addAll(mwc.selectSubGene(noSQLGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false, numOfGroup = 2))
                     mutated.addAll(mwc.selectSubGene(sqlGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false, numOfGroup = 2))
                 }else{
