@@ -144,7 +144,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             val map = selected.map { internalGenes.indexOf(it) }
             return map.map { internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact) }
         }
-        throw IllegalArgumentException("impact is null or not ObjectGeneImpact")
+        throw IllegalArgumentException("impact is null or not ObjectGeneImpact, ${additionalGeneMutationInfo.impact}")
     }
 
 

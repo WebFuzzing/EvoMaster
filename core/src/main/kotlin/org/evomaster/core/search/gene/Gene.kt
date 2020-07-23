@@ -162,7 +162,10 @@ abstract class Gene(var name: String) {
             SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT -> mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to additionalGeneMutationInfo }
             SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
                 additionalGeneMutationInfo?: throw IllegalArgumentException("additionalGeneSelectionInfo should not be null")
-                adaptiveSelectSubset(randomness, internalGenes, mwc, additionalGeneMutationInfo)
+                if (additionalGeneMutationInfo.impact == null)
+                    mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to additionalGeneMutationInfo }
+                else
+                    adaptiveSelectSubset(randomness, internalGenes, mwc, additionalGeneMutationInfo)
             }
         }.also {
             if (it.isEmpty())

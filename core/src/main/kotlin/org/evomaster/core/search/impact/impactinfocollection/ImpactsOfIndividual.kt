@@ -98,7 +98,7 @@ class ImpactsOfIndividual private constructor(
 
     fun syncBasedOnIndividual(individual: Individual, mutatedGene: MutatedGeneSpecification) {
         //for initialization due to db action fixing
-        val diff = individual.seeInitializingActions().size - initializationGeneImpacts.getFullSize()//mutatedGene.addedExistingDataInitialization.size - initializationGeneImpacts.getOriginalSize()
+        val diff = individual.seeInitializingActions().size - initializationGeneImpacts.getOriginalSize()//mutatedGene.addedExistingDataInitialization.size - initializationGeneImpacts.getOriginalSize()
         if (diff < 0) { //truncation
             initializationGeneImpacts.truncation(individual.seeInitializingActions())
         }else if (diff > 0){
@@ -546,7 +546,7 @@ class ImpactsOfIndividual private constructor(
             return template[templateInfo.first]?.get(templateInfo.second)
         }
 
-        fun getOriginalSize() = completeSequence.size
+        fun getOriginalSize(includeExistingSQLData : Boolean = true) = completeSequence.size + if (includeExistingSQLData) existingSQLData else 0
 
         fun getSize(): Int {
             if (abstract) return template.size
