@@ -29,6 +29,8 @@ If you are compiling directly from the _EvoMaster_ source code, make sure to use
 install the snapshot version `x.y.z-SNAPSHOT` of the Java client into your local Maven repository 
 (e.g., under *~/.m2*). 
 For the actual `x.y.z-SNAPSHOT` version number, you need to look at the root `pom.xml` file in the project.
+If you are using Gradle, you can for example check on this [SO question](https://stackoverflow.com/questions/6122252/gradle-alternate-to-mvn-install) 
+to see how to do something equivalent to `mvn install`. 
 
 Note: the core application `evomaster.jar` is independent of the driver library, and it contains none of 
 the driver's classes.
