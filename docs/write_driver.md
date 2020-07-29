@@ -21,11 +21,14 @@ In Gradle, it would be:
 
 `testCompile('org.evomaster:evomaster-client-java-controller:LATEST')`.
 
+The placeholder `LATEST` needs to be replaced with an actual version number (e.g.,
+`1.0.0` or `1.0.0-SNAPSHOT`).
 For the latest version, check [Maven Central Repository](https://mvnrepository.com/artifact/org.evomaster/evomaster-client-java-controller).
 The latest version number should also appear at the top of the main readme page.
 If you are compiling directly from the _EvoMaster_ source code, make sure to use `mvn install` to 
-install the snapshot version of the Java client into your local Maven repository 
+install the snapshot version `x.y.z-SNAPSHOT` of the Java client into your local Maven repository 
 (e.g., under *~/.m2*). 
+For the actual `x.y.z-SNAPSHOT` version number, you need to look at the root `pom.xml` file in the project.
 
 Note: the core application `evomaster.jar` is independent of the driver library, and it contains none of 
 the driver's classes.
