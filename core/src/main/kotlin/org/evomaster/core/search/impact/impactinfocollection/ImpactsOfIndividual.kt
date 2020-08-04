@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.evomaster.core.Lazy
 
 /**
  * created by manzh on 2019-10-31
@@ -103,6 +104,9 @@ class ImpactsOfIndividual private constructor(
             initializationGeneImpacts.truncation(individual.seeInitializingActions())
         }else if (diff > 0){
             throw IllegalArgumentException("impact is out of sync")
+        }
+        if (initializationGeneImpacts.getOriginalSize() != individual.seeInitializingActions().size){
+            throw IllegalStateException("inconsistent impact for SQL genes")
         }
 
         //for action
@@ -459,9 +463,14 @@ class ImpactsOfIndividual private constructor(
                 if (enableImpactOnDuplicatedTimes)
                     templateDuplicateTimes.putIfAbsent(newkey, Impact(id = newkey))
             }else{
-                indexMap.removeAll(indexMap.subList(seq.size, original))
+                while(indexMap.size > seq.size){
+                    indexMap.removeAt(indexMap.size - 1)
+                }
             }
 
+            Lazy.assert{
+                ignoreExisting == indexMap.size
+            }
             val extracted = indexMap.map { it.first }.toSet()
             template.filterKeys { !extracted.contains(it) }.keys.forEach {
                 template.remove(it)
