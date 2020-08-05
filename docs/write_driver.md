@@ -65,6 +65,13 @@ writing those controllers/drivers.
 For example, `org.evomaster.client.java.controller.db.DbCleaner` helps in resetting
 the state of a database (if any is used by the SUT).
 
+Note: when implementing a new class, most IDEs (e.g., IntelliJ) have the function 
+to automatically generate empty 
+stubs for all the abstract methods in its super-classes. 
+Also, all the concrete (i.e., non-abstract) methods in  `EmbeddedSutController`
+and `ExternalSutController` are marked as `final`, to prevent overriding them by mistake
+and so breaking the driver's internal functionalities. 
+
 Each of the abstract methods you need to implement does provide Javadocs.
 How to read those Javadocs depend on your IDE settings (e.g., hovering the mouse over a method declaration).
 You can also browse them online [here](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller).
