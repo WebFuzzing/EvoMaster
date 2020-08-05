@@ -65,6 +65,11 @@ writing those controllers/drivers.
 For example, `org.evomaster.client.java.controller.db.DbCleaner` helps in resetting
 the state of a database (if any is used by the SUT).
 
+Each of the abstract methods you need to implement does provide Javadocs.
+How to read those Javadocs depend on your IDE settings (e.g., hovering the mouse over a method declaration).
+You can also browse them online [here](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller).
+
+
 
 Once a class `X` that is a descendant of `SutController` is written, you need
 to be able to start the _EvoMaster_ driver, by using the 
