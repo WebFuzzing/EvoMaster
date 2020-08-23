@@ -10,7 +10,21 @@ import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import java.util.Collection;
 import java.util.List;
 
-
+/**
+ * <p>
+ * Main class used to implement an EvoMaster Driver.
+ * A user that wants to use EvoMaster for white-box testing will
+ * need to implement this abstract class.
+ * </p>
+ *
+ * <p>
+ * For full details on how to implement this class, look at the documentation
+ * for <em>Write an EvoMaster Driver for White-Box Testing</em>,
+ * currently at
+ * <a href=https://github.com/EMResearch/EvoMaster/blob/master/docs/write_driver.md>
+ *     https://github.com/EMResearch/EvoMaster/blob/master/docs/write_driver.md</a>
+ * </p>
+ */
 public abstract class EmbeddedSutController extends SutController {
 
     @Override
