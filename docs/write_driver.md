@@ -35,6 +35,8 @@ to see how to do something equivalent to `mvn install`.
 Note: the core application `evomaster.jar` is independent of the driver library, and it contains none of 
 the driver's classes.
 
+Note: you might also need to import some [other libraries](library_dependencies.md)
+(e.g., *RestAssured* when generating tests for REST APIs runninng on the JVM).
 
 Once the client library is imported, you need to create a class that extends either
 `org.evomaster.client.java.controller.EmbeddedSutController`
