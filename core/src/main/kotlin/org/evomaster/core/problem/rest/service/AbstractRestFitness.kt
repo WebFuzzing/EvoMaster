@@ -243,7 +243,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         it.gene is ObjectGene && it.gene.fields.isEmpty()
                     }
 
-            if(info.rawAccessOfHttpBodyPayload
+            if(info.rawAccessOfHttpBodyPayload == true
                     && dtoNames.isNotEmpty()
                     && (noBody || emptyObject)
             ){
