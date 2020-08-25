@@ -86,13 +86,19 @@ __Known limitations__:
 <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div> 
 -->
 
-[![](docs/img/video-player-flaticon.png)](https://youtu.be/3mYxjgnhLEo) 
 
-A [short video](https://youtu.be/3mYxjgnhLEo) (5 minutes)
+### Videos
+
+![](docs/img/video-player-flaticon.png)
+
+* A [short video](https://youtu.be/3mYxjgnhLEo) (5 minutes)
 shows the use of _EvoMaster_ on one of the 
 case studies in [EMB](https://github.com/EMResearch/EMB). 
 
-
+* This [13-minute video](https://youtu.be/ORxZoYw7LnM)
+  shows how to write a white-box driver for EvoMaster, for the
+  [rest-api-example](https://github.com/EMResearch/rest-api-example). 
+ 
 ### Hiring
 
 Each year we usually have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
