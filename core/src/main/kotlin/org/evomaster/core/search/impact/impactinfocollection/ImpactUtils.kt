@@ -14,6 +14,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.date.DateTime
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.impact.impactinfocollection.regex.*
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -227,25 +228,18 @@ class ImpactUtils {
         }
 
         /**
-         * @return a degree to measure whether collect enough impact info regarding specified [property] and given [targets]
+         * find a gene that has the same with [gene], but different value
+         * @param gene is one of root genes of [action]
          */
-        fun getImpactDistribution(impacts : List<Impact>, property: ImpactProperty, targets : Set<Int>) : ImpactPropertyDistribution{
-            val available = impacts.filter {
-                when(property){
-                    ImpactProperty.TIMES_NO_IMPACT -> it.getTimesOfNoImpact() > 0
-                    ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET -> it.getTimesOfNoImpactWithTargets().any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
-                    ImpactProperty.TIMES_IMPACT ->  it.getTimesOfImpacts().any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
-                    ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT -> it.getNoImpactsFromImpactCounter().any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0 }
-                    ImpactProperty.TIMES_CONS_NO_IMPROVEMENT -> it.getNoImprovementCounter().any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
-                }
-            }.size
-            return when{
-                available == 0 -> ImpactPropertyDistribution.NONE
-                available == impacts.size -> ImpactPropertyDistribution.ALL
-                available < impacts.size * 0.3 -> ImpactPropertyDistribution.FEW
-                available > impacts.size * 0.7 -> ImpactPropertyDistribution.MOST
-                else -> ImpactPropertyDistribution.EQUAL
-            }
+        fun findMutatedGene(action: Action, gene : Gene) : Gene?{
+            val template = ParamUtil.getValueGene(gene)
+            return action.seeGenes().filter {o->
+                val g = ParamUtil.getValueGene(o)
+                g.name == template.name && g::class.java.simpleName == template::class.java.simpleName && g.containsSameValueAs(template)
+            }.also {
+                if (it.size > 1)
+                    log.warn("{} genes have been mutated with the name {},",it.size, gene.name)
+            }.firstOrNull()
         }
     }
 }

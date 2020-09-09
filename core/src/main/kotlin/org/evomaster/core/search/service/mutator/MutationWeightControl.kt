@@ -58,7 +58,7 @@ class MutationWeightControl {
         if (candidateGenesToMutate.size == 1 && forceNotEmpty)
             return candidateGenesToMutate
 
-        val numToMutate = apc.getExploratoryValue(max(1.0, config.startingPerOfGenesToMutate * candidateGenesToMutate.size), 1.0/numOfGroup)
+        val numToMutate = getNGeneToMutate(candidateGenesToMutate.size, numOfGroup)
         val mutated = mutableListOf<Gene>()
 
         //by default, weight of all mutable genes is 1.0
@@ -79,7 +79,7 @@ class MutationWeightControl {
                 throw IllegalArgumentException("invalid inputs: when adaptive weight is applied, individual and evaluated individual (or impacts) should not be null")
         } else{
             candidateGenesToMutate.forEach {
-                weights[it] = it.mutationWeight().toDouble()
+                weights[it] = it.mutationWeight()
             }
         }
 
@@ -93,6 +93,11 @@ class MutationWeightControl {
         }
 
         return mutated
+    }
+
+    fun getNGeneToMutate(numOfCandidates :Int, numOfGroup : Int) : Double{
+        return apc.getExploratoryValue(max(1.0, config.startingPerOfGenesToMutate * numOfCandidates), 1.0/numOfGroup)
+
     }
 
     fun <T>selectSubsetWithWeight(weights : Map<T, Double>, forceNotEmpty: Boolean, numToMutate : Double) : List<T>{

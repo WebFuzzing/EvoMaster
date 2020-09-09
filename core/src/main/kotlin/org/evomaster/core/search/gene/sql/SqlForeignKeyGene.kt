@@ -6,7 +6,7 @@ import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 /**
@@ -106,7 +106,7 @@ class SqlForeignKeyGene(
 
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         randomize(randomness, true, allGenes)
         return true
     }
@@ -189,5 +189,7 @@ class SqlForeignKeyGene(
      */
     fun hasValidUniqueIdOfPrimaryKey() = uniqueIdOfPrimaryKey >= 0 ||
             (nullable && uniqueIdOfPrimaryKey == -1L)
+
+    override fun innerGene(): List<Gene> = listOf()
 
 }

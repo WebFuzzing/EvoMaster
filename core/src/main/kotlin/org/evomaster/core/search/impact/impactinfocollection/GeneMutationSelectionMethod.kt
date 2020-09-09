@@ -29,6 +29,10 @@ enum class GeneMutationSelectionMethod(val archive: Boolean = true, val adaptive
      */
     BALANCE_IMPACT_NOIMPACT,
     /**
+     * penalty and reward function
+     */
+    BALANCE_IMPACT_NOIMPACT_WITH_E,
+    /**
      * randomly apply one of fixed archive-based gene selection method ([archive] is true and [adaptive] is false)
      */
     ALL_FIXED_RAND(adaptive = true)

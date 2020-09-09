@@ -5,7 +5,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
@@ -90,7 +90,7 @@ class MapGene<T>(
         return maxSize > 0
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         if(!isMutable()){
             throw IllegalStateException("Cannot mutate a immutable array")
         }
@@ -104,18 +104,19 @@ class MapGene<T>(
         return if (randomness.nextBoolean(p)) listOf() else mutable
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         /*
             element is dynamically modified, then we do not collect impacts for it now.
             thus for the internal genes, adaptive gene selection for mutation is not applicable
         */
-        return listOf(randomness.choose(internalGenes) to additionalGeneMutationInfo.copyFoInnerGene(null))
+        val s = randomness.choose(internalGenes)
+        return listOf(s to additionalGeneMutationInfo.copyFoInnerGene(null, s))
     }
 
     /**
      * leaf mutation for arrayGene is size mutation, i.e., 'remove' or 'add'
      */
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) : Boolean{
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
             val gene = template.copy() as T
@@ -148,35 +149,13 @@ class MapGene<T>(
         else listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
-        if (original !is MapGene<*>){
-            log.warn("original ({}) should be MapGene", original::class.java.simpleName)
-            return
-        }
-        if (mutated !is MapGene<*>){
-            log.warn("mutated ({}) should be MapGene", mutated::class.java.simpleName)
-            return
-        }
-        if (original.elements.size != mutated.elements.size) return
-        val mutatedElements = mutated.elements.filterIndexed { index, gene ->
-            !gene.containsSameValueAs(original.elements[index])
-        }
-        if (mutatedElements.size > 1){
-            log.warn("size of mutated elements is more than 1, i.e.,{}", mutatedElements.size)
-            return
-        }
-        val index = mutated.elements.indexOf(mutatedElements.first())
-        if (index > elements.size - 1){
-            log.warn("cannot find element at index {}", index)
-            return
-        }
-        elements[index].archiveMutationUpdate(original.elements[index], mutated.elements[index], targetsEvaluated, archiveMutator)
-    }
-
     /**
      * 1 is for 'remove' or 'add' element
      */
     override fun mutationWeight(): Double {
         return 1.0 + elements.map { it.mutationWeight() }.sum()
     }
+
+    override fun innerGene(): List<Gene> = elements
+
 }

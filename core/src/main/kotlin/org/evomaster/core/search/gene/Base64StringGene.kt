@@ -4,8 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
@@ -32,27 +31,8 @@ class Base64StringGene(
         data.randomize(randomness, forceNewValue)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return listOf(data)
-    }
-
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
-        TODO()
-    }
-
-    override fun reachOptimal(targets: Set<Int>): Boolean {
-        return data.reachOptimal(targets)
-    }
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
-        if (original !is Base64StringGene){
-            log.warn("original ({}) should be Base64StringGene", original::class.java.simpleName)
-            return
-        }
-        if (mutated !is Base64StringGene){
-            log.warn("mutated ({}) should be Base64StringGene", mutated::class.java.simpleName)
-            return
-        }
-        data.archiveMutationUpdate(original.data, mutated.data, targetsEvaluated, archiveMutator)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -77,4 +57,6 @@ class Base64StringGene(
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
         return if(excludePredicate(this)) listOf(this) else listOf(this).plus(data.flatView(excludePredicate))
     }
+
+    override fun innerGene(): List<Gene> = listOf()
 }

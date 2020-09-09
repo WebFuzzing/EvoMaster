@@ -6,7 +6,6 @@ import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpa
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.*
 import org.slf4j.Logger
@@ -16,8 +15,7 @@ import java.lang.IllegalStateException
 
 class SqlNullable(name: String,
                   val gene: Gene,
-                  var isPresent: Boolean = true,
-                  val presentMutationInfo : IntMutationUpdate = IntMutationUpdate(0, 1)
+                  var isPresent: Boolean = true
 ) : SqlWrapperGene(name) {
 
     init{
@@ -39,7 +37,7 @@ class SqlNullable(name: String,
     }
 
     override fun copy(): Gene {
-        return SqlNullable(name, gene.copy(), isPresent, presentMutationInfo.copy())
+        return SqlNullable(name, gene.copy(), isPresent)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -52,7 +50,7 @@ class SqlNullable(name: String,
         gene.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
 
         if (!isPresent) return emptyList()
 
@@ -69,19 +67,19 @@ class SqlNullable(name: String,
                     selector = additionalGeneMutationInfo.archiveGeneSelector
             )
 
-            if (inactive) return emptyList() else listOf(gene)
+            return if (inactive)  emptyList() else listOf(gene)
         }
         throw IllegalArgumentException("impact is null or not OptionalGeneImpact")
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlNullableImpact){
-            return listOf(gene to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.geneImpact))
+            return listOf(gene to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.geneImpact, gene))
         }
         throw IllegalArgumentException("impact is null or not SqlNullableImpact")
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) : Boolean{
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         isPresent = !isPresent
         if (enableAdaptiveGeneMutation){
@@ -93,30 +91,9 @@ class SqlNullable(name: String,
 //                presentMutationInfo.preferMax = 0
 //            }
 
-            presentMutationInfo.counter+=1
         }
 
         return true
-    }
-
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
-        if (original !is SqlNullable){
-            log.warn("original ({}) should be SqlNullable", original::class.java.simpleName)
-            return
-        }
-        if (mutated !is SqlNullable){
-            log.warn("mutated ({}) should be SqlNullable", mutated::class.java.simpleName)
-            return
-        }
-        if (original.isPresent == mutated.isPresent && mutated.isPresent)
-            gene.archiveMutationUpdate(original.gene, mutated.gene, targetsEvaluated, archiveMutator)
-        /**
-         * may handle Boolean Mutation in the future
-         */
-    }
-
-    override fun reachOptimal(targets: Set<Int>): Boolean {
-        return (presentMutationInfo.reached && presentMutationInfo.preferMin == 0 && presentMutationInfo.preferMax == 0) ||  gene.reachOptimal(targets)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -152,4 +129,7 @@ class SqlNullable(name: String,
     override fun mutationWeight(): Double {
         return 1.0 + gene.mutationWeight()
     }
+
+    override fun innerGene(): List<Gene> = listOf(gene)
+
 }

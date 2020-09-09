@@ -418,4 +418,11 @@ class FitnessValue(
             else -> 0
         }
     }
+
+    /**
+     * @return targets that are reached/covered by an action at [actionIndex]
+     */
+    fun getTargetsByAction(actionIndex : Int) : Set<Int> {
+        return targets.filterValues { it.actionIndex == actionIndex }.keys
+    }
 }

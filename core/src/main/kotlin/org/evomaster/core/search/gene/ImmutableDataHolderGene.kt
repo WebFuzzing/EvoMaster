@@ -47,4 +47,7 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
     }
 
     override fun mutationWeight(): Double = 0.0
+
+    override fun innerGene(): List<Gene> = listOf()
+
 }

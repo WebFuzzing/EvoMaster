@@ -49,6 +49,9 @@ public class TestabilityWithImpactCollectionEM extends SpringTestBase {
                     args.add("--adaptiveGeneSelectionMethod");
                     args.add("APPROACH_IMPACT");
 
+                    args.add("--archiveGeneMutation");
+                    args.add("SPECIFIED");
+
                     args.add("--probOfArchiveMutation");
                     args.add("0.9");
 

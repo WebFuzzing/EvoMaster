@@ -1,10 +1,11 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.impact.impactinfocollection.value.collection.EnumGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 /**
@@ -80,25 +81,25 @@ class EnumGene<T : Comparable<T>>(
         index = k
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
-        if (!enableAdaptiveGeneMutation || values.size == 2){
-            val next = (index+1) % values.size
-            index = next
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+
+        if (additionalGeneMutationInfo?.impact != null && additionalGeneMutationInfo.impact is EnumGeneImpact){
+            val candidates = (0 until values.size).filter { index != it }
+            val impacts = candidates.map {
+                additionalGeneMutationInfo.impact.values[it]
+            }.toList()
+            val weights = additionalGeneMutationInfo.archiveGeneSelector.impactBasedOnWeights(impacts, additionalGeneMutationInfo.targets)
+
+            val selects =mwc.selectSubsetWithWeight(candidates.mapIndexed { index, i -> candidates[index] to weights[index] }.toMap(), true, 1.0)
+            index = randomness.choose(selects)
             return true
         }
 
-//        archive-based mutation
-//        if (additionalGeneMutationInfo?.impact != null && additionalGeneMutationInfo.impact is EnumGeneImpact){
-//            val candidates = (0 until values.size).filter { index != it }.map {
-//                Pair(it, additionalGeneMutationInfo.impact.values[it])
-//            }
-//            val selects = additionalGeneMutationInfo.archiveMutator.selectGenesByArchive(candidates, 1.0/(values.size - 1), additionalGeneMutationInfo.targets)
-//            index = randomness.choose(selects)
-//
-//            return true
-//        }
+        val next = (index+1) % values.size
+        index = next
+        return true
 
-        throw IllegalArgumentException("impact is null or not EnumGeneImpact")
+        //throw IllegalArgumentException("impact is null or not EnumGeneImpact")
     }
 
 
@@ -130,8 +131,6 @@ class EnumGene<T : Comparable<T>>(
         return this.index == other.index
     }
 
-    //TODO when archive-based mutation is enabled
-    override fun reachOptimal(targets: Set<Int>): Boolean {
-        return values.size == 1
-    }
+    override fun innerGene(): List<Gene> = listOf()
+
 }

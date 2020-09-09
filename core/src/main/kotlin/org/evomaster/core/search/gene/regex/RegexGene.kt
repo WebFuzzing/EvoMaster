@@ -7,7 +7,7 @@ import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpa
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 /**
@@ -34,20 +34,20 @@ class RegexGene(
         return disjunctions.isMutable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return if (!isMutable()) emptyList() else listOf(disjunctions)
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is RegexGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(disjunctions))
                 throw IllegalArgumentException("mismatched internal gene")
-            return listOf(disjunctions to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.listRxGeneImpact))
+            return listOf(disjunctions to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.listRxGeneImpact, disjunctions))
         }
         throw IllegalArgumentException("mismatched gene impact")
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         // do nothing since disjunctions is not mutable
         return true
     }
@@ -98,4 +98,6 @@ class RegexGene(
      * use mutationweight of [disjunctions]
      */
     override fun mutationWeight(): Double = disjunctions.mutationWeight()
+
+    override fun innerGene(): List<Gene> = listOf(disjunctions)
 }

@@ -49,9 +49,8 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
 
     override fun isPrintable() = false
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
-        throw IllegalStateException("AutoIncrement fields are not part of the search")
-    }
-
     override fun mutationWeight(): Double = 0.0
+
+    override fun innerGene(): List<Gene> = listOf()
+
 }

@@ -10,7 +10,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
@@ -43,17 +43,17 @@ class SqlUUIDGene(
         leastSigBits.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return listOf(mostSigBits, leastSigBits)
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlUUIDGeneImpact){
             val maps = mapOf<Gene, GeneImpact>(
                     mostSigBits to additionalGeneMutationInfo.impact.mostSigBitsImpact,
                     leastSigBits to additionalGeneMutationInfo.impact.leastSigBitsImpact
             )
-            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it)) }
+            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it), it) }
         }
         throw IllegalArgumentException("impact is null or not DateTimeGeneImpact")
     }
@@ -91,28 +91,6 @@ class SqlUUIDGene(
                     .plus(leastSigBits.flatView(excludePredicate))
     }
 
-
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
-        if (original !is SqlUUIDGene){
-            log.warn("original ({}) should be SqlUUIDGene", original::class.java.simpleName)
-            return
-        }
-        if (mutated !is SqlUUIDGene){
-            log.warn("mutated ({}) should be SqlUUIDGene", mutated::class.java.simpleName)
-            return
-        }
-
-        if (!mutated.leastSigBits.containsSameValueAs(original.leastSigBits)){
-            leastSigBits.archiveMutationUpdate(original.leastSigBits, mutated.leastSigBits, targetsEvaluated, archiveMutator)
-        }
-        if (!mutated.mostSigBits.containsSameValueAs(original.mostSigBits)){
-            mostSigBits.archiveMutationUpdate(original.mostSigBits, mutated.mostSigBits, targetsEvaluated, archiveMutator)
-        }
-    }
-
-    override fun reachOptimal(targets: Set<Int>): Boolean {
-        return leastSigBits.reachOptimal(targets) && mostSigBits.reachOptimal(targets)
-    }
-
+    override fun innerGene(): List<Gene> = listOf(mostSigBits, leastSigBits)
 
 }

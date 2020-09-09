@@ -13,9 +13,9 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.EvaluatedInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import kotlin.math.max
 
@@ -42,13 +42,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val mutable = individual.seeGenes(filterMutate).filter { it.isMutable() }
         if (!config.enableArchiveGeneMutation())
             return mutable
-        /**
-         * be able to jump from local optimal,
-         * we allow an exception to mutate the gene which has reached 'possible' optimal
-         */
-        mutable.filter { !it.reachOptimal(targets) || archiveGeneMutator.applyException()}.let {
-            if (it.isNotEmpty()) return it
-        }
+
         return mutable
     }
 
@@ -71,7 +65,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 }
             }
         }else{
-            val enableAPC = config.weightBasedMutationRate && config.enableArchiveGeneSelection()
+            val enableAPC = config.weightBasedMutationRate && archiveGeneSelector.applyArchiveSelection()
             val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
             val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
             while (mutated.isEmpty()){
@@ -127,34 +121,33 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             return copy
 
         for (gene in selectGeneToMutate){
-            val isDb = copy.seeInitializingActions().any { it.seeGenes().contains(gene) }
 
-            val value = try {
-                if(gene.isPrintable()) gene.getValueAsPrintableString() else "null"
-            } catch (e: Exception){
-                "exception"
+            val adaptive = randomness.nextBoolean(config.probOfArchiveMutation)
+
+            // enable weight based mutation when mutating gene
+            val enableWGS = config.weightBasedMutationRate && config.enableWeightBasedMutationRateSelectionForGene
+            // enable gene selection when mutating gene, eg, ObjectGene
+            val enableAGS = enableWGS && adaptive && config.enableArchiveGeneSelection()
+            // enable gene mutation based on history
+            val enableAGM = adaptive && config.enableArchiveGeneMutation()
+
+            val selectionStrategy = when {
+                enableAGS -> SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
+                enableWGS && !enableAGS -> SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
+                else -> SubsetGeneSelectionStrategy.DEFAULT
             }
-            val position = if (isDb){
-                copy.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
-            } else{
-                copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) }
-            }
-            mutatedGene?.addMutatedGene(isDb, valueBeforeMutation = value, gene = gene, position = position)
 
-            val selectionStrategy = if (!config.weightBasedMutationRate || !config.enableWeightBasedMutationRateSelectionForGene) SubsetGeneSelectionStrategy.DEFAULT
-                        else if (archiveGeneSelector.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
-                        else SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
+            val additionInfo = mutationConfiguration(
+                    gene = gene,
+                    individual = copy,
+                    eval = individual,
+                    enableAGM = enableAGM,
+                    enableAGS = enableAGS,
+                    targets = targets,
+                    mutatedGene = mutatedGene
+            )
 
-            val additionInfo = if(selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
-                val id = ImpactUtils.generateGeneId(copy, gene)
-                //root gene impact
-                val impact = individual.getImpact(copy, gene)
-                AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveGeneSelector, archiveGeneMutator, individual,targets)
-            }else if(config.enableArchiveGeneMutation()){
-                AdditionalGeneSelectionInfo(GeneMutationSelectionMethod.NONE, null, null, archiveGeneSelector, archiveGeneMutator, individual,targets)
-            }else null
-
-            gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, config.enableArchiveGeneMutation(), additionalGeneMutationInfo = additionInfo)
+            gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAGM, additionalGeneMutationInfo = additionInfo)
         }
         return copy
     }
@@ -192,6 +185,80 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         //Check that the repair was successful
         Lazy.assert { mutatedIndividual.verifyInitializationActions() }
 
+    }
+
+    /**
+     * @param gene is selected to mutate
+     * @param individual is the individual that contains the [gene]
+     * @param eval is an sampled evaluated indvidual for the mutation
+     * @param enableAGS indicates whether the archive-based selection is applied for the gene mutation
+     * @param enableAGM indicates whether to apply archive-based gene mutation
+     * @param targets is a set of targets to cover
+     * @param mutatedGene contains what genes are mutated in this mutation
+     */
+    private fun mutationConfiguration(
+            gene: Gene, individual: T,
+            eval : EvaluatedIndividual<T>,
+            enableAGS : Boolean,
+            enableAGM: Boolean,
+            targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : AdditionalGeneMutationInfo?{
+
+        val isDb = individual.seeInitializingActions().any { it.seeGenes().contains(gene) }
+
+        val value = try {
+            if(gene.isPrintable()) gene.getValueAsPrintableString() else "null"
+        } catch (e: Exception){
+            "exception"
+        }
+        val position = if (isDb){
+            individual.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
+        } else{
+            individual.seeActions().indexOfFirst { it.seeGenes().contains(gene) }
+        }
+
+        mutatedGene?.addMutatedGene(isDb, valueBeforeMutation = value, gene = gene, position = position)
+
+        val additionInfo = if(enableAGS || enableAGM){
+            val id = ImpactUtils.generateGeneId(individual, gene)
+            //root gene impact
+            val impact = eval.getImpact(individual, gene)
+            AdditionalGeneMutationInfo(
+                    config.adaptiveGeneSelectionMethod, impact, id, archiveGeneSelector, archiveGeneMutator, eval,targets, fromInitialization = isDb, position = position, rootGene = gene)
+        }else null
+
+        if (enableAGM){
+            /*
+                TODO might conduct further experiment on the 'maxlengthOfHistoryForAGM'?
+             */
+            val effective = eval.getLast<EvaluatedIndividual<T>>(config.maxlengthOfHistoryForAGM, EvaluatedMutation.range(min = EvaluatedMutation.BETTER_THAN.value)).filter {
+                it.individual.seeActions(isDb).size > position &&
+                        it.individual.seeActions(isDb)[position].getName() == individual.seeActions(isDb)[position].getName()
+            }
+            val history = eval.getLast<EvaluatedIndividual<T>>(config.maxlengthOfHistoryForAGM, EvaluatedMutation.range()).filter {
+                it.individual.seeActions(isDb).size > position &&
+                        it.individual.seeActions(isDb)[position].getName() == individual.seeActions(isDb)[position].getName()
+            }
+
+
+            additionInfo!!.effectiveHistory.addAll(effective.mapNotNull {
+                ImpactUtils.findMutatedGene(
+                        it.individual.seeActions(isDb)[position], gene)
+            })
+
+            additionInfo.history.addAll(history.mapNotNull {e->
+                ImpactUtils.findMutatedGene(
+                        e.individual.seeActions(isDb)[position], gene)?.run {
+                    this to EvaluatedInfo(
+                            index =  e.index,
+                            result = e.evaluatedResult,
+                            targets = e.fitness.getViewOfData().keys,
+                            specificTargets = if (!isDb) e.fitness.getTargetsByAction(position) else setOf()
+                    )
+                }
+            })
+        }
+
+        return additionInfo
     }
 
 }

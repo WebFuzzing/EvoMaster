@@ -1,5 +1,6 @@
 package org.evomaster.core.search.tracer
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import kotlin.math.max
 
@@ -53,7 +54,7 @@ abstract class TraceableElement {
     }
 
     fun wrapWithEvaluatedResults(evaluatedResult: EvaluatedMutation?){
-        this.evaluatedResult == evaluatedResult
+        this.evaluatedResult = evaluatedResult
     }
 
     private fun wrapped(){

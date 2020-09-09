@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
@@ -61,7 +61,7 @@ class DateGene(
         } while (onlyValidDates && !isValidDate())
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return listOf(year, month, day)
     }
 
@@ -69,37 +69,17 @@ class DateGene(
         return !onlyValidDates || isValidDate()
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateGeneImpact){
             val maps = mapOf<Gene, GeneImpact>(
                     year to additionalGeneMutationInfo.impact.yearGeneImpact,
                     month to additionalGeneMutationInfo.impact.monthGeneImpact,
                     day to additionalGeneMutationInfo.impact.dayGeneImpact
             )
-            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it)) }
+            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it), it) }
         }
 
         throw IllegalArgumentException("impact is null or not DateGeneImpact")
-    }
-
-
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
-        if (original !is DateGene){
-            log.warn("original ({}) should be DateGene", original::class.java.simpleName)
-            return
-        }
-        if (mutated !is DateGene){
-            log.warn("mutated ({}) should be DateGene", mutated::class.java.simpleName)
-            return
-        }
-
-        if (!mutated.year.containsSameValueAs(original.year)){
-            year.archiveMutationUpdate(original.year, mutated.year, targetsEvaluated, archiveMutator)
-        }
-        if (!mutated.month.containsSameValueAs(original.month))
-            month.archiveMutationUpdate(original.month, mutated.month, targetsEvaluated, archiveMutator)
-        if (!mutated.day.containsSameValueAs(original.day))
-            day.archiveMutationUpdate(original.day, mutated.day, targetsEvaluated, archiveMutator)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -155,12 +135,10 @@ class DateGene(
                     .plus(day.flatView(excludePredicate))
     }
 
-    override fun reachOptimal(targets: Set<Int>): Boolean {
-        return year.reachOptimal(targets) && month.reachOptimal(targets) && day.reachOptimal(targets)
-    }
-
     /*
      override fun mutationWeight(): Int
      weight for date gene might be 1 as default since it is simple to solve
     */
+
+    override fun innerGene(): List<Gene> = listOf(year, month, day)
 }

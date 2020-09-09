@@ -50,6 +50,9 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      */
     open fun seeInitializingActions(): List<Action> = listOf()
 
+
+    open fun seeActions(isInitialization : Boolean) = if (isInitialization) seeInitializingActions() else seeActions()
+
     /**
      * Determine if the structure (ie the actions) of this individual
      * can be mutated (eg, add/remove actions).

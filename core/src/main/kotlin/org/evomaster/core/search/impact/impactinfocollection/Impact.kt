@@ -1,5 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
+import kotlin.math.pow
+
 
 /**
  * @property shared shared impacts. over a course of mutation, some gene impact info (e.g., times of manipulating the gene) should be shared that are collected by [shared].
@@ -36,31 +38,34 @@ open class Impact(
 
     fun recentImprovement() = getNoImprovementCounter().any { it.value < 2 }
 
-    fun getDegree(property: ImpactProperty, target: Int, singleImpactReward : Boolean) = if (manipulateTimesForTargets(target, singleImpactReward) == 0.0) -1.0 else getValueByImpactProperty(property, target, singleImpactReward)/manipulateTimesForTargets(target, singleImpactReward)
-    fun getCounter(property: ImpactProperty, target: Int, singleImpactReward : Boolean) = getValueByImpactProperty(property, target, singleImpactReward)
+    private fun getDegree(property: ImpactProperty, target: Int, singleImpactReward : Boolean) : Double?{
+        return   if (property == ImpactProperty.E_IMPACT_DIVID_NO_IMPACT) getValueByImpactProperty(property, target, singleImpactReward)
+            else if (manipulateTimesForTargets(target, singleImpactReward) == 0.0) 1.0
+            else getValueByImpactProperty(property, target, singleImpactReward)?.div(manipulateTimesForTargets(target, singleImpactReward))
+    }
+    private fun getCounter(property: ImpactProperty, target: Int, singleImpactReward : Boolean) : Double?{
+        return if (getTimesToManipulate() == 0) 1.0 else getValueByImpactProperty(property, target, singleImpactReward)
+    }
 
-    fun getDegree(property: ImpactProperty, targets: Set<Int>, by: By, singleImpactReward: Boolean) : Double{
-        return targets.map { getDegree(property, it, singleImpactReward = singleImpactReward) }.filter { it != -1.0 }.run {
-            if (isEmpty()) -1.0
-            else{
-                when(by){
-                    By.MIN -> this.min()!!
-                    By.MAX -> this.max()!!
-                    By.AVG -> this.average()!!
-                    By.SUM -> this.sum()
-                }
+
+    fun getDegree(property: ImpactProperty, targets: Set<Int>, by: By, singleImpactReward: Boolean) : Double?{
+        return targets.mapNotNull { getDegree(property, it, singleImpactReward = singleImpactReward) }.run {
+            when(by){
+                By.MIN -> this.min()
+                By.MAX -> this.max()
+                By.AVG -> this.average()
+                By.SUM -> this.filter { it > 0.0 }.sum()
             }
         }
     }
 
-    fun getCounter(property: ImpactProperty, targets: Set<Int>, by: By, singleImpactReward: Boolean) : Double{
-        val list = targets.map { getCounter(property, it, singleImpactReward) }.filter { it != -1.0 }
-        if (list.isEmpty()) return -1.0
+    fun getCounter(property: ImpactProperty, targets: Set<Int>, by: By, singleImpactReward: Boolean) : Double?{
+        val list = targets.mapNotNull { getCounter(property, it, singleImpactReward) }
         return when(by){
-            By.MIN -> list.min()?: throw IllegalArgumentException("min is null")
-            By.MAX -> list.max()?: throw IllegalArgumentException("max is null")
+            By.MIN -> list.min()
+            By.MAX -> list.max()
             By.AVG -> list.average()
-            By.SUM -> list.sum()
+            By.SUM -> list.filter { it > 0.0}.sum()
         }
     }
 
@@ -158,15 +163,33 @@ open class Impact(
 
     fun getMaxImpact() : Double = shared.timesOfImpact.values.max()?:0.0
 
-    private fun getValueByImpactProperty(property: ImpactProperty, target : Int, singleImpactReward: Boolean) : Double{
+    private fun getValueByImpactProperty(property: ImpactProperty, target : Int, singleImpactReward: Boolean) : Double?{
         return when(property){
             ImpactProperty.TIMES_NO_IMPACT -> shared.timesOfNoImpacts.toDouble()
             ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET -> shared.timesOfNoImpactWithTargets[target]
             ImpactProperty.TIMES_IMPACT -> shared.timesOfImpact[target]?.times(singleReward(singleImpactReward))
             ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT -> specific.noImpactFromImpact[target]
             ImpactProperty.TIMES_CONS_NO_IMPROVEMENT -> specific.noImpactFromImpact[target]
-        }?: -1.0
+            ImpactProperty.E_IMPACT_DIVID_NO_IMPACT -> nl(target, divide = true)
+            ImpactProperty.E_IMPACT_MINUS_NO_IMPACT -> nl(target, divide = false)
+        }
     }
+
+    /**
+     * natural logarithms
+     */
+    private fun nl(target: Int, divide : Boolean) : Double{
+        val impact = getValueByImpactProperty(ImpactProperty.TIMES_IMPACT, target, true)?:0.0
+        val noImpact = getValueByImpactProperty(ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET, target, true)?:0.0
+        if (divide){
+            val ei = Math.E.pow( (impact)/(impact + noImpact) )
+            val en = Math.E.pow( (noImpact)/(impact + noImpact) )
+            return ei/en
+        }else{
+            return Math.E.pow( (impact - noImpact)/(impact + noImpact) )
+        }
+    }
+
 
     private fun manipulateTimesForTargets(target: Int, singleImpactReward: Boolean) : Double = (shared.timesOfNoImpactWithTargets[target]?:0.0) + (shared.timesOfImpact[target]?:0.0) * singleReward(singleImpactReward)
 
@@ -219,7 +242,9 @@ enum class ImpactProperty{
     TIMES_NO_IMPACT_WITH_TARGET,
     TIMES_IMPACT,
     TIMES_CONS_NO_IMPACT_FROM_IMPACT,
-    TIMES_CONS_NO_IMPROVEMENT
+    TIMES_CONS_NO_IMPROVEMENT,
+    E_IMPACT_DIVID_NO_IMPACT,
+    E_IMPACT_MINUS_NO_IMPACT
 }
 
 enum class By{

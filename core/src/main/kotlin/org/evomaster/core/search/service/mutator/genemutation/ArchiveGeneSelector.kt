@@ -1,7 +1,6 @@
 package org.evomaster.core.search.service.mutator.genemutation
 
 import com.google.inject.Inject
-import org.apache.commons.lang3.mutable.Mutable
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
@@ -91,39 +90,13 @@ class ArchiveGeneSelector {
             GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT))
             GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPROVEMENT))
             GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET))
+            GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT_WITH_E -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.E_IMPACT_DIVID_NO_IMPACT))
+
             else -> {
                 throw IllegalArgumentException("invalid gene selection method: method cannot be NONE or adaptive, but $method")
             }
         }
     }
-
-    /**
-     * ideally, candidates should shrink with search for a focused mutation.
-     * but if there is no enough info for deciding whether the gene is impactful, we need expand budget to explore.
-     */
-    private fun expandBudgetToExplore(impacts: List<Impact>, targets: Set<Int>, method: GeneMutationSelectionMethod): Boolean {
-        return getImpactPropertiesByMethod(method).map { ImpactUtils.getImpactDistribution(impacts, it, targets) }.any { it == ImpactPropertyDistribution.NONE || it == ImpactPropertyDistribution.FEW }
-    }
-
-    private fun getImpactPropertiesByMethod(method : GeneMutationSelectionMethod) : Array<ImpactProperty>{
-        return when (method) {
-            GeneMutationSelectionMethod.AWAY_NOIMPACT -> arrayOf(ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET)
-            GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT -> {
-                arrayOf(ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET, ImpactProperty.TIMES_IMPACT)
-            }
-            GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT -> {
-                arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPROVEMENT)
-            }
-            GeneMutationSelectionMethod.APPROACH_IMPACT -> arrayOf(ImpactProperty.TIMES_IMPACT)
-
-            GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT -> {
-                arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT)
-            }else -> {
-                throw IllegalArgumentException("invalid gene selection method: method cannot be NONE or adaptive, but $method")
-            }
-        }
-    }
-
 
     /**
      * decide an archive-based gene selection method when the selection is adaptive (i.e., [GeneMutationSelectionMethod.adaptive])
@@ -162,7 +135,7 @@ class ArchiveGeneSelector {
             properties.map { p->
                 if (usingCounter == null){
                     when(config.geneWeightBasedOnImpactsBy){
-                        EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER -> getCounterByProperty(impact, p, targets).toDouble()
+                        EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER -> getCounterByProperty(impact, p, targets)
                         // weight = degree * 100, otherwise the difference is quite minor
                         EMConfig.GeneWeightBasedOnImpact.RATIO, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> getDegreeByProperty(impact, p, targets) * 100
                     }
@@ -203,7 +176,7 @@ class ArchiveGeneSelector {
      * the more，the better
      */
     private fun getCounterByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>): Double {
-        val value = impact.getCounter(property, targets, By.SUM, true)
+        val value = impact.getCounter(property, targets, By.SUM, true)?: return 0.0
 
         if (value < 0) return value
 
@@ -217,11 +190,10 @@ class ArchiveGeneSelector {
      * the more，the better
      */
     private fun getDegreeByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>): Double {
-        val value = impact.getDegree(property, targets, By.SUM, true)
-        if (value < 0) return value
+        val value = impact.getDegree(property, targets, By.SUM, true) ?: return 1.0
 
         return when (property) {
-            ImpactProperty.TIMES_IMPACT -> value
+            ImpactProperty.TIMES_IMPACT, ImpactProperty.E_IMPACT_DIVID_NO_IMPACT -> value
             else -> 1.0 - value
         }
     }

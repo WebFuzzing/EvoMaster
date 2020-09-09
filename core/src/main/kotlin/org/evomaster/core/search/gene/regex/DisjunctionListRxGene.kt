@@ -7,7 +7,7 @@ import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionLi
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 
@@ -54,7 +54,7 @@ class DisjunctionListRxGene(
         }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         if(disjunctions.size > 1
                 && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(PROB_NEXT))){
             //activate the next disjunction
@@ -64,7 +64,7 @@ class DisjunctionListRxGene(
         }
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is DisjunctionListRxGeneImpact)
             throw IllegalArgumentException("mismatched gene impact")
 
@@ -82,30 +82,30 @@ class DisjunctionListRxGene(
                 forceNotEmpty = true,
                 adaptiveWeight = true
         )
-        return selected.map { it to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.disjunctions[disjunctions.indexOf(it)]) }.toList()
+        return selected.map { it to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.disjunctions[disjunctions.indexOf(it)], it) }.toList()
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         // select another disjunction based on impact
         if (enableAdaptiveGeneMutation || selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
             additionalGeneMutationInfo?:throw IllegalStateException("")
-            if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is DisjunctionListRxGeneImpact)
-                throw IllegalArgumentException("mismatched gene impact")
+            if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DisjunctionListRxGeneImpact){
+                val candidates = disjunctions.filterIndexed { index, _ -> index != activeDisjunction  }
+                val impacts = candidates.map {
+                    additionalGeneMutationInfo.impact.disjunctions[disjunctions.indexOf(it)]
+                }
 
-            val candidates = disjunctions.filterIndexed { index, _ -> index != activeDisjunction  }
-            val impacts = candidates.map {
-                additionalGeneMutationInfo.impact.disjunctions[disjunctions.indexOf(it)]
+                val selected = mwc.selectSubGene(
+                        candidateGenesToMutate = candidates,
+                        impacts = impacts,
+                        targets = additionalGeneMutationInfo.targets,
+                        forceNotEmpty = true,
+                        adaptiveWeight = true
+                )
+                activeDisjunction = disjunctions.indexOf(randomness.choose(selected))
+                return true
             }
-
-            val selected = mwc.selectSubGene(
-                    candidateGenesToMutate = candidates,
-                    impacts = impacts,
-                    targets = additionalGeneMutationInfo.targets,
-                    forceNotEmpty = true,
-                    adaptiveWeight = true
-            )
-            activeDisjunction = disjunctions.indexOf(randomness.choose(selected))
-            return true
+                //throw IllegalArgumentException("mismatched gene impact")
         }
 
         //activate the next disjunction
@@ -151,4 +151,7 @@ class DisjunctionListRxGene(
     }
 
     override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() * PROB_NEXT + 1
+
+    override fun innerGene(): List<Gene> = disjunctions
+
 }

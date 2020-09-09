@@ -1132,9 +1132,15 @@ class EMConfig {
     @Cfg("Whether to enable archive-based gene mutation")
     var archiveGeneMutation = ArchiveGeneMutation.NONE
 
+    @Experimental
+    @Cfg("Specify a maximum length of history when applying archive-based gene mutation")
+    var maxlengthOfHistoryForAGM = 10
+
     enum class ArchiveGeneMutation {
         NONE,
         SPECIFIED,
+        SPECIFIED_WITH_TARGETS,
+        SPECIFIED_WITH_SPECIFIC_TARGETS,
         ADAPTIVE
     }
 

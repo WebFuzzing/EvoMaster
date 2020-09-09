@@ -62,3 +62,4 @@ experiments/target/
 /core-it/target/
 /coveredTargets.txt
 /core-driver-it/target/
+/core-it/src/test/kotlin/exp/

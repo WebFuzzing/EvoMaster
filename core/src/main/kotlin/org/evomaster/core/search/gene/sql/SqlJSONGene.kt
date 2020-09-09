@@ -9,7 +9,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
@@ -34,20 +34,20 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
         objectGene.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return if (objectGene.isMutable()) listOf(objectGene) else emptyList()
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlJsonGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(objectGene))
                 throw IllegalStateException("mismatched input: the internalGenes should only contain objectGene")
-            return listOf(objectGene to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.geneImpact))
+            return listOf(objectGene to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.geneImpact, objectGene))
         }
         throw IllegalArgumentException("impact is null or not SqlJsonGeneImpact")
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         // do nothing since the objectGene is not mutable
         return true
     }
@@ -89,23 +89,10 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
             listOf(this).plus(objectGene.flatView(excludePredicate))
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
-        if (original !is SqlJSONGene){
-            log.warn("original ({}) should be SqlJSONGene", original::class.java.simpleName)
-            return
-        }
-        if (mutated !is SqlJSONGene){
-            log.warn("mutated ({}) should be SqlJSONGene", mutated::class.java.simpleName)
-            return
-        }
-        objectGene.archiveMutationUpdate(original.objectGene, mutated.objectGene, targetsEvaluated, archiveMutator)
-    }
-
-    override fun reachOptimal(targets: Set<Int>): Boolean {
-        return objectGene.reachOptimal(targets)
-    }
-
     override fun mutationWeight(): Double {
         return objectGene.mutationWeight()
     }
+
+    override fun innerGene(): List<Gene> = listOf(objectGene)
+
 }

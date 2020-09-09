@@ -154,11 +154,6 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
              */
             current = saveMutation(result, archive, current, mutatedWithTraces)
 
-            // gene mutation evaluation
-            if (config.enableArchiveGeneMutation()){
-                archiveGeneMutator.updateArchiveMutationInfo(currentWithTraces, mutatedWithTraces, mutatedGenes, targetsInfo)
-            }
-
             archiveGeneSelector.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,targetsInfo = targetsInfo, result = result, evaluatedIndividual = current)
 
             when(config.mutationTargetsSelectionStrategy){

@@ -9,8 +9,6 @@ import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.problem.rest.service.RestStructureMutator
-import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -183,6 +181,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
 
         val nextInTracking = next.copy(copyFilter)
+        nextInTracking.wrapWithEvaluatedResults(evaluatedResult)
         pushLatest(nextInTracking)
 
         val new = EvaluatedIndividual(
@@ -376,6 +375,16 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         if (index >= individual.seeInitializingActions().size) return null
             //throw IllegalArgumentException("index $index is out of boundary of initializing actions ${individual.seeInitializingActions().size} of the individual")
         return individual.seeInitializingActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
+    }
+
+    fun findGeneWithActionIndexAndGene(index: Int, gene: Gene, isInitializationAction : Boolean) : Gene?{
+        val action = try {
+            (if (isInitializationAction) individual.seeInitializingActions() else individual.seeActions()).elementAt(index)
+        }catch(e: IndexOutOfBoundsException){
+            return null
+        }
+        // gene should be one of root genes
+        return ImpactUtils.findMutatedGene(action, gene)
     }
 
 

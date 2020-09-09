@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
@@ -68,7 +68,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 .forEach { it.randomize(randomness, forceNewValue, allGenes) }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return fields.filter { it.isMutable() }
     }
 
@@ -133,7 +133,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
 
         if (additionalGeneMutationInfo.impact != null
                 && additionalGeneMutationInfo.impact is ObjectGeneImpact){
@@ -142,29 +142,15 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                     internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
             )
             val map = selected.map { internalGenes.indexOf(it) }
-            return map.map { internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact) }
+            return map.map { internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact, gene = internalGenes[it]) }
         }
         throw IllegalArgumentException("impact is null or not ObjectGeneImpact, ${additionalGeneMutationInfo.impact}")
     }
 
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, EvaluatedMutation>, archiveMutator: ArchiveGeneMutator) {
-        original as? ObjectGene ?: throw IllegalStateException("$original should be ObjectGene")
-        mutated as? ObjectGene ?: throw IllegalStateException("$mutated should be ObjectGene")
-
-        mutated.fields.zip(original.fields) { cf, pf ->
-            Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
-        }.filter { !it.second }.map { it.first }.forEach { g ->
-            val current = fields.find { it.name == g.first.name }
-                    ?: throw IllegalArgumentException("mismatched field")
-            current.archiveMutationUpdate(original = g.second, mutated = g.first, targetsEvaluated = targetsEvaluated, archiveMutator = archiveMutator)
-        }
-    }
-
-    override fun reachOptimal(targets: Set<Int>): Boolean {
-        return fields.all { it.reachOptimal(targets) }
-    }
-
     override fun mutationWeight(): Double = fields.map { it.mutationWeight() }.sum()
+
+    override fun innerGene(): List<Gene> = fields
+
 
 }
