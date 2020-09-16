@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
@@ -10,10 +9,9 @@ import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -25,10 +23,8 @@ class RestStructureMutator : StructureMutator() {
     }
 
     @Inject
-    private lateinit var archiveMutator: ArchiveMutator
-
-    @Inject
     private lateinit var sampler: RestSampler
+
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
 
@@ -96,7 +92,9 @@ class RestStructureMutator : StructureMutator() {
 
         return fw.filter { e ->
             //shouldn't have already an action adding such SQL data
-            ind.dbInitialization.none { a ->
+            ind.dbInitialization
+                    .filter { ! it.representExistingData }
+                    .none { a ->
                 a.table.name.equals(e.key, ignoreCase = true) && e.value.all { c ->
                     // either the selected column is already in existing action
                     (c != "*" && a.selectedColumns.any { x ->
@@ -136,6 +134,8 @@ class RestStructureMutator : StructureMutator() {
             //this would be a bug
             else -> throw IllegalStateException("Cannot handle sample type ${individual.sampleType}")
         }
+
+        if (config.trackingEnabled()) tag(individual, time.evaluatedIndividuals)
     }
 
     private fun mutateForSmartGetCollection(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?) {

@@ -47,6 +47,9 @@ public class EMController {
      */
     private static final Set<String> connectedClientsSoFar = new CopyOnWriteArraySet<>();
 
+    private static final String htmlWarning =
+            //ah! the beauty and elegance of Java when one just wants read a text resource as a string...
+            new Scanner(EMController.class.getResourceAsStream("/warning.html"), "UTF-8").useDelimiter("\\A").next();
 
     public EMController(SutController sutController) {
         this.sutController = Objects.requireNonNull(sutController);
@@ -72,6 +75,13 @@ public class EMController {
      */
     public static void resetConnectedClientsSoFar(){
         connectedClientsSoFar.clear();
+    }
+
+    @Path("/")
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    public Response getWarning(){
+        return Response.status(400).entity(htmlWarning).build();
     }
 
     @Path(ControllerConstants.INFO_SUT_PATH)
@@ -216,8 +226,22 @@ public class EMController {
                         want to do it
                      */
                     if (dto.resetState != null && dto.resetState) {
-                        sutController.resetStateOfSUT();
-                        sutController.newTest();
+                        try{
+                            /*
+                                This should not fail... but, as it is user code, it might fail...
+                                When it does, it is a major issue, as it can leave the system in
+                                an inconsistent state for the following fitness evaluations.
+                                So, we always force a newTest, even when reset fails.
+
+                                TODO: a current problem is in Proxyprint, in which after REST calls
+                                it seems there are locks on the DB (this might happen if a transaction
+                                is started but then not committed). Ideally, in the reset of DBs we should
+                                force all lock releases, and possibly point any left lock as a potential bug
+                             */
+                            sutController.resetStateOfSUT();
+                        } finally {
+                            sutController.newTest();
+                        }
                     }
 
                     /*
@@ -287,6 +311,12 @@ public class EMController {
                 dto.targets.add(info);
             });
 
+            /*
+                Note: it is important that extra is computed before AdditionalInfo,
+                as heuristics on SQL might add new entries to String specializations
+             */
+            dto.extraHeuristics = sutController.getExtraHeuristics();
+
             List<AdditionalInfo> additionalInfos = sutController.getAdditionalInfoList();
             if (additionalInfos != null) {
                 additionalInfos.forEach(a -> {
@@ -294,6 +324,8 @@ public class EMController {
                     info.queryParameters = new HashSet<>(a.getQueryParametersView());
                     info.headers = new HashSet<>(a.getHeadersView());
                     info.lastExecutedStatement = a.getLastExecutedStatement();
+                    info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
+                    info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
 
                     info.stringSpecializations = new HashMap<>();
                     for(Map.Entry<String, Set<StringSpecializationInfo>> entry :
@@ -319,7 +351,7 @@ public class EMController {
                 return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
             }
 
-            dto.extraHeuristics = sutController.getExtraHeuristics();
+
 
             return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
 

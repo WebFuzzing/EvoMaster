@@ -93,14 +93,13 @@ class TestCaseWriter {
         this.expectationsWriter = ExpectationsWriter()
         expectationsWriter.setFormat(this.format)
 
-        val objGenerator = ObjectGenerator()
-
         setupWriter(config, objectGenerator)
         counter = 0
 
         val lines = Lines()
 
-        if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER){
+        if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
+                && test.test.getClusters().size != 0){
             clusterComment(lines, test)
         }
         if (format.isJUnit()) {
@@ -115,14 +114,15 @@ class TestCaseWriter {
 
         lines.indented {
 
-            val ind = test.test.individual
+            val ind = test.test
 
-            if (ind is RestIndividual) {
+            if (ind.individual is RestIndividual) {
                 if (configuration.expectationsActive) {
-                    expectationsWriter.addDeclarations(lines)
+                    expectationsWriter.addDeclarations(lines, ind as EvaluatedIndividual<RestIndividual>)
+                    //TODO: -> also check expectation generation before adding declarations
                 }
-                if (ind.dbInitialization.isNotEmpty()) {
-                    SqlWriter.handleDbInitialization(format, ind.dbInitialization, lines)
+                if (ind.individual.dbInitialization.isNotEmpty()) {
+                    SqlWriter.handleDbInitialization(format, ind.individual.dbInitialization, lines)
                 }
             }
 
@@ -135,6 +135,7 @@ class TestCaseWriter {
                     TODO: rather declare variable first time we access it?
                  */
                 lines.addEmpty()
+
 
                 test.test.evaluatedActions().asSequence()
                         .map { it.action }
@@ -275,7 +276,7 @@ class TestCaseWriter {
             }
         }
 
-        handleResponse(lines, res)
+        handleResponse(call, res, lines)
         handleLastLine(call, res, lines, name)
 
         //BMR should expectations be here?
@@ -283,7 +284,6 @@ class TestCaseWriter {
         if (configuration.expectationsActive) {
             expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
         }
-        //TODO: BMR expectations from partial oracles here?
     }
 
     /**
@@ -291,7 +291,10 @@ class TestCaseWriter {
      */
     private fun needsResponseVariable(call: RestCallAction, res: RestCallResult) : Boolean{
 
-        return configuration.expectationsActive || (call.saveLocation && !res.stopping)
+        return (configuration.expectationsActive
+                && partialOracles.generatesExpectation(call, res))
+               // || !res.failedCall()
+                || (call.saveLocation && !res.stopping)
     }
 
     private fun handleFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, resVarName: String) {
@@ -404,7 +407,7 @@ class TestCaseWriter {
         lines.append(")")
     }
 
-    private fun handleResponse(lines: Lines, res: RestCallResult) {
+    private fun handleResponse(call: RestCallAction, res: RestCallResult, lines: Lines) {
         if (!res.failedCall()) {
 
             val code = res.getStatusCode()
@@ -426,6 +429,8 @@ class TestCaseWriter {
                 handleResponseContents(lines, res)
             }
         }
+        else if(partialOracles.generatesExpectation(call, res)
+                && format.isJavaOrKotlin()) lines.add(".then()")
     }
 
     private fun handleFieldValues(resContentsItem: Any?): String {
@@ -436,7 +441,12 @@ class TestCaseWriter {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
                 String::class ->  return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
                 Map::class -> return NOT_COVERED_YET
-                ArrayList::class -> return NOT_COVERED_YET
+                ArrayList::class -> if((resContentsItem as ArrayList<*>).all { it is String }) {
+                    return "hasItems(${(resContentsItem as ArrayList<String>).joinToString{"\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""}})"
+                }
+                else {
+                    return NOT_COVERED_YET
+                }
                 else -> return NOT_COVERED_YET
             }
         }
@@ -497,19 +507,19 @@ class TestCaseWriter {
                                     (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
                                     (value is String) -> longArray = true
                                     else -> {
-                                        val printableTh = handleFieldValues(value)
-                                        if (printableTh != "null"
-                                                && printableTh != NOT_COVERED_YET
-                                                && !printableTh.contains("logged")
-                                                && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
-                                        ) {
-                                            //lines.add(".body(\"get($test_index)\", $printableTh)")
-                                            lines.add(".body(\"\", $printableTh)")
+                                        val printableFieldValue = handleFieldValues(value)
+                                        if (printSuitable(printableFieldValue)) {
+                                            lines.add(".body(\"\", $printableFieldValue)")
                                         }
                                     }
                                 }
                             }
-                            if(longArray) lines.add(".body(\"\", hasItems(${resContents.joinToString{"\"$it\""}}))")
+                            if(longArray) {
+                                val printableContent = handleFieldValues(resContents)
+                                if (printSuitable(printableContent)) {
+                                    lines.add(".body(\"\", $printableContent)")
+                                }
+                            }
                         }
                         else{
                             // the object is empty
@@ -564,18 +574,13 @@ class TestCaseWriter {
                     val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
                     val actualValue = flatContent[it]
                     if (actualValue != null) {
-                        val printableTh = handleFieldValues(actualValue)
-                        if (printableTh != "null"
-                                && printableTh != NOT_COVERED_YET
-                                && !printableTh.contains("logged")
-                                && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
-                        ) {
-                            //lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                        val printableFieldValue = handleFieldValues(actualValue)
+                        if (printSuitable(printableFieldValue)) {
                             /*
                                 There are some fields like "id" which are often non-deterministic,
                                 which unfortunately would lead to flaky tests
                              */
-                            if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableTh})")
+                            if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableFieldValue})")
                         }
                     }
                 }
@@ -764,5 +769,19 @@ class TestCaseWriter {
             lines.add("* $c")
         }
         lines.add("*/")
+    }
+
+    /**
+     * Some content may be lead to problems in the resultant test case.
+     * Null values, or content that is not yet handled are can lead to un-compilable generated tests.
+     * Removing strings that contain "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
+     * Such information can cause failures upon re-run, as object references and timestamps will differ.
+     */
+
+    private fun printSuitable(printableContent: String): Boolean{
+        return (printableContent != "null"
+                && printableContent != NOT_COVERED_YET
+                && !printableContent.contains("logged")
+                && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
     }
 }

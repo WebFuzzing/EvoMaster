@@ -10,6 +10,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -31,20 +32,20 @@ public class EscapeManualTest extends EscapeTestBase {
         Swagger swagger = new SwaggerParser().parse(swaggerJson);
 
         assertEquals("/", swagger.getBasePath());
-        assertEquals(5, swagger.getPaths().size());
+        assertEquals(7, swagger.getPaths().size());
     }
 
     @Test
     public void testContainsDollar(){
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/escape/containsDollar/doesnt")
+                .get(baseUrlOfSut + "/api/escape/containsDollar/" + false)
                 .then()
                 .statusCode(200)
                 .body("valid", is(false))
                 .body("response", is("Nope"));
 
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/escape/containsDollar/it%24ingdoes")
+                .get(baseUrlOfSut + "/api/escape/containsDollar/" + true)
                 .then()
                 .statusCode(200)
                 .body("valid", is(true))
@@ -53,14 +54,14 @@ public class EscapeManualTest extends EscapeTestBase {
     @Test
     public void testContainsQuote(){
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/escape/containsQuote/doesnt")
+                .get(baseUrlOfSut + "/api/escape/containsQuote/" + false)
                 .then()
                 .statusCode(200)
                 .body("valid", is(false))
                 .body("response", is("Nope"));
 
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/escape/containsQuote/it%22ingdoes")
+                .get(baseUrlOfSut + "/api/escape/containsQuote/" + true)
                 .then()
                 .statusCode(200)
                 .body("valid", is(true))
@@ -124,62 +125,33 @@ public class EscapeManualTest extends EscapeTestBase {
 
     }
 
-
-    /*
     @Test
-    public void testContainsQuote2(){
+    public void testSlash(){
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/escape/containsQuote/doesnt")
+                .get(baseUrlOfSut + "/api/escape/containsSlash/" + false)
                 .then()
                 .statusCode(200)
                 .body("valid", is(false))
                 .body("response", is("Nope"));
 
+
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/escape/containsQuote/it%2F%2F%22ingdoes")
+                .get(baseUrlOfSut + "/api/escape/containsSlash/" + true)
                 .then()
                 .statusCode(200)
                 .body("valid", is(true))
-                .body("response", containsString("\""));
-    }
-
-
-
-
-    @Test
-    public void testContainsSlash(){
-        given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/escape/containsSlash/doesnt")
-                .then()
-                .statusCode(200)
-                .body("valid", is(false))
-                .body("response", is("Nope"));
-
-        given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/escape/containsSlash/it%5Cingdoes")
-                .then()
-                .statusCode(200)
-                .body("valid", is(true))
-                .body("response", containsString("\\"))
-                .body("response", containsString("%5C"));
+                .body("response", is("This contains \\"));
     }
 
     @Test
-    public void testContainsSingleQuote(){
+    public void testEscapesJson(){
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/escape/containsSingleQuote/doesnt")
+                .get(baseUrlOfSut + "/api/escape/escapesJson/" + true)
                 .then()
                 .statusCode(200)
-                .body("valid", is(false))
-                .body("response", is("Nope"));
+                .assertThat()
+                .contentType("application/json")
+                .body("", hasItems("$-test", "\\-test", "\"-test"));
 
-        given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/escape/containsSingleQuote/it%27ingdoes")
-                .then()
-                .statusCode(200)
-                .body("valid", is(true))
-                .body("response", containsString("\'"))
-                .body("response", containsString("%27"));
     }
-    */
 }

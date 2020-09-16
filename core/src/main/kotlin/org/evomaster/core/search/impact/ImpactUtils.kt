@@ -14,6 +14,7 @@ import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.value.numeric.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 
 /**
  * created by manzh on 2019-09-09
@@ -78,7 +79,7 @@ class ImpactUtils {
             return generateGeneId(gene)
         }
 
-        fun extractMutatedGeneWithContext(mutatedGenes : MutableList<Gene>, individual: Individual, previousIndividual: Individual) : Map<String, MutableList<MutatedGeneWithContext>>{
+        fun extractMutatedGeneWithContext(mutatedGenes : List<Gene>, individual: Individual, previousIndividual: Individual) : Map<String, MutableList<MutatedGeneWithContext>>{
             val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
 
             if (individual.seeActions().isEmpty()){
@@ -107,7 +108,7 @@ class ImpactUtils {
             return mutatedGenesWithContext
         }
 
-        fun extractMutatedDbGeneWithContext(mutatedGenes : MutableList<Gene>, individual: Individual, previousIndividual: Individual) : Map<String, MutableList<MutatedGeneWithContext>>{
+        fun extractMutatedDbGeneWithContext(mutatedGenes : List<Gene>, individual: Individual, previousIndividual: Individual) : Map<String, MutableList<MutatedGeneWithContext>>{
             val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
 
             individual.seeInitializingActions().forEachIndexed { index, action ->
@@ -177,6 +178,11 @@ class ImpactUtils {
                 specified > impacts.size * 0.7 -> ImpactPropertyDistribution.MOST
                 else -> ImpactPropertyDistribution.EQUAL
             }
+        }
+
+
+        fun recentImprovement(impact: Impact) : Boolean{
+            return impact.noImprovement.any { it.value < 2 }
         }
 
     }

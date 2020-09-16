@@ -31,7 +31,7 @@ object TestSuiteSplitter {
 
         val type = config.testSuiteSplitType
         val sol = solution as Solution<RestIndividual>
-        val metrics = mutableListOf(DistanceMetricErrorText(), DistanceMetricLastLine())
+        val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon), DistanceMetricLastLine(config.lastLineEpsilon))
         val errs = sol.individuals.filter {ind ->
             if (ind.individual is RestIndividual) {
                 ind.evaluatedActions().any {ac ->
@@ -88,13 +88,14 @@ object TestSuiteSplitter {
             clusters[metric.getName()] = Clusterer.cluster(
                     //Solution(errs, solution.testSuiteName, Termination.SUMMARY),
                     clusteringSol,
+                    epsilon = metric.getRecommendedEpsilon(),
                     oracles = oracles,
                     metric = metric)
         }
         solution.clusteringTime = ((System.currentTimeMillis() - clusteringStart) / 1000).toInt()
         splitResult.clusteringTime = System.currentTimeMillis() - clusteringStart
         //If clustering is done, the executive summary is, essentially, for free.
-        splitResult.executiveSummary = execSummary(clusters, solution, splitResult)
+        splitResult.executiveSummary = execSummary(clusters, solution, oracles, splitResult)
         return clusters
     }
 
@@ -102,21 +103,35 @@ object TestSuiteSplitter {
      * The [execSummary] function takes in a solution, clusters individuals containing errors by error messsage,
      * then picks from each cluster one individual.
      *
+     * The method uses [MutableSet] to ensure the uniqueness of [EvaluatedIndividual] objects
+     * selected for inclusion in the summary.
+     *
      * The individual selected is the shortest (by action count) or random.
      */
 
     private fun execSummary(clusters : MutableMap<String, MutableList<MutableList<RestCallResult>>>,
                             solution: Solution<RestIndividual>,
+                            oracles: PartialOracles,
                             splitResult: SplitResult
             ) : Solution<RestIndividual> {
-        val execSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
+
+        // MutableSet is used here to ensure the uniqueness of TestCases selected for the executive summary.
+        val execSol = mutableSetOf<EvaluatedIndividual<RestIndividual>>()
         clusters.values.forEach { it.forEachIndexed { index, clu ->
             val inds = solution.individuals.filter { ind ->
                 ind.evaluatedActions().any { ac -> clu.contains(ac.result as RestCallResult) }
             }.toMutableList()
-            execSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
+            inds.sortBy { it.individual.seeActions().size }
+            inds.firstOrNull { execSol.add(it) }
         } }
-        return Solution(execSol, solution.testSuiteName, Termination.SUMMARY)
+
+        val oracleInds = oracles.failByOracle(solution.individuals)
+        oracleInds.forEach { key, ind ->
+            ind.firstOrNull { execSol.add(it) }
+        }
+
+        val execSolList = execSol.toMutableList()
+        return Solution(execSolList, solution.testSuiteName, Termination.SUMMARY)
     }
 
     private fun splitByCluster(clusters: MutableMap<String, MutableList<MutableList<RestCallResult>>>,

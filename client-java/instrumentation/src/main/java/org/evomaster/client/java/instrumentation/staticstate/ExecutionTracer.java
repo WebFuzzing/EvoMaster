@@ -88,6 +88,49 @@ public class ExecutionTracer {
         return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
     }
 
+    public static void handleTaintForStringEquals(String left, String right, boolean ignoreCase){
+
+        if(left == null || right == null){
+            //nothing to do?
+            return;
+        }
+
+        boolean taintedLeft = isTaintInput(left);
+        boolean taintedRight = isTaintInput(right);
+
+        if(taintedLeft && taintedRight){
+            if(ignoreCase ? left.equalsIgnoreCase(right) : left.equals(right)){
+                //tainted, but compared to itself. so shouldn't matter
+                return;
+            }
+
+            /*
+                We consider binding only for base versions of taint, ie we ignore
+                the special strings provided by the Core, as it would lead to nasty
+                side-effects
+             */
+            if(! TaintInputName.isTaintInput(left) || !TaintInputName.isTaintInput(right)){
+                return;
+            }
+
+            //TODO could have EQUAL_IGNORE_CASE
+            String id = left + "___" + right;
+            addStringSpecialization(left, new StringSpecializationInfo(StringSpecialization.EQUAL, id));
+            addStringSpecialization(right, new StringSpecializationInfo(StringSpecialization.EQUAL, id));
+            return;
+        }
+
+        StringSpecialization type = ignoreCase ? StringSpecialization.CONSTANT_IGNORE_CASE
+                : StringSpecialization.CONSTANT;
+
+        if (taintedLeft || taintedRight) {
+            if (taintedLeft) {
+                addStringSpecialization(left, new StringSpecializationInfo(type, right));
+            } else {
+                addStringSpecialization(right, new StringSpecializationInfo(type, left));
+            }
+        }
+    }
 
     public static TaintType getTaintType(String input){
 
@@ -109,6 +152,14 @@ public class ExecutionTracer {
 
     public static List<AdditionalInfo> exposeAdditionalInfoList() {
         return additionalInfoList;
+    }
+
+    public static void markRawAccessOfHttpBodyPayload(){
+        additionalInfoList.get(actionIndex).setRawAccessOfHttpBodyPayload(true);
+    }
+
+    public static void addParsedDtoName(String name){
+        additionalInfoList.get(actionIndex).addParsedDtoName(name);
     }
 
     public static void addQueryParameter(String param){

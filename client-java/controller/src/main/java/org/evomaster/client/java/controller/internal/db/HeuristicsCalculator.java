@@ -9,6 +9,9 @@ import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Timestamp;
@@ -16,8 +19,11 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static org.evomaster.client.java.controller.internal.db.ParserUtils.getWhere;
 
@@ -243,7 +249,7 @@ public class HeuristicsCalculator {
         return Math.min(a, b);
     }
 
-    private Instant getAsInstant(Object obj){
+    protected Instant getAsInstant(Object obj){
 
         if(obj == null){
             /*
@@ -258,29 +264,51 @@ public class HeuristicsCalculator {
         }
 
         if(obj instanceof String){
-            try {
-                return ZonedDateTime.parse(obj.toString()).toInstant();
-            } catch (DateTimeParseException e){
-                /*
-                    maybe it is in some weird format like 28-Feb-17...
-                    this shouldn't really happen, but looks like Hibernate generate SQL from
-                    JPQL with Date handled like this :(
-                 */
-                DateTimeFormatter df = new DateTimeFormatterBuilder()
-                        // case insensitive to parse JAN and FEB
-                        .parseCaseInsensitive()
-                        // add pattern
-                        .appendPattern("dd-MMM-yy")
-                        // create formatter (use English Locale to parse month names)
-                        .toFormatter(Locale.ENGLISH);
 
-                return LocalDate.parse(obj.toString(), df)
-                        .atStartOfDay().toInstant(ZoneOffset.UTC);
+
+            List<Function<String, Instant>> parsers = Arrays.asList(
+                    s ->  ZonedDateTime.parse(s).toInstant(),
+                    s -> Instant.parse(s),
+                    s -> OffsetDateTime.parse( s , DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSX")).toInstant(),
+                    s -> {
+                        /*
+                           maybe it is in some weird format like 28-Feb-17...
+                           this shouldn't really happen, but looks like Hibernate generate SQL from
+                           JPQL with Date handled like this :(
+                        */
+                        DateTimeFormatter df = new DateTimeFormatterBuilder()
+                                // case insensitive to parse JAN and FEB
+                                .parseCaseInsensitive()
+                                // add pattern
+                                .appendPattern("dd-MMM-yy")
+                                // create formatter (use English Locale to parse month names)
+                                .toFormatter(Locale.ENGLISH);
+
+                        return LocalDate.parse(obj.toString(), df)
+                                .atStartOfDay().toInstant(ZoneOffset.UTC);
+                    }
+            );
+
+            String s = obj.toString();
+
+            /*
+                Dealing with timestamps is a mess, including bugs in the JDK itself...
+                https://stackoverflow.com/questions/43360852/cannot-parse-string-in-iso-8601-format-lacking-colon-in-offset-to-java-8-date
+                So, here we try different date parsers, hoping at least one will work...
+             */
+
+            for(Function<String, Instant> p : parsers){
+                try{
+                    return p.apply(s);
+                } catch (DateTimeParseException t) {
+                }
             }
+
+            SimpleLogger.warn("Cannot handle time value in the format: " + s);
+            return null;
         }
 
         SimpleLogger.warn("Cannot handle time value for class: " + obj.getClass());
-
         return null;
     }
 
@@ -396,7 +424,10 @@ public class HeuristicsCalculator {
     private double computeComparison(String a, String b, ComparisonOperator exp) {
 
         if (exp instanceof EqualsTo) {
+
+            ExecutionTracer.handleTaintForStringEquals(a, b, false);
             return DistanceHelper.getLeftAlignmentDistance(a, b);
+
         } else if (exp instanceof NotEqualsTo) {
             if (a.equals(b)) {
                 return Double.MAX_VALUE;

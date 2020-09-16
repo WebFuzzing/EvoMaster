@@ -1,14 +1,14 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.OptionalGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -19,7 +19,17 @@ import org.slf4j.LoggerFactory
 class OptionalGene(name: String,
                    val gene: Gene,
                    var isActive: Boolean = true,
-                   val activeMutationInfo : IntMutationUpdate = IntMutationUpdate(0, 1))
+                   val activeMutationInfo : IntMutationUpdate = IntMutationUpdate(0, 1),
+                   /**
+                    * In some cases, we might add new optional genes that are off by default.
+                    * This is the case for we "expand" the genotype of an individual with new
+                    * info coming from the search.
+                    * But, in these cases, to avoid modifying the phenotype, we must leave them off
+                    * by default.
+                    * However, we might want to tell the search that, at the next mutation, we should
+                    * put them on.
+                    */
+                   var requestSelection: Boolean = false)
     : Gene(name) {
 
 
@@ -35,6 +45,7 @@ class OptionalGene(name: String,
         private set
 
 
+
     init{
         gene.parent = this
     }
@@ -46,7 +57,7 @@ class OptionalGene(name: String,
     }
 
     override fun copy(): Gene {
-        val copy = OptionalGene(name, gene.copy(), isActive, activeMutationInfo.copy())
+        val copy = OptionalGene(name, gene.copy(), isActive, activeMutationInfo.copy(), requestSelection)
         copy.selectable = this.selectable
         return copy
     }
@@ -60,6 +71,8 @@ class OptionalGene(name: String,
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.isActive = other.isActive
+        this.selectable = other.selectable
+        this.requestSelection = other.requestSelection
         this.gene.copyValueFrom(other.gene)
     }
 
@@ -90,83 +103,45 @@ class OptionalGene(name: String,
         }
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
 
-        if(!selectable){
-            return
+        if (!isActive || !gene.isMutable()) return emptyList()
+
+        if (!enableAdaptiveGeneMutation){
+            return if (randomness.nextBoolean(INACTIVE)) emptyList() else listOf(gene)
         }
-
-        if (!isActive) {
-            isActive = true
-        } else {
-
-            if (randomness.nextBoolean(INACTIVE) || !gene.isMutable()) {
-                /*
-                    the idea here is that we deactivate an element only with small
-                    probability. however, if a gene is not mutable, the only mutation
-                    we can do is to switch from active to inactive, and vice-versa
-                 */
-                isActive = false
-            } else {
-                gene.standardMutation(randomness, apc, allGenes)
-            }
-        }
-    }
-
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-
-        if(!selectable){
-            return
-        }
-
-        if(!archiveMutator.enableArchiveMutation()){
-            standardMutation(randomness, apc, allGenes)
-            return
-        }
-
-        val preferActive = if (!archiveMutator.applyArchiveSelection() || impact == null || impact !is OptionalGeneImpact) true
-        else {
-            !impact.activeImpact.run {
-                //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
+        if (additionalGeneMutationInfo?.impact != null && additionalGeneMutationInfo.impact is OptionalGeneImpact){
+            //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
+            val inactive = additionalGeneMutationInfo.impact.activeImpact.run {
                 this.timesToManipulate > 5
                         &&
-                        (this.falseValue.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
+                        (this.falseValue.timesOfImpact.filter { additionalGeneMutationInfo.targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.timesOfImpact.filter { additionalGeneMutationInfo.targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
             }
+            if (inactive) return emptyList() else listOf(gene)
         }
-
-        if (preferActive){
-            if (!isActive){
-                isActive = true
-                activeMutationInfo.counter+=1
-                return
-            }
-            if (randomness.nextBoolean(INACTIVE)){
-                isActive = false
-                activeMutationInfo.counter+=1
-                return
-            }
-        }else{
-            //if preferPresent is false, it is not necessary to mutate the gene
-            activeMutationInfo.reached = archiveMutator.withinNormal()
-            if (activeMutationInfo.reached){
-                activeMutationInfo.preferMin = 0
-                activeMutationInfo.preferMax = 0
-            }
-
-            if (isActive){
-                isActive = false
-                activeMutationInfo.counter+=1
-                return
-            }
-            if (randomness.nextBoolean(INACTIVE)){
-                isActive = true
-                activeMutationInfo.counter+=1
-                return
-            }
-        }
-        gene.archiveMutation(randomness, allGenes, apc, selection, if (impact == null || impact !is OptionalGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
-
+        throw IllegalArgumentException("impact is null or not OptionalGeneImpact")
     }
+
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is OptionalGeneImpact){
+            if (internalGenes.size != 1 || !internalGenes.contains(gene))
+                throw IllegalStateException("mismatched input: the internalGenes should only contain gene")
+            return listOf(gene to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.geneImpact))
+        }
+        throw IllegalArgumentException("impact is null or not OptionalGeneImpact")
+    }
+
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) : Boolean{
+
+        isActive = !isActive
+        if (enableAdaptiveGeneMutation){
+            //TODO MAN further check
+            activeMutationInfo.counter+=1
+        }
+
+        return true
+    }
+
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         return gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
@@ -205,5 +180,9 @@ class OptionalGene(name: String,
              * may handle Boolean Mutation in the future
              */
         }
+    }
+
+    override fun mutationWeight(): Double {
+        return 1.0 + gene.mutationWeight()
     }
 }

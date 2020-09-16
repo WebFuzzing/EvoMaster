@@ -5,6 +5,8 @@ apple.
 com.apple.
 com_cenqua_clover.
 com.cenqua.
+com.google.gson.
+com.p6spy.
 com.sun.
 com.vladium.emma.
 com.yourkit.
@@ -24,4 +26,9 @@ org.powermock.
 org.xml.
 org.w3c.
 mockit.
+shaded.
 sun.
+//
+// issue with TT
+org.glassfish.jersey.uri.PatternWithGroups
+org.springframework.web.util.UriTemplate

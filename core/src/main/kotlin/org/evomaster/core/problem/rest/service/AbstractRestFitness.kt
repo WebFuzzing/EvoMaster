@@ -8,28 +8,32 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.ObjectGenerator
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.SearchTimeController
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.MalformedURLException
+import java.net.URL
 import javax.annotation.PostConstruct
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Client
@@ -55,6 +59,9 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
     @Inject
     private lateinit var searchTimeController: SearchTimeController
+
+    @Inject
+    private lateinit var writer: TestSuiteWriter
 
     private val clientConfiguration = ClientConfig()
             .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
@@ -152,7 +159,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
      */
     open fun expandIndividual(
             individual: RestIndividual,
-            additionalInfoList: List<AdditionalInfoDto>
+            additionalInfoList: List<AdditionalInfoDto>,
+            actionResults: List<ActionResult>
     ) {
 
         if (individual.seeActions().size < additionalInfoList.size) {
@@ -174,10 +182,14 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 continue
             }
 
+            val result = actionResults[i] as RestCallResult
+
             /*
                 Those are OptionalGenes, which MUST be off by default.
                 We are changing the genotype, but MUST not change the phenotype.
                 Otherwise, the fitness value we just computed would be wrong.
+
+                TODO: should update default action templates in Sampler
              */
 
             info.headers
@@ -185,7 +197,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         !action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach {
-                        action.parameters.add(HeaderParam(it, OptionalGene(it, StringGene(it), false)))
+                        action.parameters.add(HeaderParam(it, OptionalGene(it, StringGene(it), false, requestSelection = true)))
                     }
 
             info.queryParameters
@@ -193,11 +205,92 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach { name ->
-                        action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false)))
+                        action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false, requestSelection = true)))
                     }
+
+            if(result.getStatusCode() == 415){
+                /*
+                    In theory, this should not happen.
+                    415 means the media type of the sent payload is wrong.
+                    There is no point for EvoMaster to do that, ie sending an XML to
+                    an endpoint that expects a JSON.
+                    Having such kind of test would be pretty pointless.
+
+                    However, a POST/PUT could expect a payload and, if that is not specified
+                    in OpenAPI, we could get a 415 when sending no data.
+                 */
+                if(action.parameters.none{ it is BodyParam}){
+
+                    val obj = ObjectGene("body", listOf())
+
+                    val body = BodyParam(obj,
+                             // TODO could look at "Accept" header instead of defaulting to JSON
+                            EnumGene("contentType", listOf("application/json")))
+
+                    val update = UpdateForBodyParam(body)
+
+                    action.parameters.add(update)
+                }
+            }
+
+
+            val dtoNames = info.parsedDtoNames;
+
+            val noBody = action.parameters.none{ it is BodyParam}
+            val emptyObject = !noBody &&
+                    // this is the case of 415 handling
+                    action.parameters.find { it is BodyParam }!!.let {
+                        it.gene is ObjectGene && it.gene.fields.isEmpty()
+                    }
+
+            if(info.rawAccessOfHttpBodyPayload == true
+                    && dtoNames.isNotEmpty()
+                    && (noBody || emptyObject)
+            ){
+                /*
+                    The SUT tried to read the HTTP body payload, but there is no info
+                    about it in the schema. This can happen when payloads are dynamically
+                    loaded directly in the business logic of the SUT, and automated tools
+                    like SpringDoc/SpringFox failed to infer what is read
+
+                    TODO could handle other types besides JSON
+                    TODO what to do if more than 1 DTO are registered?
+                         Likely need a new MultiOptionGene similar to DisjunctionListRxGene
+                 */
+                if(dtoNames.size > 1){
+                    LoggingUtil.uniqueWarn(log, "More than 1 DTO option: [${dtoNames.sorted().joinToString(", ")}]")
+                }
+                val name = dtoNames.first()
+                val obj = getObjectGeneForDto(name)
+
+                val body = BodyParam(obj, EnumGene("contentType", listOf("application/json")))
+                val update = UpdateForBodyParam(body)
+                action.parameters.add(update)
+            }
         }
     }
 
+    private fun getObjectGeneForDto(name: String) : Gene{
+
+        if(!infoDto.unitsInfoDto.parsedDtos.containsKey(name)){
+            /*
+                parsedDto info is update throughout the search.
+                so, if info is missing, we re-fetch the whole data.
+                Would be more efficient to just fetch new data, but,
+                as this will happens seldom (at most N times for N dtos),
+                no much point in optimizing it
+             */
+            infoDto = rc.getSutInfo()!!
+
+            if(!infoDto.unitsInfoDto.parsedDtos.containsKey(name)){
+                throw RuntimeException("BUG: info for DTO $name is not available in the SUT driver")
+            }
+        }
+
+        val schema : String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
+
+        return RestActionBuilderV3.createObjectGeneForDTO(name, schema)
+    }
 
     /**
      * Initializing Actions before evaluating its fitness if need
@@ -263,6 +356,16 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         fv.updateTarget(bugId, 1.0, it)
                         result.setLastStatementWhen500(source)
                     }
+                    /*
+                        Objectives for the two partial oracles implemented thus far.
+                    */
+                    val call = actions[it] as RestCallAction
+                    val oracles = writer.getPartialOracles().activeOracles(call, result)
+                    oracles.filter { it.value }.forEach { entry ->
+                        val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
+                        val bugId = idMapper.handleLocalTarget(oracleId)
+                        fv.updateTarget(bugId, 1.0, it)
+                    }
                 }
     }
 
@@ -272,6 +375,21 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             infoDto.baseUrlOfSUT
         } else {
             BlackBoxUtils.restUrl(config)
+        }
+
+        try{
+            /*
+                Note: this in theory should already been checked: either in EMConfig for
+                Black-box testing, or already in the driver for White-Box testing
+             */
+            URL(baseUrl)
+        } catch (e: MalformedURLException){
+            val base = "Invalid 'baseUrl'."
+            val wb = "In the EvoMaster driver, in the startSut() method, you must make sure to return a valid URL."
+            val err = " ERROR: $e"
+
+            val msg = if(config.blackBox) "$base $err" else "$base $wb $err"
+            throw SutProblemException(msg)
         }
 
         if (baseUrl.endsWith("/")) {
@@ -336,12 +454,17 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     client.close() //make sure to release any resource
                     client = ClientBuilder.newClient()
 
-                    val seconds = 30
-                    log.warn("Running out of ephemeral ports. Waiting $seconds seconds before re-trying connection")
-                    Thread.sleep(seconds * 1000L)
+                    TcpUtils.handleEphemeralPortIssue()
 
                     createInvocation(a, chainState, cookies).invoke()
-
+                }
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
+                    /*
+                        This should not really happen... but it does :( at least on Windows...
+                     */
+                    log.warn("TCP connection to SUT problem: ${e.cause!!.message}")
+                    rcr.setTcpProblem(true)
+                    return false
                 }
                 else -> throw e
             }
@@ -379,8 +502,6 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 log.warn("Failed to parse HTTP response: ${e.message}")
             }
         }
-
-
 
         if (response.status == 401 && a.auth !is NoAuth) {
             //this would likely be a misconfiguration in the SUT controller
@@ -614,5 +735,24 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         }
 
         return map
+    }
+
+    override fun targetsToEvaluate(targets: Set<Int>, individual: T): Set<Int> {
+        /*
+            We cannot request all non-covered targets, because:
+            1) performance hit
+            2) might not be possible to have a too long URL
+         */
+        //TODO prioritized list
+//        val ids = randomness.choose(
+//                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
+//                100).toSet()
+        val ts = targets.filter { !IdMapper.isLocal(it) }.toMutableSet()
+        val nc = archive.notCoveredTargets().filter { !IdMapper.isLocal(it) && !ts.contains(it)}
+        return when {
+            ts.size > 100 -> randomness.choose(ts, 100)
+            nc.isEmpty() -> ts
+            else -> ts.plus(randomness.choose(nc, 100 - ts.size))
+        }
     }
 }

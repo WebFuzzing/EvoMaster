@@ -145,6 +145,8 @@ class Main {
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)
 
+            val writer = setupPartialOracles(injector, config)
+
             val solution = run(injector)
             val faults = solution.overall.potentialFoundFaults(idMapper)
 
@@ -338,7 +340,7 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
-            val writer = setupPartialOracles(injector, config, controllerInfoDto)
+            val writer = setupPartialOracles(injector, config)
 
             val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
@@ -352,7 +354,13 @@ class Main {
             }
         }
 
-        private fun setupPartialOracles(injector: Injector, config: EMConfig, controllerInfoDto: ControllerInfoDto?): TestSuiteWriter{
+        @JvmStatic
+        fun initPartialOracles(injector: Injector){
+            val config = injector.getInstance(EMConfig::class.java)
+            val writer = setupPartialOracles(injector, config)
+        }
+
+        private fun setupPartialOracles(injector: Injector, config: EMConfig): TestSuiteWriter{
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             if(config.problemType == EMConfig.ProblemType.REST){
                 // Some initialization to handle test suite splitting and relevant partial oracles
@@ -362,7 +370,7 @@ class Main {
                 objGenerator.setSwagger(swagger)
                 partialOracles.setGenerator(objGenerator)
                 partialOracles.setFormat(config.outputFormat)
-                assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+                //assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
                 writer.setSwagger(swagger)
                 writer.setPartialOracles(partialOracles)
                 writer.setObjectGenerator(objGenerator)
@@ -446,29 +454,6 @@ class Main {
             val statistics = injector.getInstance(Statistics::class.java)
             statistics.writeCoveredTargets(solution, config.coveredTargetSortedBy)
         }
-        /*
-        private fun writeExecutiveSummary(injector: Injector,
-                                          solution: Solution<*>,
-                                          controllerInfoDto: ControllerInfoDto?,
-                                          partialOracles: PartialOracles){
-            val config = injector.getInstance(EMConfig::class.java)
-
-            if (!config.createTests) {
-                return
-            }
-
-            val writer = injector.getInstance(TestSuiteWriter::class.java)
-            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
-
-            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY_ONLY, partialOracles)
-            if(executiveSummary.isNotEmpty()) {
-                executiveSummary.forEach {
-                    writer.writeTests(it, controllerInfoDto?.fullName)
-                }
-            }
-        }
-
-         */
 
         private fun writeExecSummary(injector: Injector,
                                      controllerInfoDto: ControllerInfoDto?,

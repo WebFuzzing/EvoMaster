@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -47,4 +48,12 @@ public class UnitsInfoDto {
      * we explicitly keep track of how they are called (eg their inputs).
      */
     public int numberOfTrackedMethods;
+
+
+    /*
+        Key -> DTO full name
+        Value -> OpenAPI object schema
+        TODO should consider if also adding info on type, eg JSON vs XML
+     */
+    public Map<String,String> parsedDtos;
 }

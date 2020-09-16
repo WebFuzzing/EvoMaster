@@ -5,6 +5,9 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 
 class DisjunctionRxGene(
@@ -34,6 +37,9 @@ class DisjunctionRxGene(
         }
     }
 
+    companion object{
+        private const val APPEND = 0.05
+    }
 
     override fun copy(): Gene {
         val copy = DisjunctionRxGene(name, terms.map { it.copy() as RxTerm }, matchStart, matchEnd)
@@ -59,20 +65,27 @@ class DisjunctionRxGene(
         return !matchStart || !matchEnd || terms.any { it.isMutable() }
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        if(!matchStart && randomness.nextBoolean(0.05)){
-            extraPrefix = ! extraPrefix
-        } else if(!matchEnd && randomness.nextBoolean(0.05)){
-            extraPostfix = ! extraPostfix
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+        return if(!matchStart && randomness.nextBoolean(APPEND)){
+            emptyList()
+        } else if(!matchEnd && randomness.nextBoolean(APPEND)){
+            emptyList()
         } else {
-            val terms = terms.filter { it.isMutable() }
-            if(terms.isEmpty()){
-                return
-            }
-            val term = randomness.choose(terms)
-            term.standardMutation(randomness, apc, allGenes)
+            terms.filter { it.isMutable() }
         }
+    }
 
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+        TODO()
+    }
+
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+        if(!matchStart){
+            extraPrefix = ! extraPrefix
+        } else {
+            extraPostfix = ! extraPostfix
+        }
+        return true
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -114,5 +127,9 @@ class DisjunctionRxGene(
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(terms.flatMap { it.flatView(excludePredicate) })
+    }
+
+    override fun mutationWeight(): Double {
+        return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
     }
 }

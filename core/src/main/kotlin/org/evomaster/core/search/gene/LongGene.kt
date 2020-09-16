@@ -1,12 +1,11 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 
 class LongGene(
@@ -25,8 +24,10 @@ class LongGene(
 
         var k = if (randomness.nextBoolean(0.1)) {
             randomness.nextLong()
-        } else {
+        } else if (randomness.nextBoolean(0.1)) {
             randomness.nextInt().toLong()
+        } else {
+            randomness.nextInt(1000).toLong()
         }
 
         while (forceNewValue && k == value) {
@@ -36,7 +37,7 @@ class LongGene(
         value = k
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) : Boolean{
 
         //choose an i for 2^i modification
         val delta = GeneUtils.getDelta(randomness, apc)
@@ -44,12 +45,9 @@ class LongGene(
         val sign = randomness.choose(listOf(-1, +1))
 
         value += (sign * delta)
-    }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        standardMutation(randomness, apc, allGenes)
+        return true
     }
-
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         return value.toString()

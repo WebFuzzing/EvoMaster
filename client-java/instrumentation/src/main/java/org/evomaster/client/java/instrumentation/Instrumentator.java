@@ -5,7 +5,6 @@ package org.evomaster.client.java.instrumentation;
 import org.evomaster.client.java.instrumentation.coverage.CoverageClassVisitor;
 import org.evomaster.client.java.instrumentation.coverage.ThirdPartyClassVisitor;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
-import org.evomaster.client.java.instrumentation.tracker.TrackerClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -65,21 +64,9 @@ public class Instrumentator {
         reader.accept(cn, readFlags);
 
         if(canInstrumentForCoverage(className)){
-
             cv = new CoverageClassVisitor(cv, className);
-
-            /*
-                this should be done after coverage instrumentation, as
-                we don't want these extra methods added as part of
-                targets to cover
-             */
-            cv = new TrackerClassVisitor(cv, className);
-
         } else {
-
             cv = new ThirdPartyClassVisitor(cv, className);
-
-            //reader.accept(cv, readFlags);
         }
 
         cn.accept(cv);

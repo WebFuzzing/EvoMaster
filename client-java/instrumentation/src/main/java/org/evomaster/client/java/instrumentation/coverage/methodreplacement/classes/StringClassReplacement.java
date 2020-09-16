@@ -23,18 +23,9 @@ public class StringClassReplacement implements MethodReplacementClass {
     public static boolean equals(String caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
-        boolean taintedCaller = ExecutionTracer.isTaintInput(caller);
-        boolean taintedOther = anObject != null && ExecutionTracer.isTaintInput(anObject.toString());
-
-        if (taintedCaller || taintedOther) {
-            if (taintedCaller) {
-                ExecutionTracer.addStringSpecialization(caller,
-                        new StringSpecializationInfo(StringSpecialization.CONSTANT, anObject.toString()));
-            } else {
-                ExecutionTracer.addStringSpecialization(anObject.toString(),
-                        new StringSpecializationInfo(StringSpecialization.CONSTANT, caller));
-            }
-        }
+        String left = caller;
+        String right = anObject == null ? null : anObject.toString();
+        ExecutionTracer.handleTaintForStringEquals(left, right, false);
 
         //not important if NPE
         boolean result = caller.equals(anObject);
@@ -65,18 +56,7 @@ public class StringClassReplacement implements MethodReplacementClass {
     public static boolean equalsIgnoreCase(String caller, String anotherString, String idTemplate) {
         Objects.requireNonNull(caller);
 
-        boolean taintedCaller = ExecutionTracer.isTaintInput(caller);
-        boolean taintedOther = ExecutionTracer.isTaintInput(anotherString);
-
-        if (taintedCaller || taintedOther) {
-            if (taintedCaller) {
-                ExecutionTracer.addStringSpecialization(caller,
-                        new StringSpecializationInfo(StringSpecialization.CONSTANT_IGNORE_CASE, anotherString));
-            } else {
-                ExecutionTracer.addStringSpecialization(anotherString,
-                        new StringSpecializationInfo(StringSpecialization.CONSTANT_IGNORE_CASE, caller));
-            }
-        }
+        ExecutionTracer.handleTaintForStringEquals(caller, anotherString, true);
 
         //not important if NPE
         boolean result = caller.equalsIgnoreCase(anotherString);

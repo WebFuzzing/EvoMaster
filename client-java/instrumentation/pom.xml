@@ -57,6 +57,27 @@
             <artifactId>automaton</artifactId>
         </dependency>
 
+        <!--
+            "Provided" dependencies.
+            See ThirdPartyMethodReplacementClass for an explanation for why needed
+            -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

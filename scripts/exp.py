@@ -123,7 +123,7 @@ MINUTES_PER_RUN = int(sys.argv[7])
 
 # How many scripts M we want the N jobs to be divided into.
 # Note: on cluster we can at most submit 400 scripts.
-# Also not that in the same .sh script there can be experiments only for a single SUT.
+# Also note that, in the same .sh script, there can be experiments only for a single SUT.
 NJOBS = int(sys.argv[8])
 
 
@@ -178,7 +178,7 @@ if CLUSTER:
     HOME = os.environ['HOME']
     EVOMASTER_DIR = HOME
     CASESTUDY_DIR = HOME + "/dist"
-    LOGS_DIR = os.environ['USERWORK']
+    LOGS_DIR = HOME + "/nobackup"
 
 
 ## Local configurations
@@ -186,7 +186,7 @@ else:
     # These SUTs requires Docker
     SUTS = [
         Sut("ind0", 1, JDK_8),
-        Sut("ocvn-rest", 1, JDK_8),
+        # Sut("ocvn-rest", 1, JDK_8),
         # Sut("ncs-js", 1, JS),
         # Sut("scs-js", 1, JS)
     ]
@@ -212,9 +212,17 @@ else:
 
     LOGS_DIR = BASE_DIR
 
+    JAVA_HOME_8 = os.environ.get("JAVA_HOME_8", "")
+    if JAVA_HOME_8 == "":
+        raise Exception("You must specify a JAVA_HOME_8 env variable specifying where JDK 8 is installed")
+
+    JAVA_HOME_11 = os.environ.get("JAVA_HOME_11", "")
+    if JAVA_HOME_11 == "":
+        raise Exception("You must specify a JAVA_HOME_11 env variable specifying where JDK 11 is installed")
+
 
 # How to run EvoMaster
-EVOMASTER = "java  -Xms2G -Xmx4G  -jar evomaster.jar"
+EVOMASTER_JAVA_OPTIONS = " -Xms2G -Xmx4G  -jar evomaster.jar "
 AGENT = "evomaster-agent.jar"
 EM_POSTFIX = "-evomaster-runner.jar"
 SUT_POSTFIX = "-sut.jar"
@@ -359,7 +367,8 @@ def createJobHead(port, sut, timeoutMinutes):
     if sut.platform == JDK_8 or sut.platform == JDK_11:
         params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart)
         jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
-        command = "java " + jvm + " -jar " + sut.name + EM_POSTFIX + " " + params + " > " + sut_log + " 2>&1 &"
+        JAVA = getJavaCommand(sut)
+        command = JAVA + jvm + " -jar " + sut.name + EM_POSTFIX + " " + params + " > " + sut_log + " 2>&1 &"
 
     elif sut.platform == JS:
         # TODO sutPort
@@ -392,15 +401,27 @@ def closeJob(port, sut_name):
 
 class State:
     def __init__(self, budget):
+        # total budget for the search which is left
         self.budget = budget
 
+    # number of generated script files, so far
     generated = 0
+    # each job will have a different time duration, and we keep track
+    # of those durations for every single generated script
     waits = []
+    # how many jobs/scripts we still need to create
     jobsLeft = NJOBS
+    # how many SUTs we still need to create jobs/scripts for.
+    # recall that in a script there can be only 1 SUT
     sutsLeft = len(SUTS)
+    # how much budget we have used for the current opened job/script
     counter = 0
+    # whether we are adding a new run in an existing script.
+    # if not, need to make sure to create all the right header / init methods
     opened = False
+    # budget left for each remaining job/script
     perJob = 0
+    # to avoid TCP conflicts, each job uses a different port range
     port = BASE_SEED
 
     def updatePerJob(self):
@@ -413,10 +434,15 @@ class State:
         self.port += 10
 
     def updateBudget(self, weight):
+        # the used budget for current script increases...
         self.counter += weight
+        # ... whereas the total left budget decreases by the same amount
         self.budget -= weight
 
     def getTimeoutMinutes(self):
+        # the timeout we want to wait for does depend not only on the number of runs, but
+        # also on the weights of the SUT (this is captured by self.counter).
+        # Note: we add a 10% just in case...
         timeoutMinutes = TIMEOUT_SUT_START_MINUTES + int(math.ceil(1.1 * self.counter * MINUTES_PER_RUN))
         self.waits.append(timeoutMinutes)
         return timeoutMinutes
@@ -448,6 +474,16 @@ def createOneJob(state, sut, seed, config):
     return code
 
 
+def getJavaCommand(sut):
+        JAVA = "java "
+        if not CLUSTER:
+             if sut.platform == JDK_8:
+                    JAVA = "\"" + JAVA_HOME_8 +"\"/bin/java "
+             elif sut.platform == JDK_11:
+                    JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
+        return JAVA
+
+
 def addJobBody(port, sut, seed, config):
     script = io.StringIO()
 
@@ -470,8 +506,10 @@ def addJobBody(port, sut, seed, config):
     params += " --appendToStatisticsFile=true"
     params += " --writeStatistics=true"
     params += " --showProgress=false"
+    params += " --testSuiteSplitType=NONE"
 
-    command = EVOMASTER + params + " >> " + em_log + " 2>&1"
+    JAVA = getJavaCommand(sut)
+    command = JAVA + EVOMASTER_JAVA_OPTIONS + params + " >> " + em_log + " 2>&1"
 
     if not CLUSTER:
         script.write("\n\necho \"Starting EvoMaster with: " + command + "\"\n")
@@ -494,8 +532,13 @@ def createJobs():
 
     NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * len(CONFIGS)
     SUT_WEIGHTS = sum(map(lambda x: x.timeWeight, SUTS))
+    # For example, if we have 30 runs and 5 SUTs, the total budget
+    # to distribute among the different jobs/scripts is 150.
+    # However, some SUTs might have weights greater than 1 (ie, they run slower, so
+    # need more budget)
+    TOTAL_BUDGET = NRUNS_PER_SUT * SUT_WEIGHTS
 
-    state = State(NRUNS_PER_SUT * SUT_WEIGHTS)
+    state = State(TOTAL_BUDGET)
 
     SUTS.sort(key=lambda x: -x.timeWeight)
 
@@ -513,12 +556,24 @@ def createJobs():
 
             for config in CONFIGS:
 
+                # first run in current script: we need to create all the initializing preambles
                 if state.counter == 0:
                     code = createOneJob(state, sut, seed, config)
 
-                elif (state.counter + sut.timeWeight) < state.perJob \
-                        or not state.hasSpareJobs() or \
-                        (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight):
+                # can we add this new run to the current opened script?
+                elif(
+                        # we need to check if we would not exceed the budget limit per job
+                        (state.counter + sut.timeWeight) <= state.perJob
+                        # however, that check must be ignored if we cannot open/create any new script file
+                        # for the current SUT
+                        or not state.hasSpareJobs() or
+                        # this case is bit more tricky... let's say only few runs are left that
+                        # we need to allocate in a script, but they are so few that they would need
+                        # only a small percentage of a new script capacity (eg, less than 30%).
+                        # In such a case, to avoid getting very imbalanced execution times,
+                        # we could just add those few runs to the current script.
+                        (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight)
+                     ):
                     code += addJobBody(state.port, sut, seed, config)
                     state.updateBudget(sut.timeWeight)
 
@@ -526,6 +581,8 @@ def createJobs():
                     writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
                     state.resetTmpForNewRun()
                     code = createOneJob(state, sut, seed, config)
+
+                # keep track that a new run has been handled
                 completedForSut += 1
 
         if state.opened:
@@ -548,10 +605,12 @@ def createJobs():
 
 
 class Config:
-    def __init__(self, blackBox, algorithm):
-        self.blackBox = blackBox
-        self.bbExperiments = blackBox
-        self.algorithm = algorithm
+     def __init__(self, useMethodReplacement, useNonIntegerReplacement, expandRestIndividuals, baseTaintAnalysisProbability):
+            self.useMethodReplacement = useMethodReplacement
+            self.useNonIntegerReplacement = useNonIntegerReplacement
+            self.expandRestIndividuals = expandRestIndividuals
+            self.baseTaintAnalysisProbability = baseTaintAnalysisProbability
+
 
 
 
@@ -559,13 +618,19 @@ def customParameters(seed, config):
 
     params = ""
 
-    label = str(config.algorithm)
 
     ### Custom for these experiments
+    params += " --useMethodReplacement=" + str(config.useMethodReplacement)
+    params += " --useNonIntegerReplacement=" + str(config.useNonIntegerReplacement)
+    params += " --expandRestIndividuals=" + str(config.expandRestIndividuals)
+    params += " --baseTaintAnalysisProbability=" + str(config.baseTaintAnalysisProbability)
+
+    # For each experiment configuration, we MUST create a unique label, with also the seed used.
+    # We need this to create unique file names for the generated test suites, so that EvoMaster
+    # does not override already generated tests from experiment runs that have already finished.
+    label = str(config.useMethodReplacement) + "_" + str(int(config.baseTaintAnalysisProbability * 10))
     params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
-    params += " --blackBox=" + str(config.blackBox)
-    params += " --bbExperiments=" + str(config.blackBox)
-    params += " --algorithm=" + str(config.algorithm)
+
 
     return params
 
@@ -574,12 +639,20 @@ def getConfigs():
 
     # array of configuration objects. We will run experiments for each of
     # these configurations
-    CONFIGS = []
+   CONFIGS = []
 
-    CONFIGS.append(Config(False, "RANDOM"))
-    CONFIGS.append(Config(False, "MIO"))
+   if CLUSTER:
+           CONFIGS.append(Config(False, False, False, 0))
+           CONFIGS.append(Config(True, True, True, 0))
+#            CONFIGS.append(Config(True, True, True, 0.1))
+#            CONFIGS.append(Config(True, True, True, 0.5))
+           CONFIGS.append(Config(True, True, True, 0.9))
+   else:
+           CONFIGS.append(Config(False, False, False, 0))
+           CONFIGS.append(Config(True, True, True, 0))
+           CONFIGS.append(Config(True, True, True, 0.9))
 
-    return CONFIGS
+   return CONFIGS
 
 
 ############################################################################

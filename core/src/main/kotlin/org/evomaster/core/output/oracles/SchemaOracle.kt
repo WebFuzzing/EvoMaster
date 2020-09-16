@@ -1,6 +1,7 @@
 package org.evomaster.core.output.oracles
 
 import com.google.gson.Gson
+import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.*
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
@@ -8,7 +9,9 @@ import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 
@@ -44,17 +47,19 @@ class SchemaOracle : ImplementedOracle() {
 
     override fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
         if (res.failedCall()
-                || res.getStatusCode() == 500) {
+                || res.getStatusCode() == 500
+                || !generatesExpectation(call, res)) {
             return
         }
 
-        try {
-            getSupportedResponse(call)
-        }
-        catch (e: Exception){
+        //try {
+            //getSupportedResponse(call)
+        //}
+        //catch (e: Exception){
 
-        }
+        //}
 
+        getSupportedResponse(call)
         val bodyString = res.getBody()
         when (bodyString?.first()) {
             '[' -> {
@@ -65,41 +70,56 @@ class SchemaOracle : ImplementedOracle() {
                 // TODO: Handle individual objects
                 val supportedObjs = getSupportedResponse(call)
                 val expectedObject = supportedObjs.get("${res.getStatusCode()}")
+
                 when {
                     expectedObject.isNullOrEmpty() -> return //No expectations can be made (possibly another fault exists).
                     expectedObject.equals("string", ignoreCase = true) -> return
                     // handling single values appears to be a known problem with RestAssured and Groovy
                     // see https://github.com/rest-assured/rest-assured/issues/949
                     else -> {
-                        // if the contents are objects with a ref in the schema
-                        val referenceObject = objectGenerator.getNamedReference("$expectedObject")
-                        val isItThough = supportedObject(referenceObject, call)
-
-                        val referenceKeys = referenceObject.fields
-                                .filterNot { it is OptionalGene }
-                                .map { "\"${it.name}\"" }
-                                .joinToString(separator = ", ")
-
-                        //this differs between kotlin and java
-                        when{
-                            format.isJava() ->lines.add(".that($variableName, json_$name.getMap(\"\").keySet().containsAll(Arrays.asList($referenceKeys)))")
-                            format.isKotlin() -> lines.add(".that($variableName, json_$name.getMap<Any, Any>(\"\").keys.containsAll(Arrays.asList($referenceKeys)))")
-                        }
-                        val referenceOptionalKeys = referenceObject.fields
-                                .filter { it is OptionalGene }
-                                .map { "\"${it.name}\"" }
-                                .joinToString(separator = ", ")
-
-                        when {
-                            format.isJava() -> lines.add(".that($variableName, Arrays.asList($referenceOptionalKeys).containsAll(json_$name.getMap(\"\").keySet()))")
-                            format.isKotlin() -> lines.add(".that($variableName, listOf<Any>($referenceOptionalKeys).containsAll(json_$name.getMap<Any, Any>(\"\").keys))")
-                        }
+                        writeExpectation(call, lines, name, format, expectedObject)
                     }
                 }
             }
         }
     }
 
+    fun writeExpectation(call: RestCallAction, lines: Lines,  name: String, format: OutputFormat, expectedObject: String?){
+        // if the contents are objects with a ref in the schema
+        val json_ref = "$name.extract().response().jsonPath()"
+        val referenceObject = objectGenerator.getNamedReference("$expectedObject")
+
+
+        val referenceKeys = referenceObject.fields
+                .filterNot { it is OptionalGene }
+                .map { "\"${it.name}\"" }
+                .joinToString(separator = ", ")
+
+        //this differs between kotlin and java
+        when{
+            format.isJava() ->lines.add(".that($variableName, $json_ref.getMap(\"\").keySet().containsAll(Arrays.asList($referenceKeys)))")
+            format.isKotlin() -> lines.add(".that($variableName, $json_ref.getMap<Any, Any>(\"\").keys.containsAll(Arrays.asList($referenceKeys)))")
+        }
+        val referenceOptionalKeys = referenceObject.fields
+                .filter { it is OptionalGene }
+                .map { "\"${it.name}\"" }
+                .joinToString(separator = ", ")
+
+        when {
+            format.isJava() -> {
+                lines.add(".that($variableName, Arrays.asList($referenceOptionalKeys)")
+                lines.indented {
+                    lines.add(".containsAll($json_ref.getMap(\"\").keySet()))")
+                }
+            }
+            format.isKotlin() -> {
+                lines.add(".that($variableName, listOf<Any>($referenceOptionalKeys)")
+                lines.indented {
+                    lines.add(".containsAll($json_ref.getMap<Any, Any>(\"\").keys))")
+                }
+            }
+        }
+    }
 
     fun supportedObject(obj: ObjectGene, call: RestCallAction): Boolean{
         val supportedObjects = getSupportedResponse(call)
@@ -140,7 +160,7 @@ class SchemaOracle : ImplementedOracle() {
 
     fun getSupportedResponse(call: RestCallAction): MutableMap<String, String>{
         val verb = call.verb
-        val path = objectGenerator.getSwagger().paths.get(call.path.toString())
+        val path = retrievePath(objectGenerator, call)
         val specificPath = when(verb){
             HttpVerb.GET -> path?.get
             HttpVerb.POST -> path?.post
@@ -154,11 +174,18 @@ class SchemaOracle : ImplementedOracle() {
         }
         val mapResponses = mutableMapOf<String, String>()
         specificPath?.responses?.forEach { key, value ->
-            value.content.values.map { cva ->
+            value.content?.values?.map { cva ->
+                //TODO: BMR the schema may need additions here
                 val valueSchema = cva.schema
                 val rez = when (valueSchema) {
                     is ArraySchema -> valueSchema.items.`$ref` ?: valueSchema.items.type
-                    is MapSchema -> (cva.schema.additionalProperties as StringSchema).type ?: (cva.schema.additionalProperties as Schema<*>).`$ref`
+                    is MapSchema -> {
+                        when(cva.schema.additionalProperties) {
+                            is StringSchema -> (cva.schema.additionalProperties as StringSchema).type
+                            is ObjectSchema -> (cva.schema.additionalProperties as ObjectSchema).type
+                            else -> (cva.schema.additionalProperties as Schema<*>).`$ref`
+                        }
+                    }
                     is StringSchema -> valueSchema.type
                     is IntegerSchema -> valueSchema.format
                     is ObjectSchema -> ""
@@ -176,14 +203,47 @@ class SchemaOracle : ImplementedOracle() {
         objectGenerator = gen
     }
 
-    override fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean {
+    override fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean {
         // A check should be made if this should be the case (i.e. if (any of) the object(s) contained break the schema.
         //return !(res.failedCall() || res.getStatusCode() == 500)
-        return true
+        if(!::objectGenerator.isInitialized) return false
+        val supportedObjs = getSupportedResponse(call)
+        val expectedObject = supportedObjs.get("${res.getStatusCode()}") ?: return false
+        if(!objectGenerator.containsKey(expectedObject)) return false
+        val referenceObject = objectGenerator.getNamedReference(expectedObject)
+        val supported = supportedObject(referenceObject, call)
+        return !supported
+    }
+
+    override fun generatesExpectation(individual: EvaluatedIndividual<*>): Boolean {
+        // A check should be made if this should be the case (i.e. if (any of) the object(s) contained break the schema.
+        //return !(res.failedCall() || res.getStatusCode() == 500)
+        if(individual.individual !is RestIndividual) return false
+        if(!::objectGenerator.isInitialized) return false
+
+        return individual.evaluatedActions().any {
+            val call = it.action as RestCallAction
+            val res = it.result as RestCallResult
+            val supportedObjs = getSupportedResponse(call)
+            val expectedObject = supportedObjs.get("${res.getStatusCode()}") ?: return false
+            if(!objectGenerator.containsKey(expectedObject)) return false
+            val referenceObject = objectGenerator.getNamedReference(expectedObject)
+            !supportedObject(referenceObject, call)
+        }
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
-        //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        return false
+        if (action.action is RestCallAction && action.result is RestCallResult){
+            return generatesExpectation(action.action, action.result)
+        }
+        else return false
+    }
+
+    override fun getName():String {
+        return "SchemaOracle"
+    }
+
+    override fun adjustName(): String?{
+        return "_apiSchemaMismatch"
     }
 }

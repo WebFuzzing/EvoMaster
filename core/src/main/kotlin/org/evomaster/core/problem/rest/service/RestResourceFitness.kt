@@ -24,7 +24,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
     private lateinit var rc: RemoteController
 
     @Inject
-    private lateinit var sampler : RestResourceSampler
+    private lateinit var sampler : ResourceSampler
 
     @Inject
     private lateinit var dm: ResourceDepManageService
@@ -36,7 +36,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
     /*
         add db check in term of each abstract resource
      */
-    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
 
@@ -93,17 +93,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 break
         }
 
-        /*
-            We cannot request all non-covered targets, because:
-            1) performance hit
-            2) might not be possible to have a too long URL
-         */
-        //TODO prioritized list
-        val ids = randomness.choose(
-                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
-                100).toSet()
-
-        val dto = rc.getTestResults(ids)
+        val dto = rc.getTestResults(targetsToEvaluate(targets, individual))
         if (dto == null) {
             log.warn("Cannot retrieve coverage")
             return null
@@ -129,10 +119,11 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         handleResponseTargets(fv, individual.seeActions().toMutableList(), actionResults, dto.additionalInfoList)
 
         if (config.expandRestIndividuals) {
-            expandIndividual(individual, dto.additionalInfoList)
+            expandIndividual(individual, dto.additionalInfoList, actionResults)
         }
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, enableTracking = config.enableTrackEvaluatedIndividual, trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null, enableImpact = (config.probOfArchiveMutation > 0.0))
+        return EvaluatedIndividual(
+                fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)
 
         /*
             TODO when dealing with seeding, might want to extend EvaluatedIndividual

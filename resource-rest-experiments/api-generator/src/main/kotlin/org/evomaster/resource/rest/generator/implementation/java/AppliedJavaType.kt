@@ -24,23 +24,24 @@ class AppliedJavaType : ConstantTypeScript {
 
     override fun getAllCommonTypes(): Map<CommonTypes, String> = map
 
-    override fun getTypes(): Map<String, String> = mapOf(
-            "ResponseEntity" to "ResponseEntity",
-            "Docket" to "Docket",
-            "ApiInfo" to "ApiInfo",
-            "String[]" to "String[]",
-            "Class<?>" to "Class<?>",
-            "ConfigurableApplicationContext" to "ConfigurableApplicationContext",
-            "int" to "int",
-            "Connection" to "Connection",
-            "ProblemInfo" to "ProblemInfo",
-            "List<AuthenticationDto>" to "List<AuthenticationDto>",
-            "SutInfoDto.OutputFormat" to  "SutInfoDto.OutputFormat",
-            "InstrumentedSutStarter" to "InstrumentedSutStarter",
-            "SutController" to "SutController",
-            "RemoteController" to "RemoteController"
-
-    )
+    override fun getTypes(): Map<String, String> {
+        val typedCommonTypes = map.map { "${it.value}[]" to "${it.value}[]" }.toMap()
+        return mapOf(
+                "ResponseEntity" to "ResponseEntity",
+                "Docket" to "Docket",
+                "ApiInfo" to "ApiInfo",
+                "Class<?>" to "Class<?>",
+                "ConfigurableApplicationContext" to "ConfigurableApplicationContext",
+                "Connection" to "Connection",
+                "ProblemInfo" to "ProblemInfo",
+                "List<AuthenticationDto>" to "List<AuthenticationDto>",
+                "SutInfoDto.OutputFormat" to  "SutInfoDto.OutputFormat",
+                "InstrumentedSutStarter" to "InstrumentedSutStarter",
+                "SutController" to "SutController",
+                "RemoteController" to "RemoteController",
+                "Server" to "Server"
+        ).plus(typedCommonTypes).plus(map.map { it.key.name to it.value }).plus(map.map { it.key.name.toLowerCase() to it.value }).plus(map.map { it.value to it.value })
+    }
 
     override fun getGenericTypes(list: List<String>): Map<String, String> {
         val map = mutableMapOf<String, String>()

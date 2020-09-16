@@ -59,3 +59,6 @@ experiments/target/
 
 /e2e-tests/spring-rest-openapi-v3/target
 /client-js/integration-tests/build/
+/core-it/target/
+/coveredTargets.txt
+/core-driver-it/target/

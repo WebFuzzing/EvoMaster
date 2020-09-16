@@ -1,177 +1,34 @@
 package org.evomaster.core.problem.rest.service
 
-import com.google.inject.Inject
-import io.swagger.models.Swagger
-import io.swagger.parser.SwaggerParser
-import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.auth.CookieLogin
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.DisruptiveGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.search.tracer.TraceableElement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.net.ConnectException
-import java.net.MalformedURLException
-import javax.annotation.PostConstruct
-import javax.ws.rs.client.ClientBuilder
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 
-class RestSampler : Sampler<RestIndividual>(){
+class RestSampler : AbstractRestSampler(){
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestSampler::class.java)
     }
 
-    @Inject(optional = true)
-    private lateinit var rc: RemoteController
-
-    @Inject
-    private lateinit var configuration: EMConfig
-
-    private val authentications: MutableList<AuthenticationInfo> = mutableListOf()
-
-    private val adHocInitialIndividuals: MutableList<RestAction> = mutableListOf()
-
-    private var sqlInsertBuilder: SqlInsertBuilder? = null
-
-    var existingSqlData : List<DbAction> = listOf()
-        private set
-
-    //private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
-
-    //private val usedObjects: UsedObjects = UsedObjects()
-
-    private lateinit var swagger: OpenAPI
-
-    @PostConstruct
-    private fun initialize() {
-
-        log.debug("Initializing {}", RestSampler::class.simpleName)
-
-        if(configuration.blackBox && !configuration.bbExperiments){
-            initForBlackBox()
-            return
-        }
-
-        rc.checkConnection()
-
-        val started = rc.startSUT()
-        if (!started) {
-            throw SutProblemException("Failed to start the system under test")
-        }
-
-        val infoDto = rc.getSutInfo()
-                ?: throw SutProblemException("Failed to retrieve the info about the system under test")
-
-        val swaggerURL = infoDto.restProblem?.swaggerJsonUrl
-                ?: throw IllegalStateException("Missing information about the Swagger URL")
-
-        swagger = OpenApiAccess.getOpenAPI(swaggerURL)
-        if (swagger.paths == null) {
-            throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
-        }
-
-        actionCluster.clear()
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf())
-
-        //modelCluster.clear()
-       // RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
-
-        setupAuthentication(infoDto)
-
-        initAdHocInitialIndividuals()
-
+    override fun initSqlInfo(infoDto: SutInfoDto) {
         if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
 
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
             existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
         }
-
-        if(configuration.outputFormat == OutputFormat.DEFAULT){
-            try {
-                val format = OutputFormat.valueOf(infoDto.defaultOutputFormat?.toString()!!)
-                configuration.outputFormat = format
-            } catch (e : Exception){
-                throw SutProblemException("Failed to use test output format: " + infoDto.defaultOutputFormat)
-            }
-        }
-
-        log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
 
-
-    private fun initForBlackBox() {
-
-        swagger = OpenApiAccess.getOpenAPI(configuration.bbSwaggerUrl)
-        if (swagger.paths == null) {
-            throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
-        }
-
-        actionCluster.clear()
-        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf())
-
-        //modelCluster.clear()
-        // RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
-
-        initAdHocInitialIndividuals()
-
-        log.debug("Done initializing {}", RestSampler::class.simpleName)
-    }
-
-
-    private fun setupAuthentication(infoDto: SutInfoDto) {
-
-        val info = infoDto.infoForAuthentication ?: return
-
-        info.forEach { i ->
-            if (i.name == null || i.name.isBlank()) {
-                log.warn("Missing name in authentication info")
-                return@forEach
-            }
-
-            val headers: MutableList<AuthenticationHeader> = mutableListOf()
-
-            i.headers.forEach loop@{ h ->
-                val name = h.name?.trim()
-                val value = h.value?.trim()
-                if (name == null || value == null) {
-                    log.warn("Invalid header in ${i.name}")
-                    return@loop
-                }
-
-                headers.add(AuthenticationHeader(name, value))
-            }
-
-            val cookieLogin = if(i.cookieLogin != null){
-                CookieLogin.fromDto(i.cookieLogin)
-            } else {
-                null
-            }
-
-            val auth = AuthenticationInfo(i.name.trim(), headers, cookieLogin)
-
-            authentications.add(auth)
-        }
-    }
 
     fun canInsertInto(tableName: String) : Boolean {
         //TODO might need to refactor/remove once we deal with VIEWs
@@ -194,14 +51,10 @@ class RestSampler : Sampler<RestIndividual>(){
         val actions = mutableListOf<RestAction>()
         val n = randomness.nextInt(1, config.maxTestSize)
 
-        //usedObjects.clear()
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05))
         }
-        val objInd =  RestIndividual(actions, SampleType.RANDOM, mutableListOf()//, usedObjects.copy()
-                , if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
-        //usedObjects.clear()
-        return objInd
+        return RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
     }
 
     /**
@@ -240,29 +93,13 @@ class RestSampler : Sampler<RestIndividual>(){
     }
 
 
-    private fun getRandomAuth(noAuthP: Double): AuthenticationInfo {
-        if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
-            return NoAuth()
-        } else {
-            //if there is auth, should have high probability of using one,
-            //as without auth we would do little.
-            return randomness.choose(authentications)
-        }
-    }
-
     override fun smartSample(): RestIndividual {
 
         /*
             At the beginning, sample from this set, until it is empty
          */
         if (!adHocInitialIndividuals.isEmpty()) {
-            val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
-            //usedObjects.clear()
-            randomizeActionGenes(action, false)
-            val objInd = RestIndividual(mutableListOf(action), SampleType.SMART, mutableListOf()//, usedObjects.copy()
-                    , if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
-            //usedObjects.clear()
-            return objInd
+            return adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
         }
 
         if (config.maxTestSize <= 1) {
@@ -301,21 +138,13 @@ class RestSampler : Sampler<RestIndividual>(){
 
         if (!test.isEmpty()) {
             val objInd = RestIndividual(test, sampleType, mutableListOf()//, usedObjects.copy()
-                    , if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
+                    ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
 
             //usedObjects.clear()
             return objInd
         }
         //usedObjects.clear()
         return sampleAtRandom()
-    }
-
-    override fun hasSpecialInit(): Boolean {
-        return !adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
-    }
-
-    override fun resetSpecialInit() {
-        initAdHocInitialIndividuals()
     }
 
     private fun handleSmartPost(post: RestCallAction, test: MutableList<RestAction>): SampleType {
@@ -597,7 +426,7 @@ class RestSampler : Sampler<RestIndividual>(){
     }
 
 
-    private fun initAdHocInitialIndividuals() {
+    override fun initAdHocInitialIndividuals() {
 
         adHocInitialIndividuals.clear()
 
@@ -617,12 +446,11 @@ class RestSampler : Sampler<RestIndividual>(){
                     val copy = a.value.copy() as RestCallAction
                     copy.auth = auth
                     randomizeActionGenes(copy)
-                    adHocInitialIndividuals.add(copy)
+                    randomizeActionGenes(copy, false)
+                    val ind = RestIndividual(mutableListOf(copy), SampleType.SMART, mutableListOf()//, usedObjects.copy()
+                            ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+                    adHocInitialIndividuals.add(ind)
                 }
-    }
-
-    fun getOpenAPI(): OpenAPI{
-        return swagger
     }
 
 }

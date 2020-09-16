@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.examples.splitter;
 
 import org.evomaster.core.EMConfig;
+import org.evomaster.core.output.ObjectGenerator;
 import org.evomaster.core.output.TestSuiteSplitter;
 import org.evomaster.core.output.Termination;
 import org.evomaster.core.output.clustering.SplitResult;
@@ -64,6 +65,8 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
                 (args) -> {
                     args.add("--testSuiteSplitType");
                     args.add("" + splitType);
+                    args.add("--expectationsActive");
+                    args.add("" + true);
                     Solution<RestIndividual> solution = initAndRun(args);
                     assertTrue(solution.getIndividuals().size() >= 1);
                     SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);
@@ -83,6 +86,8 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
                 (args) -> {
                     args.add("--testSuiteSplitType");
                     args.add("" + splitType);
+                    args.add("--expectationsActive");
+                    args.add("" + true);
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

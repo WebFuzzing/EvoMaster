@@ -270,7 +270,7 @@ class EMConfig {
         }
 
         //archive-based mutation
-        if (geneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
+        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
             throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
         }
 
@@ -653,6 +653,22 @@ class EMConfig {
     @Cfg("Generate an executive summary, containing an example of each category of potential fault found")
     var executiveSummary = false
 
+    @Experimental
+    @Cfg("The Distance Metric Last Line may use several values for epsilon." +
+            "During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results." +
+            "Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8.")
+    @Min(0.0)
+    @Max(1.0)
+    var lastLineEpsilon = 0.8
+
+    @Experimental
+    @Cfg("The Distance Metric Error Text may use several values for epsilon." +
+            "During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results." +
+            "Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8.")
+    @Min(0.0)
+    @Max(1.0)
+    var errorTextEpsilon = 0.8
+
     @Cfg("The seed for the random generator used during the search. " +
             "A negative value means the CPU clock time will be rather used as seed")
     var seed: Long = -1
@@ -760,6 +776,10 @@ class EMConfig {
 
     @Cfg("Whether secondary objectives are less important than test bloat control")
     var bloatControlForSecondaryObjective = false
+
+    @Cfg("Specify minimum size when bloatControlForSecondaryObjective")
+    @Min(0.0)
+    var minimumSizeControl = 2
 
     @Cfg("Probability of applying a mutation that can change the structure of a test")
     @Probability
@@ -887,6 +907,9 @@ class EMConfig {
     @Cfg("Apply method replacement heuristics to smooth the search landscape")
     var useMethodReplacement = true
 
+    @Cfg("Apply non-integer numeric comparison heuristics to smooth the search landscape")
+    var useNonIntegerReplacement = true
+
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
 
@@ -960,6 +983,46 @@ class EMConfig {
     var doesApplyNameMatching = false
 
     @Experimental
+    @Cfg("Whether to save mutated gene info, which is typically used for debugging mutation")
+    var saveMutationInfo = false
+
+    @Experimental
+    @Cfg("Specify a path to save mutation details which is useful for debugging mutation")
+    @FilePath
+    var mutatedGeneFile = "mutatedGeneInfo.csv"
+
+    @Experimental
+    @Cfg("Specify a strategy to select targets for evaluating mutation")
+    var mutationTargetsSelectionStrategy = MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET
+
+    enum class MutationTargetsSelectionStrategy{
+        /**
+         * employ not covered target obtained by archive at first for all upTimesMutations
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is still {A, B}
+         */
+        FIRST_NOT_COVERED_TARGET,
+        /**
+         * expand targets with updated not covered targets
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is {A, B, C}
+         */
+        EXPANDED_UPDATED_NOT_COVERED_TARGET,
+        /**
+         * only employ current not covered targets obtainedby archive
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is {B, C}
+         */
+        UPDATED_NOT_COVERED_TARGET
+    }
+
+    @Experimental
     @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
     @Probability(false)
     var S1iR: Double = 0.25
@@ -978,6 +1041,29 @@ class EMConfig {
     @Cfg("Specify a probability to apply SMdR when resource sampling strategy is 'Customized'")
     @Probability(false)
     var SMdR: Double = 0.25
+
+    @Experimental
+    @Cfg("Whether to enable a weight-based mutation rate")
+    var weightBasedMutationRate = false
+
+    @Experimental
+    @Cfg("Whether to specialize sql gene selection to mutation")
+    var specializeSQLGeneSelection = false
+
+    @Experimental
+    @Cfg("Specify a maximum mutation rate when enabling 'adaptiveMutationRate'")
+    @PercentageAsProbability(false)
+    var maxMutationRate = 0.9
+
+    @Experimental
+    @Cfg("Specify a starting percentage of genes of an individual to mutate")
+    @PercentageAsProbability(false)
+    var startingPerOfGenesToMutate = 0.5
+
+    @Experimental
+    @Cfg("Specify a starting percentage of genes of an individual to mutate")
+    @PercentageAsProbability(false)
+    var d = 0.5
 
     @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
@@ -1000,7 +1086,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
-    var geneSelectionMethod = GeneMutationSelectionMethod.NONE
+    var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.NONE
 
     @Experimental
     @Cfg("Whether to enable archive-based gene mutation")
@@ -1029,15 +1115,12 @@ class EMConfig {
     @Probability
     var baseTaintAnalysisProbability = 0.9
 
-
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
 
-    @Experimental
     @Cfg("Specify whether to export covered targets info")
     var exportCoveredTarget = false
 
-    @Experimental
     @Cfg("Specify a file which saves covered targets info regarding generated test suite")
     @FilePath
     var coveredTargetFile = "coveredTargets.txt"
@@ -1068,6 +1151,9 @@ class EMConfig {
          */
     }
 
+    @Cfg("Only for debugging. Concentrate search on only one single REST endpoint")
+    var endpointFocus : String? = null
+
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -1092,5 +1178,7 @@ class EMConfig {
 
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
+
+    fun trackingEnabled() = enableTrackEvaluatedIndividual || enableTrackIndividual
 
 }

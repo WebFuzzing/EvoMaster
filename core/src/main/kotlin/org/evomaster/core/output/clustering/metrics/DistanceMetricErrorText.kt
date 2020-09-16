@@ -18,35 +18,30 @@ import javax.ws.rs.core.MediaType
  *
  */
 
-class DistanceMetricErrorText : DistanceMetric<RestCallResult>() {
+class DistanceMetricErrorText(
+        epsilon: Double = 0.6
+) : DistanceMetric<RestCallResult>() {
     private val name = "ErrorText"
+    private val recommendedEpsilon = if (epsilon in 0.0..1.0) epsilon
+                                    else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
     override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         val message1 = if (includeInClustering(first)){
-                /*first.getBodyType() != null
-                && first.getStatusCode() == 500
-                && (first.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)
-                && (first.getBody()?.trim()?.first()?.equals('[') == true || first.getBody()?.trim()?.first()?.equals('{') == true)) {
-
-                 */
             Gson().fromJson(first.getBody(), Map::class.java)?.get("message") ?: ""
         }
         else {
             "" //first.getBody()
         }
         val message2 = if(includeInClustering(second)){
-
-                /*second.getBodyType() != null
-                && second.getStatusCode() == 500
-                && (second.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)
-                && (second.getBody()?.trim()?.first()?.equals('[') == true || second.getBody()?.trim()?.first()?.equals('{') == true)) {
-
-                 */
             Gson().fromJson(second.getBody(), Map::class.java)?.get("message") ?: ""
         }
         else {
             "" //second.getBody()
         }
         return LevenshteinDistance.distance(message1.toString(), message2.toString())
+    }
+
+    override fun getRecommendedEpsilon(): Double {
+        return recommendedEpsilon
     }
 
     override fun getName(): String {

@@ -18,7 +18,7 @@ class JavaDto (specification: DtoClazz): JavaClass<DtoClazz>(specification) {
     override fun getDeclaration(): List<out DeclarationScript> {
         val declarations = mutableListOf<DeclarationScript>()
         if (!specification.idFromSuperClazz) declarations.add(JavaDeclarationDto(specification.idProperty))
-        specification.defaultProperties.plus(specification.referToOthers).plus(specification.ownOthers).forEach { p->
+        specification.defaultProperties.plus(specification.referToOthers).plus(specification.ownOthers).plus(specification.ownOthersProperties.flatten()).forEach { p->
             declarations.add(JavaDeclarationDto(p))
         }
         return declarations

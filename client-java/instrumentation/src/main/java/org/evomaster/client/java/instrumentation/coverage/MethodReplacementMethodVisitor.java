@@ -1,14 +1,14 @@
 package org.evomaster.client.java.instrumentation.coverage;
 
-import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
-import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementList;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
-import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -24,11 +24,13 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
     private final String className;
     private final String methodName;
     private final boolean registerNewTargets;
+    private final boolean isInSUT;
 
     private int currentLine;
     private int currentIndex;
 
     public MethodReplacementMethodVisitor(boolean registerNewTargets,
+                                          boolean isInSUT,
                                           MethodVisitor mv,
                                           String className,
                                           String methodName,
@@ -38,6 +40,7 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
         this.className = className;
         this.methodName = methodName;
         this.registerNewTargets = registerNewTargets;
+        this.isInSUT = isInSUT;
         currentLine = 0;
     }
 
@@ -59,19 +62,6 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             return;
         }
 
-        /*
-            Loading class here could have side-effects.
-            However, method replacements is only done for JDK APIs, which
-            anyway should be loaded with boot-classloader.
-            so, loading them here "hopefully" should be OK...
-
-            TODO: in future, might also target methods in Kotlin API
-         */
-        if (!owner.startsWith("java/")) {
-            super.visitMethodInsn(opcode, owner, name, desc, itf);
-            return;
-        }
-
 
         /*
          * This is a very special case. This can happen when we replace a method
@@ -86,21 +76,30 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
          * in Guava when they have "super.()" calls.
          * For now, we just skip them.
          */
-        if(opcode == Opcodes.INVOKESPECIAL){
+        if (opcode == Opcodes.INVOKESPECIAL) {
             super.visitMethodInsn(opcode, owner, name, desc, itf);
             return;
         }
 
-        Class<?> klass = null;
-        try {
-            klass = this.getClass().getClassLoader().loadClass(ClassName.get(owner).getFullNameWithDots());
-        } catch (ClassNotFoundException e) {
-            //shouldn't really happen
-            SimpleLogger.error(e.toString());
-            throw new RuntimeException(e);
-        }
 
-        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(klass);
+//        if (!owner.startsWith("java/")) {
+//            super.visitMethodInsn(opcode, owner, name, desc, itf);
+//            return;
+//        }
+//
+//        /*
+//            Loading class here could have side-effects if code is executed in static initializer.
+//         */
+//        Class<?> klass = null;
+//        try {
+//            klass = this.getClass().getClassLoader().loadClass(ClassName.get(owner).getFullNameWithDots());
+//        } catch (ClassNotFoundException e) {
+//            //shouldn't really happen
+//            SimpleLogger.error(e.toString());
+//            throw new RuntimeException(e);
+//        }
+
+        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(owner);
 
         if (candidateClasses.isEmpty()) {
             super.visitMethodInsn(opcode, owner, name, desc, itf);
@@ -113,8 +112,16 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
                 .filter(m -> m.getName().equals(name))
                 .filter(m -> {
                     Replacement br = m.getAnnotation(Replacement.class);
-                    return (br.replacingStatic() && desc.equals(getDescriptorSkippingLast(m, 0))) ||
-                            (!br.replacingStatic() && desc.equals(getDescriptorSkippingLast(m, 1)));
+                    if(isInSUT && br.usageFilter() == UsageFilter.ONLY_THIRD_PARTY){
+                        return false;
+                    }
+                    if(!isInSUT && br.usageFilter() == UsageFilter.ONLY_SUT){
+                        return false;
+                    }
+
+                    int skipFirst = br.replacingStatic() ? 0 : 1;
+                    int skipLast = br.type() == ReplacementType.TRACKER ? 0 : 1;
+                    return desc.equals(getDescriptor(m, skipFirst, skipLast));
                 })
                 .findAny();
 
@@ -125,11 +132,16 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 
         Method m = r.get();
         replaceMethod(m);
+        Replacement a = m.getAnnotation(Replacement.class);
 
-        if(registerNewTargets){
-            UnitsInfoRecorder.markNewReplacedMethodInSut();
+        if (a.type() == ReplacementType.TRACKER) {
+            UnitsInfoRecorder.markNewTrackedMethod();
         } else {
-            UnitsInfoRecorder.markNewReplacedMethodInThirdParty();
+            if (isInSUT) {
+                UnitsInfoRecorder.markNewReplacedMethodInSut();
+            } else {
+                UnitsInfoRecorder.markNewReplacedMethodInThirdParty();
+            }
         }
     }
 
@@ -157,23 +169,27 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
                     This means we do not need to handle "a", but still need to create
                     "id" and replace "foo" with "bar".
         */
-        if (registerNewTargets) {
-            String idTemplate = ObjectiveNaming.methodReplacementObjectiveNameTemplate(
-                    className, currentLine, currentIndex
-            );
+        if(br.type() != ReplacementType.TRACKER) {
+            //tracker methods do not add a template id
 
-            currentIndex++;
+            if (registerNewTargets) {
+                String idTemplate = ObjectiveNaming.methodReplacementObjectiveNameTemplate(
+                        className, currentLine, currentIndex
+                );
 
-            String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, br.type());
-            String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, br.type());
-            ObjectiveRecorder.registerTarget(idTrue);
-            ObjectiveRecorder.registerTarget(idFalse);
+                currentIndex++;
 
-            this.visitLdcInsn(idTemplate);
+                String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, br.type());
+                String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, br.type());
+                ObjectiveRecorder.registerTarget(idTrue);
+                ObjectiveRecorder.registerTarget(idFalse);
 
-        } else {
-            //this.visitLdcInsn(null);
-            this.visitInsn(Opcodes.ACONST_NULL);
+                this.visitLdcInsn(idTemplate);
+
+            } else {
+                //this.visitLdcInsn(null);
+                this.visitInsn(Opcodes.ACONST_NULL);
+            }
         }
 
         mv.visitMethodInsn(
@@ -185,19 +201,20 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
     }
 
 
-    private static String getDescriptorSkippingLast(Method m, int skipFirsts) {
+    private static String getDescriptor(Method m, int skipFirsts, int skipLast) {
         Class<?>[] parameters = m.getParameterTypes();
         StringBuilder buf = new StringBuilder();
         buf.append('(');
 
         //skipping first parameter(s)
         int start = skipFirsts;
+        int end = parameters.length - skipLast;
 
         /*
             we might skip the first (if replacing non-static), and
-            always skipping the last (id template)
+            skipping the last (id template)
          */
-        for (int i = start; i < parameters.length - 1; ++i) {
+        for (int i = start; i < end; ++i) {
             buf.append(Type.getDescriptor(parameters[i]));
         }
         buf.append(')');

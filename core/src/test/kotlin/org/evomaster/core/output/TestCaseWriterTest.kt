@@ -8,9 +8,7 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType.*
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
-import org.evomaster.core.problem.rest.RestAction
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -953,6 +951,57 @@ class TestCaseWriterTest {
             add(".dtos();")
             deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
+    @Test
+    fun testVarGeneration(){
+        //TODO: this needs a rename
+        val format = OutputFormat.JAVA_JUNIT_4
+
+        val baseUrlOfSut = "baseUrlOfSut"
+        val sampleType = SampleType.RANDOM
+        val action = RestCallAction("1", HttpVerb.GET, RestPath(""), mutableListOf())
+        val restActions = listOf(action).toMutableList()
+        val individual = RestIndividual(restActions, sampleType)
+        val fitnessVal = FitnessValue(0.0)
+        val result = RestCallResult()
+        result.setTimedout(timedout = true)
+        val results = listOf(result)
+        val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
+        val config = EMConfig()
+        val partialOracles = PartialOracles()
+        config.outputFormat = format
+        config.expectationsActive = true
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+        writer.setPartialOracles(partialOracles)
+
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("")
+            add("try{")
+            indent()
+            add("given().accept(\"*/*\")")
+            indent()
+            indent()
+            add(".get(baseUrlOfSut + \"\");")
+            deindent()
+            deindent()
+            add("")
+            deindent()
+            add("} catch(Exception e){")
+            add("}")
             deindent()
             add("}")
         }

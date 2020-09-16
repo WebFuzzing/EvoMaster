@@ -1,5 +1,6 @@
 package org.evomaster.core.output.oracles
 
+import io.swagger.v3.oas.models.PathItem
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
@@ -9,6 +10,8 @@ import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * The [SupportedCodeOracle] class generates an expectation and writes it to the code.
@@ -21,6 +24,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 class SupportedCodeOracle : ImplementedOracle() {
     private val variableName = "sco"
     private lateinit var objectGenerator: ObjectGenerator
+    private val log: Logger = LoggerFactory.getLogger(SupportedCodeOracle::class.java)
 
     override fun variableDeclaration(lines: Lines, format: OutputFormat) {
         lines.add("/**")
@@ -35,15 +39,37 @@ class SupportedCodeOracle : ImplementedOracle() {
     }
 
     override fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
-        if(!supportedCode(call, res)){
+        //if(!supportedCode(call, res)){
+        if(generatesExpectation(call, res)){
             // The code is not among supported codes, so an expectation will be generated
             //val actualCode = res.getStatusCode() ?: 0
             //lines.add(".that($oracleName, Arrays.asList(${getSupportedCode(call)}).contains($actualCode))")
-            val supportedCode = getSupportedCode(call).joinToString(", ")
-            if(supportedCode.equals("default", ignoreCase = true)){
-                lines.add("/* Note: this call is handled via a default code. If this is intended behaviour, ignore this comment */")
+            val supportedCodes = getSupportedCode(call)
+            //BMR: this will be a problem if supportedCode contains both codes and default...
+            if(supportedCodes.contains("0")){
+                lines.add("// WARNING: the code list seems to contain an unsupported code (0 is not a valid HTTP code). This could indicate a problem with the schema. The issue has been logged.")
+                supportedCodes.remove("0")
+                log.warn("The list of supported codes appears to contain an unsupported code (0 is not a valid HTTP code). This could indicate a problem with the schema.")
+                //TODO: if a need arises for more involved checks, refactor this
             }
-            else lines.add(".that($variableName, Arrays.asList($supportedCode).contains($name.extract().statusCode()))")
+            val supportedCode = supportedCodes.joinToString(", ")
+
+            if(supportedCode.equals("default", ignoreCase = true)
+                    || supportedCode.equals("")){
+                lines.add("/*")
+                lines.add(" Note: The default code seems to be the only one defined. https://swagger.io/docs/specification/describing-responses/.")
+                lines.add(" This is somewhat unexpected, so the code below is likely to lead to a failed expectation")
+                lines.add("*/")
+                when {
+                    format.isJava() -> lines.add(".that($variableName, Arrays.asList().contains($name.extract().statusCode()))")
+                    format.isKotlin() -> lines.add(".that($variableName, listOf<Int>().contains($name.extract().statusCode()))")
+                }
+            }
+            //TODO: check here if supported code contains 0 (or maybe check against a list of "acceptable" codes
+            else when {
+                format.isJava() -> lines.add(".that($variableName, Arrays.asList($supportedCode).contains($name.extract().statusCode()))")
+                format.isKotlin() -> lines.add(".that($variableName, listOf<Int>($supportedCode).contains($name.extract().statusCode()))")
+            }
         }
     }
     fun supportedCode(call: RestCallAction, res: RestCallResult): Boolean{
@@ -54,7 +80,7 @@ class SupportedCodeOracle : ImplementedOracle() {
 
     fun getSupportedCode(call: RestCallAction): MutableSet<String>{
         val verb = call.verb
-        val path = objectGenerator.getSwagger().paths.get(call.path.toString())
+        val path = retrievePath(objectGenerator, call)
         val result = when (verb){
             HttpVerb.GET -> path?.get
             HttpVerb.POST -> path?.post
@@ -73,13 +99,31 @@ class SupportedCodeOracle : ImplementedOracle() {
         objectGenerator = gen
     }
 
-    override fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean {
-        return !supportedCode(call, res)
+    override fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean {
+        if(this::objectGenerator.isInitialized){
+             return !supportedCode(call, res)
+        }
+        return false
+    }
+
+    override fun generatesExpectation(individual: EvaluatedIndividual<*>): Boolean {
+        if(individual.individual !is RestIndividual) return false
+        if(!this::objectGenerator.isInitialized) return false
+        val gens = individual.evaluatedActions().any {
+            !supportedCode(it.action as RestCallAction, it.result as RestCallResult)
+        }
+        return false
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
-        return if (action.result is RestCallResult && action.action is RestCallAction)
+        return if (action.result is RestCallResult
+                && action.action is RestCallAction
+                &&this::objectGenerator.isInitialized)
             !supportedCode(action.action, action.result)
         else false
+    }
+
+    override fun getName(): String {
+        return "CodeOracle"
     }
 }

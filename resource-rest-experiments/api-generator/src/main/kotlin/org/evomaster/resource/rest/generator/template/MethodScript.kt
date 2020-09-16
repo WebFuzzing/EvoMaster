@@ -1,5 +1,7 @@
 package org.evomaster.resource.rest.generator.template
 
+import org.evomaster.resource.rest.generator.implementation.java.service.IfSnippet
+
 /**
  * created by manzh on 2019-08-13
  */
@@ -56,4 +58,6 @@ interface MethodScript : ScriptTemplate{
         content.append(generateEnding(types))
         return content.toString()
     }
+
+    fun getIfSnippets() : List<IfSnippet>
 }

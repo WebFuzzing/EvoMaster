@@ -8,6 +8,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
@@ -322,34 +323,91 @@ public abstract class SutController implements SutHandler {
     public abstract boolean isInstrumentationActivated();
 
     /**
+     * <p>
      * Check if the system under test (SUT) is running and fully initialized
+     * </p>
      *
+     * <p>
+     * How to implement this method depends on the library/framework used
+     * to build the application.
+     * In Spring applications, this can be done with something like:
+     * {@code ctx != null && ctx.isRunning()}, where {@code ctx} is a field where
+     * {@code ConfigurableApplicationContext} should be stored when starting
+     * the application.
+     * </p>
      * @return true if the SUT is running
      */
     public abstract boolean isSutRunning();
 
 
     /**
-     * a "," separated list of package prefixes or class names.
+     * <p>
+     * A "," separated list of package prefixes or class names.
      * For example, "com.foo.,com.bar.Bar".
+     * This is used to specify for which classes we want to measure
+     * code coverage.
+     * </p>
+     *
+     * <p>
      * Note: be careful of using something as general as "com."
      * or "org.", as most likely ALL your third-party libraries
      * would be instrumented as well, which could have a severe
-     * impact on performance
+     * impact on performance.
+     * </p>
      *
      * @return a String representing the packages to cover
      */
     public abstract String getPackagePrefixesToCover();
 
     /**
+     * <p>
+     * If the application uses some sort of authentication, these details
+     * need to be provided here.
+     * Even if EvoMaster can have access to the database, it would not be able
+     * to recover hashed passwords.
+     * </p>
+     *
+     * <p>
+     * To test the application, there is the need to provide auth for at least 1 user
+     * (and more if they have different authorization roles).
+     * When EvoMaster generates test cases, it can decide to use the credential of
+     * any user provided by this method.
+     * </p>
+     *
+     * <p>
+     * What type of info to provide here depends on the auth mechanism, e.g.,
+     * Basic or cookie-based (using {@link CookieLoginDto}).
+     * To simplify the creation of these DTOs with auth info, you can look
+     * at {@link org.evomaster.client.java.controller.AuthUtils}.
+     * </p>
+     *
+     * <p>
+     * If the credential are stored in a database, be careful on how the
+     * method {@code resetStateOfSUT} is implemented.
+     * If you delete all data with {@link DbCleaner}, then you will need as well to
+     * recreate the auth details.
+     * This can be put in a script, executed then with {@link SqlScriptRunner}.
+     * </p>
+     *
      * @return a list of valid authentication credentials, or {@code null} if
      *      * none is necessary
      */
     public abstract List<AuthenticationDto> getInfoForAuthentication();
 
     /**
+     * <p>
      * If the system under test (SUT) uses a SQL database, we need to have a
      * configured connection to access it.
+     * </p>
+     *
+     * <p>
+     * This method is related to {@link SutHandler#resetStateOfSUT}.
+     * When accessing a {@code Connection} object to reset the state of
+     * the application, we suggest to save it to field (eg when starting the
+     * application), and return such field here, e.g., {@code return connection;}.
+     * This connection object will be used by EvoMaster to analyze the state of
+     * the database to create better test cases.
+     * </p>
      *
      * @return {@code null} if the SUT does not use any SQL database
      */
@@ -373,14 +431,27 @@ public abstract class SutController implements SutHandler {
     public abstract List<AdditionalInfo> getAdditionalInfoList();
 
     /**
+     * <p>
      * Depending of which kind of SUT we are dealing with (eg, REST, GraphQL or SPA frontend),
-     * there is different info that must be provided
+     * there is different info that must be provided.
+     * For example, in a RESTful API, you need to speficy where the OpenAPI/Swagger schema
+     * is located.
+     * </p>
      *
+     * <p>
+     * The interface {@link ProblemInfo} provides different implementations, like
+     * {@code RestProblem}.
+     * You will need to instantiate one of such classes, and return it here in this method.
+     * </p>
      * @return an instance of object with all the needed data for the specific addressed problem
      */
     public abstract ProblemInfo getProblemInfo();
 
     /**
+     * Test cases could be outputted in different language (e.g., Java and Kotlin),
+     * using different testing libraries (e.g., JUnit 4 or 5).
+     * Here, need to specify the default option.
+     *
      * @return the format in which the test cases should be generated
      */
     public abstract SutInfoDto.OutputFormat getPreferredOutputFormat();
@@ -401,6 +472,7 @@ public abstract class SutController implements SutHandler {
         dto.numberOfReplacedMethodsInThirdParty = recorder.getNumberOfReplacedMethodsInThirdParty();
         dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
         dto.unitNames = recorder.getUnitNames();
+        dto.parsedDtos = recorder.getParsedDtos();
         return dto;
     }
 }

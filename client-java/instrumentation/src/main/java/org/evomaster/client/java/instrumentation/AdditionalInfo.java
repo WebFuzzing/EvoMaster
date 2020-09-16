@@ -66,6 +66,38 @@ public class AdditionalInfo implements Serializable {
     private StatementDescription noExceptionStatement = null;
 
 
+    /**
+     * Check if the business logic of the SUT (and not a third-party library) is
+     * accessing the raw bytes of HTTP body payload (if any) directly
+     */
+    private boolean rawAccessOfHttpBodyPayload = false;
+
+
+    /**
+     * The name of all DTO that have been parsed (eg, with GSON and Jackson).
+     * Note: the actual content of schema is queried separately.
+     * Reasons: does not change (DTO classes are static), and quite expensive
+     * to send at each action evaluation
+     */
+    private Set<String> parsedDtoNames = new CopyOnWriteArraySet<>();
+
+
+    public Set<String> getParsedDtoNamesView(){
+        return Collections.unmodifiableSet(parsedDtoNames);
+    }
+
+    public void addParsedDtoName(String name){
+        parsedDtoNames.add(name);
+    }
+
+    public boolean isRawAccessOfHttpBodyPayload() {
+        return rawAccessOfHttpBodyPayload;
+    }
+
+    public void setRawAccessOfHttpBodyPayload(boolean rawAccessOfHttpBodyPayload) {
+        this.rawAccessOfHttpBodyPayload = rawAccessOfHttpBodyPayload;
+    }
+
     public void addSpecialization(String taintInputName, StringSpecializationInfo info){
         if(!ExecutionTracer.getTaintType(taintInputName).isTainted()){
             throw new IllegalArgumentException("No valid input name: " + taintInputName);

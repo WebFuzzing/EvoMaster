@@ -7,4 +7,8 @@ package org.evomaster.core.search.tracer
 interface TrackOperator{
 
     fun operatorTag() : String = this::class.java.simpleName
+
+    fun tag(element: TraceableElement, index : Int){
+        element.tagOperator(this, index)
+    }
 }

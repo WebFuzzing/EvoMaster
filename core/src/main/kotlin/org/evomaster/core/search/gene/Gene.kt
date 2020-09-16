@@ -1,12 +1,12 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 
 /**
@@ -51,6 +51,12 @@ abstract class Gene(var name: String) {
     abstract fun copy() : Gene
 
     /**
+     * weight for mutation
+     * For example, higher the weight, the higher the chances to be selected for mutation
+     */
+    open fun mutationWeight() : Double = 1.0
+
+    /**
      * Specify if this gene can be mutated during the search.
      * Typically, it will be true, apart from some special cases.
      */
@@ -79,44 +85,104 @@ abstract class Gene(var name: String) {
             allGenes: List<Gene> = listOf())
 
     /**
-     * Apply a mutation to the current gene.
      * A mutation is just a small change.
+     * Apply a mutation to the current gene.
+     * Regarding the gene,
+     * 1) there might exist multiple internal genes i.e.,[candidatesInternalGenes].
+     *  In this case, we first apply [selectSubset] to select a subset of internal genes.
+     *  then apply mutation on each of the selected genes.
+     * 2) When there is no need to do further selection, we apply [mutate] on the current gene.
      *
      *   @param randomness the source of non-determinism
+     *   @param apc parameter control
+     *   @param mwc mutation weight control
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
      *          we need to refer to them
+     *   @param interalGeneSelectionStrategy a strategy to select internal genes to mutate
+     *   @param enableAdaptiveMutation whether apply adaptive gene mutation, e.g., archive-based gene mutation
+     *   @param additionalGeneMutationInfo contains additional info for gene mutation
      */
-    abstract fun standardMutation(
+    fun standardMutation(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene> = listOf()
-    )
+            mwc: MutationWeightControl,
+            allGenes: List<Gene> = listOf(),
+            internalGeneSelectionStrategy: SubsetGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT,
+            enableAdaptiveGeneMutation: Boolean = false,
+            additionalGeneMutationInfo: AdditionalGeneSelectionInfo? = null
+    ){
+        val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        if (internalGenes.isEmpty()){
+            val mutated = mutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            if (!mutated) throw IllegalStateException("leaf mutation is not implemented")
+        }else{
+            val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            if (selected.isEmpty())
+                throw IllegalStateException("none is selected to mutate")
+
+            selected.forEach{
+                do {
+                    it.first.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
+                }while (!mutationCheck())
+            }
+        }
+    }
 
     /**
-     * Apply a archived-based mutation to the current gene.
+     * mutated gene should pass the check if needed, eg, DateGene
      *
-     * NOTE THAT if this method is not overridden, just default to standard mutation
-     *
-     *   @param randomness the source of non-determinism
-     *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
-     *          we need to refer to them
-     *   @param evi the evaluated individual contains an evolution of the gene with fitness values
-     *   @param selection how to select genes to mutate if [this] contains more than one genes(e.g., ObjectGene) or other characteristics(e.g., size of ArrayGene)
-     *   @param impact info of impact of the gene if it has, but in some case impact might be null, e.g., an element at ArrayGene
-     *   @param geneReference a reference (i.e., id generated) to find a gene in this history, which always refers to 'root' gene in the [evi]
-     *   @param archiveMutator mutate genes using archive-based methods if the method is enabled or supports this type of [this] gene.
+     * In some cases, we must have genes with 'valid' values.
+     * For example, a date with month 42 would be invalid.
+     * On the one hand, it can still be useful for robustness testing
+     * to provide such invalid values in a HTTP call. On the other hand,
+     * it would be pointless to try to add it directly into a database,
+     * as that SQL command would simply fail without any SUT code involved.
      */
-    open fun archiveMutation(randomness: Randomness,
-                             allGenes: List<Gene>,
-                             apc: AdaptiveParameterControl,
-                             selection: GeneMutationSelectionMethod,
-                             impact: GeneImpact?,
-                             geneReference: String,
-                             archiveMutator: ArchiveMutator,
-                             evi: EvaluatedIndividual<*>,
-                             targets: Set<Int>){
-        standardMutation(randomness, apc, allGenes)
+    open fun mutationCheck() : Boolean = true
+
+    /**
+     * @return whether to apply a subset selection for internal genes to mutate
+     */
+    open fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?)
+            = listOf<Gene>()
+
+    /**
+     * @return a subset of internal genes to apply mutations
+     */
+    open fun selectSubset(internalGenes: List<Gene>,
+                          randomness: Randomness,
+                          apc: AdaptiveParameterControl,
+                          mwc: MutationWeightControl,
+                          allGenes: List<Gene> = listOf(),
+                          selectionStrategy: SubsetGeneSelectionStrategy,
+                          enableAdaptiveGeneMutation: Boolean,
+                          additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+        return when(selectionStrategy){
+            SubsetGeneSelectionStrategy.DEFAULT -> listOf(Pair(randomness.choose(internalGenes), null))
+            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT -> mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to null }
+            SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
+                additionalGeneMutationInfo?: throw IllegalArgumentException("additionalGeneSelectionInfo should not be null")
+                adaptiveSelectSubset(internalGenes, mwc, additionalGeneMutationInfo)
+            }
+        }
     }
+
+    open fun adaptiveSelectSubset(internalGenes: List<Gene>,
+                                  mwc: MutationWeightControl,
+                                  additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> = listOf()
+
+    /**
+     * mutate the current gene if there is no need to apply selection, i.e., when [candidatesInternalGenes] is empty
+     *
+     * TODO Man if Specialization of String is handled properly, params might be simplified
+     */
+    open fun mutate(randomness: Randomness,
+                    apc: AdaptiveParameterControl,
+                    mwc: MutationWeightControl,
+                    allGenes: List<Gene> = listOf(),
+                    selectionStrategy: SubsetGeneSelectionStrategy,
+                    enableAdaptiveGeneMutation: Boolean,
+                    additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) = false
 
     /**
      * Return the value as a printable string.

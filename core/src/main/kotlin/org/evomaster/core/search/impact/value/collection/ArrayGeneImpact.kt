@@ -2,9 +2,7 @@ package org.evomaster.core.search.impact.value.collection
 
 import org.evomaster.core.search.gene.ArrayGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.Impact
-import org.evomaster.core.search.impact.MutatedGeneWithContext
+import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 
 /**
@@ -27,7 +25,9 @@ class ArrayGeneImpact (
         timesOfImpact= timesOfImpact,
         noImpactFromImpact = noImpactFromImpact,
         noImprovement = noImprovement
-) {
+), CollectionImpact {
+
+    override fun getSizeImpact(): Impact = sizeImpact
 
     override fun copy(): ArrayGeneImpact {
         return ArrayGeneImpact(

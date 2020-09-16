@@ -1,5 +1,6 @@
 package org.evomaster.resource.rest.generator.implementation.java
 
+import org.evomaster.resource.rest.generator.template.RelationTag
 import org.evomaster.resource.rest.generator.template.Tag
 
 /**
@@ -29,7 +30,7 @@ object JavaxAnnotation {
     /**
      * Specifies a single-valued association to another entity that has one-to-one multiplicity.
      */
-    val ONE_TO_ONE = Tag("OneToOne")
+    val ONE_TO_ONE = RelationTag("OneToOne")
 
     /**
      * Specifies a single-valued association to another entity class that has many-to-one multiplicity.
@@ -39,7 +40,7 @@ object JavaxAnnotation {
     /**
      * Specifies a many-valued association with one-to-many multiplicity.
      */
-    val ONE_TO_MANY = Tag("OneToMany")
+    val ONE_TO_MANY = RelationTag("OneToMany")
     /**
      * Specifies a many-valued association with many-to-many multiplicity.
      */

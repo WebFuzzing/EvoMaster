@@ -2,7 +2,9 @@ package org.evomaster.core.search.service.mutator.geneMutation
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
@@ -11,14 +13,15 @@ import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 
 /**
  *
@@ -53,6 +56,11 @@ class ArchiveMutator {
     }
 
     /**************************** gene selection ********************************************/
+
+    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Double> ,individual: Individual?, impacts: List<Impact>?, evi: EvaluatedIndividual<*>, targets : Set<Int>){
+        TODO()// when merge with archive-based branch
+    }
+
 
     /**
      * Apply archive-based mutation to select [genes] from [individual] to mutate regarding their impacts saved in [evi],
@@ -180,9 +188,9 @@ class ArchiveMutator {
      * decide an archive-based gene selection method when the selection is adaptive (i.e., [GeneMutationSelectionMethod.adaptive])
      */
     private fun decideArchiveGeneSelectionMethod(genes : List<Impact>) : GeneMutationSelectionMethod {
-        return when (config.geneSelectionMethod) {
+        return when (config.adaptiveGeneSelectionMethod) {
             GeneMutationSelectionMethod.ALL_FIXED_RAND -> randomGeneSelectionMethod()
-            else -> config.geneSelectionMethod
+            else -> config.adaptiveGeneSelectionMethod
         }
     }
 
@@ -196,7 +204,7 @@ class ArchiveMutator {
      */
     fun <T : Individual> selectIndividual(individuals : List<EvaluatedIndividual<T>>) : EvaluatedIndividual<T>{
         if (randomness.nextBoolean(0.1)) return randomness.choose(individuals)
-        val impacts = individuals.filter { it.getImpactOfGenes().any { i->i.value.timesToManipulate > 0 } }
+        val impacts = individuals.filter { it.getImpactInfo().any { i->i.value.timesToManipulate > 0 } }
         if (impacts.isNotEmpty()) return randomness.choose(impacts)
         return randomness.choose(individuals)
     }
@@ -554,13 +562,18 @@ class ArchiveMutator {
     fun applyArchiveSelection() = enableArchiveSelection()
             && randomness.nextBoolean(config.probOfArchiveMutation)
 
-    fun enableArchiveSelection() = config.geneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
+    /**
+     * @return whether the archive-based gene selection for the mutation is enabled
+     */
+    fun enableArchiveSelection() = config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
 
     fun enableArchiveGeneMutation() = config.probOfArchiveMutation > 0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE
 
     fun enableArchiveMutation() = enableArchiveGeneMutation() || enableArchiveSelection()
 
     fun createCharMutationUpdate() = IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt())
+
+    fun doCollectImpact() : Boolean = config.probOfArchiveMutation > 0
 
     /**
      * export impact info collected during search that is normally used for experiment
@@ -572,7 +585,7 @@ class ArchiveMutator {
         val content = mutableListOf<String>()
         content.add(mutableListOf("test","rootGene").plus(Impact.toCSVHeader()).joinToString(","))
         solution.individuals.forEachIndexed { index, e->
-            e.getImpactOfGenes().forEach { (t, geneImpact) ->
+            e.getImpactInfo().forEach { (t, geneImpact) ->
                 content.add(mutableListOf(index.toString(), t).plus(geneImpact.toCSVCell()).joinToString(","))
                 geneImpact.flatViewInnerImpact().forEach{ (name, impact) ->
                     content.add(mutableListOf(index.toString(), "$t-$name").plus(impact.toCSVCell()).joinToString(","))
@@ -582,6 +595,49 @@ class ArchiveMutator {
         if (content.size > 1){
             Files.write(path, content)
         }
+    }
+
+    fun saveMutatedGene(mutatedGenes: MutatedGeneSpecification?, individual: Individual, index : Int, evaluatedMutation : EvaluatedMutation, targets: Set<Int>){
+        mutatedGenes?:return
+        if(!config.saveMutationInfo) return
+
+        val path = Paths.get(config.mutatedGeneFile)
+        if (path.parent != null) Files.createDirectories(path.parent)
+        if (Files.notExists(path)) Files.createFile(path)
+
+        val content = mutableListOf<String>()
+        content.addAll(mutatedGenes.mutatedGenes.mapIndexed { gindex, geneInfo -> listOf(
+                index,
+                evaluatedMutation,
+                geneInfo.gene.name,
+                geneInfo.previousValue,
+                geneInfo.gene.getValueAsPrintableString(),
+                "#${targets.joinToString("#")}",
+                if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[gindex] else "",
+                if (mutatedGenes.mutatedPosition.isNotEmpty() && individual.seeActions().isNotEmpty())
+                    getActionInfo(individual.seeActions()[mutatedGenes.mutatedPosition[gindex]])
+                else "").joinToString(",")} )
+
+        content.addAll(mutatedGenes.mutatedDbGenes.mapIndexed { gindex, geneInfo -> listOf(
+                index,
+                evaluatedMutation,
+                geneInfo.gene.name,
+                geneInfo.previousValue,
+                geneInfo.gene.getValueAsPrintableString(),
+                "#${targets.joinToString("#")}",
+                if (mutatedGenes.mutatedDbActionPosition.isNotEmpty()) mutatedGenes.mutatedDbActionPosition[gindex] else "",
+                if (mutatedGenes.mutatedDbActionPosition.isNotEmpty() && individual.seeInitializingActions().isNotEmpty())
+                    getActionInfo(individual.seeInitializingActions()[mutatedGenes.mutatedDbActionPosition[gindex]])
+                else "" ).joinToString(",")})
+
+        if (content.isNotEmpty()) {
+            Files.write(path, content, StandardOpenOption.APPEND)
+        }
+    }
+
+    private fun getActionInfo(action : Action) : String{
+        return if (action is RestCallAction) action.resolvedPath()
+        else action.getName()
     }
 }
 
