@@ -338,7 +338,7 @@ class Main {
             val tests = getAmountOfTestsAsString(solution)
             LoggingUtil.getInfoLogger().info("Going to save snapshot $tests to ${config.outputFolder}")
 
-            val writer = setupPartialOracles(injector, config, controllerInfoDto)
+            val writer = setupPartialOracles(injector, config)
             writer.writeTests(solution, controllerInfoDto?.fullName, snapshot)
         }
 
