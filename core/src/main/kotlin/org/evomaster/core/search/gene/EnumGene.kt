@@ -89,17 +89,16 @@ class EnumGene<T : Comparable<T>>(
                 additionalGeneMutationInfo.impact.values[it]
             }.toList()
             val weights = additionalGeneMutationInfo.archiveGeneSelector.impactBasedOnWeights(impacts, additionalGeneMutationInfo.targets)
-
-            val selects =mwc.selectSubsetWithWeight(candidates.mapIndexed { index, i -> candidates[index] to weights[index] }.toMap(), true, 1.0)
-            index = randomness.choose(selects)
-            return true
+            if(weights.isNotEmpty()){
+                val selects =mwc.selectSubsetWithWeight(candidates.mapIndexed { index, i -> candidates[index] to weights[index] }.toMap(), true, 1.0)
+                index = randomness.choose(selects)
+                return true
+            }
         }
 
         val next = (index+1) % values.size
         index = next
         return true
-
-        //throw IllegalArgumentException("impact is null or not EnumGeneImpact")
     }
 
 

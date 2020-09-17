@@ -29,7 +29,7 @@ class PrimitiveTypeMatchFitness : FitnessFunction<PrimitiveTypeMatchIndividual>(
 
     private fun getTargets(individual: PrimitiveTypeMatchIndividual) : List<Any>{
         return when{
-            individual.gene is StringGene -> listOf("foo", "", "Y8l4x0WC9qtH5mTN")
+            individual.gene is StringGene -> listOf("bar", "", "Y8l4x0WC9qtH5mTN")
             individual.gene is IntegerGene -> listOf(Int.MIN_VALUE, -1, 0, 1, Int.MAX_VALUE)
             individual.gene is DoubleGene -> listOf(Double.MIN_VALUE, -1.0, 0.0, 1.0, Double.MAX_VALUE)
             individual.gene is FloatGene -> listOf(Float.MIN_VALUE, -1.0f, 0.0f, 1.0f, Float.MAX_VALUE)

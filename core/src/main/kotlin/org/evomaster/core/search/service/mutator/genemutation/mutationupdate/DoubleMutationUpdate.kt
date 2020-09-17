@@ -23,7 +23,7 @@ class DoubleMutationUpdate(min: Double, max: Double, updateTimes : Int = 0, coun
 
     override fun middle(): Double = preferMin/2.0 + preferMax/2.0
 
-    override fun random(apc: AdaptiveParameterControl, randomness: Randomness, current: Double, probOfMiddle: Double, start: Int, end: Int): Double {
+    override fun random(apc: AdaptiveParameterControl, randomness: Randomness, current: Double, probOfMiddle: Double, start: Int, end: Int, minimalTimeForUpdate: Int): Double {
         if(randomness.nextBoolean(probOfMiddle)) {
             val m = middle()
             if (m != current) return m
@@ -34,7 +34,7 @@ class DoubleMutationUpdate(min: Double, max: Double, updateTimes : Int = 0, coun
         val valid = candidates.filter { it <= preferMax && it >= preferMin }
         return when{
             valid.isNotEmpty() -> randomness.choose(valid)
-            valid.min()!! > preferMax -> preferMax
+            candidates.min()!! > preferMax -> preferMax
             else -> preferMin
         }
     }
@@ -42,7 +42,11 @@ class DoubleMutationUpdate(min: Double, max: Double, updateTimes : Int = 0, coun
     override fun copy(): DoubleMutationUpdate = DoubleMutationUpdate(preferMin, preferMax, updateTimes, counter, reached, latest, preferMin, preferMax)
 
     override fun candidatesBoundary(): Double {
-        return (preferMax - preferMin).also {
+        val result = preferMax - preferMin
+        if (Double.NEGATIVE_INFINITY == result || result == Double.NaN || result == Double.NEGATIVE_INFINITY)
+            return Long.MAX_VALUE.toDouble()
+
+        return result.also {
             if (it < 0) throw IllegalStateException("preferMax < preferMin: $preferMax, $preferMin")
         }
     }
@@ -54,9 +58,9 @@ class DoubleMutationUpdate(min: Double, max: Double, updateTimes : Int = 0, coun
         val value = latest!!/2.0 + current/2.0
         updateCounter(doesCurrentBetter)
         if ( (doesCurrentBetter && current > latest!!) || (!doesCurrentBetter && current < latest!!)){
-            preferMin = value
+            preferMin = if(value > preferMax) preferMax else value
         }else
-            preferMax = value
+            preferMax = if(value < preferMin) preferMin else value
         updateTimes +=1
     }
 }

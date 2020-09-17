@@ -196,12 +196,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
      * @param targets is a set of targets to cover
      * @param mutatedGene contains what genes are mutated in this mutation
      */
-    private fun mutationConfiguration(
+    fun mutationConfiguration(
             gene: Gene, individual: T,
             eval : EvaluatedIndividual<T>,
             enableAGS : Boolean,
             enableAGM: Boolean,
-            targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : AdditionalGeneMutationInfo?{
+            targets: Set<Int>, mutatedGene: MutatedGeneSpecification?, includeSameValue : Boolean = false) : AdditionalGeneMutationInfo?{
 
         val isDb = individual.seeInitializingActions().any { it.seeGenes().contains(gene) }
 
@@ -210,10 +210,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         } catch (e: Exception){
             "exception"
         }
-        val position = if (isDb){
-            individual.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
-        } else{
-            individual.seeActions().indexOfFirst { it.seeGenes().contains(gene) }
+        val position = when {
+            individual.seeActions(isDb).isEmpty() -> individual.seeGenes().indexOf(gene)
+            isDb -> individual.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
+            else -> individual.seeActions().indexOfFirst { it.seeGenes().contains(gene) }
         }
 
         mutatedGene?.addMutatedGene(isDb, valueBeforeMutation = value, gene = gene, position = position)
@@ -231,30 +231,44 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 TODO might conduct further experiment on the 'maxlengthOfHistoryForAGM'?
              */
             val effective = eval.getLast<EvaluatedIndividual<T>>(config.maxlengthOfHistoryForAGM, EvaluatedMutation.range(min = EvaluatedMutation.BETTER_THAN.value)).filter {
-                it.individual.seeActions(isDb).size > position &&
-                        it.individual.seeActions(isDb)[position].getName() == individual.seeActions(isDb)[position].getName()
+                it.individual.seeActions(isDb).isEmpty() ||
+                        (it.individual.seeActions(isDb).size > position && it.individual.seeActions(isDb)[position].getName() == individual.seeActions(isDb)[position].getName())
             }
             val history = eval.getLast<EvaluatedIndividual<T>>(config.maxlengthOfHistoryForAGM, EvaluatedMutation.range()).filter {
-                it.individual.seeActions(isDb).size > position &&
-                        it.individual.seeActions(isDb)[position].getName() == individual.seeActions(isDb)[position].getName()
+                it.individual.seeActions(isDb).isEmpty() ||
+                        (it.individual.seeActions(isDb).size > position && it.individual.seeActions(isDb)[position].getName() == individual.seeActions(isDb)[position].getName())
             }
 
 
             additionInfo!!.effectiveHistory.addAll(effective.mapNotNull {
-                ImpactUtils.findMutatedGene(
-                        it.individual.seeActions(isDb)[position], gene)
+                if (it.individual.seeActions(isDb).isEmpty())
+                    ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
+                else
+                    ImpactUtils.findMutatedGene(
+                        it.individual.seeActions(isDb)[position], gene, includeSameValue)
             })
 
             additionInfo.history.addAll(history.mapNotNull {e->
-                ImpactUtils.findMutatedGene(
-                        e.individual.seeActions(isDb)[position], gene)?.run {
-                    this to EvaluatedInfo(
-                            index =  e.index,
-                            result = e.evaluatedResult,
-                            targets = e.fitness.getViewOfData().keys,
-                            specificTargets = if (!isDb) e.fitness.getTargetsByAction(position) else setOf()
-                    )
-                }
+                if (e.individual.seeActions(isDb).isEmpty())
+                    ImpactUtils.findMutatedGene(
+                           e.individual.seeGenes(), gene, includeSameValue)?.run {
+                        this to EvaluatedInfo(
+                                index =  e.index,
+                                result = e.evaluatedResult,
+                                targets = e.fitness.getViewOfData().keys,
+                                specificTargets = if (!isDb) e.fitness.getTargetsByAction(position) else setOf()
+                        )
+                    }
+                else
+                    ImpactUtils.findMutatedGene(
+                            e.individual.seeActions(isDb)[position], gene, includeSameValue)?.run {
+                        this to EvaluatedInfo(
+                                index =  e.index,
+                                result = e.evaluatedResult,
+                                targets = e.fitness.getViewOfData().keys,
+                                specificTargets = if (!isDb) e.fitness.getTargetsByAction(position) else setOf()
+                        )
+                    }
             })
         }
 

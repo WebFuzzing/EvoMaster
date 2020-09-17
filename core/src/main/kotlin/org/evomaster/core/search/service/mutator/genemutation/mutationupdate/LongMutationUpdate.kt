@@ -25,7 +25,7 @@ class LongMutationUpdate(min: Long, max: Long, updateTimes : Int = 0, counter: I
         return (preferMin/2.0 + preferMax/2.0).toLong()
     }
 
-    override fun random(apc: AdaptiveParameterControl, randomness: Randomness, current: Long, probOfMiddle: Double, start: Int, end: Int): Long {
+    override fun random(apc: AdaptiveParameterControl, randomness: Randomness, current: Long, probOfMiddle: Double, start: Int, end: Int, minimalTimeForUpdate: Int): Long {
         var c = current
         if (randomness.nextBoolean(probOfMiddle)) {
             val middle = middle()
@@ -43,11 +43,21 @@ class LongMutationUpdate(min: Long, max: Long, updateTimes : Int = 0, counter: I
     }
 
     override fun compareTo(other: LongMutationUpdate): Int {
-        return (-candidatesBoundary() + other.candidatesBoundary()).toInt()
+        val result = try{
+            Math.subtractExact(other.candidatesBoundary(), candidatesBoundary())
+        }catch (e : ArithmeticException) {
+            return other.candidatesBoundary().compareTo(candidatesBoundary())
+        }
+        return if (result > Int.MAX_VALUE.toLong()) Int.MAX_VALUE else if (result < Int.MIN_VALUE.toLong()) Int.MIN_VALUE else result.toInt()
     }
 
     override fun candidatesBoundary(): Long {
-        return (preferMax - preferMin).also {
+        val range = try {
+            Math.subtractExact(preferMax, preferMin)
+        }catch (e : ArithmeticException){
+            return  Long.MAX_VALUE
+        }
+        return range.also {
             if (it < 0) throw IllegalStateException("preferMax < preferMin: $preferMax, $preferMin")
         }
     }
@@ -58,10 +68,18 @@ class LongMutationUpdate(min: Long, max: Long, updateTimes : Int = 0, counter: I
         latest?:return
         if (current == latest) return
         val value = latest!!/2.0 + current/2.0
-        if ( (doesCurrentBetter && current > latest!!) || (!doesCurrentBetter && current < latest!!)){
-            preferMin = if (value < preferMax) value.toLong()+1L else value.toLong()
-        }else
-            preferMax = value.toLong()
+        val updateMin = (doesCurrentBetter && current > latest!!) || (!doesCurrentBetter && current < latest!!)
+        if (updateMin){
+            preferMin = if (value > preferMax) {
+                if (value.toLong()+1L > preferMax) preferMax
+                else value.toLong()+1L
+            } else value.toLong()
+        }else{
+            preferMax = if(value < preferMin) {
+                if(value.toLong() +1L < preferMin) preferMin
+                else value.toLong() +1L
+            } else value.toLong()
+        }
         updateTimes +=1
     }
 }

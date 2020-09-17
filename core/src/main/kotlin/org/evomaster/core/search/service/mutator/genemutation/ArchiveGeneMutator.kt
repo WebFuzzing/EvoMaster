@@ -63,11 +63,14 @@ class ArchiveGeneMutator{
     fun historyBasedValueMutation(additionalGeneMutationInfo: AdditionalGeneMutationInfo, gene: Gene, allGenes: List<Gene>) {
         val history = manageHistory(additionalGeneMutationInfo, additionalGeneMutationInfo.targets)
         when (gene) {
-            is StringGene -> deriveMutatorForStringValue(history, gene, allGenes)
+            is StringGene -> {
+                val applied = deriveMutatorForStringValue(history, gene, allGenes)
+                if (!applied) gene.standardValueMutation(randomness, allGenes, apc)
+            }
             is IntegerGene -> gene.value = sampleValue(
                     history = history.map {
                         ((it.first as? IntegerGene)
-                                ?: throw IllegalArgumentException("element in history has different type, ie, ${it.first::class.java.simpleName}")
+                                ?: throw DifferentGeneInHistory(gene, it.first)
                                 ).value.toLong() to (it.second.result?.isEffective() == true)
                     },
                     value = gene.value.toLong(),
@@ -76,7 +79,8 @@ class ArchiveGeneMutator{
             ).toInt()
             is LongGene -> gene.value =  sampleValue(
                     history = history.map {
-                        ((it.first as? LongGene)?: throw IllegalArgumentException(" ")).value to (it.second.result?.isEffective() == true)
+                        ((it.first as? LongGene)
+                                ?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.isEffective() == true)
                     },
                     value = gene.value,
                     valueUpdate = LongMutationUpdate(min = Long.MIN_VALUE, max = Long.MAX_VALUE),
@@ -84,7 +88,7 @@ class ArchiveGeneMutator{
             )
             is DoubleGene -> gene.value =  sampleValue(
                     history = history.map {
-                        ((it.first as? DoubleGene)?: throw IllegalArgumentException(" ")).value to (it.second.result?.isEffective() == true)
+                        ((it.first as? DoubleGene)?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.isEffective() == true)
                     },
                     value = gene.value,
                     valueUpdate = DoubleMutationUpdate(min = Double.MIN_VALUE, max = Double.MAX_VALUE),
@@ -92,7 +96,7 @@ class ArchiveGeneMutator{
             )
             is FloatGene -> gene.value = sampleValue(
                     history = history.map {
-                        ((it.first as? FloatGene)?: throw IllegalArgumentException(" ")).value.toDouble() to (it.second.result?.isEffective() == true)
+                        ((it.first as? FloatGene)?: throw DifferentGeneInHistory(gene, it.first)).value.toDouble() to (it.second.result?.isEffective() == true)
                     },
                     value = gene.value.toDouble(),
                     valueUpdate = DoubleMutationUpdate(min = Float.MIN_VALUE.toDouble(), max = Float.MAX_VALUE.toDouble()),
@@ -123,13 +127,14 @@ class ArchiveGeneMutator{
                 current = value,
                 probOfMiddle = probOfMiddle(valueUpdate),
                 start = start,
-                end = end
+                end = end,
+                minimalTimeForUpdate = 5
         )
     }
 
     /**************************** String Gene ********************************************/
 
-    private fun deriveMutatorForStringValue(history : List<Pair<Gene, EvaluatedInfo>>, gene: StringGene, allGenes: List<Gene>) {
+    private fun deriveMutatorForStringValue(history : List<Pair<Gene, EvaluatedInfo>>, gene: StringGene, allGenes: List<Gene>) : Boolean{
         val others = allGenes.flatMap { it.flatView() }
                 .filterIsInstance<StringGene>()
                 .map { it.getValueAsRawString() }
@@ -158,12 +163,35 @@ class ArchiveGeneMutator{
 
         val p = randomness.nextDouble()
         val pOfLen = apc.getExploratoryValue(0.6, 0.2)
-        when{
-            p < 0.02 && others.isNotEmpty() -> gene.value = randomness.choose(others)
-            lenMutationUpdate.isReached(gene.value.length.toLong()) || (p < (1.0 - pOfLen) && gene.value.isNotBlank()) -> mutateChars(charsMutationUpdate, gene)
-            gene.value.isBlank() || (p < (1.0 - pOfLen/2.0) && gene.value.length < gene.maxLength) -> gene.value += randomness.nextWordChar()
-            else -> gene.value = gene.value.dropLast(1)
+        val pLength = lenMutationUpdate.random(
+                apc = apc,
+                randomness = randomness,
+                current = gene.value.length.toLong(),
+                probOfMiddle = probOfMiddle(lenMutationUpdate),
+                start = 6,
+                end = 3,
+                minimalTimeForUpdate = 2
+        )
+
+        val anyCharToMutate = charsMutationUpdate.filterIndexed {
+            index, longMutationUpdate -> !longMutationUpdate.isReached(gene.value[index].toLong()) }.isNotEmpty() && charsMutationUpdate.isNotEmpty()
+        if (!anyCharToMutate && lenMutationUpdate.isReached(gene.value.length.toLong())) return false
+
+        if (p < 0.02 && others.isNotEmpty()){
+            gene.value = randomness.choose(others)
+            return true
         }
+
+        if (lenMutationUpdate.isReached(gene.value.length.toLong()) || (p < (1.0 - pOfLen) && anyCharToMutate && gene.value.isNotBlank())){
+            return mutateChars(charsMutationUpdate, gene)
+        }
+        val append = pLength.toInt() > gene.value.length || (pLength.toInt() == gene.value.length && p < 1.0 - pOfLen/2.0)
+        if (append){
+            gene.value += randomness.nextWordChar() //(0 until (pLength.toInt() - gene.value.length)).map {randomness.nextWordChar()}.joinToString("")
+        }else{
+            gene.value = gene.value.dropLast(1)
+        }
+        return true
     }
 
     /**
@@ -172,12 +200,13 @@ class ArchiveGeneMutator{
      * @param charsMutationUpdate collects the candidates
      * @param gene that is String to mutate
      */
-    private fun mutateChars(charsMutationUpdate : List<LongMutationUpdate>, gene : StringGene) {
+    private fun mutateChars(charsMutationUpdate : List<LongMutationUpdate>, gene : StringGene) : Boolean {
         val weightsMap = charsMutationUpdate.mapIndexed { index, intMutationUpdate ->
             index to intMutationUpdate
         }.filter{ !it.second.isReached(gene.value[it.first].toLong()) }.map { it.first to it.second.candidatesBoundary().toDouble() }.toMap()
         if (weightsMap.isEmpty()) {
             log.warn("none of chars to select for the mutation")
+            return false
         }
 
         val chars = mwc.selectSubsetWithWeight(weightsMap, true, mwc.getNGeneToMutate(weightsMap.size, 1))
@@ -188,10 +217,12 @@ class ArchiveGeneMutator{
                     apc = apc,
                     start = 6,
                     end = 3,
-                    probOfMiddle = probOfMiddle(charsMutationUpdate[it])
+                    probOfMiddle = probOfMiddle(charsMutationUpdate[it]),
+                    minimalTimeForUpdate = 3
             ).toChar()
             gene.value = modifyIndex(gene.value, index = it, char = mc)
         }
+        return true
     }
 
     fun mutateStringGene(

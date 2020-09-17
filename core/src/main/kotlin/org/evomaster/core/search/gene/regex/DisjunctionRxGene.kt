@@ -132,9 +132,16 @@ class DisjunctionRxGene(
         if (other !is DisjunctionRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        for (i in 0 until terms.size) {
-            if (!this.terms[i].containsSameValueAs(other.terms[i])) {
-                return false
+
+        //TODO Man: Andrea, please check this code
+        if (terms.size != other.terms.size) return false
+
+        //Man: if terms is empty, there throws IndexOutOfBoundsException (found by rest-scs case study)
+        if (terms.isNotEmpty()){
+            for (i in 0 until terms.size) {
+                if (!this.terms[i].containsSameValueAs(other.terms[i])) {
+                    return false
+                }
             }
         }
 

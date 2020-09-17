@@ -231,11 +231,16 @@ class ImpactUtils {
          * find a gene that has the same with [gene], but different value
          * @param gene is one of root genes of [action]
          */
-        fun findMutatedGene(action: Action, gene : Gene) : Gene?{
+        fun findMutatedGene(action: Action, gene : Gene, includeSameValue : Boolean = false) : Gene?{
+            return findMutatedGene(action.seeGenes(), gene, includeSameValue)
+        }
+
+
+        fun findMutatedGene(genes: List<Gene>, gene : Gene, includeSameValue : Boolean = false) : Gene?{
             val template = ParamUtil.getValueGene(gene)
-            return action.seeGenes().filter {o->
+            return genes.filter {o->
                 val g = ParamUtil.getValueGene(o)
-                g.name == template.name && g::class.java.simpleName == template::class.java.simpleName && g.containsSameValueAs(template)
+                g.name == template.name && g::class.java.simpleName == template::class.java.simpleName && (includeSameValue || !g.containsSameValueAs(template))
             }.also {
                 if (it.size > 1)
                     log.warn("{} genes have been mutated with the name {},",it.size, gene.name)

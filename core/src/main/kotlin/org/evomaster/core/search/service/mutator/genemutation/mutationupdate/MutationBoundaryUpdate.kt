@@ -31,7 +31,7 @@ abstract class MutationBoundaryUpdate<T> (
     fun isReached(current : T) : Boolean = preferMin == preferMax && preferMin == current
 
     abstract fun middle() : T
-    abstract fun random(apc: AdaptiveParameterControl, randomness: Randomness, current: T, probOfMiddle : Double, start: Int, end: Int) : T
+    abstract fun random(apc: AdaptiveParameterControl, randomness: Randomness, current: T, probOfMiddle : Double, start: Int, end: Int, minimalTimeForUpdate: Int) : T
 
     abstract fun doReset(current : T, doesCurrentBetter: Boolean) : Boolean
     abstract fun updateBoundary(current: T, doesCurrentBetter : Boolean)
@@ -44,6 +44,15 @@ abstract class MutationBoundaryUpdate<T> (
         }
         updateCounter(doesCurrentBetter)
         latest = current
+    }
+
+    fun updateOrRestBoundary(history : List<Pair<T, Boolean>>){
+        (0 until history.size).forEach {i->
+            updateOrRestBoundary(
+                    current = history[i].first,
+                    doesCurrentBetter = history[i].second
+            )
+        }
     }
 }
 

@@ -5,6 +5,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 
@@ -41,12 +42,14 @@ class LongGene(
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
             if (additionalGeneMutationInfo.hasHistory()){
-                additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
-                        additionalGeneMutationInfo,
-                        this,
-                        allGenes
-                )
-                return true
+                try {
+                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
+                            additionalGeneMutationInfo,
+                            this,
+                            allGenes
+                    )
+                    return true
+                }catch (e: DifferentGeneInHistory){}
             }
         }
 

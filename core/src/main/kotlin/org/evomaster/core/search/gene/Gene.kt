@@ -119,9 +119,14 @@ abstract class Gene(var name: String) {
             val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
 
             selected.forEach{
+                var mutateCounter = 0
                 do {
                     it.first.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
-                }while (!mutationCheck())
+                    mutateCounter +=1
+                }while (!mutationCheck() && mutateCounter <=3)
+                if (!mutationCheck()){
+                    GeneUtils.repairGenes(listOf(this))
+                }
             }
         }
     }

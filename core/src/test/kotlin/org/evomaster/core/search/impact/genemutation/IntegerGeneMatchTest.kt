@@ -23,7 +23,7 @@ class IntegerGeneMatchTest {
     private lateinit var config: EMConfig
     private lateinit var mio: MioAlgorithm<PrimitiveTypeMatchIndividual>
 
-    private val budget = 300
+    private val budget = 6000
 
     @BeforeEach
     fun init(){
@@ -37,34 +37,20 @@ class IntegerGeneMatchTest {
         config = injector.getInstance(EMConfig::class.java)
         config.maxActionEvaluations = budget
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-        config.focusedSearchActivationTime = 0.0
 
         val sampler = injector.getInstance(PrimitiveTypeMatchSampler::class.java)
         sampler.template = PrimitiveTypeMatchIndividual.intTemplate()
 
         val ff = injector.getInstance(PrimitiveTypeMatchFitness::class.java)
-        ff.type = ONE2M.ONE_EQUAL_WITH_MANY
-
-    }
-
-    @Test
-    fun shareInfoWithASM(){
-        config.archiveGeneMutation = EMConfig.ArchiveGeneMutation.SPECIFIED
-        config.probOfArchiveMutation = 1.0
-        config.baseTaintAnalysisProbability = 0.0
-
-        val solution = mio.search()
-
-        assert(solution.individuals.size > 1)
-        val info = (solution.individuals.first().individual.gene as IntegerGene).mutationInfo
-
-        assert(solution.individuals.all { (it.individual.gene as IntegerGene).mutationInfo == info })
+        ff.type = ONE2M.ONE_EQUAL_WITH_ONE
 
     }
 
     @Test
     fun testASM(){
 
+        config.weightBasedMutationRate = true
+        config.enableTrackEvaluatedIndividual = true
         config.archiveGeneMutation = EMConfig.ArchiveGeneMutation.SPECIFIED
         config.probOfArchiveMutation = 1.0
 

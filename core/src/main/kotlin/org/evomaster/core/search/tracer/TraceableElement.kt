@@ -49,7 +49,8 @@ abstract class TraceableElement {
 
     fun <T: TraceableElement> wrapWithTracking(evaluatedResult: EvaluatedMutation?, trackingHistory: TrackingHistory<T>?){
         wrapped()
-        this.evaluatedResult = evaluatedResult
+        if (this.evaluatedResult == null || evaluatedResult!=null)
+            this.evaluatedResult = evaluatedResult
         this.tracking = trackingHistory
     }
 

@@ -103,9 +103,10 @@ class MutationWeightControl {
     fun <T>selectSubsetWithWeight(weights : Map<T, Double>, forceNotEmpty: Boolean, numToMutate : Double) : List<T>{
         if (weights.isEmpty()) throw IllegalArgumentException("Cannot select with an empty list")
         if (weights.size == 1) return weights.keys.toList()
+        val sw = weights.values.sum()
+        if (sw == 0.0) return randomness.choose(weights.keys.toList(), 1)
         val results  = mutableListOf<T>()
         do {
-            val sw = weights.values.sum()
             val size = weights.size
             weights.keys.forEach { g->
                 val m = calculatedAdaptiveMutationRate(size, config.d, numToMutate, sw, weights.getValue(g))

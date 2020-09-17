@@ -1,5 +1,7 @@
 package org.evomaster.e2etests.spring.examples.impactXYZ;
 
+import org.evomaster.core.EMConfig;
+import org.evomaster.core.EMConfig.ArchiveGeneMutation;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
@@ -12,29 +14,41 @@ public class ArchiveGeneMutationImpactXYZTest extends ImpactXYZTestBase {
 
     private final String folder = "AGM-ImpactXYZ";
 
-    @Disabled("enable when archive gene mutation is done")
     @Test
-    public void testOnlyArchiveMutation() throws Throwable {
-        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT);
+    public void testWithout() throws Throwable {
+        testRunEM(0.0, GeneMutationSelectionMethod.NONE, ArchiveGeneMutation.NONE);
     }
 
-    public void testRunEM(GeneMutationSelectionMethod method) throws Throwable {
+    @Test
+    public void testOnlyApproachImpactSelection() throws Throwable {
+        testRunEM(1.0, GeneMutationSelectionMethod.APPROACH_IMPACT, ArchiveGeneMutation.NONE);
+    }
+
+    @Test
+    public void testOnlyBalanceSelection() throws Throwable {
+        testRunEM(1.0, GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT_WITH_E, ArchiveGeneMutation.NONE);
+    }
+
+    public void testRunEM(double probOfArchive,GeneMutationSelectionMethod method, ArchiveGeneMutation agm) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "none",
                 "none",
-                1000,
+                2000,
                 false,
                 (args) -> {
 
                     args.add("--probOfArchiveMutation");
-                    args.add("1.0");
+                    args.add(""+probOfArchive);
+
+                    args.add("--weightBasedMutationRate");
+                    args.add("true");
 
                     args.add("--adaptiveGeneSelectionMethod");
                     args.add(method.toString());
 
                     args.add("--archiveGeneMutation");
-                    args.add("SPECIFIED");
+                    args.add(agm.toString());
 
                     args.add("--enableTrackEvaluatedIndividual");
                     args.add("true");
