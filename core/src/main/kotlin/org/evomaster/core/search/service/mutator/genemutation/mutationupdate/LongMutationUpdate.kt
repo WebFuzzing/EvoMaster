@@ -70,15 +70,13 @@ class LongMutationUpdate(min: Long, max: Long, updateTimes : Int = 0, counter: I
         val value = latest!!/2.0 + current/2.0
         val updateMin = (doesCurrentBetter && current > latest!!) || (!doesCurrentBetter && current < latest!!)
         if (updateMin){
-            preferMin = if (value > preferMax) {
-                if (value.toLong()+1L > preferMax) preferMax
-                else value.toLong()+1L
-            } else value.toLong()
+            (if (value.toLong()+1L < preferMax) value.toLong()+1L else value.toLong() ).also {
+                if (it <= preferMax) preferMin = it
+            }
         }else{
-            preferMax = if(value < preferMin) {
-                if(value.toLong() +1L < preferMin) preferMin
-                else value.toLong() +1L
-            } else value.toLong()
+            value.toLong().also {
+                if (it >= preferMin) preferMax = it
+            }
         }
         updateTimes +=1
     }

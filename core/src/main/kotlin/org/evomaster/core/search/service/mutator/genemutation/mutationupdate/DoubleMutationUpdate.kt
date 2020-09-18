@@ -57,10 +57,16 @@ class DoubleMutationUpdate(min: Double, max: Double, updateTimes : Int = 0, coun
 
         val value = latest!!/2.0 + current/2.0
         updateCounter(doesCurrentBetter)
+
         if ( (doesCurrentBetter && current > latest!!) || (!doesCurrentBetter && current < latest!!)){
-            preferMin = if(value > preferMax) preferMax else value
-        }else
-            preferMax = if(value < preferMin) preferMin else value
+            value.also {
+                if(it <= preferMax) preferMin = it
+            }
+        }else{
+            value.also {
+                if (it >= preferMin) preferMax =it
+            }
+        }
         updateTimes +=1
     }
 }
