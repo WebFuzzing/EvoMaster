@@ -139,7 +139,7 @@ class DisjunctionRxGene(
         //Man: if terms is empty, there throws IndexOutOfBoundsException (found by rest-scs case study)
         if (terms.isNotEmpty()){
             for (i in 0 until terms.size) {
-                if (!this.terms[i].containsSameValueAs(other.terms[i])) {
+                if ( this.terms[i]::class.java.simpleName != other.terms[i]::class.java.simpleName ||!this.terms[i].containsSameValueAs(other.terms[i])) {
                     return false
                 }
             }
