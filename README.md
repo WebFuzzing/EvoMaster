@@ -4,6 +4,7 @@
 ![](docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash")
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
+[![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
 [![Build Status](https://travis-ci.org/EMResearch/EvoMaster.svg?branch=master)](https://travis-ci.org/EMResearch/EvoMaster)
 [![CircleCI](https://circleci.com/gh/EMResearch/EvoMaster.svg?style=svg)](https://circleci.com/gh/EMResearch/EvoMaster)
 [![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
@@ -55,7 +56,8 @@ __Key features__:
   as long as an OpenAPI schema is provided. However, results will be worse than whitebox testing (e.g., due
   to lack of bytecode analysis).
 
-
+* _Authentication_: we support auth based on authentication headers and cookies. 
+   However, at the moment we do not support OAuth.
 
 __Known limitations__:
 
@@ -84,13 +86,19 @@ __Known limitations__:
 <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div> 
 -->
 
-[![](docs/img/video-player-flaticon.png)](https://youtu.be/3mYxjgnhLEo) 
 
-A [short video](https://youtu.be/3mYxjgnhLEo) (5 minutes)
+### Videos
+
+![](docs/img/video-player-flaticon.png)
+
+* A [short video](https://youtu.be/3mYxjgnhLEo) (5 minutes)
 shows the use of _EvoMaster_ on one of the 
 case studies in [EMB](https://github.com/EMResearch/EMB). 
 
-
+* This [13-minute video](https://youtu.be/ORxZoYw7LnM)
+  shows how to write a white-box driver for EvoMaster, for the
+  [rest-api-example](https://github.com/EMResearch/rest-api-example). 
+ 
 ### Hiring
 
 Each year we usually have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
@@ -101,7 +109,7 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 
 ### Documentation
 
-* [Example](docs/example.md)
+* [Example of generated tests](docs/example.md)
 * [Download EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
 * [Console options](docs/options.md)
@@ -109,6 +117,7 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
     * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
+* [Library dependencies for the generated tests](docs/library_dependencies.md)
 * [How to contribute](docs/contribute.md)
     * [Technical notes for developers contributing to EvoMaster](docs/for_developers.md)
 * Troubleshooting

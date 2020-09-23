@@ -17,15 +17,26 @@ _EvoMaster_ Java client library. For example, in Maven:
 </dependency>
 ```
 
+In Gradle, it would be:
+
+`testCompile('org.evomaster:evomaster-client-java-controller:LATEST')`.
+
+The placeholder `LATEST` needs to be replaced with an actual version number (e.g.,
+`1.0.0` or `1.0.0-SNAPSHOT`).
 For the latest version, check [Maven Central Repository](https://mvnrepository.com/artifact/org.evomaster/evomaster-client-java-controller).
 The latest version number should also appear at the top of the main readme page.
 If you are compiling directly from the _EvoMaster_ source code, make sure to use `mvn install` to 
-install the snapshot version of the Java client into your local Maven repository 
+install the snapshot version `x.y.z-SNAPSHOT` of the Java client into your local Maven repository 
 (e.g., under *~/.m2*). 
+For the actual `x.y.z-SNAPSHOT` version number, you need to look at the root `pom.xml` file in the project.
+If you are using Gradle, you can for example check on this [SO question](https://stackoverflow.com/questions/6122252/gradle-alternate-to-mvn-install) 
+to see how to do something equivalent to `mvn install`. 
 
 Note: the core application `evomaster.jar` is independent of the driver library, and it contains none of 
 the driver's classes.
 
+Note: you might also need to import some [other libraries](library_dependencies.md)
+(e.g., *RestAssured* when generating tests for REST APIs runninng on the JVM).
 
 Once the client library is imported, you need to create a class that extends either
 `org.evomaster.client.java.controller.EmbeddedSutController`
@@ -55,6 +66,18 @@ The _EvoMaster_ Java client library also provides further utility classes to hel
 writing those controllers/drivers.
 For example, `org.evomaster.client.java.controller.db.DbCleaner` helps in resetting
 the state of a database (if any is used by the SUT).
+
+Note: when implementing a new class, most IDEs (e.g., IntelliJ) have the function 
+to automatically generate empty 
+stubs for all the abstract methods in its super-classes. 
+Also, all the concrete (i.e., non-abstract) methods in  `EmbeddedSutController`
+and `ExternalSutController` are marked as `final`, to prevent overriding them by mistake
+and so breaking the driver's internal functionalities. 
+
+Each of the abstract methods you need to implement does provide Javadocs.
+How to read those Javadocs depend on your IDE settings (e.g., hovering the mouse over a method declaration).
+You can also browse them online [here](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller).
+
 
 
 Once a class `X` that is a descendant of `SutController` is written, you need

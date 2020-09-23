@@ -113,8 +113,13 @@ and novel *testability transformations* [@arcuri2020testability].
 In the recent years, different techniques have been proposed for _black-box_ testing 
 of RESTful APIs (e.g., [@restlerICSE2019][@karlsson2020QuickREST]
 [@viglianisi2020resttestgen][@eddouibi2018automatic]).
-However, at the time of this writing, ``EvoMaster`` appears to be the only one can do both
+Those present different variants of random testing, enhanced with heuristics based on the information provided in the API schemas.
+As those techniques are black-box, they do not access the source-code/bytecode of the tested APIs, and so cannot exploit any such information to improve the generation of test cases.
+
+At the time of this writing, *EvoMaster* appears to be the only tool that can do both
 _black-box_ and _white-box_ testing, and that is also released as open-source.
+Supporting black-box testing is important, as it is easier to setup and use.
+However, white-box testing leads to better results (e.g., higher code coverage and fault detection), as it can exploit more information on the system under test. 
 
 
 # Acknowledgements

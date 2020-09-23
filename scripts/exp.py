@@ -618,14 +618,18 @@ def customParameters(seed, config):
 
     params = ""
 
-    label = str(config.useMethodReplacement) + "_" + str(int(config.baseTaintAnalysisProbability * 10))
 
     ### Custom for these experiments
-    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
     params += " --useMethodReplacement=" + str(config.useMethodReplacement)
     params += " --useNonIntegerReplacement=" + str(config.useNonIntegerReplacement)
     params += " --expandRestIndividuals=" + str(config.expandRestIndividuals)
     params += " --baseTaintAnalysisProbability=" + str(config.baseTaintAnalysisProbability)
+
+    # For each experiment configuration, we MUST create a unique label, with also the seed used.
+    # We need this to create unique file names for the generated test suites, so that EvoMaster
+    # does not override already generated tests from experiment runs that have already finished.
+    label = str(config.useMethodReplacement) + "_" + str(int(config.baseTaintAnalysisProbability * 10))
+    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
 
 
     return params

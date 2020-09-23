@@ -174,7 +174,7 @@ class SchemaOracle : ImplementedOracle() {
         }
         val mapResponses = mutableMapOf<String, String>()
         specificPath?.responses?.forEach { key, value ->
-            value.content.values.map { cva ->
+            value.content?.values?.map { cva ->
                 //TODO: BMR the schema may need additions here
                 val valueSchema = cva.schema
                 val rez = when (valueSchema) {
