@@ -1,4 +1,4 @@
-package org.evomaster.core.search.impact.genemutation.archivemutationinfo
+package org.evomaster.core.search.impact.genemutationupdate
 
 import com.google.inject.Injector
 import com.google.inject.Key
@@ -9,16 +9,13 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.matchproblem.*
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StandardMutator
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
-import org.evomaster.core.search.service.mutator.genemutation.mutationupdate.LongMutationUpdate
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.junit.jupiter.api.BeforeEach
@@ -107,7 +104,7 @@ class StringGeneMutationUpdate {
     @Test
     fun testMutationUpdate(){
         val template = PrimitiveTypeMatchIndividual.stringTemplate()
-        val specified = listOf("","a","ax","bx","bg","be","bc","ba","bax")
+        val specified = listOf("","a","ax","bx","bg","be","bc","ba","bax","baq")
         val history = mutableListOf<EvaluatedIndividual<PrimitiveTypeMatchIndividual>>()
         specified.forEach {
             val ind = template.copy() as PrimitiveTypeMatchIndividual
@@ -134,8 +131,21 @@ class StringGeneMutationUpdate {
         val current = (history.last().copy(tracker.getCopyFilterForEvalInd(history.last())))
         val th = TrackingHistory<EvaluatedIndividual<PrimitiveTypeMatchIndividual>>(config.maxLengthOfTraces)
         th.history.addAll(history)
-        current.wrapWithTracking(null, th)
+        current.wrapWithEvaluatedResults(null)
+        current.wrapWithTracking(history.last().evaluatedResult, th)
 
+        val msp = MutatedGeneSpecification()
+
+        val aminfo = mutator.mutationConfiguration(
+                gene = current.individual.gene, individual = current.individual,
+                eval = current, enableAGS = false,
+                enableAGM = true, targets = setOf(0), mutatedGene = msp, includeSameValue =false)
+        assertNotNull(aminfo)
+        agm.historyBasedValueMutation(aminfo!!, current.individual.gene, listOf(current.individual.gene))
+        val mt = (current.individual.gene as StringGene).value
+        assert(
+                (mt.length == 3 && mt[2].toInt() <= 'x'.toInt()/2.0 + 'q'.toInt()/2.0) || mt.length == 4 || mt.length == 2
+        )
 
     }
 

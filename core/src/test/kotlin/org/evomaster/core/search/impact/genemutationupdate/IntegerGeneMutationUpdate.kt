@@ -1,4 +1,4 @@
-package org.evomaster.core.search.impact.genemutation.archivemutationinfo
+package org.evomaster.core.search.impact.genemutationupdate
 
 import com.google.inject.Injector
 import com.google.inject.Key
@@ -8,7 +8,6 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.matchproblem.*
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
