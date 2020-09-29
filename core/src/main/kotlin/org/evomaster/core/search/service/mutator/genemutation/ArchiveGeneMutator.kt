@@ -71,7 +71,7 @@ class ArchiveGeneMutator{
                     history = history.map {
                         ((it.first as? IntegerGene)
                                 ?: throw DifferentGeneInHistory(gene, it.first)
-                                ).value.toLong() to (it.second.result?.isEffective() == true)
+                                ).value.toLong() to (it.second.result?.value?:-2)
                     },
                     value = gene.value.toLong(),
                     valueUpdate = LongMutationUpdate(min = gene.min.toLong(), max = gene.max.toLong()),
@@ -80,7 +80,7 @@ class ArchiveGeneMutator{
             is LongGene -> gene.value =  sampleValue(
                     history = history.map {
                         ((it.first as? LongGene)
-                                ?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.isEffective() == true)
+                                ?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
                     valueUpdate = LongMutationUpdate(min = Long.MIN_VALUE, max = Long.MAX_VALUE),
@@ -88,7 +88,7 @@ class ArchiveGeneMutator{
             )
             is DoubleGene -> gene.value =  sampleValue(
                     history = history.map {
-                        ((it.first as? DoubleGene)?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.isEffective() == true)
+                        ((it.first as? DoubleGene)?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
                     valueUpdate = DoubleMutationUpdate(min = Double.MIN_VALUE, max = Double.MAX_VALUE),
@@ -96,7 +96,7 @@ class ArchiveGeneMutator{
             )
             is FloatGene -> gene.value = sampleValue(
                     history = history.map {
-                        ((it.first as? FloatGene)?: throw DifferentGeneInHistory(gene, it.first)).value.toDouble() to (it.second.result?.isEffective() == true)
+                        ((it.first as? FloatGene)?: throw DifferentGeneInHistory(gene, it.first)).value.toDouble() to (it.second.result?.value?:-2)
                     },
                     value = gene.value.toDouble(),
                     valueUpdate = DoubleMutationUpdate(min = Float.MIN_VALUE.toDouble(), max = Float.MAX_VALUE.toDouble()),
@@ -114,11 +114,11 @@ class ArchiveGeneMutator{
         }
     }
 
-    private fun<T: Number> sampleValue(history : List<Pair<T, Boolean>>, value: T, valueUpdate: MutationBoundaryUpdate<T>, start: Int, end: Int) : T {
+    private fun<T: Number> sampleValue(history : List<Pair<T, Int>>, value: T, valueUpdate: MutationBoundaryUpdate<T>, start: Int, end: Int) : T {
         (0 until history.size).forEach {i->
             valueUpdate.updateOrRestBoundary(
                     current = history[i].first,
-                    doesCurrentBetter = history[i].second
+                    evaluatedResult = history[i].second
             )
         }
         return valueUpdate.random(
@@ -145,17 +145,17 @@ class ArchiveGeneMutator{
         val charsMutationUpdate = (0 until gene.value.length).map { createCharMutationUpdate() }
         (0 until history.size).forEach { i ->
             val c = ( history[i].first as? StringGene)?.value ?: throw IllegalStateException("invalid extracted history element")
-            val better = history[i].second.result?.isEffective() == true
+            val better = history[i].second.result?.value?:-2
 
             lenMutationUpdate.updateOrRestBoundary(
                     current = c.length.toLong(),
-                    doesCurrentBetter = better
+                    evaluatedResult = better
             )
             charsMutationUpdate.forEachIndexed { index, intMutationUpdate ->
                 if (c.elementAtOrNull(index) != null){
                     intMutationUpdate.updateOrRestBoundary(
                             current = c.elementAt(index).toLong(),
-                            doesCurrentBetter = better
+                            evaluatedResult = better
                     )
                 }
             }

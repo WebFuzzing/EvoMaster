@@ -106,7 +106,7 @@ class IntegerGeneMutationUpdate {
         val mutationinfo = LongMutationUpdate(Int.MIN_VALUE, Int.MAX_VALUE)
 
         mutationinfo.updateOrRestBoundary(specified.map {
-            it.toLong() to EvaluatedMutation.BETTER_THAN.isEffective()
+            it.toLong() to EvaluatedMutation.BETTER_THAN.value
         })
 
         assertEquals(Int.MIN_VALUE, mutationinfo.preferMin.toInt())

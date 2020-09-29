@@ -17,8 +17,8 @@ class DoubleMutationUpdate(min: Double, max: Double, updateTimes : Int = 0, coun
         return r.toInt()
     }
 
-    override fun doReset(current: Double, doesCurrentBetter: Boolean): Boolean {
-        return (current < preferMin || current > preferMax) && doesCurrentBetter
+    override fun doReset(current: Double, evaluatedResult: Int): Boolean {
+        return (current < preferMin || current > preferMax) && (evaluatedResult > 0)
     }
 
     override fun middle(): Double = preferMin/2.0 + preferMax/2.0
@@ -51,14 +51,14 @@ class DoubleMutationUpdate(min: Double, max: Double, updateTimes : Int = 0, coun
         }
     }
 
-    override fun updateBoundary(current: Double, doesCurrentBetter: Boolean) {
+    override fun updateBoundary(current: Double, evaluatedResult: Int) {
         latest?:return
-        if (current == latest) return
+        if (current == latest || evaluatedResult == 0) return
 
         val value = latest!!/2.0 + current/2.0
-        updateCounter(doesCurrentBetter)
-
-        if ( (doesCurrentBetter && current > latest!!) || (!doesCurrentBetter && current < latest!!)){
+        updateCounter(evaluatedResult)
+        val isBetter = evaluatedResult>0
+        if ( (isBetter && current > latest!!) || (!isBetter && current < latest!!)){
             value.also {
                 if(it <= preferMax) preferMin = it
             }

@@ -16,8 +16,8 @@ abstract class MutationBoundaryUpdate<T> (
     abstract fun copy() : MutationBoundaryUpdate<T>
     abstract fun candidatesBoundary() : T
 
-    fun updateCounter(improved : Boolean){
-        if (improved) counter = 0
+    fun updateCounter(improved : Int){
+        if (improved > 0) counter = 0
         else counter += 1
     }
 
@@ -33,24 +33,24 @@ abstract class MutationBoundaryUpdate<T> (
     abstract fun middle() : T
     abstract fun random(apc: AdaptiveParameterControl, randomness: Randomness, current: T, probOfMiddle : Double, start: Int, end: Int, minimalTimeForUpdate: Int) : T
 
-    abstract fun doReset(current : T, doesCurrentBetter: Boolean) : Boolean
-    abstract fun updateBoundary(current: T, doesCurrentBetter : Boolean)
+    abstract fun doReset(current : T, evaluatedResult: Int) : Boolean
+    abstract fun updateBoundary(current: T, evaluatedResult : Int)
 
-    fun updateOrRestBoundary(current: T, doesCurrentBetter : Boolean){
-        if (doReset(current, doesCurrentBetter)){
+    fun updateOrRestBoundary(current: T, evaluatedResult : Int){
+        if (doReset(current, evaluatedResult)){
             reset()
         }else{
-            updateBoundary(current, doesCurrentBetter)
+            updateBoundary(current, evaluatedResult)
         }
-        updateCounter(doesCurrentBetter)
+        updateCounter(evaluatedResult)
         latest = current
     }
 
-    fun updateOrRestBoundary(history : List<Pair<T, Boolean>>){
+    fun updateOrRestBoundary(history : List<Pair<T, Int>>){
         (0 until history.size).forEach {i->
             updateOrRestBoundary(
                     current = history[i].first,
-                    doesCurrentBetter = history[i].second
+                    evaluatedResult = history[i].second
             )
         }
     }

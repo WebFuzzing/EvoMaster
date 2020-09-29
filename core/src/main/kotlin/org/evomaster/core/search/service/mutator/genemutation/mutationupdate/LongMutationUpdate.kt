@@ -11,8 +11,8 @@ class LongMutationUpdate(min: Long, max: Long, updateTimes : Int = 0, counter: I
 
     constructor(min: Int, max: Int) : this(min = min.toLong(), max = max.toLong())
 
-    override fun doReset(current: Long, doesCurrentBetter: Boolean): Boolean {
-        return (current < preferMin || current > preferMax) && doesCurrentBetter
+    override fun doReset(current: Long, evaluatedResult: Int): Boolean {
+        return (current < preferMin || current > preferMax) && (evaluatedResult > 0)
     }
 
     companion object{
@@ -64,11 +64,12 @@ class LongMutationUpdate(min: Long, max: Long, updateTimes : Int = 0, counter: I
 
     override fun copy(): LongMutationUpdate = LongMutationUpdate(preferMin, preferMax, updateTimes, counter, reached, latest, preferMin, preferMax)
 
-    override fun updateBoundary(current: Long, doesCurrentBetter: Boolean) {
+    override fun updateBoundary(current: Long, evaluatedResult: Int) {
         latest?:return
-        if (current == latest) return
+        if (current == latest || evaluatedResult == 0) return
         val value = latest!!/2.0 + current/2.0
-        val updateMin = (doesCurrentBetter && current > latest!!) || (!doesCurrentBetter && current < latest!!)
+        val isBetter = evaluatedResult>0
+        val updateMin = (isBetter && current > latest!!) || (!isBetter && current < latest!!)
         if (updateMin){
             (if (value.toLong()+1L < preferMax) value.toLong()+1L else value.toLong() ).also {
                 if (it <= preferMax) preferMin = it
