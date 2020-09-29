@@ -8,7 +8,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.database.schema.Column
-import org.evomaster.core.database.schema.ColumnDataType
+import org.evomaster.core.database.schema.ColumnFactory.createColumnFromDto
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.gene.Gene
@@ -96,22 +96,8 @@ class SqlInsertBuilder(
 
                 val likePatternsForColumn = findLikePatternsForColumn(tableConstraints, c)
 
-                val column = Column(
-                        name = c.name,
-                        size = c.size,
-                        type = ColumnDataType.valueOf(c.type.toUpperCase()),
-                        primaryKey = c.primaryKey,
-                        autoIncrement = c.autoIncrement,
-                        foreignKeyToAutoIncrement = c.foreignKeyToAutoIncrement,
-                        nullable = c.nullable,
-                        unique = c.unique,
-                        lowerBound = lowerBoundForColumn,
-                        upperBound = upperBoundForColumn,
-                        enumValuesAsStrings = enumValuesForColumn,
-                        similarToPatterns = similarToPatternsForColumn,
-                        likePatterns = likePatternsForColumn,
-                        databaseType = databaseType
-                )
+                val column = createColumnFromDto(c, lowerBoundForColumn, upperBoundForColumn, enumValuesForColumn,
+                        similarToPatternsForColumn, likePatternsForColumn, databaseType)
 
                 columns.add(column)
             }
@@ -449,9 +435,9 @@ class SqlInsertBuilder(
      *
      * Note that [pkValues] only points to one row.
      */
-    fun extractExistingByCols(tableName: String, pkValues : DataRowDto): DbAction{
+    fun extractExistingByCols(tableName: String, pkValues: DataRowDto): DbAction {
 
-        if(dbExecutor == null){
+        if (dbExecutor == null) {
             throw IllegalStateException("No Database Executor registered for this object")
         }
 
@@ -462,8 +448,8 @@ class SqlInsertBuilder(
         val pks = table.columns.filter { it.primaryKey }
         val cols = table.columns.toList()
 
-        var row : DataRowDto? = null
-        if(pks.isNotEmpty()){
+        var row: DataRowDto? = null
+        if (pks.isNotEmpty()) {
 
 
             val condition = SQLGenerator.composeAndConditions(
@@ -473,18 +459,18 @@ class SqlInsertBuilder(
                             table)
             )
 
-            val sql = SQLGenerator.genSelect(cols.map { it.name }.toTypedArray(),table, condition)
+            val sql = SQLGenerator.genSelect(cols.map { it.name }.toTypedArray(), table, condition)
 
             val dto = DatabaseCommandDto()
             dto.command = sql
 
-            val result : QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
+            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
                     ?: throw IllegalArgumentException("rows regarding pks can not be found")
-            if(result.rows.size != 1){
+            if (result.rows.size != 1) {
                 throw IllegalArgumentException("the size of rows regarding pks is ${result.rows.size}, and except is 1")
             }
             row = result.rows.first()
-        }else
+        } else
             row = pkValues
 
 
@@ -492,16 +478,16 @@ class SqlInsertBuilder(
 
         val genes = mutableListOf<Gene>()
 
-        for(i in 0 until cols.size){
+        for (i in 0 until cols.size) {
 
-            if(row!!.columnData[i] != "NULL"){
+            if (row!!.columnData[i] != "NULL") {
 
-                val colName= cols[i].name
+                val colName = cols[i].name
                 val inQuotes = cols[i].type.shouldBePrintedInQuotes()
 
-                val gene = if(cols[i].primaryKey){
+                val gene = if (cols[i].primaryKey) {
                     SqlPrimaryKeyGene(colName, table.name, ImmutableDataHolderGene(colName, row.columnData[i], inQuotes), id)
-                }else{
+                } else {
                     ImmutableDataHolderGene(colName, row.columnData[i], inQuotes)
                 }
                 genes.add(gene)
@@ -569,29 +555,29 @@ class SqlInsertBuilder(
     /**
      * get existing pks in db
      */
-    fun extractExistingPKs(dataInDB : MutableMap<String, MutableList<DataRowDto>>){
+    fun extractExistingPKs(dataInDB: MutableMap<String, MutableList<DataRowDto>>) {
 
-        if(dbExecutor == null){
+        if (dbExecutor == null) {
             throw IllegalStateException("No Database Executor registered for this object")
         }
 
         dataInDB.clear()
 
-        for(table in tables.values){
+        for (table in tables.values) {
             val pks = table.columns.filter { it.primaryKey }
-            val selected = if(pks.isEmpty()) {
+            val selected = if (pks.isEmpty()) {
                 SQLKey.ALL.key
                 //continue
-            } else pks.map {"\"${it.name}\""}.joinToString(",")
+            } else pks.map { "\"${it.name}\"" }.joinToString(",")
 
             val sql = "SELECT $selected FROM \"${table.name}\""
 
             val dto = DatabaseCommandDto()
             dto.command = sql
 
-            val result : QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
+            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
                     ?: continue
-            dataInDB.getOrPut(table.name){ result.rows.map { it }.toMutableList()}
+            dataInDB.getOrPut(table.name) { result.rows.map { it }.toMutableList() }
         }
 
 
@@ -600,9 +586,9 @@ class SqlInsertBuilder(
     /**
      * get table info
      */
-    fun extractExistingTables( tablesMap : MutableMap<String, Table>? = null){
+    fun extractExistingTables(tablesMap: MutableMap<String, Table>? = null) {
 
-        if(tablesMap!=null){
+        if (tablesMap != null) {
             tablesMap.clear()
             tablesMap.putAll(tables)
         }
