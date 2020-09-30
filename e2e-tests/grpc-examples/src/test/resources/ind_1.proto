@@ -7,59 +7,50 @@ option objc_class_prefix = "Ind_1";
 
 package com.company;
 
-message FieldNameA {
-    string name = 1;
-}
+message FieldNameA {}
 
-message FieldNameB {
-    string name = 1;
-}
+message FieldNameB {}
 
+message FieldE {}
 
-message FieldE {
-    string name = 1;
-}
-
-message FieldF {
-    string name = 1;
-}
+message FieldF {}
 
 
 message A {
-    FieldNameB FieldB = 1;
+    com.company.FieldNameB FieldB = 1;
 }
 
 message B {
-    FieldNameA FieldA = 1;
+    com.company.FieldNameA FieldA = 1;
     A FieldX = 2;
 }
 
 message C {
-    repeated FieldNameB FieldB = 1;
+    repeated com.company.FieldNameB FieldB = 1;
 }
 
 message D {
-    FieldNameA FieldA = 1;
+    com.company.FieldNameA FieldA = 1;
     C FieldX = 2;
 }
 
 message E {
-    FieldF FieldF = 1;
-    FieldE FieldE = 2;
+    com.company.FieldF FieldF = 1;
+    com.company.FieldE FieldE = 2;
 }
 
 message F {
-    FieldNameA FieldA = 1;
+    com.company.FieldNameA FieldA = 1;
     E FieldX = 2;
 }
 
 message G {
-    FieldF FieldF = 1;
-    FieldE FieldE = 2;
+    com.company.FieldF FieldF = 1;
+    com.company.FieldE FieldE = 2;
 }
 
 message H {
-    FieldNameA FieldA = 1;
+    com.company.FieldNameA FieldA = 1;
     G FieldX = 2;
 }
 
@@ -68,7 +59,7 @@ RESPONSE messages
 ****************************************************************/
 
 message BResponse {
-    FieldNameA FieldA = 1;
+    com.company.FieldNameA FieldA = 1;
     A FieldName = 2;
 }
 
@@ -83,26 +74,26 @@ message IResult {
 }
 
 message DResponse {
-    FieldNameA FieldA = 1;
+    com.company.FieldNameA FieldA = 1;
     IResult FieldName = 2;
 }
 
 message FResult {
-    FieldNameB FieldB = 1;
+    com.company.FieldNameB FieldB = 1;
 }
 
 message FResponse {
-    FieldNameA FieldA = 1;
+    com.company.FieldNameA FieldA = 1;
     FResult FieldName = 2;
 }
 
 message HResult {
-    FieldF FieldF = 1;
+    com.company.FieldF FieldF = 1;
     repeated I FieldName = 2;
 }
 
 message HResponse {
-    FieldNameA FieldA = 1;
+    com.company.FieldNameA FieldA = 1;
     HResult FieldName = 2;
 }
 
