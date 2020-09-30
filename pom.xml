@@ -753,7 +753,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
-                    <version>2.6</version>
+                    <version>3.3.0</version>
                 </plugin>
 
                 <!-- To create self-executable uber/fat jars with shaded packages-->
