@@ -18,6 +18,7 @@
         <module>spring-examples</module>
         <module>spring-rest-postgres</module>
         <module>spring-rest-openapi-v3</module>
+        <module>grpc-examples</module>
     </modules>
 
 
