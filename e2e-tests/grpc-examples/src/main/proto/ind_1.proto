@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.company";
+option java_outer_classname = "Ind_1Proto";
+option objc_class_prefix = "Ind1";
+
+package com.company;
+
+message FieldNameA {}
+
+message FieldNameB {}
+
+message FieldE {}
+
+message FieldF {}
+
+
+message A {
+    com.company.FieldNameB FieldB = 1;
+}
+
+message B {
+    com.company.FieldNameA FieldA = 1;
+    A FieldX = 2;
+}
+
+message C {
+    repeated com.company.FieldNameB FieldB = 1;
+}
+
+message D {
+    com.company.FieldNameA FieldA = 1;
+    C FieldX = 2;
+}
+
+message E {
+    com.company.FieldF FieldF = 1;
+    com.company.FieldE FieldE = 2;
+}
+
+message F {
+    com.company.FieldNameA FieldA = 1;
+    E FieldX = 2;
+}
+
+message G {
+    com.company.FieldF FieldF = 1;
+    com.company.FieldE FieldE = 2;
+}
+
+message H {
+    com.company.FieldNameA FieldA = 1;
+    G FieldX = 2;
+}
+
+/***************************************************************
+RESPONSE messages
+****************************************************************/
+
+message BResponse {
+    com.company.FieldNameA FieldA = 1;
+    A FieldName = 2;
+}
+
+message I {
+    string Field1 = 1;
+    bool Field2 = 2;
+    string Field3 = 3;
+}
+
+message IResult {
+    repeated I FieldName = 1;
+}
+
+message DResponse {
+    com.company.FieldNameA FieldA = 1;
+    IResult FieldName = 2;
+}
+
+message FResult {
+    com.company.FieldNameB FieldB = 1;
+}
+
+message FResponse {
+    com.company.FieldNameA FieldA = 1;
+    FResult FieldName = 2;
+}
+
+message HResult {
+    com.company.FieldF FieldF = 1;
+    repeated I FieldName = 2;
+}
+
+message HResponse {
+    com.company.FieldNameA FieldA = 1;
+    HResult FieldName = 2;
+}
+
+service ServiceName {
+    rpc EndpointA(B)
+        returns (BResponse) {}
+    
+    rpc EndpointB(F)
+        returns (FResponse) {}
+    
+    rpc EndpointC(D)
+        returns (DResponse) {}
+    
+    rpc EndpointD(H)
+        returns (HResponse) {}
+}

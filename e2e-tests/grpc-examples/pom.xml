@@ -10,7 +10,6 @@
         <version>1.0.2-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.evomaster</groupId>
     <artifactId>grpc-examples</artifactId>
     <version>1.0.2-SNAPSHOT</version>
 
@@ -57,7 +56,7 @@
                             <outputTargets>
                                 <outputTarget>
                                     <outputDirectory>
-                                        src/main/java
+                                        gen
                                     </outputDirectory>
                                 </outputTarget>
                             </outputTargets>
