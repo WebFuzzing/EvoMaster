@@ -10,7 +10,7 @@
         <version>1.0.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>grpc-examples</artifactId>
+    <artifactId>grpc-java-examples</artifactId>
     <version>1.0.2-SNAPSHOT</version>
 
     <dependencies>
