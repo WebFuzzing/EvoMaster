@@ -2,6 +2,7 @@ package com.company;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -61,31 +62,42 @@ public class Ind_1Server {
     static class Ind_1Impl extends Ind_1Grpc.Ind_1ImplBase {
 
         @Override
-        public void endpointA(com.company.B request,
-                              io.grpc.stub.StreamObserver<com.company.BResponse> responseObserver) {
-
+        public void endpointA(B request,
+                              StreamObserver<BResponse> responseObserver) {
+            String name = request.getFieldA().getName();
+            BResponse reply = BResponse.newBuilder().setFieldA(FieldNameA.newBuilder().setName(name).build()).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
         }
 
 
         @Override
-        public void endpointB(com.company.F request,
-                              io.grpc.stub.StreamObserver<com.company.FResponse> responseObserver) {
-
+        public void endpointB(F request,
+                              StreamObserver<FResponse> responseObserver) {
+            String name = request.getFieldA().getName();
+            FResponse reply = FResponse.newBuilder().setFieldA(FieldNameA.newBuilder().setName(name).build()).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
         }
 
 
-        public void endpointC(com.company.D request,
-                              io.grpc.stub.StreamObserver<com.company.DResponse> responseObserver) {
+        public void endpointC(D request,
+                              StreamObserver<DResponse> responseObserver) {
+            String name = request.getFieldA().getName();
+            DResponse reply = DResponse.newBuilder().setFieldA(FieldNameA.newBuilder().setName(name).build()).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
         }
 
         /**
          *
          */
-        public void endpointD(com.company.H request,
-                              io.grpc.stub.StreamObserver<com.company.HResponse> responseObserver) {
-
-
-
+        public void endpointD(H request,
+                              StreamObserver<HResponse> responseObserver) {
+            String name = request.getFieldA().getName();
+            HResponse reply = HResponse.newBuilder().setFieldA(FieldNameA.newBuilder().setName(name).build()).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
         }
 
 
