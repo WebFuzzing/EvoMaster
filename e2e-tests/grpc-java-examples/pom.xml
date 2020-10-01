@@ -34,7 +34,6 @@
             <artifactId>grpc-testing</artifactId>
             <version>1.32.1</version>
         </dependency>
-
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
@@ -45,6 +44,11 @@
             <artifactId>junit</artifactId>
             <version>4.12</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.wire</groupId>
+            <artifactId>wire-schema</artifactId>
+            <version>3.4.0</version>
         </dependency>
     </dependencies>
 
