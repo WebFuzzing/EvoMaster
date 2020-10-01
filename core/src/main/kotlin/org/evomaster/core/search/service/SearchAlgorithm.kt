@@ -39,11 +39,19 @@ abstract class SearchAlgorithm<T> where T : Individual {
         return mutator
     }
 
+    /**
+     * This method does a single step in the search process
+     */
     abstract fun searchOnce()
 
     abstract fun setupBeforeSearch()
 
-    fun search(writeTests: (s: Solution<T>, t: String) -> Unit): Solution<T> {
+    /**
+     * This method does the full search invoking searchOnce() on each iteration.
+     * The method writeTestsSnapshot send as parameter is the code that is executed to write the obtained tests as snapshots.
+     * If writing snapshots of tests is enabled, then this method will be invoked when configured after running the searchOnce method.
+     */
+    fun search(writeTestsSnapshot: ((s: Solution<T>, snapshotTimestamp: String) -> Unit)? = null): Solution<T> {
 
         time.startSearch()
 
@@ -53,10 +61,10 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
             searchOnce()
 
-            if (needsToSnapshot()) {
+            if (needsToSnapshot() && writeTestsSnapshot != null) {
                 lastSnapshot = time.getElapsedSeconds()
                 val partialSolution = archive.extractPartialSolution()
-                writeTests(partialSolution, time.getElapsedSeconds().toString())
+                writeTestsSnapshot(partialSolution, time.getElapsedSeconds().toString())
             }
         }
 

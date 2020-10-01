@@ -10,6 +10,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.Algorithm.*
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.NONE
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.MosaAlgorithm
 import org.evomaster.core.search.algorithms.RandomAlgorithm
@@ -89,7 +90,7 @@ class Main {
             val manager = a.first.getInstance(LifecycleManager::class.java)
 
             manager.start()
-            val sol = a.second.searchOnce()
+            val sol = a.second.search()
             manager.close()
 
             val size = optimaX.size + optimaY.size

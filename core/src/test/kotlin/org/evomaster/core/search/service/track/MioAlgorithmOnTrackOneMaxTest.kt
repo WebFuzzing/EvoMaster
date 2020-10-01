@@ -73,7 +73,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
         assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
 
-        val solution = mio.search { _: Solution<*>, _: String ->  }
+        val solution = mio.search()
 
         solution.individuals.forEach { s->
             assertNull(s.tracking)
@@ -111,7 +111,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
         assert(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
 
-        val solution = mio.search { _: Solution<*>, _: String ->  }
+        val solution = mio.search()
 
         solution.individuals.forEach {  s->
             assertNull(s.individual.tracking)
@@ -152,7 +152,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
         assert(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
 
-        val solution = mio.search { _: Solution<*>, _: String ->  }
+        val solution = mio.search()
 
         assert(solution.individuals.count { it.tracking != null } > 0)
 
@@ -201,7 +201,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(EvaluatedIndividual.ONLY_WITH_CLONE_IMPACT))
         assert(tracker.exists(EvaluatedIndividual.ONLY_WITH_COPY_IMPACT))
 
-        val solution = mio.search { _: Solution<*>, _: String ->  }
+        val solution = mio.search()
 
         solution.individuals.forEach {  s->
             assertNull(s.individual.tracking)
@@ -229,7 +229,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
         assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
 
-        val solution = mio.search { _: Solution<*>, _: String ->  }
+        val solution = mio.search()
 
         solution.individuals.forEach { s->
             assertNull(s.tracking)

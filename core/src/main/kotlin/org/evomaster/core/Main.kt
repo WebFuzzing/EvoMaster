@@ -280,7 +280,7 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Starting to generate test cases")
 
-            return imp.search { solution: Solution<*>, snapshot: String -> writeTestsAsSnapshots(injector, solution, controllerInfo, snapshot) }
+            return imp.search { solution: Solution<*>, snapshotTimestamp: String -> writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp) }
         }
 
         private fun checkExperimentalSettings(injector: Injector) {
@@ -327,7 +327,7 @@ class Main {
             return dto
         }
 
-        private fun writeTestsAsSnapshots(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshot: String="") {
+        private fun writeTestsAsSnapshots(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshotTimestamp: String="") {
 
             val config = getEmConfig(injector)
 
@@ -339,7 +339,8 @@ class Main {
             LoggingUtil.getInfoLogger().info("Going to save snapshot $tests to ${config.outputFolder}")
 
             val writer = setupPartialOracles(injector, config)
-            writer.writeTests(solution, controllerInfoDto?.fullName, snapshot)
+
+            writer.writeTests(solution, controllerInfoDto?.fullName, snapshotTimestamp)
         }
 
         private fun getAmountOfTestsAsString(solution: Solution<*>): String {

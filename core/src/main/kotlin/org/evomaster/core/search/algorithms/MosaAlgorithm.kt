@@ -272,7 +272,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         // the population is not fully sorted
         var min = randomness.nextInt(population.size)
 
-        (0 until config.tournamentSize - 1).forEach { _ ->
+        repeat((0 until config.tournamentSize - 1).count()) {
             val sel = randomness.nextInt(population.size)
             if (population[sel].rank < population[min].rank) {
                 min = sel

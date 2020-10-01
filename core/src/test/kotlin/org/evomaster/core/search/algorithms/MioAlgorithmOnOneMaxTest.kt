@@ -40,7 +40,7 @@ class MioAlgorithmOnOneMaxTest {
         val n = 20
         sampler.n = n
 
-        val solution = mio.search { _: Solution<*>, _: String ->  }
+        val solution = mio.search()
 
         Assertions.assertEquals(n.toDouble(), solution.overall.computeFitnessScore(), 0.001);
         Assertions.assertEquals(1, solution.individuals.size)
