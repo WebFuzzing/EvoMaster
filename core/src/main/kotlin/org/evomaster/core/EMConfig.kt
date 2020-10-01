@@ -126,13 +126,16 @@ class EMConfig {
                 }
                 return description
             }
+            // This is just an example for Problem Type  but
+            val enumAnnotationsExperimental = mapOf("Problem Type" to "WEB")
+
         }
 
         fun getDescription(m: KMutableProperty<*>): ConfigDescription {
 
             val cfg = (m.annotations.find { it is Cfg } as? Cfg)
                     ?: throw IllegalArgumentException("Property ${m.name} is not annotated with @Cfg")
-
+         //  println(cfg.description)
             val text = cfg.description.trim().run {
                 when {
                     isBlank() -> "No description."
@@ -172,10 +175,12 @@ class EMConfig {
             val returnType = m.returnType.javaType as Class<*>
 
             if (returnType.isEnum) {
+
                 val elements = returnType.getDeclaredMethod("values")
                         .invoke(null) as Array<*>
 
                 enumValues = elements.joinToString(", ")
+
             }
 
             var description = "$text$constraints$enumValues"
@@ -623,14 +628,28 @@ class EMConfig {
     var algorithm = Algorithm.MIO
 
 
+   class enumAnnotationsExperimental(
+       var variableName: String,
+       var validValues : String,
+       var experimentalValues: String
+   )
+    //
+    val listAnnotationsExperimental = mutableListOf<enumAnnotationsExperimental>()
+     fun addAnnotationsEnumExperiment()
+     {
+         listAnnotationsExperimental.add(enumAnnotationsExperimental(variableName = "problemType", validValues =  "REST", experimentalValues = "WEB"))
+
+     }
+
     enum class ProblemType {
         REST,
-        @Experimental
         WEB
-    }
+       }
 
+    @Experimental
     @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API")
     var problemType = ProblemType.REST
+
 
 
     @Cfg("Specify if test classes should be created as output of the tool. " +

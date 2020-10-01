@@ -21,12 +21,13 @@ object ConfigToMarkdown {
     fun toMarkdown(): String {
 
         val buffer = StringBuilder()
-
+        //
+        defaultInstance.addAnnotationsEnumExperiment()
         addHeader(buffer)
 
         addOptions(buffer)
-
         return buffer.toString()
+
     }
 
 
@@ -79,11 +80,13 @@ object ConfigToMarkdown {
     private fun addOptions(buffer: StringBuilder) {
 
         val all = EMConfig.getConfigurationProperties()
-
         val important = all.filter { it.annotations.any { a -> a is EMConfig.Important } }
         val experimental = all.filter { it.annotations.any { a -> a is EMConfig.Experimental } }
+
         val internal = all.filter { it.annotations.none { a -> a is EMConfig.Experimental || a is EMConfig.Important } }
 
+       // for (element in experimental)
+         //   println(element.name)
         assert(all.size == important.size + experimental.size + internal.size)
 
         addImportant(buffer, important)
@@ -102,6 +105,10 @@ object ConfigToMarkdown {
     private fun addExperimental(buffer: StringBuilder, experimental: List<KMutableProperty<*>>) {
 
         val sorted = experimental.sortedBy { it.name }
+
+        //for (element in sorted)
+          //  println(element.name)
+
 
         buffer.append("\n## Experimental Command-Line Options\n\n")
         printOptionList(buffer, sorted)
@@ -140,6 +147,7 @@ object ConfigToMarkdown {
 //        buffer.append("<table><thead><tr><th>Options</th><th>Description</th></tr></thead><tbody>")
 
         for(opt in list){
+
             printOption(buffer, opt)
         }
 
@@ -149,12 +157,15 @@ object ConfigToMarkdown {
     private fun printOption(buffer: StringBuilder, opt: KMutableProperty<*>) {
 
         var default = opt.call(defaultInstance).toString()
+      //  println(opt.call().toString())
         if(default.isBlank()){
             default = "\"\""
         }
         val type = (opt.returnType.javaType as Class<*>)
         val typeName = if(type.isEnum){
             "Enum"
+         // println(opt.name)
+
         } else {
             type.simpleName.capitalize()
         }
@@ -171,7 +182,6 @@ object ConfigToMarkdown {
 //        buffer.append("<td>")
 
         buffer.append("__${typeName}__. ")
-
         buffer.append(description.text.trim())
         if(!description.text.trim().endsWith(".")){
             buffer.append(".")
@@ -180,8 +190,30 @@ object ConfigToMarkdown {
             buffer.append(" *Constraints*: `${description.constraints}`.")
         }
         if(description.enumValues.isNotBlank()){
-            buffer.append(" *Valid values*: `${description.enumValues}`.")
+            var experimentalValues = ""
+            var validValues = ""
+            var findVariable = false
+            for (element in defaultInstance.listAnnotationsExperimental) {
+                if (element.variableName == opt.name) {
+
+                    experimentalValues = element.experimentalValues
+                    validValues = element.validValues
+                    findVariable = true
+                }
+            }
+            if (findVariable==true)
+            {
+                buffer.append(" *Valid values*: `${validValues}`, *Experimental Values*: `${experimentalValues}` ")
+            }
+            else
+            {
+
+                buffer.append(" *Valid values*: `${description.enumValues}`, *Experimental Values*: `This is under work` ")
+            }
+
         }
+
+
         buffer.append(" *Default value*: `$default`.")
 
 //        buffer.append("</td></tr>")
