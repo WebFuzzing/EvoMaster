@@ -10,8 +10,8 @@
         <version>1.0.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>grpc-java-examples</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <artifactId>evomaster-grpc-java-examples</artifactId>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
