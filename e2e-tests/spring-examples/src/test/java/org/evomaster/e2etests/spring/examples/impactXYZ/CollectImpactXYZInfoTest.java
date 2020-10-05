@@ -1,5 +1,6 @@
 package org.evomaster.e2etests.spring.examples.impactXYZ;
 
+import com.foo.rest.examples.spring.impactXYZ.ImpactXYZRestController;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
@@ -7,8 +8,9 @@ import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact;
-import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod;
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils;
+import org.evomaster.e2etests.spring.examples.SpringTestBase;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -16,19 +18,15 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class CollectImpactXYZInfoTest extends ImpactXYZTestBase {
+public class CollectImpactXYZInfoTest extends SpringTestBase {
 
     @Test
-    public void testOnlyCollectImpact() throws Throwable {
-        testRunEM(GeneMutationSelectionMethod.NONE, 1000, false);
-    }
-
-    public void testRunEM(GeneMutationSelectionMethod method, int iterations, boolean checkImpactCollection) throws Throwable {
+    public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "ImpactXYZ_"+method,
-                "org.bar.ImpactXYZ"+method,
-                iterations,
+                "ImpactXYZ_TestImpactCollection",
+                "org.bar.ImpactXYZ_TestImpactCollection",
+                1000,
                 true,
                 (args) -> {
 
@@ -36,7 +34,7 @@ public class CollectImpactXYZInfoTest extends ImpactXYZTestBase {
                     args.add("true");
 
                     args.add("--adaptiveGeneSelectionMethod");
-                    args.add(method.toString());
+                    args.add("NONE");
 
                     //since there only exist one endpoint, we set the population for each target 3
                     args.add("--archiveTargetLimit");
@@ -47,33 +45,6 @@ public class CollectImpactXYZInfoTest extends ImpactXYZTestBase {
 
                     args.add("--focusedSearchActivationTime");
                     args.add("0.0");
-
-                    if (checkImpactCollection){
-                        // only for the test
-                        args.add("--saveImpactAfterMutation");
-                        args.add("true");
-                        args.add("--impactAfterMutationFile");
-                        args.add("target/impactXYZ/impactInfo/Impacts_ImpactXYZ_"+method.toString()+".csv");
-
-                        args.add("--saveMutationInfo");
-                        args.add("true");
-                        args.add("--mutatedGeneFile");
-                        args.add("target/impactXYZ/mutatedGeneInfo/MutatedGenes_ImpactXYZ_"+method.toString()+".csv");
-
-                        // only for the test
-                        args.add("--saveArchiveAfterMutation");
-                        args.add("true");
-                        args.add("--archiveAfterMutationFile");
-                        args.add("target/impactXYZ/archiveInfo/ArchiveNotCoveredSnapshot_ImpactXYZ_"+method.toString()+".csv");
-                    }
-
-                    args.add("--exportCoveredTarget");
-                    args.add("true");
-
-                    args.add("--coveredTargetFile");
-                    String path = "target/impactXYZ/coveredTargets/testImpacts_CoveredTargetsBy"+method.toString()+".csv";
-                    args.add(path);
-
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
@@ -130,5 +101,8 @@ public class CollectImpactXYZInfoTest extends ImpactXYZTestBase {
     }
 
 
-
+    @BeforeAll
+    public static void initClass() throws Exception {
+        SpringTestBase.initClass(new ImpactXYZRestController(Arrays.asList("/api/impactdto/{x}")));
+    }
 }

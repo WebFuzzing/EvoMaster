@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * created by manzh on 2020-07-01
  */
-public class TestabilityWithImpactCollectionEM extends SpringTestBase {
+public class TestabilityEMTestWithAdaptiveMutation extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
@@ -29,8 +29,8 @@ public class TestabilityWithImpactCollectionEM extends SpringTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
-                "org.bar.TestabilityWithImpactCollectionEM",
-                5_000,
+                "org.bar.TestabilityEMTestWithAdaptiveMutation",
+                8_000,
                 true,
                 (args) -> {
 
@@ -44,19 +44,19 @@ public class TestabilityWithImpactCollectionEM extends SpringTestBase {
                     args.add("true");
 
                     args.add("--d");
-                    args.add("0.0");
+                    args.add("0.8");
 
                     args.add("--adaptiveGeneSelectionMethod");
                     args.add("APPROACH_IMPACT");
 
                     args.add("--archiveGeneMutation");
-                    args.add("SPECIFIED");
+                    args.add("SPECIFIED_WITH_SPECIFIC_TARGETS");
 
                     args.add("--probOfArchiveMutation");
-                    args.add("0.9");
+                    args.add("0.5");
 
                     args.add("--enableWeightBasedMutationRateSelectionForGene");
-                    args.add("false");
+                    args.add("true");
 
 
                     Solution<RestIndividual> solution = initAndRun(args);

@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class ImpactXYZRestController extends SpringController {
 
-
+    private List<String> skip = null;
     public ImpactXYZRestController() {
         super(ImpactXYZApplication.class);
     }
@@ -20,6 +20,11 @@ public class ImpactXYZRestController extends SpringController {
     public ImpactXYZRestController(int port) {
         super(ImpactXYZApplication.class);
         setControllerPort(port);
+    }
+
+    public ImpactXYZRestController(List<String> skip) {
+        super(ImpactXYZApplication.class);
+        this.skip = skip;
     }
 
     @Override
@@ -34,5 +39,13 @@ public class ImpactXYZRestController extends SpringController {
         InstrumentedSutStarter starter = new InstrumentedSutStarter(controller);
 
         starter.start();
+    }
+
+    @Override
+    public ProblemInfo getProblemInfo() {
+        return new RestProblem(
+                "http://localhost:" + getSutPort() + "/v2/api-docs",
+                skip
+        );
     }
 }
