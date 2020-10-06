@@ -21,6 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WeightBasedMutationXYZTest extends SpringTestBase {
 
+    /**
+     * this test aims at testing whether gene selection can be distinguished based on their weights.
+     */
     @Test
     public void testRunEM() throws Throwable {
 
@@ -64,10 +67,8 @@ public class WeightBasedMutationXYZTest extends SpringTestBase {
                 }, 3);
     }
 
-
     // since weights of dto is more than x, dto has more chances to be mutated.
     private boolean checkManipulatedTimes(EvaluatedIndividual<RestIndividual> ind){
-
         return ind.getGeneImpact("x").stream().map(s->s.getTimesToManipulate()).reduce(0, Integer::sum) <= ind.getGeneImpact("dto").stream().map(s->s.getTimesToManipulate()).reduce(0, Integer::sum);
     }
 

@@ -883,7 +883,7 @@ class EMConfig {
     @Experimental
     @Cfg("Whether to enable tracking the history of modifications of the individuals with its fitness values (i.e., evaluated individual) during the search. " +
             "Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual")
-    var enableTrackEvaluatedIndividual = false
+    var enableTrackEvaluatedIndividual = true
 
     @Experimental
     @Cfg("Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. " +
@@ -1058,7 +1058,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Whether to enable a weight-based mutation rate")
-    var weightBasedMutationRate = false
+    var weightBasedMutationRate = true
 
     @Experimental
     @Cfg("Whether to specialize sql gene selection to mutation")
@@ -1079,12 +1079,12 @@ class EMConfig {
             "For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, " +
             "and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate.")
     @PercentageAsProbability(false)
-    var d = 0.5
+    var d = 0.8
 
     @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
     @Probability
-    var probOfArchiveMutation = 0.0
+    var probOfArchiveMutation = 0.5
 
     @Experimental
     @Cfg("Specify whether to collect impact info that provides an option to enable of collecting impact info when archive-based gene selection is disable. ")
@@ -1120,7 +1120,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a strategy to select genes for mutation adaptively")
-    var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.NONE
+    var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.APPROACH_IMPACT
 
     @Experimental
     @Cfg("Specify whether to enable weight-based mutation selection for selecting genes to mutate for a gene")
@@ -1146,7 +1146,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Whether to enable archive-based gene mutation")
-    var archiveGeneMutation = ArchiveGeneMutation.NONE
+    var archiveGeneMutation = ArchiveGeneMutation.SPECIFIED_WITH_SPECIFIC_TARGETS
 
     @Experimental
     @Cfg("Specify a maximum length of history when applying archive-based gene mutation")

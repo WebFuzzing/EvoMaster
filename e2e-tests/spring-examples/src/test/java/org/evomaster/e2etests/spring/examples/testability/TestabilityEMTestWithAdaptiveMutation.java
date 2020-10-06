@@ -18,7 +18,6 @@ public class TestabilityEMTestWithAdaptiveMutation extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
-
         SpringTestBase.initClass(new TestabilityController());
     }
 

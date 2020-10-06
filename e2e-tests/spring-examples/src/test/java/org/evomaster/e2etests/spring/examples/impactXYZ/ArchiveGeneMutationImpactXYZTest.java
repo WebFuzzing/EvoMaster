@@ -1,86 +1,42 @@
 package org.evomaster.e2etests.spring.examples.impactXYZ;
 
-import org.evomaster.core.EMConfig;
-import org.evomaster.core.EMConfig.ArchiveGeneMutation;
+import com.foo.rest.examples.spring.impactXYZ.ImpactXYZRestController;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
-import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod;
-import org.junit.jupiter.api.Disabled;
+import org.evomaster.e2etests.spring.examples.SpringTestBase;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 
-public class ArchiveGeneMutationImpactXYZTest extends ImpactXYZTestBase {
 
-    private final String folder = "AGM-ImpactXYZ";
-
-    @Test
-    public void testWithout() throws Throwable {
-        testRunEM(0.0, GeneMutationSelectionMethod.NONE, ArchiveGeneMutation.NONE);
-    }
+public class ArchiveGeneMutationImpactXYZTest extends SpringTestBase {
 
     @Test
-    public void testOnlyApproachImpactSelection() throws Throwable {
-        testRunEM(1.0, GeneMutationSelectionMethod.APPROACH_IMPACT, ArchiveGeneMutation.NONE);
-    }
-
-    @Test
-    public void testOnlyBalanceSelection() throws Throwable {
-        testRunEM(1.0, GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT_WITH_E, ArchiveGeneMutation.NONE);
-    }
-
-    public void testRunEM(double probOfArchive,GeneMutationSelectionMethod method, ArchiveGeneMutation agm) throws Throwable {
+    public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "none",
-                "none",
-                2000,
-                false,
+                "ArchiveMutationEM",
+                "org.bar.impactXYZ.agm",
+                5_000,
+                true,
                 (args) -> {
 
                     args.add("--probOfArchiveMutation");
-                    args.add(""+probOfArchive);
+                    args.add("0.5");
 
                     args.add("--weightBasedMutationRate");
                     args.add("true");
 
                     args.add("--adaptiveGeneSelectionMethod");
-                    args.add(method.toString());
+                    args.add("APPROACH_IMPACT");
 
                     args.add("--archiveGeneMutation");
-                    args.add(agm.toString());
+                    args.add("SPECIFIED_WITH_SPECIFIC_TARGETS");
 
                     args.add("--enableTrackEvaluatedIndividual");
                     args.add("true");
-
-                    args.add("--focusedSearchActivationTime");
-                    args.add("0.0");
-
-                    // only for the test
-                    args.add("--saveImpactAfterMutation");
-                    args.add("true");
-                    args.add("--impactAfterMutationFile");
-                    args.add("target/"+folder+"/impactInfo/Impacts_ImpactXYZ_"+method.toString()+".csv");
-
-                    // only for the test
-                    args.add("--saveMutationInfo");
-                    args.add("true");
-                    args.add("--mutatedGeneFile");
-                    args.add("target/"+folder+"/mutatedGeneInfo/MutatedGenes_ImpactXYZ_"+method.toString()+".csv");
-
-                    // only for the test
-                    args.add("--saveArchiveAfterMutation");
-                    args.add("true");
-                    args.add("--archiveAfterMutationFile");
-                    args.add("target/"+folder+"/archiveInfo/ArchiveNotCoveredSnapshot_ImpactXYZ_"+method.toString()+".csv");
-
-                    args.add("--exportCoveredTarget");
-                    args.add("true");
-
-                    args.add("--coveredTargetFile");
-                    String path = "target/"+folder+"/coveredTargets/testImpacts_CoveredTargetsBy"+method.toString()+".csv";
-                    args.add(path);
-
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
@@ -92,5 +48,10 @@ public class ArchiveGeneMutationImpactXYZTest extends ImpactXYZTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/impactxyz/{x}", "CREATED_4");
 
                 }, 3);
+    }
+
+    @BeforeAll
+    public static void initClass() throws Exception {
+        SpringTestBase.initClass(new ImpactXYZRestController(Arrays.asList("/api/impactdto/{x}")));
     }
 }

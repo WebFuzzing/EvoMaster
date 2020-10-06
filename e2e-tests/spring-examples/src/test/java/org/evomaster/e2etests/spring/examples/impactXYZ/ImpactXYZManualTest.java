@@ -1,13 +1,19 @@
 package org.evomaster.e2etests.spring.examples.impactXYZ;
 
+import com.foo.rest.examples.spring.impactXYZ.ImpactXYZRestController;
+import org.evomaster.e2etests.spring.examples.SpringTestBase;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * created by manzh on 2020-06-16
  */
-public class ImpactXYZManualTest extends ImpactXYZTestBase {
+public class ImpactXYZManualTest extends SpringTestBase {
 
     @Test
     public void testSwaggerJSON() {
@@ -71,6 +77,10 @@ public class ImpactXYZManualTest extends ImpactXYZTestBase {
                 .statusCode(200)
                 .extract().asString();
         assertEquals(result, "EXCEED");
+    }
 
+    @BeforeAll
+    public static void initClass() throws Exception {
+        SpringTestBase.initClass(new ImpactXYZRestController(Arrays.asList("/api/impactdto/{x}")));
     }
 }

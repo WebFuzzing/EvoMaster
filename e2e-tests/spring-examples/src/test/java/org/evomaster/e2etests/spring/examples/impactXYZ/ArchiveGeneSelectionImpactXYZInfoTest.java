@@ -18,10 +18,13 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class CollectImpactXYZInfoTest extends SpringTestBase {
+public class ArchiveGeneSelectionImpactXYZInfoTest extends SpringTestBase {
 
+    /**
+     * this test aims at testing whether impacts are collected correctly without any impact-based solutions.
+     */
     @Test
-    public void testRunEM() throws Throwable {
+    public void testCollectionRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "ImpactXYZ_TestImpactCollection",
@@ -29,6 +32,11 @@ public class CollectImpactXYZInfoTest extends SpringTestBase {
                 1000,
                 true,
                 (args) -> {
+                    args.add("--weightBasedMutationRate");
+                    args.add("false");
+
+                    args.add("--archiveGeneMutation");
+                    args.add("NONE");
 
                     args.add("--doCollectImpact");
                     args.add("true");
@@ -52,6 +60,51 @@ public class CollectImpactXYZInfoTest extends SpringTestBase {
 
                     solution.getIndividuals().stream().allMatch(
                             s -> s.anyImpactInfo() && checkImpactOfxyz(s)
+                    );
+
+                }, 3);
+    }
+
+    /**
+     * this test aims at testing whether impactful gene has more chance to be selected.
+     */
+    @Test
+    public void testGeneSelectionRunEM() throws Throwable {
+
+        runTestHandlingFlakyAndCompilation(
+                "ImpactXYZ_TestImpactCollection",
+                "org.bar.ImpactXYZ_TestImpactCollection",
+                1000,
+                true,
+                (args) -> {
+                    args.add("--probOfArchiveMutation");
+                    args.add("0.5");
+
+                    args.add("--weightBasedMutationRate");
+                    args.add("true");
+
+                    args.add("--adaptiveGeneSelectionMethod");
+                    args.add("APPROACH_IMPACT");
+
+                    args.add("--archiveGeneMutation");
+                    args.add("SPECIFIED_WITH_SPECIFIC_TARGETS");
+
+                    args.add("--enableTrackEvaluatedIndividual");
+                    args.add("true");
+
+                    //since there only exist one endpoint, we set the population for each target 3
+                    args.add("--archiveTargetLimit");
+                    args.add("3");
+
+                    args.add("--focusedSearchActivationTime");
+                    args.add("0.0");
+
+                    Solution<RestIndividual> solution = initAndRun(args);
+
+                    assertTrue(solution.getIndividuals().size() >= 1);
+
+                    solution.getIndividuals().stream().allMatch(
+                            s -> s.anyImpactInfo() && checkManipulatedTimes(s)
                     );
 
                 }, 3);
@@ -81,6 +134,13 @@ public class CollectImpactXYZInfoTest extends SpringTestBase {
         return targets.stream().allMatch(
                 s-> getValue(ximpacts, s) >= getValue(yimpacts, s) && getValue(ximpacts, s) >= getValue(zimpacts, s) && getValue(yimpacts, s) >= getValue(zimpacts, s)
         );
+    }
+
+    private boolean checkManipulatedTimes(EvaluatedIndividual<RestIndividual> ind){
+        return ind.getGeneImpact("x").stream().map(s->s.getTimesToManipulate()).reduce(0, Integer::sum)
+                >= ind.getGeneImpact("y").stream().map(s->s.getTimesToManipulate()).reduce(0, Integer::sum) &&
+                ind.getGeneImpact("y").stream().map(s->s.getTimesToManipulate()).reduce(0, Integer::sum)
+                    >= ind.getGeneImpact("z").stream().map(s->s.getTimesToManipulate()).reduce(0, Integer::sum);
     }
 
     private double getValue(Map<Integer, Double> map, int key){
