@@ -74,9 +74,15 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
 
             Method targetMethod;
             try {
+                //this will not return private methods
                 targetMethod = targetClass.getMethod(m.getName(), reducedInputs);
             } catch (NoSuchMethodException e) {
-                throw new RuntimeException("BUG in EvoMaster: " + e);
+                try {
+                    //this would return private methods, but not public in superclasses
+                    targetMethod = targetClass.getDeclaredMethod(m.getName(), reducedInputs);
+                } catch (NoSuchMethodException noSuchMethodException) {
+                    throw new RuntimeException("BUG in EvoMaster: " + e);
+                }
             }
 
             String id = r.id();

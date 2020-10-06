@@ -12,6 +12,7 @@ public class ReplacementList {
 
     public static List<MethodReplacementClass> getList() {
         return Arrays.asList(
+                new AbstractEndpointClassReplacement(),
                 new BooleanClassReplacement(),
                 new ByteClassReplacement(),
                 new CharacterClassReplacement(),
@@ -21,6 +22,7 @@ public class ReplacementList {
                 new DoubleClassReplacement(),
                 new FloatClassReplacement(),
                 new GsonClassReplacement(),
+                new Http11ProcessorReplacementClass(),
                 new HttpServletRequestClassReplacement(),
                 new IntegerClassReplacement(),
                 new LocalDateClassReplacement(),

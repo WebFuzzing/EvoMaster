@@ -43,4 +43,11 @@ public class TcpPortApplication extends SwaggerConfiguration {
 
         return ports;
     }
+
+
+    @GetMapping(path = "/api/tcpPortFailed")
+    public Set<Integer> getFailed(HttpServletRequest request){
+        get(request);
+        throw new RuntimeException();
+    }
 }
