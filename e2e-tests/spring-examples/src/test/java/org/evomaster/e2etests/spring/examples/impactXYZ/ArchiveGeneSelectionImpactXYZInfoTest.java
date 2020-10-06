@@ -27,8 +27,8 @@ public class ArchiveGeneSelectionImpactXYZInfoTest extends SpringTestBase {
     public void testCollectionRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "ImpactXYZ_TestImpactCollection",
-                "org.bar.ImpactXYZ_TestImpactCollection",
+                "TestImpactCollection",
+                "org.impactxyz.TestImpactCollection",
                 1000,
                 true,
                 (args) -> {
@@ -72,8 +72,8 @@ public class ArchiveGeneSelectionImpactXYZInfoTest extends SpringTestBase {
     public void testGeneSelectionRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "ImpactXYZ_TestImpactCollection",
-                "org.bar.ImpactXYZ_TestImpactCollection",
+                "TestGeneSelection",
+                "org.impactxyz.TestGeneSelection",
                 1000,
                 true,
                 (args) -> {

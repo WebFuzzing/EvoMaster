@@ -17,9 +17,9 @@ public class ArchiveGeneMutationImpactXYZTest extends SpringTestBase {
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "ArchiveMutationEM",
-                "org.bar.impactXYZ.agm",
-                5_000,
+                "TestAGM",
+                "org.impactxyz.TestAGM",
+                8_000,
                 true,
                 (args) -> {
 

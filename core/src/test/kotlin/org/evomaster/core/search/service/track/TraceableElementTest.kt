@@ -70,6 +70,8 @@ class TraceableElementTest {
         config.maxActionEvaluations = 100
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         config.maxLengthOfTraces = 20
+        config.probOfArchiveMutation = 0.0
+        config.weightBasedMutationRate = false
 
         val inds10 = (0 until 10).map { ff.calculateCoverage(sampler.sample())!!.also { archive.addIfNeeded(it) }}
         assert(inds10.all { it.trackOperator != null })
@@ -112,6 +114,8 @@ class TraceableElementTest {
         config.enableTrackEvaluatedIndividual = false
         config.enableTrackIndividual = true
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.probOfArchiveMutation = 0.0
+        config.weightBasedMutationRate = false
 
         tracker.postConstruct()
 

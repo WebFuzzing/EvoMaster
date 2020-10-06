@@ -28,7 +28,7 @@ public class WeightBasedMutationXYZTest extends SpringTestBase {
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "ImpactXYZ_TestWM",
+                "ImpactWM",
                 "org.bar.ImpactWM",
                 1000,
                 true,

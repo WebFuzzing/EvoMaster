@@ -52,6 +52,10 @@ class MioAlgorithmOnTrackOneMaxTest {
     fun testIndividualWithTrack(){
 
         val args = arrayOf(
+                "--probOfArchiveMutation",
+                "0.0",
+                "--weightBasedMutationRate",
+                "false",
                 "--stoppingCriterion",
                 "FITNESS_EVALUATIONS",
                 "--maxActionEvaluations",
@@ -208,6 +212,10 @@ class MioAlgorithmOnTrackOneMaxTest {
     fun testTrackWithoutTrack(){
 
         val args = arrayOf(
+                "--probOfArchiveMutation",
+                "0.0",
+                "--weightBasedMutationRate",
+                "false",
                 "--stoppingCriterion",
                 "FITNESS_EVALUATIONS",
                 "--enableTrackIndividual",

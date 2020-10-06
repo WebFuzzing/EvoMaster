@@ -28,7 +28,7 @@ public class TestabilityEMTestWithAdaptiveMutation extends SpringTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
-                "org.bar.TestabilityEMTestWithAdaptiveMutation",
+                "org.bar.TestabilityEMAGM",
                 8_000,
                 true,
                 (args) -> {
