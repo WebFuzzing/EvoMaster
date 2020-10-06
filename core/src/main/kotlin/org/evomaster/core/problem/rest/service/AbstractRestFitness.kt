@@ -472,6 +472,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
         rcr.setStatusCode(response.status)
 
+        handlePossibleConnectionClose(response)
+
         try {
             if (response.hasEntity()) {
                 if (response.mediaType != null) {
@@ -512,6 +514,16 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
         return true
+    }
+
+    /**
+     * In general, we should avoid having SUT send close requests on the TCP socket.
+     * However, Tomcat (default in SpringBoot) by default will do that any 100 requests... :(
+     */
+    private fun handlePossibleConnectionClose(response: Response) {
+        if(response.getHeaderString("Connection")?.contains("close", true) == true){
+            searchTimeController.reportConnectionCloseRequest(response.status)
+        }
     }
 
     private fun createInvocation(a: RestCallAction, chainState: MutableMap<String, String>, cookies: Map<String, List<NewCookie>>): Invocation {

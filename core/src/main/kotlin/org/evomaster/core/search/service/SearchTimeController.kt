@@ -2,6 +2,8 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.logging.LoggingUtil
+import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
@@ -13,6 +15,10 @@ class SearchTimeController {
 
     @Inject
     private lateinit var configuration: EMConfig
+
+    companion object{
+        private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
+    }
 
 
     var evaluatedIndividuals = 0
@@ -30,6 +36,16 @@ class SearchTimeController {
     var lastActionImprovement = -1
         private set
 
+    /**
+     * The SUT should avoid sending HTTP requests with "Connection: close", as it puts strains on the OS,
+     * possibly running out of available ports when running experiments
+     */
+    var connectionCloseRequest = 0
+        private set
+
+    var actionWhenLastConnectionCloseRequest = -1
+        private set
+
     private var startTime = 0L
 
     private val executedIndividualTime : Queue<Pair<Long,Int>> = ArrayDeque(100)
@@ -43,6 +59,25 @@ class SearchTimeController {
 
     fun addListener(listener: SearchListener){
         listeners.add(listener)
+    }
+
+    fun reportConnectionCloseRequest(httpStatus: Int){
+
+        connectionCloseRequest++
+        //evaluatedActions is updated at the end of test case
+        //assert(evaluatedActions > actionWhenLastConnectionCloseRequest)
+
+        val total = "$connectionCloseRequest/$evaluatedActions"
+        val sinceLast =  if(actionWhenLastConnectionCloseRequest < 1){
+            "0/0"
+        } else {
+            "1/${evaluatedActions-actionWhenLastConnectionCloseRequest}"
+        }
+
+        actionWhenLastConnectionCloseRequest = evaluatedActions
+
+        LoggingUtil.uniqueWarn(log, "The SUT sent a 'Connection: close' HTTP header. This should be avoided, if possible")
+        log.debug("SUT requested a 'Connection: close' in a HTTP response. Ratio: total=$total , since-last=$sinceLast, HTTP=$httpStatus")
     }
 
     fun reportExecutedIndividualTime(ms: Long, nActions: Int){
