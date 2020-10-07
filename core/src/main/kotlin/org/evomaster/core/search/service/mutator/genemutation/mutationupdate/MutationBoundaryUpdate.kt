@@ -51,7 +51,8 @@ abstract class MutationBoundaryUpdate<T> (
     abstract fun direction(latest: T?, current: T, evaluatedResult: Int) : Int
 
     fun updateOrRestBoundary(index : Int, current: T, evaluatedResult : Int){
-        directionHistory.add(index, direction(latest, current, evaluatedResult))
+        if (direction)
+            directionHistory.add(index, direction(latest, current, evaluatedResult))
 
         if (doReset(current, evaluatedResult)){
             reset()

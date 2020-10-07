@@ -35,6 +35,17 @@ class LongMutationUpdate(direction: Boolean, min: Long, max: Long, updateTimes :
         val delta = GeneUtils.getDelta(randomness, apc, range = candidatesBoundary(), start = start, end = end)
         val candidates = listOf(c + delta, c - delta)
         val valid = candidates.filter { it <= preferMax && it >= preferMin }
+
+        if (direction){
+            val dir = randomDirection(randomness)
+            if (dir != null && dir != 0){
+                val values = valid.filter {
+                    if(dir > 0) it > current else it < current
+                }
+                if (values.isNotEmpty()) return randomness.choose(values)
+            }
+        }
+
         return when {
             valid.isNotEmpty() -> randomness.choose(valid)
             candidates.min()!! > preferMax -> preferMax
