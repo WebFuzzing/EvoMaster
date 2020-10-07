@@ -1175,12 +1175,12 @@ class EMConfig {
          */
         SPECIFIED_WITH_SPECIFIC_TARGETS(2, false),
         /**
-         * mutate individual with history based on targets
+         * mutate individual with history and directions based on targets
          * but not specific to actions
          */
         SPECIFIED_WITH_TARGETS_DIRECTION(1, true),
         /**
-         * mutate individual with history based on targets
+         * mutate individual with history and directions based on targets
          * and the targets are linked to the action level
          */
         SPECIFIED_WITH_SPECIFIC_TARGETS_DIRECTION(2, true),
