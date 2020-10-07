@@ -431,6 +431,28 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return impactInfo.anyImpactfulInfo()
     }
 
+    /**
+     *  gene impact can be added only if the gene is root gene
+     *  this is to handle unclassified, eg, a gene might be empty gson or a gene constrained with some class
+     */
+    fun addGeneImpact(individual: Individual, gene: Gene) : GeneImpact?{
+        val action = individual.seeActions().find {
+            it.seeGenes().contains(gene)
+        }
+        if (action == null && !individual.seeGenes().contains(gene)) return null
+        val index = individual.seeActions().indexOf(action)
+        val geneId = ImpactUtils.generateGeneId(individual, gene)
+        val impact = ImpactUtils.createGeneImpact(gene,geneId)
+        impactInfo?.addOrUpdateActionGeneImpacts(
+                actionName = action?.getName(),
+                actionIndex = index,
+                newAction = false,
+                impacts = mutableMapOf(geneId to ImpactUtils.createGeneImpact(gene,geneId))
+
+        )
+        return impact
+    }
+
     fun getImpact(individual: Individual, gene: Gene) : GeneImpact?{
         impactInfo?:return null
 

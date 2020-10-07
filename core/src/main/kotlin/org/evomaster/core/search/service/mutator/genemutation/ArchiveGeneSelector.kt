@@ -43,8 +43,8 @@ class ArchiveGeneSelector {
     fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Double>, individual: Individual,  evi: EvaluatedIndividual<*>, targets : Set<Int>){
 
         val geneImpacts =  genesToMutate.map { g ->
-            evi.getImpact(individual, g)
-                    ?: throw IllegalArgumentException("mismatched gene and impact info during mutation")
+            evi.getImpact(individual, g) ?: evi.addGeneImpact(individual, g)?:
+                    throw IllegalArgumentException("mismatched gene and impact info during mutation")
         }
 
         calculateWeightByArchive(genesToMutate, map, geneImpacts, targets)

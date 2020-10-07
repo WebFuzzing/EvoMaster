@@ -1278,17 +1278,17 @@ class EMConfig {
     /**
      * impact info can be collected when archive-based solution is enabled or doCollectImpact
      */
-    fun collectImpact() = doCollectImpact || enableArchiveGeneSelection()
+    fun collectImpact() = algorithm == Algorithm.MIO && doCollectImpact || enableArchiveGeneSelection()
 
     /**
      * @return whether archive-based gene selection is enabled
      */
-    fun enableArchiveGeneSelection() = probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+    fun enableArchiveGeneSelection() = algorithm == Algorithm.MIO && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
 
     /**
      * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
      */
-    fun enableArchiveGeneMutation() = archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+    fun enableArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
 
 
     fun enableArchiveSolution() = enableArchiveGeneMutation() || enableArchiveGeneSelection()

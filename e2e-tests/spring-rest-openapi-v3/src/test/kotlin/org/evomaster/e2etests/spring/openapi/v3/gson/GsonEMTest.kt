@@ -22,7 +22,7 @@ class GsonEMTest : SpringTestBase() {
 
 
     /**
-     * Man: due to dynamic changes fields,
+     * Man: due to dynamic changes body, e.g., empty gson object or object from some template
      * disable archive-based solution for the moment
      */
     @Test
@@ -31,21 +31,7 @@ class GsonEMTest : SpringTestBase() {
                 "GsonEM",
                 "org.foo.GsonEM",
                 1000
-        ) { args: MutableList<String> ->
-            args.add("--weightBasedMutationRate")
-            args.add("false")
-
-            args.add("--probOfArchiveMutation")
-            args.add("0.0")
-
-            args.add("--adaptiveGeneSelectionMethod")
-            args.add("NONE")
-
-            args.add("--archiveGeneMutation")
-            args.add("NONE")
-
-            args.add("--enableTrackEvaluatedIndividual")
-            args.add("true")
+        ) { args: List<String> ->
 
             val solution = initAndRun(args)
 
