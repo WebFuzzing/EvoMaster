@@ -89,8 +89,8 @@ class ObjectGeneImpact  (
         }
 
         fields.forEach { (t, u) ->
-            val p = (previous as ObjectGene).fields.find { it.name == t }
             val c = (current as ObjectGene).fields.find { it.name == t }?: throw IllegalArgumentException("the matched field for impact cannot be found")
+            val p = (previous as? ObjectGene)?.fields?.find { it.name == t }
             (u as GeneImpact).syncImpact(p, c)
         }
 
