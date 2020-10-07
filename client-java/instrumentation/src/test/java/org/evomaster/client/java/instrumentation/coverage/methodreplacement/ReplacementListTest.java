@@ -81,7 +81,11 @@ class ReplacementListTest {
                 try {
                     targetMethod = targetClass.getMethod(m.getName(), reducedInputs);
                 } catch (NoSuchMethodException e) {
-                    fail("No target method '"+m.getName()+" in class "+targetClass.getName()+" with the right input parameters");
+                    try {
+                        targetMethod = targetClass.getDeclaredMethod(m.getName(), reducedInputs);
+                    } catch (NoSuchMethodException noSuchMethodException) {
+                        fail("No target method '"+m.getName()+" in class "+targetClass.getName()+" with the right input parameters");
+                    }
                 }
 
                 assertEquals(r.replacingStatic(), Modifier.isStatic(targetMethod.getModifiers()));

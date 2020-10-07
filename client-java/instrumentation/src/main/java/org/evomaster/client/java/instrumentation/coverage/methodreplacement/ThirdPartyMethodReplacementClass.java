@@ -37,17 +37,20 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
 
     protected ThirdPartyMethodReplacementClass(){
 
-        if(! isAvailable()){
-            //nothing to initialize
-            return;
-        }
+//        if(! isAvailable()){
+//            //nothing to initialize
+//            return;
+//        }
+        //initMethods();
+    }
 
-        /*
-            Use reflection to load all methods that were replaced.
-            This is essential to simplify the writing of the replacement, as those
-            must still call the original, but only via reflection (as original third-party
-            library must not included in EvoMaster)
-         */
+    private  void initMethods() {
+    /*
+        Use reflection to load all methods that were replaced.
+        This is essential to simplify the writing of the replacement, as those
+        must still call the original, but only via reflection (as original third-party
+        library must not included in EvoMaster)
+     */
         Class<? extends ThirdPartyMethodReplacementClass> subclass = this.getClass();
 
         for (Method m : subclass.getDeclaredMethods()) {
@@ -74,9 +77,15 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
 
             Method targetMethod;
             try {
-                targetMethod = targetClass.getMethod(m.getName(), reducedInputs);
+                //this will not return private methods
+                targetMethod = getTargetClass().getMethod(m.getName(), reducedInputs);
             } catch (NoSuchMethodException e) {
-                throw new RuntimeException("BUG in EvoMaster: " + e);
+                try {
+                    //this would return private methods, but not public in superclasses
+                    targetMethod = targetClass.getDeclaredMethod(m.getName(), reducedInputs);
+                } catch (NoSuchMethodException noSuchMethodException) {
+                    throw new RuntimeException("BUG in EvoMaster: " + e);
+                }
             }
 
             String id = r.id();
@@ -101,6 +110,9 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
     public static Method getOriginal(ThirdPartyMethodReplacementClass singleton, String id){
         if(id == null || id.isEmpty()){
             throw new IllegalArgumentException("Invalid empty id");
+        }
+        if(singleton.methods.isEmpty()){
+            singleton.initMethods();
         }
         Method original = singleton.methods.get(id);
         if(original == null){

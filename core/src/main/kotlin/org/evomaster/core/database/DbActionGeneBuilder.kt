@@ -69,7 +69,7 @@ class DbActionGeneBuilder {
                 /**
                  * BIGINT(19) is a long/Long field
                  */
-                ColumnDataType.INT8, ColumnDataType.BIGINT ->
+                ColumnDataType.INT8, ColumnDataType.BIGINT, ColumnDataType.BIGSERIAL ->
                     handleBigIntColumn(column)
 
                 /**
@@ -91,7 +91,7 @@ class DbActionGeneBuilder {
                 /**
                  * TIMESTAMP is assumed to be a Date field
                  */
-                ColumnDataType.TIMESTAMP ->
+                ColumnDataType.TIMESTAMP, ColumnDataType.TIMESTAMPTZ ->
                     handleTimestampColumn(column)
 
                 /**

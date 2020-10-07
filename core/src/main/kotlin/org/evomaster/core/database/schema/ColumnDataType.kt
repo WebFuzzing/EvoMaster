@@ -3,6 +3,7 @@ package org.evomaster.core.database.schema
 /**
  * SQL Data types from databases
  * See http://www.h2database.com/html/datatypes.html
+ * and https://www.postgresql.org/docs/9.1/datatype.html
  */
 enum class ColumnDataType(dataTypeName: String) {
 
@@ -42,6 +43,13 @@ enum class ColumnDataType(dataTypeName: String) {
      */
     TIMESTAMP("TIMESTAMP"),
     /**
+     * The timestamptz data is the timestamp with time zone. The timestamptz is a time zone-aware date and time data type.
+     * The SQL standard requires that writing just timestamp be equivalent to timestamp without time zone, and PostgreSQL
+     * honors that behavior. (Releases prior to 7.3 treated it as timestamp with time zone.) timestamptz is accepted as
+     * an abbreviation for timestamp with time zone; this is a PostgreSQL extension.
+     */
+    TIMESTAMPTZ("TIMESTAMPTZ"),
+    /**
      * VARBINARY is similar to VARCHAR, except that it contains binary strings rather than nonbinary strings.
      * That is, it contains byte sequences rather than character sequences.
      */
@@ -62,7 +70,6 @@ enum class ColumnDataType(dataTypeName: String) {
      * The length is given in number characters for both CLOB, unless one of the suffixes K, M, or G is given, relating to the multiples of 1024, 1024*1024, 1024*1024*1024 respectively.
      **/
     CLOB("CLOB"),
-
     /**
      * Real data can hold a value 4 bytes in size, meaning it has 7 digits of precision
      * (the number of digits to the right of the decimal point).
@@ -103,11 +110,16 @@ enum class ColumnDataType(dataTypeName: String) {
     DATE("DATE"),
 
     JSON("JSON"),
-    JSONB("JSONB");
+    JSONB("JSONB"),
+    /**
+     * BigSerial used as auto-incremental ID.
+     * The data types serial and bigserial are not true types, but merely a notational convenience for creating unique
+     * identifier columns (similar to the AUTO_INCREMENT property supported by some other databases).
+     */
+    BIGSERIAL("BIGSERIAL");
 
 
     fun shouldBePrintedInQuotes(): Boolean {
-
-        return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TEXT)
+        return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TIMESTAMPTZ) || equals(TEXT)
     }
 }

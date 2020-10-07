@@ -9,6 +9,11 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 
 ### 2020
 
+* A. Arcuri.
+  *Automated Blackbox and Whitebox Testing of RESTful APIs with EvoMaster*.
+  IEEE Software.
+  [[PDF](publications/2020_sw.pdf)].
+
 * A. Arcuri, J.P. Galeotti.
   *Handling SQL Databases in Automated System Test Generation*. 
   ACM Transactions on Software Engineering and Methodology (TOSEM).

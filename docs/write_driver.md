@@ -225,6 +225,7 @@ In your driver, you can then have code like:
 ```
 private static final GenericContainer postgres = new GenericContainer("postgres:9")
             .withExposedPorts(5432)
+            .withEnv("POSTGRES_HOST_AUTH_METHOD","trust")
             .withTmpFs(Collections.singletonMap("/var/lib/postgresql/data", "rw"));
 ```
  
