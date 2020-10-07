@@ -5,6 +5,17 @@ import org.evomaster.core.search.service.Randomness
 
 /**
  * created by manzh on 2019-09-19
+ *
+ * this is to calculate the available boundary with evolution history
+ * @property min is minimum value
+ * @property max is maximum value
+ * @property counter indicates times from the recent improvement
+ * @property reached indicates whether the gene has reached its optimal
+ * @property updateTimes represents times to be updated
+ * @property resetTimes represents how many times of the values are reset, which may be useful to 'gene dependency' analysis (but not implemented)
+ * @property latest record the latest value which is used to boundary value
+ * @property preferMin is preferred minimum value for this mutation
+ * @property preferMax is preferred maximum value for this mutation
  */
 abstract class MutationBoundaryUpdate<T> (
         val min : T, val max : T, var counter : Int = 0, var reached : Boolean = false,

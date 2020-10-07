@@ -20,6 +20,9 @@ import java.nio.file.StandardOpenOption
  */
 object ArchiveMutationUtils {
 
+    /**
+     * save detailed mutated gene over search which is useful for debugging
+     */
     fun saveMutatedGene(config: EMConfig, mutatedGenes: MutatedGeneSpecification?, individual: Individual, index : Int, evaluatedMutation : EvaluatedMutation, targets: Set<Int>){
         mutatedGenes?:return
         val path = saveMutationInfo(config)?: return

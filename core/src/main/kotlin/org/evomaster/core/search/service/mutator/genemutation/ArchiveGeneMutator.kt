@@ -60,6 +60,12 @@ class ArchiveGeneMutator{
         }
     }
 
+    /**
+     * apply mutation based on tracked history
+     * @param additionalGeneMutationInfo history of gene
+     * @param gene to mutate
+     * @param allGenes are other genes in the same individual
+     */
     fun historyBasedValueMutation(additionalGeneMutationInfo: AdditionalGeneMutationInfo, gene: Gene, allGenes: List<Gene>) {
         val history = manageHistory(additionalGeneMutationInfo, additionalGeneMutationInfo.targets)
         when (gene) {
@@ -225,6 +231,14 @@ class ArchiveGeneMutator{
         return true
     }
 
+    /**
+     * archive-based gene mutation for string gene
+     * @param gene to mutate
+     * @param targets for this mutation
+     * @param allGenes are other genes in the same individual
+     * @param selectionStrategy indicates the startegy to select a specialization of the gene
+     * @param additionalGeneMutationInfo contains addtional info for applying archive-based gene mutation, e.g., impact, history of the gene
+     */
     fun mutateStringGene(
             gene: StringGene, targets: Set<Int>,
             allGenes : List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo){
@@ -407,7 +421,6 @@ class ArchiveGeneMutator{
 
     }
 
-    //FIXME MAN
     private fun createCharMutationUpdate() = LongMutationUpdate(getDefaultCharMin(), getDefaultCharMax())
 
     private fun getCharPool() = CharPool.WORD
@@ -422,12 +435,24 @@ class ArchiveGeneMutator{
         CharPool.WORD -> randomness.wordCharPool().last()
     }
 
+    /**
+     * save detailed mutated gene over search which is useful for debugging
+     * @param mutatedGenes contains what gene are mutated in this evaluation
+     * @param individual is the individual to mutate
+     * @param index indicates timepoint over search
+     * @param evaluatedMutation is evaluated result of this mutation
+     * @param targets are targets for this mutation
+     */
     fun saveMutatedGene(mutatedGenes: MutatedGeneSpecification?, individual: Individual, index : Int, evaluatedMutation : EvaluatedMutation, targets: Set<Int>){
         ArchiveMutationUtils.saveMutatedGene(config, mutatedGenes, individual, index, evaluatedMutation, targets)
     }
 
 }
 
+/**
+ * which chars are used for sampling string gene
+ * this might need to be further improved
+ */
 enum class CharPool {
     ALL,
     WORD
