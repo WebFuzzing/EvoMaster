@@ -53,6 +53,7 @@ public class TcpPortEMTest extends SpringTestBase {
                     assertTrue(solution.getIndividuals().size() >= 1);
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/tcpPort", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/tcpPortFailed", null);
                 });
 
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
