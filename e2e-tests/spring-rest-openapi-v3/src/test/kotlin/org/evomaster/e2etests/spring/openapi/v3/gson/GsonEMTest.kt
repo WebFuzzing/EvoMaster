@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.openapi.v3.gson
 
-import com.foo.rest.examples.spring.openapi.v3.base.BaseController
 import com.foo.rest.examples.spring.openapi.v3.gson.GsonController
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -22,13 +21,31 @@ class GsonEMTest : SpringTestBase() {
     }
 
 
+    /**
+     * Man: due to dynamic changes fields,
+     * disable archive-based solution for the moment
+     */
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
                 "GsonEM",
                 "org.foo.GsonEM",
                 1000
-        ) { args: List<String> ->
+        ) { args: MutableList<String> ->
+            args.add("--weightBasedMutationRate")
+            args.add("false")
+
+            args.add("--probOfArchiveMutation")
+            args.add("0.0")
+
+            args.add("--adaptiveGeneSelectionMethod")
+            args.add("NONE")
+
+            args.add("--archiveGeneMutation")
+            args.add("NONE")
+
+            args.add("--enableTrackEvaluatedIndividual")
+            args.add("true")
 
             val solution = initAndRun(args)
 
