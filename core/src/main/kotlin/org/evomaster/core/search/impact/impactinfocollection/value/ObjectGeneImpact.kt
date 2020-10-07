@@ -13,8 +13,6 @@ class ObjectGeneImpact  (
         val fields : MutableMap<String, Impact> = mutableMapOf()
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
-
-
     constructor(id: String, objectGene: ObjectGene) : this (SharedImpactInfo(id), SpecificImpactInfo(), fields = objectGene.fields.map { Pair(it.name, ImpactUtils.createGeneImpact(it, it.name)) }.toMap().toMutableMap())
 
     override fun copy(): ObjectGeneImpact {
@@ -89,7 +87,7 @@ class ObjectGeneImpact  (
         }
 
         fields.forEach { (t, u) ->
-            val c = (current as ObjectGene).fields.find { it.name == t }?: throw IllegalArgumentException("the matched field for impact cannot be found")
+            val c = current.fields.find { it.name == t }?: throw IllegalArgumentException("the matched field for impact cannot be found")
             val p = (previous as? ObjectGene)?.fields?.find { it.name == t }
             (u as GeneImpact).syncImpact(p, c)
         }

@@ -103,7 +103,7 @@ class IntegerGeneMutationUpdate {
     fun testMutationUpdate(){
         val specified = listOf(Int.MAX_VALUE/2, Int.MAX_VALUE/4, 0, Int.MIN_VALUE/4, Int.MIN_VALUE/2)
 
-        val mutationinfo = LongMutationUpdate(Int.MIN_VALUE, Int.MAX_VALUE)
+        val mutationinfo = LongMutationUpdate(false, Int.MIN_VALUE, Int.MAX_VALUE)
 
         mutationinfo.updateOrRestBoundary(specified.map {
             it.toLong() to EvaluatedMutation.BETTER_THAN.value

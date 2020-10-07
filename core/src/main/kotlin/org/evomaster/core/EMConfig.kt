@@ -1152,11 +1152,43 @@ class EMConfig {
     @Cfg("Specify a maximum length of history when applying archive-based gene mutation")
     var maxlengthOfHistoryForAGM = 10
 
-    enum class ArchiveGeneMutation {
+    /**
+     * archive-based gene value mutation
+     */
+    enum class ArchiveGeneMutation (val withTargets : Int = 0, val withDirection: Boolean = false){
+        /**
+         * do not apply archive-based gene mutation
+         */
         NONE,
+        /**
+         * mutate with history but not related to any target
+         */
         SPECIFIED,
-        SPECIFIED_WITH_TARGETS,
-        SPECIFIED_WITH_SPECIFIC_TARGETS,
+        /**
+         * mutate individual with history based on targets
+         * but not specific to actions
+         */
+        SPECIFIED_WITH_TARGETS(1, false),
+        /**
+         * mutate individual with history based on targets
+         * and the targets are linked to the action level
+         */
+        SPECIFIED_WITH_SPECIFIC_TARGETS(2, false),
+        /**
+         * mutate individual with history based on targets
+         * but not specific to actions
+         */
+        SPECIFIED_WITH_TARGETS_DIRECTION(1, true),
+        /**
+         * mutate individual with history based on targets
+         * and the targets are linked to the action level
+         */
+        SPECIFIED_WITH_SPECIFIC_TARGETS_DIRECTION(2, true),
+
+        /**
+         * mutate individual with history with consideration of dependency among genes
+         * (not done yet)
+         */
         ADAPTIVE
     }
 

@@ -91,7 +91,7 @@ class OptionalGeneImpact  (
 
     override fun syncImpact(previous: Gene?, current: Gene) {
         check(previous, current)
-        geneImpact.syncImpact((previous as OptionalGene).gene, (current as OptionalGene).gene)
+        geneImpact.syncImpact((previous as? OptionalGene)?.gene, (current as OptionalGene).gene)
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {

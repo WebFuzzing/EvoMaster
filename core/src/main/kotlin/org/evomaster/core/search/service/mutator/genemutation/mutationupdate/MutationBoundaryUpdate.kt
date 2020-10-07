@@ -7,6 +7,7 @@ import org.evomaster.core.search.service.Randomness
  * created by manzh on 2019-09-19
  *
  * this is to calculate the available boundary with evolution history
+ * @property direction indicates whether collect change directions
  * @property min is minimum value
  * @property max is maximum value
  * @property counter indicates times from the recent improvement
@@ -18,11 +19,12 @@ import org.evomaster.core.search.service.Randomness
  * @property preferMax is preferred maximum value for this mutation
  */
 abstract class MutationBoundaryUpdate<T> (
+        val direction : Boolean,
         val min : T, val max : T, var counter : Int = 0, var reached : Boolean = false,
         var updateTimes : Int = 0,
         var resetTimes : Int = 0, var latest: T? = null, var preferMin : T = min, var preferMax : T = max) where T : Number{
 
-
+    private var directionHistory : MutableList<Int> = mutableListOf()
 
     abstract fun copy() : MutationBoundaryUpdate<T>
     abstract fun candidatesBoundary() : T
@@ -46,8 +48,11 @@ abstract class MutationBoundaryUpdate<T> (
 
     abstract fun doReset(current : T, evaluatedResult: Int) : Boolean
     abstract fun updateBoundary(current: T, evaluatedResult : Int)
+    abstract fun direction(latest: T?, current: T, evaluatedResult: Int) : Int
 
-    fun updateOrRestBoundary(current: T, evaluatedResult : Int){
+    fun updateOrRestBoundary(index : Int, current: T, evaluatedResult : Int){
+        directionHistory.add(index, direction(latest, current, evaluatedResult))
+
         if (doReset(current, evaluatedResult)){
             reset()
         }else{
@@ -58,12 +63,21 @@ abstract class MutationBoundaryUpdate<T> (
     }
 
     fun updateOrRestBoundary(history : List<Pair<T, Int>>){
+
         (0 until history.size).forEach {i->
             updateOrRestBoundary(
+                    index = i,
                     current = history[i].first,
                     evaluatedResult = history[i].second
             )
         }
+    }
+
+    fun randomDirection(randomness: Randomness) : Int?{
+        val changes = directionHistory.filter { it != 0 }
+        if (changes.isEmpty()) return null
+        if (randomness.nextBoolean(0.8)) return changes.last()
+        return randomness.choose(changes)
     }
 }
 

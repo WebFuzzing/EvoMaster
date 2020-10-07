@@ -53,9 +53,9 @@ class ArchiveGeneMutator{
     }
 
     private fun manageHistory(additionalGeneMutationInfo: AdditionalGeneMutationInfo, targets: Set<Int>) : List<Pair<Gene, EvaluatedInfo>> {
-        return when(config.archiveGeneMutation){
-            EMConfig.ArchiveGeneMutation.SPECIFIED_WITH_TARGETS -> additionalGeneMutationInfo.history.filter { it.second.targets.any { t-> targets.contains(t) } && it.second.result?.isImpactful()?:true }
-            EMConfig.ArchiveGeneMutation.SPECIFIED_WITH_SPECIFIC_TARGETS -> additionalGeneMutationInfo.history.filter { it.second.specificTargets.any { t-> targets.contains(t) } && it.second.result?.isImpactful()?:true }
+        return when (config.archiveGeneMutation.withTargets) {
+            1 -> additionalGeneMutationInfo.history.filter { it.second.targets.any { t-> targets.contains(t) } && it.second.result?.isImpactful()?:true }
+            2 -> additionalGeneMutationInfo.history.filter { it.second.specificTargets.any { t-> targets.contains(t) } && it.second.result?.isImpactful()?:true }
             else -> additionalGeneMutationInfo.history
         }
     }
@@ -80,7 +80,7 @@ class ArchiveGeneMutator{
                                 ).value.toLong() to (it.second.result?.value?:-2)
                     },
                     value = gene.value.toLong(),
-                    valueUpdate = LongMutationUpdate(min = gene.min.toLong(), max = gene.max.toLong()),
+                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.min.toLong(), max = gene.max.toLong()),
                     start = GeneUtils.intpow2.size, end = 10
             ).toInt()
             is LongGene -> gene.value =  sampleValue(
@@ -89,7 +89,7 @@ class ArchiveGeneMutator{
                                 ?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
-                    valueUpdate = LongMutationUpdate(min = Long.MIN_VALUE, max = Long.MAX_VALUE),
+                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = Long.MIN_VALUE, max = Long.MAX_VALUE),
                     start = GeneUtils.intpow2.size, end = 10
             )
             is DoubleGene -> gene.value =  sampleValue(
@@ -97,7 +97,7 @@ class ArchiveGeneMutator{
                         ((it.first as? DoubleGene)?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
-                    valueUpdate = DoubleMutationUpdate(min = Double.MIN_VALUE, max = Double.MAX_VALUE),
+                    valueUpdate = DoubleMutationUpdate(config.archiveGeneMutation.withDirection, min = Double.MIN_VALUE, max = Double.MAX_VALUE),
                     start = GeneUtils.intpow2.size, end = 10
             )
             is FloatGene -> gene.value = sampleValue(
@@ -105,7 +105,7 @@ class ArchiveGeneMutator{
                         ((it.first as? FloatGene)?: throw DifferentGeneInHistory(gene, it.first)).value.toDouble() to (it.second.result?.value?:-2)
                     },
                     value = gene.value.toDouble(),
-                    valueUpdate = DoubleMutationUpdate(min = Float.MIN_VALUE.toDouble(), max = Float.MAX_VALUE.toDouble()),
+                    valueUpdate = DoubleMutationUpdate(config.archiveGeneMutation.withDirection, min = Float.MIN_VALUE.toDouble(), max = Float.MAX_VALUE.toDouble()),
                     start = GeneUtils.intpow2.size, end = 10
             ).toFloat()
             else -> throw IllegalArgumentException("history-based value mutation is not applicable for ${gene::class.java.simpleName}")
@@ -123,6 +123,7 @@ class ArchiveGeneMutator{
     private fun<T: Number> sampleValue(history : List<Pair<T, Int>>, value: T, valueUpdate: MutationBoundaryUpdate<T>, start: Int, end: Int) : T {
         (0 until history.size).forEach {i->
             valueUpdate.updateOrRestBoundary(
+                    index = i,
                     current = history[i].first,
                     evaluatedResult = history[i].second
             )
@@ -147,19 +148,21 @@ class ArchiveGeneMutator{
                 .filter { it != gene.value }
                 .filter { !TaintInputName.isTaintInput(it) }
 
-        val lenMutationUpdate = LongMutationUpdate(gene.minLength.toLong(), gene.maxLength.toLong())
+        val lenMutationUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, gene.minLength.toLong(), gene.maxLength.toLong())
         val charsMutationUpdate = (0 until gene.value.length).map { createCharMutationUpdate() }
         (0 until history.size).forEach { i ->
             val c = ( history[i].first as? StringGene)?.value ?: throw IllegalStateException("invalid extracted history element")
             val better = history[i].second.result?.value?:-2
 
             lenMutationUpdate.updateOrRestBoundary(
+                    index = i,
                     current = c.length.toLong(),
                     evaluatedResult = better
             )
             charsMutationUpdate.forEachIndexed { index, intMutationUpdate ->
                 if (c.elementAtOrNull(index) != null){
                     intMutationUpdate.updateOrRestBoundary(
+                            index = i,
                             current = c.elementAt(index).toLong(),
                             evaluatedResult = better
                     )
@@ -421,7 +424,7 @@ class ArchiveGeneMutator{
 
     }
 
-    private fun createCharMutationUpdate() = LongMutationUpdate(getDefaultCharMin(), getDefaultCharMax())
+    private fun createCharMutationUpdate() = LongMutationUpdate(config.archiveGeneMutation.withDirection,getDefaultCharMin(), getDefaultCharMax())
 
     private fun getCharPool() = CharPool.WORD
 

@@ -7,8 +7,8 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 
-class DoubleMutationUpdate(min: Double, max: Double, updateTimes : Int = 0, counter: Int = 0, reached: Boolean = false, latest : Double? = null, preferMin: Double = min, preferMax : Double = max)
-    : MutationBoundaryUpdate<Double>(min, max, updateTimes = updateTimes, counter = counter, reached = reached, latest = latest, preferMin = preferMin, preferMax = preferMax), Comparable<DoubleMutationUpdate> {
+class DoubleMutationUpdate(direction: Boolean, min: Double, max: Double, updateTimes : Int = 0, counter: Int = 0, reached: Boolean = false, latest : Double? = null, preferMin: Double = min, preferMax : Double = max)
+    : MutationBoundaryUpdate<Double>(direction, min, max, updateTimes = updateTimes, counter = counter, reached = reached, latest = latest, preferMin = preferMin, preferMax = preferMax), Comparable<DoubleMutationUpdate> {
 
     override fun compareTo(other: DoubleMutationUpdate): Int {
         val r = -candidatesBoundary() + other.candidatesBoundary()
@@ -39,7 +39,7 @@ class DoubleMutationUpdate(min: Double, max: Double, updateTimes : Int = 0, coun
         }
     }
 
-    override fun copy(): DoubleMutationUpdate = DoubleMutationUpdate(preferMin, preferMax, updateTimes, counter, reached, latest, preferMin, preferMax)
+    override fun copy(): DoubleMutationUpdate = DoubleMutationUpdate(direction, preferMin, preferMax, updateTimes, counter, reached, latest, preferMin, preferMax)
 
     override fun candidatesBoundary(): Double {
         val result = preferMax - preferMin
@@ -68,5 +68,10 @@ class DoubleMutationUpdate(min: Double, max: Double, updateTimes : Int = 0, coun
             }
         }
         updateTimes +=1
+    }
+
+    override fun direction(latest: Double?, current: Double, evaluatedResult: Int): Int {
+        if (latest == null || evaluatedResult == 0) return 0
+        return evaluatedResult * current.compareTo(latest)
     }
 }
