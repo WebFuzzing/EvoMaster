@@ -503,7 +503,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         mutatedGenes.addedInitializationGroup.addAll(modified)
 
         Lazy.assert {
-            individual.seeInitializingActions().size == impactInfo.getSizeOfActionImpacts(true)
+            individual.seeInitializingActions().filter { it is DbAction && !it.representExistingData }.size == impactInfo.getSizeOfActionImpacts(true)
         }
     }
 
