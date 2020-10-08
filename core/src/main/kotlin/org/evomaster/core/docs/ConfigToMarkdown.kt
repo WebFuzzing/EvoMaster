@@ -4,6 +4,7 @@ import org.evomaster.core.EMConfig
 import java.io.File
 import java.nio.charset.Charset
 import kotlin.reflect.KMutableProperty
+import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.javaType
 
 /**
@@ -21,7 +22,6 @@ object ConfigToMarkdown {
     fun toMarkdown(): String {
 
         val buffer = StringBuilder()
-
         addHeader(buffer)
 
         addOptions(buffer)
@@ -83,7 +83,6 @@ object ConfigToMarkdown {
         val important = all.filter { it.annotations.any { a -> a is EMConfig.Important } }
         val experimental = all.filter { it.annotations.any { a -> a is EMConfig.Experimental } }
         val internal = all.filter { it.annotations.none { a -> a is EMConfig.Experimental || a is EMConfig.Important } }
-
         assert(all.size == important.size + experimental.size + internal.size)
 
         addImportant(buffer, important)
@@ -180,7 +179,16 @@ object ConfigToMarkdown {
             buffer.append(" *Constraints*: `${description.constraints}`.")
         }
         if(description.enumValues.isNotBlank()){
-            buffer.append(" *Valid values*: `${description.enumValues}`.")
+            if (description.experimentalValues.isNotBlank())
+            {
+                buffer.append(" *Valid values*: `${description.validValues}`.")
+                buffer.append(" *Experimental values*: `${description.experimentalValues}`.")
+            }
+            else
+            {
+                buffer.append(" *Valid values*: `${description.enumValues}`.")
+            }
+
         }
         buffer.append(" *Default value*: `$default`.")
 
