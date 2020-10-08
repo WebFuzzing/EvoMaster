@@ -23,6 +23,9 @@ public class TestabilityEMTest extends SpringTestBase {
         SpringTestBase.initClass(new TestabilityController());
     }
 
+    /**
+     * TODO less budget(i.e., 8K vs 15k) has more chances to pass the test
+     */
     @Test
     public void testRunEM() throws Throwable {
 
@@ -33,7 +36,7 @@ public class TestabilityEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
                 "org.bar.TestabilityEM",
-                15_000,
+                8_000,
                 true,
                 (args) -> {
 

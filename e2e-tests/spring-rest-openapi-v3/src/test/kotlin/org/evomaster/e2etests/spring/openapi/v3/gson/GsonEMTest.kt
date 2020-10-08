@@ -20,11 +20,6 @@ class GsonEMTest : SpringTestBase() {
         }
     }
 
-
-    /**
-     * Man: due to dynamic changes body, e.g., empty gson object or object from some template
-     * disable archive-based solution for the moment
-     */
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
