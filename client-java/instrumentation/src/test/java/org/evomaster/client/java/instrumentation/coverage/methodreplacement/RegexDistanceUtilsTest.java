@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 /**
  * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
@@ -21,15 +22,27 @@ import java.util.regex.Pattern;
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
- */
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+ */import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Gordon Fraser
  *
  */
 public class RegexDistanceUtilsTest {
+
+    @Test
+    public void testLanguageToolIssue(){
+
+        String regex = "(?iu).*\\p{L}";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher("foo");
+        assertTrue(matcher.matches());
+
+        //should not crash
+        RegexDistanceUtils.getStandardDistance("foo", regex);
+    }
+
     @Test
     public void testLongRegex() {
         final String example = "-@0.AA";

@@ -251,7 +251,12 @@ public class RegexDistanceUtils {
         if (!isSupportedRegex(regex)) {
             return getDefaultDistance(arg, regex);
         }
-        RegexGraph graph = new RegexGraph(arg, regex);
+        RegexGraph graph;
+        try {
+            graph = new RegexGraph(arg, regex);
+        }catch (Exception e){
+            return getDefaultDistance(arg, regex);
+        }
         CostMatrix matrix = new CostMatrix();
         return matrix.calculateStandardCost(graph);
     }
