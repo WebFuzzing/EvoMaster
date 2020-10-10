@@ -1,0 +1,54 @@
+import ast
+
+import astunparse
+import astor
+
+from ast_transformer import AstTransformer
+
+
+if __name__ == "__main__":
+    filename = 'client/controller.py'
+
+    with open(filename) as f:
+        source = f.read()
+
+    # Examples: multiple statements per line
+    my_tree = ast.parse('for i in range(2): print("foo"); print("bar")')
+    # my_tree = ast.parse('print("foo") if 5 < 10 else print("bar")')
+    # my_tree = ast.parse(source, filename=filename)
+
+    t = AstTransformer(filename)
+    new_tree = t.visit(my_tree)
+    t.targetsInfo()
+
+    # Walk tree in order traversing the bodies
+    # def walk_body(node, prefix=''):
+    #     print(prefix, "node type: ", node.__class__.__name__, " line no:", node.lineno if hasattr(node, 'lineno') else "unknown")
+    #     if hasattr(node, 'body'):
+    #         for subnode in node.body:
+    #             walk_body(subnode, prefix + '\t')
+    # walk_body(my_tree)
+    # for node in my_tree.body:
+    #     print("node type: ", node.__class__.__name__, " line no:", node.lineno)
+    #     if hasattr(node, 'body'):
+    #         for subnode in node.body:
+    #             print("\t node type: ", subnode.__class__.__name__, " line no:", subnode.lineno)
+
+    # Use ast.walk to traverse the tree (not in source code order)
+    # for node in ast.walk(my_tree):
+    #     if isinstance(node, ast.stmt):
+    #         print("node type: ", node.__class__.__name__, " line no:", node.lineno if hasattr(node, 'lineno') else "unknown")
+
+    print("### AST Tree ###")
+    # print(astunparse.dump(new_tree))
+    print(astor.dump_tree(new_tree))
+    print("######")
+
+    print("### Code parsed from AST ###")
+    # print(astunparse.unparse(new_tree))
+    print(astor.to_source(new_tree))
+    print("######")
+
+    # Run instrumented code
+    # ast.fix_missing_locations(new_tree)
+    # exec(compile(new_tree, filename="<ast>", mode="exec"))
