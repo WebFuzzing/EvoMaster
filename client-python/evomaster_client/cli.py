@@ -30,7 +30,10 @@ def run(**kwargs):
     with install_import_hook('all', ExecutionTracer()):
         module_path = 'evomaster_client/controller/em_app.py'
         cached_module_path = Path(cache_from_source(str(module_path)))
-        print(cached_module_path)
+        if cached_module_path.exists():
+            cached_module_path.unlink()
+        module_path = 'evomaster_client/controller/em_controller.py'
+        cached_module_path = Path(cache_from_source(str(module_path)))
         if cached_module_path.exists():
             cached_module_path.unlink()
         module = import_module('evomaster_client.controller.em_app')
