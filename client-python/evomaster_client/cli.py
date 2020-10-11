@@ -1,6 +1,4 @@
-from importlib import import_module, reload, invalidate_caches
-from importlib.util import cache_from_source
-from pathlib import Path
+from importlib import import_module
 
 import click
 
@@ -10,14 +8,6 @@ from evomaster_client.instrumentation.execution_tracer import ExecutionTracer
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
-def greeter(**kwargs):
-    output = '{0}, {1}!'.format(kwargs['greeting'],
-                                kwargs['name'])
-    if kwargs['caps']:
-        output = output.upper()
-    print(output)
-
-
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(version='1.0.0')
 def evomaster():
@@ -25,32 +15,18 @@ def evomaster():
 
 
 @evomaster.command()
-def run(**kwargs):
-    print("running evomaster client!")
-    with install_import_hook('all', ExecutionTracer()):
-        module_path = 'evomaster_client/controller/em_app.py'
-        cached_module_path = Path(cache_from_source(str(module_path)))
-        if cached_module_path.exists():
-            cached_module_path.unlink()
-        module_path = 'evomaster_client/controller/em_controller.py'
-        cached_module_path = Path(cache_from_source(str(module_path)))
-        if cached_module_path.exists():
-            cached_module_path.unlink()
-        module = import_module('evomaster_client.controller.em_app')
-        reload(module)  # in case it is cached
-        app = module.__getattribute__('app')
+@click.option('--package-prefix', '-p', multiple=True, help='package prefix to measure code coverage')
+@click.option('--flask-module', '-m', required=True, help='module name where the flask application is defined')
+@click.option('--flask-app', '-a', default='app', help='flask app defined in flask-module')
+def run(package_prefix, flask_module, flask_app):
+    print(f'package_prefix={package_prefix}')
+    print(f'flask_module={flask_module}')
+    print(f'flask_app={flask_app}')
+
+    with install_import_hook(package_prefix, ExecutionTracer()):
+        module = import_module(flask_module)
+        app = module.__getattribute__(flask_app)
         app.run()
-    # 1. start an instrumented SUT using moduimport_hook.py
-    # 2. make the instrumented SUT path parametrizable with options
-    # the command options are the options that the user needs to manually define in Java extending the EmbeddedController class
-
-
-@evomaster.command()
-@click.argument('name')
-@click.option('--greeting', default='Hello', help='word to use for the greeting')
-@click.option('--caps', is_flag=True, help='uppercase the output')
-def hello(**kwargs):
-    greeter(**kwargs)
 
 
 if __name__ == '__main__':

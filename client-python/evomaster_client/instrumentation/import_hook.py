@@ -4,6 +4,8 @@ from importlib.machinery import SourceFileLoader
 from importlib.abc import MetaPathFinder
 from importlib.util import decode_source
 from inspect import isclass
+from pathlib import Path
+from typing import List
 
 import astor
 
@@ -18,14 +20,14 @@ class InstrumentationFinder(MetaPathFinder):
     should be instrumented.
     """
 
-    def __init__(self, original_pathfinder, modules_to_instrument, tracer):
+    def __init__(self, original_pathfinder, package_prefixes, tracer):
         """Wraps the given path finder.
         Args:
             original_pathfinder: the original pathfinder that is wrapped.
             module_to_instrument: the name of the module, that should be instrumented.
             tracer: the execution tracer
         """
-        self.modules_to_instrument = modules_to_instrument
+        self.package_prefixes = package_prefixes
         self._original_pathfinder = original_pathfinder
         self.tracer = tracer
 
@@ -46,6 +48,9 @@ class InstrumentationFinder(MetaPathFinder):
             spec = self._original_pathfinder.find_spec(fullname, path, target)
             if spec is not None and isinstance(spec.loader, SourceFileLoader):
                 spec.loader = InstrumentationLoader(spec.loader.name, spec.loader.path, self.tracer)
+                cached = Path(spec.cached)
+                if cached.exists():
+                    cached.unlink()
                 return spec
         return None
 
@@ -54,7 +59,8 @@ class InstrumentationFinder(MetaPathFinder):
         Determine whether the module with the given name should be instrumented.
         :param module_name: full name of the module that is about to be imported (e.g. ``xyz.abc``)
         """
-        return True
+        return any(module_name.startswith(prefix) for prefix in self.package_prefixes)
+
 
 class InstrumentationLoader(SourceFileLoader):
     """A loader that instruments the module after execution."""
@@ -77,6 +83,7 @@ class InstrumentationLoader(SourceFileLoader):
         ast.fix_missing_locations(tree)
         # return _call_with_frames_removed(compile, tree, path, 'exec',
         #                                  dont_inherit=True, optimize=_optimize)
+        print (path)
         print(astor.to_source(tree))
         return compile(tree, path, 'exec')
 
@@ -99,7 +106,8 @@ class ImportHookContextManager:
         except ValueError:
             pass  # already removed
 
-def install_import_hook(module_to_instrument: str, tracer: ExecutionTracer) -> ImportHookContextManager:
+
+def install_import_hook(package_prefixes: List[str], tracer: ExecutionTracer) -> ImportHookContextManager:
     """Install the InstrumentationFinder in the meta path.
     Args:
         module_to_instrument: The module that shall be instrumented.
@@ -122,6 +130,6 @@ def install_import_hook(module_to_instrument: str, tracer: ExecutionTracer) -> I
     if not to_wrap:
         raise RuntimeError("Cannot find a PathFinder in sys.meta_path")
 
-    hook = InstrumentationFinder(to_wrap, module_to_instrument, tracer)
+    hook = InstrumentationFinder(to_wrap, package_prefixes, tracer)
     sys.meta_path.insert(0, hook)
     return ImportHookContextManager(hook)
