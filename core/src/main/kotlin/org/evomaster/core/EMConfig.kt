@@ -294,6 +294,10 @@ class EMConfig {
         if (testSuiteFileName.contains("-") && outputFormat.isJavaOrKotlin()) {
             throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
         }
+
+        if (seedTestCases && seedTestCasesPath.isNullOrBlank()) {
+            throw IllegalArgumentException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1153,6 +1157,24 @@ class EMConfig {
 
     @Cfg("Only for debugging. Concentrate search on only one single REST endpoint")
     var endpointFocus : String? = null
+
+    @Experimental
+    @Cfg("Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process")
+    var seedTestCases = false
+
+    enum class SeedTestCasesFormat {
+        POSTMAN
+    }
+
+    @Experimental
+    @Cfg("Format of the test cases seeded to EvoMaster")
+    var seedTestCasesFormat = SeedTestCasesFormat.POSTMAN
+
+    @Experimental
+    @FilePath
+    @Cfg("File path where the seeded test cases are located")
+    var seedTestCasesPath : String? = null
+
 
 
     fun timeLimitInSeconds(): Int {
