@@ -11,6 +11,7 @@ EVOMASTER_DRIVER_URL = 'http://127.0.0.1:40101'
 
 controller = Blueprint('controller', __name__, url_prefix='/controller/api')
 
+
 @controller.route('/infoSUT', methods=['GET'])
 def infoSUT():
     r = requests.get(getRedirectUrl())
@@ -18,6 +19,7 @@ def infoSUT():
     res = r.json()
     trace(request.path, response=res)
     return jsonify(res)
+
 
 @controller.route('/runSUT', methods=['PUT'])
 def runSUT():
@@ -27,6 +29,7 @@ def runSUT():
     trace(request.path, params=args)
     return ''
 
+
 @controller.route('/testResults', methods=['GET'])
 def testResults():
     r = requests.get(getRedirectUrl())
@@ -34,6 +37,7 @@ def testResults():
     res = r.json()
     trace(request.path, response=res)
     return jsonify(res)
+
 
 @controller.route('/controllerInfo', methods=['GET'])
 def controllerInfo():
@@ -43,12 +47,14 @@ def controllerInfo():
     trace(request.path, response=res)
     return jsonify(res)
 
+
 @controller.route('/newSearch', methods=['POST'])
 def newSearch():
     r = requests.post(getRedirectUrl())
     r.raise_for_status()
     trace(request.path)
     return ''
+
 
 @controller.route('/newAction', methods=['PUT'])
 def newAction():
@@ -57,6 +63,7 @@ def newAction():
     r.raise_for_status()
     trace(request.path, params=args)
     return ''
+
 
 @controller.route('/databaseCommand', methods=['POST'])
 def databaseCommand():
@@ -67,15 +74,19 @@ def databaseCommand():
     trace(request.path, params=args, response=res)
     return jsonify(res)
 
+
 def getRedirectUrl():
     return f"{EVOMASTER_DRIVER_URL}{request.path}"
 
+
 trace_call = 0
+
 
 if os.path.exists("full_trace.txt"):
     os.remove("full_trace.txt")
 if os.path.exists("trace.txt"):
     os.remove("trace.txt")
+
 
 def trace(path, params=None, response=None):
     global trace_call

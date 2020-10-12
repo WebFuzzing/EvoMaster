@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint
+from flask import Flask
 from evomaster_client.controller.em_controller import controller
 
 app = Flask(__name__)

@@ -1,9 +1,9 @@
 import ast
 
-import astunparse
+# import astunparse
 import astor
 
-from ast_transformer import AstTransformer
+from evomaster_client.instrumentation.ast_transformer import AstTransformer
 
 
 if __name__ == "__main__":
@@ -23,7 +23,8 @@ if __name__ == "__main__":
 
     # Walk tree in order traversing the bodies
     # def walk_body(node, prefix=''):
-    #     print(prefix, "node type: ", node.__class__.__name__, " line no:", node.lineno if hasattr(node, 'lineno') else "unknown")
+    # print(prefix, "node type: ", node.__class__.__name__, " line no:", node.lineno if hasattr(node, 'lineno')
+    #       else "unknown")
     #     if hasattr(node, 'body'):
     #         for subnode in node.body:
     #             walk_body(subnode, prefix + '\t')
@@ -37,7 +38,8 @@ if __name__ == "__main__":
     # Use ast.walk to traverse the tree (not in source code order)
     # for node in ast.walk(my_tree):
     #     if isinstance(node, ast.stmt):
-    #         print("node type: ", node.__class__.__name__, " line no:", node.lineno if hasattr(node, 'lineno') else "unknown")
+    #         print("node type: ", node.__class__.__name__, " line no:", node.lineno if hasattr(node, 'lineno')
+    #               else "unknown")
 
     print("### AST Tree ###")
     # print(astunparse.dump(new_tree))

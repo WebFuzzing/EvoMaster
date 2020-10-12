@@ -32,11 +32,11 @@ class AstTransformer(ast.NodeTransformer):
         # TODO: Replace return(something) with a completing_statement(something, ...)
 
         return [
-            ast.Expr(value = ast.Call(func=ast.Name("entering_statement", ast.Load()),
+            ast.Expr(value=ast.Call(func=ast.Name("entering_statement", ast.Load()),
                      args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
                      keywords=[])),
             node,
-            ast.Expr(value = ast.Call(func=ast.Name("completed_statement", ast.Load()),
+            ast.Expr(value=ast.Call(func=ast.Name("completed_statement", ast.Load()),
                      args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
                      keywords=[])),
         ]

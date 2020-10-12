@@ -1,3 +1,6 @@
+"""
+Provides classes for runtime instrumentation.
+"""
 import ast
 import sys
 from importlib.machinery import SourceFileLoader
@@ -16,15 +19,15 @@ from evomaster_client.instrumentation.execution_tracer import ExecutionTracer
 class InstrumentationFinder(MetaPathFinder):
     """
     A meta path finder which wraps another pathfinder.
-    It receives all import requests and intercepts the ones for the modules that
-    should be instrumented.
+    It receives all import requests and intercepts the ones for the modules
+    that should be instrumented.
     """
 
     def __init__(self, original_pathfinder, package_prefixes, tracer):
         """Wraps the given path finder.
         Args:
-            original_pathfinder: the original pathfinder that is wrapped.
-            module_to_instrument: the name of the module, that should be instrumented.
+            original_pathfinder: the original pathfinder that is wrapped
+            package_prefixes: package prefixes to be instrumented
             tracer: the execution tracer
         """
         self.package_prefixes = package_prefixes
@@ -34,8 +37,8 @@ class InstrumentationFinder(MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
         """Try to find a spec for the given module.
 
-        If the original path finder accepts the request, we take the spec and replace
-        the loader.
+        If the original path finder accepts the request,
+        we take the spec and replace the loader.
 
         Args:
             fullname: The full name of the module
@@ -47,7 +50,9 @@ class InstrumentationFinder(MetaPathFinder):
         if self.should_instrument(fullname):
             spec = self._original_pathfinder.find_spec(fullname, path, target)
             if spec is not None and isinstance(spec.loader, SourceFileLoader):
-                spec.loader = InstrumentationLoader(spec.loader.name, spec.loader.path, self.tracer)
+                spec.loader = InstrumentationLoader(spec.loader.name,
+                                                    spec.loader.path,
+                                                    self.tracer)
                 cached = Path(spec.cached)
                 if cached.exists():
                     cached.unlink()
@@ -55,11 +60,17 @@ class InstrumentationFinder(MetaPathFinder):
         return None
 
     def should_instrument(self, module_name: str) -> bool:
+        """Determine whether the module with the given name
+        should be instrumented.
+
+        Args:
+            module_name (str): name of the module
+
+        Returns:
+            bool: true if the module should be instrumented
         """
-        Determine whether the module with the given name should be instrumented.
-        :param module_name: full name of the module that is about to be imported (e.g. ``xyz.abc``)
-        """
-        return any(module_name.startswith(prefix) for prefix in self.package_prefixes)
+        return any(module_name.startswith(prefix)
+                   for prefix in self.package_prefixes)
 
 
 class InstrumentationLoader(SourceFileLoader):
@@ -83,9 +94,10 @@ class InstrumentationLoader(SourceFileLoader):
         ast.fix_missing_locations(tree)
         # return _call_with_frames_removed(compile, tree, path, 'exec',
         #                                  dont_inherit=True, optimize=_optimize)
-        print (path)
+        print(path)
         print(astor.to_source(tree))
         return compile(tree, path, 'exec')
+
 
 class ImportHookContextManager:
     """A simple context manager for using the import hook."""
@@ -107,7 +119,8 @@ class ImportHookContextManager:
             pass  # already removed
 
 
-def install_import_hook(package_prefixes: List[str], tracer: ExecutionTracer) -> ImportHookContextManager:
+def install_import_hook(package_prefixes: List[str],
+                        tracer: ExecutionTracer) -> ImportHookContextManager:
     """Install the InstrumentationFinder in the meta path.
     Args:
         module_to_instrument: The module that shall be instrumented.

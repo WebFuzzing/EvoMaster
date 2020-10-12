@@ -2,6 +2,7 @@ class AdditionalInfo:
     def __init__(self) -> None:
         self.info = []
 
+
 class ExecutionTracer:
     def __init__(self) -> None:
         self.reset()
