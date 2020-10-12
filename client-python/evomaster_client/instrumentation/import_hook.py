@@ -6,6 +6,7 @@ import sys
 from importlib.machinery import SourceFileLoader
 from importlib.abc import MetaPathFinder
 from importlib.util import decode_source
+from importlib import import_module, reload
 from inspect import isclass
 from pathlib import Path
 from typing import List
@@ -64,8 +65,7 @@ class InstrumentationFinder(MetaPathFinder):
         Returns:
             bool: true if the module should be instrumented
         """
-        return any(module_name.startswith(prefix)
-                   for prefix in self.package_prefixes)
+        return any(module_name.startswith(prefix) for prefix in self.package_prefixes)
 
 
 class InstrumentationLoader(SourceFileLoader):
@@ -82,7 +82,7 @@ class InstrumentationLoader(SourceFileLoader):
         tree = ast.parse(source, filename=path)
         # tree = _call_with_frames_removed(compile, source, path, 'exec', ast.PyCF_ONLY_AST,
         #                                  dont_inherit=True, optimize=_optimize)
-        tree = AstTransformer(module=path).visit(tree)
+        tree = AstTransformer(module=self.name).visit(tree)
         ast.fix_missing_locations(tree)
         # return _call_with_frames_removed(compile, tree, path, 'exec',
         #                                  dont_inherit=True, optimize=_optimize)
@@ -132,6 +132,9 @@ def install_import_hook(package_prefixes: List[str]) -> ImportHookContextManager
 
     if not to_wrap:
         raise RuntimeError("Cannot find a PathFinder in sys.meta_path")
+
+    # Reload evomaster_client (used for development)
+    reload(import_module('evomaster_client'))
 
     hook = InstrumentationFinder(to_wrap, package_prefixes)
     sys.meta_path.insert(0, hook)

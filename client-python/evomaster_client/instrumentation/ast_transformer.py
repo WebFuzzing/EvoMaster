@@ -28,6 +28,7 @@ class AstTransformer(ast.NodeTransformer):
         # TODO: Consider statements that do not need a completed_statement (return, continue, raise, etc.)
         # TODO: Replace return(something) with a completing_statement(something, ...)
 
+        self.statement_counter += 1
         return [
             ast.Expr(value=ast.Call(func=ast.Name("entering_statement", ast.Load()),
                      args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
