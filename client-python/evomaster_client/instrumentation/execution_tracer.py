@@ -1,6 +1,38 @@
+from typing import Sequence, Set
+
+from evomaster_client.instrumentation import objective_naming
+
+
 class AdditionalInfo:
     def __init__(self) -> None:
-        self.info = []
+        self.query_parameters = set()
+        self.headers = set()
+        self.last_executed_statement_stack = []
+        self.no_exception_statement = None
+
+    def push_last_executed_statement(self, last_line: str) -> None:
+        self.no_exception_statement = None
+        self.last_executed_statement_stack.append(last_line)
+
+    def pop_last_executed_statement(self) -> str:
+        statement = self.last_executed_statement_stack.pop()
+        if not self.last_executed_statement_stack:
+            self.no_exception_statement = statement
+        return statement
+
+
+class Action:
+    def __init__(self, index: int, input_variables: Sequence[str]) -> None:
+        self.index = index
+        self.input_variables = input_variables
+
+
+class TargetInfo:
+    def __init__(self, mapped_id: int, descriptive_id: str, value: float, action_index: int):
+        self.mapped_id = mapped_id
+        self.descriptive_id = descriptive_id
+        self.value = value
+        self.action_index = action_index
 
 
 class ExecutionTracer:
@@ -14,233 +46,57 @@ class ExecutionTracer:
         self.additional_info_list = []
         self.additional_info_list.append(AdditionalInfo())
 
-    # static setAction(action: Action) {
-    #     if (action.getIndex() != ExecutionTracer.actionIndex) {
-    #         ExecutionTracer.actionIndex = action.getIndex();
-    #         ExecutionTracer.additionalInfoList.push(new AdditionalInfo());
-    #     }
+    def set_action(self, action: Action) -> None:
+        if action.index != self.action_index:
+            self.action_index = action.index
+            self.additional_info_list.append(AdditionalInfo())
+        if action.input_variables:
+            self.input_variables = action.input_variables
 
-    #     if (action.getInputVariables() && action.getInputVariables().size > 0) {
-    #         ExecutionTracer.inputVariables = action.getInputVariables();
-    #     }
-    # }
+    def mark_last_executed_statement(self, last_line: str) -> None:
+        self.additional_info_list[self.action_index].push_last_executed_statement(last_line)
 
-    # /**
-    #  * Check if the given input represented a tainted value from the test cases.
-    #  * This could be based on static info of the input (eg, according to a precise
-    #  * name convention given by TaintInputName), or dynamic info given directly by
-    #  * the test itself (eg, the test at action can register a list of values to check
-    #  * for)
-    #  */
-    # // public static boolean isTaintInput(String input){
-    # //     return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
-    # // }
+    def completed_last_executed_statement(self, last_line: str) -> None:
+        self.additional_info_list[self.action_index].pop_last_executed_statement()
 
+    def get_number_of_objectives(self, prefix: str = '') -> int:
+        return len([k for k in self.objective_coverage.keys() if k.startsWith(prefix)])
 
-    # // public static TaintType getTaintType(String input){
-    # //
-    # //     if(input == null){
-    # //         return TaintType.NONE;
-    # //     }
-    # //
-    # //     if(isTaintInput(input)){
-    # //         return TaintType.FULL_MATCH;
-    # //     }
-    # //
-    # //     if(TaintInputName.includesTaintInput(input)
-    # //         || inputVariables.stream().anyMatch(v -> input.contains(v))){
-    # //         return TaintType.PARTIAL_MATCH;
-    # //     }
-    # //
-    # //     return TaintType.NONE;
-    # // }
+    def get_number_of_non_covered_objectives(self, prefix: str = '') -> int:
+        return len(self.get_non_covered_objectives(prefix))
 
+    def get_non_covered_objectives(self, prefix: str = '') -> Set[str]:
+        return set(descriptive_id for descriptive_id, target_info in self.objective_coverage.items()
+                   if descriptive_id.startsWith(prefix) and target_info.value < 1)
 
-    # static exposeAdditionalInfoList(): Array<AdditionalInfo> {
-    #     return ExecutionTracer.additionalInfoList;
-    # }
+    def get_value(self, descriptive_id: str) -> float:
+        return self.objective_coverage[descriptive_id].value
 
-    # // public static void addQueryParameter(String param){
-    # //     additionalInfoList.get(actionIndex).addQueryParameter(param);
-    # // }
-    # //
-    # // public static void addHeader(String header){
-    # //     additionalInfoList.get(actionIndex).addHeader(header);
-    # // }
-    # //
-    # // public static void addStringSpecialization(String taintInputName, StringSpecializationInfo info){
-    # //     additionalInfoList.get(actionIndex).addSpecialization(taintInputName, info);
-    # // }
+    def update_objective(self, descriptive_id: str, value: float) -> None:
+        if value < 0 or value > 1:
+            raise ValueError(f'Invalid value: {value}')
+        target_info = TargetInfo(None, descriptive_id, value, self.action_index)
+        previous = self.objective_coverage.get(descriptive_id)
+        if previous:
+            if value > previous.value:
+                self.objective_coverage[descriptive_id] = target_info
+        else:
+            self.objective_coverage[descriptive_id] = target_info
+        # TODO: ObjectiveRecorder.update(id, value)
 
+    def entering_statement(self, file_name: str, line: int, statement: int) -> None:
+        file_id = objective_naming.file_objective_name(file_name)
+        line_id = objective_naming.line_objective_name(file_name, line)
+        statement_id = objective_naming.statement_objective_name(file_name, line, statement)
+        self.update_objective(file_id, 1)
+        self.update_objective(line_id, 1)
+        self.update_objective(statement_id, 0.5)
+        self.mark_last_executed_statement(f"{file_name}_{line}_{statement}")
 
-    # public static markLastExecutedStatement(lastLine: string) {
+    def completed_statement(self, file_name: str, line: int, statement: int) -> None:
+        statement_id = objective_naming.statement_objective_name(file_name, line, statement)
+        self.update_objective(statement_id, 1)
+        self.completed_last_executed_statement(f"{file_name}_{line}_{statement}")
+        # HeuristicsForBooleans.clearLastEvaluation()
 
-    #     /*
-    #         There is a possible issue here: when there is an exception, there
-    #         is no pop of the stmt. So, the "call-stack" until the exception will still
-    #         be saved in this stack, even if computation continues (eg after a try/catch).
-    #         This is possibly a memory leak
-    #      */
-
-    #     ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex]
-    #         .pushLastExecutedStatement(lastLine);
-    # }
-
-
-    # public static completedLastExecutedStatement(lastLine: string) {
-    #     const stmt = ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex].popLastExecutedStatement();
-    #     if (stmt !== lastLine) {
-    #         /*
-    #             actually we cannot have such check. We might end in such situation:
-
-    #             X calls F in non-instrumented framework, which then call Y (both X and Y being of SUT).
-    #             If Y crashes with a catch in F, then X will wrongly pop for Y.
-
-    #             TODO could have such check with a parameter, to have only in the tests
-    #          */
-    #         //throw Error(`Expected to pop ${lastLine} instead of ${stmt}`);
-    #     }
-    # }
-
-    # public static getInternalReferenceToObjectiveCoverage(): Map<String, TargetInfo> {
-    #     return ExecutionTracer.objectiveCoverage;
-    # }
-
-    # /**
-    #  * @return the number of objectives that have been encountered
-    #  * during the test execution
-    #  */
-    # public static getNumberOfObjectives(prefix?: string): number {
-
-    #     if (!prefix) {
-    #         return ExecutionTracer.objectiveCoverage.size;
-    #     }
-
-    #     return Array.from(ExecutionTracer.objectiveCoverage.keys())
-    #         .filter(e => e.startsWith(prefix))
-    #         .length;
-    # }
-
-    # /**
-    #  * Note: only the objectives encountered so far can have
-    #  * been recorded. So, this is a relative value, not based
-    #  * on the code of the whole SUT (just the parts executed so far).
-    #  * Therefore, it is quite useless for binary values (ie 0 or 1),
-    #  * like current implementation of basic line coverage.
-    #  *
-    #  * @param prefix used for string matching of which objectives types
-    #  *               to consider, eg only lines or only branches.
-    #  *               Use "" or {@code null} to pick up everything
-    #  * @return
-    #  */
-    # public static getNumberOfNonCoveredObjectives(prefix: string): number {
-
-    #     return ExecutionTracer.getNonCoveredObjectives(prefix).size;
-    # }
-
-    # public static getNonCoveredObjectives(prefix: string): Set<string> {
-
-    #     return new Set(Array.from(ExecutionTracer.objectiveCoverage.entries())
-    #         .filter(e => !prefix || e[0].startsWith(prefix))
-    #         .filter(e => e[1].value < 1)
-    #         .map(e => e[0])
-    #     );
-    # }
-
-    # public static getValue(id: string): number {
-    #     return ExecutionTracer.objectiveCoverage.get(id).value;
-    # }
-
-    # private static updateObjective(id: string, value: number) {
-    #     if (value < 0 || value > 1) {
-    #         throw new Error("Invalid value " + value + " out of range [0,1]");
-    #     }
-
-    #     /*
-    #         In the same execution, a target could be reached several times,
-    #         so we should keep track of the best value found so far
-    #      */
-    #     if (ExecutionTracer.objectiveCoverage.has(id)) {
-    #         let previous = ExecutionTracer.objectiveCoverage.get(id).value;
-    #         if (value > previous) {
-    #             ExecutionTracer.objectiveCoverage.set(id, new TargetInfo(null, id, value, ExecutionTracer.actionIndex));
-    #         }
-    #     } else {
-    #         ExecutionTracer.objectiveCoverage.set(id, new TargetInfo(null, id, value, ExecutionTracer.actionIndex));
-    #     }
-
-    #     ObjectiveRecorder.update(id, value);
-    # }
-
-    # public static executedReplacedMethod(idTemplate: string, type: ReplacementType, t: Truthness) {
-
-    #     const idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
-    #     const idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, type);
-
-    #     ExecutionTracer.updateObjective(idTrue, t.getOfTrue());
-    #     ExecutionTracer.updateObjective(idFalse, t.getOfFalse());
-    # }
-
-
-    # /**
-    #  *
-    #  * WARNING: here we do differently from Java, as we can not rely on reflection
-    #  * to get unique id for methods.
-    #  *
-    #  * We rather do "statement" coverage, and have a further id for it.
-    #  */
-    # public static enteringStatement(fileName: string, line: number, statementId: number) {
-
-    #     const lineId = ObjectiveNaming.lineObjectiveName(fileName, line);
-    #     const fileId = ObjectiveNaming.fileObjectiveName(fileName);
-    #     const stmtId = ObjectiveNaming.statementObjectiveName(fileName, line, statementId);
-    #     ExecutionTracer.updateObjective(lineId, 1);
-    #     ExecutionTracer.updateObjective(fileId, 1);
-    #     ExecutionTracer.updateObjective(stmtId, 0.5);
-
-
-    #     const lastLine = fileName + "_" + line + "_" + statementId;
-
-    #     ExecutionTracer.markLastExecutedStatement(lastLine);
-    # }
-
-    # public static completedStatement(fileName: string, line: number, statementId: number) {
-
-    #     const stmtId = ObjectiveNaming.statementObjectiveName(fileName, line, statementId);
-    #     ExecutionTracer.updateObjective(stmtId, 1);
-
-    #     const lastLine = fileName + "_" + line + "_" + statementId;
-
-    #     ExecutionTracer.completedLastExecutedStatement(lastLine);
-
-    #     HeuristicsForBooleans.clearLastEvaluation();
-    # }
-
-
-    # /**
-    #  *  Report on whether method calls have been successfully completed.
-    #  *  Failures can happen due to thrown exceptions.
-    #  *
-    #  * @param fileName
-    #  * @param line
-    #  * @param index    as there can be many method calls on same line, need to differentiate them
-    #  * @param completed whether the method call was successfully completed.
-    #  */
-    # public static executingMethod(fileName: string, line: number, index: number, completed: boolean) {
-    #     const id = ObjectiveNaming.successCallObjectiveName(fileName, line, index);
-    #     if (completed) {
-    #         ExecutionTracer.updateObjective(id, 1);
-    #     } else {
-    #         ExecutionTracer.updateObjective(id, 0.5);
-    #     }
-    # }
-
-
-    # public static updateBranch(fileName: string, line: number, branchId: number, t: Truthness) {
-
-    #     const forThen = ObjectiveNaming.branchObjectiveName(fileName, line, branchId, true);
-    #     const forElse = ObjectiveNaming.branchObjectiveName(fileName, line, branchId, false);
-
-    #     ExecutionTracer.updateObjective(forThen, t.getOfTrue());
-    #     ExecutionTracer.updateObjective(forElse, t.getOfFalse());
-    # }
+    # TODO: def update_branch(self, ...)
