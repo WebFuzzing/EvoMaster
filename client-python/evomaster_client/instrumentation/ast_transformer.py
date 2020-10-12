@@ -1,5 +1,9 @@
 import ast
 
+from evomaster_client.instrumentation.objective_naming import (file_objective_name, line_objective_name,
+                                                               statement_objective_name)
+from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorder
+
 
 class AstTransformer(ast.NodeTransformer):
     def __init__(self, module: str):
@@ -8,6 +12,7 @@ class AstTransformer(ast.NodeTransformer):
 
     def visit_Module(self, node):
         self.generic_visit(node)  # visit child nodes
+        ObjectiveRecorder().register_target(file_objective_name(self.module))
         import_node = ast.ImportFrom(module='evomaster_client.instrumentation.injected_functions',
                                      names=[ast.alias(name='*', asname=None)],
                                      level=0)
@@ -22,13 +27,15 @@ class AstTransformer(ast.NodeTransformer):
             print("isBlockStatement. no point in instrumenting it. Recall, we still instrument its content anyway.")
             return node
 
+        self.statement_counter += 1
+        ObjectiveRecorder().register_target(line_objective_name(self.module, node.lineno))
+        ObjectiveRecorder().register_target(statement_objective_name(self.module, node.lineno, self.statement_counter))
+
         # For nodes that were part of a collection of statements (that applies to all statement nodes),
         # the visitor may also return a list of nodes rather than just a single node.
 
         # TODO: Consider statements that do not need a completed_statement (return, continue, raise, etc.)
         # TODO: Replace return(something) with a completing_statement(something, ...)
-
-        self.statement_counter += 1
         return [
             ast.Expr(value=ast.Call(func=ast.Name("entering_statement", ast.Load()),
                      args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
