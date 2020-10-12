@@ -5,7 +5,7 @@ import astor
 
 from evomaster_client.instrumentation.ast_transformer import AstTransformer
 
-
+# TODO: rewrite this as a test module after completing AST transformer with particular statements
 if __name__ == "__main__":
     filename = 'client/controller.py'
 

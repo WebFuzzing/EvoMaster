@@ -1,6 +1,8 @@
 from typing import Sequence, Set
 
 from evomaster_client.instrumentation import objective_naming
+from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorder
+from evomaster_client.instrumentation.util import Singleton
 
 
 class AdditionalInfo:
@@ -35,22 +37,8 @@ class TargetInfo:
         self.action_index = action_index
 
 
-class Singleton(object):
-    _instances = {}
-
-    def __new__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            s = super(Singleton, cls).__new__(cls, *args, **kwargs)
-            s.initialize()
-            cls._instances[cls] = s
-        return cls._instances[cls]
-
-    def initialize(self):
-        pass
-
-
 class ExecutionTracer(Singleton):
-    def initialize(self):
+    def initialize(self) -> None:
         self.reset()
 
     def reset(self) -> None:
@@ -96,7 +84,7 @@ class ExecutionTracer(Singleton):
                 self.objective_coverage[descriptive_id] = target_info
         else:
             self.objective_coverage[descriptive_id] = target_info
-        # TODO: ObjectiveRecorder.update(id, value)
+        ObjectiveRecorder().update(descriptive_id, value)
 
     def entering_statement(self, file_name: str, line: int, statement: int) -> None:
         file_id = objective_naming.file_objective_name(file_name)
