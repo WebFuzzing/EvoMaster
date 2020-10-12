@@ -3,7 +3,6 @@ from importlib import import_module
 import click
 
 from evomaster_client.instrumentation.import_hook import install_import_hook
-from evomaster_client.instrumentation.execution_tracer import ExecutionTracer
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -26,7 +25,7 @@ def run(package_prefix, flask_module, flask_app):
     print(f'flask_module={flask_module}')
     print(f'flask_app={flask_app}')
 
-    with install_import_hook(package_prefix, ExecutionTracer()):
+    with install_import_hook(package_prefix):
         module = import_module(flask_module)
         app = module.__getattribute__(flask_app)
         app.run()

@@ -13,7 +13,6 @@ from typing import List
 import astor
 
 from evomaster_client.instrumentation.ast_transformer import AstTransformer
-from evomaster_client.instrumentation.execution_tracer import ExecutionTracer
 
 
 class InstrumentationFinder(MetaPathFinder):
@@ -23,16 +22,14 @@ class InstrumentationFinder(MetaPathFinder):
     that should be instrumented.
     """
 
-    def __init__(self, original_pathfinder, package_prefixes, tracer):
+    def __init__(self, original_pathfinder, package_prefixes):
         """Wraps the given path finder.
         Args:
             original_pathfinder: the original pathfinder that is wrapped
             package_prefixes: package prefixes to be instrumented
-            tracer: the execution tracer
         """
         self.package_prefixes = package_prefixes
         self._original_pathfinder = original_pathfinder
-        self.tracer = tracer
 
     def find_spec(self, fullname, path=None, target=None):
         """Try to find a spec for the given module.
@@ -50,9 +47,7 @@ class InstrumentationFinder(MetaPathFinder):
         if self.should_instrument(fullname):
             spec = self._original_pathfinder.find_spec(fullname, path, target)
             if spec is not None and isinstance(spec.loader, SourceFileLoader):
-                spec.loader = InstrumentationLoader(spec.loader.name,
-                                                    spec.loader.path,
-                                                    self.tracer)
+                spec.loader = InstrumentationLoader(spec.loader.name, spec.loader.path)
                 cached = Path(spec.cached)
                 if cached.exists():
                     cached.unlink()
@@ -76,14 +71,11 @@ class InstrumentationFinder(MetaPathFinder):
 class InstrumentationLoader(SourceFileLoader):
     """A loader that instruments the module after execution."""
 
-    def __init__(self, fullname, path, tracer: ExecutionTracer):
+    def __init__(self, fullname, path):
         super().__init__(fullname, path)
-        self._tracer = tracer
 
     def exec_module(self, module):
-        # self._tracer.reset()
         super().exec_module(module)
-        # self._tracer.store_import_trace()
 
     def source_to_code(self, data, path, *, _optimize=-1):
         source = decode_source(data)
@@ -119,12 +111,10 @@ class ImportHookContextManager:
             pass  # already removed
 
 
-def install_import_hook(package_prefixes: List[str],
-                        tracer: ExecutionTracer) -> ImportHookContextManager:
+def install_import_hook(package_prefixes: List[str]) -> ImportHookContextManager:
     """Install the InstrumentationFinder in the meta path.
     Args:
         module_to_instrument: The module that shall be instrumented.
-        tracer: The tracer where the instrumentation should report its data.
     Returns:
         a context manager which can be used to uninstall the hook.
     Raises:
@@ -143,6 +133,6 @@ def install_import_hook(package_prefixes: List[str],
     if not to_wrap:
         raise RuntimeError("Cannot find a PathFinder in sys.meta_path")
 
-    hook = InstrumentationFinder(to_wrap, package_prefixes, tracer)
+    hook = InstrumentationFinder(to_wrap, package_prefixes)
     sys.meta_path.insert(0, hook)
     return ImportHookContextManager(hook)
