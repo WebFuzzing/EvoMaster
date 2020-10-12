@@ -83,12 +83,9 @@ class DisjunctionRxGene(
 
         if (!terms.containsAll(internalGenes))
             throw IllegalArgumentException("mismatched internal genes")
-        /**
-         * terms might be increased?
-         */
+
         val impacts = internalGenes.map {
-            if(terms.indexOf(it) < additionalGeneMutationInfo.impact.termsImpact.size) additionalGeneMutationInfo.impact.termsImpact[terms.indexOf(it)]
-            else ImpactUtils.createGeneImpact(it, it.name)
+            additionalGeneMutationInfo.impact.termsImpact[terms.indexOf(it)]
         }
 
         val selected = mwc.selectSubGene(

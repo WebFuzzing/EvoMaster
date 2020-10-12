@@ -63,9 +63,9 @@ class ImpactUtils {
                 is RegexGene -> RegexGeneImpact(id, gene)
                 is DisjunctionListRxGene -> DisjunctionListRxGeneImpact(id, gene)
                 is DisjunctionRxGene -> DisjunctionRxGeneImpact(id, gene)
+                is QuantifierRxGene -> QuantifierRxGeneImpact(id, gene)
                 is RxAtom -> RxAtomImpact(id)
                 is RxTerm -> RxTermImpact(id)
-
                 else ->{
                     GeneImpact(id)
                 }
@@ -76,7 +76,7 @@ class ImpactUtils {
         private const val SEPARATOR_GENE = ";"
         private const val SEPARATOR_GENE_WITH_TYPE = ">"
 
-        fun generateGeneId(action: Action, gene : Gene) : String = "${action.getName()}$SEPARATOR_ACTION_TO_GENE${generateGeneId(gene)}"
+        fun generateGeneId(action: Action, gene : Gene) : String = "${action.getName()}$SEPARATOR_ACTION_TO_GENE${generateGeneId(gene)}$SEPARATOR_ACTION_TO_GENE${action.seeGenes().indexOf(gene)}"
 
         fun extractActionName(geneId : String) : String?{
             if (!geneId.contains(SEPARATOR_ACTION_TO_GENE)) return null
@@ -94,7 +94,7 @@ class ImpactUtils {
                 return generateGeneId(it, gene)
             }
             individual.seeActions().find { a-> a.seeGenes().contains(gene) }?.let {
-                return generateGeneId(it, gene)
+                return generateGeneId(action = it, gene = gene)
             }
             return generateGeneId(gene)
         }

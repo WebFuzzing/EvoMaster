@@ -23,9 +23,6 @@ public class TestabilityEMTest extends SpringTestBase {
         SpringTestBase.initClass(new TestabilityController());
     }
 
-    /**
-     * TODO less budget(i.e., 8K vs 15k) has more chances to pass the test
-     */
     @Test
     public void testRunEM() throws Throwable {
 
@@ -36,12 +33,27 @@ public class TestabilityEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
                 "org.bar.TestabilityEM",
-                8_000,
+                15_000,
                 true,
                 (args) -> {
 
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
+
+                    args.add("--enableTrackEvaluatedIndividual");
+                    args.add("false");
+
+                    args.add("--weightBasedMutationRate");
+                    args.add("false");
+
+                    args.add("--adaptiveGeneSelectionMethod");
+                    args.add("NONE");
+
+                    args.add("--archiveGeneMutation");
+                    args.add("NONE");
+
+                    args.add("--probOfArchiveMutation");
+                    args.add("0.0");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
