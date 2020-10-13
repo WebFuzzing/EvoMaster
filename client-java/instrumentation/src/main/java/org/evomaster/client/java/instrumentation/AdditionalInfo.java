@@ -1,13 +1,11 @@
 package org.evomaster.client.java.instrumentation;
 
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -23,7 +21,7 @@ public class AdditionalInfo implements Serializable {
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-    private Set<String> queryParameters = new CopyOnWriteArraySet<>();
+    private final Set<String> queryParameters = new CopyOnWriteArraySet<>();
 
 
     /**
@@ -33,12 +31,12 @@ public class AdditionalInfo implements Serializable {
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-    private Set<String> headers = new CopyOnWriteArraySet<>();
+    private final Set<String> headers = new CopyOnWriteArraySet<>();
 
     /**
      * Map from taint input name to string specializations for it
      */
-    private Map<String, Set<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
+    private final Map<String, Set<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
 
     private static class StatementDescription implements Serializable{
         public final String line;
@@ -57,8 +55,14 @@ public class AdditionalInfo implements Serializable {
      *
      * We need to use a stack to handle method call invocations, as we can know when a statement
      * starts, but not so easily when it ends.
+     * For example:
+     * foo(bar(), x.npe)
+     * here, if x is null, we would end up wrongly marking the last line in bar() as last-statement,
+     * whereas it should be the one for foo()
+     *
+     * Furthermore, we need a stack per execution thread, based on their name.
      */
-    private Deque<StatementDescription> lastExecutedStatementStack = new ArrayDeque<>();
+    private final Map<String, Deque<StatementDescription>> lastExecutedStatementStacks = new ConcurrentHashMap<>();
 
     /**
      * In case we pop all elements from stack, keep track of last one separately.
@@ -79,8 +83,9 @@ public class AdditionalInfo implements Serializable {
      * Reasons: does not change (DTO classes are static), and quite expensive
      * to send at each action evaluation
      */
-    private Set<String> parsedDtoNames = new CopyOnWriteArraySet<>();
+    private final Set<String> parsedDtoNames = new CopyOnWriteArraySet<>();
 
+    private String lastExecutingThread = null;
 
     public Set<String> getParsedDtoNamesView(){
         return Collections.unmodifiableSet(parsedDtoNames);
@@ -136,35 +141,61 @@ public class AdditionalInfo implements Serializable {
 
     public String getLastExecutedStatement() {
 
-        if(lastExecutedStatementStack.isEmpty()){
+//        if(lastExecutedStatementStacks.values().stream().allMatch(s -> s.isEmpty())){
+        /*
+            TODO: not super-sure about this... we could have several threads in theory, but hard to
+            really say if the last one executing a statement of the SUT is always the one we are really
+            interested into... would need to check if there are cases in which this is not the case
+         */
+
+        if(lastExecutingThread == null || lastExecutedStatementStacks.get(lastExecutingThread).isEmpty()){
             if(noExceptionStatement == null){
                 return null;
             }
             return noExceptionStatement.line;
         }
 
-        StatementDescription current = lastExecutedStatementStack.peek();
+        Deque<StatementDescription> stack = lastExecutedStatementStacks.get(lastExecutingThread);
+        StatementDescription current = stack.peek(); //WARNING this is not thread-safe... but hopefully should not be a problem
         return current.line;
     }
 
     public void pushLastExecutedStatement(String lastLine, String lastMethod) {
 
+        String key = getThreadIdentifier();
+        lastExecutingThread = key;
+        lastExecutedStatementStacks.putIfAbsent(key, new ArrayDeque<>());
+        Deque<StatementDescription> stack = lastExecutedStatementStacks.get(key);
+
         noExceptionStatement = null;
 
         StatementDescription statement = new StatementDescription(lastLine, lastMethod);
-        StatementDescription current = lastExecutedStatementStack.peek();
+        StatementDescription current = stack.peek();
 
         //if some method, then replace top of stack
         if(current != null && lastMethod.equals(current.method)){
-            lastExecutedStatementStack.pop();
+            stack.pop();
         }
 
-        lastExecutedStatementStack.push(statement);
+        stack.push(statement);
+    }
+
+    private String getThreadIdentifier() {
+        return "" + Thread.currentThread().getId();
     }
 
     public void popLastExecutedStatement(){
-        StatementDescription statementDescription = lastExecutedStatementStack.pop();
-        if(lastExecutedStatementStack.isEmpty()){
+
+        String key = getThreadIdentifier();
+        Deque<StatementDescription> stack = lastExecutedStatementStacks.get(key);
+
+        if(stack == null || stack.isEmpty()){
+            throw new IllegalStateException("[ERROR] EvoMaster: invalid stack pop on thread " + key);
+        }
+
+        StatementDescription statementDescription = stack.pop();
+
+        if(stack.isEmpty()){
             noExceptionStatement = statementDescription;
         }
     }
