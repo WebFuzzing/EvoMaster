@@ -1173,7 +1173,7 @@ class EMConfig {
     @Experimental
     @FilePath
     @Cfg("File path where the seeded test cases are located")
-    var seedTestCasesPath : String? = null
+    var seedTestCasesPath : String = "postman.postman_collection.json"
 
 
 
