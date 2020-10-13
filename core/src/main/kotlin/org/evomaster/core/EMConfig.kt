@@ -103,7 +103,8 @@ class EMConfig {
         class ConfigDescription(
                 val text: String,
                 val constraints: String,
-                val enumValues: String,
+                val enumExperimentalValues: String,
+                val enumValidValues: String,
                 val experimental: Boolean
         ) {
             override fun toString(): String {
@@ -111,9 +112,15 @@ class EMConfig {
                 if (constraints.isNotBlank()) {
                     description += " [Constraints: $constraints]."
                 }
-                if (enumValues.isNotBlank()) {
-                    description += " [Values: $enumValues]."
+                if (enumValidValues.isNotBlank()) {
+                    description += " [Values: $enumValidValues]."
                 }
+                if (enumExperimentalValues.isNotBlank()) {
+                    description += " [Experimental Values: $enumExperimentalValues]."
+                }
+
+
+
 
                 if (experimental) {
                     /*
@@ -167,22 +174,22 @@ class EMConfig {
                 }
             }
 
-            var enumValues = ""
-
+            var experimentalValues =""
+            var validValues = ""
             val returnType = m.returnType.javaType as Class<*>
 
             if (returnType.isEnum) {
                 val elements = returnType.getDeclaredMethod("values")
                         .invoke(null) as Array<*>
-
-                enumValues = elements.joinToString(", ")
+                val experimentElements= elements.filter{ it is WithExperimentalOptions && it.isExperimental()}
+                val validElements= elements.filter{ it !is WithExperimentalOptions || !it.isExperimental()}
+                experimentalValues = experimentElements.joinToString(", ")
+                validValues = validElements.joinToString(", ")
             }
-
-            var description = "$text$constraints$enumValues"
 
             val experimental = (m.annotations.find { it is Experimental } as? Experimental)
 
-            val cd = ConfigDescription(text, constraints, enumValues, experimental != null)
+            val cd = ConfigDescription(text, constraints, experimentalValues ,validValues, experimental != null)
 
             return cd
         }
@@ -622,11 +629,18 @@ class EMConfig {
     @Cfg("The algorithm used to generate test cases")
     var algorithm = Algorithm.MIO
 
+    /**
+    * Workaround for issues with annotations that can not be applied on ENUM values,
+    * like @Experimental
+    * */
+    interface WithExperimentalOptions{
+        fun isExperimental() : Boolean
+    }
 
-    enum class ProblemType {
-        REST,
-        @Experimental
-        WEB
+    enum class ProblemType(private val experimental: Boolean) : WithExperimentalOptions {
+        REST(experimental = false),
+        WEB(experimental = true);
+        override fun isExperimental() = experimental
     }
 
     @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API")
