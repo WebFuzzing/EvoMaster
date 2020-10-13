@@ -52,8 +52,3 @@ class AstTransformer(ast.NodeTransformer):
             # TODO: review if different visitors per statement type are needed
             return self.visit_Statement(node)
         return super().visit(node)
-
-    def targetsInfo(self):
-        print("### TARGETS INFO ###")
-        for target in self.targets:
-            print(target)

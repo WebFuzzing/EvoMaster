@@ -19,7 +19,6 @@ if __name__ == "__main__":
 
     t = AstTransformer(filename)
     new_tree = t.visit(my_tree)
-    t.targetsInfo()
 
     # Walk tree in order traversing the bodies
     # def walk_body(node, prefix=''):
