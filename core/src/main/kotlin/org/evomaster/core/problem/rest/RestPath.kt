@@ -295,4 +295,40 @@ class RestPath(path: String) {
     fun getElements() :List<Map<String, Boolean>>{
         return elements.map { it.tokens.map { t->Pair(t.name, t.isParameter) }.toMap() }
     }
+
+    /**
+     * Checks whether a resolved path matches the RestPath. The type of the path
+     * parameters are not considered for the matching
+     * For example:
+     *
+     * /foo/bar/5
+     *
+     * matches the path
+     *
+     * /foo/bar/{id}
+     */
+    fun matches(resolvedPath: String): Boolean {
+        val resolvedPathElements = resolvedPath
+                .split('/')
+                .filter { !it.isBlank() }
+        val elementsToMatch = mutableListOf<String>()
+
+        if (elements.size == resolvedPathElements.size) {
+            elements.forEach { e ->
+                elementsToMatch.add("/")
+                e.tokens.forEach { t ->
+                    if (t.isParameter)
+                        elementsToMatch.add(".*")
+                    else
+                        elementsToMatch.add(t.name)
+                }
+            }
+
+            val matchExpression = Regex("^" + elementsToMatch.joinToString("") + "$")
+            if (resolvedPath.matches(matchExpression))
+                return true
+        }
+
+        return false
+    }
 }

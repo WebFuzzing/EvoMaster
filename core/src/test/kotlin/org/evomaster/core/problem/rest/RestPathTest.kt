@@ -236,4 +236,49 @@ internal class RestPathTest{
 
         assertEquals("/x%20+%20y?a=k+%2B+w", uri)
     }
+
+    @Test
+    fun testMatchResolvedPath(){
+        val path = RestPath("/x/{y}/z")
+
+        val resolvedPath = "/x/example/z"
+
+        assertTrue(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testMatchResolvedPathCompound(){
+        val path = RestPath("/x/{y}-{anotherParam}/z")
+
+        val resolvedPath = "/x/example-2/z"
+
+        assertTrue(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testNotMatchResolvedPath(){
+        val path = RestPath("/x/y")
+
+        val resolvedPath = "/x/y/z"
+
+        assertFalse(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testNotMatchResolvedPathWithParam(){
+        val path = RestPath("/x/y/{param}")
+
+        val resolvedPath = "/x/error/param"
+
+        assertFalse(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testNotMatchResolvedPathCompound(){
+        val path = RestPath("/x/{y}-{anotherParam}/z")
+
+        val resolvedPath = "/x/example/z"
+
+        assertFalse(path.matches(resolvedPath))
+    }
 }
