@@ -4,7 +4,6 @@ import org.evomaster.core.EMConfig
 import java.io.File
 import java.nio.charset.Charset
 import kotlin.reflect.KMutableProperty
-import kotlin.reflect.full.valueParameters
 import kotlin.reflect.jvm.javaType
 
 /**
@@ -178,18 +177,17 @@ object ConfigToMarkdown {
         if(description.constraints.isNotBlank()){
             buffer.append(" *Constraints*: `${description.constraints}`.")
         }
-        if(description.enumValues.isNotBlank()){
-            if (description.experimentalValues.isNotBlank())
-            {
-                buffer.append(" *Valid values*: `${description.validValues}`.")
-                buffer.append(" *Experimental values*: `${description.experimentalValues}`.")
-            }
-            else
-            {
-                buffer.append(" *Valid values*: `${description.enumValues}`.")
-            }
 
+        if (description.enumValidValues.isNotBlank()) {
+            buffer.append(" *Valid values*: `${description.enumValidValues}`.")
+          }
+
+        if (description.enumExperimentalValues.isNotBlank()) {
+            buffer.append(" *Experimental values*: `${description.enumExperimentalValues}`.")
         }
+
+
+
         buffer.append(" *Default value*: `$default`.")
 
 //        buffer.append("</td></tr>")
