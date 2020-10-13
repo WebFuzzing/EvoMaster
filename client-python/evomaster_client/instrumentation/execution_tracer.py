@@ -1,4 +1,4 @@
-from typing import Sequence, Set
+from typing import Sequence, Set, Mapping
 
 from evomaster_client.instrumentation import objective_naming
 from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorder
@@ -42,7 +42,7 @@ class ExecutionTracer(Singleton):
         self.reset()
 
     def reset(self) -> None:
-        self.objective_coverage = {}
+        self.objective_coverage: Mapping[str, TargetInfo] = {}
         self.action_index = 0
         self.input_variables = set()
         self.additional_info_list = []
