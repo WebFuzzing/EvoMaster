@@ -178,7 +178,7 @@ class EMConfig {
                         .invoke(null) as Array<*>
                 enumValues = elements.joinToString(", ")
                val experimentElements= elements.filter{ it is WithExperimentalOptions && it.isExperimental()}
-                val validElements= elements.filter{ it is WithExperimentalOptions && !it.isExperimental()}
+                val validElements= elements.filter{ it !is WithExperimentalOptions || !it.isExperimental()}
                 experimentalValues = experimentElements.joinToString(", ")
                 validValues = validElements.joinToString(", ")
             }
