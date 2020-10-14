@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation;
 
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.Serializable;
 import java.util.*;
@@ -148,15 +149,23 @@ public class AdditionalInfo implements Serializable {
             interested into... would need to check if there are cases in which this is not the case
          */
 
-        if(lastExecutingThread == null || lastExecutedStatementStacks.get(lastExecutingThread).isEmpty()){
+        Deque<StatementDescription> stack = null;
+        if(lastExecutingThread != null){
+            stack = lastExecutedStatementStacks.get(lastExecutingThread);
+        }
+
+        if(lastExecutingThread == null || stack == null || stack.isEmpty()){
             if(noExceptionStatement == null){
                 return null;
             }
             return noExceptionStatement.line;
         }
 
-        Deque<StatementDescription> stack = lastExecutedStatementStacks.get(lastExecutingThread);
-        StatementDescription current = stack.peek(); //WARNING this is not thread-safe... but hopefully should not be a problem
+        StatementDescription current = stack.peek();
+        if(current == null){
+            //could happen due to multi-threading
+            return null;
+        }
         return current.line;
     }
 
@@ -190,7 +199,17 @@ public class AdditionalInfo implements Serializable {
         Deque<StatementDescription> stack = lastExecutedStatementStacks.get(key);
 
         if(stack == null || stack.isEmpty()){
-            throw new IllegalStateException("[ERROR] EvoMaster: invalid stack pop on thread " + key);
+            //throw new IllegalStateException("[ERROR] EvoMaster: invalid stack pop on thread " + key);
+            SimpleLogger.warn("EvoMaster instrumentation was left in an inconsistent state." +
+                    " This could happen if you have threads executing business logic in your instrumented" +
+                    " classes after an action is completed (e.g., an HTTP call)." +
+                    " This is not a problem, as long as this warning appears only seldom in the logs.");
+            /*
+                This problem should not really happen in SpringBoot applications, but for example
+                it does happen in LanguageTool, as it handles the HTTP connections manually in
+                the business logic
+             */
+            return;
         }
 
         StatementDescription statementDescription = stack.pop();
