@@ -24,6 +24,7 @@ import dk.brics.automaton.Automaton;
 import dk.brics.automaton.RegExp;
 import dk.brics.automaton.State;
 import dk.brics.automaton.Transition;
+import org.evomaster.client.java.utils.SimpleLogger;
 import org.jgrapht.DirectedGraph;
 import org.jgrapht.alg.CycleDetector;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -251,9 +252,21 @@ public class RegexDistanceUtils {
         if (!isSupportedRegex(regex)) {
             return getDefaultDistance(arg, regex);
         }
-        RegexGraph graph = new RegexGraph(arg, regex);
+        RegexGraph graph;
+        try {
+            graph = new RegexGraph(arg, regex);
+        }catch (Exception e){
+            SimpleLogger.uniqueWarn("Failed to build graph for regex: " + regex);
+            return getDefaultDistance(arg, regex);
+        }
         CostMatrix matrix = new CostMatrix();
-        return matrix.calculateStandardCost(graph);
+
+        try {
+            return matrix.calculateStandardCost(graph);
+        }catch (Exception e){
+            SimpleLogger.uniqueWarn("Failed to compute distance cost for regex: " + regex);
+            return getDefaultDistance(arg, regex);
+        }
     }
 
     private static int getDefaultDistance(String arg, String regex) {
