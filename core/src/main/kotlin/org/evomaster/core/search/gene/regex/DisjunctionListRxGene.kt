@@ -150,7 +150,7 @@ class DisjunctionListRxGene(
         else listOf(this).plus(disjunctions.flatMap { it.flatView(excludePredicate) })
     }
 
-    override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() * PROB_NEXT + 1
+    override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() + 1
 
     override fun innerGene(): List<Gene> = disjunctions
 
