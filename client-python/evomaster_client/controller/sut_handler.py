@@ -5,13 +5,16 @@ from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorde
 
 
 class SutHandler:
+    def get_url(self):
+        raise NotImplementedError
+
     def start_sut(self):
         raise NotImplementedError
 
     def stop_sut(self):
         raise NotImplementedError
 
-    def reset_sut(self):
+    def reset_sut_state(self):
         raise NotImplementedError
 
     def setup_for_generated_test(self):

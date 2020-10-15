@@ -1,6 +1,7 @@
 """EvoMaster controller used to connect with the core."""
 
-from flask import Blueprint
+from flask import Blueprint, request, jsonify, abort
+from distutils.util import strtobool
 
 from evomaster_client.controller.sut_handler import SutHandler
 
@@ -11,7 +12,7 @@ def controller(sut_handler: SutHandler) -> Blueprint:
     # TODO: remove this (used for testing)
     @controller.route('/testStartSut', methods=['GET'])
     def testStartSut():
-        print('Starting SUT PLUS...')
+        print('Starting SUT...')
         sut_handler.start_sut()
         return ''
 
@@ -24,27 +25,71 @@ def controller(sut_handler: SutHandler) -> Blueprint:
 
     @controller.route('/infoSUT', methods=['GET'])
     def infoSUT():
-        raise NotImplementedError()
+        sut_info = {
+            'isSutRunning': sut_handler.is_sut_running(),
+            'baseUrlOfSUT': sut_handler.get_url(),
+            'infoForAuthentication': sut_handler.get_info_for_authentication(),
+            'defaultOutputFormat': sut_handler.get_preferred_output_format(),
+            'restProblem': sut_handler.get_problem_info(),
+            'unitsInfoDto': sut_handler.get_units_info_dto()
+        }
+        return jsonify({'data': sut_info})
 
     @controller.route('/runSUT', methods=['PUT'])
     def runSUT():
-        raise NotImplementedError()
+        args = request.json
+        if not args:
+            abort(400, {'error': 'No provided JSON payload'})
+        if 'run' not in args:
+            abort(400, {'error': "Invalid JSON: 'run' field is required"})
+        run = bool(strtobool(args.get('run', 'false')))
+        reset_state = 'resetState' in args and bool(strtobool(args.get('resetState', 'false')))
+        if run:
+            sut_handler.start_sut()
+            # TODO: handle errors on start_sut
+            if reset_state:
+                sut_handler.reset_sut_state()
+                sut_handler.new_test()
+        else:
+            if reset_state:
+                abort(400, {'error': 'Invalid JSON: cannot reset state and stop service at same time'})
+            sut_handler.stop_sut()
+        return '', 204
 
     @controller.route('/testResults', methods=['GET'])
     def testResults():
-        raise NotImplementedError()
+        ids = set(int(_id) for _id in request.args.get('ids', '').split(','))
+        target_infos = sut_handler.get_target_infos(ids)
+        if not target_infos:
+            abort(500, {'error': f"Failed to collect target information for {len(ids)} ids"})
+        additional_infos = sut_handler.get_additional_info_list()
+        if not additional_infos:
+            abort(500, {'error': 'Failed to collect additional info'})
+        test_results = {
+            'targets': [ti.to_dto() for ti in target_infos],
+            'additionalInfoList': sut_handler.get_additional_info_list,
+            'extraHeuristics': [ai.to_dto() for ai in additional_infos],
+        }
+        return jsonify({'data': test_results})
 
     @controller.route('/controllerInfo', methods=['GET'])
     def controllerInfo():
-        raise NotImplementedError()
+        controller_info = {
+            'fullName': sut_handler.__class__.__name__,
+            'isInstrumentationOn': sut_handler.is_instrumentation_activated()
+        }
+        return jsonify({'data': controller_info})
 
     @controller.route('/newSearch', methods=['POST'])
     def newSearch():
-        raise NotImplementedError()
+        sut_handler.new_search()
+        return '', 201
 
     @controller.route('/newAction', methods=['PUT'])
     def newAction():
-        raise NotImplementedError()
+        if any(arg not in request.json for arg in ['index', 'inputVariables']):
+            abort(400)
+        sut_handler.new_action(request.json)
 
     @controller.route('/databaseCommand', methods=['POST'])
     def databaseCommand():

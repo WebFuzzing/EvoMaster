@@ -22,6 +22,19 @@ class AdditionalInfo:
             self.no_exception_statement = statement
         return statement
 
+    def get_last_executed_statement(self) -> str:
+        if self.last_executed_statement_stack:
+            return self.last_executed_statement_stack[-1]
+        else:
+            return self.no_exception_statement
+
+    def to_dto(self):
+        return {
+            'queryParameters': self.query_parameters,
+            'headers': self.headers,
+            'lastExecutedStatement': self.get_last_executed_statement()
+        }
+
 
 class Action:
     def __init__(self, index: int, input_variables: Sequence[str]) -> None:
@@ -35,6 +48,14 @@ class TargetInfo:
         self.descriptive_id = descriptive_id
         self.value = value
         self.action_index = action_index
+
+    def to_dto(self):
+        return {
+            'id': self.mapped_id,
+            'value': self.value,
+            'descriptiveId': self.descriptive_id,
+            'actionIndex': self.action_index
+        }
 
 
 class ExecutionTracer(Singleton):

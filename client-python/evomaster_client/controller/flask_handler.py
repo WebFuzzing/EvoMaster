@@ -5,6 +5,9 @@ from werkzeug.serving import make_server
 from evomaster_client.controller.sut_handler import SutHandler
 from evomaster_client.instrumentation.import_hook import install_import_hook
 
+HOST = '127.0.0.1'
+PORT = 5001
+
 
 class ServerThread(threading.Thread):
     def __init__(self, app):
@@ -12,7 +15,7 @@ class ServerThread(threading.Thread):
         self.app = app
 
     def run(self):
-        self.srv = make_server(host='127.0.0.1', port=5001, app=self.app)
+        self.srv = make_server(host=HOST, port=PORT, app=self.app)
         self.ctx = self.app.app_context()
         self.ctx.push()
         self.srv.serve_forever()
@@ -40,24 +43,44 @@ class FlaskHandler(SutHandler):
             app = module.__getattribute__(self.flask_app)
             return app
 
+    def get_url(self):
+        return f"{HOST}:{PORT}"
+
     def start_sut(self):
-        if self.server:
+        if self.is_sut_running():
             print('server is running')
             return
         self.server = ServerThread(self.app)
         self.server.start()
 
     def stop_sut(self):
-        if not self.server:
+        if not self.is_sut_running():
             print('server is not running')
             return
         # Server will stop after the next request. TODO: is there a way to force it?
         self.server.shutdown()
         self.server = None
 
-    def reset_sut(self):
-        self.stop_sut()
-        self.start_sut()
+    def reset_sut_state(self):
+        pass
 
     def setup_for_generated_test(self):
-        raise NotImplementedError
+        pass
+
+    def get_info_for_authentication(self):
+        # TODO: must be an argument
+        return []
+
+    def get_preferred_output_format(self):
+        # TODO: must be an argument
+        return 'JAVA_JUNIT_5'
+
+    def is_sut_running(self):
+        return bool(self.server)
+
+    def get_problem_info(self):
+        # TODO: must be an argument
+        return {
+            'swaggerJsonUrl': self.get_url(),
+            'endpointsToSkip': []
+        }
