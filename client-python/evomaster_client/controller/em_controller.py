@@ -75,7 +75,7 @@ def controller(sut_handler: SutHandler) -> Blueprint:
     @controller.route('/controllerInfo', methods=['GET'])
     def controllerInfo():
         controller_info = {
-            'fullName': sut_handler.__class__.__name__,
+            'fullName': sut_handler.__class__.__module__ + '.' + sut_handler.__class__.__name__,
             'isInstrumentationOn': sut_handler.is_instrumentation_activated()
         }
         return jsonify({'data': controller_info})
