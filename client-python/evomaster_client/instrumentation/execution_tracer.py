@@ -30,8 +30,8 @@ class AdditionalInfo:
 
     def to_dto(self):
         return {
-            'queryParameters': self.query_parameters,
-            'headers': self.headers,
+            'queryParameters': list(self.query_parameters),
+            'headers': list(self.headers),
             'lastExecutedStatement': self.get_last_executed_statement()
         }
 
@@ -56,6 +56,10 @@ class TargetInfo:
             'descriptiveId': self.descriptive_id,
             'actionIndex': self.action_index
         }
+
+    @staticmethod
+    def not_reached(mapped_id: int):
+        return TargetInfo(mapped_id=mapped_id, descriptive_id=None, value=0.0, action_index=-1)
 
 
 class ExecutionTracer(Singleton):

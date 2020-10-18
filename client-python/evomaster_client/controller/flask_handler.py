@@ -6,7 +6,7 @@ from evomaster_client.controller.sut_handler import SutHandler
 from evomaster_client.instrumentation.import_hook import install_import_hook
 
 HOST = '127.0.0.1'
-PORT = 5001
+PORT = 5000
 
 
 class ServerThread(threading.Thread):
@@ -44,7 +44,7 @@ class FlaskHandler(SutHandler):
             return app
 
     def get_url(self):
-        return f"{HOST}:{PORT}"
+        return f'http://{HOST}:{PORT}'
 
     def start_sut(self):
         if self.is_sut_running():
@@ -81,6 +81,6 @@ class FlaskHandler(SutHandler):
     def get_problem_info(self):
         # TODO: must be an argument
         return {
-            'swaggerJsonUrl': self.get_url(),
+            'swaggerJsonUrl': self.get_url() + '/swagger.json',
             'endpointsToSkip': []
         }

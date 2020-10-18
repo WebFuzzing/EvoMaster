@@ -1,6 +1,6 @@
 from typing import Set
 
-from evomaster_client.instrumentation.execution_tracer import ExecutionTracer, Action
+from evomaster_client.instrumentation.execution_tracer import ExecutionTracer, Action, TargetInfo
 from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorder
 
 
@@ -41,7 +41,7 @@ class SutHandler:
 
     def get_units_info_dto(self):
         return {
-            'unitNames': ObjectiveRecorder().units_info.unit_names,
+            'unitNames': list(ObjectiveRecorder().units_info.unit_names),
             'numberOfLines': ObjectiveRecorder().units_info.lines_count,
             'numberOfBranches': ObjectiveRecorder().units_info.branch_count
         }
@@ -66,8 +66,16 @@ class SutHandler:
         for mapped_id in ids:
             descriptive_id = ObjectiveRecorder().get_descriptive_id(mapped_id)
             # TODO: review what's the purpose of withMappedId and withNoDescriptiveId ?
-            target_infos.append(objectives[descriptive_id])
+            t = objectives.get(descriptive_id)
+            if t:
+                t.mapped_id = mapped_id
+                t.descriptive_id = None
+            else:
+                t = TargetInfo.not_reached(mapped_id)
+            target_infos.append(t)
         # If new targets were found, we add them even if not requested by EM
         for descriptive_id in ObjectiveRecorder().first_time_encountered:
-            target_infos.append(objectives[descriptive_id])
+            t = objectives[descriptive_id]
+            t.mapped_id = ObjectiveRecorder().get_mapped_id(descriptive_id)
+            target_infos.append(t)
         return target_infos
