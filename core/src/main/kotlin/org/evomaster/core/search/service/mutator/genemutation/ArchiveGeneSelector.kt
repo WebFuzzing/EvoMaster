@@ -49,7 +49,6 @@ class ArchiveGeneSelector {
 
         calculateWeightByArchive(genesToMutate, map, geneImpacts, targets)
 
-        //FIXME man tmp
         ArchiveMutationUtils.saveWeight(
                 config = config,
                 map = map,
@@ -72,7 +71,6 @@ class ArchiveGeneSelector {
         val method = decideArchiveGeneSelectionMethod()
         if (method.adaptive)
             throw IllegalArgumentException("the decided method should be a fixed method")
-//        mutatedGenes?.geneSelectionStrategy = method
 
         return impactBasedOnWeights(impacts, method, targets)
     }
@@ -247,8 +245,6 @@ class ArchiveGeneSelector {
         val text = "$index,${checkedTargets.joinToString("-")},${targetsInfo.filterValues { it.value >=0 }.keys.joinToString("-")},${targetsInfo.filterValues { it.isImproved() }.keys.joinToString("-")},$result,"
         val content = evaluatedIndividual.exportImpactAsListString(checkedTargets.plus(targetsInfo.keys).toSet()).map { "$text,$it" }
         if (content.isNotEmpty()) Files.write(path, content, StandardOpenOption.APPEND)
-
     }
-
 }
 
