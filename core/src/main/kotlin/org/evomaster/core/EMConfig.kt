@@ -1056,13 +1056,11 @@ class EMConfig {
     @Probability(false)
     var SMdR: Double = 0.25
 
-    @Experimental
     @Cfg("Whether to enable a weight-based mutation rate")
     var weightBasedMutationRate = true
 
-    @Experimental
     @Cfg("Whether to specialize sql gene selection to mutation")
-    var specializeSQLGeneSelection = false
+    var specializeSQLGeneSelection = true
 
     @Experimental
     @Cfg("Specify a maximum mutation rate when enabling 'adaptiveMutationRate'")
@@ -1074,14 +1072,12 @@ class EMConfig {
     @PercentageAsProbability(false)
     var startingPerOfGenesToMutate = 0.5
 
-    @Experimental
     @Cfg("When weight-based mutation rate is enabled, specify a percentage of calculating mutation rate based on a number of candidate genes to mutate. " +
             "For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, " +
             "and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate.")
     @PercentageAsProbability(false)
     var d = 0.8
 
-    @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
     @Probability
     var probOfArchiveMutation = 0.5
@@ -1091,11 +1087,9 @@ class EMConfig {
     var doCollectImpact = false
 
     @Experimental
-    @Cfg("whether to abstract genes that exist initialization actions to mutate")
+    @Cfg("During mutation, whether to abstract genes for repeated SQL actions")
     var abstractInitializationGeneToMutate = false
 
-
-    @Experimental
     @Cfg("Specify a strategy to calculate a weight of a gene based on impacts")
     var geneWeightBasedOnImpactsBy = GeneWeightBasedOnImpact.RATIO
 
@@ -1118,11 +1112,9 @@ class EMConfig {
         RATIO
     }
 
-    @Experimental
     @Cfg("Specify a strategy to select genes for mutation adaptively")
     var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.APPROACH_IMPACT
 
-    @Experimental
     @Cfg("Specify whether to enable weight-based mutation selection for selecting genes to mutate for a gene")
     var enableWeightBasedMutationRateSelectionForGene = true
 
@@ -1144,11 +1136,9 @@ class EMConfig {
     @FilePath
     var impactAfterMutationFile = "impactSnapshot.csv"
 
-    @Experimental
     @Cfg("Whether to enable archive-based gene mutation")
     var archiveGeneMutation = ArchiveGeneMutation.SPECIFIED_WITH_SPECIFIC_TARGETS
 
-    @Experimental
     @Cfg("Specify a maximum length of history when applying archive-based gene mutation")
     var maxlengthOfHistoryForAGM = 10
 

@@ -176,20 +176,25 @@ open class Impact(
     }
 
     /**
-     * natural logarithms
+     * calculate impact verse noimpact with natural logarithms
+     * @param target regarding a specific target
+     * @param divide represent two different methods.
+     *          when it is true, e^(impact/all)/e^(noimpact/all)
+     *          when it is false, e^((impact-noimpact)/all)
      */
     private fun nl(target: Int, divide : Boolean) : Double{
         val impact = getValueByImpactProperty(ImpactProperty.TIMES_IMPACT, target, true)?:0.0
         val noImpact = getValueByImpactProperty(ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET, target, true)?:0.0
+        val sum = impact + noImpact
+        if (sum == 0.0) return  Math.E.pow(sum)
         if (divide){
-            val ei = Math.E.pow( (impact)/(impact + noImpact) )
-            val en = Math.E.pow( (noImpact)/(impact + noImpact) )
+            val ei = Math.E.pow( (impact)/sum )
+            val en = Math.E.pow( (noImpact)/sum )
             return ei/en
         }else{
-            return Math.E.pow( (impact - noImpact)/(impact + noImpact) )
+            return Math.E.pow( (impact - noImpact)/sum)
         }
     }
-
 
     private fun manipulateTimesForTargets(target: Int, singleImpactReward: Boolean) : Double = (shared.timesOfNoImpactWithTargets[target]?:0.0) + (shared.timesOfImpact[target]?:0.0) * singleReward(singleImpactReward)
 

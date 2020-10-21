@@ -7,17 +7,15 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.matchproblem.*
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.genemutation.mutationupdate.LongMutationUpdate
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
-import org.evomaster.core.search.tracer.TrackingHistory
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
@@ -25,7 +23,7 @@ import org.junit.jupiter.api.Assertions.*
 /**
  * created by manzh on 2020-09-10
  */
-class StringGeneMutationUpdate {
+class IntegerGeneMutationUpdateTest {
 
     private lateinit var config: EMConfig
     private lateinit var mio: MioAlgorithm<PrimitiveTypeMatchIndividual>
@@ -54,7 +52,7 @@ class StringGeneMutationUpdate {
         config.probOfRandomSampling = 0.0
 
         sampler = injector.getInstance(PrimitiveTypeMatchSampler::class.java)
-        sampler.template = PrimitiveTypeMatchIndividual.stringTemplate()
+        sampler.template = PrimitiveTypeMatchIndividual.intTemplate()
 
         ff = injector.getInstance(PrimitiveTypeMatchFitness::class.java)
         ff.type = ONE2M.ONE_EQUAL_WITH_ONE
@@ -103,50 +101,18 @@ class StringGeneMutationUpdate {
 
     @Test
     fun testMutationUpdate(){
-        val template = PrimitiveTypeMatchIndividual.stringTemplate()
-        val specified = listOf("","a","ax","bx","bg","be","bc","ba","bax","baq")
-        val history = mutableListOf<EvaluatedIndividual<PrimitiveTypeMatchIndividual>>()
-        specified.forEach {
-            val ind = template.copy() as PrimitiveTypeMatchIndividual
-            (ind.gene as StringGene).value = it
-            val eval = ff.calculateCoverage(ind, archive.notCoveredTargets())
-            assertNotNull(eval)
-            val er = if(history.isNotEmpty()){
-                mutator.evaluateMutation(
-                        mutated = history.last(),
-                        current = eval!!,
-                        archive = archive,
-                        targets = archive.notCoveredTargets()
-                ).apply {
-                    assertEquals(EvaluatedMutation.BETTER_THAN, this)
-                }
-            }else{
-                EvaluatedMutation.UNSURE
-            }
+        val specified = listOf(Int.MAX_VALUE/2, Int.MAX_VALUE/4, 0, Int.MIN_VALUE/4, Int.MIN_VALUE/2)
 
-            eval!!.wrapWithEvaluatedResults(er)
-            history.add(eval)
-        }
+        val mutationinfo = LongMutationUpdate(false, Int.MIN_VALUE, Int.MAX_VALUE)
 
-        val current = (history.last().copy(tracker.getCopyFilterForEvalInd(history.last())))
-        val th = TrackingHistory<EvaluatedIndividual<PrimitiveTypeMatchIndividual>>(config.maxLengthOfTraces)
-        th.history.addAll(history)
-        current.wrapWithEvaluatedResults(null)
-        current.wrapWithTracking(history.last().evaluatedResult, th)
+        mutationinfo.updateOrRestBoundary(specified.map {
+            it.toLong() to EvaluatedMutation.BETTER_THAN.value
+        })
 
-        val msp = MutatedGeneSpecification()
-
-        val aminfo = mutator.mutationConfiguration(
-                gene = current.individual.gene, individual = current.individual,
-                eval = current, enableAGS = false,
-                enableAGM = true, targets = setOf(0), mutatedGene = msp, includeSameValue =false)
-        assertNotNull(aminfo)
-        agm.historyBasedValueMutation(aminfo!!, current.individual.gene, listOf(current.individual.gene))
-        val mt = (current.individual.gene as StringGene).value
-        assert(
-                (mt.length == 3 && mt[2].toInt() <= 'x'.toInt()/2.0 + 'q'.toInt()/2.0) || mt.length == 4 || mt.length == 2
-        )
-
+        assertEquals(Int.MIN_VALUE, mutationinfo.preferMin.toInt())
+        assertEquals(specified.size-1, mutationinfo.updateTimes)
+        assertEquals(0, mutationinfo.resetTimes)
+        assertEquals(specified.subList(3, specified.size).average().toInt(), mutationinfo.preferMax.toInt())
     }
 
 }

@@ -2,6 +2,8 @@ package org.evomaster.core.search.impact.impactinfocollection
 
 /**
  * created by manzh on 2020-04-08
+ *
+ * this is to extract Duplicated group, e.g., abc-abc-abc, particularly designed for SQL initialization actions
  */
 abstract class ImpactOfDuplicatedArtifact<T> (
         /**
@@ -19,6 +21,4 @@ abstract class ImpactOfDuplicatedArtifact<T> (
          * value is an impact on duplicate times of the template
          */
         val templateDuplicateTimes: MutableMap<String, Impact> = mutableMapOf()
-
-
 )

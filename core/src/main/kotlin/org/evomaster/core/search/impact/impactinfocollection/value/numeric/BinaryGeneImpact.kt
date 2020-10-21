@@ -11,26 +11,11 @@ import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelecto
 class BinaryGeneImpact (
         sharedImpactInfo: SharedImpactInfo,
         specificImpactInfo: SpecificImpactInfo,
-        val falseValue : Impact ,
-        val trueValue : Impact
+        val falseValue : Impact = Impact("false"),
+        val trueValue : Impact = Impact("true")
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
-    constructor(
-            id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
-            falseValue : Impact = Impact("false"),
-            trueValue : Impact = Impact("true")
-    ) : this(
-            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
-            SpecificImpactInfo(noImpactFromImpact, noImprovement),
-            falseValue,
-            trueValue)
+    constructor(id : String) : this(SharedImpactInfo(id), SpecificImpactInfo())
 
     override fun copy(): BinaryGeneImpact {
         return BinaryGeneImpact(

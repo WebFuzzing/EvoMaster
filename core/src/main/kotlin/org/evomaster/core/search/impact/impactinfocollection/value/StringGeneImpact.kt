@@ -9,6 +9,9 @@ import org.slf4j.LoggerFactory
 
 /**
  * created by manzh on 2019-09-09
+ *
+ * @property employBinding is to collect whether to bind values.
+ * @property employSpecialization is to collect whether to employ the specialization.
  */
 class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
                         specificImpactInfo: SpecificImpactInfo,
@@ -26,6 +29,7 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(StringGeneImpact::class.java)
+        private const val NEVER_EMPLOY_SPECIALIZATION = -1
     }
 
     constructor(id: String, gene : StringGene)
@@ -74,10 +78,10 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
 
         val currentSelect = gc.current.selectedSpecialization
         employSpecialization.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
-        val taintImpact = if (currentSelect == -1){ employSpecialization.falseValue }else employSpecialization.trueValue
+        val taintImpact = if (currentSelect == NEVER_EMPLOY_SPECIALIZATION){ employSpecialization.falseValue }else employSpecialization.trueValue
         taintImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
 
-        if (currentSelect != -1 && allImpacts?.size == gc.current.specializationGenes.size){
+        if (currentSelect != NEVER_EMPLOY_SPECIALIZATION && allImpacts?.size == gc.current.specializationGenes.size){
 
             val sImpact = allImpacts[gc.current.selectedSpecialization]
             val previousSelect = (gc.previous as StringGene).selectedSpecialization
@@ -125,4 +129,5 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
             }
         }
     }
+
 }

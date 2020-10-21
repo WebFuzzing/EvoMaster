@@ -15,18 +15,11 @@ class DisruptiveGeneImpact (
 
     constructor(
             id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
             geneImpact: GeneImpact
 
     ) : this(
-            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
-            SpecificImpactInfo(noImpactFromImpact, noImprovement),
+            SharedImpactInfo(id),
+            SpecificImpactInfo(),
             geneImpact
     )
 

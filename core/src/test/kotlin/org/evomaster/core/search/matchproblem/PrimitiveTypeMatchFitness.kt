@@ -19,7 +19,7 @@ class PrimitiveTypeMatchFitness : FitnessFunction<PrimitiveTypeMatchIndividual>(
 
         calAndUpdate(fv, individual)
 
-        return EvaluatedIndividual(fv, individual.copy() as PrimitiveTypeMatchIndividual, listOf())
+        return EvaluatedIndividual(fv, individual.copy() as PrimitiveTypeMatchIndividual, listOf(), trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
     private fun calculateHeuristic(target: Any, value : Any) : Double{

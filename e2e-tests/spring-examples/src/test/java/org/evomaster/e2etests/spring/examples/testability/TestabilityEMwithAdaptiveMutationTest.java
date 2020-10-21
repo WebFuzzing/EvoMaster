@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * created by manzh on 2020-07-01
  */
-public class TestabilityEMTestWithAdaptiveMutation extends SpringTestBase {
+public class TestabilityEMwithAdaptiveMutationTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {

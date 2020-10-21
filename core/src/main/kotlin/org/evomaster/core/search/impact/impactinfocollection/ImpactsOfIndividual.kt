@@ -12,6 +12,11 @@ import org.evomaster.core.Lazy
 
 /**
  * created by manzh on 2019-10-31
+ *
+ * this class is to collect impacts for an individual including
+ * @property initializationGeneImpacts impacts for initialization actions
+ * @property actionGeneImpacts impacts for rest actions
+ * @property impactsOfStructure impacts for a structure of rest actions
  */
 class ImpactsOfIndividual private constructor(
         /**

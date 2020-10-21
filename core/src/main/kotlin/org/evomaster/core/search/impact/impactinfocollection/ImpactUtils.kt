@@ -67,6 +67,7 @@ class ImpactUtils {
                 is RxAtom -> RxAtomImpact(id)
                 is RxTerm -> RxTermImpact(id)
                 else ->{
+                    log.warn("impact for {} has not been impelemented yet",gene::class.java.simpleName)
                     GeneImpact(id)
                 }
             }

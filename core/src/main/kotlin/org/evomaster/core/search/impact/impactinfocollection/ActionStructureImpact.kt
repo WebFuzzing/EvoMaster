@@ -6,7 +6,10 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
 
 /**
- * created by manzh on 2019-09-03
+ * This class is to collect impacts of structure mutation on action-based individual, e.g., remove/add action.
+ * @property sizeImpact is to collect an impact regarding a size of actions contained in the individual
+ * @property structures save the evaluated fitness value (value) regarding the structure (key).
+ *              the structure is defined based on a sequence of action names joined with ';'.
  */
 class ActionStructureImpact  (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
                               val sizeImpact : IntegerGeneImpact,
@@ -15,18 +18,11 @@ class ActionStructureImpact  (sharedImpactInfo: SharedImpactInfo, specificImpact
 
     constructor(
             id : String,
-            degree: Double = 0.0,
-            timesToManipulate : Int = 0,
-            timesOfNoImpacts : Int = 0,
-            timesOfNoImpactWithTargets : MutableMap<Int, Double> = mutableMapOf(),
-            timesOfImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImpactFromImpact : MutableMap<Int, Double> = mutableMapOf(),
-            noImprovement : MutableMap<Int, Double> = mutableMapOf(),
             sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size"),
             structures : MutableMap<String, Double> = mutableMapOf()
     ) : this(
-            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
-            SpecificImpactInfo(noImpactFromImpact, noImprovement),
+            SharedImpactInfo(id),
+            SpecificImpactInfo(),
             sizeImpact, structures
     )
 

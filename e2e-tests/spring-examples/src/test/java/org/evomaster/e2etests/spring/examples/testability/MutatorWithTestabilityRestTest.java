@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * created by manzh on 2020-06-22
  */
-public class MutatorTestWithTestabilityRest extends SpringTestBase {
+public class MutatorWithTestabilityRestTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
