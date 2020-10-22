@@ -4,20 +4,18 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 
 class BooleanGene(
         name: String,
-        var value: Boolean = true,
-        val valueMutationInfo : IntMutationUpdate = IntMutationUpdate(0, 1)
+        var value: Boolean = true
 ) : Gene(name) {
 
 
     override fun copy(): Gene {
-        return BooleanGene(name, value, valueMutationInfo.copy())
+        return BooleanGene(name, value)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -31,7 +29,7 @@ class BooleanGene(
         value = k
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         value = ! value
         return true
     }
@@ -53,4 +51,6 @@ class BooleanGene(
         }
         return this.value == other.value
     }
+
+    override fun innerGene(): List<Gene> = listOf()
 }

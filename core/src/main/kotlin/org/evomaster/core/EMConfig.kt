@@ -6,7 +6,7 @@ import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import java.net.MalformedURLException
 import java.net.URL
 import java.nio.file.Files
@@ -273,13 +273,22 @@ class EMConfig {
             TODO if required
          */
         if (resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)) {
-            throw IllegalArgumentException(" resource-mio does not support SQL strategies for the moment")
+            throw IllegalArgumentException("Resource-mio does not support SQL strategies for the moment")
         }
 
         //archive-based mutation
-        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
-            throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
-        }
+//        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
+//            throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
+//        }
+
+        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && probOfArchiveMutation > 0 && !weightBasedMutationRate)
+            throw IllegalArgumentException("When applying adaptive gene selection, weight-based mutation rate should be enabled")
+
+        if (probOfArchiveMutation > 0 && !enableTrackEvaluatedIndividual)
+            throw IllegalArgumentException("Archive-based solution is only applicable when enable of tracking of EvaluatedIndividual.")
+
+        if (doCollectImpact && !enableTrackEvaluatedIndividual)
+            throw IllegalArgumentException("Impact collection should be applied together with tracking EvaluatedIndividual")
 
         if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
@@ -882,17 +891,13 @@ class EMConfig {
     var processInterval = 100
 
     @Experimental
-    @Cfg("Enable EvoMaster to generate, use, and attach complete objects to REST calls, rather than just the needed fields/values")
-    var enableCompleteObjects = false
-
-    @Experimental
     @Cfg("Whether to enable tracking the history of modifications of the individuals during the search")
     var enableTrackIndividual = false
 
     @Experimental
     @Cfg("Whether to enable tracking the history of modifications of the individuals with its fitness values (i.e., evaluated individual) during the search. " +
             "Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual")
-    var enableTrackEvaluatedIndividual = false
+    var enableTrackEvaluatedIndividual = true
 
     @Experimental
     @Cfg("Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. " +
@@ -1037,6 +1042,15 @@ class EMConfig {
     }
 
     @Experimental
+    @Cfg("Whether to record targets when the number is more than 100")
+    var recordExceededTargets = false
+
+    @Experimental
+    @Cfg("Specify a path to save all not covered targets when the number is more than 100")
+    @FilePath
+    var exceedTargetsFile = "exceedTargets.txt"
+
+    @Experimental
     @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
     @Probability(false)
     var S1iR: Double = 0.25
@@ -1056,13 +1070,11 @@ class EMConfig {
     @Probability(false)
     var SMdR: Double = 0.25
 
-    @Experimental
     @Cfg("Whether to enable a weight-based mutation rate")
-    var weightBasedMutationRate = false
+    var weightBasedMutationRate = true
 
-    @Experimental
     @Cfg("Whether to specialize sql gene selection to mutation")
-    var specializeSQLGeneSelection = false
+    var specializeSQLGeneSelection = true
 
     @Experimental
     @Cfg("Specify a maximum mutation rate when enabling 'adaptiveMutationRate'")
@@ -1074,41 +1086,113 @@ class EMConfig {
     @PercentageAsProbability(false)
     var startingPerOfGenesToMutate = 0.5
 
-    @Experimental
-    @Cfg("Specify a starting percentage of genes of an individual to mutate")
+    @Cfg("When weight-based mutation rate is enabled, specify a percentage of calculating mutation rate based on a number of candidate genes to mutate. " +
+            "For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, " +
+            "and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate.")
     @PercentageAsProbability(false)
-    var d = 0.5
+    var d = 0.8
 
-    @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
     @Probability
-    var probOfArchiveMutation = 0.0
+    var probOfArchiveMutation = 0.5
 
     @Experimental
-    @Cfg("Specify a percentage (before starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
-    @PercentageAsProbability(false)
-    var startPerOfCandidateGenesToMutate = 0.9
+    @Cfg("Specify whether to collect impact info that provides an option to enable of collecting impact info when archive-based gene selection is disable. ")
+    var doCollectImpact = false
 
     @Experimental
-    @Cfg("Specify a percentage (after starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
-    @PercentageAsProbability(false)
-    var endPerOfCandidateGenesToMutate = 0.1
+    @Cfg("During mutation, whether to abstract genes for repeated SQL actions")
+    var abstractInitializationGeneToMutate = false
+
+    @Cfg("Specify a strategy to calculate a weight of a gene based on impacts")
+    var geneWeightBasedOnImpactsBy = GeneWeightBasedOnImpact.RATIO
+
+    enum class GeneWeightBasedOnImpact{
+        /**
+         * using rank of counter
+         */
+        SORT_COUNTER,
+        /**
+         * using rank of ratio
+         */
+        SORT_RATIO,
+        /**
+         * using counter
+         */
+        COUNTER,
+        /**
+         * using ratio, ie, counter/total manipulated times
+         */
+        RATIO
+    }
+
+    @Cfg("Specify a strategy to select genes for mutation adaptively")
+    var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.APPROACH_IMPACT
+
+    @Cfg("Specify whether to enable weight-based mutation selection for selecting genes to mutate for a gene")
+    var enableWeightBasedMutationRateSelectionForGene = true
 
     @Experimental
-    @Cfg("Specify whether to decide a top percent of genes to mutate adaptively")
-    var adaptivePerOfCandidateGenesToMutate = false
+    @Cfg("Whether to save archive info after each of mutation, which is typically useful for debugging mutation and archive")
+    var saveArchiveAfterMutation = false
 
     @Experimental
-    @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
-    var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.NONE
+    @Cfg("Specify a path to save archive after each mutation during search, only useful for debugging")
+    @FilePath
+    var archiveAfterMutationFile = "archive.csv"
 
     @Experimental
+    @Cfg("Whether to save impact info after each of mutation, which is typically useful debugging impact driven solutions and mutation")
+    var saveImpactAfterMutation = false
+
+    @Experimental
+    @Cfg("Specify a path to save collected impact info after each mutation during search, only useful for debugging")
+    @FilePath
+    var impactAfterMutationFile = "impactSnapshot.csv"
+
     @Cfg("Whether to enable archive-based gene mutation")
-    var archiveGeneMutation = ArchiveGeneMutation.NONE
+    var archiveGeneMutation = ArchiveGeneMutation.SPECIFIED_WITH_SPECIFIC_TARGETS
 
-    enum class ArchiveGeneMutation {
+    @Cfg("Specify a maximum length of history when applying archive-based gene mutation")
+    var maxlengthOfHistoryForAGM = 10
+
+    /**
+     * archive-based gene value mutation
+     */
+    enum class ArchiveGeneMutation (val withTargets : Int = 0, val withDirection: Boolean = false){
+        /**
+         * do not apply archive-based gene mutation
+         */
         NONE,
+        /**
+         * mutate with history but not related to any target
+         */
         SPECIFIED,
+        /**
+         * mutate individual with history based on targets
+         * but not specific to actions
+         */
+        SPECIFIED_WITH_TARGETS(1, false),
+        /**
+         * mutate individual with history based on targets
+         * and the targets are linked to the action level
+         */
+        SPECIFIED_WITH_SPECIFIC_TARGETS(2, false),
+        /**
+         * mutate individual with history and directions based on targets
+         * but not specific to actions
+         */
+        SPECIFIED_WITH_TARGETS_DIRECTION(1, true),
+        /**
+         * mutate individual with history and directions based on targets
+         * and the targets are linked to the action level
+         */
+        SPECIFIED_WITH_SPECIFIC_TARGETS_DIRECTION(2, true),
+
+        /**
+         * mutate individual with history with consideration of dependency among genes
+         * (not done yet)
+         */
         ADAPTIVE
     }
 
@@ -1117,7 +1201,7 @@ class EMConfig {
     var exportImpacts = false
 
     @Experimental
-    @Cfg("Specify a file that saves derived genes")
+    @Cfg("Specify a path to save derived genes")
     @FilePath
     var impactFile = "impact.csv"
 
@@ -1194,5 +1278,23 @@ class EMConfig {
     }
 
     fun trackingEnabled() = enableTrackEvaluatedIndividual || enableTrackIndividual
+
+    /**
+     * impact info can be collected when archive-based solution is enabled or doCollectImpact
+     */
+    fun collectImpact() = algorithm == Algorithm.MIO && doCollectImpact || enableArchiveGeneSelection()
+
+    /**
+     * @return whether archive-based gene selection is enabled
+     */
+    fun enableArchiveGeneSelection() = algorithm == Algorithm.MIO && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+
+    /**
+     * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
+     */
+    fun enableArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+
+
+    fun enableArchiveSolution() = enableArchiveGeneMutation() || enableArchiveGeneSelection()
 
 }

@@ -24,6 +24,8 @@ abstract class ExtractTestBasePostgres {
         private val postgres = KGenericContainer("postgres:10")
                 .withEnv("POSTGRES_HOST_AUTH_METHOD","trust")
                 .withExposedPorts(5432)
+                //https://www.postgresql.org/docs/current/auth-trust.html
+                .withEnv("POSTGRES_HOST_AUTH_METHOD","trust")
 
         @BeforeAll
         @JvmStatic

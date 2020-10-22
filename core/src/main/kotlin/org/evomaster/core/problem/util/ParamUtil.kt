@@ -117,7 +117,7 @@ class ParamUtil {
                             if (found is ObjectGene)
                                 bindObjectGeneWithObjectGene(mf as ObjectGene, found)
                             else
-                                mf.copyValueFrom(found)
+                                mf.copyValueFrom(getValueGene(found))
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 package org.evomaster.core.search.tracer
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import kotlin.math.max
 
@@ -48,12 +49,13 @@ abstract class TraceableElement {
 
     fun <T: TraceableElement> wrapWithTracking(evaluatedResult: EvaluatedMutation?, trackingHistory: TrackingHistory<T>?){
         wrapped()
-        this.evaluatedResult = evaluatedResult
+        if (this.evaluatedResult == null || evaluatedResult!=null)
+            this.evaluatedResult = evaluatedResult
         this.tracking = trackingHistory
     }
 
     fun wrapWithEvaluatedResults(evaluatedResult: EvaluatedMutation?){
-        this.evaluatedResult == evaluatedResult
+        this.evaluatedResult = evaluatedResult
     }
 
     private fun wrapped(){
@@ -82,6 +84,7 @@ abstract class TraceableElement {
      */
     fun <T : TraceableElement> pushLatest(next: T){
         (tracking as? TrackingHistory<T>)?.update(next)
+                ?: throw IllegalStateException("tracking history should not be null")
     }
 
     fun <T : TraceableElement> getLast(n : Int, resultRange: IntRange? = null) : List<T>{
@@ -92,6 +95,12 @@ abstract class TraceableElement {
             else
                 subList(size - n, size)
         } ?: throw IllegalStateException("the element is not tracked")
+    }
+
+    fun <T: TraceableElement> getByIndex(index : Int) : T?{
+        return ((tracking as? TrackingHistory<T>)?: throw IllegalStateException("tracking should not be null")).history?.find {
+            it.index == index
+        }
     }
 
 }

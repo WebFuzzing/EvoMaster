@@ -1,14 +1,15 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.value.date.TimeGeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -65,45 +66,21 @@ class TimeGene(
         second.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return listOf(hour, minute, second)
     }
 
-    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is TimeGeneImpact){
             val maps = mapOf<Gene,  GeneImpact>(
                     hour to additionalGeneMutationInfo.impact.hourGeneImpact,
                     minute to additionalGeneMutationInfo.impact.minuteGeneImpact,
                     second to additionalGeneMutationInfo.impact.secondGeneImpact
             )
-            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it)) }
+            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi)
+                    .map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it), it) }
         }
         throw IllegalArgumentException("impact is null or not TimeGeneImpact")
-    }
-
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (original !is TimeGene){
-                log.warn("original ({}) should be TimeGene", original::class.java.simpleName)
-                return
-            }
-            if (mutated !is TimeGene){
-                log.warn("mutated ({}) should be TimeGene", mutated::class.java.simpleName)
-                return
-            }
-
-            if (!mutated.hour.containsSameValueAs(original.hour)){
-                hour.archiveMutationUpdate(original.hour, mutated.hour, doesCurrentBetter, archiveMutator)
-            }
-            if (!mutated.minute.containsSameValueAs(original.minute))
-                minute.archiveMutationUpdate(original.minute, mutated.minute, doesCurrentBetter, archiveMutator)
-            if (!mutated.second.containsSameValueAs(original.second))
-                second.archiveMutationUpdate(original.second, mutated.second, doesCurrentBetter, archiveMutator)
-        }
-    }
-
-    override fun reachOptimal(): Boolean {
-        return hour.reachOptimal() && minute.reachOptimal() && second.reachOptimal()
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -177,4 +154,7 @@ class TimeGene(
      override fun mutationWeight(): Int
      weight for time gene might be 1 as default since it is simple to solve
     */
+
+    override fun innerGene(): List<Gene> = listOf(hour, minute, second)
+
 }

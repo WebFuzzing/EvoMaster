@@ -2,14 +2,15 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
@@ -43,16 +44,22 @@ class RestStructureMutator : StructureMutator() {
             return
         }
 
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
+
         if(ind.dbInitialization.isEmpty()
                 || ! ind.dbInitialization.any { it.representExistingData }) {
             //add existing data only once
             ind.dbInitialization.addAll(0, sampler.existingSqlData)
-            mutatedGenes?.addedInitializationGenes?.addAll( sampler.existingSqlData.flatMap { it.seeGenes() })
+
+            //record newly added existing sql data
+            mutatedGenes?.addedExistingDataInitialization?.addAll(0, sampler.existingSqlData)
         }
 
         val max = config.maxSqlInitActionsPerMissingData
 
         var missing = findMissing(fw, ind)
+
+        val addedInsertions = if (mutatedGenes != null) mutableListOf<List<Action>>() else null
 
         while (!missing.isEmpty()) {
 
@@ -68,7 +75,9 @@ class RestStructureMutator : StructureMutator() {
                  */
                 val position = sampler.existingSqlData.size
                 ind.dbInitialization.addAll(position, insertions)
-                mutatedGenes?.addedInitializationGenes?.addAll(insertions.flatMap { it.seeGenes() })
+
+                //record newly added insertions
+                addedInsertions?.add(0, insertions)
             }
 
             /*
@@ -86,6 +95,15 @@ class RestStructureMutator : StructureMutator() {
         }
 
         ind.repairInitializationActions(randomness)
+
+        // update impact based on added genes
+        if(mutatedGenes != null && config.enableArchiveGeneSelection()){
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                    mutatedGenes,
+                    old,
+                    addedInsertions
+            )
+        }
     }
 
     private fun findMissing(fw: Map<String, Set<String>>, ind: RestIndividual): Map<String, Set<String>> {

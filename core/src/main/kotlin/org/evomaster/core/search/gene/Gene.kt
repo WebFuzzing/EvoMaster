@@ -1,12 +1,11 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 
 /**
@@ -109,21 +108,25 @@ abstract class Gene(var name: String) {
             allGenes: List<Gene> = listOf(),
             internalGeneSelectionStrategy: SubsetGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT,
             enableAdaptiveGeneMutation: Boolean = false,
-            additionalGeneMutationInfo: AdditionalGeneSelectionInfo? = null
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
     ){
+        //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
         val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
             val mutated = mutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
             if (!mutated) throw IllegalStateException("leaf mutation is not implemented")
         }else{
             val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
-            if (selected.isEmpty())
-                throw IllegalStateException("none is selected to mutate")
 
             selected.forEach{
+                var mutateCounter = 0
                 do {
                     it.first.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
-                }while (!mutationCheck())
+                    mutateCounter +=1
+                }while (!mutationCheck() && mutateCounter <=3)
+                if (!mutationCheck()){
+                    GeneUtils.repairGenes(listOf(this))
+                }
             }
         }
     }
@@ -143,7 +146,7 @@ abstract class Gene(var name: String) {
     /**
      * @return whether to apply a subset selection for internal genes to mutate
      */
-    open fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?)
+    open fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?)
             = listOf<Gene>()
 
     /**
@@ -156,25 +159,38 @@ abstract class Gene(var name: String) {
                           allGenes: List<Gene> = listOf(),
                           selectionStrategy: SubsetGeneSelectionStrategy,
                           enableAdaptiveGeneMutation: Boolean,
-                          additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
-        return when(selectionStrategy){
-            SubsetGeneSelectionStrategy.DEFAULT -> listOf(Pair(randomness.choose(internalGenes), null))
-            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT -> mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to null }
+                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        return  when(selectionStrategy){
+            SubsetGeneSelectionStrategy.DEFAULT -> {
+                val s = randomness.choose(internalGenes)
+                listOf( s to additionalGeneMutationInfo?.copyFoInnerGene( null,s))
+            }
+            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT ->
+                mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to additionalGeneMutationInfo?.copyFoInnerGene(null, it) }
             SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
                 additionalGeneMutationInfo?: throw IllegalArgumentException("additionalGeneSelectionInfo should not be null")
-                adaptiveSelectSubset(internalGenes, mwc, additionalGeneMutationInfo)
+                if (additionalGeneMutationInfo.impact == null)
+                    mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to additionalGeneMutationInfo.copyFoInnerGene(null, it) }
+                else
+                    adaptiveSelectSubset(randomness, internalGenes, mwc, additionalGeneMutationInfo)
             }
+        }.also {
+            if (it.isEmpty())
+                throw IllegalStateException("with $selectionStrategy strategy and ${internalGenes.size} candidates, none is selected to mutate")
+            if (it.any { a -> a.second?.impact?.validate(a.first) == false})
+                throw IllegalStateException("mismatched impact for gene ${it.filter { a -> a.second?.impact?.validate(a.first) == false}.map { "${it.first}:${it.second}" }.joinToString(",")}")
         }
     }
 
-    open fun adaptiveSelectSubset(internalGenes: List<Gene>,
+    open fun adaptiveSelectSubset(randomness: Randomness,
+                                  internalGenes: List<Gene>,
                                   mwc: MutationWeightControl,
-                                  additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> = listOf()
+                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        throw IllegalStateException("adaptive gene selection is unavailable for the gene")
+    }
 
     /**
      * mutate the current gene if there is no need to apply selection, i.e., when [candidatesInternalGenes] is empty
-     *
-     * TODO Man if Specialization of String is handled properly, params might be simplified
      */
     open fun mutate(randomness: Randomness,
                     apc: AdaptiveParameterControl,
@@ -182,7 +198,7 @@ abstract class Gene(var name: String) {
                     allGenes: List<Gene> = listOf(),
                     selectionStrategy: SubsetGeneSelectionStrategy,
                     enableAdaptiveGeneMutation: Boolean,
-                    additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) = false
+                    additionalGeneMutationInfo: AdditionalGeneMutationInfo?) = false
 
     /**
      * Return the value as a printable string.
@@ -236,17 +252,12 @@ abstract class Gene(var name: String) {
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
-    /**
-     * indicates if it is likely that the gene reaches its optimal value, i.e., all possible values have been evaluated during search in the context of its individual.
-     * For instance, an enum has four items. If all values evaluated used during search, its 'Optimal' may be identified. But there may exist dependency among the genes
-     * in an individual, 'Optimal' can be reset.
-     */
-    open fun reachOptimal() = false
+
+    abstract fun innerGene() : List<Gene>
 
     /**
-     * based on evaluated results, update a preferred boundary for the gene
+     * evaluate whether [this] and [gene] belong to one evolution during search
      */
-    open fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator){
-        //do nothing
-    }
+    open fun possiblySame(gene : Gene) : Boolean = gene.name == name && gene::class == this::class
 }
+

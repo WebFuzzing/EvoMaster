@@ -9,7 +9,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
@@ -38,7 +39,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     private lateinit var tracker : ArchiveMutationTrackService
 
     @Inject
-    protected lateinit var archiveMutator : ArchiveMutator
+    protected lateinit var archiveGeneSelector : ArchiveGeneSelector
+
+    @Inject
+    protected lateinit var archiveGeneMutator : ArchiveGeneMutator
 
     @Inject
     protected lateinit var mwc : MutationWeightControl
@@ -54,7 +58,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @param evi a reference of the individual to mutate
      * @return a list of genes that are allowed to mutate
      */
-    abstract fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene>
+    abstract fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene>
 
     /**
      * @param individual an individual to mutate
@@ -90,18 +94,17 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         for (i in 0 until upToNTimes) {
 
+            //save ei (i.e., impact and traces) before its individual is mutated, because the impact info might be updated during mutation
             val currentWithTraces = current.copy(tracker.getCopyFilterForEvalInd(current))
 
             if (!time.shouldContinueSearch()) {
                 break
             }
+
             val mutatedGenes = MutatedGeneSpecification()
 
+            // impact info is updated due to newly added initialization actions
             structureMutator.addInitializingActions(current, mutatedGenes)
-
-            if(mutatedGenes.addedInitializationGenes.isNotEmpty() && archiveMutator.enableArchiveSelection()){
-                current.updateDbActionGenes(current.individual, mutatedGenes.addedInitializationGenes)
-            }
 
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
@@ -120,29 +123,38 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             //enable further actions for extracting
             update(currentWithTraces, mutated, mutatedGenes, result)
 
-            archiveMutator.saveMutatedGene(mutatedGenes, index = time.evaluatedIndividuals, individual = mutatedInd, evaluatedMutation = result, targets = targets)
+            //save mutationInfo
+            archiveGeneMutator.saveMutatedGene(mutatedGenes, index = time.evaluatedIndividuals, individual = mutatedInd, evaluatedMutation = result, targets = targets)
+            archive.saveSnapshot()
 
             val mutatedWithTraces = when{
-                config.enableTrackEvaluatedIndividual-> currentWithTraces.next(
+                config.enableTrackEvaluatedIndividual-> current.next(
                         next = mutated, copyFilter = TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT, evaluatedResult = result)!!
                 config.enableTrackIndividual -> {
-                    currentWithTraces.nextForIndividual(next = mutated,  evaluatedResult = result)!!
+                    current.nextForIndividual(next = mutated,  evaluatedResult = result)!!
                 }
                 else -> mutated
             }
 
-            //TODO refactor when archive-mutation branch is merged
-            //update impacts
-            if (archiveMutator.doCollectImpact()){
-                mutatedWithTraces.updateImpactOfGenes(mutatedGenes, targets, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective)
-            }
+            val targetsInfo =
+                evaluateMutationInDetails(mutated = mutated, current = current, targets = targets, archive = archive)
 
-            current = saveMutation(result, archive, currentWithTraces, mutatedWithTraces)
-
-            // gene mutation evaluation
-            if (archiveMutator.enableArchiveGeneMutation()){
-                //TODO feedback archive-based gene mutation
+            if (config.collectImpact()){
+                /*
+                    update impact info regarding targets.
+                    To avoid side-effect to impactful gene, remove covered targets
+                 */
+                mutatedWithTraces.updateImpactOfGenes(previous = currentWithTraces,
+                        mutated = mutatedWithTraces, mutatedGenes = mutatedGenes,
+                        targetsInfo = targetsInfo.filter { !archive.isCovered(it.key) && !IdMapper.isLocal(it.key) })
             }
+            /*
+                update archive based on mutated individual
+                for next, we use [current] that contains latest updated initialization instead of [currentWithTraces]
+             */
+            current = saveMutation(result, archive, current, mutatedWithTraces)
+
+            archiveGeneSelector.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,targetsInfo = targetsInfo, result = result, evaluatedIndividual = current)
 
             when(config.mutationTargetsSelectionStrategy){
                 EMConfig.MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET ->{}
@@ -184,17 +196,29 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         return compare(mutated, current, targets)
     }
 
+    /**
+     * @return a result by comparing mutated individual [mutated] with before [current] regarding [targets].
+     */
+    private fun evaluateMutationInDetails(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, targets: Set<Int>, archive: Archive<T>): Map<Int, EvaluatedMutation> {
+
+        if (!config.collectImpact() && !config.enableArchiveSolution()) return emptyMap()
+
+        val evaluatedTargets = targets.map { it to EvaluatedMutation.UNSURE }.toMap().toMutableMap()
+
+        // in terms of Archive
+        archive.identifyNewTargets(mutated, evaluatedTargets)
+
+        // compare with current
+        current.fitness.isDifferent(mutated.fitness, targetSubset = targets, targetInfo = evaluatedTargets, config = config)
+
+        return evaluatedTargets
+    }
+
     private fun compare(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, targets: Set<Int>): EvaluatedMutation {
         // current is better than mutated
         val beforeBetter = current.fitness.subsumes(other = mutated.fitness, targetSubset = targets, config = config)
         if (beforeBetter) return EvaluatedMutation.WORSE_THAN
         if (mutated.fitness.subsumes(current.fitness, targets, config)) return EvaluatedMutation.BETTER_THAN
-        return EvaluatedMutation.EQUAL_WITH
-    }
-
-    private fun compareReachedTargets(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>): EvaluatedMutation {
-        if (current.fitness.reachMoreTargets(mutated.fitness)) return EvaluatedMutation.WORSE_THAN
-        if (mutated.fitness.reachMoreTargets(current.fitness)) return EvaluatedMutation.BETTER_THAN
         return EvaluatedMutation.EQUAL_WITH
     }
 

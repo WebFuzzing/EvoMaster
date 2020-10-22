@@ -3,10 +3,9 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 
 
 class SqlAutoIncrementGene(name: String) : Gene(name) {
@@ -50,9 +49,8 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
 
     override fun isPrintable() = false
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
-        throw IllegalStateException("AutoIncrement fields are not part of the search")
-    }
-
     override fun mutationWeight(): Double = 0.0
+
+    override fun innerGene(): List<Gene> = listOf()
+
 }
