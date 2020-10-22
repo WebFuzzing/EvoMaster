@@ -5,5 +5,5 @@ data class Url (
         val protocol: String,
         val host: List<String>,
         val path: List<String>,
-        val query: List<Query>
+        val query: List<Query>?
 )
