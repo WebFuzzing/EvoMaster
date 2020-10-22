@@ -435,7 +435,7 @@ class RestSampler : AbstractRestSampler(){
 
         if (config.seedTestCases) {
             val parser = getParser()
-            val seededTestCases = parser.parseTestCases(config.seedTestCasesPath!!)
+            val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
             adHocInitialIndividuals.addAll(seededTestCases)
         } else {
             //init first sampling with 1-action call per endpoint, for all auths
@@ -464,7 +464,7 @@ class RestSampler : AbstractRestSampler(){
 
     private fun getParser(): Parser {
         return when(config.seedTestCasesFormat) {
-            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser()
+            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(this)
         }
     }
 
