@@ -1,17 +1,17 @@
 package org.evomaster.core.problem.rest.seeding.postman
 
 import com.google.gson.Gson
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.param.HeaderParam
-import org.evomaster.core.problem.rest.param.Param
-import org.evomaster.core.problem.rest.param.QueryParam
-import org.evomaster.core.problem.rest.seeding.Parser
+import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.rest.param.*
+import org.evomaster.core.problem.rest.seeding.AbstractParser
 import org.evomaster.core.problem.rest.seeding.postman.pojos.PostmanCollectionObject
 import org.evomaster.core.problem.rest.seeding.postman.pojos.Request
 import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.tracer.TraceableElement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -19,16 +19,14 @@ import java.nio.charset.StandardCharsets
 
 class PostmanParser(
         private val restSampler: RestSampler
-) : Parser {
-
-    private val swagger = restSampler.getOpenAPI()
+) : AbstractParser(restSampler) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PostmanParser::class.java)
     }
 
     override fun parseTestCases(path: String): MutableList<RestIndividual> {
-        var testCases = mutableListOf<RestIndividual>()
+        val testCases = mutableListOf<RestIndividual>()
 
         val postmanContent = File(path).inputStream().readBytes().toString(StandardCharsets.UTF_8)
         val postmanObject = Gson().fromJson(postmanContent, PostmanCollectionObject::class.java)
@@ -38,22 +36,28 @@ class PostmanParser(
         postmanObject.item.forEach { postmanItem ->
             val postmanRequest = postmanItem.request
 
-            // Get action corresponding to Postman request
+            // Copy action corresponding to Postman request
             val restAction = getRestAction(defaultRestActions, postmanRequest)
 
-            restAction?.parameters?.forEach { parameter ->
-                updateParameterGenesWithRequest(parameter, postmanRequest)
-            }
+            if (restAction != null) {
+                // Update action parameters according to Postman request
+                restAction.parameters.forEach { parameter ->
+                    updateParameterGenesWithRequest(parameter, postmanRequest, restAction)
+                }
 
+                val ind = RestIndividual(mutableListOf(restAction), SampleType.SMART, mutableListOf(),
+                        trackOperator = if (config.trackingEnabled()) restSampler else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+
+                testCases.add(ind)
+            }
         }
 
         return testCases
     }
 
     private fun getRestAction(defaultRestActions: List<RestCallAction>, postmanRequest: Request): RestCallAction? {
-        val baseUrl = swagger.servers[0].url
         val verb = postmanRequest.method
-        val path = postmanRequest.url.raw.removePrefix(baseUrl).split('?')[0]
+        val path = getResolvedPathFromPostmanRequest(postmanRequest)
         val originalRestAction = defaultRestActions.firstOrNull { it.verb.toString() == verb && it.path.matches(path) }
 
         if (originalRestAction == null)
@@ -62,35 +66,54 @@ class PostmanParser(
         return originalRestAction?.copy() as RestCallAction?
     }
 
-    private fun updateParameterGenesWithRequest(parameter: Param, postmanRequest: Request) {
+    private fun updateParameterGenesWithRequest(parameter: Param, postmanRequest: Request, restAction: RestCallAction) {
         val paramName = parameter.name
         val paramType = parameter.javaClass
         val rootGene = parameter.gene
 
-        val paramValue = getParamValueFromRequest(parameter, postmanRequest)
+        if (!isFormBody(parameter)) { // Form bodies in Postman are not a single string but an array of key-value
+            val paramValue = getParamValueFromRequest(parameter, postmanRequest, restAction)
+        } else {
 
+        }
 
-//        when(parameter) {
-//            is HeaderParam, is QueryParam, is BodyParam ->
-//        }
     }
 
     /**
      * In a Postman collection file, all parameter values are represented as strings,
-     * even if it is a JSON body.
+     * except for form bodies.
      *
      * @param parameter Parameter extracted from an action
      * @param postmanRequest Postman representation of a request
+     * @param restAction Action where the parameter is contained. Needed to find
+     * path parameters, since Postman doesn't use keys for them, only values
      * @return Value of the parameter in the Postman request, null if not found
      */
-    private fun getParamValueFromRequest(parameter: Param, postmanRequest: Request): String? {
+    private fun getParamValueFromRequest(parameter: Param, postmanRequest: Request, restAction: RestCallAction): String? {
         var value: String? = null
         when (parameter) {
             is HeaderParam -> value = postmanRequest.header?.find { it.key == parameter.name }?.value
-//                    postmanRequest.header.first { it.key == parameter.name }.value
+            is QueryParam -> value = postmanRequest.url.query?.find { it.key == parameter.name }?.value
+            is BodyParam -> value = postmanRequest.body?.raw // Will return null for form bodies
+            is PathParam -> {
+                val path = getResolvedPathFromPostmanRequest(postmanRequest)
+                value = restAction.path.getKeyValues(path)?.get(parameter.name)
+            }
         }
 
         return value
     }
 
+    private fun isFormBody(parameter: Param): Boolean {
+        return parameter is BodyParam && parameter.isForm()
+    }
+
+    private fun getResolvedPathFromPostmanRequest(postmanRequest: Request) : String {
+        val baseUrl = swagger.servers[0].url
+        return postmanRequest.url.raw.removePrefix(baseUrl).split('?')[0]
+    }
+
+    private fun getChildrenGenes(parentGene: Gene): List<Gene> {
+        return parentGene.flatView { it.parent == parentGene }
+    }
 }
