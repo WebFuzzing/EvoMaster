@@ -23,15 +23,21 @@ import java.time.format.DateTimeParseException
 class DateGene(
         name: String,
         //note: ranges deliberately include wrong values.
-        val year: IntegerGene = IntegerGene("year", 2016, 1900, 2100),
-        val month: IntegerGene = IntegerGene("month", 3, 0, 13),
-        val day: IntegerGene = IntegerGene("day", 12, 0, 32),
+        val year: IntegerGene = IntegerGene("year", 2016, MIN_YEAR, MAX_YEAR),
+        val month: IntegerGene = IntegerGene("month", 3, MIN_MONTH, MAX_MONTH),
+        val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
         val onlyValidDates: Boolean = false,
         val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
 ) : Gene(name) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(DateGene::class.java)
+        const val MAX_YEAR = 2100
+        const val MIN_YEAR = 1900
+        const val MAX_MONTH = 13
+        const val MIN_MONTH = 0
+        const val MAX_DAY = 32
+        const val MIN_DAY = 9
     }
 
     enum class DateGeneFormat {
