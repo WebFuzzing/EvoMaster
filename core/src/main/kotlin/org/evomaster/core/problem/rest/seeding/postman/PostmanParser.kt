@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.seeding.postman
 
 import com.google.gson.Gson
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
@@ -18,7 +17,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 
 class PostmanParser(
-        private val restSampler: RestSampler
+        restSampler: RestSampler
 ) : AbstractParser(restSampler) {
 
     companion object {
@@ -67,12 +66,9 @@ class PostmanParser(
     }
 
     private fun updateParameterGenesWithRequest(parameter: Param, postmanRequest: Request, restAction: RestCallAction) {
-        val paramName = parameter.name
-        val paramType = parameter.javaClass
-        val rootGene = parameter.gene
-
         if (!isFormBody(parameter)) { // Form bodies in Postman are not a single string but an array of key-value
             val paramValue = getParamValueFromRequest(parameter, postmanRequest, restAction)
+            updateGenesRecursivelyWithParameterValue(parameter, paramValue)
         } else {
 
         }
