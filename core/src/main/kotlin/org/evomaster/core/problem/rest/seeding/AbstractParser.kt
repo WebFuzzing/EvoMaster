@@ -1,9 +1,10 @@
 package org.evomaster.core.problem.rest.seeding
 
+import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import com.google.inject.Inject
 import org.apache.commons.codec.binary.Base64
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.gene.*
@@ -27,88 +28,152 @@ abstract class AbstractParser(
         private val log: Logger = LoggerFactory.getLogger(PostmanParser::class.java)
     }
 
-    fun updateGenesRecursivelyWithParameterValue(parameter: Param, paramValue: String?) {
-        val rootGene = parameter.gene
-
+    fun updateGenesRecursivelyWithParameterValue(gene: Gene, paramName: String, paramValue: String?) {
+        // Optional parameter not present in request
         if (paramValue == null) {
-            if (rootGene is OptionalGene)
-                rootGene.isActive = false
+            if (gene is OptionalGene)
+                gene.isActive = false
             else
-                log.warn("Required parameter {} was not found in a seeded request. Ignoring and keeping the parameter...", parameter.name)
+                log.warn("Required parameter {} was not found in a seeded request. Ignoring and keeping the parameter...", paramName)
             return
         }
 
-        when (rootGene) {
+        when (gene) {
 
             // Basic data type genes
-
-            is StringGene -> rootGene.value = paramValue
-
-            is BooleanGene -> {
-                when (paramValue) {
-                    "true" -> rootGene.value = true
-                    "false" -> rootGene.value = false
-                    else -> logBadParamAssignment("boolean", parameter.name, paramValue)
-                }
-            }
-
-            is DoubleGene -> try { rootGene.value = paramValue.toDouble() }
-                catch (e: NumberFormatException) {
-                    logBadParamAssignment("double", parameter.name, paramValue)
-                }
-
-            is FloatGene -> try { rootGene.value = paramValue.toFloat() }
-                catch (e: NumberFormatException) {
-                    logBadParamAssignment("float", parameter.name, paramValue)
-                }
-
-            is IntegerGene -> try { rootGene.value = paramValue.toInt() }
-                catch (e: NumberFormatException) {
-                    logBadParamAssignment("integer", parameter.name, paramValue)
-                }
-
-            is LongGene -> try { rootGene.value = paramValue.toLong() }
-                catch (e: NumberFormatException) {
-                    logBadParamAssignment("long", parameter.name, paramValue)
-                }
-
+            is StringGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is BooleanGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is DoubleGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is FloatGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is IntegerGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is LongGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
 
             // Non-basic data type but terminal genes
+            is Base64StringGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is EnumGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is DateGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is TimeGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is DateTimeGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
 
-            is Base64StringGene -> {
-                if (Base64.isBase64(paramValue))
-                    rootGene.data.value = paramValue
-                else
-                    logBadParamAssignment("base64", parameter.name, paramValue)
-            }
+            // Non-terminal genes (iterate over children)
+            is OptionalGene -> updateGenesRecursivelyWithParameterValue(gene.gene, gene.name, paramValue)
+            is DisruptiveGene<*> -> updateGenesRecursivelyWithParameterValue(gene.gene, gene.name, paramValue)
 
-            is EnumGene<*> -> {
-                if (rootGene.values.map { it.toString() }.contains(paramValue))
-                    rootGene.index = rootGene.values.map { it.toString() }.indexOf(paramValue)
-                else
-                    logBadParamAssignment("enum", parameter.name, paramValue)
-            }
-
-            is DateGene -> updateGeneWithParameterValue(rootGene, parameter.name, paramValue)
-
-            is TimeGene -> updateGeneWithParameterValue(rootGene, parameter.name, paramValue)
-
-            is DateTimeGene -> {
+            is ArrayGene<*> -> {
                 /*
-                    Same comment as in Date and Time genes
+                    Here we may have an array as a query/header/path/cookie parameter
+                    or inside a request body. In the first case, we assume the values
+                    are comma-separated.
+
+                    TODO: Support more serialization options:
+                     https://swagger.io/docs/specification/serialization/
+
+                    TODO: Support nested objects and arrays in non-body parameters
                  */
-                val dateTimeRegex = Regex("^\\d{4}-\\d{2}-\\d{2}([ T])\\d{2}:\\d{2}:\\d{2}(.\\d{3}Z)?$")
-                if (paramValue.matches(dateTimeRegex)) {
-                    updateGeneWithParameterValue(rootGene.date, parameter.name, paramValue)
-                    updateGeneWithParameterValue(rootGene.time, parameter.name, paramValue)
-                } else
-                    logBadParamAssignment("date", parameter.name, paramValue)
+
+                gene.elements.clear()
+
+                val elements = try {
+                    Gson().fromJson(paramValue, ArrayList::class.java)
+                } catch (ex: JsonSyntaxException) { // Value is not within body, but comma separated
+                    paramValue.split(',')
+                }
+
+                if (elements.size > ArrayGene.MAX_SIZE)
+                    gene.maxSize = elements.size
+                elements.forEach { element ->
+                    val elementGene = gene.template.copy()
+                    updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, element as String?)
+                    gene.elements.add(elementGene)
+                }
             }
+
+            is ObjectGene -> {
+                /*
+                    TODO: Support objects in query/header/path/cookie parameters
+                 */
+
+                try {
+                    val fields = Gson().fromJson(paramValue, Map::class.java)
+                    fields.forEach { (key, value) ->
+                        val fieldGene = gene.fields.find { it.name == key }
+                        if (fieldGene != null)
+                            updateGenesRecursivelyWithParameterValue(fieldGene, fieldGene.name, value as String?)
+                        else {
+
+                        }
+                    }
+                } catch (ex: JsonSyntaxException) {
+                    log.warn("Failed to parse JSON of parameter {}", paramName)
+                }
+            }
+
+            // TODO: MapGene
+
 
             else -> {
-                TODO("Handling of gene " + rootGene.javaClass + " is not yet implemented")
+                // ImmutableDataHolderGene should never happen
+                TODO("Handling of gene " + gene.javaClass + " is not yet implemented")
             }
         }
+    }
+
+    protected fun updateGeneWithParameterValue(gene: StringGene, paramName: String, paramValue: String) {
+        gene.value = paramValue
+    }
+
+    protected fun updateGeneWithParameterValue(gene: BooleanGene, paramName: String, paramValue: String) {
+        when (paramValue) {
+            "true" -> gene.value = true
+            "false" -> gene.value = false
+            else -> logBadParamAssignment("boolean", paramName, paramValue)
+        }
+    }
+
+    protected fun updateGeneWithParameterValue(gene: DoubleGene, paramName: String, paramValue: String) {
+        try {
+            gene.value = paramValue.toDouble()
+        } catch (e: NumberFormatException) {
+            logBadParamAssignment("double", paramName, paramValue)
+        }
+    }
+
+    protected fun updateGeneWithParameterValue(gene: FloatGene, paramName: String, paramValue: String) {
+        try {
+            gene.value = paramValue.toFloat()
+        } catch (e: NumberFormatException) {
+            logBadParamAssignment("float", paramName, paramValue)
+        }
+    }
+
+    protected fun updateGeneWithParameterValue(gene: IntegerGene, paramName: String, paramValue: String) {
+        try {
+            gene.value = paramValue.toInt()
+        } catch (e: NumberFormatException) {
+            logBadParamAssignment("integer", paramName, paramValue)
+        }
+    }
+
+    protected fun updateGeneWithParameterValue(gene: LongGene, paramName: String, paramValue: String) {
+        try {
+            gene.value = paramValue.toLong()
+        } catch (e: NumberFormatException) {
+            logBadParamAssignment("long", paramName, paramValue)
+        }
+    }
+
+    protected fun updateGeneWithParameterValue(gene: Base64StringGene, paramName: String, paramValue: String) {
+        if (Base64.isBase64(paramValue))
+            gene.data.value = paramValue
+        else
+            logBadParamAssignment("base64", paramName, paramValue)
+    }
+
+    protected fun updateGeneWithParameterValue(gene: EnumGene<*>, paramName: String, paramValue: String) {
+        if (gene.values.map { it.toString() }.contains(paramValue))
+            gene.index = gene.values.map { it.toString() }.indexOf(paramValue)
+        else
+            logBadParamAssignment("enum", paramName, paramValue)
     }
 
     protected fun updateGeneWithParameterValue(gene: DateGene, paramName: String, paramValue: String) {
@@ -154,6 +219,18 @@ abstract class AbstractParser(
                 log.warn("Attempt to set time parameter {} with invalid time {}. Ignoring and keeping the parameter the same...", paramName, paramValue)
         } else
             logBadParamAssignment("time", paramName, paramValue)
+    }
+
+    protected fun updateGeneWithParameterValue(gene: DateTimeGene, paramName: String, paramValue: String) {
+        /*
+            Same comment as in Date and Time genes
+         */
+        val dateTimeRegex = Regex("^\\d{4}-\\d{2}-\\d{2}([ T])\\d{2}:\\d{2}:\\d{2}(.\\d{3}Z)?$")
+        if (paramValue.matches(dateTimeRegex)) {
+            updateGeneWithParameterValue(gene.date, paramName, paramValue)
+            updateGeneWithParameterValue(gene.time, paramName, paramValue)
+        } else
+            logBadParamAssignment("date-time", paramName, paramValue)
     }
 
     private fun logBadParamAssignment(paramType: String, paramName: String, paramValue: String) {

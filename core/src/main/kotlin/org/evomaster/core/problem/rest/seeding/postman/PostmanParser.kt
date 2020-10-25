@@ -68,7 +68,7 @@ class PostmanParser(
     private fun updateParameterGenesWithRequest(parameter: Param, postmanRequest: Request, restAction: RestCallAction) {
         if (!isFormBody(parameter)) { // Form bodies in Postman are not a single string but an array of key-value
             val paramValue = getParamValueFromRequest(parameter, postmanRequest, restAction)
-            updateGenesRecursivelyWithParameterValue(parameter, paramValue)
+            updateGenesRecursivelyWithParameterValue(parameter.gene, parameter.name, paramValue)
         } else {
 
         }
