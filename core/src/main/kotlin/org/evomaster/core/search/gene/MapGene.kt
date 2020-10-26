@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
 class MapGene<T>(
         name: String,
         val template: T,
-        val maxSize: Int = 5,
+        var maxSize: Int = MAX_SIZE,
         var elements: MutableList<T> = mutableListOf()
 ) : CollectionGene, Gene(name)
         where T : Gene {
@@ -41,6 +41,7 @@ class MapGene<T>(
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(MapGene::class.java)
+        const val MAX_SIZE = 5
     }
 
     override fun copy(): Gene {

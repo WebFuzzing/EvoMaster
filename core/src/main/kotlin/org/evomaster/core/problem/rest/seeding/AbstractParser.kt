@@ -60,13 +60,11 @@ abstract class AbstractParser(
             is DisruptiveGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ArrayGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
-
-            // TODO: MapGene
-
+            is MapGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
 
             else -> {
                 // ImmutableDataHolderGene should never happen
-                TODO("Handling of gene " + gene.javaClass + " is not yet implemented")
+                throw IllegalStateException("Unexpected gene found in RestCallAction")
             }
         }
     }
@@ -155,7 +153,7 @@ abstract class AbstractParser(
 
     protected fun updateGeneWithParameterValue(gene: TimeGene, paramName: String, paramValue: String) {
         /*
-            Same comment as in DateGene
+            TODO: Same comment as in DateGene
          */
         val timeRegex = Regex("^\\d{2}:\\d{2}:\\d{2}(.\\d{3}Z)?$")
         if (paramValue.matches(timeRegex)) {
@@ -176,7 +174,7 @@ abstract class AbstractParser(
 
     protected fun updateGeneWithParameterValue(gene: DateTimeGene, paramName: String, paramValue: String) {
         /*
-            Same comment as in Date and Time genes
+            TODO: Same comment as in Date and Time genes
          */
         val dateTimeRegex = Regex("^\\d{4}-\\d{2}-\\d{2}([ T])\\d{2}:\\d{2}:\\d{2}(.\\d{3}Z)?$")
         if (paramValue.matches(dateTimeRegex)) {
@@ -200,8 +198,13 @@ abstract class AbstractParser(
             or inside a request body. In the first case, we assume the values
             are comma-separated.
 
-            TODO: Support more serialization options:
-             https://swagger.io/docs/specification/serialization/
+            TODO: Support more serialization options. This involves not only different
+             separators other than ',' (e.g., '|' and ' '), but also different parsing
+             of the request. For example, in query parameters it is possible to have
+             arrays expressed as "/endpoint?param=a&param=b&param=c", which is equal
+             to "/endpoint?param=a,b,c". However, for this, it would be necessary to
+             look for the serialization style and explode properties in the Swagger.
+             Reference: https://swagger.io/docs/specification/serialization/
 
             TODO: Support nested objects and arrays in non-body parameters
          */
@@ -218,14 +221,18 @@ abstract class AbstractParser(
             gene.maxSize = elements.size
         elements.forEach { element ->
             val elementGene = gene.template.copy()
+            elementGene.parent = gene
             updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, element as String?)
-            gene.elements.add(elementGene)
+            addGeneToArrayGene(gene, elementGene)
         }
     }
 
     protected fun updateGeneWithParameterValue(gene: ObjectGene, paramName: String, paramValue: String) {
         /*
-            TODO: Support objects in query/header/path/cookie parameters
+            TODO: Support objects in query/header/path/cookie parameters. Unlike for
+             the ArrayGene, here we don't support any kind of object in parameters
+             other than body ones.
+
             TODO: Support XML?
          */
 
@@ -234,6 +241,71 @@ abstract class AbstractParser(
             gene.fields.forEach { updateGenesRecursivelyWithParameterValue(it, it.name, fields[it.name] as String?) }
         } catch (ex: JsonSyntaxException) {
             log.warn("Failed to parse parameter {} as JSON", paramName)
+        }
+    }
+
+    protected fun updateGeneWithParameterValue(gene: MapGene<*>, paramName: String, paramValue: String) {
+        /*
+            TODO: Same comment as in ObjectGene
+         */
+
+        gene.elements.clear()
+
+        try {
+            val elements = Gson().fromJson(paramValue, Map::class.java)
+            if (elements.size > MapGene.MAX_SIZE)
+                gene.maxSize = elements.size
+            elements.forEach { (key, value) ->
+                val elementGene = gene.template.copy()
+                elementGene.name = key as String
+                elementGene.parent = gene
+                updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, value as String?)
+                addGeneToMapGene(gene, elementGene)
+            }
+        } catch (ex: JsonSyntaxException) {
+            log.warn("Failed to parse parameter {} as JSON", paramName)
+        }
+    }
+
+    private fun addGeneToArrayGene(gene: ArrayGene<*>, elementGene: Gene) {
+        when (elementGene) {
+            is StringGene -> (gene as ArrayGene<StringGene>).elements.add(elementGene)
+            is BooleanGene -> (gene as ArrayGene<BooleanGene>).elements.add(elementGene)
+            is DoubleGene -> (gene as ArrayGene<DoubleGene>).elements.add(elementGene)
+            is FloatGene -> (gene as ArrayGene<FloatGene>).elements.add(elementGene)
+            is IntegerGene -> (gene as ArrayGene<IntegerGene>).elements.add(elementGene)
+            is LongGene -> (gene as ArrayGene<LongGene>).elements.add(elementGene)
+            is Base64StringGene -> (gene as ArrayGene<Base64StringGene>).elements.add(elementGene)
+            is EnumGene<*> -> (gene as ArrayGene<EnumGene<*>>).elements.add(elementGene)
+            is DateGene -> (gene as ArrayGene<DateGene>).elements.add(elementGene)
+            is TimeGene -> (gene as ArrayGene<TimeGene>).elements.add(elementGene)
+            is DateTimeGene -> (gene as ArrayGene<DateTimeGene>).elements.add(elementGene)
+            is OptionalGene -> (gene as ArrayGene<OptionalGene>).elements.add(elementGene)
+            is DisruptiveGene<*> -> (gene as ArrayGene<DisruptiveGene<*>>).elements.add(elementGene)
+            is ArrayGene<*> -> (gene as ArrayGene<ArrayGene<*>>).elements.add(elementGene)
+            is ObjectGene -> (gene as ArrayGene<ObjectGene>).elements.add(elementGene)
+            is MapGene<*> -> (gene as ArrayGene<MapGene<*>>).elements.add(elementGene)
+        }
+    }
+
+    private fun addGeneToMapGene(gene: MapGene<*>, elementGene: Gene) {
+        when(elementGene) {
+            is StringGene -> (gene as MapGene<StringGene>).elements.add(elementGene)
+            is BooleanGene -> (gene as MapGene<BooleanGene>).elements.add(elementGene)
+            is DoubleGene -> (gene as MapGene<DoubleGene>).elements.add(elementGene)
+            is FloatGene -> (gene as MapGene<FloatGene>).elements.add(elementGene)
+            is IntegerGene -> (gene as MapGene<IntegerGene>).elements.add(elementGene)
+            is LongGene -> (gene as MapGene<LongGene>).elements.add(elementGene)
+            is Base64StringGene -> (gene as MapGene<Base64StringGene>).elements.add(elementGene)
+            is EnumGene<*> -> (gene as MapGene<EnumGene<*>>).elements.add(elementGene)
+            is DateGene -> (gene as MapGene<DateGene>).elements.add(elementGene)
+            is TimeGene -> (gene as MapGene<TimeGene>).elements.add(elementGene)
+            is DateTimeGene -> (gene as MapGene<DateTimeGene>).elements.add(elementGene)
+            is OptionalGene -> (gene as MapGene<OptionalGene>).elements.add(elementGene)
+            is DisruptiveGene<*> -> (gene as MapGene<DisruptiveGene<*>>).elements.add(elementGene)
+            is ArrayGene<*> -> (gene as MapGene<ArrayGene<*>>).elements.add(elementGene)
+            is ObjectGene -> (gene as MapGene<ObjectGene>).elements.add(elementGene)
+            is MapGene<*> -> (gene as MapGene<MapGene<*>>).elements.add(elementGene)
         }
     }
 
