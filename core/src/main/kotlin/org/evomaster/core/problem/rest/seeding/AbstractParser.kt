@@ -200,7 +200,7 @@ abstract class AbstractParser(
              of the request. For example, in query parameters it is possible to have
              arrays expressed as "/endpoint?param=a&param=b&param=c", which is equal
              to "/endpoint?param=a,b,c". However, for this, it would be necessary to
-             look for the serialization style and explode properties in the Swagger.
+             look for the serialization 'style' and 'explode' properties in the Swagger.
              Reference: https://swagger.io/docs/specification/serialization/
 
             TODO: Support nested objects and arrays in non-body parameters

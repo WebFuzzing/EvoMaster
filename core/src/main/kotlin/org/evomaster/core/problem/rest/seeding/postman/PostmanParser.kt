@@ -7,10 +7,11 @@ import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.seeding.AbstractParser
 import org.evomaster.core.problem.rest.seeding.postman.pojos.PostmanCollectionObject
 import org.evomaster.core.problem.rest.seeding.postman.pojos.Request
-import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.lang.IllegalStateException
 import java.net.URI
 import java.nio.charset.StandardCharsets
 
@@ -63,10 +64,8 @@ class PostmanParser(
         if (!isFormBody(parameter)) { // Form bodies in Postman are not a single string but an array of key-value
             val paramValue = getParamValueFromRequest(parameter, postmanRequest, restAction)
             updateGenesRecursivelyWithParameterValue(parameter.gene, parameter.name, paramValue)
-        } else {
-
-        }
-
+        } else
+            updateFormBodyGenesWithRequest(parameter as BodyParam, postmanRequest)
     }
 
     /**
@@ -94,11 +93,35 @@ class PostmanParser(
         return value
     }
 
-    private fun isFormBody(parameter: Param): Boolean {
-        return parameter is BodyParam && parameter.isForm()
+    /**
+     * Form bodies in Postman are not a single raw string, but rather a list of
+     * key-value pairs. This function takes a form body parameter containing an
+     * object gene and updates its first-level subgenes according to the key-value
+     * pairs present in the Postman request.
+     */
+    private fun updateFormBodyGenesWithRequest(formBody: BodyParam, postmanRequest: Request) {
+        /*
+            TODO: Support nested objects according to different serialization schemes [1].
+             The payload format is similar to that of query parameters, therefore it
+             would be possible to parse a Postman-formatted form body according to the
+             serialization scheme defined in the Swagger [2].
+             [1] https://swagger.io/docs/specification/describing-request-body/ (section "Form Data")
+             [2] https://swagger.io/docs/specification/describing-parameters/#query-parameters
+         */
+
+        when (formBody.gene) {
+            is ObjectGene -> {
+                formBody.gene.fields.forEach { formBodyField ->
+                    val paramValue = postmanRequest.body?.urlencoded?.find { it.key == formBodyField.name }?.value
+                    updateGenesRecursivelyWithParameterValue(formBodyField, formBodyField.name, paramValue)
+                }
+            }
+
+            else -> throw IllegalStateException("Only objects are supported for form bodies when parsing Postman requests")
+        }
     }
 
-    private fun getChildrenGenes(parentGene: Gene): List<Gene> {
-        return parentGene.flatView { it.parent == parentGene }
+    private fun isFormBody(parameter: Param): Boolean {
+        return parameter is BodyParam && parameter.isForm()
     }
 }
