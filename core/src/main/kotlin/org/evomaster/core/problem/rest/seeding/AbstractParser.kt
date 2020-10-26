@@ -56,51 +56,10 @@ abstract class AbstractParser(
             is DateTimeGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
 
             // Non-terminal genes (iterate over children)
-            is OptionalGene -> updateGenesRecursivelyWithParameterValue(gene.gene, gene.name, paramValue)
-            is DisruptiveGene<*> -> updateGenesRecursivelyWithParameterValue(gene.gene, gene.name, paramValue)
-
-            is ArrayGene<*> -> {
-                /*
-                    Here we may have an array as a query/header/path/cookie parameter
-                    or inside a request body. In the first case, we assume the values
-                    are comma-separated.
-
-                    TODO: Support more serialization options:
-                     https://swagger.io/docs/specification/serialization/
-
-                    TODO: Support nested objects and arrays in non-body parameters
-                 */
-
-                gene.elements.clear()
-
-                val elements = try {
-                    Gson().fromJson(paramValue, ArrayList::class.java)
-                } catch (ex: JsonSyntaxException) { // Value is not within body, but comma separated
-                    paramValue.split(',')
-                }
-
-                if (elements.size > ArrayGene.MAX_SIZE)
-                    gene.maxSize = elements.size
-                elements.forEach { element ->
-                    val elementGene = gene.template.copy()
-                    updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, element as String?)
-                    gene.elements.add(elementGene)
-                }
-            }
-
-            is ObjectGene -> {
-                /*
-                    TODO: Support objects in query/header/path/cookie parameters
-                    TODO: Support XML?
-                 */
-
-                try {
-                    val fields = Gson().fromJson(paramValue, Map::class.java)
-                    gene.fields.forEach { updateGenesRecursivelyWithParameterValue(it, it.name, fields[it.name] as String?) }
-                } catch (ex: JsonSyntaxException) {
-                    log.warn("Failed to parse parameter {} as JSON", paramName)
-                }
-            }
+            is OptionalGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is DisruptiveGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is ArrayGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is ObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
 
             // TODO: MapGene
 
@@ -225,6 +184,57 @@ abstract class AbstractParser(
             updateGeneWithParameterValue(gene.time, paramName, paramValue)
         } else
             logBadParamAssignment("date-time", paramName, paramValue)
+    }
+
+    protected fun updateGeneWithParameterValue(gene: OptionalGene, paramName: String, paramValue: String) {
+        updateGenesRecursivelyWithParameterValue(gene.gene, gene.name, paramValue)
+    }
+
+    protected fun updateGeneWithParameterValue(gene: DisruptiveGene<*>, paramName: String, paramValue: String) {
+        updateGenesRecursivelyWithParameterValue(gene.gene, gene.gene.name, paramValue)
+    }
+
+    protected fun updateGeneWithParameterValue(gene: ArrayGene<*>, paramName: String, paramValue: String) {
+        /*
+            Here we may have an array as a query/header/path/cookie parameter
+            or inside a request body. In the first case, we assume the values
+            are comma-separated.
+
+            TODO: Support more serialization options:
+             https://swagger.io/docs/specification/serialization/
+
+            TODO: Support nested objects and arrays in non-body parameters
+         */
+
+        gene.elements.clear()
+
+        val elements = try {
+            Gson().fromJson(paramValue, ArrayList::class.java)
+        } catch (ex: JsonSyntaxException) { // Value is not within body, but comma separated
+            paramValue.split(',')
+        }
+
+        if (elements.size > ArrayGene.MAX_SIZE)
+            gene.maxSize = elements.size
+        elements.forEach { element ->
+            val elementGene = gene.template.copy()
+            updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, element as String?)
+            gene.elements.add(elementGene)
+        }
+    }
+
+    protected fun updateGeneWithParameterValue(gene: ObjectGene, paramName: String, paramValue: String) {
+        /*
+            TODO: Support objects in query/header/path/cookie parameters
+            TODO: Support XML?
+         */
+
+        try {
+            val fields = Gson().fromJson(paramValue, Map::class.java)
+            gene.fields.forEach { updateGenesRecursivelyWithParameterValue(it, it.name, fields[it.name] as String?) }
+        } catch (ex: JsonSyntaxException) {
+            log.warn("Failed to parse parameter {} as JSON", paramName)
+        }
     }
 
     private fun logBadParamAssignment(paramType: String, paramName: String, paramValue: String) {
