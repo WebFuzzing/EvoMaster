@@ -1,16 +1,13 @@
 package org.evomaster.core.problem.rest.seeding.postman
 
 import com.google.gson.Gson
+import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.seeding.AbstractParser
 import org.evomaster.core.problem.rest.seeding.postman.pojos.PostmanCollectionObject
 import org.evomaster.core.problem.rest.seeding.postman.pojos.Request
-import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.tracer.TraceableElement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -18,26 +15,25 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 
 class PostmanParser(
-        restSampler: RestSampler
-) : AbstractParser(restSampler) {
+        defaultRestCallActions: List<RestCallAction>,
+        swagger: OpenAPI
+) : AbstractParser(defaultRestCallActions, swagger) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PostmanParser::class.java)
     }
 
-    override fun parseTestCases(path: String): MutableList<RestIndividual> {
-        val testCases = mutableListOf<RestIndividual>()
+    override fun parseTestCases(path: String): MutableList<MutableList<RestCallAction>> {
+        val testCases = mutableListOf<MutableList<RestCallAction>>()
 
         val postmanContent = File(path).inputStream().readBytes().toString(StandardCharsets.UTF_8)
         val postmanObject = Gson().fromJson(postmanContent, PostmanCollectionObject::class.java)
-
-        val defaultRestActions = restSampler.seeAvailableActions().filterIsInstance<RestCallAction>()
 
         postmanObject.item.forEach { postmanItem ->
             val postmanRequest = postmanItem.request
 
             // Copy action corresponding to Postman request
-            val restAction = getRestAction(defaultRestActions, postmanRequest)
+            val restAction = getRestAction(defaultRestCallActions, postmanRequest)
 
             if (restAction != null) {
                 // Update action parameters according to Postman request
@@ -45,10 +41,7 @@ class PostmanParser(
                     updateParameterGenesWithRequest(parameter, postmanRequest, restAction)
                 }
 
-                val ind = RestIndividual(mutableListOf(restAction), SampleType.SMART, mutableListOf(),
-                        trackOperator = if (config.trackingEnabled()) restSampler else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
-
-                testCases.add(ind)
+                testCases.add(mutableListOf(restAction))
             }
         }
 

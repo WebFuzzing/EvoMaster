@@ -2,27 +2,24 @@ package org.evomaster.core.problem.rest.seeding
 
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import com.google.inject.Inject
+import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.codec.binary.Base64
-import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
-import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * Parsers allow to transform a set of test cases in a specific format into a set
+ * of test cases that EvoMaster can handle. To this end, they need two key components:
+ * the set of default actions (i.e., actions representing single calls to each API
+ * operation) and the Swagger specification.
+ */
 abstract class AbstractParser(
-        protected val restSampler: RestSampler
+        protected val defaultRestCallActions: List<RestCallAction>,
+        protected val swagger: OpenAPI
 ) : Parser {
-
-    @Inject
-    protected lateinit var config: EMConfig
-
-    @Inject
-    protected lateinit var time : SearchTimeController
-
-    protected val swagger = restSampler.getOpenAPI()
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PostmanParser::class.java)

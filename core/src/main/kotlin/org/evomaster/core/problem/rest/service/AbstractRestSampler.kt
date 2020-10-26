@@ -46,7 +46,7 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
 
     //private val usedObjects: UsedObjects = UsedObjects()
 
-    private lateinit var swagger: OpenAPI
+    protected lateinit var swagger: OpenAPI
 
     @PostConstruct
     open fun initialize() {

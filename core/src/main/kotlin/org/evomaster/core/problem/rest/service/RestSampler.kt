@@ -436,7 +436,7 @@ class RestSampler : AbstractRestSampler(){
         if (config.seedTestCases) {
             val parser = getParser()
             val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
-            adHocInitialIndividuals.addAll(seededTestCases)
+            adHocInitialIndividuals.addAll(seededTestCases.map { createIndividual(it) })
         } else {
             //init first sampling with 1-action call per endpoint, for all auths
 
@@ -456,15 +456,19 @@ class RestSampler : AbstractRestSampler(){
                     copy.auth = auth
                     randomizeActionGenes(copy)
                     randomizeActionGenes(copy, false)
-                    val ind = RestIndividual(mutableListOf(copy), SampleType.SMART, mutableListOf()//, usedObjects.copy()
-                            ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+                    val ind = createIndividual(mutableListOf(copy))
                     adHocInitialIndividuals.add(ind)
                 }
     }
 
+    private fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+        return RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
+                ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+    }
+
     private fun getParser(): Parser {
         return when(config.seedTestCasesFormat) {
-            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(this)
+            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger)
         }
     }
 
