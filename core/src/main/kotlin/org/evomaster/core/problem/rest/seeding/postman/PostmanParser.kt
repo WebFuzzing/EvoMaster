@@ -14,6 +14,7 @@ import org.evomaster.core.search.tracer.TraceableElement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.net.URI
 import java.nio.charset.StandardCharsets
 
 class PostmanParser(
@@ -56,7 +57,7 @@ class PostmanParser(
 
     private fun getRestAction(defaultRestActions: List<RestCallAction>, postmanRequest: Request): RestCallAction? {
         val verb = postmanRequest.method
-        val path = getResolvedPathFromPostmanRequest(postmanRequest)
+        val path = URI(postmanRequest.url.raw).path.trim()
         val originalRestAction = defaultRestActions.firstOrNull { it.verb.toString() == verb && it.path.matches(path) }
 
         if (originalRestAction == null)
@@ -92,7 +93,7 @@ class PostmanParser(
             is QueryParam -> value = postmanRequest.url.query?.find { it.key == parameter.name }?.value
             is BodyParam -> value = postmanRequest.body?.raw // Will return null for form bodies
             is PathParam -> {
-                val path = getResolvedPathFromPostmanRequest(postmanRequest)
+                val path = URI(postmanRequest.url.raw).path.trim()
                 value = restAction.path.getKeyValues(path)?.get(parameter.name)
             }
         }
@@ -102,11 +103,6 @@ class PostmanParser(
 
     private fun isFormBody(parameter: Param): Boolean {
         return parameter is BodyParam && parameter.isForm()
-    }
-
-    private fun getResolvedPathFromPostmanRequest(postmanRequest: Request) : String {
-        val baseUrl = swagger.servers[0].url
-        return postmanRequest.url.raw.removePrefix(baseUrl).split('?')[0]
     }
 
     private fun getChildrenGenes(parentGene: Gene): List<Gene> {

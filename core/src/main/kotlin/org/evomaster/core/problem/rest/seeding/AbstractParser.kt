@@ -91,20 +91,14 @@ abstract class AbstractParser(
             is ObjectGene -> {
                 /*
                     TODO: Support objects in query/header/path/cookie parameters
+                    TODO: Support XML?
                  */
 
                 try {
                     val fields = Gson().fromJson(paramValue, Map::class.java)
-                    fields.forEach { (key, value) ->
-                        val fieldGene = gene.fields.find { it.name == key }
-                        if (fieldGene != null)
-                            updateGenesRecursivelyWithParameterValue(fieldGene, fieldGene.name, value as String?)
-                        else {
-
-                        }
-                    }
+                    gene.fields.forEach { updateGenesRecursivelyWithParameterValue(it, it.name, fields[it.name] as String?) }
                 } catch (ex: JsonSyntaxException) {
-                    log.warn("Failed to parse JSON of parameter {}", paramName)
+                    log.warn("Failed to parse parameter {} as JSON", paramName)
                 }
             }
 
