@@ -51,7 +51,7 @@ class PostmanParser(
 
     private fun getRestAction(defaultRestActions: List<RestCallAction>, postmanRequest: Request): RestCallAction? {
         val verb = postmanRequest.method
-        val path = URI(postmanRequest.url.raw).path.trim()
+        val path = URI(getEncodedPath(postmanRequest.url.raw)).path.trim()
         val originalRestAction = defaultRestActions.firstOrNull { it.verb.toString() == verb && it.path.matches(path) }
 
         if (originalRestAction == null)
@@ -85,7 +85,7 @@ class PostmanParser(
             is QueryParam -> value = postmanRequest.url.query?.find { it.key == parameter.name }?.value
             is BodyParam -> value = postmanRequest.body?.raw // Will return null for form bodies
             is PathParam -> {
-                val path = URI(postmanRequest.url.raw).path.trim()
+                val path = URI(getEncodedPath(postmanRequest.url.raw)).path.trim()
                 value = restAction.path.getKeyValues(path)?.get(parameter.name)
             }
         }
@@ -119,6 +119,18 @@ class PostmanParser(
 
             else -> throw IllegalStateException("Only objects are supported for form bodies when parsing Postman requests")
         }
+    }
+
+    private fun getEncodedPath(path: String): String {
+        /*
+            WARNING: Postman doesn't encode parameter values properly. The best we can do is to manually encode
+            some safe-to-encode characters (i.e., they must be encoded regardless of where they occur)
+         */
+        return path
+                .replace(" ", "%20")
+                .replace("\"", "%22")
+                .replace("<", "%3C")
+                .replace(">", "%3E")
     }
 
     private fun isFormBody(parameter: Param): Boolean {
