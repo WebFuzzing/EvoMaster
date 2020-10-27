@@ -25,6 +25,8 @@ class PostmanParser(
     }
 
     override fun parseTestCases(path: String): MutableList<MutableList<RestCallAction>> {
+        log.info("Parsing seed test cases from Postman collection located at {}", path)
+
         val testCases = mutableListOf<MutableList<RestCallAction>>()
 
         val postmanContent = File(path).inputStream().readBytes().toString(StandardCharsets.UTF_8)

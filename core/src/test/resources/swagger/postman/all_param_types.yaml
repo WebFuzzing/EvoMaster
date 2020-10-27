@@ -1,0 +1,116 @@
+openapi: 3.0.3
+servers:
+  - url: 'http://localhost:8080/api/v1'
+info:
+  description: 'all_param_types'
+  title: all_param_types
+  version: '1.0'
+paths:
+  /queryHeaderPath/{reqPathParam}:
+    get:
+      description: Endpoint containing all parameter types
+      parameters:
+        - in: path
+          name: reqPathParam
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: optStringQueryParam
+          schema:
+            type: string
+        - in: query
+          name: reqStringQueryParam
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: optStringEnumQueryParam
+          schema:
+            enum:
+              - val1
+              - val2
+            type: string
+        - in: query
+          name: optIntQueryParam
+          schema:
+            type: integer
+        - in: query
+          name: optIntEnumQueryParam
+          schema:
+            enum:
+              - 1
+              - 2
+              - 3
+            type: integer
+        - in: query
+          name: optBase64QueryParam
+          schema:
+            type: string
+            format: byte
+        - in: query
+          name: optBoolQueryParam
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: optDateQueryParam
+          required: false
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: optTimeQueryParam
+          required: false
+          schema:
+            type: string
+            format: time
+        - in: query
+          name: optDateTimeQueryParam
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: optDoubleQueryParam
+          schema:
+            type: number
+            format: double
+        - in: query
+          name: optFloatQueryParam
+          schema:
+            type: number
+            format: float
+        - in: query
+          name: optLongQueryParam
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: optArrayQueryParam
+          schema:
+            type: array
+            items:
+              type: integer
+              enum:
+                - 1
+                - 2
+                - 3
+                - 4
+                - 5
+                - 6
+                - 7
+                - 8
+                - 9
+                - 10
+        - in: header
+          name: optStringHeaderParam
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: object
+          description: Get response
+
