@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.regex.Pattern
 
 /**
  * Parsers allow to transform a set of test cases in a specific format into a set
@@ -173,10 +174,14 @@ abstract class AbstractParser(
         /*
             TODO: Same comment as in Date and Time genes
          */
-        val dateTimeRegex = Regex("^\\d{4}-\\d{2}-\\d{2}([ T])\\d{2}:\\d{2}:\\d{2}(.\\d{3}Z)?$")
-        if (paramValue.matches(dateTimeRegex)) {
-            updateGeneWithParameterValue(gene.date, paramName, paramValue)
-            updateGeneWithParameterValue(gene.time, paramName, paramValue)
+        val dateTimeRegex = "^(\\d{4}-\\d{2}-\\d{2})[ T](\\d{2}:\\d{2}:\\d{2}(.\\d{3}Z)?)$"
+        if (paramValue.matches(Regex(dateTimeRegex))) {
+            val matcher = Pattern
+                    .compile(dateTimeRegex)
+                    .matcher(paramValue)
+            matcher.find()
+            updateGeneWithParameterValue(gene.date, paramName, matcher.group(1))
+            updateGeneWithParameterValue(gene.time, paramName, matcher.group(2))
         } else
             logBadParamAssignment("date-time", paramName, paramValue)
     }
