@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.seeding
 
-import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.codec.binary.Base64
 import org.evomaster.core.problem.rest.RestCallAction
@@ -248,8 +248,8 @@ abstract class AbstractParser(
         gene.elements.clear()
 
         val elements = try {
-            Gson().fromJson(paramValue, ArrayList::class.java)
-        } catch (ex: JsonSyntaxException) { // Value is not within body, but comma separated
+            ObjectMapper().readValue(paramValue, ArrayList::class.java)
+        } catch (ex: JsonProcessingException) { // Value is not within body, but comma separated
             paramValue.split(',')
         }
 
@@ -258,7 +258,7 @@ abstract class AbstractParser(
         elements.forEach { element ->
             val elementGene = gene.template.copy()
             elementGene.parent = gene
-            if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, element as String?))
+            if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, getJsonifiedString(element)))
                 addGeneToArrayGene(gene, elementGene)
             else if (res)
                 res = false
@@ -279,12 +279,12 @@ abstract class AbstractParser(
         var res = true
 
         try {
-            val fields = Gson().fromJson(paramValue, Map::class.java)
+            val fields = ObjectMapper().readValue(paramValue, Map::class.java)
             gene.fields.forEach {
-                if (!updateGenesRecursivelyWithParameterValue(it, it.name, fields[it.name] as String?) && res)
+                if (!updateGenesRecursivelyWithParameterValue(it, it.name, getJsonifiedString(fields[it.name])) && res)
                     res = false
             }
-        } catch (ex: JsonSyntaxException) {
+        } catch (ex: JsonProcessingException) {
             res = logWarningAndReturnFalse(WARN_WRONG_JSON, paramName)
         }
 
@@ -301,23 +301,31 @@ abstract class AbstractParser(
         gene.elements.clear()
 
         try {
-            val elements = Gson().fromJson(paramValue, Map::class.java)
+            val elements = ObjectMapper().readValue(paramValue, Map::class.java)
             if (elements.size > MapGene.MAX_SIZE)
                 gene.maxSize = elements.size
             elements.forEach { (key, value) ->
                 val elementGene = gene.template.copy()
                 elementGene.name = key as String
                 elementGene.parent = gene
-                if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, value as String?))
+                if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, getJsonifiedString(value)))
                     addGeneToMapGene(gene, elementGene)
                 else if (res)
                     res = false
             }
-        } catch (ex: JsonSyntaxException) {
+        } catch (ex: JsonProcessingException) {
             res = logWarningAndReturnFalse(WARN_WRONG_JSON, paramName)
         }
 
         return res
+    }
+
+    private fun getJsonifiedString(element: Any?): String? {
+        return when(element) {
+            null -> null
+            is ArrayList<*>, is HashMap<*,*> -> ObjectMapper().writeValueAsString(element)
+            else -> element.toString()
+        }
     }
 
     private fun addGeneToArrayGene(gene: ArrayGene<*>, elementGene: Gene) {
