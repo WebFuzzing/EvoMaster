@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.Action
@@ -310,6 +311,38 @@ class PostmanParserTest {
         assertTrue((optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).template.values.containsAll(listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)))
         assertEquals(4, (optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).elements.size)
         assertTrue((optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).elements.map { it.values[it.index] }.containsAll(listOf(1, 2, 5, 10)))
+    }
+
+    @Test
+    fun testPostmanParserOptionalJsonBodyNotPresent() {
+        val swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
+        val swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
+        val postmanParser = PostmanParser(loadRestCallActions(swagger), swagger)
+        val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
+
+        assertEquals(3, testCases.size)
+
+        // Assert the presence and value of each gene of the request
+        val request = testCases[2][0]
+
+        val bodyParam = request.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
+        assertFalse(bodyParam.isActive)
+    }
+
+    @Test
+    fun testPostmanParserJsonBody() {
+        val swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
+        val swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
+        val postmanParser = PostmanParser(loadRestCallActions(swagger), swagger)
+        val testCases = postmanParser.parseTestCases("src/test/resources/postman/json_body.postman_collection.json")
+
+        assertEquals(1, testCases.size)
+
+        // Assert the presence and value of each gene of the request
+        val request = testCases[0][0]
+
+        val bodyParam = request.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
+        assertTrue(bodyParam.isActive)
     }
 
     private fun loadRestCallActions(swagger: OpenAPI): List<RestCallAction> {

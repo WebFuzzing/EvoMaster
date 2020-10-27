@@ -128,11 +128,43 @@ paths:
           application/json:
             schema:
               type: object
-              properties:
-                stringProp:
-                  type: string
               required:
-                - stringProp
+                - strProp
+                - arrProp
+              properties:
+                strProp:
+                  type: string
+                arrProp:
+                  type: array
+                  items:
+                    type: integer
+                    enum:
+                      - 1
+                      - 2
+                      - 3
+                      - 4
+                      - 5
+                      - 6
+                intProp:
+                  type: integer
+                objProp:
+                  type: object
+                  required:
+                    - objEnumStrProp
+                  properties:
+                    objBoolProp:
+                      type: boolean
+                    objEnumStrProp:
+                      type: string
+                      enum:
+                        - val1
+                        - val2
+                        - val3
+                    objArrProp:
+                      type: array
+                      items:
+                        type: object
+                        additionalProperties: true
       responses:
         '200':
           content:
