@@ -113,4 +113,30 @@ paths:
               schema:
                 type: object
           description: Get response
-
+    post:
+      description: Endpoint containing JSON object
+      parameters:
+        - in: path
+          name: reqPathParam
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: requestBody
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stringProp:
+                  type: string
+              required:
+                - stringProp
+      responses:
+        '200':
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: object
+          description: Get response

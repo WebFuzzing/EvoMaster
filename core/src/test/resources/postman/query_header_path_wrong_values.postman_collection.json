@@ -1,0 +1,92 @@
+{
+	"info": {
+		"_postman_id": "c564e36a-01b1-4431-b0ff-c8e2ee3292f5",
+		"name": "query_header_path",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_bad_params",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "optStringHeaderParam",
+						"value": "string3"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue?optStringQueryParam=string1&optStringEnumQueryParam=out_of_range&optIntQueryParam=17.47&optIntEnumQueryParam=100&optBase64QueryParam=][¨Ç*_¿´‚≠&optBoolQueryParam=non_bool&optDateQueryParam=non_date&optTimeQueryParam=13:45:08&optDateTimeQueryParam=1800-12-14 29:45:08&optDoubleQueryParam=non_double&optFloatQueryParam=non_float&optLongQueryParam=19.43&optArrayQueryParam=1,2,1000,string,5,10,true,1.8,-1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"pathParamValue"
+					],
+					"query": [
+						{
+							"key": "optStringQueryParam",
+							"value": "string1"
+						},
+						{
+							"key": "optStringEnumQueryParam",
+							"value": "out_of_range"
+						},
+						{
+							"key": "optIntQueryParam",
+							"value": "17.47"
+						},
+						{
+							"key": "optIntEnumQueryParam",
+							"value": "100"
+						},
+						{
+							"key": "optBase64QueryParam",
+							"value": "][¨Ç*_¿´‚≠"
+						},
+						{
+							"key": "optBoolQueryParam",
+							"value": "non_bool"
+						},
+						{
+							"key": "optDateQueryParam",
+							"value": "non_date"
+						},
+						{
+							"key": "optTimeQueryParam",
+							"value": "13:45:08"
+						},
+						{
+							"key": "optDateTimeQueryParam",
+							"value": "1800-12-14 29:45:08"
+						},
+						{
+							"key": "optDoubleQueryParam",
+							"value": "non_double"
+						},
+						{
+							"key": "optFloatQueryParam",
+							"value": "non_float"
+						},
+						{
+							"key": "optLongQueryParam",
+							"value": "19.43"
+						},
+						{
+							"key": "optArrayQueryParam",
+							"value": "1,2,1000,string,5,10,true,1.8,-1"
+						}
+					]
+				},
+				"description": "Endpoint containing all parameter types"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

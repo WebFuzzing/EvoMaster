@@ -1,12 +1,12 @@
 {
 	"info": {
 		"_postman_id": "c564e36a-01b1-4431-b0ff-c8e2ee3292f5",
-		"name": "all_param_types",
+		"name": "query_header_path",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "/queryHeaderPath/{reqPathParam}_all_params",
+			"name": "/queryHeaderPath/{reqPathParam}_query_header_path",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -192,6 +192,59 @@
 					"body": "{}"
 				}
 			]
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_no_params",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue?reqStringQueryParam=string2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"pathParamValue"
+					],
+					"query": [
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						}
+					]
+				},
+				"description": "Endpoint containing all parameter types"
+			},
+			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_no_json_object",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"pathParamValue"
+					]
+				},
+				"description": "Endpoint containing a JSON body"
+			},
+			"response": []
 		}
 	],
 	"protocolProfileBehavior": {}
