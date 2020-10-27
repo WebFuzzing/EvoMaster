@@ -22,7 +22,7 @@ abstract class AbstractParser(
 ) : Parser {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(PostmanParser::class.java)
+        private val log: Logger = LoggerFactory.getLogger(AbstractParser::class.java)
     }
 
     fun updateGenesRecursivelyWithParameterValue(gene: Gene, paramName: String, paramValue: String?) {
