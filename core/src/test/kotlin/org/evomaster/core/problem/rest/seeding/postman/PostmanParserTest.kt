@@ -322,7 +322,7 @@ class PostmanParserTest {
 
         assertEquals(3, testCases.size)
 
-        // Assert the presence and value of each gene of the request
+        // Assert the absence of the request body
         val request = testCases[2][0]
 
         val bodyParam = request.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
@@ -341,8 +341,52 @@ class PostmanParserTest {
         // Assert the presence and value of each gene of the request
         val request = testCases[0][0]
 
-        val bodyParam = request.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
-        assertTrue(bodyParam.isActive)
+        val optBodyObj = request.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
+        assertTrue(optBodyObj.isActive)
+
+        val bodyObj = optBodyObj.gene as ObjectGene
+
+        val strProp = bodyObj.fields.find { it.name == "strProp" } as StringGene
+        assertEquals("strPropVal", strProp.value)
+
+        val arrProp = bodyObj.fields.find { it.name == "arrProp" } as ArrayGene<*>
+        assertEquals(7, arrProp.maxSize)
+        assertEquals(7, arrProp.elements.size)
+        assertEquals("[1, 2, 3, 2, 6, 1, 3]", arrProp.getValueAsRawString())
+
+        val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene
+        assertFalse(optIntProp.isActive)
+
+        val optObjProp = bodyObj.fields.find { it.name == "objProp" } as OptionalGene
+        assertTrue(optObjProp.isActive)
+
+        val objProp = optObjProp.gene as ObjectGene
+
+        val optObjBoolProp = objProp.fields.find { it.name == "objBoolProp" } as OptionalGene
+        assertTrue(optObjBoolProp.isActive)
+        assertEquals(false, (optObjBoolProp.gene as BooleanGene).value)
+
+        val objEnumStrProp = objProp.fields.find { it.name == "objEnumStrProp" } as EnumGene<*>
+        assertEquals("val2", objEnumStrProp.values[objEnumStrProp.index])
+
+        val optObjArrProp = objProp.fields.find { it.name == "objArrProp" } as OptionalGene
+        assertTrue(optObjArrProp.isActive)
+
+        val objArrProp = optObjArrProp.gene as ArrayGene<*>
+
+        val objArrPropElem1 = objArrProp.elements[0] as MapGene<*>
+        assertEquals(2, objArrPropElem1.elements.size)
+        assertEquals("prop1", objArrPropElem1.elements[0].name)
+        assertEquals("val1", (objArrPropElem1.elements[0] as StringGene).value)
+        assertEquals("prop2", objArrPropElem1.elements[1].name)
+        assertEquals("val2", (objArrPropElem1.elements[1] as StringGene).value)
+
+        val objArrPropElem2 = objArrProp.elements[1] as MapGene<*>
+        assertEquals(2, objArrPropElem2.elements.size)
+        assertEquals("prop3", objArrPropElem2.elements[0].name)
+        assertEquals("val3", (objArrPropElem2.elements[0] as StringGene).value)
+        assertEquals("prop4", objArrPropElem2.elements[1].name)
+        assertEquals("val4", (objArrPropElem2.elements[1] as StringGene).value)
     }
 
     private fun loadRestCallActions(swagger: OpenAPI): List<RestCallAction> {

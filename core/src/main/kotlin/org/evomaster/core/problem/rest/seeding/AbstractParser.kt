@@ -34,7 +34,7 @@ abstract class AbstractParser(
      * within OptionalGene) based on it. If the parameter value is null, it means
      * that it was not present in the original parsed request.
      *
-     * @return true if there wasn't any problems updating the gene, false otherwise
+     * @return true if there weren't any problems updating the gene, false otherwise
      * (e.g., trying to assign a string to an integer parameter).
      */
     fun updateGenesRecursivelyWithParameterValue(gene: Gene, paramName: String, paramValue: String?): Boolean {

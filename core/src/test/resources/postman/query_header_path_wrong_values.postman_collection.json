@@ -86,6 +86,29 @@
 				"description": "Endpoint containing all parameter types"
 			},
 			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_wrong_endpoint",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"pathParamValue"
+					]
+				},
+				"description": "Wrond endpoint (doesn't exist in Swagger)"
+			},
+			"response": []
 		}
 	],
 	"protocolProfileBehavior": {}
