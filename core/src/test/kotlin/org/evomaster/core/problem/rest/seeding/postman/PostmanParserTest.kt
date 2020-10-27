@@ -11,15 +11,24 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class PostmanParserTest {
 
+    private lateinit var swaggerPath: String
+    private lateinit var swagger: OpenAPI
+    private lateinit var postmanParser: PostmanParser
+
+    @BeforeEach
+    fun loadSwaggerAndParser() {
+        swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
+        swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
+        postmanParser = PostmanParser(loadRestCallActions(swagger), swagger)
+    }
+
     @Test
     fun testPostmanParserNoRequests() {
-        val swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
-        val swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
-        val postmanParser = PostmanParser(loadRestCallActions(swagger), swagger)
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/no_requests.postman_collection.json")
 
         assertEquals(0, testCases.size)
@@ -27,9 +36,6 @@ class PostmanParserTest {
 
     @Test
     fun testPostmanParserQueryHeaderPath() {
-        val swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
-        val swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
-        val postmanParser = PostmanParser(loadRestCallActions(swagger), swagger)
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
 
         assertEquals(3, testCases.size)
@@ -111,9 +117,6 @@ class PostmanParserTest {
 
     @Test
     fun testPostmanParserNoParams() {
-        val swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
-        val swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
-        val postmanParser = PostmanParser(loadRestCallActions(swagger), swagger)
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
 
         assertEquals(3, testCases.size)
@@ -156,9 +159,6 @@ class PostmanParserTest {
 
     @Test // This test should throw multiple warnings
     fun testPostmanParserBadParams() {
-        val swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
-        val swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
-        val postmanParser = PostmanParser(loadRestCallActions(swagger), swagger)
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path_wrong_values.postman_collection.json")
 
         assertEquals(1, testCases.size)
@@ -315,9 +315,6 @@ class PostmanParserTest {
 
     @Test
     fun testPostmanParserOptionalJsonBodyNotPresent() {
-        val swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
-        val swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
-        val postmanParser = PostmanParser(loadRestCallActions(swagger), swagger)
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
 
         assertEquals(3, testCases.size)
@@ -331,9 +328,6 @@ class PostmanParserTest {
 
     @Test
     fun testPostmanParserJsonBody() {
-        val swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
-        val swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
-        val postmanParser = PostmanParser(loadRestCallActions(swagger), swagger)
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/json_body.postman_collection.json")
 
         assertEquals(1, testCases.size)
@@ -387,6 +381,69 @@ class PostmanParserTest {
         assertEquals("val3", (objArrPropElem2.elements[0] as StringGene).value)
         assertEquals("prop4", objArrPropElem2.elements[1].name)
         assertEquals("val4", (objArrPropElem2.elements[1] as StringGene).value)
+    }
+
+    @Test
+    fun testPostmanParserJsonBodySomeValuesWrong() {
+        val testCases = postmanParser.parseTestCases("src/test/resources/postman/json_body_some_values_wrong.postman_collection.json")
+
+        assertEquals(1, testCases.size)
+
+        // Assert the presence and value of each gene of the request
+        val request = testCases[0][0]
+
+        // Elements from the original request:
+        val originalRequest = loadRestCallActions(swagger).find { it.verb == HttpVerb.POST }!!
+        val originalOptBodyObj = originalRequest.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
+        val originalBodyObj = originalOptBodyObj.gene as ObjectGene
+        val originalOptObjProp = originalBodyObj.fields.find { it.name == "objProp" } as OptionalGene
+        val originalObjProp = originalOptObjProp.gene as ObjectGene
+        val originalObjEnumStrProp = originalObjProp.fields.find { it.name == "objEnumStrProp" } as EnumGene<*>
+
+        val optBodyObj = request.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
+        assertTrue(optBodyObj.isActive)
+
+        val bodyObj = optBodyObj.gene as ObjectGene
+
+        val strProp = bodyObj.fields.find { it.name == "strProp" } as StringGene
+        val origStrProp = originalBodyObj.fields.find { it.name == "strProp" } as StringGene
+        assertEquals(origStrProp.value, strProp.value)
+
+        val arrProp = bodyObj.fields.find { it.name == "arrProp" } as ArrayGene<*>
+        assertEquals(7, arrProp.maxSize)
+        assertEquals(3, arrProp.elements.size)
+        assertEquals("[1, 2, 3]", arrProp.getValueAsRawString())
+
+        val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene
+        assertTrue(optIntProp.isActive)
+
+        val intProp = optIntProp.gene as IntegerGene
+        assertEquals(10000, intProp.value)
+
+        val optObjProp = bodyObj.fields.find { it.name == "objProp" } as OptionalGene
+        assertTrue(optObjProp.isActive)
+
+        val objProp = optObjProp.gene as ObjectGene
+
+        val optObjBoolProp = objProp.fields.find { it.name == "objBoolProp" } as OptionalGene
+        assertTrue(optObjBoolProp.isActive)
+        assertEquals(false, (optObjBoolProp.gene as BooleanGene).value)
+
+        val objEnumStrProp = objProp.fields.find { it.name == "objEnumStrProp" } as EnumGene<*>
+        assertEquals(originalObjEnumStrProp.values[originalObjEnumStrProp.index], objEnumStrProp.values[objEnumStrProp.index])
+
+        val optObjArrProp = objProp.fields.find { it.name == "objArrProp" } as OptionalGene
+        assertTrue(optObjArrProp.isActive)
+
+        val objArrProp = optObjArrProp.gene as ArrayGene<*>
+
+        val objArrPropElem1 = objArrProp.elements[0] as MapGene<*>
+        assertEquals(0, objArrPropElem1.elements.size)
+
+        val objArrPropElem2 = objArrProp.elements[1] as MapGene<*>
+        assertEquals(1, objArrPropElem2.elements.size)
+        assertEquals("prop1", objArrPropElem2.elements[0].name)
+        assertEquals("val1", (objArrPropElem2.elements[0] as StringGene).value)
     }
 
     private fun loadRestCallActions(swagger: OpenAPI): List<RestCallAction> {
