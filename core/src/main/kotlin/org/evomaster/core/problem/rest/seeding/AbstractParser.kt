@@ -5,7 +5,6 @@ import com.google.gson.JsonSyntaxException
 import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.codec.binary.Base64
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -24,19 +23,31 @@ abstract class AbstractParser(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractParser::class.java)
+        private const val WARN_REQ_PARAM_MISSING = "Required parameter {} was not found in a seeded request. Ignoring and keeping the parameter..."
+        private const val WARN_WRONG_VALUE = "Attempt to set {} parameter {} with non-{} value {}. Ignoring and keeping the parameter the same..."
+        private const val WARN_WRONG_DATE_TIME = "Attempt to set {} parameter {} with invalid {} {}. Ignoring and keeping the parameter the same..."
+        private const val WARN_WRONG_JSON = "Failed to parse parameter {} as JSON"
     }
 
-    fun updateGenesRecursivelyWithParameterValue(gene: Gene, paramName: String, paramValue: String?) {
+    /**
+     * Given a parameter value, update a gene and all its subgenes (e.g., StringGene
+     * within OptionalGene) based on it. If the parameter value is null, it means
+     * that it was not present in the original parsed request.
+     *
+     * @return true if there wasn't any problems updating the gene, false otherwise
+     * (e.g., trying to assign a string to an integer parameter).
+     */
+    fun updateGenesRecursivelyWithParameterValue(gene: Gene, paramName: String, paramValue: String?): Boolean {
         // Optional parameter not present in request
         if (paramValue == null) {
-            if (gene is OptionalGene)
+            return if (gene is OptionalGene) {
                 gene.isActive = false
-            else
-                log.warn("Required parameter {} was not found in a seeded request. Ignoring and keeping the parameter...", paramName)
-            return
+                true
+            } else
+                logWarningAndReturnFalse(WARN_REQ_PARAM_MISSING, paramName)
         }
 
-        when (gene) {
+        return when (gene) {
 
             // Basic data type genes
             is StringGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
@@ -67,65 +78,80 @@ abstract class AbstractParser(
         }
     }
 
-    protected fun updateGeneWithParameterValue(gene: StringGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: StringGene, paramName: String, paramValue: String): Boolean {
         gene.value = paramValue
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: BooleanGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: BooleanGene, paramName: String, paramValue: String): Boolean {
         when (paramValue) {
             "true" -> gene.value = true
             "false" -> gene.value = false
-            else -> logBadParamAssignment("boolean", paramName, paramValue)
+            else -> return logWarningAndReturnFalse(WARN_WRONG_VALUE, "boolean", paramName, "boolean", paramValue)
         }
+
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: DoubleGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: DoubleGene, paramName: String, paramValue: String): Boolean {
         try {
             gene.value = paramValue.toDouble()
         } catch (e: NumberFormatException) {
-            logBadParamAssignment("double", paramName, paramValue)
+            return logWarningAndReturnFalse(WARN_WRONG_VALUE, "double", paramName, "double", paramValue)
         }
+
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: FloatGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: FloatGene, paramName: String, paramValue: String): Boolean {
         try {
             gene.value = paramValue.toFloat()
         } catch (e: NumberFormatException) {
-            logBadParamAssignment("float", paramName, paramValue)
+            return logWarningAndReturnFalse(WARN_WRONG_VALUE, "float", paramName, "float", paramValue)
         }
+
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: IntegerGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: IntegerGene, paramName: String, paramValue: String): Boolean {
         try {
             gene.value = paramValue.toInt()
         } catch (e: NumberFormatException) {
-            logBadParamAssignment("integer", paramName, paramValue)
+            return logWarningAndReturnFalse(WARN_WRONG_VALUE, "integer", paramName, "integer", paramValue)
         }
+
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: LongGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: LongGene, paramName: String, paramValue: String): Boolean {
         try {
             gene.value = paramValue.toLong()
         } catch (e: NumberFormatException) {
-            logBadParamAssignment("long", paramName, paramValue)
+            return logWarningAndReturnFalse(WARN_WRONG_VALUE, "long", paramName, "long", paramValue)
         }
+
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: Base64StringGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: Base64StringGene, paramName: String, paramValue: String): Boolean {
         if (Base64.isBase64(paramValue))
             gene.data.value = paramValue
         else
-            logBadParamAssignment("base64", paramName, paramValue)
+            return logWarningAndReturnFalse(WARN_WRONG_VALUE, "base64", paramName, "base64", paramValue)
+
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: EnumGene<*>, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: EnumGene<*>, paramName: String, paramValue: String): Boolean {
         if (gene.values.map { it.toString() }.contains(paramValue))
             gene.index = gene.values.map { it.toString() }.indexOf(paramValue)
         else
-            logBadParamAssignment("enum", paramName, paramValue)
+            return logWarningAndReturnFalse(WARN_WRONG_VALUE, "enum", paramName, "enum", paramValue)
+
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: DateGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: DateGene, paramName: String, paramValue: String): Boolean {
         // TODO: Maybe support more date formats, although Swagger only supports this
         /*
             Here we don't want to parse the date, since we may use bad dates intentionally.
@@ -144,12 +170,14 @@ abstract class AbstractParser(
                 gene.month.value = month
                 gene.day.value = day
             } else
-                log.warn("Attempt to set date parameter {} with invalid date {}. Ignoring and keeping the parameter the same...", paramName, paramValue)
+                return logWarningAndReturnFalse(WARN_WRONG_DATE_TIME, "date", paramName, "date", paramValue)
         } else
-            logBadParamAssignment("date", paramName, paramValue)
+            return logWarningAndReturnFalse(WARN_WRONG_VALUE, "date", paramName, "date", paramValue)
+
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: TimeGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: TimeGene, paramName: String, paramValue: String): Boolean {
         /*
             TODO: Same comment as in DateGene
          */
@@ -165,12 +193,14 @@ abstract class AbstractParser(
                 gene.minute.value = minute
                 gene.second.value = second
             } else
-                log.warn("Attempt to set time parameter {} with invalid time {}. Ignoring and keeping the parameter the same...", paramName, paramValue)
+                return logWarningAndReturnFalse(WARN_WRONG_DATE_TIME, "time", paramName, "time", paramValue)
         } else
-            logBadParamAssignment("time", paramName, paramValue)
+            return logWarningAndReturnFalse(WARN_WRONG_VALUE, "time", paramName, "time", paramValue)
+
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: DateTimeGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: DateTimeGene, paramName: String, paramValue: String): Boolean {
         /*
             TODO: Same comment as in Date and Time genes
          */
@@ -183,18 +213,20 @@ abstract class AbstractParser(
             updateGeneWithParameterValue(gene.date, paramName, matcher.group(1))
             updateGeneWithParameterValue(gene.time, paramName, matcher.group(2))
         } else
-            logBadParamAssignment("date-time", paramName, paramValue)
+            return logWarningAndReturnFalse(WARN_WRONG_VALUE, "date-time", paramName, "date-time", paramValue)
+
+        return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: OptionalGene, paramName: String, paramValue: String) {
-        updateGenesRecursivelyWithParameterValue(gene.gene, gene.name, paramValue)
+    protected fun updateGeneWithParameterValue(gene: OptionalGene, paramName: String, paramValue: String): Boolean {
+        return updateGenesRecursivelyWithParameterValue(gene.gene, gene.name, paramValue)
     }
 
-    protected fun updateGeneWithParameterValue(gene: DisruptiveGene<*>, paramName: String, paramValue: String) {
-        updateGenesRecursivelyWithParameterValue(gene.gene, gene.gene.name, paramValue)
+    protected fun updateGeneWithParameterValue(gene: DisruptiveGene<*>, paramName: String, paramValue: String): Boolean {
+        return updateGenesRecursivelyWithParameterValue(gene.gene, gene.gene.name, paramValue)
     }
 
-    protected fun updateGeneWithParameterValue(gene: ArrayGene<*>, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: ArrayGene<*>, paramName: String, paramValue: String): Boolean {
         /*
             Here we may have an array as a query/header/path/cookie parameter
             or inside a request body. In the first case, we assume the values
@@ -211,6 +243,8 @@ abstract class AbstractParser(
             TODO: Support nested objects and arrays in non-body parameters
          */
 
+        var res = true
+
         gene.elements.clear()
 
         val elements = try {
@@ -224,12 +258,16 @@ abstract class AbstractParser(
         elements.forEach { element ->
             val elementGene = gene.template.copy()
             elementGene.parent = gene
-            updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, element as String?)
-            addGeneToArrayGene(gene, elementGene)
+            if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, element as String?))
+                addGeneToArrayGene(gene, elementGene)
+            else if (res)
+                res = false
         }
+
+        return res
     }
 
-    protected fun updateGeneWithParameterValue(gene: ObjectGene, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: ObjectGene, paramName: String, paramValue: String): Boolean {
         /*
             TODO: Support objects in query/header/path/cookie parameters. Unlike for
              the ArrayGene, here we don't support any kind of object in parameters
@@ -238,18 +276,27 @@ abstract class AbstractParser(
             TODO: Support XML?
          */
 
+        var res = true
+
         try {
             val fields = Gson().fromJson(paramValue, Map::class.java)
-            gene.fields.forEach { updateGenesRecursivelyWithParameterValue(it, it.name, fields[it.name] as String?) }
+            gene.fields.forEach {
+                if (!updateGenesRecursivelyWithParameterValue(it, it.name, fields[it.name] as String?) && res)
+                    res = false
+            }
         } catch (ex: JsonSyntaxException) {
-            log.warn("Failed to parse parameter {} as JSON", paramName)
+            res = logWarningAndReturnFalse(WARN_WRONG_JSON, paramName)
         }
+
+        return res
     }
 
-    protected fun updateGeneWithParameterValue(gene: MapGene<*>, paramName: String, paramValue: String) {
+    protected fun updateGeneWithParameterValue(gene: MapGene<*>, paramName: String, paramValue: String): Boolean {
         /*
             TODO: Same comment as in ObjectGene
          */
+
+        var res = true
 
         gene.elements.clear()
 
@@ -261,12 +308,16 @@ abstract class AbstractParser(
                 val elementGene = gene.template.copy()
                 elementGene.name = key as String
                 elementGene.parent = gene
-                updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, value as String?)
-                addGeneToMapGene(gene, elementGene)
+                if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, value as String?))
+                    addGeneToMapGene(gene, elementGene)
+                else if (res)
+                    res = false
             }
         } catch (ex: JsonSyntaxException) {
-            log.warn("Failed to parse parameter {} as JSON", paramName)
+            res = logWarningAndReturnFalse(WARN_WRONG_JSON, paramName)
         }
+
+        return res
     }
 
     private fun addGeneToArrayGene(gene: ArrayGene<*>, elementGene: Gene) {
@@ -311,8 +362,14 @@ abstract class AbstractParser(
         }
     }
 
-    private fun logBadParamAssignment(paramType: String, paramName: String, paramValue: String) {
-        log.warn("Attempt to set {} parameter {} with non-{} value {}. Ignoring and keeping the parameter the same...", paramType, paramName, paramType, paramValue)
+    private fun logWarningAndReturnFalse(message: String, vararg logArgs: String): Boolean {
+        when (logArgs.size) {
+            1 -> log.warn(message, logArgs[0])
+            2 -> log.warn(message, logArgs[0], logArgs[1])
+            3 -> log.warn(message, logArgs[0], logArgs[1], logArgs[2])
+            4 -> log.warn(message, logArgs[0], logArgs[1], logArgs[2], logArgs[3])
+        }
+        return false
     }
 
 }
