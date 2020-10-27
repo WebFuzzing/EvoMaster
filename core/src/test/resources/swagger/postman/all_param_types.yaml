@@ -172,3 +172,45 @@ paths:
               schema:
                 type: object
           description: Get response
+  /formBody:
+    put:
+      description: Endpoint containing form body
+      requestBody:
+        description: requestBody
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - strProp
+                - arrProp
+                - boolProp
+              properties:
+                strProp:
+                  type: string
+                arrProp:
+                  type: array
+                  items:
+                    type: integer
+                    enum:
+                      - 1
+                      - 2
+                      - 3
+                      - 4
+                      - 5
+                      - 6
+                intProp:
+                  type: integer
+                dateTimeProp:
+                  type: string
+                  format: date-time
+                boolProp:
+                  type: boolean
+      responses:
+        '200':
+          content:
+            application/json; charset=utf-8:
+              schema:
+                type: object
+          description: Get response

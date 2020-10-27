@@ -8,6 +8,7 @@ import org.evomaster.core.problem.rest.seeding.AbstractParser
 import org.evomaster.core.problem.rest.seeding.postman.pojos.PostmanCollectionObject
 import org.evomaster.core.problem.rest.seeding.postman.pojos.Request
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -111,10 +112,19 @@ class PostmanParser(
              [2] https://swagger.io/docs/specification/describing-parameters/#query-parameters
          */
 
-        when (formBody.gene) {
+        // Optional form body not present in request
+        if (postmanRequest.body?.urlencoded?.isEmpty() != false) {
+            if (formBody.gene is OptionalGene)
+                formBody.gene.isActive = false
+            else
+                log.warn("Required form body was not found in a seeded request. Ignoring and keeping the body...")
+            return
+        }
+
+        when (val rootGene = if (formBody.gene is OptionalGene) formBody.gene.gene else formBody.gene) {
             is ObjectGene -> {
-                formBody.gene.fields.forEach { formBodyField ->
-                    val paramValue = postmanRequest.body?.urlencoded?.find { it.key == formBodyField.name }?.value
+                rootGene.fields.forEach { formBodyField ->
+                    val paramValue = postmanRequest.body.urlencoded.find { it.key == formBodyField.name }?.value
                     updateGenesRecursivelyWithParameterValue(formBodyField, formBodyField.name, paramValue)
                 }
             }

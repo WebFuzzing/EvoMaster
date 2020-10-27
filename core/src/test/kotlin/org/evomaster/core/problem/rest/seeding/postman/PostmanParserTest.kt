@@ -446,6 +446,113 @@ class PostmanParserTest {
         assertEquals("val1", (objArrPropElem2.elements[0] as StringGene).value)
     }
 
+    @Test
+    fun testPostmanParserOptionalFormBodyNotPresent() {
+        val testCases = postmanParser.parseTestCases("src/test/resources/postman/form_body.postman_collection.json")
+
+        assertEquals(3, testCases.size)
+
+        // Assert the absence of the request body
+        val request = testCases[2][0]
+
+        val bodyParam = request.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
+        assertFalse(bodyParam.isActive)
+    }
+
+    @Test
+    fun testPostmanParserFormBody() {
+        val testCases = postmanParser.parseTestCases("src/test/resources/postman/form_body.postman_collection.json")
+
+        assertEquals(3, testCases.size)
+
+        // Assert the presence and value of each gene of the request
+        val request = testCases[0][0]
+
+        val optBodyObj = request.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
+        assertEquals(true, optBodyObj.isActive)
+
+        val bodyObj = optBodyObj.gene as ObjectGene
+
+        val strProp = bodyObj.fields.find { it.name == "strProp" } as StringGene
+        assertEquals("val1", strProp.value)
+
+        val arrProp = bodyObj.fields.find { it.name == "arrProp" } as ArrayGene<*>
+        assertEquals(9, arrProp.maxSize)
+        assertEquals(9, arrProp.elements.size)
+        assertEquals("[6, 2, 6, 1, 3, 2, 6, 1, 1]", arrProp.getValueAsRawString())
+
+        val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene
+        assertEquals(true, optIntProp.isActive)
+
+        val intProp = optIntProp.gene as IntegerGene
+        assertEquals(999999, intProp.value)
+
+        val optDateTimeProp = bodyObj.fields.find { it.name == "dateTimeProp" } as OptionalGene
+        assertEquals(true, optDateTimeProp.isActive)
+
+        val dateTimeProp = optDateTimeProp.gene as DateTimeGene
+        assertEquals(2020, dateTimeProp.date.year.value)
+        assertEquals(12, dateTimeProp.date.month.value)
+        assertEquals(14, dateTimeProp.date.day.value)
+        assertEquals(13, dateTimeProp.time.hour.value)
+        assertEquals(45, dateTimeProp.time.minute.value)
+        assertEquals(8, dateTimeProp.time.second.value)
+
+        val boolProp = bodyObj.fields.find { it.name == "boolProp" } as BooleanGene
+        assertEquals(true, boolProp.value)
+    }
+
+    @Test
+    fun testPostmanParserFormBodySomeValuesWrong() {
+        val testCases = postmanParser.parseTestCases("src/test/resources/postman/form_body.postman_collection.json")
+
+        assertEquals(3, testCases.size)
+
+        // Assert the presence and value of each gene of the request
+        val request = testCases[1][0]
+
+        // Elements from the original request:
+        val originalRequest = loadRestCallActions(swagger).find { it.verb == HttpVerb.PUT }!!
+        val originalOptBodyObj = originalRequest.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
+        val originalBodyObj = originalOptBodyObj.gene as ObjectGene
+
+        val optBodyObj = request.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
+        assertEquals(true, optBodyObj.isActive)
+
+        val bodyObj = optBodyObj.gene as ObjectGene
+
+        val strProp = bodyObj.fields.find { it.name == "strProp" } as StringGene
+        val originalStrProp = originalBodyObj.fields.find { it.name == "strProp" } as StringGene
+        assertEquals(originalStrProp.value, strProp.value)
+
+        val arrProp = bodyObj.fields.find { it.name == "arrProp" } as ArrayGene<*>
+        assertEquals(8, arrProp.maxSize)
+        assertEquals(6, arrProp.elements.size)
+        assertEquals("[1, 2, 3, 4, 5, 6]", arrProp.getValueAsRawString())
+
+        val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene
+        assertEquals(true, optIntProp.isActive)
+
+        val intProp = optIntProp.gene as IntegerGene
+        val originalIntProp = (originalBodyObj.fields.find { it.name == "intProp" } as OptionalGene).gene as IntegerGene
+        assertEquals(originalIntProp.value, intProp.value)
+
+        val optDateTimeProp = bodyObj.fields.find { it.name == "dateTimeProp" } as OptionalGene
+        assertEquals(true, optDateTimeProp.isActive)
+
+        val dateTimeProp = optDateTimeProp.gene as DateTimeGene
+        val originalDateTimeProp = (originalBodyObj.fields.find { it.name == "dateTimeProp" } as OptionalGene).gene as DateTimeGene
+        assertEquals(originalDateTimeProp.date.year.value, dateTimeProp.date.year.value)
+        assertEquals(originalDateTimeProp.date.month.value, dateTimeProp.date.month.value)
+        assertEquals(originalDateTimeProp.date.day.value, dateTimeProp.date.day.value)
+        assertEquals(originalDateTimeProp.time.hour.value, dateTimeProp.time.hour.value)
+        assertEquals(originalDateTimeProp.time.minute.value, dateTimeProp.time.minute.value)
+        assertEquals(originalDateTimeProp.time.second.value, dateTimeProp.time.second.value)
+
+        val boolProp = bodyObj.fields.find { it.name == "boolProp" } as BooleanGene
+        assertEquals(true, boolProp.value)
+    }
+
     private fun loadRestCallActions(swagger: OpenAPI): List<RestCallAction> {
         val actions: MutableMap<String, Action> = mutableMapOf()
 

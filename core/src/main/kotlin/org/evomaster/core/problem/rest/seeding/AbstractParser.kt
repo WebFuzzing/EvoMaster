@@ -73,6 +73,7 @@ abstract class AbstractParser(
 
             else -> {
                 // ImmutableDataHolderGene should never happen
+                // TODO CycleObjectGene?
                 throw IllegalStateException("Unexpected gene found in RestCallAction")
             }
         }
@@ -250,7 +251,7 @@ abstract class AbstractParser(
         val elements = try {
             ObjectMapper().readValue(paramValue, ArrayList::class.java)
         } catch (ex: JsonProcessingException) { // Value is not within body, but comma separated
-            paramValue.split(',')
+            paramValue.split(',').map { it.trim() }
         }
 
         if (elements.size > ArrayGene.MAX_SIZE)
