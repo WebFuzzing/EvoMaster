@@ -1,14 +1,15 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.value.ObjectGeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URLEncoder
@@ -67,7 +68,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 .forEach { it.randomize(randomness, forceNewValue, allGenes) }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return fields.filter { it.isMutable() }
     }
 
@@ -132,44 +133,24 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
     }
 
-    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
-        val canFields = fields.filter { !it.reachOptimal() || !additionalGeneMutationInfo.archiveMutator.withinNormal() }.run {
-            if (isEmpty())
-                fields
-            else this
-        }
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+
         if (additionalGeneMutationInfo.impact != null
                 && additionalGeneMutationInfo.impact is ObjectGeneImpact){
-            val impacts = canFields.map { additionalGeneMutationInfo.impact.fields.getValue(it.name)}
+            val impacts = internalGenes.map { additionalGeneMutationInfo.impact.fields.getValue(it.name)}
             val selected = mwc.selectSubGene(
-                    canFields, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
+                    internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
             )
-            val map = selected.map { canFields.indexOf(it) }
-            return map.map { canFields[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact) }
+            val map = selected.map { internalGenes.indexOf(it) }
+            return map.map { internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact, gene = internalGenes[it]) }
         }
-        throw IllegalArgumentException("impact is null or not ObjectGeneImpact")
+        throw IllegalArgumentException("impact is null or not ObjectGeneImpact, ${additionalGeneMutationInfo.impact}")
     }
 
-
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
-        if (archiveMutator.enableArchiveGeneMutation()) {
-            original as? ObjectGene ?: throw IllegalStateException("$original should be ObjectGene")
-            mutated as? ObjectGene ?: throw IllegalStateException("$mutated should be ObjectGene")
-
-            mutated.fields.zip(original.fields) { cf, pf ->
-                Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
-            }.filter { !it.second }.map { it.first }.forEach { g ->
-                val current = fields.find { it.name == g.first.name }
-                        ?: throw IllegalArgumentException("mismatched field")
-                current.archiveMutationUpdate(original = g.second, mutated = g.first, doesCurrentBetter = doesCurrentBetter, archiveMutator = archiveMutator)
-            }
-        }
-    }
-
-    override fun reachOptimal(): Boolean {
-        return fields.all { it.reachOptimal() }
-    }
 
     override fun mutationWeight(): Double = fields.map { it.mutationWeight() }.sum()
+
+    override fun innerGene(): List<Gene> = fields
+
 
 }

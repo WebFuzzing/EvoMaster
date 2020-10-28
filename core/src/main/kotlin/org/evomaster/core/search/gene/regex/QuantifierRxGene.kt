@@ -6,8 +6,8 @@ import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -106,7 +106,7 @@ class QuantifierRxGene(
         return min != limitedMax || template.isMutable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         val length = atoms.size
 
         return if( length > min  && randomness.nextBoolean(MODIFY_LENGTH)){
@@ -120,7 +120,16 @@ class QuantifierRxGene(
     }
 
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        /*
+            atoms is dynamically modified, then we do not collect impacts for it now.
+            thus for the internal genes, adaptive gene selection for mutation is not applicable
+        */
+        val s = randomness.choose(internalGenes)
+        return listOf(s to additionalGeneMutationInfo.copyFoInnerGene(null, s))
+    }
+
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         val length = atoms.size
 
         if (length < min || length > limitedMax)
@@ -210,4 +219,6 @@ class QuantifierRxGene(
     override fun mutationWeight(): Double {
         return atoms.filter { isMutable() }.map { it.mutationWeight() }.sum() + 1.0
     }
+
+    override fun innerGene(): List<Gene> = atoms
 }

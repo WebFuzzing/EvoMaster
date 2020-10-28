@@ -34,6 +34,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
 import java.net.URL
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 import javax.annotation.PostConstruct
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Client
@@ -756,15 +759,23 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             2) might not be possible to have a too long URL
          */
         //TODO prioritized list
-//        val ids = randomness.choose(
-//                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
-//                100).toSet()
         val ts = targets.filter { !IdMapper.isLocal(it) }.toMutableSet()
         val nc = archive.notCoveredTargets().filter { !IdMapper.isLocal(it) && !ts.contains(it)}
+        recordExceededTarget(nc)
         return when {
             ts.size > 100 -> randomness.choose(ts, 100)
             nc.isEmpty() -> ts
             else -> ts.plus(randomness.choose(nc, 100 - ts.size))
         }
+    }
+
+    private fun recordExceededTarget(targets: Collection<Int>){
+        if(!config.recordExceededTargets) return
+        if (targets.size <= 100) return
+
+        val path = Paths.get(config.exceedTargetsFile)
+        if (Files.notExists(path.parent)) Files.createDirectories(path.parent)
+        if (Files.notExists(path)) Files.createFile(path)
+        Files.write(path, listOf(time.evaluatedIndividuals.toString()).plus(targets.map { idMapper.getDescriptiveId(it) }), StandardOpenOption.APPEND)
     }
 }

@@ -4,6 +4,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import kotlin.math.min
 
 /**
@@ -265,56 +266,26 @@ class FitnessValue(
 
 
     /**
-     * Check if current does differ from [other] regarding [targetSubset].
-     *
-     * Recall: during the search, we might not calculate all targets, eg once they
-     * are covered.
-     *
      * @param other, the one we compare to
      * @param targetSubset, only calculate subsumption on these testing targets
+     * @param targetInfo, comparison results for each of [targetSubset]
+     * @param config, includes setting for comparison
      */
     fun isDifferent(
             other: FitnessValue,
             targetSubset: Set<Int>,
-            improved : MutableSet<Int>,
-            different : MutableSet<Int>,
-            strategy: EMConfig.SecondaryObjectiveStrategy,
-            bloatControlForSecondaryObjective: Boolean) : Boolean {
+            targetInfo: MutableMap<Int, EvaluatedMutation>,
+            config: EMConfig)  {
 
-        var atLeastOneDifferent = false
         for (k in targetSubset) {
-
-            val v = this.targets[k]?.distance ?: 0.0
-            val z = other.targets[k]?.distance ?: 0.0
-            if (v == 0.0 && v == z)
-                continue
-
-            if (v != z) {
-                different.add(k)
-                atLeastOneDifferent = true
-                if (v > z) improved.add(k)
-                continue
+            val value = when {
+                betterThan(target = k, other = other, strategy = config.secondaryObjectiveStrategy,bloatControlForSecondaryObjective = config.bloatControlForSecondaryObjective, minimumSize = config.minimumSizeControl) -> EvaluatedMutation.WORSE_THAN
+                equivalent(k, other, strategy = config.secondaryObjectiveStrategy) -> EvaluatedMutation.EQUAL_WITH
+                else -> EvaluatedMutation.BETTER_THAN
             }
-
-            val extra = compareExtraToMinimize(k, other, strategy)
-
-            if (this.size != other.size || extra != 0) {
-                different.add(k)
-                atLeastOneDifferent = true
-
-                if(bloatControlForSecondaryObjective){
-                    if (this.size < other.size || (this.size == other.size && extra > 0)) {
-                        improved.add(k)
-                    }
-                } else {
-                    if (extra > 0 ||
-                            (extra == 0 && this.size < other.size)) {
-                        improved.add(k)
-                    }
-                }
-            }
+            targetInfo.merge(
+                    k, value){ old, new -> if (old.value > new.value) old else new }
         }
-        return atLeastOneDifferent
     }
 
     fun averageExtraDistancesToMinimize(actionIndex: Int): Double{
@@ -446,5 +417,12 @@ class FitnessValue(
             thisLength < otherLength -> 1
             else -> 0
         }
+    }
+
+    /**
+     * @return targets that are reached/covered by an action at [actionIndex]
+     */
+    fun getTargetsByAction(actionIndex : Int) : Set<Int> {
+        return targets.filterValues { it.actionIndex == actionIndex }.keys
     }
 }

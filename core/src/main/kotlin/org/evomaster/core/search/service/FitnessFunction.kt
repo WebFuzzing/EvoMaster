@@ -51,6 +51,7 @@ abstract class FitnessFunction<T>  where T : Individual {
                 {time.reportExecutedIndividualTime(it, a)},
                 {doCalculateCoverage(individual, targets)}
         )
+
         processMonitor.eval = ei
 
         if(ei == null){
@@ -99,9 +100,9 @@ abstract class FitnessFunction<T>  where T : Individual {
 
     /**
      * decide what targets to evaluate during fitness evaluation
+     * @param targets indicates prioritized targets if there exists
      */
     open fun targetsToEvaluate(targets: Set<Int>, individual: T) : Set<Int>{
-        if (targets.isEmpty()) throw IllegalArgumentException("none of the targets to evaluate")
-        return targets
+        return targets.plus(archive.notCoveredTargets()).filter { !IdMapper.isLocal(it) }.toSet()
     }
 }

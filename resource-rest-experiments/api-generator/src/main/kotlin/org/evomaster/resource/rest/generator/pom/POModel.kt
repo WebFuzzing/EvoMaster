@@ -100,6 +100,7 @@ class EXPOModel(groupId: String, artifactId: String, version: String = DEFAULT_V
     : POModel(groupId= groupId, artifactId= artifactId, version = version, output=output){
     override fun getPOModel(): Model {
         val model = Model()
+        model.modelVersion = "4.0.0"
         model.groupId = groupId
         model.artifactId = artifactId
         model.version = version

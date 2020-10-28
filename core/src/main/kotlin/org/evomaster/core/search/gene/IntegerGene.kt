@@ -5,9 +5,9 @@ import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 
 class IntegerGene(
@@ -16,12 +16,11 @@ class IntegerGene(
         /** Inclusive */
         val min: Int = Int.MIN_VALUE,
         /** Inclusive */
-        val max: Int = Int.MAX_VALUE,
-        val valueMutation :IntMutationUpdate = IntMutationUpdate(min, max)
+        val max: Int = Int.MAX_VALUE
 ) : NumberGene<Int>(name, value) {
 
     override fun copy(): Gene {
-        return IntegerGene(name, value, min, max, valueMutation.copy())
+        return IntegerGene(name, value, min, max)
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -68,13 +67,26 @@ class IntegerGene(
         } else {
             randomness.nextInt(a, b)
         }
-
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+
+        if (enableAdaptiveGeneMutation){
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
+            if (additionalGeneMutationInfo.hasHistory()){
+                try {
+                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
+                            additionalGeneMutationInfo,
+                            this,
+                            allGenes
+                    )
+                    return true
+                }catch (e: DifferentGeneInHistory){}
+            }
+        }
 
         //check maximum range. no point in having a delta greater than such range
-        val range: Long = max.toLong() - min.toLong()
+        val range = max.toLong() - min.toLong()
 
         //choose an i for 2^i modification
         val delta = getDelta(randomness, apc, range)
@@ -93,7 +105,6 @@ class IntegerGene(
             else -> res.toInt()
         }
 
-        //TODO MAN add archive-based mutation
         return true
     }
 
@@ -102,7 +113,6 @@ class IntegerGene(
         return value.toString()
     }
 
-    override fun reachOptimal(): Boolean {
-        return valueMutation.reached
-    }
+    override fun innerGene(): List<Gene> = listOf()
+
 }

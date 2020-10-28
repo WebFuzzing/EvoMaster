@@ -16,7 +16,7 @@ object GeneUtils {
     /**
      * List where each element at position "i" has value "2^i"
      */
-    private val intpow2 = (0..30).map { 2.0.pow(it).toInt() }
+    val intpow2 = (0..30).map { 2.0.pow(it).toInt() }
 
 
     /**

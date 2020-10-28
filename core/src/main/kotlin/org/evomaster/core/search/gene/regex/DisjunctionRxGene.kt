@@ -3,11 +3,13 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
+import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionRxGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 
 class DisjunctionRxGene(
@@ -65,7 +67,7 @@ class DisjunctionRxGene(
         return !matchStart || !matchEnd || terms.any { it.isMutable() }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return if(!matchStart && randomness.nextBoolean(APPEND)){
             emptyList()
         } else if(!matchEnd && randomness.nextBoolean(APPEND)){
@@ -75,11 +77,28 @@ class DisjunctionRxGene(
         }
     }
 
-    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
-        TODO()
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is DisjunctionRxGeneImpact)
+            throw IllegalArgumentException("mismatched gene impact")
+
+        if (!terms.containsAll(internalGenes))
+            throw IllegalArgumentException("mismatched internal genes")
+
+        val impacts = internalGenes.map {
+            additionalGeneMutationInfo.impact.termsImpact[terms.indexOf(it)]
+        }
+
+        val selected = mwc.selectSubGene(
+                candidateGenesToMutate = internalGenes,
+                impacts = impacts,
+                targets = additionalGeneMutationInfo.targets,
+                forceNotEmpty = true,
+                adaptiveWeight = true
+        )
+        return selected.map { it to additionalGeneMutationInfo.copyFoInnerGene(impacts[internalGenes.indexOf(it)], it) }.toList()
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         if(!matchStart){
             extraPrefix = ! extraPrefix
         } else {
@@ -114,9 +133,16 @@ class DisjunctionRxGene(
         if (other !is DisjunctionRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        for (i in 0 until terms.size) {
-            if (!this.terms[i].containsSameValueAs(other.terms[i])) {
-                return false
+
+        //TODO Man: Andrea, please check this code
+        if (terms.size != other.terms.size) return false
+
+        //Man: if terms is empty, there throws IndexOutOfBoundsException (found by rest-scs case study)
+        if (terms.isNotEmpty()){
+            for (i in 0 until terms.size) {
+                if ( this.terms[i]::class.java.simpleName != other.terms[i]::class.java.simpleName ||!this.terms[i].containsSameValueAs(other.terms[i])) {
+                    return false
+                }
             }
         }
 
@@ -132,4 +158,6 @@ class DisjunctionRxGene(
     override fun mutationWeight(): Double {
         return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
     }
+
+    override fun innerGene(): List<Gene> = terms
 }

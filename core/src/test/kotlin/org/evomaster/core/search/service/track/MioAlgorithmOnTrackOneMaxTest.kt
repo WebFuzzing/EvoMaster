@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service.track
+package org.evomaster.core.search.algorithms
 
 import com.google.inject.Injector
 import com.google.inject.Key
@@ -8,7 +8,6 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
@@ -53,6 +52,10 @@ class MioAlgorithmOnTrackOneMaxTest {
     fun testIndividualWithTrack(){
 
         val args = arrayOf(
+                "--probOfArchiveMutation",
+                "0.0",
+                "--weightBasedMutationRate",
+                "false",
                 "--stoppingCriterion",
                 "FITNESS_EVALUATIONS",
                 "--maxActionEvaluations",
@@ -181,8 +184,8 @@ class MioAlgorithmOnTrackOneMaxTest {
                 "false",
                 "--enableTrackEvaluatedIndividual",
                 "true",
-                "--probOfArchiveMutation",
-                "0.5",
+                "--doCollectImpact",
+                "true",
                 "--maxLengthOfTraces",
                 "-1"
         )
@@ -192,13 +195,16 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
         assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
         assert(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
-        assert(tracker.exists(EvaluatedIndividual.WITH_TRACK_WITH_IMPACT))
+        assert(tracker.exists(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT))
+        assert(tracker.exists(EvaluatedIndividual.WITH_TRACK_WITH_COPY_IMPACT))
+        assert(tracker.exists(EvaluatedIndividual.ONLY_WITH_CLONE_IMPACT))
+        assert(tracker.exists(EvaluatedIndividual.ONLY_WITH_COPY_IMPACT))
 
         val solution = mio.search()
 
         solution.individuals.forEach {  s->
             assertNull(s.individual.tracking)
-            assertNotNull(s.getImpactInfo().isNotEmpty())
+            assertNotNull(s.anyImpactInfo())
         }
     }
 
@@ -206,6 +212,10 @@ class MioAlgorithmOnTrackOneMaxTest {
     fun testTrackWithoutTrack(){
 
         val args = arrayOf(
+                "--probOfArchiveMutation",
+                "0.0",
+                "--weightBasedMutationRate",
+                "false",
                 "--stoppingCriterion",
                 "FITNESS_EVALUATIONS",
                 "--enableTrackIndividual",

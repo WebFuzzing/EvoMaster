@@ -9,6 +9,7 @@ import org.evomaster.e2etests.utils.CIUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -23,33 +24,15 @@ public class TestabilityEMTest extends SpringTestBase {
     }
 
     @Test
-    public void testWithDefault() throws Throwable {
-        CIUtils.skipIfOnCircleCI();
-
-        testRunEM("FIRST_NOT_COVERED_TARGET", "");
-    }
-
-    @Test
-    public void testWithExpand() throws Throwable {
-        CIUtils.skipIfOnCircleCI();
-
-        testRunEM("EXPANDED_UPDATED_NOT_COVERED_TARGET", "Expand");
-    }
-
-    @Test
-    public void testWithUpdated() throws Throwable {
-        CIUtils.skipIfOnCircleCI();
-
-        testRunEM("UPDATED_NOT_COVERED_TARGET", "Update");
-    }
-
-    private void testRunEM(String mutationTargetsSelectionStrategy, String packageSuffix) throws Throwable {
+    public void testRunEM() throws Throwable {
 
         defaultSeed = 0;
 
+        CIUtils.skipIfOnCircleCI();
+
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
-                "org.bar.TestabilityEM"+packageSuffix,
+                "org.bar.TestabilityEM",
                 15_000,
                 true,
                 (args) -> {
@@ -57,16 +40,25 @@ public class TestabilityEMTest extends SpringTestBase {
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
 
-                    args.add("--mutationTargetsSelectionStrategy");
-                    args.add(mutationTargetsSelectionStrategy);
+                    args.add("--enableTrackEvaluatedIndividual");
+                    args.add("false");
+
+                    args.add("--weightBasedMutationRate");
+                    args.add("false");
+
+                    args.add("--adaptiveGeneSelectionMethod");
+                    args.add("NONE");
+
+                    args.add("--archiveGeneMutation");
+                    args.add("NONE");
+
+                    args.add("--probOfArchiveMutation");
+                    args.add("0.0");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    /*
-                        there seem exist some dependency among tests. After executing the first test, SUT fails to throw the exception in following two tests.
-                     */
                     assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/testability/{date}/{number}/{setting}", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "ERROR");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "OK");

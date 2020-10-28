@@ -11,8 +11,14 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
+
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 
 
 class Archive<T> where T : Individual {
@@ -278,6 +284,15 @@ class Archive<T> where T : Individual {
                 .any { populations[it]?.isEmpty() ?: true }
     }
 
+    fun identifyNewTargets(ei: EvaluatedIndividual<T>, targetInfo: MutableMap<Int, EvaluatedMutation>) {
+
+        ei.fitness.getViewOfData()
+                .filter { it.value.distance > 0.0 && populations[it.key]?.isEmpty() ?: true}
+                .forEach { t->
+                    targetInfo[t.key] = EvaluatedMutation.NEWLY_IDENTIFIED
+                }
+    }
+
     /**
      * @return true if the new individual was added to the archive
      */
@@ -452,6 +467,13 @@ class Archive<T> where T : Individual {
     }
 
     /**
+     * useful for debugging
+     */
+    fun getReachedTargetHeuristics(target: Int) : Double?{
+        return populations[target]?.map { v-> v.fitness.getHeuristic(target) }?.max()
+    }
+
+    /**
      * @return current population
      */
     fun getSnapshotOfBestIndividuals(): Map<Int, MutableList<EvaluatedIndividual<T>>>{
@@ -476,6 +498,34 @@ class Archive<T> where T : Individual {
                 .map { t->
                     Pair(idMapper.getDescriptiveId(t), solution.individuals.mapIndexed { index, f-> if (f.fitness.doesCover(t)) index else -1 }.filter { it != -1 })
                 }.toList()
+    }
+
+    /**
+     * @return an existing ImpactsOfIndividual which includes same action with [other]
+     */
+    fun findImpactInfo(other: Individual) : ImpactsOfIndividual?{
+        return populations.values.find {
+            it.any { i-> i.individual.sameActions(other) }
+        }.run {
+            if (this == null || this.isEmpty())
+                null
+            else
+                find{i -> i.individual.sameActions(other)}!!.impactInfo?.clone()
+        }
+    }
+
+
+    fun saveSnapshot(){
+        if (!config.saveArchiveAfterMutation) return
+
+        val index = time.evaluatedIndividuals
+        val archiveContent = notCoveredTargets().filter { it >= 0 }.map { "$index,${it to getReachedTargetHeuristics(it)},${idMapper.getDescriptiveId(it)}" }
+
+        val apath = Paths.get(config.archiveAfterMutationFile)
+        if (apath.parent != null) Files.createDirectories(apath.parent)
+        if (Files.notExists(apath)) Files.createFile(apath)
+
+        if (archiveContent.isNotEmpty()) Files.write(apath, archiveContent, StandardOpenOption.APPEND)
     }
 
 //    fun chooseLatestImprovedTargets(size : Int) : Set<Int>{

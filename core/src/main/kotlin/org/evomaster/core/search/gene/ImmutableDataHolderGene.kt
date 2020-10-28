@@ -1,9 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 
 
 /**
@@ -49,4 +47,7 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
     }
 
     override fun mutationWeight(): Double = 0.0
+
+    override fun innerGene(): List<Gene> = listOf()
+
 }
