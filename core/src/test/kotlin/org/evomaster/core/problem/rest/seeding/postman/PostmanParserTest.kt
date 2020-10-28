@@ -16,13 +16,12 @@ import org.junit.jupiter.api.Test
 
 class PostmanParserTest {
 
-    private lateinit var swaggerPath: String
     private lateinit var swagger: OpenAPI
     private lateinit var postmanParser: PostmanParser
 
     @BeforeEach
     fun loadSwaggerAndParser() {
-        swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
+        val swaggerPath = "src/test/resources/swagger/postman/all_param_types.yaml"
         swagger = OpenAPIParser().readLocation(swaggerPath, null, null).openAPI
         postmanParser = PostmanParser(loadRestCallActions(swagger), swagger)
     }
