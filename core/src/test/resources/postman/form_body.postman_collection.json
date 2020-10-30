@@ -1,0 +1,119 @@
+{
+	"info": {
+		"_postman_id": "c564e36a-01b1-4431-b0ff-c8e2ee3292f5",
+		"name": "form_body",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "/formBody_all_props",
+			"request": {
+				"method": "PUT",
+				"url": {
+					"raw": "http://localhost:8080/api/v1/formBody",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"formBody"
+					]
+				},
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded":[
+						{
+							"key": "strProp",
+							"value": "val1"
+						},
+						{
+							"key": "arrProp",
+							"value": "6,2,6,1,3,2,6,1,1"
+						},
+						{
+							"key": "intProp",
+							"value": "999999"
+						},
+						{
+							"key": "dateTimeProp",
+							"value": "2020-12-14 13:45:08"
+						},
+						{
+							"key": "boolProp",
+							"value": "true"
+						}
+					]
+				},
+				"description": "Endpoint containing a form body"
+			},
+			"response": []
+		},
+		{
+			"name": "/formBody_some_props_wrong",
+			"request": {
+				"method": "PUT",
+				"url": {
+					"raw": "http://localhost:8080/api/v1/formBody",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"formBody"
+					]
+				},
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded":[
+						{
+							"key": "arrProp",
+							"value": "1, 2, 3, 4, 5, 6, 7, 8"
+						},
+						{
+							"key": "intProp",
+							"value": "16.18"
+						},
+						{
+							"key": "dateTimeProp",
+							"value": "non_date"
+						},
+						{
+							"key": "boolProp",
+							"value": "true"
+						}
+					]
+				},
+				"description": "Endpoint containing a form body"
+			},
+			"response": []
+		},
+		{
+			"name": "/formBody_no_body",
+			"request": {
+				"method": "PUT",
+				"url": {
+					"raw": "http://localhost:8080/api/v1/formBody",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"formBody"
+					]
+				},
+				"description": "Endpoint containing a form body"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

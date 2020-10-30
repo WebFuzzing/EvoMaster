@@ -17,7 +17,7 @@ import java.lang.IllegalStateException
 class ArrayGene<T>(
         name: String,
         val template: T,
-        var maxSize: Int = 5,
+        var maxSize: Int = MAX_SIZE,
         var elements: MutableList<T> = mutableListOf()
 ) : CollectionGene, Gene(name)
         where T : Gene {
@@ -40,6 +40,7 @@ class ArrayGene<T>(
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(ArrayGene::class.java)
+        const val MAX_SIZE = 5
     }
 
 

@@ -149,5 +149,8 @@ There are 3 types of options:
 |`saveArchiveAfterMutation`| __Boolean__. Whether to save archive info after each of mutation, which is typically useful for debugging mutation and archive. *Default value*: `false`.|
 |`saveImpactAfterMutation`| __Boolean__. Whether to save impact info after each of mutation, which is typically useful debugging impact driven solutions and mutation. *Default value*: `false`.|
 |`saveMutationInfo`| __Boolean__. Whether to save mutated gene info, which is typically used for debugging mutation. *Default value*: `false`.|
+|`seedTestCases`| __Boolean__. Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process. *Default value*: `false`.|
+|`seedTestCasesFormat`| __Enum__. Format of the test cases seeded to EvoMaster. *Valid values*: `POSTMAN`. *Default value*: `POSTMAN`.|
+|`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`testSuiteSplitType`| __Enum__. Instead of generating a single test file, it could be split in several files, according to different strategies. *Valid values*: `NONE, CLUSTER, SUMMARY_ONLY, CODE`. *Default value*: `NONE`.|
