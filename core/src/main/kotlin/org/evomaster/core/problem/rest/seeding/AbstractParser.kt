@@ -74,7 +74,7 @@ abstract class AbstractParser(
 
             else -> {
                 // ImmutableDataHolderGene should never happen
-                throw IllegalStateException("Unexpected gene found in RestCallAction")
+                throw IllegalStateException("Unexpected gene found in RestCallAction: " + gene.javaClass.simpleName)
             }
         }
     }

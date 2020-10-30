@@ -433,18 +433,20 @@ class RestSampler : AbstractRestSampler(){
 
         adHocInitialIndividuals.clear()
 
+        //init first sampling with 1-action call per endpoint, for all auths
+
+        createSingleCallOnEachEndpoint(NoAuth())
+
+        authentications.forEach { auth ->
+            createSingleCallOnEachEndpoint(auth)
+        }
+
+        // if test case seeding is enabled, add those test cases too
+
         if (config.seedTestCases) {
             val parser = getParser()
             val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
             adHocInitialIndividuals.addAll(seededTestCases.map { createIndividual(it) })
-        } else {
-            //init first sampling with 1-action call per endpoint, for all auths
-
-            createSingleCallOnEachEndpoint(NoAuth())
-
-            authentications.forEach { auth ->
-                createSingleCallOnEachEndpoint(auth)
-            }
         }
     }
 
