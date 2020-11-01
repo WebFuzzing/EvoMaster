@@ -33,7 +33,7 @@ class RandomSearchTest {
             config.maxActionEvaluations = 3000
             config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
 
-            val solution = rs.search { _: Solution<*>, _: String ->  }
+            val solution = rs.search()
 
             assertEquals(3.0, solution.overall.computeFitnessScore(), 0.001)
             assertTrue(solution.individuals.size <= 2)
