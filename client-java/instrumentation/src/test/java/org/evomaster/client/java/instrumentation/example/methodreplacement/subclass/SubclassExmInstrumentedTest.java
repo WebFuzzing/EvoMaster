@@ -49,6 +49,6 @@ public class SubclassExmInstrumentedTest {
 
         assertEquals("foobar", result);
 
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(2, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
     }
 }
