@@ -93,10 +93,14 @@ class SearchTimeController {
 
     fun reportExecutedIndividualTime(ms: Long, nActions: Int){
 
+        //this is for last 100 tests, displayed live during the search in the console
         executedIndividualTime.add(Pair(ms, nActions))
         if(executedIndividualTime.size > 100){
             executedIndividualTime.poll()
         }
+
+        // for all tests evaluated so far
+        averageTestTimeMs.addValue(ms)
     }
 
     /**

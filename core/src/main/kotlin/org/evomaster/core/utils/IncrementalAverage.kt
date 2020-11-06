@@ -65,6 +65,8 @@ class IncrementalAverage {
         startingTime = System.currentTimeMillis()
     }
 
+    fun isRecordingTimer() = startingTime != null
+
     /**
      * Add number of ms since timer was started, and then reset it
      */
@@ -75,5 +77,9 @@ class IncrementalAverage {
         val elapsed = System.currentTimeMillis() - startingTime!!
         addValue(elapsed)
         startingTime = null
+    }
+
+    override fun toString() : String {
+        return "Avg=%.2f , min=%.2f , max=%.2f".format(mean, min, max)
     }
 }
