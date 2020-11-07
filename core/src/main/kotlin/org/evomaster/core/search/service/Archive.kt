@@ -463,7 +463,7 @@ class Archive<T> where T : Individual {
         { it.fitness.getHeuristic(target) }
                 .thenComparator { a, b -> a.fitness.compareExtraToMinimize(target, b.fitness, config.secondaryObjectiveStrategy) }
                 .thenBy { -it.individual.size() }
-                .thenBy{ -it.executionTimeMs})
+                .thenBy{ if(config.useTimeInFeedbackSampling) -it.executionTimeMs else 0L})
 
         val limit = dpc.getArchiveTargetLimit()
         while (list.size > limit) {
