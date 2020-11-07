@@ -160,7 +160,18 @@ class Archive<T> where T : Individual {
 
         return when (config.feedbackDirectedSampling) {
             LAST -> toChooseFrom.minBy {
-                samplingCounter.getOrDefault(it, 0)
+                val counter = samplingCounter.getOrDefault(it, 0)
+                val p = populations[it]!!
+                val time = p[p.lastIndex].executionTimeMs //time of best individual
+                if(!config.useTimeInFeedbackSampling || time == Long.MAX_VALUE){
+                     counter.toLong()
+                } else {
+                    /*
+                    WARNING: this does introduce some form of non-determinism,
+                    as timestamps can vary.
+                 */
+                    (counter * time)
+                }
             }!!
             FOCUSED_QUICKEST ->
                 handleFocusedQuickest(toChooseFrom)
@@ -382,6 +393,7 @@ class Archive<T> where T : Individual {
             val curr = current[0]
             Lazy.assert {
                 curr.fitness.size == curr.individual.size().toDouble()
+                        &&
                 copy.fitness.size == copy.individual.size().toDouble()
             }
 
@@ -418,6 +430,10 @@ class Archive<T> where T : Individual {
             if (better || equivalent) {
                 /*
                     replace worst element, if copy is not worse than it (but not necessarily better).
+                    However this is base on heuristics values and size, but NOT execution time
+
+                    TODO would it makes sense to do something like subsumes() where
+                    execution time is taken into account?
                  */
                 current[0] = copy
                 added = true
@@ -446,7 +462,8 @@ class Archive<T> where T : Individual {
         list.sortWith(compareBy<EvaluatedIndividual<T>>
         { it.fitness.getHeuristic(target) }
                 .thenComparator { a, b -> a.fitness.compareExtraToMinimize(target, b.fitness, config.secondaryObjectiveStrategy) }
-                .thenBy { -it.individual.size() })
+                .thenBy { -it.individual.size() }
+                .thenBy{ -it.executionTimeMs})
 
         val limit = dpc.getArchiveTargetLimit()
         while (list.size > limit) {

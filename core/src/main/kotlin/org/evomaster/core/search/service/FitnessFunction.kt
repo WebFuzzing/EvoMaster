@@ -52,7 +52,10 @@ abstract class FitnessFunction<T>  where T : Individual {
         }
 
         var ei = time.measureTimeMillis(
-                {time.reportExecutedIndividualTime(it, a)},
+                { t, ind ->
+                    time.reportExecutedIndividualTime(t, a)
+                    ind?.executionTimeMs = t
+                },
                 {doCalculateCoverage(individual, targets)}
         )
 
@@ -70,7 +73,10 @@ abstract class FitnessFunction<T>  where T : Individual {
             Thread.sleep(5_000)
 
             ei = time.measureTimeMillis(
-                    {time.reportExecutedIndividualTime(it, a)},
+                    {t, ind ->
+                        time.reportExecutedIndividualTime(t, a)
+                        ind?.executionTimeMs = t
+                    },
                     {doCalculateCoverage(individual, targets)}
             )
 
