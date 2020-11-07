@@ -5,6 +5,8 @@ import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 
 /**
@@ -65,6 +67,11 @@ class FitnessValue(
      */
     private val aggregatedFailedWhere: MutableMap<String, Set<String>> = mutableMapOf()
 
+    /**
+    * How long it took to evaluate this fitness value.
+    */
+    var executionTimeMs : Long = Long.MAX_VALUE
+
 
     fun copy(): FitnessValue {
         val copy = FitnessValue(size)
@@ -72,6 +79,7 @@ class FitnessValue(
         copy.extraToMinimize.putAll(this.extraToMinimize)
         copy.databaseExecutions.putAll(this.databaseExecutions) //note: DatabaseExecution supposed to be immutable
         copy.aggregateDatabaseData()
+        copy.executionTimeMs = executionTimeMs
         return copy
     }
 
@@ -184,6 +192,8 @@ class FitnessValue(
      * Recall: during the search, we might not calculate all targets, eg once they
      * are covered.
      *
+     * This keeps into account both test size and its execution time
+     *
      * @param other, the one we compare to
      * @param targetSubset, only calculate subsumption on these testing targets
      */
@@ -192,7 +202,8 @@ class FitnessValue(
             targetSubset: Set<Int>,
             strategy: EMConfig.SecondaryObjectiveStrategy,
             bloatControlForSecondaryObjective: Boolean,
-            minimumSize: Int)
+            minimumSize: Int,
+            useTimestamps: Boolean)
             : Boolean {
 
         var atLeastOneBetter = false
@@ -202,13 +213,30 @@ class FitnessValue(
             val v = this.targets[k]?.distance ?: 0.0
             val z = other.targets[k]?.distance ?: 0.0
             if (v < z) {
+                //  if it is worse on any target, then it cannot be subsuming
                 return false
             }
 
             atLeastOneBetter = atLeastOneBetter || betterThan(k, other, strategy, bloatControlForSecondaryObjective, minimumSize)
         }
 
-        return atLeastOneBetter
+        if(atLeastOneBetter){
+            return true
+        }
+
+        if(useTimestamps && other.executionTimeMs != Long.MAX_VALUE &&
+                executionTimeMs < other.executionTimeMs * 2){
+            /*
+                time is very, very tricky to handle... as its evaluation
+                is not fully deterministic, ie, can have noise.
+                so, if for any reason two fitnesses are equivalent under all
+                other heuristics, then we say one subsumes the other if twice
+                as fast to compute
+             */
+            return true
+        }
+
+        return false
     }
 
     fun subsumes(
@@ -217,7 +245,12 @@ class FitnessValue(
             config : EMConfig)
             : Boolean {
 
-        return subsumes(other, targetSubset, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective, config.minimumSizeControl)
+        return subsumes(other,
+                targetSubset,
+                config.secondaryObjectiveStrategy,
+                config.bloatControlForSecondaryObjective,
+                config.minimumSizeControl,
+                config.useTimeInFeedbackSampling)
     }
 
     /**
@@ -242,7 +275,22 @@ class FitnessValue(
         if (z != v) return false
 
         val extra = compareExtraToMinimize(target, other, strategy)
-        return extra == 0 && this.size == other.size
+
+        //WARN: cannot really do this unless we update betterThan as well.
+        //      But unclear if really make sense when considering specific targets
+        //Time is very tricky... so we consider equivalent as long as not more than twice time difference
+//        val timeRatio = if(this.executionTimeMs == Long.MAX_VALUE ||
+//                other.executionTimeMs == Long.MAX_VALUE ||
+//                (this.executionTimeMs == 0L && other.executionTimeMs==0L)) {
+//            0.0
+//        }else {
+//                abs(this.executionTimeMs - other.executionTimeMs) /
+//                        min(this.executionTimeMs.toDouble(), other.executionTimeMs.toDouble())
+//        }
+
+        return extra == 0
+                && this.size == other.size
+//                && timeRatio < 1.0
     }
 
     private fun betterThan(target: Int, heuristics: Double, size: Double, extra: Int, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
@@ -268,10 +316,11 @@ class FitnessValue(
     /**
      * @param other, the one we compare to
      * @param targetSubset, only calculate subsumption on these testing targets
-     * @param targetInfo, comparison results for each of [targetSubset]
+     * @param targetInfo, comparison results for each of [targetSubset]. It will be updated
+     *                  as side-effect of this function
      * @param config, includes setting for comparison
      */
-    fun isDifferent(
+    fun computeDifference(
             other: FitnessValue,
             targetSubset: Set<Int>,
             targetInfo: MutableMap<Int, EvaluatedMutation>,
@@ -283,8 +332,7 @@ class FitnessValue(
                 equivalent(k, other, strategy = config.secondaryObjectiveStrategy) -> EvaluatedMutation.EQUAL_WITH
                 else -> EvaluatedMutation.BETTER_THAN
             }
-            targetInfo.merge(
-                    k, value){ old, new -> if (old.value > new.value) old else new }
+            targetInfo.merge(k, value){ old, new -> if (old.value > new.value) old else new }
         }
     }
 

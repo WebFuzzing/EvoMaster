@@ -101,7 +101,8 @@ public abstract class RestTestBase {
                 "--avoidNonDeterministicLogs", "true",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
-                "--stoppingCriterion", "FITNESS_EVALUATIONS"
+                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--useTimeInFeedbackSampling" , "false"
         ));
 
         StaticCounter.Companion.reset();
@@ -320,6 +321,7 @@ public abstract class RestTestBase {
         return new ArrayList<>(Arrays.asList(
                 "--createTests", "" + createTests,
                 "--seed", "" + defaultSeed,
+                "--useTimeInFeedbackSampling" , "false",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",

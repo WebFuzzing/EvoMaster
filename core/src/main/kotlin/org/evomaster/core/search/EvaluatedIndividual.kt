@@ -48,7 +48,18 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      */
     var hasImprovement = false
 
-    val clusterAssignments : MutableSet<String> = mutableSetOf<String>()
+    val clusterAssignments : MutableSet<String> = mutableSetOf()
+
+    /**
+     * How long it took to evaluate this individual.
+     *
+     * Note: could had it better to setup this value in the constructor, but it would had
+     * led to quite a lot of refactoring. Furthermore, execution time is not fully deterministic,
+     * and could make sense to re-update it when re-evaluating
+     */
+    var executionTimeMs : Long
+        get() = fitness.executionTimeMs
+        set(value) { fitness.executionTimeMs = value}
 
     init{
         if(individual.seeActions().size < results.size){
@@ -66,13 +77,18 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                         null)
 
     fun copy(): EvaluatedIndividual<T> {
-        return EvaluatedIndividual(
+        val ei = EvaluatedIndividual(
                 fitness.copy(),
                 individual.copy() as T,
                 results.map(ActionResult::copy),
                 trackOperator,
                 index
         )
+        ei.executionTimeMs = executionTimeMs
+        ei.hasImprovement = hasImprovement
+        ei.clusterAssignments.addAll(clusterAssignments)
+
+        return ei
     }
 
     /**
