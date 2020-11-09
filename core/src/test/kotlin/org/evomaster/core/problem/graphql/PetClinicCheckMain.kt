@@ -22,18 +22,14 @@ class PetClinicCheckMain {
             val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
             println("From JSON To OBJECT:\n" + schemaObj)
 
-
-            var actionCluster_list = ArrayList<ActionCluster?>() // not yet used
-
-
             for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
 
-                var table = ArrayList<Table?>()
+                val table = ArrayList<Table?>()
 
 
                 for (elementInfields in elementIntypes?.fields.orEmpty()) {
 
-                    var tableElement = Table()
+                    val tableElement = Table()
 
                     tableElement.tableField = elementInfields?.name
 
