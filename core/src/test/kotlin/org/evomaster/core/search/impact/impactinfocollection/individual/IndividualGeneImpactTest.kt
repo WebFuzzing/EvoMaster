@@ -67,7 +67,7 @@ class IndividualGeneImpactTest {
         evaluatedTargets[simulatedMutator.getNewTarget()] = EvaluatedMutation.BETTER_THAN
 
 
-        evi_ind1.fitness.isDifferent(
+        evi_ind1.fitness.computeDifference(
                 other = evi_ind2.fitness,
                 targetSubset = simulatedMutator.getInitialTargets(),
                 targetInfo = evaluatedTargets,
@@ -141,7 +141,7 @@ class IndividualGeneImpactTest {
         val evaluatedTargets = mutableMapOf<Int, EvaluatedMutation>()
         evaluatedTargets[simulatedMutator.getNewTarget()] = EvaluatedMutation.BETTER_THAN
 
-        evi_ind1.fitness.isDifferent(
+        evi_ind1.fitness.computeDifference(
                 other = evi_ind2.fitness,
                 targetSubset = simulatedMutator.getInitialTargets(),
                 targetInfo = evaluatedTargets,

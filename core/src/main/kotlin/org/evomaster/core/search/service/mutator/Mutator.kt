@@ -209,7 +209,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         archive.identifyNewTargets(mutated, evaluatedTargets)
 
         // compare with current
-        current.fitness.isDifferent(mutated.fitness, targetSubset = targets, targetInfo = evaluatedTargets, config = config)
+        current.fitness.computeDifference(mutated.fitness, targetSubset = targets, targetInfo = evaluatedTargets, config = config)
 
         return evaluatedTargets
     }

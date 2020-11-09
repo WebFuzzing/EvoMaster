@@ -8,6 +8,7 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 
@@ -35,16 +36,33 @@ public class MapClassReplacement implements MethodReplacementClass {
         }
 
 
-        // keyset() returns an set instance that indirectly calls
-        // to containsKey(). In order to avoid a stack overflow
-        // we compute a fresh collection
-        Collection keyCollection = new HashSet(c.keySet());
+        /*
+            keySet() returns a set instance that indirectly calls
+            to containsKey() when doing a contains().
+            In order to avoid a stack overflow in classes sub-classing JDK
+            collections, we compute a fresh collection.
+            An example is StringHashMap from RestAssured.
+
+            The problem though is this can be come quickly very, very
+            expensive...
+
+            NOTE: due to changes in ReplacementList, this does not seem a problem
+            anymore. See comments in that class.
+         */
+        //Collection keyCollection = new HashSet(c.keySet());
+        Collection keyCollection = c.keySet();
 
         if (ExecutionTracer.isTaintInput(inputString)) {
+            int counter = 0;
             for (Object value : keyCollection) {
                 if (value instanceof String) {
                     ExecutionTracer.addStringSpecialization(inputString,
                             new StringSpecializationInfo(StringSpecialization.CONSTANT, (String) value));
+                    counter++;
+                    if(counter >= 10){
+                        //no point in creating possibly hundreds/thousands of constants...
+                        break;
+                    }
                 }
             }
         }
@@ -60,7 +78,7 @@ public class MapClassReplacement implements MethodReplacementClass {
         if (result) {
             t = new Truthness(1d, 0d);
         } else {
-            double h = CollectionsDistanceUtils.getHeuristicToContains(keyCollection, o);
+            double h = CollectionsDistanceUtils.getHeuristicToContains(keyCollection, o, 50);
             t = new Truthness(h, 1d);
         }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);

@@ -47,8 +47,15 @@ abstract class FitnessFunction<T>  where T : Individual {
 
         val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
 
+        if(time.averageOverheadMsBetweenTests.isRecordingTimer()){
+            time.averageOverheadMsBetweenTests.addElapsedTime()
+        }
+
         var ei = time.measureTimeMillis(
-                {time.reportExecutedIndividualTime(it, a)},
+                { t, ind ->
+                    time.reportExecutedIndividualTime(t, a)
+                    ind?.executionTimeMs = t
+                },
                 {doCalculateCoverage(individual, targets)}
         )
 
@@ -66,7 +73,10 @@ abstract class FitnessFunction<T>  where T : Individual {
             Thread.sleep(5_000)
 
             ei = time.measureTimeMillis(
-                    {time.reportExecutedIndividualTime(it, a)},
+                    {t, ind ->
+                        time.reportExecutedIndividualTime(t, a)
+                        ind?.executionTimeMs = t
+                    },
                     {doCalculateCoverage(individual, targets)}
             )
 
@@ -76,6 +86,8 @@ abstract class FitnessFunction<T>  where T : Individual {
                 statistics.reportCoverageFailure()
             }
         }
+
+        time.averageOverheadMsBetweenTests.doStartTimer()
 
         time.newActionEvaluation(maxOf(1, a))
         time.newIndividualEvaluation()

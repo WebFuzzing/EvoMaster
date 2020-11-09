@@ -3,6 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.utils.IncrementalAverage
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -48,9 +49,19 @@ class SearchTimeController {
 
     private var startTime = 0L
 
+    /**
+     * Keeping track of the latest N test executions.
+     * Time expressed in ms (Long).
+     * Also keeping track of number of actions (Int)
+     */
     private val executedIndividualTime : Queue<Pair<Long,Int>> = ArrayDeque(100)
 
     private val listeners = mutableListOf<SearchListener>()
+
+    val averageTestTimeMs = IncrementalAverage()
+
+    val averageOverheadMsBetweenTests = IncrementalAverage()
+
 
     fun startSearch(){
         searchStarted = true
@@ -82,21 +93,25 @@ class SearchTimeController {
 
     fun reportExecutedIndividualTime(ms: Long, nActions: Int){
 
+        //this is for last 100 tests, displayed live during the search in the console
         executedIndividualTime.add(Pair(ms, nActions))
         if(executedIndividualTime.size > 100){
             executedIndividualTime.poll()
         }
+
+        // for all tests evaluated so far
+        averageTestTimeMs.addValue(ms)
     }
 
     /**
      * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
      */
-    inline fun <T> measureTimeMillis(loggingFunction: (Long) -> Unit,
+    inline fun <T> measureTimeMillis(loggingFunction: (Long, T) -> Unit,
                                     function: () -> T): T {
 
         val startTime = System.currentTimeMillis()
         val result: T = function.invoke()
-        loggingFunction.invoke(System.currentTimeMillis() - startTime)
+        loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
 
         return result
     }
