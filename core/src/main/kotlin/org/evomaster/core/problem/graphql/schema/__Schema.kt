@@ -1,3 +1,5 @@
+package org.evomaster.core.problem.graphql.schema
+
 class __Schema {
 
      var queryType: __Type?= null

@@ -1,3 +1,5 @@
+package org.evomaster.core.problem.graphql.schema
+
 class __Directive {
 
      var name: String?=null

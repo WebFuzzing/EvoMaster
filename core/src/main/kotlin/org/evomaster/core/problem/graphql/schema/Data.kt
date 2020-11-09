@@ -1,3 +1,5 @@
+package org.evomaster.core.problem.graphql.schema
+
 class Data {
 
     var __schema: __Schema? = null

@@ -1,3 +1,5 @@
+package org.evomaster.core.problem.graphql.schema
+
 enum class __DirectiveLocation {
 
 

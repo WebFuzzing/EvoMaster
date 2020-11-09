@@ -1,3 +1,6 @@
+package org.evomaster.core.problem.graphql.schema
+
+
 class __EnumValue {
 
      var name:String?=null

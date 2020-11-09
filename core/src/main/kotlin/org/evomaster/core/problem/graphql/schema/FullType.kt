@@ -1,3 +1,6 @@
+package org.evomaster.core.problem.graphql.schema
+
+
 class FullType {
 
      var kind: __TypeKind?=null
