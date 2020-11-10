@@ -830,6 +830,10 @@ class EMConfig {
     @Cfg("Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement")
     var feedbackDirectedSampling = FeedbackDirectedSampling.LAST
 
+    //Warning: this is off in the tests, as it is a source of non-determinism
+    @Cfg("Whether to use timestamp info on the execution time of the tests for sampling (e.g., to reward the quickest ones)")
+    var useTimeInFeedbackSampling = true
+
     @Cfg("Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO)")
     @Min(1.0)
     var populationSize = 30
@@ -898,7 +902,7 @@ class EMConfig {
     @Cfg("Whether to enable tracking the history of modifications of the individuals during the search")
     var enableTrackIndividual = false
 
-    @Experimental
+
     @Cfg("Whether to enable tracking the history of modifications of the individuals with its fitness values (i.e., evaluated individual) during the search. " +
             "Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual")
     var enableTrackEvaluatedIndividual = true

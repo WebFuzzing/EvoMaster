@@ -172,6 +172,8 @@ class Main {
 
                 if(!config.avoidNonDeterministicLogs) {
                     info("Passed time (seconds): ${stc.getElapsedSeconds()}")
+                    info("Execution time per test (ms): ${stc.averageTestTimeMs}")
+                    info("Computation overhead between tests (ms): ${stc.averageOverheadMsBetweenTests}")
                 }
 
                 if(!config.blackBox || config.bbExperiments) {

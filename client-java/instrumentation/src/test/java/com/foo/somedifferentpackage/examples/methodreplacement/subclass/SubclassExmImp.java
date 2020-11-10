@@ -24,9 +24,14 @@ public class SubclassExmImp implements SubclassExm {
         MyIdentityMap<String, String> ident = new MyIdentityMap<>();
         ident.containsKey("bar");
 
-
+        //replaced
         Map<String,String> regular = new HashMap<>();
         regular.containsKey("123");
+
+        // this is as well replaced
+        // TODO do we really want this behavior? to investigate
+        Map<String, Integer> subclass = new MyMap<>();
+        subclass.containsKey("456");
 
         return map.lastCheckedKey + ident.lastCheckedKey;
     }

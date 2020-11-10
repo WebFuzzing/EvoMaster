@@ -14,6 +14,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.date.DateTime
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.impact.impactinfocollection.regex.*
@@ -67,7 +68,7 @@ class ImpactUtils {
                 is RxAtom -> RxAtomImpact(id)
                 is RxTerm -> RxTermImpact(id)
                 else ->{
-                    log.warn("impact for {} has not been impelemented yet",gene::class.java.simpleName)
+                    LoggingUtil.uniqueWarn(log, "impact for {} has not been implemented yet",gene::class.java.simpleName)
                     GeneImpact(id)
                 }
             }
