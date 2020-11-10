@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.graphql.schema
 
-
+/**
+ *  Field: __enumValue part of the introspection system.
+ */
 class __EnumValue {
 
      var name:String?=null

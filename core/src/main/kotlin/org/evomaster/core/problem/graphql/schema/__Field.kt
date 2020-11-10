@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.graphql.schema
-
+/**
+ *  Field: __field part of the introspection system.
+ */
 class __Field {
 
      var name: String?=null

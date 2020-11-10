@@ -1,5 +1,8 @@
 package org.evomaster.core.problem.graphql.schema
 
+/**
+ *  Field: __directive part of the introspection system.
+ */
 class __Directive {
 
      var name: String?=null

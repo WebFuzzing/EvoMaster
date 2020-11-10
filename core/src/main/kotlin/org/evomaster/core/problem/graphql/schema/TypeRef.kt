@@ -1,5 +1,8 @@
 package org.evomaster.core.problem.graphql.schema
 
+/**
+ * TypeRef: fragment on __Type
+ */
 class TypeRef {
 
      var kind: __TypeKind?=null

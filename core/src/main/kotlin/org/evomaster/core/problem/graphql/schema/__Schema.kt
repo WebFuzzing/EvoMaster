@@ -1,5 +1,8 @@
 package org.evomaster.core.problem.graphql.schema
 
+/**
+ *  Field: __schema part of the introspection system.
+ */
 class __Schema {
 
      var queryType: __Type?= null

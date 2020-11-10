@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.graphql.schema
 
-
+/**
+ * FullType: fragment  on __Type
+ */
 class FullType {
 
      var kind: __TypeKind?=null

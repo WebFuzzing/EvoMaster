@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.graphql.schema
 
-
+/**
+ * InputValue: fragment  on __InputValue
+ */
 class InputValue {
 
      var name: String?=null
