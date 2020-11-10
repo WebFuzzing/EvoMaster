@@ -1,14 +1,7 @@
 package org.evomaster.core.problem.graphql.schema
 
-class ofTypeOn__Type {
 
-         var name: String?= null
-         var kind: __TypeKind?=null
-         var ofType: ofTypeOn__Type?=null
-
-        override fun toString(): String {
-            return "{ name: ${this.name}, kind: ${this.kind}, ofType ${this.ofType}}"
-
-        }
-    }
-
+data class ofTypeOn__Type(var name: String,
+                          var kind: __TypeKind,
+                          var ofType: ofTypeOn__Type) {
+}

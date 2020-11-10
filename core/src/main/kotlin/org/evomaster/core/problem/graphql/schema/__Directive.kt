@@ -3,17 +3,9 @@ package org.evomaster.core.problem.graphql.schema
 /**
  *  Field: __directive part of the introspection system.
  */
-class __Directive {
-
-     var name: String?=null
-     var locations= ArrayList<__DirectiveLocation?>()
-     var args= ArrayList<InputValue?>()
-
-
-    override fun toString(): String {
-        return "{name: ${this.name}, locations: ${this.locations}, args: ${this.args}}"
-
-    }
+data class __Directive( var name: String,
+                        var locations: ArrayList<__DirectiveLocation> = ArrayList(),
+                        var args: ArrayList<InputValue> = ArrayList()) {
 
 
 }

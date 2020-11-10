@@ -3,20 +3,12 @@ package org.evomaster.core.problem.graphql.schema
 /**
  * FullType: fragment  on __Type
  */
-class FullType {
-
-     var kind: __TypeKind?=null
-     var name: String?= null
-     var fields = ArrayList<__Field?>()
-     var inputFields = ArrayList<InputValue?>()
-     var interfaces = ArrayList<TypeRef?>()
-     var enumValues = ArrayList<__EnumValue?>()
-     var possibleTypes = ArrayList<TypeRef?>()
-
-    override fun toString(): String {
-        return "{ kind: ${this.kind}, name: ${this.name}, fields ${this.fields}, inputFields: ${this.inputFields}, interfaces: ${this.interfaces}," +
-                " enumValues: ${this.enumValues}, possibleTypes: ${this.possibleTypes}}"
-
-    }
+data class FullType( var kind: __TypeKind,
+                     var name: String,
+                     var fields : ArrayList<__Field> = ArrayList(),
+                     var inputFields : ArrayList<InputValue> = ArrayList(),
+                     var interfaces : ArrayList<TypeRef> = ArrayList(),
+                     var enumValues : ArrayList<__EnumValue> = ArrayList(),
+                     var possibleTypes : ArrayList<TypeRef> = ArrayList()) {
 
 }

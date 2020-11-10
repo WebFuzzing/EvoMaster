@@ -2,20 +2,11 @@ package org.evomaster.core.problem.graphql.schema
 /**
  *  Field: __field part of the introspection system.
  */
-class __Field {
-
-     var name: String?=null
-     var args = ArrayList<InputValue?>()
-     var type : TypeRef?=null
-     var isDeprecated: Boolean= true
-     var deprecationReason: String?= null
+data class __Field (var name: String,
+                    var args : ArrayList<InputValue> = ArrayList(),
+                    var type : TypeRef,
+                    var isDeprecated: Boolean= true,
+                    var deprecationReason: String){
 
 
-
-
-    override fun toString(): String {
-        return "{ name: ${this.name}, args: ${this.args}, type: ${this.type}, isDeprecated: ${this.isDeprecated}," +
-                " deprecationReason: ${this.deprecationReason} }"
-
-    }
 }
