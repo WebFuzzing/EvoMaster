@@ -18,12 +18,10 @@ hs_err_pid*
 spy.log
 *pom.xml.versionsBackup
 *dependency-reduced-pom.xml
-/e2e-tests/dropwizardExamples/src/em/
-/e2e-tests/springExamples/src/em/
 /src/
 /private/
 /statistics.csv
-/e2e-tests/spring-examples/src/em/
+/e2e-tests/spring-rest-openapi-v2/src/em/
 case-study/rest/target/
 client-java/client-util/target/
 client-java/controller-api/target/
@@ -34,9 +32,9 @@ client-java/database-spy/target/
 core/target/
 e2e-tests/dropwizard-examples/target/
 e2e-tests/e2e-tests-utils/target/
-e2e-tests/spring-examples/target/
+e2e-tests/spring-rest-openapi-v2/target/
 experiments/target/
-/e2e-tests/spring-examples/src/em/EvoMasterTest.java
+/e2e-tests/spring-rest-openapi-v2/src/em/EvoMasterTest.java
 /e2e-tests/dropwizard-examples/src/em/
 /snapshot.csv
 *.lst

@@ -8,7 +8,7 @@
         <version>1.0.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>evomaster-e2e-tests-spring-examples</artifactId>
+    <artifactId>evomaster-e2e-tests-spring-rest-openapi-v2</artifactId>
     <packaging>jar</packaging>
 
 
