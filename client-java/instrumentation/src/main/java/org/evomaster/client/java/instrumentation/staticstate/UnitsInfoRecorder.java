@@ -32,6 +32,9 @@ public class UnitsInfoRecorder implements Serializable {
     private AtomicInteger numberOfReplacedMethodsInSut;
     private AtomicInteger numberOfReplacedMethodsInThirdParty;
     private AtomicInteger numberOfTrackedMethods;
+    private AtomicInteger numberOfInstrumentedNumberComparisons;
+
+
     /*
         Key -> DTO full name
         Value -> OpenAPI object schema
@@ -46,6 +49,7 @@ public class UnitsInfoRecorder implements Serializable {
         numberOfReplacedMethodsInSut = new AtomicInteger(0);
         numberOfReplacedMethodsInThirdParty = new AtomicInteger(0);
         numberOfTrackedMethods = new AtomicInteger(0);
+        numberOfInstrumentedNumberComparisons = new AtomicInteger(0);
         parsedDtos = new ConcurrentHashMap<>();
     }
 
@@ -82,6 +86,10 @@ public class UnitsInfoRecorder implements Serializable {
 
     public static void markNewTrackedMethod(){
         singleton.numberOfTrackedMethods.incrementAndGet();
+    }
+
+    public static void markNewInstrumentedNumberComparison(){
+        singleton.numberOfInstrumentedNumberComparisons.incrementAndGet();
     }
 
     public static void registerNewParsedDto(String name, String schema){
@@ -127,5 +135,9 @@ public class UnitsInfoRecorder implements Serializable {
 
     public  int getNumberOfTrackedMethods() {
         return numberOfTrackedMethods.get();
+    }
+
+    public  int getNumberOfInstrumentedNumberComparisons(){
+        return numberOfInstrumentedNumberComparisons.get();
     }
 }

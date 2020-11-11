@@ -49,6 +49,11 @@ public class UnitsInfoDto {
      */
     public int numberOfTrackedMethods;
 
+    /**
+     * Number of cases in which numeric comparisons needed customized
+     * instrumentation (eg, needed on JVM for non-integer types)
+     */
+    public int numberOfInstrumentedNumberComparisons;
 
     /*
         Key -> DTO full name
