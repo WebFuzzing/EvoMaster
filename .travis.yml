@@ -45,9 +45,9 @@ jobs:
   include:
     - stage: init
       script: mvn clean install --fae -P skipE2E_V2
-    - stage: e2e
+    - stage: e2e-rest-v2
       script:
-        - cd e2e-tests/spring-examples
+        - cd e2e-tests/spring-rest-openapi-v2
         - mvn verify --fae
 #    - stage: jdk11
 #      script:
