@@ -15,8 +15,8 @@
     <modules>
         <module>e2e-tests-utils</module>
         <module>dropwizard-examples</module>
-        <module>spring-examples</module>
         <module>spring-rest-postgres</module>
+        <module>spring-rest-openapi-v2</module>
         <module>spring-rest-openapi-v3</module>
     </modules>
 

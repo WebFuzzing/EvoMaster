@@ -26,7 +26,7 @@ public class TTPaperEMTest  extends SpringTestBase {
         defaultSeed = 0;
 
         runTestHandlingFlakyAndCompilation(
-                "TTPaper",
+                "TTPaper_numeric",
                 "org.bar.ttpaper.TTPaperNumeric",
                 10_000,
                 true,
@@ -49,7 +49,7 @@ public class TTPaperEMTest  extends SpringTestBase {
         defaultSeed = 0;
 
         runTestHandlingFlakyAndCompilation(
-                "TTPaper",
+                "TTPaper_param",
                 "org.bar.ttpaper.TTPaperParam",
                 1_000,
                 true,
@@ -73,7 +73,7 @@ public class TTPaperEMTest  extends SpringTestBase {
         defaultSeed = 0;
 
         runTestHandlingFlakyAndCompilation(
-                "TTPaper",
+                "TTPaper_body",
                 "org.bar.ttpaper.TTPaperBody",
                 1_000,
                 true,
