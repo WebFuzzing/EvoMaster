@@ -1,0 +1,57 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Some description",
+    "version": "1.0",
+    "title": "API"
+  },
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "regex-application",
+      "description": "Regex Application"
+    }
+  ],
+  "paths": {
+    "/api/{value}": {
+      "get": {
+        "tags": [
+          "regex-application"
+        ],
+        "summary": "get",
+        "operationId": "getUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "value",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "type": "string",
+            "pattern": "\\d{4}-\\d{2}-\\d{2}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  }
+}
