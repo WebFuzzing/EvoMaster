@@ -12,8 +12,8 @@ namespace Controller.Api {
     /**
      * List of extra heuristic values we want to optimize
      */
-    public IList<HeuristicEntryDto> Heuristics { get; set; }
+    public IList<HeuristicEntryDto> Heuristics { get; set; } = new List<HeuristicEntryDto>();
 
-    public ExecutionDto databaseExecutionDto { get; set; }
+    public ExecutionDto DatabaseExecutionDto { get; set; }
   }
 }

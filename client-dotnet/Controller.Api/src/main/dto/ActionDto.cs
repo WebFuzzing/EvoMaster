@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 
-namespace Controller.Api
-{
-  public class ActionDto {
+namespace Controller.Api {
+    public class ActionDto {
 
         /**
          * The index of this action in the test.
@@ -16,6 +15,6 @@ namespace Controller.Api
          * This info can be used for different kinds of taint analysis, eg
          * to check how such values are used in the SUT
          */
-        public IList<string> InputVariables { get; set; }
+        public IList<string> InputVariables { get; set; } = new List<string> ();
     }
 }

@@ -22,7 +22,7 @@ namespace Controller.Api {
     /**
      * The headers needed for authentication
      */
-    public IList<HeaderDto> Headers { get; set; }
+    public IList<HeaderDto> Headers { get; set; } = new List<HeaderDto> ();
 
     /**
      * If the login is based on cookies, need to provide info on

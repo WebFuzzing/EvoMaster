@@ -10,7 +10,7 @@ namespace Controller.Api {
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-    public ISet<string> QueryParameters { get; set; }
+    public ISet<string> QueryParameters { get; set; } = new HashSet<string> ();
 
     /**
      * In REST APIs, it can happen that some HTTP headers do not
@@ -19,7 +19,7 @@ namespace Controller.Api {
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-    public ISet<string> Headers { get; set; }
+    public ISet<string> Headers { get; set; } = new HashSet<string> ();
 
     /**
      * Information for taint analysis.
@@ -29,7 +29,8 @@ namespace Controller.Api {
      * The associated list is its possible specializations (which usually
      * will be at most 1).
      */
-    public IDictionary<string, IList<StringSpecializationInfoDto>> StringSpecializations { get; set; }
+    public IDictionary<string, IList<StringSpecializationInfoDto>> StringSpecializations { get; set; } =
+      new Dictionary<string, IList<StringSpecializationInfoDto>> ();
 
     /**
      * Keep track of the last executed statement done in the SUT.
@@ -48,6 +49,6 @@ namespace Controller.Api {
      * The name of all DTO that have been parsed (eg, with GSON and Jackson).
      * Note: the actual content of schema is queried separately.
      */
-    public ISet<string> ParsedDtoNames { get; set; }
+    public ISet<string> ParsedDtoNames { get; set; } = new HashSet<string> ();
   }
 }
