@@ -1,4 +1,5 @@
-namespace Controller.Api {
+namespace Controller.Api
+{
   /**
    * The type of extra heuristic.
    * Note: for the moment, we only have heuristics on SQL commands
@@ -6,4 +7,5 @@ namespace Controller.Api {
   public enum Type {
     SQL
   }
+
 }

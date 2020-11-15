@@ -19,5 +19,4 @@ namespace Controller.Api
 
     public string Type { get; set; }
   }
-
 }
