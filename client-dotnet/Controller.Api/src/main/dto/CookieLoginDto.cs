@@ -1,4 +1,5 @@
-namespace Controller.Api {
+namespace Controller.Api
+{
   /**
    * Information on how to do a login based on username/password,
    * from which we then get a cookie back
