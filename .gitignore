@@ -61,3 +61,9 @@ experiments/target/
 /coveredTargets.txt
 /core-driver-it/target/
 /core-it/src/test/kotlin/exp/
+
+#DotNet Build Results
+[Dd]ebug/
+[Bb]in/
+[Oo]bj/
+*.dll
