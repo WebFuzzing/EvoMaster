@@ -13,7 +13,7 @@ namespace Controller.Api
     /**
      * Whether the SUT is running or not
      */
-    public bool IsSutRunning { get; set; }
+    public bool? IsSutRunning { get; set; }
 
     /**
      * When generating test cases for this SUT, specify the default

@@ -23,7 +23,7 @@ namespace Controller.Api {
     /**
      * The actual value of the heuristic
      */
-    public double Value { get; set; }
+    public double? Value { get; set; }
 
   }
 }
