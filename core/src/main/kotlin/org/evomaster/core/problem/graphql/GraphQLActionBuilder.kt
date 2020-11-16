@@ -4,8 +4,10 @@ import ch.qos.logback.classic.db.names.TableName
 import com.google.gson.Gson
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.problem.graphql.schema.SchemaObj
+import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.search.Action
 import java.util.concurrent.atomic.AtomicInteger
+import javax.management.Query
 
 
 object GraphQLActionBuilder {
@@ -80,8 +82,10 @@ object GraphQLActionBuilder {
 
         }
         for (elementIntable in table) {
+
             if (elementIntable.tableName == "Mutation" || elementIntable.tableName == "Query") {
-                handleOperation(actionCluster, elementIntable?.tableName, elementIntable?.tableField, elementIntable?.tableType)
+                //TODO
+                //handleOperation(actionCluster, elementIntable?.tableName, elementIntable?.tableField, elementIntable?.tableType)
             }
         }
 
@@ -89,14 +93,32 @@ object GraphQLActionBuilder {
 
     private fun handleOperation(
             actionCluster: MutableMap<String, Action>,
-            tableName: String?,
-            tableField: String?,
-            tableType: String?
+            methodName: String?,
+            methodType: String?
     ) {
+        if(methodName == null){
+            //TODO log warn
+            return;
+        }
+        if(methodType == null){
+            //TODO log warn
+            return;
+        }
+        val type = when{
+            methodType.equals("QUERY",true) -> GQMethodType.QUERY
+            methodType.equals("MUTATION",true) -> GQMethodType.MUTATION
+            else -> {
+                //TODO log warn
+                return
+            }
+        }
 
+        val actionId = "$methodName${idGenerator.incrementAndGet()}"
 
-        val actionId = "$tableName$tableField${idGenerator.incrementAndGet()}"
-        val action = GraphQLAction(actionId, tableName, tableField, tableType)
+        //TODO populate
+        val params =  mutableListOf<Param>()
+
+        val action = GraphQLAction(actionId, methodName, type, params)
 
         actionCluster[action.getName()] = action
     }
