@@ -10,21 +10,20 @@ import java.util.concurrent.atomic.AtomicInteger
 
 object GraphQLActionBuilder {
 
+    private val idGenerator = AtomicInteger()
 
     /**
      * @param schema: the schema extracted from a GraphQL API, as a JSON string
      * @param actionCluster: for each mutation/query in the schema, populate this map with
      *                      new action templates.
      */
-    private val idGenerator = AtomicInteger()
-
     fun addActionsFromSchema(schema: String, actionCluster: MutableMap<String, Action>) {
 
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(schema, SchemaObj::class.java)
 
         /*
-         TOODO
+         TODO
 
             - go through every Query and Mutation
             - create action for it which the needed genes// asma: Not yet
