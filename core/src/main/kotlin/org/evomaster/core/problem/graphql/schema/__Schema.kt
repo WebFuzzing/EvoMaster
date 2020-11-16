@@ -5,8 +5,8 @@ package org.evomaster.core.problem.graphql.schema
  */
 data class __Schema (var queryType: __Type,
                      var mutationType: __Type,
-                     var types :  ArrayList<FullType> = ArrayList(),
-                     var directives : ArrayList<__Directive> = ArrayList()){
+                     var types :  MutableList<FullType> = mutableListOf(),
+                     var directives : MutableList<__Directive> = mutableListOf()){
 
 
 }

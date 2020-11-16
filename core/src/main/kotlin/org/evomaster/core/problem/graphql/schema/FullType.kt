@@ -5,10 +5,10 @@ package org.evomaster.core.problem.graphql.schema
  */
 data class FullType( var kind: __TypeKind,
                      var name: String,
-                     var fields : ArrayList<__Field> = ArrayList(),
-                     var inputFields : ArrayList<InputValue> = ArrayList(),
-                     var interfaces : ArrayList<TypeRef> = ArrayList(),
-                     var enumValues : ArrayList<__EnumValue> = ArrayList(),
-                     var possibleTypes : ArrayList<TypeRef> = ArrayList()) {
+                     var fields : MutableList<__Field> = mutableListOf(),
+                     var inputFields : MutableList<InputValue> = mutableListOf(),
+                     var interfaces : MutableList<TypeRef> = mutableListOf(),
+                     var enumValues : MutableList<__EnumValue> = mutableListOf(),
+                     var possibleTypes : MutableList<TypeRef> = mutableListOf()) {
 
 }
