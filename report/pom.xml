@@ -68,7 +68,7 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-e2e-tests-spring-examples</artifactId>
+            <artifactId>evomaster-e2e-tests-spring-rest-openapi-v2</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
