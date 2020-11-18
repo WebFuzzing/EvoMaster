@@ -3,8 +3,6 @@ namespace Controller.Api
   /**
    * Information on how to do a login based on username/password,
    * from which we then get a cookie back
-   *
-   * Created by arcuri82 on 24-Oct-19.
    */
   public class CookieLoginDto {
 

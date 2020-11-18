@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 
-namespace Controller.Api {
+namespace Controller.Api
+{
   /**
    * Information about the "units" in the SUT.
    * In case of OO languages like Java and Kotlin, those will be "classes"
@@ -57,4 +58,5 @@ namespace Controller.Api {
      */
     public IDictionary<string, string> ParsedDtos { get; set; }
   }
+
 }

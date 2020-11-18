@@ -8,7 +8,7 @@ namespace Controller.Api
 
         public string Name { get; set; }
 
-        public IList<TableDto> Tables = new List<TableDto> ();
+        public IList<TableDto> Tables { get; set; } = new List<TableDto> ();
 
     }
 
