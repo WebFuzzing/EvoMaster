@@ -67,3 +67,6 @@ experiments/target/
 [Bb]in/
 [Oo]bj/
 *.dll
+
+#Generated Tests
+generated-test-cases/
