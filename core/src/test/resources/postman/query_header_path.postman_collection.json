@@ -16,7 +16,7 @@
 					}
 				],
 				"url": {
-					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue?optStringQueryParam=string1&reqStringQueryParam=string2&optStringEnumQueryParam=val2&optIntQueryParam=10&optIntEnumQueryParam=3&optBase64QueryParam=ZXhhbXBsZQ%3D%3D&optBoolQueryParam=true&optDateQueryParam=2020-12-14&optTimeQueryParam=13%3A45%3A08&optDateTimeQueryParam=2020-12-14%2013%3A45%3A08&optDoubleQueryParam=12.143425253&optFloatQueryParam=1.9&optLongQueryParam=3147483647&optArrayQueryParam=1%2C2%2C3%2C4%2C5%2C6",
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue?optStringQueryParam=string1&reqStringQueryParam=string2&optStringEnumQueryParam=val2&optIntQueryParam=10&optIntEnumQueryParam=3&optBase64QueryParam=ZXhhbXBsZQ%3D%3D&optBoolQueryParam=true&optDateQueryParam=2020-12-14&optTimeQueryParam=13%3A45%3A08&optDateTimeQueryParam=2020-12-14+13%3A45%3A08&optDoubleQueryParam=12.143425253&optFloatQueryParam=1.9&optLongQueryParam=3147483647&optArrayQueryParam=1%2C2%2C3%2C4%2C5%2C6",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -68,7 +68,7 @@
 						},
 						{
 							"key": "optDateTimeQueryParam",
-							"value": "2020-12-14%2013%3A45%3A08"
+							"value": "2020-12-14+13%3A45%3A08"
 						},
 						{
 							"key": "optDoubleQueryParam",
