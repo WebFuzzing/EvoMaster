@@ -68,6 +68,7 @@ experiments/target/
 [Oo]bj/
 *.dll
 client-dotnet/src/Controller/Properties/
+.vscode/
 
 #Generated Tests
 generated-test-cases/
