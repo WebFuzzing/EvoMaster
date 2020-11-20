@@ -26,6 +26,7 @@ class GraphQLAction(
         return "$methodName"
     }
 
+
     override fun seeGenes(): List<out Gene> {
         TODO("Not yet implemented")
     }

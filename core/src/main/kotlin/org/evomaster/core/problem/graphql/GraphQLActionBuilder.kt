@@ -1,13 +1,13 @@
 package org.evomaster.core.problem.graphql
 
-import ch.qos.logback.classic.db.names.TableName
 import com.google.gson.Gson
-import io.swagger.v3.oas.models.OpenAPI
+import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.graphql.schema.SchemaObj
+import org.evomaster.core.problem.graphql.schema.__TypeKind
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.gene.*
 import java.util.concurrent.atomic.AtomicInteger
-import javax.management.Query
 
 
 object GraphQLActionBuilder {
@@ -28,11 +28,12 @@ object GraphQLActionBuilder {
          TODO
 
             - go through every Query and Mutation
-            - create action for it which the needed genes// asma: Not yet
+            - create action for it which the needed genes
             - add the action to actionCluster
          */
 
-        var table : MutableList<Table> = mutableListOf()
+        var action : MutableList<GraphQLAction> = mutableListOf()
+        var table: MutableList<Table> = mutableListOf()
 
 
         for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
@@ -46,12 +47,21 @@ object GraphQLActionBuilder {
 
                 tableElement.tableField = elementInfields?.name
 
+                var list: __TypeKind? = __TypeKind.LIST
+
+                if (elementInfields?.type?.ofType?.kind == list){
+
+
+                    tableElement.kindOfTableField =elementInfields?.type?.ofType?.kind
+                }
+
                 while (elementInfields?.type?.ofType?.name == null) {
 
                     elementInfields?.type?.ofType = elementInfields?.type?.ofType?.ofType
 
                 }
 
+                tableElement.kindOfTableType= elementInfields?.type?.ofType?.kind
                 tableElement.tableType = elementInfields?.type?.ofType?.name
                 tableElement.tableName = elementIntypes?.name
                 table.add(tableElement)
@@ -81,20 +91,32 @@ object GraphQLActionBuilder {
 
 
         }
+
+
         for (elementIntable in table) {
 
             if (elementIntable.tableName == "Mutation" || elementIntable.tableName == "Query") {
-                //TODO
-                //handleOperation(actionCluster, elementIntable?.tableName, elementIntable?.tableField, elementIntable?.tableType)
+
+                handleOperation(actionCluster, elementIntable.tableField, elementIntable.tableName,
+                        elementIntable.tableType,
+                        elementIntable.kindOfTableType.toString(),
+                        elementIntable.kindOfTableField.toString(),
+                        table,
+                        elementIntable.tableName.toString())
+
             }
         }
 
     }
-
     private fun handleOperation(
             actionCluster: MutableMap<String, Action>,
             methodName: String?,
-            methodType: String?
+            methodType: String?,
+            tableType: String,
+            kindOfTableType: String,
+            kindOfTableField: String,
+            table:MutableList<Table>,
+            tableName: String
     ) {
         if(methodName == null){
             //TODO log warn
@@ -116,12 +138,80 @@ object GraphQLActionBuilder {
         val actionId = "$methodName${idGenerator.incrementAndGet()}"
 
         //TODO populate
-        val params =  mutableListOf<Param>()
+
+        val params = extractParams(methodName, methodType, tableType, kindOfTableType, kindOfTableField, table, tableName)
 
         val action = GraphQLAction(actionId, methodName, type, params)
 
         actionCluster[action.getName()] = action
     }
+    private fun extractParams(
+            methodName: String,
+            methodType: String,
+            tableType: String,
+            kindOfTableType: String,
+            kindOfTableField: String,
+            table: MutableList<Table>,
+            tableName: String
 
+    ): MutableList<Param> {
+
+        val params = mutableListOf<Param>()
+
+        var gene = getGene(tableType, kindOfTableField, kindOfTableType, table, tableName)
+
+        params.add(GQReturnParam(tableType, gene))
+
+
+        return params
+    }
+
+    private fun getGene(
+            tableType: String,
+            kindOfTableField: String,
+            kindOfTableType: String,
+            table: MutableList<Table>,
+            tableName: String
+    ): Gene {
+
+        when (kindOfTableField) {
+            "LIST" -> {
+                var template = getGene(tableName, kindOfTableType, kindOfTableField, table, tableType)
+                return ArrayGene(tableName, template)
+            }
+            "OBJECT" -> {
+                return createObjectGene(tableName, tableType, kindOfTableType, table)
+            }
+
+            "Int" -> {
+                return IntegerGene(tableName)
+            }
+
+            "String" -> {
+                return StringGene(tableName)
+            }
+            else -> {
+                return StringGene("NotFound")
+            }
+        }
+
+    }
+    private fun createObjectGene(tableName: String,
+                                 tableType: String,
+                                 kindOfTableType: String,
+                                 table: MutableList<Table>): Gene {
+        var fields :MutableList<Gene> = mutableListOf()
+        for (element in table) {
+            if (element.tableName == tableName) {
+                var field = element.tableField
+                var template = field?.let { getGene(tableName, element.tableType,kindOfTableType, table, it) }
+                if (template != null) {
+                    fields.add(template)
+                }
+            }
+
+        }
+        return ObjectGene(tableName, fields, tableName)
+    }
 
 }

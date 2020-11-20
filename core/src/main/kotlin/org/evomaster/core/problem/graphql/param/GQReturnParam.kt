@@ -9,4 +9,7 @@ class GQReturnParam(name: String, gene : Gene) : Param(name, gene) {
     override fun copy(): Param {
         TODO("Not yet implemented")
     }
+
+
+
 }
