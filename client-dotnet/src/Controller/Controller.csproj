@@ -5,4 +5,8 @@
   </PropertyGroup>
 
 
+  <ItemGroup>
+    <ProjectReference Include="../Controller.Api/Controller.Api.csproj" />
+  </ItemGroup>
+
 </Project>
