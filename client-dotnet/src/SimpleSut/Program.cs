@@ -7,15 +7,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Controller
+namespace SimpleSut
 {
     public class Program
     {
         public static void Main(string[] args)
         {
-            var sutController = new ConcreteController();
-
-            sutController.StartTheControllerServer();
+            CreateHostBuilder(args).Build().Run();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>

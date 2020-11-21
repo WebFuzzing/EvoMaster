@@ -67,8 +67,9 @@ experiments/target/
 [Bb]in/
 [Oo]bj/
 *.dll
-client-dotnet/src/Controller/Properties/
+client-dotnet/src/*/Properties/
 .vscode/
+*.launchSettings.json
 
 #Generated Tests
 generated-test-cases/
