@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using Controller;
 using Controller.Api;
 
-namespace SimpleSut {
+namespace E2E.HelloWorld {
   public class EmbeddedEvoMasterController : EmbeddedSutController {
     public static void Main (string[] args) {
 
-      System.Console.WriteLine("Driver is starting...\n");
-      
+      System.Console.WriteLine ("Driver is starting...\n");
+
       EmbeddedEvoMasterController embeddedEvoMasterController = new EmbeddedEvoMasterController ();
 
       InstrumentedSutStarter instrumentedSutStarter = new InstrumentedSutStarter (embeddedEvoMasterController);

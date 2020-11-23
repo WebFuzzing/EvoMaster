@@ -4,13 +4,12 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     
     <!-->TODO</-->
-    <StartupObject>SimpleSut.EmbeddedEvoMasterController</StartupObject>
-    
+    <StartupObject>E2E.HelloWorld.EmbeddedEvoMasterController</StartupObject>
+  
   </PropertyGroup>
 
-
   <ItemGroup>
-    <ProjectReference Include="../Controller/Controller.csproj" />
+    <ProjectReference Include="../../../../client-dotnet/src/Controller/Controller.csproj" />
   </ItemGroup>
 
 </Project>

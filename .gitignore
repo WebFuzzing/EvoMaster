@@ -68,6 +68,7 @@ experiments/target/
 [Oo]bj/
 *.dll
 client-dotnet/src/*/Properties/
+e2e-tests/*/Properties/
 .vscode/
 *.launchSettings.json
 

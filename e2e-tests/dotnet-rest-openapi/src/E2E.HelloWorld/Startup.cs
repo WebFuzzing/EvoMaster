@@ -11,9 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace SimpleSut
+namespace E2E.HelloWorld
 {
-  public class Startup
+    public class Startup
     {
         public Startup(IConfiguration configuration)
         {

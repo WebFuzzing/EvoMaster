@@ -7,9 +7,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace SimpleSut
+namespace E2E.HelloWorld
 {
-    public class Program
+  public class Program
     {
         public static void Main(string[] args)
         {
