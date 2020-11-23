@@ -36,22 +36,4 @@ namespace Controller
                 webBuilder.UseStartup<Startup> ();
             });
     }
-
-    public class ConcreteController : SutController {
-        public override void ExecInsertionsIntoDatabase (IList<InsertionDto> insertions) {
-            throw new System.NotImplementedException ();
-        }
-
-        public override void ResetStateOfSut () {
-            throw new System.NotImplementedException ();
-        }
-
-        public override string StartSut () {
-            throw new System.NotImplementedException ();
-        }
-
-        public override void StopSut () {
-            throw new System.NotImplementedException ();
-        }
-    }
 }

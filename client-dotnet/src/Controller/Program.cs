@@ -7,22 +7,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Controller
-{
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            var sutController = new ConcreteController();
+namespace Controller {
+    public class Program {
+        public static void Main (string[] args) {
 
-            sutController.StartTheControllerServer();
+            CreateHostBuilder (args).Build ().Run ();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+        public static IHostBuilder CreateHostBuilder (string[] args) =>
+            Host.CreateDefaultBuilder (args)
+            .ConfigureWebHostDefaults (webBuilder => {
+                webBuilder.UseStartup<Startup> ();
+            });
     }
 }
