@@ -116,6 +116,8 @@
         <nlp.version>3.9.2</nlp.version>
         <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
         <jgrapht.version>0.8.3</jgrapht.version>
+        <version.graphql-spring>5.0.2</version.graphql-spring>
+        <version.graphql-java-tools>5.2.4</version.graphql-java-tools>
     </properties>
 
 
@@ -563,6 +565,29 @@
                 <artifactId>jaxb-runtime</artifactId>
                 <version>2.3.1</version>
             </dependency>
+
+            <!--  GraphQL             -->
+            <dependency>
+                <groupId>com.graphql-java</groupId>
+                <artifactId>graphql-spring-boot-starter</artifactId>
+                <version>${version.graphql-spring}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.graphql-java</groupId>
+                <artifactId>graphiql-spring-boot-starter</artifactId>
+                <version>${version.graphql-spring}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.graphql-java</groupId>
+                <artifactId>voyager-spring-boot-starter</artifactId>
+                <version>${version.graphql-spring}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.graphql-java</groupId>
+                <artifactId>graphql-java-tools</artifactId>
+                <version>${version.graphql-java-tools}</version>
+            </dependency>
+
 
             <!-- test dependencies -->
             <dependency>
