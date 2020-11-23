@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 class BaseGraphQLApplicationTest{
 
 
-    @Disabled
+    //@Disabled
     @Test
     fun testIntrospectiveQuery(){
 

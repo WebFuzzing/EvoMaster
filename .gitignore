@@ -61,3 +61,4 @@ experiments/target/
 /coveredTargets.txt
 /core-driver-it/target/
 /core-it/src/test/kotlin/exp/
+/core-graphql-it/target/

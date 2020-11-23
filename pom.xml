@@ -22,6 +22,7 @@
         <module>core</module>
         <module>core-driver-it</module>
         <module>core-it</module>
+        <module>core-graphql-it</module>
         <module>client-java</module>
         <module>e2e-tests</module>
         <module>experiments</module>
@@ -116,8 +117,8 @@
         <nlp.version>3.9.2</nlp.version>
         <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
         <jgrapht.version>0.8.3</jgrapht.version>
-        <version.graphql-spring>5.0.2</version.graphql-spring>
-        <version.graphql-java-tools>5.2.4</version.graphql-java-tools>
+        <version.graphql-spring>7.1.0</version.graphql-spring>
+        <version.graphql-java-tools>6.2.0</version.graphql-java-tools>
     </properties>
 
 
@@ -568,25 +569,25 @@
 
             <!--  GraphQL             -->
             <dependency>
-                <groupId>com.graphql-java</groupId>
+                <groupId>com.graphql-java-kickstart</groupId>
                 <artifactId>graphql-spring-boot-starter</artifactId>
                 <version>${version.graphql-spring}</version>
             </dependency>
             <dependency>
-                <groupId>com.graphql-java</groupId>
+                <groupId>com.graphql-java-kickstart</groupId>
                 <artifactId>graphiql-spring-boot-starter</artifactId>
                 <version>${version.graphql-spring}</version>
             </dependency>
             <dependency>
-                <groupId>com.graphql-java</groupId>
+                <groupId>com.graphql-java-kickstart</groupId>
                 <artifactId>voyager-spring-boot-starter</artifactId>
                 <version>${version.graphql-spring}</version>
             </dependency>
-            <dependency>
-                <groupId>com.graphql-java</groupId>
-                <artifactId>graphql-java-tools</artifactId>
-                <version>${version.graphql-java-tools}</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>com.graphql-java-kickstart</groupId>-->
+<!--                <artifactId>graphql-java-tools</artifactId>-->
+<!--                <version>${version.graphql-java-tools}</version>-->
+<!--            </dependency>-->
 
 
             <!-- test dependencies -->
