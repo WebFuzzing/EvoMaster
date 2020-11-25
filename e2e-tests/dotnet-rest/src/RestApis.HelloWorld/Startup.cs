@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace E2E.HelloWorld
+namespace RestApis.HelloWorld
 {
     public class Startup
     {
@@ -36,7 +36,7 @@ namespace E2E.HelloWorld
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
             app.UseRouting();
 

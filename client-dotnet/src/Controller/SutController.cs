@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Controller.Api;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace Controller
-{
-  public abstract class SutController {
+namespace Controller {
+    public abstract class SutController {
         private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
         private string controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
 
@@ -13,9 +14,9 @@ namespace Controller
 
         public abstract void ResetStateOfSut ();
 
-        public abstract string StartSut ();
+        public abstract Task<Process> StartSutAsync ();
 
-        public abstract void StopSut ();
+        public abstract void StopSut (Process process);
 
         public bool StartTheControllerServer () {
 
@@ -33,7 +34,7 @@ namespace Controller
         private IHostBuilder CreateHostBuilder () =>
             Host.CreateDefaultBuilder ()
             .ConfigureWebHostDefaults (webBuilder => {
-                webBuilder.UseStartup<Startup> ();
+                webBuilder.UseStartup<Startup> ().UseUrls ($"http://*:{controllerPort}");
             });
     }
 }
