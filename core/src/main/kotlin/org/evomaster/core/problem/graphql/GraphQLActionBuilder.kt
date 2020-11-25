@@ -32,8 +32,8 @@ object GraphQLActionBuilder {
             - add the action to actionCluster
          */
 
-        var action : MutableList<GraphQLAction> = mutableListOf()
-        var table: MutableList<Table> = mutableListOf()
+
+        val table: MutableList<Table> = mutableListOf()
 
 
         for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
@@ -43,11 +43,11 @@ object GraphQLActionBuilder {
             }
             for (elementInfields in elementIntypes?.fields.orEmpty()) {
 
-                var tableElement = Table()
+                val tableElement = Table()
 
                 tableElement.tableField = elementInfields?.name
 
-                var list: __TypeKind? = __TypeKind.LIST
+                val list: __TypeKind? = __TypeKind.LIST
 
                 if (elementInfields?.type?.ofType?.kind == list){
 
@@ -71,7 +71,7 @@ object GraphQLActionBuilder {
 
             for (elementIntable in table) {
                 if (elementIntable?.tableField == elementIntypes?.name) {
-                    var tableElement = Table()
+                    val tableElement = Table()
                     for (elementInfields in elementIntypes?.fields.orEmpty()) {
                         tableElement.tableField = elementInfields?.name
                         while (elementInfields?.type?.ofType?.name == null) {
@@ -114,8 +114,8 @@ object GraphQLActionBuilder {
             methodType: String?,
             tableType: String,
             kindOfTableType: String,
-            kindOfTableField: String,
-            table:MutableList<Table>,
+            kindOfTableField: String?,
+            table:List<Table>,
             tableName: String
     ) {
         if(methodName == null){
@@ -139,7 +139,7 @@ object GraphQLActionBuilder {
 
         //TODO populate
 
-        val params = extractParams(methodName, methodType, tableType, kindOfTableType, kindOfTableField, table, tableName)
+        val params = extractParams(methodName, tableType, kindOfTableType, kindOfTableField, table, tableName)
 
         val action = GraphQLAction(actionId, methodName, type, params)
 
@@ -147,18 +147,17 @@ object GraphQLActionBuilder {
     }
     private fun extractParams(
             methodName: String,
-            methodType: String,
             tableType: String,
             kindOfTableType: String,
-            kindOfTableField: String,
-            table: MutableList<Table>,
+            kindOfTableField: String?,
+            table: List<Table>,
             tableName: String
 
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
 
-        var gene = getGene(tableType, kindOfTableField, kindOfTableType, table, tableName)
+        val gene = getGene(tableType, kindOfTableField, kindOfTableType, table, tableName)
 
         params.add(GQReturnParam(tableType, gene))
 
@@ -168,15 +167,15 @@ object GraphQLActionBuilder {
 
     private fun getGene(
             tableType: String,
-            kindOfTableField: String,
+            kindOfTableField: String?,
             kindOfTableType: String,
-            table: MutableList<Table>,
+            table: List<Table>,
             tableName: String
     ): Gene {
 
         when (kindOfTableField) {
             "LIST" -> {
-                var template = getGene(tableName, kindOfTableType, kindOfTableField, table, tableType)
+                val template = getGene(tableName, kindOfTableType, kindOfTableField, table, tableType)
                 return ArrayGene(tableName, template)
             }
             "OBJECT" -> {
@@ -190,7 +189,14 @@ object GraphQLActionBuilder {
             "String" -> {
                 return StringGene(tableName)
             }
-            else -> {
+            "null"-> {//means only not a list: does not means that it is an object
+                return getGene(tableName, kindOfTableType, kindOfTableField, table, tableType)
+            }
+            "Date"-> {
+                return DateGene(tableName)
+            }
+
+            else -> {//see Andrea
                 return StringGene("NotFound")
             }
         }
@@ -199,14 +205,16 @@ object GraphQLActionBuilder {
     private fun createObjectGene(tableName: String,
                                  tableType: String,
                                  kindOfTableType: String,
-                                 table: MutableList<Table>): Gene {
-        var fields :MutableList<Gene> = mutableListOf()
+                                 table: List<Table>): Gene {
+        val fields :MutableList<Gene> = mutableListOf()
         for (element in table) {
             if (element.tableName == tableName) {
-                var field = element.tableField
-                var template = field?.let { getGene(tableName, element.tableType,kindOfTableType, table, it) }
+                if(element.kindOfTableType.toString() == "SCALAR"){
+                val field = element.tableField
+                val template = field?.let { getGene(tableName, element.tableType,kindOfTableType, table, it) }
                 if (template != null) {
                     fields.add(template)
+                }
                 }
             }
 
