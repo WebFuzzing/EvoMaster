@@ -37,7 +37,7 @@ namespace RestApis.Tests.HelloWorld
         }
 
         [Fact]
-        public async Task CallApiWhenFailed_Fail () {
+        public async Task CallApiWhenStopped_Fail () {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
