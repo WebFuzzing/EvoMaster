@@ -30,6 +30,7 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
             //RestApis.HelloWorld.Program.Main (null);
 
+            //TODO: Remove hardcoded path
             var process = "dotnet /home/amid/repos/phd/EvoMaster/e2e-tests/dotnet-rest/src/RestApis.HelloWorld/bin/Debug/netcoreapp3.1/RestApis.HelloWorld.dll".Bash ();
 
             await Task.Delay (1000);
