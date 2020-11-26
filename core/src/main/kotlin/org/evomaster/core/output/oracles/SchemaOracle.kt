@@ -178,7 +178,8 @@ class SchemaOracle : ImplementedOracle() {
                 //TODO: BMR the schema may need additions here
                 val valueSchema = cva.schema
                 val rez = when (valueSchema) {
-                    is ArraySchema -> valueSchema.items.`$ref` ?: valueSchema.items.type
+                    // valueSchema.items might be null with cyclostron sut
+                    is ArraySchema -> valueSchema.items?.`$ref` ?: valueSchema.items?.type ?:""
                     is MapSchema -> {
                         when(cva.schema.additionalProperties) {
                             is StringSchema -> (cva.schema.additionalProperties as StringSchema).type
