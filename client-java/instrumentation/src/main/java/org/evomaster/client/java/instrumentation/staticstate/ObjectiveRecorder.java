@@ -206,8 +206,12 @@ public class ObjectiveRecorder {
 
     public static int getMappedId(String descriptiveId) {
 
-        int id = idMapping.computeIfAbsent(descriptiveId, k -> idMappingCounter.getAndIncrement());
-        reversedIdMapping.computeIfAbsent(id, k -> descriptiveId);
+        int id = idMapping.computeIfAbsent(descriptiveId, k -> {
+            int x = idMappingCounter.getAndIncrement();
+            reversedIdMapping.computeIfAbsent(x, t -> descriptiveId);
+            return x;
+        });
+        //reversedIdMapping.computeIfAbsent(id, k -> descriptiveId);
 
         return id;
     }

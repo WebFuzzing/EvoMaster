@@ -16,7 +16,7 @@
 					}
 				],
 				"url": {
-					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue?optStringQueryParam=string1&optStringEnumQueryParam=out_of_range&optIntQueryParam=17.47&optIntEnumQueryParam=100&optBase64QueryParam=][¨Ç*_¿´‚≠&optBoolQueryParam=non_bool&optDateQueryParam=non_date&optTimeQueryParam=13:45:08&optDateTimeQueryParam=1800-12-14 29:45:08&optDoubleQueryParam=non_double&optFloatQueryParam=non_float&optLongQueryParam=19.43&optArrayQueryParam=1,2,1000,string,5,10,true,1.8,-1",
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue?optStringQueryParam=string1&optStringEnumQueryParam=out_of_range&optIntQueryParam=17.47&optIntEnumQueryParam=100&optBase64QueryParam=%5D%5B%C2%A8%C3%87%2A_%C2%BF%C2%B4%E2%80%9A%E2%89%A0&optBoolQueryParam=non_bool&optDateQueryParam=non_date&optTimeQueryParam=13%3A45%3A08&optDateTimeQueryParam=1800-12-14+29%3A45%3A08&optDoubleQueryParam=non_double&optFloatQueryParam=non_float&optLongQueryParam=19.43&optArrayQueryParam=1%2C2%2C1000%2Cstring%2C5%2C10%2Ctrue%2C1.8%2C-1",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -47,7 +47,7 @@
 						},
 						{
 							"key": "optBase64QueryParam",
-							"value": "][¨Ç*_¿´‚≠"
+							"value": "%5D%5B%C2%A8%C3%87%2A_%C2%BF%C2%B4%E2%80%9A%E2%89%A0"
 						},
 						{
 							"key": "optBoolQueryParam",
@@ -59,11 +59,11 @@
 						},
 						{
 							"key": "optTimeQueryParam",
-							"value": "13:45:08"
+							"value": "13%3A45%3A08"
 						},
 						{
 							"key": "optDateTimeQueryParam",
-							"value": "1800-12-14 29:45:08"
+							"value": "1800-12-14+29%3A45%3A08"
 						},
 						{
 							"key": "optDoubleQueryParam",
@@ -79,7 +79,7 @@
 						},
 						{
 							"key": "optArrayQueryParam",
-							"value": "1,2,1000,string,5,10,true,1.8,-1"
+							"value": "1%2C2%2C1000%2Cstring%2C5%2C10%2Ctrue%2C1.8%2C-1"
 						}
 					]
 				},
