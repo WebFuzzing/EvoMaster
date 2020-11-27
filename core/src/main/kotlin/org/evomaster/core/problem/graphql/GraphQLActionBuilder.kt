@@ -8,7 +8,7 @@ import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import java.util.concurrent.atomic.AtomicInteger
-
+import java.util.*
 
 object GraphQLActionBuilder {
 
@@ -152,12 +152,12 @@ object GraphQLActionBuilder {
             kindOfTableField: String?,
             table: List<Table>,
             tableName: String
-
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
+        val history: Deque<String> = ArrayDeque<String>()
 
-        val gene = getGene(tableType, kindOfTableField, kindOfTableType, table, tableName)
+        val gene = getGene(tableType, kindOfTableField, kindOfTableType, table, tableName, history)
 
         params.add(GQReturnParam(tableType, gene))
 
@@ -170,16 +170,18 @@ object GraphQLActionBuilder {
             kindOfTableField: String?,
             kindOfTableType: String,
             table: List<Table>,
-            tableName: String
+            tableName: String,
+            history: Deque<String> = ArrayDeque<String>()
     ): Gene {
 
         when (kindOfTableField) {
             "LIST" -> {
-                val template = getGene(tableName, kindOfTableType, kindOfTableField, table, tableType)
+                val template = getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history)
+
                 return ArrayGene(tableName, template)
             }
             "OBJECT" -> {
-                return createObjectGene(tableName, tableType, kindOfTableType, table)
+                return createObjectGene(tableName, tableType, kindOfTableType, table, history)
             }
 
             "Int" -> {
@@ -189,8 +191,8 @@ object GraphQLActionBuilder {
             "String" -> {
                 return StringGene(tableName)
             }
-            "null"-> {//means only not a list: does not means that it is an object
-                return getGene(tableName, kindOfTableType, kindOfTableField, table, tableType)
+            "null"-> {
+                return getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history)
             }
             "Date"-> {
                 return DateGene(tableName)
@@ -205,15 +207,26 @@ object GraphQLActionBuilder {
     private fun createObjectGene(tableName: String,
                                  tableType: String,
                                  kindOfTableType: String,
-                                 table: List<Table>): Gene {
+                                 table: List<Table>,
+                                 history: Deque<String> = ArrayDeque<String>()
+                                ): Gene {
         val fields :MutableList<Gene> = mutableListOf()
         for (element in table) {
             if (element.tableName == tableName) {
-                if(element.kindOfTableType.toString() == "SCALAR"){
-                val field = element.tableField
-                val template = field?.let { getGene(tableName, element.tableType,kindOfTableType, table, it) }
-                if (template != null) {
-                    fields.add(template)
+                if(element.kindOfTableType.toString() == "SCALAR") {
+                    val field = element.tableField
+                    val template = field?.let { getGene(tableName, element.tableType, kindOfTableType, table, it, history) }
+                    if (template != null) {
+                        fields.add(template)
+                    }
+                }
+                else {
+                    if (element.kindOfTableType.toString() == "OBJECT"){
+                        history.add(element.tableName)
+
+                        if (history.count { it == element.tableName } == 1) {
+                            getGene(element.tableType, element.kindOfTableType.toString(), element.kindOfTableField.toString(), table, element.tableType, history)
+                        }
                 }
                 }
             }
