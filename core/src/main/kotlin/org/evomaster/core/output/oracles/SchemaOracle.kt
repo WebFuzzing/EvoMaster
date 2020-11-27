@@ -14,6 +14,8 @@ import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -30,6 +32,10 @@ import org.evomaster.core.search.gene.OptionalGene
 class SchemaOracle : ImplementedOracle() {
     private val variableName = "rso"
     private lateinit var objectGenerator: ObjectGenerator
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(SchemaOracle::class.java)
+    }
 
     override fun variableDeclaration(lines: Lines, format: OutputFormat) {
         lines.add("/**")
@@ -179,7 +185,20 @@ class SchemaOracle : ImplementedOracle() {
                 val valueSchema = cva.schema
                 val rez = when (valueSchema) {
                     // valueSchema.items might be null with cyclostron sut
-                    is ArraySchema -> valueSchema.items?.`$ref` ?: valueSchema.items?.type ?:""
+                    is ArraySchema -> valueSchema.items?.`$ref` ?: valueSchema.items?.type
+                                ?:"".also {
+                        /*
+                            with cyclotron sut, a response of get /data/{key}/data is specified as
+                            "responses": {
+                              "200": {
+                                "description": "The data array for a Data Bucket",
+                                "schema": {
+                                  "type": "array"
+                                }
+                              },
+                         */
+                        log.warn("missing type of a response with Array schema {}", call.getName())
+                    }
                     is MapSchema -> {
                         when(cva.schema.additionalProperties) {
                             is StringSchema -> (cva.schema.additionalProperties as StringSchema).type
