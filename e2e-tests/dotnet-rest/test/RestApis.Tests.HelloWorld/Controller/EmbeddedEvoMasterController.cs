@@ -6,6 +6,8 @@ using Controller.Api;
 using Controller.Problem;
 
 namespace RestApis.Tests.HelloWorld.Controller {
+
+    //TODO: It is not actually embedded as I run the dll to start
     public class EmbeddedEvoMasterController : EmbeddedSutController {
         public static void Main (string[] args) {
 
@@ -68,7 +70,7 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
         //This method in java client is neither async, nor returning Process => String StartSut();
         public override async Task<Process> StartSutAsync () {
-
+            //I tried to start the SUT as follows, but I couldn't stop it in this way. So I tried to run the dll
             //RestApis.HelloWorld.Program.Main (null);
 
             //TODO: Remove hardcoded path
