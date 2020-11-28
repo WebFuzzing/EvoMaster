@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Controller.Api;
 
 namespace Controller {
@@ -11,40 +13,20 @@ namespace Controller {
      */
     void SetupForGeneratedTest () { }
 
-    /**
-     * <p>
-     * Start a new instance of the SUT.
-     * </p>
-     *
-     * <p>
-     * This method must be blocking until the SUT is initialized.
-     *</p>
-     *
-     * <p>
-     * How this method is implemented depends on the library/framework in which
-     * the application is written.
-     * For example, in Spring applications you can use something like:
-     * {@code SpringApplication.run()}
-     * </p>
-     *
-     *
-     * @return the base URL of the running SUT, eg "http://localhost:8080"
-     */
-    string StartSut ();
+    ///<summary>Start a new instance of the SUT. 
+    ///This method must be blocking until the SUT is initialized.
+    ///How this method is implemented depends on the library/framework in which the application is written.
+    ///</summary>
+    ///<returns>Returns the process to stop later</returns>
+    ///This method in java client is neither async, nor returning Process => String StartSut();
+    Task<Process> StartSutAsync ();
 
-    /**
-     * <p>
-     * Stop the SUT.
-     * </p>
-     *
-     * <p>
-     * How to implement this method depends on the library/framework in which
-     * the application is written.
-     * For example, in Spring applications you can save in a variable the {@code ConfigurableApplicationContext}
-     * returned when starting the application, and then call {@code stop()} on it here.
-     * </p>
-     */
-    void StopSut ();
+    ///<summary>
+    ///Stops the SUT by killing the process
+    ///How this method is implemented depends on the library/framework in which the application is written.
+    ///This method in java client doesn't take the process => void StopSut();
+    ///</summary>
+    void StopSut (Process process);
 
     /**
      * <p>
@@ -64,7 +46,7 @@ namespace Controller {
      * {@code ctx.getBean(JdbcTemplate.class).getDataSource().getConnection()}.
      * </p>
      */
-    void ResetStateOfSUT ();
+    void ResetStateOfSut ();
 
     /**
      * Execute the given data insertions into the database (if any)

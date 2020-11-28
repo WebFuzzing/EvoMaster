@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Controller;
 using Controller.Api;
+using Controller.Problem;
 
 namespace RestApis.Tests.HelloWorld.Controller {
     public class EmbeddedEvoMasterController : EmbeddedSutController {
@@ -17,8 +18,47 @@ namespace RestApis.Tests.HelloWorld.Controller {
             instrumentedSutStarter.Start ();
         }
 
-        public override void ExecInsertionsIntoDatabase (IList<InsertionDto> insertions) {
+        public override string GetDatabaseDriverName () {
+            throw new System.NotImplementedException ();
+        }
 
+        public override List<AuthenticationDto> GetInfoForAuthentication () {
+            throw new System.NotImplementedException ();
+        }
+
+        public override string GetPackagePrefixesToCover () {
+            throw new System.NotImplementedException ();
+        }
+
+        public override OutputFormat GetPreferredOutputFormat () {
+            throw new System.NotImplementedException ();
+        }
+
+        public override IProblemInfo GetProblemInfo () {
+            throw new System.NotImplementedException ();
+        }
+
+        public override UnitsInfoDto GetUnitsInfoDto () {
+            throw new System.NotImplementedException ();
+        }
+
+        public override bool IsInstrumentationActivated () {
+            throw new System.NotImplementedException ();
+        }
+
+        public override bool IsSutRunning () {
+            throw new System.NotImplementedException ();
+        }
+
+        public override void NewActionSpecificHandler (ActionDto dto) {
+            throw new System.NotImplementedException ();
+        }
+
+        public override void NewSearch () {
+            throw new System.NotImplementedException ();
+        }
+
+        public override void NewTestSpecificHandler () {
             throw new System.NotImplementedException ();
         }
 
@@ -26,6 +66,7 @@ namespace RestApis.Tests.HelloWorld.Controller {
             throw new System.NotImplementedException ();
         }
 
+        //This method in java client is neither async, nor returning Process => String StartSut();
         public override async Task<Process> StartSutAsync () {
 
             //RestApis.HelloWorld.Program.Main (null);

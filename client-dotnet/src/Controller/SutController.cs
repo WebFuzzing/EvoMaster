@@ -34,13 +34,8 @@ namespace Controller {
         //TODO: Commented this out just to prevent warning
         //private int actionIndex = -1;
 
-        // public void ExecInsertionsIntoDatabase (IList<InsertionDto> insertions){
-
-        // }
-
         public abstract void ResetStateOfSut ();
 
-        //This method in java client is neither async, nor returning Process => String StartSut();
         public abstract Task<Process> StartSutAsync ();
 
         public abstract void StopSut (Process process);
@@ -182,12 +177,6 @@ namespace Controller {
         public void NewAction (ActionDto dto) {
             throw new NotImplementedException ();
         }
-
-        public abstract string StartSut ();
-
-        public abstract void StopSut ();
-
-        public abstract void ResetStateOfSUT ();
 
         /**
          * Re-initialize all internal data to enable a completely new search phase
@@ -354,6 +343,5 @@ namespace Controller {
             .ConfigureWebHostDefaults (webBuilder => {
                 webBuilder.UseStartup<Startup> ().UseUrls ($"http://*:{controllerPort}");
             });
-
-    }
+  }
 }
