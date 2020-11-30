@@ -96,7 +96,7 @@ class PostmanParser(
                 val path = getPath(postmanRequest.url.path)
                 val pathParamValue = restAction.path.getKeyValues(path)?.get(parameter.name)
                 if (pathParamValue == null)
-                    log.warn("RestAction path and Postman path do not match: {} vs {}", restAction.path.toString(), path)
+                    log.warn("Ignoring path parameter value... RestAction path and Postman path do not match: {} vs {}", restAction.path.toString(), path)
                 else
                     value = UriUtils.decode(pathParamValue, StandardCharsets.UTF_8.toString())
             }

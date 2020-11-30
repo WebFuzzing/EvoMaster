@@ -348,12 +348,12 @@
 						"localhost"
 					],
 					"port": "8080",
-"path": [
-	"api",
-	"v1",
-	"queryHeaderPath",
-	"%7Bprop1=val1,%20val2 and val3;prop2=val4%3Bprop3=val5}"
-],
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"%7Bprop1=val1,%20val2 and val3;prop2=val4%3Bprop3=val5}"
+					],
 					"query": [
 						{
 							"key": "reqStringQueryParam",
