@@ -9,9 +9,12 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 object GraphQLActionBuilder {
 
+    private val log: Logger = LoggerFactory.getLogger(GraphQLActionBuilder::class.java)
     private val idGenerator = AtomicInteger()
 
     /**
@@ -199,6 +202,7 @@ object GraphQLActionBuilder {
             }
 
             else -> {//see Andrea
+                log.warn("kind Of Table Field: Not Found")
                 return StringGene("NotFound")
             }
         }
@@ -213,7 +217,7 @@ object GraphQLActionBuilder {
         val fields :MutableList<Gene> = mutableListOf()
         for (element in table) {
             if (element.tableName == tableName) {
-                if(element.kindOfTableType.toString() == "SCALAR") {
+                if(element.kindOfTableType.toString().equals("SCALAR", ignoreCase = true) ) {
                     val field = element.tableField
                     val template = field?.let { getGene(tableName, element.tableType, kindOfTableType, table, it, history) }
                     if (template != null) {
@@ -221,7 +225,7 @@ object GraphQLActionBuilder {
                     }
                 }
                 else {
-                    if (element.kindOfTableType.toString() == "OBJECT"){
+                    if (element.kindOfTableType.toString().equals("OBJECT",ignoreCase = true)){
                         history.add(element.tableName)
 
                         if (history.count { it == element.tableName } == 1) {
