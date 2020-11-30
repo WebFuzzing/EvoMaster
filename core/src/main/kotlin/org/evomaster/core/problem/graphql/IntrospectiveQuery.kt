@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.graphql
 
 import org.evomaster.core.problem.graphql.schema.SchemaObj
+import org.evomaster.core.remote.SutProblemException
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -20,6 +21,10 @@ class IntrospectiveQuery {
             .property(ClientProperties.FOLLOW_REDIRECTS, false)
 
 
+    /**
+     * Client library to make HTTP calls. To get the schema from a GraphQL API, we need to make
+     * an HTTP call that has, as body payload, and introspective query
+     */
     private var client: Client = ClientBuilder.newClient(clientConfiguration)
 
 
@@ -29,8 +34,15 @@ class IntrospectiveQuery {
              */
             graphQlEndpoint: String) : String{
 
+        /*
+            Body payload for the introspective query
+         */
         val query = Entity.entity("""
-                    TODO 
+                    {
+                        "query": {
+                            TODO
+                        }
+                    }
                 """.trimIndent(), MediaType.APPLICATION_JSON_TYPE)
 
         //TODO check if TCP problems
@@ -41,6 +53,13 @@ class IntrospectiveQuery {
 
         //TODO check status code, and any other problem inside GraphQL response
 
+        if(response.status != 200){
+            throw SutProblemException("Failed to retrieve GraphQL schema. Status code: ${response.status}")
+        }
+
+        /*
+            Extract the body from response as a string
+         */
         val body = response.readEntity(String::class.java)
 
         return body
