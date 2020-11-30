@@ -28,31 +28,23 @@ namespace Controller {
     ///</summary>
     void StopSut (Process process);
 
-    /**
-     * <p>
-     * Make sure the SUT is in a clean state (eg, reset data in database).
-     * </p>
-     *
-     * <p>
-     * A possible (likely very inefficient) way to implement this would be to
-     * call {@code stopSUT} followed by {@code startSUT}.
-     * </p>
-     *
-     * <p>
-     * When dealing with databases, you can look at the utility functions from
-     * the class {@link DbCleaner}.
-     * How to access the database depends on the application.
-     * To access a {@code java.sql.Connection}, in Spring applications you can use something like:
-     * {@code ctx.getBean(JdbcTemplate.class).getDataSource().getConnection()}.
-     * </p>
-     */
+    //TODO: edit comment
+    ///<summary>
+    ///Make sure the SUT is in a clean state (eg, reset data in database).
+    ///</summary>
+    ///<remarks>
+    ///A possible (likely very inefficient) way to implement this would be to
+    /// call <code>stopSut</code> followed by <code>startSut</code>.
+    ///When dealing with databases, you can look at the utility functions from
+    ///the class <code>DbCleaner</code>.
+    ///How to access the database depends on the application.
+    ///To access a <code>java.sql.Connection</code>, in Spring applications you can use something like:
+    ///<code>ctx.getBean(JdbcTemplate.class).getDataSource().getConnection()</code>
+    ///</remarks>
     void ResetStateOfSut ();
 
-    /**
-     * Execute the given data insertions into the database (if any)
-     *
-     * @param insertions DTOs for each insertion to execute
-     */
+    ///<summary>Execute the given data insertions into the database (if any)</summary>
+    ///<param name="insertions">DTOs for each insertion to execute</param>
     void ExecInsertionsIntoDatabase (IList<InsertionDto> insertions);
   }
 

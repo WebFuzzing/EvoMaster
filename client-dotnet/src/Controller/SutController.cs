@@ -8,11 +8,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
 namespace Controller {
-    /**
-     * Abstract class used to connect to the EvoMaster process, and
-     * that is responsible to start/stop/restart the tested application,
-     * ie the system under test (SUT)
-     */
+
+    ///<summary>
+    ///Abstract class used to connect to the EvoMaster process, and
+    ///that is responsible to start/stop/restart the tested application,
+    ///ie the system under test (SUT)
+    ///</summary>
     public abstract class SutController : ISutHandler {
         private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
         private string controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
@@ -20,15 +21,13 @@ namespace Controller {
         //TODO: To be added
         //private final SqlHandler sqlHandler = new SqlHandler();
 
-        /**
-         * If using a SQL Database, gather info about its schema
-         */
+        ///<summary>
+        ///If using a SQL Database, gather info about its schema
+        ///</summary>
         //TODO: Commented this out just to prevent warning
         // private DbSchemaDto SchemaDto;
 
-        /**
-         * For each action in a test, keep track of the extra heuristics, if any
-         */
+        //For each action in a test, keep track of the extra heuristics, if any
         private readonly ICollection<ExtraHeuristicsDto> extras = new SynchronizedCollection<ExtraHeuristicsDto> ();
 
         //TODO: Commented this out just to prevent warning
@@ -40,13 +39,12 @@ namespace Controller {
 
         public abstract void StopSut (Process process);
 
-        /**
-         * Start the controller as a RESTful server.
-         * Use the setters of this class to change the default
-         * port and host.
-         * <br>
-         * This method is blocking until the server is initialized.
-         */
+        ///<summary>
+        ///Start the controller as a RESTful server.
+        ///Use the setters of this class to change the default
+        ///port and host.
+        ///</summary>
+        ///<remarks>This method is blocking until the server is initialized.</remarks>
         ///<returns>returns true if there was no problem in starting the controller </returns>
         public bool StartTheControllerServer () {
 
@@ -66,7 +64,7 @@ namespace Controller {
             throw new NotImplementedException ();
         }
 
-        ///<returns>The actual port in use (eg, if it was an ephemeral 0)</returns>
+        ///<summary>Returns the actual port in use (eg, if it was an ephemeral 0)</summary>
         public int GetControllerServerPort () {
             //TODO: Complete this
             throw new NotImplementedException ();
@@ -94,11 +92,8 @@ namespace Controller {
             throw new NotImplementedException ();
         }
 
-        /**
-         * Calculate heuristics based on intercepted SQL commands
-         *
-         * @param sql command as a string
-         */
+        ///<summary>Calculate heuristics based on intercepted SQL commands</summary>
+        ///<param name="sql">command as a string</param>
         //TODO: Complete this method
         public void HandleSql (string sql) {
             throw new NotImplementedException ();
@@ -109,11 +104,10 @@ namespace Controller {
             throw new NotImplementedException ();
         }
 
-        /**
-         * This is needed only during test generation (not execution),
-         * and it is automatically called by the EM controller after
-         * the SUT is started.
-         */
+        ///<summary>
+        ///This is needed only during test generation (not execution),
+        ///and it is automatically called by the EM controller after the SUT is started.
+        ///</summary>
         //TODO: Complete this method
         public void InitSqlHandler () {
             throw new NotImplementedException ();
@@ -343,5 +337,5 @@ namespace Controller {
             .ConfigureWebHostDefaults (webBuilder => {
                 webBuilder.UseStartup<Startup> ().UseUrls ($"http://*:{controllerPort}");
             });
-  }
+    }
 }
