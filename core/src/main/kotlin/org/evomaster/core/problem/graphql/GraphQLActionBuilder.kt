@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.graphql
 
 import com.google.gson.Gson
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.graphql.schema.SchemaObj
 import org.evomaster.core.problem.graphql.schema.__TypeKind
@@ -36,8 +37,30 @@ object GraphQLActionBuilder {
          */
 
 
-        val table: MutableList<Table> = mutableListOf()
+        val tables = initTableInfo(schemaObj)
 
+
+        for (elementIntable in tables) {
+
+            if (elementIntable.tableName == "Mutation" || elementIntable.tableName == "Query") {
+
+                handleOperation(actionCluster,
+                        elementIntable.tableField,
+                        elementIntable.tableName,
+                        elementIntable.tableType,
+                        elementIntable.kindOfTableType.toString(),
+                        elementIntable.kindOfTableField.toString(),
+                        tables,
+                        elementIntable.tableName.toString())
+
+            }
+        }
+
+    }
+
+    private fun initTableInfo(schemaObj: SchemaObj)  : List<Table>{
+
+        val tables = mutableListOf<Table>()
 
         for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
 
@@ -52,10 +75,10 @@ object GraphQLActionBuilder {
 
                 val list: __TypeKind? = __TypeKind.LIST
 
-                if (elementInfields?.type?.ofType?.kind == list){
+                if (elementInfields?.type?.ofType?.kind == list) {
 
 
-                    tableElement.kindOfTableField =elementInfields?.type?.ofType?.kind
+                    tableElement.kindOfTableField = elementInfields?.type?.ofType?.kind
                 }
 
                 while (elementInfields?.type?.ofType?.name == null) {
@@ -64,15 +87,15 @@ object GraphQLActionBuilder {
 
                 }
 
-                tableElement.kindOfTableType= elementInfields?.type?.ofType?.kind
+                tableElement.kindOfTableType = elementInfields?.type?.ofType?.kind
                 tableElement.tableType = elementInfields?.type?.ofType?.name
                 tableElement.tableName = elementIntypes?.name
-                table.add(tableElement)
+                tables.add(tableElement)
 
             }
 
 
-            for (elementIntable in table) {
+            for (elementIntable in tables) {
                 if (elementIntable?.tableField == elementIntypes?.name) {
                     val tableElement = Table()
                     for (elementInfields in elementIntypes?.fields.orEmpty()) {
@@ -84,33 +107,17 @@ object GraphQLActionBuilder {
                         }
                         tableElement.tableType = elementInfields?.type?.ofType?.name
                         tableElement.tableName = elementIntypes?.name
-                        table.add(tableElement)
+                        tables.add(tableElement)
                     }
 
 
                 }
 
             }
-
-
         }
-
-
-        for (elementIntable in table) {
-
-            if (elementIntable.tableName == "Mutation" || elementIntable.tableName == "Query") {
-
-                handleOperation(actionCluster, elementIntable.tableField, elementIntable.tableName,
-                        elementIntable.tableType,
-                        elementIntable.kindOfTableType.toString(),
-                        elementIntable.kindOfTableField.toString(),
-                        table,
-                        elementIntable.tableName.toString())
-
-            }
-        }
-
+        return tables
     }
+
     private fun handleOperation(
             actionCluster: MutableMap<String, Action>,
             methodName: String?,
@@ -177,33 +184,33 @@ object GraphQLActionBuilder {
             history: Deque<String> = ArrayDeque<String>()
     ): Gene {
 
-        when (kindOfTableField) {
-            "LIST" -> {
+        when (kindOfTableField?.toLowerCase()) {
+            "list" -> {
                 val template = getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history)
 
                 return ArrayGene(tableName, template)
             }
-            "OBJECT" -> {
+            "object" -> {
                 return createObjectGene(tableName, tableType, kindOfTableType, table, history)
             }
 
-            "Int" -> {
+            "int" -> {
                 return IntegerGene(tableName)
             }
 
-            "String" -> {
+            "string" -> {
                 return StringGene(tableName)
             }
             "null"-> {
                 return getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history)
             }
-            "Date"-> {
+            "date"-> {
                 return DateGene(tableName)
             }
 
-            else -> {//see Andrea
-                log.warn("kind Of Table Field: Not Found")
-                return StringGene("NotFound")
+            else -> {
+                LoggingUtil.uniqueWarn(log, "Kind Of Table Field not supported yet: $kindOfTableField")
+                return StringGene("TODO")
             }
         }
 
