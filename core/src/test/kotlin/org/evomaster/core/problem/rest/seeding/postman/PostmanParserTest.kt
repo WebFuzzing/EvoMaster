@@ -12,8 +12,10 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+@Disabled
 class PostmanParserTest {
 
     private lateinit var swagger: OpenAPI

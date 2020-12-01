@@ -11,7 +11,7 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.web.util.UriUtils
+//import org.springframework.web.util.UriUtils
 import java.io.File
 import java.lang.IllegalStateException
 import java.net.URLDecoder
@@ -98,7 +98,7 @@ class PostmanParser(
                 if (pathParamValue == null)
                     log.warn("Ignoring path parameter value... RestAction path and Postman path do not match: {} vs {}", restAction.path.toString(), path)
                 else
-                    value = UriUtils.decode(pathParamValue, StandardCharsets.UTF_8.toString())
+                    value = "FIXME" //UriUtils.decode(pathParamValue, StandardCharsets.UTF_8.toString())
             }
         }
 
