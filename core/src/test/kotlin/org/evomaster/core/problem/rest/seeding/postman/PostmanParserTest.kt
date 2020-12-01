@@ -37,7 +37,7 @@ class PostmanParserTest {
     fun testPostmanParserQueryHeaderPath() {
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
 
-        assertEquals(3, testCases.size)
+        assertEquals(7, testCases.size)
 
         // Assert the presence and value of each gene of the request
         val request = testCases[0][0]
@@ -118,7 +118,7 @@ class PostmanParserTest {
     fun testPostmanParserNoParams() {
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
 
-        assertEquals(3, testCases.size)
+        assertEquals(7, testCases.size)
 
         // Assert the absence of each gene of the request, except for required ones
         val request = testCases[1][0]
@@ -316,13 +316,65 @@ class PostmanParserTest {
     fun testPostmanParserOptionalJsonBodyNotPresent() {
         val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
 
-        assertEquals(3, testCases.size)
+        assertEquals(7, testCases.size)
 
         // Assert the absence of the request body
         val request = testCases[2][0]
 
         val bodyParam = request.parameters.filterIsInstance<BodyParam>()[0].gene as OptionalGene
         assertFalse(bodyParam.isActive)
+    }
+
+    @Test
+    fun testPostmanParserWhiteSpaceInPath() {
+        val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
+
+        assertEquals(7, testCases.size)
+
+        // Assert the absence of the request body
+        val request = testCases[3][0]
+
+        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
+        assertEquals("path param value", pathParam.gene.value)
+    }
+
+    @Test
+    fun testPostmanParserEqualSymbolInPath() {
+        val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
+
+        assertEquals(7, testCases.size)
+
+        // Assert the absence of the request body
+        val request = testCases[4][0]
+
+        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
+        assertEquals("prop1=val1", pathParam.gene.value)
+    }
+
+    @Test
+    fun testPostmanParserCurlyBracesInPath() {
+        val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
+
+        assertEquals(7, testCases.size)
+
+        // Assert the absence of the request body
+        val request = testCases[5][0]
+
+        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
+        assertEquals("{prop1=val1}", pathParam.gene.value)
+    }
+
+    @Test
+    fun testPostmanParserEncodedAndNonEncodedCharsInPath() {
+        val testCases = postmanParser.parseTestCases("src/test/resources/postman/query_header_path.postman_collection.json")
+
+        assertEquals(7, testCases.size)
+
+        // Assert the absence of the request body
+        val request = testCases[6][0]
+
+        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
+        assertEquals("{prop1=val1, val2 and val3;prop2=val4;prop3=val5}", pathParam.gene.value)
     }
 
     @Test
