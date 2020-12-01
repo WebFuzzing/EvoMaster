@@ -23,6 +23,7 @@ class PostmanParser(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PostmanParser::class.java)
+        private const val TMP_PATH_STR = "_TEMP_REPLACE_1234_ABCD_"
     }
 
     override fun parseTestCases(path: String): MutableList<MutableList<RestCallAction>> {
@@ -157,9 +158,9 @@ class PostmanParser(
      */
     private fun getDecodedPathElement(pathElement: String): String {
         return URLDecoder.decode(
-                pathElement.replace("+", "_TEMP_REPLACE_1234_"),
+                pathElement.replace("+", TMP_PATH_STR),
                 StandardCharsets.UTF_8.toString()
-        ).replace("_TEMP_REPLACE_1234_", "+")
+        ).replace(TMP_PATH_STR, "+")
     }
 
     private fun isFormBody(parameter: Param): Boolean {
