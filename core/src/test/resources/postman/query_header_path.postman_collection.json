@@ -342,7 +342,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8080/api/v1/queryHeaderPath/%7Bprop1=val1,%20val2+and val3;prop2=val4%3Bprop3=val5}?reqStringQueryParam=string2",
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/%7Bprop1=val1,%20val2 and val3+val4;prop2=val4%3Bprop3=val5}?reqStringQueryParam=string2",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -352,7 +352,7 @@
 						"api",
 						"v1",
 						"queryHeaderPath",
-						"%7Bprop1=val1,%20val2 and val3;prop2=val4%3Bprop3=val5}"
+						"%7Bprop1=val1,%20val2 and val3+val4;prop2=val4%3Bprop3=val5}"
 					],
 					"query": [
 						{

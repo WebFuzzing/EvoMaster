@@ -12,10 +12,8 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Disabled
 class PostmanParserTest {
 
     private lateinit var swagger: OpenAPI
@@ -376,7 +374,7 @@ class PostmanParserTest {
         val request = testCases[6][0]
 
         val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
-        assertEquals("{prop1=val1, val2 and val3;prop2=val4;prop3=val5}", pathParam.gene.value)
+        assertEquals("{prop1=val1, val2 and val3+val4;prop2=val4;prop3=val5}", pathParam.gene.value)
     }
 
     @Test
