@@ -34,7 +34,7 @@ class BaseGraphQLApplicationTest{
 
             assertEquals(1, actionCluster.size)
             val all = actionCluster.get("all")  as GraphQLAction
-            assertEquals(4, all.parameters.size)
+            assertEquals(1, all.parameters.size)
 
         }catch(e: Exception){
             driver.stopSut()

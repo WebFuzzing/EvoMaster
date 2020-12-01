@@ -64,7 +64,14 @@ object GraphQLActionBuilder {
 
         for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
 
-            if (elementIntypes.name == "__Schema") {
+            if (elementIntypes.name == "__Schema" ||
+                    elementIntypes.name == "__Directive"||
+                    elementIntypes.name == "__DirectiveLocation"||
+                    elementIntypes.name == "__EnumValue"||
+                    elementIntypes.name == "__Field" ||
+                    elementIntypes.name == "__InputValue" ||
+                    elementIntypes.name == "__Type"||
+                    elementIntypes.name == "__TypeKind") {
                 break
             }
             for (elementInfields in elementIntypes?.fields.orEmpty()) {
@@ -72,6 +79,8 @@ object GraphQLActionBuilder {
                 val tableElement = Table()
 
                 tableElement.tableField = elementInfields?.name
+
+                if (elementInfields?.type?.ofType != null) {
 
                 val list: __TypeKind? = __TypeKind.LIST
 
@@ -91,6 +100,14 @@ object GraphQLActionBuilder {
                 tableElement.tableType = elementInfields?.type?.ofType?.name
                 tableElement.tableName = elementIntypes?.name
                 tables.add(tableElement)
+                } else {
+                    tableElement.kindOfTableField = null
+                    tableElement.kindOfTableType = elementInfields?.type?.kind
+                    tableElement.tableType = elementInfields?.type?.name
+                    tableElement.tableName = elementIntypes?.name
+                    tables.add(tableElement)
+
+                }
 
             }
 
