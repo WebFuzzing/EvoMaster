@@ -110,9 +110,9 @@
         <jersey.version>2.29.1</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
         <jackson.version>2.11.0</jackson.version>
-<!--        <springweb.version>5.3.1</springweb.version>-->
         <asm.version>8.0.1</asm.version>
-        <testcontainers.version>1.14.3</testcontainers.version>
+        <testcontainers.version>1.15.0</testcontainers.version>
+        <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
         <antlr.version>4.7.2</antlr.version>
         <nlp.version>3.9.2</nlp.version>
         <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
@@ -606,6 +606,13 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
                 <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!-- Used in SqlHandlerInDBTest class -->
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${jetbrains.annotations.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

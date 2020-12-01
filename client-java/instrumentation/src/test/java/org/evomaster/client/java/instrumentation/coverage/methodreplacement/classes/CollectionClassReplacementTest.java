@@ -220,7 +220,7 @@ public class CollectionClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateTime1 = sdf.parse(date1 + " " + time1);
         Date dateTime2 = sdf.parse(date1 + " " + time2);
