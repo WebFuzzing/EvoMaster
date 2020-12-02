@@ -35,9 +35,9 @@ namespace Controller {
 
         public abstract void ResetStateOfSut ();
 
-        public abstract Task<Process> StartSutAsync ();
+        public abstract Task<string> StartSutAsync (string port);
 
-        public abstract void StopSut (Process process);
+        public abstract void StopSut (string port);
 
         ///<summary>
         ///Start the controller as a RESTful server.

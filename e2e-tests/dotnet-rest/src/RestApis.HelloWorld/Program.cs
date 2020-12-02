@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -11,27 +12,31 @@ using Microsoft.Extensions.Logging;
 
 namespace RestApis.HelloWorld {
     public class Program {
-        private static CancellationTokenSource cancelTokenSource = new System.Threading.CancellationTokenSource ();
+
+        private static ConcurrentDictionary<string, CancellationTokenSource> tokens = new ConcurrentDictionary<string, CancellationTokenSource> ();
 
         public static void Main (string[] args) {
-            // var host = CreateWebHostBuilder (args).Build ();
-            // host.RunAsync (cancelTokenSource.Token).GetAwaiter ().GetResult ();
 
-            CreateHostBuilderOld(args).Build().Run();
+            tokens.TryAdd (args[0], new CancellationTokenSource ());
+
+            var host = CreateWebHostBuilder (args).Build ();
+
+            host.RunAsync (tokens[args[0]].Token).GetAwaiter ().GetResult ();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder (string[] args) =>
             WebHost.CreateDefaultBuilder (args)
-            .UseStartup<Startup> ();
+            .UseStartup<Startup> ().UseUrls ($"http://*:{args[0]}");
 
-        public static IHostBuilder CreateHostBuilderOld (string[] args) =>
-            Host.CreateDefaultBuilder (args)
-            .ConfigureWebHostDefaults (webBuilder => {
-                webBuilder.UseStartup<Startup> ();
-            });
+        public static void Shutdown (string port) {
 
-        public static void Shutdown () {
-            cancelTokenSource.Cancel ();
+            tokens.Remove (port, out var tokenSource);
+
+            if (tokenSource != null)
+                tokenSource.Cancel ();
+            else
+                //TODO: throw exception
+                System.Console.WriteLine ($"No cancellation token source found for port {port}");
         }
     }
 }

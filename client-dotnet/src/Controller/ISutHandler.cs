@@ -19,14 +19,14 @@ namespace Controller {
     ///</summary>
     ///<returns>Returns the process to stop later</returns>
     ///This method in java client is neither async, nor returning Process => String StartSut();
-    Task<Process> StartSutAsync ();
+    Task<string> StartSutAsync (string port);
 
     ///<summary>
     ///Stops the SUT by killing the process
     ///How this method is implemented depends on the library/framework in which the application is written.
     ///This method in java client doesn't take the process => void StopSut();
     ///</summary>
-    void StopSut (Process process);
+    void StopSut (string port);
 
     //TODO: edit comment
     ///<summary>

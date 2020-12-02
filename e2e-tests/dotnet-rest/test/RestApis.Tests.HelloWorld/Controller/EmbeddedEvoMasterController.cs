@@ -68,24 +68,27 @@ namespace RestApis.Tests.HelloWorld.Controller {
             throw new System.NotImplementedException ();
         }
 
-        //This method in java client is neither async, nor returning Process => String StartSut();
-        public override async Task<Process> StartSutAsync () {
-            //I tried to start the SUT as follows, but I couldn't stop it in this way. So I tried to run the dll
-            //RestApis.HelloWorld.Program.Main (null);
+        //This method in java client is not async
+        public override async Task<string> StartSutAsync (string port) {
 
             //TODO: Remove hardcoded path
-            var process = "dotnet ../../../../../src/RestApis.HelloWorld/bin/Debug/netcoreapp3.1/RestApis.HelloWorld.dll".Bash ();
+            // var process = "dotnet ../../../../../src/RestApis.HelloWorld/bin/Debug/netcoreapp3.1/RestApis.HelloWorld.dll".Bash ();
+
+            var task = Task.Run (() => {
+
+                RestApis.HelloWorld.Program.Main (new string[] { port });
+            });
 
             await Task.Delay (1000);
 
-            return process;
+            return port;
         }
 
-        public override void StopSut (Process process) {
+        public override void StopSut (string port) {
 
-            // RestApis.HelloWorld.Program.Shutdown ();
+            // process.Kill (true);
 
-            process.Kill (true);
+            RestApis.HelloWorld.Program.Shutdown (port);
         }
     }
 }

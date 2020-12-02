@@ -6,6 +6,7 @@ using Xunit;
 namespace RestApis.Tests.HelloWorld
 {
   public class HelloWorldTest {
+      //TODO: ports shouldn't be hardcoded, they should be allocated by the OS dynamically
         static readonly HttpClient client = new HttpClient ();
 
         [Fact]
@@ -13,11 +14,11 @@ namespace RestApis.Tests.HelloWorld
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var process = await evoMasterController.StartSutAsync ();
+            var port = await evoMasterController.StartSutAsync ("5000");
 
-            var response = await client.GetAsync ("http://localhost:5000/helloworld");
+            var response = await client.GetAsync ($"http://localhost:{port}/helloworld");
 
-            evoMasterController.StopSut (process);
+            evoMasterController.StopSut (port);
 
             Assert.Equal (200, (int) response.StatusCode);
         }
@@ -27,11 +28,11 @@ namespace RestApis.Tests.HelloWorld
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var process = await evoMasterController.StartSutAsync ();
+            var port = await evoMasterController.StartSutAsync ("5002");
 
-            var response = await client.GetAsync ("http://localhost:5000/wrongUri");
+            var response = await client.GetAsync ($"http://localhost:{port}/wrongUri");
 
-            evoMasterController.StopSut (process);
+            evoMasterController.StopSut (port);
 
             Assert.Equal (404, (int) response.StatusCode);
         }
@@ -41,11 +42,11 @@ namespace RestApis.Tests.HelloWorld
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var process = await evoMasterController.StartSutAsync ();
+            var port = await evoMasterController.StartSutAsync ("5003");
 
-            evoMasterController.StopSut (process);
+            evoMasterController.StopSut (port);
 
-            await Assert.ThrowsAsync<HttpRequestException> (async () => await client.GetAsync ("http://localhost:5000/helloworld"));
+            await Assert.ThrowsAsync<HttpRequestException> (async () => await client.GetAsync ($"http://localhost:{port}/helloworld"));
         }
     }
 }
