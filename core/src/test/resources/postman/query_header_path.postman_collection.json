@@ -245,6 +245,126 @@
 				"description": "Endpoint containing a JSON body"
 			},
 			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_pathWhiteSpace",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/path param value?reqStringQueryParam=string2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"path param value"
+					],
+					"query": [
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						}
+					]
+				},
+				"description": "Endpoint containing white space in path"
+			},
+			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_pathEqualSymbol",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/prop1=val1?reqStringQueryParam=string2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"prop1=val1"
+					],
+					"query": [
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						}
+					]
+				},
+				"description": "Endpoint containing equal symbol in path"
+			},
+			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_pathCurlyBraces",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/{prop1=val1}?reqStringQueryParam=string2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"{prop1=val1}"
+					],
+					"query": [
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						}
+					]
+				},
+				"description": "Endpoint containing curly braces in path"
+			},
+			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_pathEncAndNonEncChars",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/%7Bprop1=val1,%20val2+and val3;prop2=val4%3Bprop3=val5}?reqStringQueryParam=string2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"%7Bprop1=val1,%20val2 and val3;prop2=val4%3Bprop3=val5}"
+					],
+					"query": [
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						}
+					]
+				},
+				"description": "Endpoint containing encoded and non encoded chars in path"
+			},
+			"response": []
 		}
 	],
 	"protocolProfileBehavior": {}

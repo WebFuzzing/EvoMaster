@@ -11,11 +11,10 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+//import org.springframework.web.util.UriUtils
 import java.io.File
 import java.lang.IllegalStateException
-import java.net.URI
 import java.net.URLDecoder
-import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 class PostmanParser(
@@ -56,7 +55,7 @@ class PostmanParser(
 
     private fun getRestAction(defaultRestActions: List<RestCallAction>, postmanRequest: Request): RestCallAction? {
         val verb = postmanRequest.method
-        val path = URI(postmanRequest.url.raw).path.trim()
+        val path = getPath(postmanRequest.url.path)
         val originalRestAction = defaultRestActions.firstOrNull { it.verb.toString() == verb && it.path.matches(path) }
 
         if (originalRestAction == null)
@@ -94,8 +93,12 @@ class PostmanParser(
             }
             is BodyParam -> value = postmanRequest.body?.raw // Will return null for form bodies
             is PathParam -> {
-                val path = URI(postmanRequest.url.raw).path.trim()
-                value = restAction.path.getKeyValues(path)?.get(parameter.name)
+                val path = getPath(postmanRequest.url.path)
+                val pathParamValue = restAction.path.getKeyValues(path)?.get(parameter.name)
+                if (pathParamValue == null)
+                    log.warn("Ignoring path parameter value... RestAction path and Postman path do not match: {} vs {}", restAction.path.toString(), path)
+                else
+                    value = "FIXME" //UriUtils.decode(pathParamValue, StandardCharsets.UTF_8.toString())
             }
         }
 
@@ -137,6 +140,10 @@ class PostmanParser(
 
             else -> throw IllegalStateException("Only objects are supported for form bodies when parsing Postman requests")
         }
+    }
+
+    private fun getPath(pathElements: List<String>): String {
+        return "/" + pathElements.joinToString("/")
     }
 
     private fun isFormBody(parameter: Param): Boolean {
