@@ -74,64 +74,153 @@ object GraphQLActionBuilder {
                     elementIntypes.name == "__TypeKind") {
                 break
             }
+
             for (elementInfields in elementIntypes?.fields.orEmpty()) {
 
-                val tableElement = Table()
+                var tableElement = Table()
 
                 tableElement.tableField = elementInfields?.name
 
-                if (elementInfields?.type?.ofType != null) {
+                var non_null: __TypeKind? = __TypeKind.NON_NULL
 
-                val list: __TypeKind? = __TypeKind.LIST
+                if (elementInfields?.type?.kind == non_null) {
+                    var list: __TypeKind? = __TypeKind.LIST
+                    if (elementInfields?.type?.ofType?.kind == list) {
+                        tableElement.kindOfTableField = list
+                        tableElement.IskindOfkindOfTableFieldOptional = false
 
-                if (elementInfields?.type?.ofType?.kind == list) {
+                        if (elementInfields?.type?.ofType?.ofType?.kind == non_null) {
+                            var obj: __TypeKind? = __TypeKind.OBJECT
+                            if (elementInfields?.type?.ofType?.ofType?.ofType?.kind == obj) {
+                                tableElement.kindOfTableType = obj
+                                tableElement.IskindOfTableTypeOptional = false
+                                tableElement.tableType = elementInfields?.type?.ofType?.ofType?.ofType?.name
+                                tableElement.tableName = elementIntypes?.name
+                                tables.add(tableElement)
+                            } else {
+                                var scalar: __TypeKind? = __TypeKind.SCALAR
+                                if (elementInfields?.type?.ofType?.ofType?.ofType?.kind == scalar) {
+                                    tableElement.kindOfTableType = scalar
+                                    tableElement.IskindOfTableTypeOptional = false
+                                    tableElement.tableType = elementInfields?.type?.ofType?.ofType?.ofType?.name
+                                    tableElement.tableName = elementIntypes?.name
+                                    tables.add(tableElement)
+                                }
 
+                            }
 
-                    tableElement.kindOfTableField = elementInfields?.type?.ofType?.kind
-                }
+                        } else {
+                            var obj: __TypeKind? = __TypeKind.OBJECT
+                            if (elementInfields?.type?.ofType?.ofType?.kind == obj) {
+                                tableElement.kindOfTableType = obj
+                                tableElement.IskindOfTableTypeOptional = true
+                                tableElement.tableType = elementInfields?.type?.ofType?.ofType?.name
+                                tableElement.tableName = elementIntypes?.name
+                                tables.add(tableElement)
 
-                while (elementInfields?.type?.ofType?.name == null) {
+                            } else {
+                                var scalar: __TypeKind? = __TypeKind.SCALAR
+                                if (elementInfields?.type?.ofType?.ofType?.kind == scalar) {
+                                    tableElement.kindOfTableType = scalar
+                                    tableElement.IskindOfTableTypeOptional = true
+                                    tableElement.tableType = elementInfields?.type?.ofType?.ofType?.name
+                                    tableElement.tableName = elementIntypes?.name
+                                    tables.add(tableElement)
+                                }
 
-                    elementInfields?.type?.ofType = elementInfields?.type?.ofType?.ofType
-
-                }
-
-                tableElement.kindOfTableType = elementInfields?.type?.ofType?.kind
-                tableElement.tableType = elementInfields?.type?.ofType?.name
-                tableElement.tableName = elementIntypes?.name
-                tables.add(tableElement)
-                } else {
-                    tableElement.kindOfTableField = null
-                    tableElement.kindOfTableType = elementInfields?.type?.kind
-                    tableElement.tableType = elementInfields?.type?.name
-                    tableElement.tableName = elementIntypes?.name
-                    tables.add(tableElement)
-
-                }
-
-            }
-
-
-            for (elementIntable in tables) {
-                if (elementIntable?.tableField == elementIntypes?.name) {
-                    val tableElement = Table()
-                    for (elementInfields in elementIntypes?.fields.orEmpty()) {
-                        tableElement.tableField = elementInfields?.name
-                        while (elementInfields?.type?.ofType?.name == null) {
-
-                            elementInfields?.type?.ofType = elementInfields?.type?.ofType?.ofType
+                            }
 
                         }
-                        tableElement.tableType = elementInfields?.type?.ofType?.name
-                        tableElement.tableName = elementIntypes?.name
-                        tables.add(tableElement)
+                    } else {var obj: __TypeKind? = __TypeKind.OBJECT
+                        if (elementInfields?.type?.ofType?.kind == obj){
+                            tableElement.kindOfTableType = obj
+                            tableElement.IskindOfTableTypeOptional = false
+                            tableElement.tableType = elementInfields?.type?.ofType?.name
+                            tableElement.tableName = elementIntypes?.name
+                            tables.add(tableElement)
+                        } else {      var scalar: __TypeKind? = __TypeKind.SCALAR
+                            if (elementInfields?.type?.ofType?.kind == scalar){
+                                tableElement.kindOfTableType = scalar
+                                tableElement.IskindOfTableTypeOptional = false
+                                tableElement.tableType = elementInfields?.type?.ofType?.name
+                                tableElement.tableName = elementIntypes?.name
+                                tables.add(tableElement)
+                            }
+
+                        }
+
                     }
 
+                } else {var list: __TypeKind? = __TypeKind.LIST
+                    if (elementInfields?.type?.kind == list){
+                        tableElement.kindOfTableField = list
+                        tableElement.IskindOfkindOfTableFieldOptional = true
+                        if (elementInfields?.type?.ofType.kind == non_null ){
+                            var obj: __TypeKind? = __TypeKind.OBJECT
+                            if ( elementInfields?.type?.ofType?.ofType?.kind == obj) {
+                                tableElement.kindOfTableType = obj
+                                tableElement.IskindOfTableTypeOptional = false
+                                tableElement.tableType = elementInfields?.type?.ofType?.ofType?.name
+                                tableElement.tableName = elementIntypes?.name
+                                tables.add(tableElement)
+                            } else {var scalar: __TypeKind? = __TypeKind.SCALAR
+                                if ( elementInfields?.type?.ofType?.ofType?.kind == scalar) {
+                                    tableElement.kindOfTableType = scalar
+                                    tableElement.IskindOfTableTypeOptional = false
+                                    tableElement.tableType = elementInfields?.type?.ofType?.ofType?.name
+                                    tableElement.tableName = elementIntypes?.name
+                                    tables.add(tableElement)
+                                }
+                            }
+
+                        } else {var obj: __TypeKind? = __TypeKind.OBJECT
+                            if (elementInfields?.type?.ofType.kind == obj ) {
+                                tableElement.kindOfTableType = obj
+                                tableElement.IskindOfTableTypeOptional = true
+                                tableElement.tableType = elementInfields?.type?.ofType?.name
+                                tableElement.tableName = elementIntypes?.name
+                                tables.add(tableElement)
+                            } else {var scalar: __TypeKind? = __TypeKind.SCALAR
+                                if ( elementInfields?.type?.ofType?.kind == scalar) {
+                                    tableElement.kindOfTableType = scalar
+                                    tableElement.IskindOfTableTypeOptional = true
+                                    tableElement.tableType = elementInfields?.type?.ofType?.name
+                                    tableElement.tableName = elementIntypes?.name
+                                    tables.add(tableElement)
+                                }
+
+                            }
+
+                        }
+
+                    } else{ var obj: __TypeKind? = __TypeKind.OBJECT
+                        if (elementInfields?.type?.kind == obj){
+                            tableElement.kindOfTableType = obj
+                            tableElement.IskindOfTableTypeOptional = true
+                            tableElement.tableType = elementInfields?.type?.name
+                            tableElement.tableName = elementIntypes?.name
+                            tables.add(tableElement)
+                        }
+                        else{  var scalar: __TypeKind? = __TypeKind.SCALAR
+                            if (elementInfields?.type?.kind == scalar){
+                                tableElement.kindOfTableType = scalar
+                                tableElement.IskindOfTableTypeOptional = true
+                                tableElement.tableType = elementInfields?.type?.name
+                                tableElement.tableName = elementIntypes?.name
+                                tables.add(tableElement)
+
+                            }
+
+                        }
+
+                    }
 
                 }
 
             }
+
         }
+
         return tables
     }
 
