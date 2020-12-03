@@ -47,7 +47,7 @@ public abstract class RestTestBase {
     private final static int STARTING_SEED = 42;
     protected int defaultSeed = STARTING_SEED;
 
-
+    public final static String TESTS_OUTPUT_ROOT_FOLDER = "target/em-tests/";
     @AfterAll
     public static void tearDown() {
 
@@ -88,7 +88,7 @@ public abstract class RestTestBase {
     }
 
     protected String outputFolderPath(String outputFolderName){
-        return "target/em-tests/" + outputFolderName;
+        return TESTS_OUTPUT_ROOT_FOLDER + outputFolderName;
     }
 
 
@@ -438,6 +438,19 @@ public abstract class RestTestBase {
         }
 
         return false;
+    }
+
+    protected int countExpected(Solution<RestIndividual> solution,
+                                       HttpVerb verb,
+                                       int expectedStatusCode,
+                                       String path,
+                                       String inResponse, int count, List<String> msg) {
+
+        boolean ok = solution.getIndividuals().stream().anyMatch(
+                ind -> hasAtLeastOne(ind, verb, expectedStatusCode, path, inResponse));
+
+        msg.add("Missing " + expectedStatusCode + " " + verb + " " + path + " " + inResponse + "\n");
+        return ok? count+1: count;
     }
 
     protected void assertHasAtLeastOne(Solution<RestIndividual> solution,
