@@ -12,10 +12,9 @@ import springfox.documentation.service.ApiInfo;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import static springfox.documentation.builders.PathSelectors.regex;
-/** automatically created on 2020-10-22 */
 @EnableSwagger2
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-public class ResApp {
+public class AWHResApp {
   @Bean
   public Docket docketApi() {
     return new Docket(DocumentationType.SWAGGER_2)
@@ -35,6 +34,6 @@ public class ResApp {
   }
   // http://localhost:8080/v2/api-docs
   public static void main(String[] args) {
-    SpringApplication.run(ResApp.class, args);
+    SpringApplication.run(AWHResApp.class, args);
   }
 }
