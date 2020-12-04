@@ -11,7 +11,6 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-//import org.springframework.web.util.UriUtils
 import java.io.File
 import java.lang.IllegalStateException
 import java.net.URLDecoder
@@ -24,6 +23,7 @@ class PostmanParser(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PostmanParser::class.java)
+        private const val TMP_PATH_STR = "_TEMP_REPLACE_1234_ABCD_"
     }
 
     override fun parseTestCases(path: String): MutableList<MutableList<RestCallAction>> {
@@ -98,7 +98,7 @@ class PostmanParser(
                 if (pathParamValue == null)
                     log.warn("Ignoring path parameter value... RestAction path and Postman path do not match: {} vs {}", restAction.path.toString(), path)
                 else
-                    value = "FIXME" //UriUtils.decode(pathParamValue, StandardCharsets.UTF_8.toString())
+                    value = getDecodedPathElement(pathParamValue)
             }
         }
 
@@ -144,6 +144,23 @@ class PostmanParser(
 
     private fun getPath(pathElements: List<String>): String {
         return "/" + pathElements.joinToString("/")
+    }
+
+    /**
+     * Path elements are encoded/decoded differently that query elements in a URL.
+     * Actually, the only problem when decoding path elements are white spaces,
+     * which could be encoded as "+" in the query. When decoding a "+" in the path,
+     * it should remain as "+" and not be changed for " ".
+     *
+     * This method decodes path elements using the standard URLDecoder class from
+     * the Java API, but replaces "+" chars with a temporary string before and
+     * after, so that those do not get transformed to " ".
+     */
+    private fun getDecodedPathElement(pathElement: String): String {
+        return URLDecoder.decode(
+                pathElement.replace("+", TMP_PATH_STR),
+                StandardCharsets.UTF_8.toString()
+        ).replace(TMP_PATH_STR, "+")
     }
 
     private fun isFormBody(parameter: Param): Boolean {
