@@ -22,6 +22,8 @@ public class FooRestAPI {
       consumes = MediaType.APPLICATION_JSON)
   public ResponseEntity createFoo(
       @PathVariable(name = "x") Integer x, @RequestParam String y, @Valid @RequestBody Info info) {
+    if (fooRepository.count() < 3)
+      return ResponseEntity.status(400).build();
     if (x < 0 || fooRepository.findById(x).isPresent())
       return ResponseEntity.status(400).build();
     if (!y.toLowerCase().equals("foo"))
@@ -38,8 +40,7 @@ public class FooRestAPI {
       response += "B4";
     if (fooRepository.findById(42).isPresent())
       response += "B5";
-    if (fooRepository.count() > 3)
-      response += "B6";
+
     FooEntity node = new FooEntity();
     node.setX(x);
     node.setY(y);
