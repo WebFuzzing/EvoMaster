@@ -32,7 +32,16 @@ class GraphQLActionBuilderTest{
          assertEquals(2, objPetType.fields.size)
          assertTrue(objPetType.fields.any{ it is IntegerGene && it.name == "id"})
          assertTrue(objPetType.fields.any{ it is StringGene && it.name == "name"})
+        /**/
+         val pet = actionCluster.get("pet")  as GraphQLAction
+         assertEquals(1, pet.parameters.size)
+         assertTrue(pet.parameters[0] is GQReturnParam)
+         assertTrue(pet.parameters[0].gene is ObjectGene)
 
+         val specialties = actionCluster.get("specialties")  as GraphQLAction
+         assertEquals(1, specialties.parameters.size)
+         assertTrue(specialties.parameters[0] is GQReturnParam)
+         assertTrue(specialties.parameters[0].gene is ArrayGene<*> )
 
          //TODO other assertions on the actions
      }

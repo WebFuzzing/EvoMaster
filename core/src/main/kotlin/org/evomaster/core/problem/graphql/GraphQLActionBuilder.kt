@@ -51,7 +51,9 @@ object GraphQLActionBuilder {
                         elementIntable.kindOfTableType.toString(),
                         elementIntable.kindOfTableField.toString(),
                         tables,
-                        elementIntable.tableName.toString())
+                        elementIntable.tableName.toString(),
+                        elementIntable.IskindOfTableTypeOptional,
+                        elementIntable.IskindOfkindOfTableFieldOptional)
 
             }
         }
@@ -220,7 +222,6 @@ object GraphQLActionBuilder {
             }
 
         }
-
         return tables
     }
 
@@ -232,7 +233,9 @@ object GraphQLActionBuilder {
             kindOfTableType: String,
             kindOfTableField: String?,
             table:List<Table>,
-            tableName: String
+            tableName: String,
+            IskindOfTableTypeOptional: Boolean,
+            IskindOfkindOfTableFieldOptional : Boolean
     ) {
         if(methodName == null){
             //TODO log warn
@@ -255,7 +258,7 @@ object GraphQLActionBuilder {
 
         //TODO populate
 
-        val params = extractParams(methodName, tableType, kindOfTableType, kindOfTableField, table, tableName)
+        val params = extractParams(methodName, tableType, kindOfTableType, kindOfTableField, table, tableName, IskindOfTableTypeOptional, IskindOfkindOfTableFieldOptional)
 
         val action = GraphQLAction(actionId, methodName, type, params)
 
@@ -267,16 +270,17 @@ object GraphQLActionBuilder {
             kindOfTableType: String,
             kindOfTableField: String?,
             table: List<Table>,
-            tableName: String
+            tableName: String,
+            IskindOfTableTypeOptional: Boolean,
+            IskindOfkindOfTableFieldOptional : Boolean
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
         val history: Deque<String> = ArrayDeque<String>()
 
-        val gene = getGene(tableType, kindOfTableField, kindOfTableType, table, tableName, history)
+        val gene = getGene(tableType, kindOfTableField, kindOfTableType, table, tableName, history,IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional)
 
-        params.add(GQReturnParam(tableType, gene))
-
+            params.add(GQReturnParam(tableType, gene))
 
         return params
     }
@@ -287,31 +291,69 @@ object GraphQLActionBuilder {
             kindOfTableType: String,
             table: List<Table>,
             tableName: String,
-            history: Deque<String> = ArrayDeque<String>()
+            history: Deque<String> = ArrayDeque<String>(),
+            IskindOfTableTypeOptional: Boolean,
+            IskindOfkindOfTableFieldOptional : Boolean
     ): Gene {
 
         when (kindOfTableField?.toLowerCase()) {
             "list" -> {
-                val template = getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history)
+                if(IskindOfkindOfTableFieldOptional== true){
+                    val template = getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history,
+                                            IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )
+                    return OptionalGene(tableName,ArrayGene(tableName, template))
 
-                return ArrayGene(tableName, template)
+                }else {
+                    val template = getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history,
+                            IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )
+                    return ArrayGene(tableName, template)
+                }
             }
             "object" -> {
-                return createObjectGene(tableName, tableType, kindOfTableType, table, history)
+                if(IskindOfTableTypeOptional== true){
+                    val optObjGene=createObjectGene(tableName, tableType, kindOfTableType, table, history,
+                                                    IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional)
+                   return OptionalGene(tableName, optObjGene)
+                }else {
+                    return createObjectGene(tableName, tableType, kindOfTableType, table, history,
+                                            IskindOfTableTypeOptional, IskindOfkindOfTableFieldOptional)
+                }
             }
 
-            "int" -> {
-                return IntegerGene(tableName)
+            "int" -> { if (IskindOfTableTypeOptional == true){
+                return OptionalGene(tableName,IntegerGene(tableName))
+                         }
+                    else { return IntegerGene(tableName)
+                            }
             }
 
-            "string" -> {
-                return StringGene(tableName)
+            "string" -> {if(IskindOfTableTypeOptional == true){
+                return OptionalGene(tableName, StringGene(tableName))
+            } else {return StringGene(tableName)}
+
             }
-            "null"-> {
-                return getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history)
+            "float" -> {if(IskindOfTableTypeOptional== true){
+                return OptionalGene(tableName, FloatGene(tableName))
+            } else { return FloatGene(tableName)
             }
-            "date"-> {
-                return DateGene(tableName)
+            }
+
+            "boolean" -> {if(IskindOfTableTypeOptional== true){
+                return OptionalGene(tableName, BooleanGene(tableName))
+            }else {
+                return BooleanGene(tableName)}
+            }
+            "null"-> {if(IskindOfTableTypeOptional== true){
+                val optNonListGene= getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history,
+                        IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )
+                return OptionalGene(tableName,optNonListGene)
+            }else {
+                return getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history,
+                        IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )}
+            }
+            "date"-> {if(IskindOfTableTypeOptional== true){return OptionalGene(tableName, BooleanGene(tableName))
+            }else {
+                return DateGene(tableName)}
             }
 
             else -> {
@@ -325,14 +367,19 @@ object GraphQLActionBuilder {
                                  tableType: String,
                                  kindOfTableType: String,
                                  table: List<Table>,
-                                 history: Deque<String> = ArrayDeque<String>()
-                                ): Gene {
+                                 history: Deque<String> = ArrayDeque<String>(),
+                                 IskindOfTableTypeOptional : Boolean,
+                                 IskindOfkindOfTableFieldOptional: Boolean
+    ): Gene {
         val fields :MutableList<Gene> = mutableListOf()
         for (element in table) {
             if (element.tableName == tableName) {
                 if(element.kindOfTableType.toString().equals("SCALAR", ignoreCase = true) ) {
                     val field = element.tableField
-                    val template = field?.let { getGene(tableName, element.tableType, kindOfTableType, table, it, history) }
+                    val template = field?.let {
+                        getGene(tableName, element.tableType, kindOfTableType, table, it, history,
+                                element.IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )
+                    }
                     if (template != null) {
                         fields.add(template)
                     }
@@ -342,7 +389,7 @@ object GraphQLActionBuilder {
                         history.add(element.tableName)
 
                         if (history.count { it == element.tableName } == 1) {
-                            getGene(element.tableType, element.kindOfTableType.toString(), element.kindOfTableField.toString(), table, element.tableType, history)
+                            getGene(element.tableType, element.kindOfTableType.toString(), element.kindOfTableField.toString(), table, element.tableType, history,IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )
                         }
                 }
                 }
