@@ -14,7 +14,7 @@ namespace RestApis.Tests.HelloWorld
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var port = await evoMasterController.StartSutAsync ("5000");
+            var port = await evoMasterController.StartSutAsync ();
 
             var response = await client.GetAsync ($"http://localhost:{port}/helloworld");
 
@@ -28,7 +28,7 @@ namespace RestApis.Tests.HelloWorld
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var port = await evoMasterController.StartSutAsync ("5002");
+            var port = await evoMasterController.StartSutAsync ();
 
             var response = await client.GetAsync ($"http://localhost:{port}/wrongUri");
 
@@ -42,7 +42,7 @@ namespace RestApis.Tests.HelloWorld
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var port = await evoMasterController.StartSutAsync ("5003");
+            var port = await evoMasterController.StartSutAsync ();
 
             evoMasterController.StopSut (port);
 

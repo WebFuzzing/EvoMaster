@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Controller.Api;
 using Controller.Problem;
@@ -35,9 +37,9 @@ namespace Controller {
 
         public abstract void ResetStateOfSut ();
 
-        public abstract Task<string> StartSutAsync (string port);
+        public abstract Task<int> StartSutAsync ();
 
-        public abstract void StopSut (string port);
+        public abstract void StopSut (int port);
 
         ///<summary>
         ///Start the controller as a RESTful server.
@@ -337,5 +339,18 @@ namespace Controller {
             .ConfigureWebHostDefaults (webBuilder => {
                 webBuilder.UseStartup<Startup> ().UseUrls ($"http://*:{controllerPort}");
             });
+
+        protected int GetEphemeralTcpPort () {
+
+            var tcpListener = new TcpListener (IPAddress.Loopback, 0);
+            
+            tcpListener.Start ();
+            
+            int port = ((IPEndPoint) tcpListener.LocalEndpoint).Port;
+            
+            tcpListener.Stop ();
+            
+            return port;
+        }
     }
 }

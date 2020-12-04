@@ -13,22 +13,24 @@ using Microsoft.Extensions.Logging;
 namespace RestApis.HelloWorld {
     public class Program {
 
-        private static ConcurrentDictionary<string, CancellationTokenSource> tokens = new ConcurrentDictionary<string, CancellationTokenSource> ();
+        private static ConcurrentDictionary<int, CancellationTokenSource> tokens = new ConcurrentDictionary<int, CancellationTokenSource> ();
 
         public static void Main (string[] args) {
 
-            tokens.TryAdd (args[0], new CancellationTokenSource ());
+            int port = Convert.ToInt32(args[0]);
+
+            tokens.TryAdd (port, new CancellationTokenSource ());
 
             var host = CreateWebHostBuilder (args).Build ();
 
-            host.RunAsync (tokens[args[0]].Token).GetAwaiter ().GetResult ();
+            host.RunAsync (tokens[port].Token).GetAwaiter ().GetResult ();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder (string[] args) =>
             WebHost.CreateDefaultBuilder (args)
             .UseStartup<Startup> ().UseUrls ($"http://*:{args[0]}");
 
-        public static void Shutdown (string port) {
+        public static void Shutdown (int port) {
 
             tokens.Remove (port, out var tokenSource);
 

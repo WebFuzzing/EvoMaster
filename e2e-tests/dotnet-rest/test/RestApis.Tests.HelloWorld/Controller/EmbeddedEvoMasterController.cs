@@ -69,22 +69,24 @@ namespace RestApis.Tests.HelloWorld.Controller {
         }
 
         //This method in java client is not async
-        public override async Task<string> StartSutAsync (string port) {
+        public override async Task<int> StartSutAsync () {
 
             //TODO: Remove hardcoded path
             // var process = "dotnet ../../../../../src/RestApis.HelloWorld/bin/Debug/netcoreapp3.1/RestApis.HelloWorld.dll".Bash ();
+            
+            int ephemeralPort = GetEphemeralTcpPort();
 
             var task = Task.Run (() => {
 
-                RestApis.HelloWorld.Program.Main (new string[] { port });
+                RestApis.HelloWorld.Program.Main (new string[] { ephemeralPort.ToString() });
             });
 
             await Task.Delay (1000);
 
-            return port;
+            return ephemeralPort;
         }
 
-        public override void StopSut (string port) {
+        public override void StopSut (int port) {
 
             // process.Kill (true);
 
