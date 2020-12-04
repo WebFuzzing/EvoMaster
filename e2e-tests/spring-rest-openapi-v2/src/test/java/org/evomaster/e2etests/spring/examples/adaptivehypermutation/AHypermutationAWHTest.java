@@ -153,7 +153,6 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
         count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B3", count, msg);
         count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B4", count, msg);
         count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B5", count, msg);
-       // count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B6", count, msg);
         return count;
     }
 
