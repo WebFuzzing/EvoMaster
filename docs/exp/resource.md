@@ -4,7 +4,7 @@ We report experiment configurations used in the paper *Resource and Dependency b
 
 ## Steps
 1. [build the evomaster](#Build)
-2. [start a SUT with a driver](#Case Studies)
+2. [start a SUT with a driver](#Case-Studies)
 3. [run evomaster](#Execute) with [specified options](#Techniques)
 
 
