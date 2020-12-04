@@ -2,18 +2,18 @@
 
 We report experiment configurations used in the paper *Resource and Dependency based Test Case Generation for RESTful Web Services*.
 
-##Steps
+## Steps
 1. [build the evomaster](#Build)
 2. [start a SUT with a driver](#Case Studies)
 3. [run evomaster](#Execute) with [specified options](#Techniques)
 
 
-##Build
+## Build
 Build the evomaster from the source code with `mvn  clean install -DskipTests`.
 
 *see more details [here](../build.md).*
 
-##Case Studies
+## Case Studies
 
 The employed case studies include [7 open source](https://github.com/EMResearch/EMB) and [12 synthetic](https://github.com/EMResearch/artificial-rest-api) REST APIs.
 
@@ -22,7 +22,7 @@ You can start the driver with a specified port, e.g., 40100.
 
 *see more details to write a drive for enabling white-box testing [here](../write_driver.md).*
 
-##Techniques
+## Techniques
 
 In the paper, we conducted the experiment with the following techniques:
 * __Base1__: `--probOfSmartSampling 0.0 --resourceSampleStrategy NONE --probOfEnablingResourceDependencyHeuristics 0.0 --doesApplyNameMatching false`
@@ -38,7 +38,7 @@ To interact with a driver, you need to specify a port used when starting the dri
 
 *see more options [here](../options.md).*
 
-##Execute
+## Execute
 
 To apply a technique to generate tests, you can run the evomaster with the corresponding configuration,
 e.g., apply __Rd-MIO__
