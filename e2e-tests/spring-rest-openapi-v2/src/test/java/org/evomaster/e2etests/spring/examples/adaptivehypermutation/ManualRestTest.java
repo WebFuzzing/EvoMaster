@@ -59,7 +59,7 @@ public class ManualRestTest extends AHypermuationTestBase{
                 .assertThat()
                 .statusCode(HttpStatus.OK.value())
                 .contentType(ContentType.TEXT)
-                .body(equalTo("B3B4B5B6"));
+                .body(equalTo("B3B4B5"));
 
         given().accept("*/*")
                 .get(baseUrlOfSut + "/api/bars/0")
@@ -71,130 +71,10 @@ public class ManualRestTest extends AHypermuationTestBase{
                 .body("'c'",equalTo(369));
     }
 
+
+
     @Test
     public void test_foo_B0(){
-        given().accept("*/*")
-                .contentType("application/json")
-                .body(" { " +
-                        " \"c\": 1.0, " +
-                        " \"d1\": \"d1\", " +
-                        " \"d2\": \"d2\", " +
-                        " \"d3\": \"d3\", " +
-                        " \"t\": \"2019-01-01\" " +
-                        " } ")
-                .post(baseUrlOfSut + "/api/foos/1?y=foo")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.OK.value())
-                .contentType(ContentType.TEXT)
-                .body(equalTo("B0"));
-    }
-
-    @Test
-    public void test_foo_B1(){
-        given().accept("*/*")
-                .contentType("application/json")
-                .body(" { " +
-                        " \"c\": 100.0, " +
-                        " \"d1\": \"d1\", " +
-                        " \"d2\": \"d2\", " +
-                        " \"d3\": \"d3\", " +
-                        " \"t\": \"2019-01-01\" " +
-                        " } ")
-                .post(baseUrlOfSut + "/api/foos/1?y=foo")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.OK.value())
-                .contentType(ContentType.TEXT)
-                .body(equalTo("B1"));
-    }
-
-    @Test
-    public void test_foo_B2(){
-        given().accept("*/*")
-                .contentType("application/json")
-                .body(" { " +
-                        " \"c\": 200.0, " +
-                        " \"d1\": \"d1\", " +
-                        " \"d2\": \"d2\", " +
-                        " \"d3\": \"d3\", " +
-                        " \"t\": \"2019-01-01\" " +
-                        " } ")
-                .post(baseUrlOfSut + "/api/foos/1?y=foo")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.OK.value())
-                .contentType(ContentType.TEXT)
-                .body(equalTo("B2"));
-    }
-
-    @Test
-    public void test_foo_B3(){
-        given().accept("*/*")
-                .contentType("application/json")
-                .body(" { " +
-                        " \"c\": 300.0, " +
-                        " \"d1\": \"d1\", " +
-                        " \"d2\": \"d2\", " +
-                        " \"d3\": \"d3\", " +
-                        " \"t\": \"2019-01-01\" " +
-                        " } ")
-                .post(baseUrlOfSut + "/api/foos/1?y=foo")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.OK.value())
-                .contentType(ContentType.TEXT)
-                .body(equalTo("B3"));
-    }
-
-    @Test
-    public void test_foo_B4(){
-        given().accept("*/*")
-                .contentType("application/json")
-                .body(" { " +
-                        " \"c\": 300.0, " +
-                        " \"d1\": \"d1\", " +
-                        " \"d2\": \"d2\", " +
-                        " \"d3\": \"d3\", " +
-                        " \"t\": \"2020-01-01\" " +
-                        " } ")
-                .post(baseUrlOfSut + "/api/foos/1?y=foo")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.OK.value())
-                .contentType(ContentType.TEXT)
-                .body(equalTo("B3B4"));
-    }
-
-    @Test
-    public void test_foo_B5(){
-        List<InsertionDto> insertions = sql().insertInto("FOO", 42L)
-                .d("X", "42")
-                .d("Y", "\"foo\"")
-                .d("ZC", "0")
-                .d("ZT", "\"1900-01-20\"")
-                .dtos();
-        controller.execInsertionsIntoDatabase(insertions);
-
-        given().accept("*/*")
-                .contentType("application/json")
-                .body(" { " +
-                        " \"c\": 300.0, " +
-                        " \"d1\": \"d1\", " +
-                        " \"d2\": \"d2\", " +
-                        " \"d3\": \"d3\", " +
-                        " \"t\": \"2020-01-01\" " +
-                        " } ")
-                .post(baseUrlOfSut + "/api/foos/22?y=foo")
-                .then()
-                .assertThat()
-                .statusCode(HttpStatus.OK.value())
-                .contentType(ContentType.TEXT)
-                .body(equalTo("B3B4B5"));
-    }
-
-    @Test
-    public void test_foo_B6(){
         List<InsertionDto> insertions = sql().insertInto("FOO", 1L)
                 .d("X", "1")
                 .d("Y", "\"foo\"")
@@ -210,8 +90,184 @@ public class ManualRestTest extends AHypermuationTestBase{
                 .d("Y", "\"foo\"")
                 .d("ZC", "0")
                 .d("ZT", "\"1900-01-20\"")
-                .and().insertInto("FOO", 4L)
-                .d("X", "4")
+                .dtos();
+        controller.execInsertionsIntoDatabase(insertions);
+
+        given().accept("*/*")
+                .contentType("application/json")
+                .body(" { " +
+                        " \"c\": 1.0, " +
+                        " \"d1\": \"d1\", " +
+                        " \"d2\": \"d2\", " +
+                        " \"d3\": \"d3\", " +
+                        " \"t\": \"2019-01-01\" " +
+                        " } ")
+                .post(baseUrlOfSut + "/api/foos/4?y=foo")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.TEXT)
+                .body(equalTo("B0"));
+    }
+
+    @Test
+    public void test_foo_B1(){
+        List<InsertionDto> insertions = sql().insertInto("FOO", 1L)
+                .d("X", "1")
+                .d("Y", "\"foo\"")
+                .d("ZC", "10")
+                .d("ZT", "\"1900-01-20\"")
+                .and().insertInto("FOO", 2L)
+                .d("X", "2")
+                .d("Y", "\"foo\"")
+                .d("ZC", "0")
+                .d("ZT", "\"1900-01-20\"")
+                .and().insertInto("FOO", 3L)
+                .d("X", "3")
+                .d("Y", "\"foo\"")
+                .d("ZC", "0")
+                .d("ZT", "\"1900-01-20\"")
+                .dtos();
+        controller.execInsertionsIntoDatabase(insertions);
+
+        given().accept("*/*")
+                .contentType("application/json")
+                .body(" { " +
+                        " \"c\": 100.0, " +
+                        " \"d1\": \"d1\", " +
+                        " \"d2\": \"d2\", " +
+                        " \"d3\": \"d3\", " +
+                        " \"t\": \"2019-01-01\" " +
+                        " } ")
+                .post(baseUrlOfSut + "/api/foos/4?y=foo")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.TEXT)
+                .body(equalTo("B1"));
+    }
+
+    @Test
+    public void test_foo_B2(){
+        List<InsertionDto> insertions = sql().insertInto("FOO", 1L)
+                .d("X", "1")
+                .d("Y", "\"foo\"")
+                .d("ZC", "10")
+                .d("ZT", "\"1900-01-20\"")
+                .and().insertInto("FOO", 2L)
+                .d("X", "2")
+                .d("Y", "\"foo\"")
+                .d("ZC", "0")
+                .d("ZT", "\"1900-01-20\"")
+                .and().insertInto("FOO", 3L)
+                .d("X", "3")
+                .d("Y", "\"foo\"")
+                .d("ZC", "0")
+                .d("ZT", "\"1900-01-20\"")
+                .dtos();
+        controller.execInsertionsIntoDatabase(insertions);
+
+        given().accept("*/*")
+                .contentType("application/json")
+                .body(" { " +
+                        " \"c\": 200.0, " +
+                        " \"d1\": \"d1\", " +
+                        " \"d2\": \"d2\", " +
+                        " \"d3\": \"d3\", " +
+                        " \"t\": \"2019-01-01\" " +
+                        " } ")
+                .post(baseUrlOfSut + "/api/foos/4?y=foo")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.TEXT)
+                .body(equalTo("B2"));
+    }
+
+    @Test
+    public void test_foo_B3(){
+        List<InsertionDto> insertions = sql().insertInto("FOO", 1L)
+                .d("X", "1")
+                .d("Y", "\"foo\"")
+                .d("ZC", "10")
+                .d("ZT", "\"1900-01-20\"")
+                .and().insertInto("FOO", 2L)
+                .d("X", "2")
+                .d("Y", "\"foo\"")
+                .d("ZC", "0")
+                .d("ZT", "\"1900-01-20\"")
+                .and().insertInto("FOO", 3L)
+                .d("X", "3")
+                .d("Y", "\"foo\"")
+                .d("ZC", "0")
+                .d("ZT", "\"1900-01-20\"")
+                .dtos();
+        controller.execInsertionsIntoDatabase(insertions);
+
+        given().accept("*/*")
+                .contentType("application/json")
+                .body(" { " +
+                        " \"c\": 300.0, " +
+                        " \"d1\": \"d1\", " +
+                        " \"d2\": \"d2\", " +
+                        " \"d3\": \"d3\", " +
+                        " \"t\": \"2019-01-01\" " +
+                        " } ")
+                .post(baseUrlOfSut + "/api/foos/4?y=foo")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.TEXT)
+                .body(equalTo("B3"));
+    }
+
+    @Test
+    public void test_foo_B4(){
+        List<InsertionDto> insertions = sql().insertInto("FOO", 1L)
+                .d("X", "1")
+                .d("Y", "\"foo\"")
+                .d("ZC", "10")
+                .d("ZT", "\"1900-01-20\"")
+                .and().insertInto("FOO", 2L)
+                .d("X", "2")
+                .d("Y", "\"foo\"")
+                .d("ZC", "0")
+                .d("ZT", "\"1900-01-20\"")
+                .and().insertInto("FOO", 3L)
+                .d("X", "3")
+                .d("Y", "\"foo\"")
+                .d("ZC", "0")
+                .d("ZT", "\"1900-01-20\"")
+                .dtos();
+        controller.execInsertionsIntoDatabase(insertions);
+
+        given().accept("*/*")
+                .contentType("application/json")
+                .body(" { " +
+                        " \"c\": 300.0, " +
+                        " \"d1\": \"d1\", " +
+                        " \"d2\": \"d2\", " +
+                        " \"d3\": \"d3\", " +
+                        " \"t\": \"2020-01-01\" " +
+                        " } ")
+                .post(baseUrlOfSut + "/api/foos/4?y=foo")
+                .then()
+                .assertThat()
+                .statusCode(HttpStatus.OK.value())
+                .contentType(ContentType.TEXT)
+                .body(equalTo("B3B4"));
+    }
+
+    @Test
+    public void test_foo_B5(){
+
+        List<InsertionDto> insertions = sql().insertInto("FOO", 1L)
+                .d("X", "1")
+                .d("Y", "\"foo\"")
+                .d("ZC", "10")
+                .d("ZT", "\"1900-01-20\"")
+                .and().insertInto("FOO", 2L)
+                .d("X", "2")
                 .d("Y", "\"foo\"")
                 .d("ZC", "0")
                 .d("ZT", "\"1900-01-20\"")
@@ -232,12 +288,37 @@ public class ManualRestTest extends AHypermuationTestBase{
                         " \"d3\": \"d3\", " +
                         " \"t\": \"2020-01-01\" " +
                         " } ")
-                .post(baseUrlOfSut + "/api/foos/22?y=foo")
+                .post(baseUrlOfSut + "/api/foos/4?y=foo")
                 .then()
                 .assertThat()
                 .statusCode(HttpStatus.OK.value())
                 .contentType(ContentType.TEXT)
-                .body(equalTo("B3B4B5B6"));
+                .body(equalTo("B3B4B5"));
+    }
+
+    @Test
+    public void test_less_foo(){
+        List<InsertionDto> insertions = sql().insertInto("FOO", 1L)
+                .d("X", "1")
+                .d("Y", "\"foo\"")
+                .d("ZC", "10")
+                .d("ZT", "\"1900-01-20\"")
+                .dtos();
+        controller.execInsertionsIntoDatabase(insertions);
+
+        given().accept("*/*")
+                .contentType("application/json")
+                .body(" { " +
+                        " \"c\": 1.0, " +
+                        " \"d1\": \"d1\", " +
+                        " \"d2\": \"d2\", " +
+                        " \"d3\": \"d3\", " +
+                        " \"t\": \"2019-01-01\" " +
+                        " } ")
+                .post(baseUrlOfSut + "/api/foos/2?y=foo")
+                .then()
+                .assertThat()
+                .statusCode(400);
     }
 
     @Test
