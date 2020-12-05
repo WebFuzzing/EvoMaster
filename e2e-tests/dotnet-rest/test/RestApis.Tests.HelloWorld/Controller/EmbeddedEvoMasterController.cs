@@ -39,9 +39,9 @@ namespace RestApis.Tests.HelloWorld.Controller {
         public override OutputFormat GetPreferredOutputFormat () {
             throw new System.NotImplementedException ();
         }
-
+        //TODO: check again
         public override IProblemInfo GetProblemInfo () {
-            throw new System.NotImplementedException ();
+           return new RestProblem("http://localhost:" + GetSutPort() + "/swagger", null);
         }
 
         public override UnitsInfoDto GetUnitsInfoDto () {

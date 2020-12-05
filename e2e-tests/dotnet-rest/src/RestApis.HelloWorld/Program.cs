@@ -17,18 +17,29 @@ namespace RestApis.HelloWorld {
 
         public static void Main (string[] args) {
 
-            int port = Convert.ToInt32(args[0]);
+            if (args.Length > 0) {
 
-            tokens.TryAdd (port, new CancellationTokenSource ());
+                int port = Convert.ToInt32 (args[0]);
 
-            var host = CreateWebHostBuilder (args).Build ();
+                tokens.TryAdd (port, new CancellationTokenSource ());
 
-            host.RunAsync (tokens[port].Token).GetAwaiter ().GetResult ();
+                var host = CreateWebHostBuilder (args).Build ();
+
+                host.RunAsync (tokens[port].Token).GetAwaiter ().GetResult ();
+            } else {
+                var host = CreateWebHostBuilder (args).Build ();
+
+                host.RunAsync ().GetAwaiter ().GetResult ();
+            }
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder (string[] args) =>
-            WebHost.CreateDefaultBuilder (args)
-            .UseStartup<Startup> ().UseUrls ($"http://*:{args[0]}");
+        public static IWebHostBuilder CreateWebHostBuilder (string[] args) {
+            
+            var webHostBuilder = WebHost.CreateDefaultBuilder (args)
+                .UseStartup<Startup> ();
+
+            return args.Length > 0 ? webHostBuilder.UseUrls ($"http://*:{args[0]}") : webHostBuilder;
+        }
 
         public static void Shutdown (int port) {
 
@@ -43,12 +54,11 @@ namespace RestApis.HelloWorld {
 
         public static void Shutdown () {
 
-            foreach (var pair in tokens)
-            {
-                pair.Value.Cancel();
+            foreach (var pair in tokens) {
+                pair.Value.Cancel ();
             }
 
-            tokens.Clear();
+            tokens.Clear ();
         }
     }
 }
