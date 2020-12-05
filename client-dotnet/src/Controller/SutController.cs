@@ -54,6 +54,7 @@ namespace Controller {
             try {
                 CreateHostBuilder ().Build ().Run ();
             } catch (System.Exception e) {
+                //TODO: Use SimpleLogger
                 System.Console.WriteLine ($"Failed to start web server. Check this error out:\n{e}");
 
                 return false;
