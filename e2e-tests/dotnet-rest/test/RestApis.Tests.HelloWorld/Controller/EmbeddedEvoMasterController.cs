@@ -7,7 +7,6 @@ using Controller.Problem;
 
 namespace RestApis.Tests.HelloWorld.Controller {
 
-    //TODO: It is not actually embedded as I run the dll to start
     public class EmbeddedEvoMasterController : EmbeddedSutController {
 
         private bool isSutRunning;
