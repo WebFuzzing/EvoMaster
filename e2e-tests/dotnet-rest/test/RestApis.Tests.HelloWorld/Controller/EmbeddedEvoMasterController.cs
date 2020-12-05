@@ -9,6 +9,10 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
     //TODO: It is not actually embedded as I run the dll to start
     public class EmbeddedEvoMasterController : EmbeddedSutController {
+
+        private bool isSutRunning;
+        private int sutPort;
+
         public static void Main (string[] args) {
 
             System.Console.WriteLine ("Driver is starting...\n");
@@ -48,9 +52,7 @@ namespace RestApis.Tests.HelloWorld.Controller {
             throw new System.NotImplementedException ();
         }
 
-        public override bool IsSutRunning () {
-            throw new System.NotImplementedException ();
-        }
+        public override bool IsSutRunning () => isSutRunning;
 
         public override void NewActionSpecificHandler (ActionDto dto) {
             throw new System.NotImplementedException ();
@@ -69,28 +71,40 @@ namespace RestApis.Tests.HelloWorld.Controller {
         }
 
         //This method in java client is not async
-        public override async Task<int> StartSutAsync () {
+        public override async Task<string> StartSutAsync () {
 
-            //TODO: Remove hardcoded path
-            // var process = "dotnet ../../../../../src/RestApis.HelloWorld/bin/Debug/netcoreapp3.1/RestApis.HelloWorld.dll".Bash ();
-            
-            int ephemeralPort = GetEphemeralTcpPort();
+            //TODO: check this again
+            int ephemeralPort = GetEphemeralTcpPort ();
 
             var task = Task.Run (() => {
 
-                RestApis.HelloWorld.Program.Main (new string[] { ephemeralPort.ToString() });
+                RestApis.HelloWorld.Program.Main (new string[] { ephemeralPort.ToString () });
             });
 
-            await Task.Delay (1000);
+            await Task.Delay (300);
 
-            return ephemeralPort;
+            sutPort = ephemeralPort;
+
+            isSutRunning = true;
+
+            return $"http://localhost:{ephemeralPort}";
         }
 
+        public override void StopSut () {
+
+            RestApis.HelloWorld.Program.Shutdown ();
+
+            isSutRunning = false;
+        }
+
+        //TODO: we can remove this
         public override void StopSut (int port) {
 
-            // process.Kill (true);
-
             RestApis.HelloWorld.Program.Shutdown (port);
+
+            isSutRunning = false;
         }
+
+        protected int GetSutPort () => sutPort;
     }
 }

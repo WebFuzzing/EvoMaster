@@ -17,15 +17,16 @@ namespace Controller {
     ///This method must be blocking until the SUT is initialized.
     ///How this method is implemented depends on the library/framework in which the application is written.
     ///</summary>
-    ///<returns>Returns the process to stop later</returns>
-    ///This method in java client is neither async, nor returning Process => String StartSut();
-    Task<int> StartSutAsync ();
+    ///<returns>Returns the base url of the SUT</returns>
+    ///This method in java client is not async
+    Task<string> StartSutAsync ();
 
     ///<summary>
-    ///Stops the SUT by killing the process
+    ///Stops the SUT
     ///How this method is implemented depends on the library/framework in which the application is written.
     ///This method in java client doesn't take the process => void StopSut();
     ///</summary>
+    void StopSut ();
     void StopSut (int port);
 
     //TODO: edit comment

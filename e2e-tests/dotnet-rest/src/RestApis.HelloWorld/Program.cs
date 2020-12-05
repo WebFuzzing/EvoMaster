@@ -40,5 +40,15 @@ namespace RestApis.HelloWorld {
                 //TODO: throw exception
                 System.Console.WriteLine ($"No cancellation token source found for port {port}");
         }
+
+        public static void Shutdown () {
+
+            foreach (var pair in tokens)
+            {
+                pair.Value.Cancel();
+            }
+
+            tokens.Clear();
+        }
     }
 }

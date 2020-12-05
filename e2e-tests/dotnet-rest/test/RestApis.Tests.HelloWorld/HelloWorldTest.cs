@@ -14,11 +14,11 @@ namespace RestApis.Tests.HelloWorld
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var port = await evoMasterController.StartSutAsync ();
+            var baseUrl = await evoMasterController.StartSutAsync ();
 
-            var response = await client.GetAsync ($"http://localhost:{port}/helloworld");
+            var response = await client.GetAsync ($"{baseUrl}/helloworld");
 
-            evoMasterController.StopSut (port);
+            evoMasterController.StopSut ();
 
             Assert.Equal (200, (int) response.StatusCode);
         }
@@ -28,11 +28,11 @@ namespace RestApis.Tests.HelloWorld
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var port = await evoMasterController.StartSutAsync ();
+            var baseUrl = await evoMasterController.StartSutAsync ();
 
-            var response = await client.GetAsync ($"http://localhost:{port}/wrongUri");
+            var response = await client.GetAsync ($"{baseUrl}/wrongUri");
 
-            evoMasterController.StopSut (port);
+            evoMasterController.StopSut ();
 
             Assert.Equal (404, (int) response.StatusCode);
         }
@@ -42,11 +42,11 @@ namespace RestApis.Tests.HelloWorld
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var port = await evoMasterController.StartSutAsync ();
+            var baseUrl = await evoMasterController.StartSutAsync ();
 
-            evoMasterController.StopSut (port);
+            evoMasterController.StopSut ();
 
-            await Assert.ThrowsAsync<HttpRequestException> (async () => await client.GetAsync ($"http://localhost:{port}/helloworld"));
+            await Assert.ThrowsAsync<HttpRequestException> (async () => await client.GetAsync ($"{baseUrl}/helloworld"));
         }
     }
 }
