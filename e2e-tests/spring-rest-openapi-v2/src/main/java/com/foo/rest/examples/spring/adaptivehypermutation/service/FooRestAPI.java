@@ -21,7 +21,7 @@ public class FooRestAPI {
       method = RequestMethod.POST,
       consumes = MediaType.APPLICATION_JSON)
   public ResponseEntity createFoo(
-      @PathVariable(name = "x") Integer x, @RequestParam String y, @Valid @RequestBody Info info) {
+      @PathVariable(name = "x") Integer x, @RequestParam String y, @Valid @RequestBody Info z) {
     if (fooRepository.count() < 3)
       return ResponseEntity.status(400).build();
     if (x < 0 || fooRepository.findById(x).isPresent())
@@ -29,13 +29,13 @@ public class FooRestAPI {
     if (!y.toLowerCase().equals("foo"))
       return ResponseEntity.status(400).build();
     String response = "B0";
-    if (info.c == 100)
+    if (z.c == 100)
       response = "B1";
-    else if (info.c == 200)
+    else if (z.c == 200)
       response = "B2";
-    else if (info.c == 300)
+    else if (z.c == 300)
       response = "B3";
-    LocalDate date = LocalDate.parse(info.t);
+    LocalDate date = LocalDate.parse(z.t);
     if (date.getYear() == 2020)
       response += "B4";
     if (fooRepository.findById(42).isPresent())
@@ -44,7 +44,7 @@ public class FooRestAPI {
     FooEntity node = new FooEntity();
     node.setX(x);
     node.setY(y);
-    node.setZ(info);
+    node.setZ(z);
     // save the entity
     fooRepository.save(node);
     return ResponseEntity.ok(response);
