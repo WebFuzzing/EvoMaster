@@ -8,9 +8,10 @@ namespace RestApis.Tests.HelloWorld {
         static readonly HttpClient client = new HttpClient ();
 
         [Theory]
-        [InlineData("helloworld")]
-        [InlineData("swagger")]
-        public async Task StartApi_RetrunSuccessAsync (string uri) {
+        [InlineData ("helloworld", 200)]
+        [InlineData ("swagger", 200)]
+        [InlineData ("wrongUri", 404)]
+        public async Task StartApi_RetrunExpectedStatusCodeAsync (string uri, int expectedStatusCode) {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
@@ -20,22 +21,9 @@ namespace RestApis.Tests.HelloWorld {
 
             evoMasterController.StopSut ();
 
-            Assert.Equal (200, (int) response.StatusCode);
+            Assert.Equal (expectedStatusCode, (int) response.StatusCode);
         }
 
-        [Fact]
-        public async Task StartApiWithWrongUri_RetrunNotFoundAsync () {
-
-            EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
-
-            var baseUrl = await evoMasterController.StartSutAsync ();
-
-            var response = await client.GetAsync ($"{baseUrl}/wrongUri");
-
-            evoMasterController.StopSut ();
-
-            Assert.Equal (404, (int) response.StatusCode);
-        }
 
         [Fact]
         public async Task CallApiWhenStopped_FailAsync () {
@@ -69,7 +57,7 @@ namespace RestApis.Tests.HelloWorld {
             await evoMasterController.StartSutAsync ();
 
             evoMasterController.StopSut ();
-            
+
             Assert.False (evoMasterController.IsSutRunning ());
         }
     }
