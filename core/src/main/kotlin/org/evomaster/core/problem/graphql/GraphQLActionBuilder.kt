@@ -385,13 +385,25 @@ object GraphQLActionBuilder {
                     }
                 }
                 else {
-                    if (element.kindOfTableType.toString().equals("OBJECT",ignoreCase = true)){
-                        history.add(element.tableName)
+                    if (element.kindOfTableField.toString().equals("LIST", ignoreCase = true)) {
+                        val template= getGene(element.tableType, element.kindOfTableField.toString(), element.kindOfTableType.toString(),
+                                table, element.tableType, history, IskindOfTableTypeOptional, IskindOfkindOfTableFieldOptional)
 
-                        if (history.count { it == element.tableName } == 1) {
-                            getGene(element.tableType, element.kindOfTableType.toString(), element.kindOfTableField.toString(), table, element.tableType, history,IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )
+                        if (template != null) {
+                            fields.add(template)
                         }
-                }
+                    } else {
+                        if (element.kindOfTableType.toString().equals("OBJECT", ignoreCase = true)) {
+                            history.add(element.tableName)
+                            if (history.count { it == element.tableName } == 1) {
+                                val template = getGene(element.tableType, element.kindOfTableType.toString(), element.kindOfTableField.toString(),
+                                        table, element.tableType, history, IskindOfTableTypeOptional, IskindOfkindOfTableFieldOptional)
+                                if (template != null) {
+                                    fields.add(template)
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
