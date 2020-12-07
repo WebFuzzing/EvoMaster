@@ -40,7 +40,7 @@ namespace RestApis.Tests.HelloWorld.Controller {
         }
         //TODO: check again
         public override IProblemInfo GetProblemInfo () {
-           return new RestProblem("http://localhost:" + GetSutPort() + "/swagger", null);
+            return new RestProblem ("http://localhost:" + GetSutPort () + "/swagger", null);
         }
 
         public override UnitsInfoDto GetUnitsInfoDto () {
@@ -79,8 +79,8 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
                 RestApis.HelloWorld.Program.Main (new string[] { ephemeralPort.ToString () });
             });
-            //TODO: read from config
-            await Task.Delay (800);
+
+            await WaitUntilSutIsRunningAsync (ephemeralPort);
 
             sutPort = ephemeralPort;
 

@@ -344,14 +344,31 @@ namespace Controller {
         protected int GetEphemeralTcpPort () {
 
             var tcpListener = new TcpListener (IPAddress.Loopback, 0);
-            
+
             tcpListener.Start ();
-            
+
             int port = ((IPEndPoint) tcpListener.LocalEndpoint).Port;
-            
+
             tcpListener.Stop ();
-            
+
             return port;
         }
+
+        protected async Task WaitUntilSutIsRunningAsync (int port) {
+
+            using (TcpClient tcpClient = new TcpClient ()) {
+
+                while (true) {
+                    try {
+                        tcpClient.Connect ("127.0.0.1", port);
+                        break;
+                    } catch (Exception) {
+                        await Task.Delay (50);
+                        continue;
+                    }
+                }
+            }
+        }
+
     }
 }
