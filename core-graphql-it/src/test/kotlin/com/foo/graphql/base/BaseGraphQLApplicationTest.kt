@@ -13,12 +13,11 @@ import org.junit.jupiter.api.Test
 class BaseGraphQLApplicationTest{
 
 
-    @Disabled
+
     @Test
     fun testIntrospectiveQuery(){
 
         val driver = BaseGQDriver()
-        //driver.startTheControllerServer()
 
         try {
             val sutServer = driver.startSut()
@@ -41,9 +40,9 @@ class BaseGraphQLApplicationTest{
            val arrayUser= (all.parameters[0].gene as OptionalGene).gene as ArrayGene<*>
            val objUser=arrayUser.template as ObjectGene
            assertEquals(4, objUser.fields.size)
-           assertFalse(objUser.fields.get(0) is OptionalGene)
-           assertTrue(objUser.fields.get(0) is StringGene)
-           assertTrue((objUser.fields.get(3) as OptionalGene).gene is IntegerGene)
+           assertFalse(objUser.fields.first { it.name == "id" } is OptionalGene)
+           assertTrue(objUser.fields.first { it.name == "id" } is StringGene)
+           assertTrue((objUser.fields.first { it.name == "age" } as OptionalGene).gene is IntegerGene)
            assertTrue(objUser.fields.any{ it is StringGene && it.name == "id"})
 
 

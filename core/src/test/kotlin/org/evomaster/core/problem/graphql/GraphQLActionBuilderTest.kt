@@ -7,7 +7,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Disabled
 
-@Disabled
+
 class GraphQLActionBuilderTest{
 
 
