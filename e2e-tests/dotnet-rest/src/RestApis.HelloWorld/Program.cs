@@ -41,17 +41,6 @@ namespace RestApis.HelloWorld {
             return args.Length > 0 ? webHostBuilder.UseUrls ($"http://*:{args[0]}") : webHostBuilder;
         }
 
-        public static void Shutdown (int port) {
-
-            tokens.Remove (port, out var tokenSource);
-
-            if (tokenSource != null)
-                tokenSource.Cancel ();
-            else
-                //TODO: throw exception
-                System.Console.WriteLine ($"No cancellation token source found for port {port}");
-        }
-
         public static void Shutdown () {
 
             foreach (var pair in tokens) {

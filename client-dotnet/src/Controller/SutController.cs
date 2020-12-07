@@ -39,7 +39,6 @@ namespace Controller {
 
         public abstract Task<string> StartSutAsync ();
 
-        public abstract void StopSut (int port);
         public abstract void StopSut ();
 
         ///<summary>

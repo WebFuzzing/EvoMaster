@@ -79,8 +79,8 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
                 RestApis.HelloWorld.Program.Main (new string[] { ephemeralPort.ToString () });
             });
-
-            await Task.Delay (300);
+            //TODO: read from config
+            await Task.Delay (800);
 
             sutPort = ephemeralPort;
 
@@ -92,14 +92,6 @@ namespace RestApis.Tests.HelloWorld.Controller {
         public override void StopSut () {
 
             RestApis.HelloWorld.Program.Shutdown ();
-
-            isSutRunning = false;
-        }
-
-        //TODO: we can remove this
-        public override void StopSut (int port) {
-
-            RestApis.HelloWorld.Program.Shutdown (port);
 
             isSutRunning = false;
         }

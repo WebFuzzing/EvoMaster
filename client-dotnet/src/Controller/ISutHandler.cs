@@ -27,7 +27,6 @@ namespace Controller {
     ///This method in java client doesn't take the process => void StopSut();
     ///</summary>
     void StopSut ();
-    void StopSut (int port);
 
     //TODO: edit comment
     ///<summary>
