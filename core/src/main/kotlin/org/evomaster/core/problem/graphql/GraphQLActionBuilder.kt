@@ -40,20 +40,20 @@ object GraphQLActionBuilder {
         val tables = initTableInfo(schemaObj)
 
 
-        for (elementIntable in tables) {
+        for (element in tables) {
 
-            if (elementIntable.tableName == "Mutation" || elementIntable.tableName == "Query") {
+            if (element.tableName == "Mutation" || element.tableName == "Query") {
 
                 handleOperation(actionCluster,
-                        elementIntable.tableField,
-                        elementIntable.tableName,
-                        elementIntable.tableType,
-                        elementIntable.kindOfTableType.toString(),
-                        elementIntable.kindOfTableField.toString(),
+                        element.tableField,
+                        element.tableName,
+                        element.tableType,
+                        element.kindOfTableType.toString(),
+                        element.kindOfTableField.toString(),
                         tables,
-                        elementIntable.tableName.toString(),
-                        elementIntable.IskindOfTableTypeOptional,
-                        elementIntable.IskindOfkindOfTableFieldOptional)
+                        element.tableName.toString(),
+                        element.isKindOfTableTypeOptional,
+                        element.isKindOfKindOfTableFieldOptional)
 
             }
         }
@@ -89,13 +89,13 @@ object GraphQLActionBuilder {
                     var list: __TypeKind? = __TypeKind.LIST
                     if (elementInfields?.type?.ofType?.kind == list) {
                         tableElement.kindOfTableField = list
-                        tableElement.IskindOfkindOfTableFieldOptional = false
+                        tableElement.isKindOfKindOfTableFieldOptional = false
 
                         if (elementInfields?.type?.ofType?.ofType?.kind == non_null) {
                             var obj: __TypeKind? = __TypeKind.OBJECT
                             if (elementInfields?.type?.ofType?.ofType?.ofType?.kind == obj) {
                                 tableElement.kindOfTableType = obj
-                                tableElement.IskindOfTableTypeOptional = false
+                                tableElement.isKindOfTableTypeOptional = false
                                 tableElement.tableType = elementInfields?.type?.ofType?.ofType?.ofType?.name
                                 tableElement.tableName = elementIntypes?.name
                                 tables.add(tableElement)
@@ -103,7 +103,7 @@ object GraphQLActionBuilder {
                                 var scalar: __TypeKind? = __TypeKind.SCALAR
                                 if (elementInfields?.type?.ofType?.ofType?.ofType?.kind == scalar) {
                                     tableElement.kindOfTableType = scalar
-                                    tableElement.IskindOfTableTypeOptional = false
+                                    tableElement.isKindOfTableTypeOptional = false
                                     tableElement.tableType = elementInfields?.type?.ofType?.ofType?.ofType?.name
                                     tableElement.tableName = elementIntypes?.name
                                     tables.add(tableElement)
@@ -115,7 +115,7 @@ object GraphQLActionBuilder {
                             var obj: __TypeKind? = __TypeKind.OBJECT
                             if (elementInfields?.type?.ofType?.ofType?.kind == obj) {
                                 tableElement.kindOfTableType = obj
-                                tableElement.IskindOfTableTypeOptional = true
+                                tableElement.isKindOfTableTypeOptional = true
                                 tableElement.tableType = elementInfields?.type?.ofType?.ofType?.name
                                 tableElement.tableName = elementIntypes?.name
                                 tables.add(tableElement)
@@ -124,7 +124,7 @@ object GraphQLActionBuilder {
                                 var scalar: __TypeKind? = __TypeKind.SCALAR
                                 if (elementInfields?.type?.ofType?.ofType?.kind == scalar) {
                                     tableElement.kindOfTableType = scalar
-                                    tableElement.IskindOfTableTypeOptional = true
+                                    tableElement.isKindOfTableTypeOptional = true
                                     tableElement.tableType = elementInfields?.type?.ofType?.ofType?.name
                                     tableElement.tableName = elementIntypes?.name
                                     tables.add(tableElement)
@@ -136,14 +136,14 @@ object GraphQLActionBuilder {
                     } else {var obj: __TypeKind? = __TypeKind.OBJECT
                         if (elementInfields?.type?.ofType?.kind == obj){
                             tableElement.kindOfTableType = obj
-                            tableElement.IskindOfTableTypeOptional = false
+                            tableElement.isKindOfTableTypeOptional = false
                             tableElement.tableType = elementInfields?.type?.ofType?.name
                             tableElement.tableName = elementIntypes?.name
                             tables.add(tableElement)
                         } else {      var scalar: __TypeKind? = __TypeKind.SCALAR
                             if (elementInfields?.type?.ofType?.kind == scalar){
                                 tableElement.kindOfTableType = scalar
-                                tableElement.IskindOfTableTypeOptional = false
+                                tableElement.isKindOfTableTypeOptional = false
                                 tableElement.tableType = elementInfields?.type?.ofType?.name
                                 tableElement.tableName = elementIntypes?.name
                                 tables.add(tableElement)
@@ -156,19 +156,19 @@ object GraphQLActionBuilder {
                 } else {var list: __TypeKind? = __TypeKind.LIST
                     if (elementInfields?.type?.kind == list){
                         tableElement.kindOfTableField = list
-                        tableElement.IskindOfkindOfTableFieldOptional = true
+                        tableElement.isKindOfKindOfTableFieldOptional = true
                         if (elementInfields?.type?.ofType.kind == non_null ){
                             var obj: __TypeKind? = __TypeKind.OBJECT
                             if ( elementInfields?.type?.ofType?.ofType?.kind == obj) {
                                 tableElement.kindOfTableType = obj
-                                tableElement.IskindOfTableTypeOptional = false
+                                tableElement.isKindOfTableTypeOptional = false
                                 tableElement.tableType = elementInfields?.type?.ofType?.ofType?.name
                                 tableElement.tableName = elementIntypes?.name
                                 tables.add(tableElement)
                             } else {var scalar: __TypeKind? = __TypeKind.SCALAR
                                 if ( elementInfields?.type?.ofType?.ofType?.kind == scalar) {
                                     tableElement.kindOfTableType = scalar
-                                    tableElement.IskindOfTableTypeOptional = false
+                                    tableElement.isKindOfTableTypeOptional = false
                                     tableElement.tableType = elementInfields?.type?.ofType?.ofType?.name
                                     tableElement.tableName = elementIntypes?.name
                                     tables.add(tableElement)
@@ -178,14 +178,14 @@ object GraphQLActionBuilder {
                         } else {var obj: __TypeKind? = __TypeKind.OBJECT
                             if (elementInfields?.type?.ofType.kind == obj ) {
                                 tableElement.kindOfTableType = obj
-                                tableElement.IskindOfTableTypeOptional = true
+                                tableElement.isKindOfTableTypeOptional = true
                                 tableElement.tableType = elementInfields?.type?.ofType?.name
                                 tableElement.tableName = elementIntypes?.name
                                 tables.add(tableElement)
                             } else {var scalar: __TypeKind? = __TypeKind.SCALAR
                                 if ( elementInfields?.type?.ofType?.kind == scalar) {
                                     tableElement.kindOfTableType = scalar
-                                    tableElement.IskindOfTableTypeOptional = true
+                                    tableElement.isKindOfTableTypeOptional = true
                                     tableElement.tableType = elementInfields?.type?.ofType?.name
                                     tableElement.tableName = elementIntypes?.name
                                     tables.add(tableElement)
@@ -198,7 +198,7 @@ object GraphQLActionBuilder {
                     } else{ var obj: __TypeKind? = __TypeKind.OBJECT
                         if (elementInfields?.type?.kind == obj){
                             tableElement.kindOfTableType = obj
-                            tableElement.IskindOfTableTypeOptional = true
+                            tableElement.isKindOfTableTypeOptional = true
                             tableElement.tableType = elementInfields?.type?.name
                             tableElement.tableName = elementIntypes?.name
                             tables.add(tableElement)
@@ -206,7 +206,7 @@ object GraphQLActionBuilder {
                         else{  var scalar: __TypeKind? = __TypeKind.SCALAR
                             if (elementInfields?.type?.kind == scalar){
                                 tableElement.kindOfTableType = scalar
-                                tableElement.IskindOfTableTypeOptional = true
+                                tableElement.isKindOfTableTypeOptional = true
                                 tableElement.tableType = elementInfields?.type?.name
                                 tableElement.tableName = elementIntypes?.name
                                 tables.add(tableElement)
@@ -298,7 +298,7 @@ object GraphQLActionBuilder {
 
         when (kindOfTableField?.toLowerCase()) {
             "list" -> {
-                if(IskindOfkindOfTableFieldOptional== true){
+                if(IskindOfkindOfTableFieldOptional){
                     val template = getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history,
                                             IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )
                     return OptionalGene(tableName,ArrayGene(tableName, template))
@@ -310,7 +310,7 @@ object GraphQLActionBuilder {
                 }
             }
             "object" -> {
-                if(IskindOfTableTypeOptional== true){
+                if(IskindOfTableTypeOptional){
                     val optObjGene=createObjectGene(tableName, tableType, kindOfTableType, table, history,
                                                     IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional)
                    return OptionalGene(tableName, optObjGene)
@@ -320,30 +320,30 @@ object GraphQLActionBuilder {
                 }
             }
 
-            "int" -> { if (IskindOfTableTypeOptional == true){
+            "int" -> { if (IskindOfTableTypeOptional){
                 return OptionalGene(tableName,IntegerGene(tableName))
                          }
                     else { return IntegerGene(tableName)
                             }
             }
 
-            "string" -> {if(IskindOfTableTypeOptional == true){
+            "string" -> {if(IskindOfTableTypeOptional){
                 return OptionalGene(tableName, StringGene(tableName))
             } else {return StringGene(tableName)}
 
             }
-            "float" -> {if(IskindOfTableTypeOptional== true){
+            "float" -> {if(IskindOfTableTypeOptional){
                 return OptionalGene(tableName, FloatGene(tableName))
             } else { return FloatGene(tableName)
             }
             }
 
-            "boolean" -> {if(IskindOfTableTypeOptional== true){
+            "boolean" -> {if(IskindOfTableTypeOptional){
                 return OptionalGene(tableName, BooleanGene(tableName))
             }else {
                 return BooleanGene(tableName)}
             }
-            "null"-> {if(IskindOfTableTypeOptional== true){
+            "null"-> {if(IskindOfTableTypeOptional){
                 val optNonListGene= getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history,
                         IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )
                 return OptionalGene(tableName,optNonListGene)
@@ -351,7 +351,7 @@ object GraphQLActionBuilder {
                 return getGene(tableName, kindOfTableType, kindOfTableField, table, tableType, history,
                         IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )}
             }
-            "date"-> {if(IskindOfTableTypeOptional== true){return OptionalGene(tableName, BooleanGene(tableName))
+            "date"-> {if(IskindOfTableTypeOptional){return OptionalGene(tableName, BooleanGene(tableName))
             }else {
                 return DateGene(tableName)}
             }
@@ -378,7 +378,7 @@ object GraphQLActionBuilder {
                     val field = element.tableField
                     val template = field?.let {
                         getGene(tableName, element.tableType, kindOfTableType, table, it, history,
-                                element.IskindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )
+                                element.isKindOfTableTypeOptional,IskindOfkindOfTableFieldOptional )
                     }
                     if (template != null) {
                         fields.add(template)
