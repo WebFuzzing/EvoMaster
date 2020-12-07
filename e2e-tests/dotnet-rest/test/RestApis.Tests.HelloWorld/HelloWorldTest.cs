@@ -8,7 +8,7 @@ namespace RestApis.Tests.HelloWorld {
         static readonly HttpClient client = new HttpClient ();
 
         [Fact]
-        public async Task StartApi_RetrunSuccess () {
+        public async Task StartApi_RetrunSuccessAsync () {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
@@ -22,7 +22,7 @@ namespace RestApis.Tests.HelloWorld {
         }
 
         [Fact]
-        public async Task StartApiWithWrongUri_RetrunNotFound () {
+        public async Task StartApiWithWrongUri_RetrunNotFoundAsync () {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
@@ -36,7 +36,7 @@ namespace RestApis.Tests.HelloWorld {
         }
 
         [Fact]
-        public async Task CallApiWhenStopped_Fail () {
+        public async Task CallApiWhenStopped_FailAsync () {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
@@ -48,7 +48,7 @@ namespace RestApis.Tests.HelloWorld {
         }
 
         [Fact]
-        public async Task StartApi_IsSutRunningShouldReturnTrue () {
+        public async Task StartApi_IsSutRunningShouldReturnTrueAsync () {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
@@ -60,7 +60,7 @@ namespace RestApis.Tests.HelloWorld {
         }
 
         [Fact]
-        public async Task StartAndStopApi_IsSutRunningShouldReturnFalse () {
+        public async Task StartAndStopApi_IsSutRunningShouldReturnFalseAsync () {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
@@ -71,7 +71,7 @@ namespace RestApis.Tests.HelloWorld {
             Assert.False (evoMasterController.IsSutRunning ());
         }
         [Fact]
-        public async Task CheckSwaggerWhenStarted_ReturnSuccess () {
+        public async Task CheckSwaggerWhenStarted_ReturnSuccessAsync () {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
