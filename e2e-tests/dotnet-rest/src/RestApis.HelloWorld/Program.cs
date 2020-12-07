@@ -34,7 +34,7 @@ namespace RestApis.HelloWorld {
         }
 
         public static IWebHostBuilder CreateWebHostBuilder (string[] args) {
-            
+
             var webHostBuilder = WebHost.CreateDefaultBuilder (args)
                 .UseStartup<Startup> ();
 

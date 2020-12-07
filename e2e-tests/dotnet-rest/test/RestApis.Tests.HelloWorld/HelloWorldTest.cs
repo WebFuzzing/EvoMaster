@@ -7,14 +7,16 @@ namespace RestApis.Tests.HelloWorld {
     public class HelloWorldTest {
         static readonly HttpClient client = new HttpClient ();
 
-        [Fact]
-        public async Task StartApi_RetrunSuccessAsync () {
+        [Theory]
+        [InlineData("helloworld")]
+        [InlineData("swagger")]
+        public async Task StartApi_RetrunSuccessAsync (string uri) {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
             var baseUrl = await evoMasterController.StartSutAsync ();
 
-            var response = await client.GetAsync ($"{baseUrl}/helloworld");
+            var response = await client.GetAsync ($"{baseUrl}/{uri}");
 
             evoMasterController.StopSut ();
 
@@ -69,19 +71,6 @@ namespace RestApis.Tests.HelloWorld {
             evoMasterController.StopSut ();
             
             Assert.False (evoMasterController.IsSutRunning ());
-        }
-        [Fact]
-        public async Task CheckSwaggerWhenStarted_ReturnSuccessAsync () {
-
-            EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
-
-            var baseUrl = await evoMasterController.StartSutAsync ();
-            
-            var response = await client.GetAsync ($"{baseUrl}/swagger");
-
-            evoMasterController.StopSut ();
-            
-            Assert.Equal (200, (int) response.StatusCode);
         }
     }
 }
