@@ -24,5 +24,6 @@ class Table(
      * the type for the list elements
      */
     var kindOfTableType: __TypeKind?=null,
-        var isKindOfTableTypeOptional: Boolean= false
+    var isKindOfTableTypeOptional: Boolean= false,
+    var fieldWithArgs: Boolean=false
 )
