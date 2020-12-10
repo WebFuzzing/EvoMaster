@@ -29,16 +29,6 @@ class GraphQLActionBuilderTest{
          assertEquals(2, objPetType.fields.size)
          assertTrue(objPetType.fields.any{ it is IntegerGene && it.name == "id"})
          assertTrue(objPetType.fields.any{ it is StringGene && it.name == "name"})
-        /**/
-         val pet = actionCluster.get("pet")  as GraphQLAction
-         assertEquals(1, pet.parameters.size)
-         assertTrue(pet.parameters[0] is GQReturnParam)
-         assertTrue(pet.parameters[0].gene is ObjectGene)
-
-         val specialties = actionCluster.get("specialties")  as GraphQLAction
-         assertEquals(1, specialties.parameters.size)
-         assertTrue(specialties.parameters[0] is GQReturnParam)
-         assertTrue(specialties.parameters[0].gene is ArrayGene<*> )
          /**/
          val vets = actionCluster.get("vets")  as GraphQLAction
          assertEquals(1, vets.parameters.size)
@@ -69,13 +59,27 @@ class GraphQLActionBuilderTest{
          assertTrue(owner.fields.any{ it is StringGene && it.name == "telephone"})
          assertTrue(owner.fields.any{ it is ArrayGene<*> && it.name == "Pet"})
          val objPet= (owner.fields[6] as ArrayGene<*>).template as ObjectGene
-        // assertEquals(4, objPet.fields.size)
+         assertEquals(6, objPet.fields.size)
          assertTrue(objPet.fields.any{ it is IntegerGene && it.name == "id"})
          assertTrue(objPet.fields.any{ it is StringGene && it.name == "name"})
          assertTrue(objPet.fields.any{ it is DateGene && it.name == "birthDate"})
          assertTrue(objPet.fields.any{ it is ObjectGene && it.name == "PetType"})
-
-
+         assertTrue(objPet.fields.any{ it is ObjectGene && it.name == "Owner"})
+         assertTrue(objPet.fields.any{ it is ObjectGene && it.name == "VisitConnection"})
+         val objVisitConnection= objPet.fields[5] as ObjectGene
+        // assertEquals(2, objVisitConnection.fields.size) not yet
+         //assertTrue(objVisitConnection.fields[0] is IntegerGene) not yet
+         //assertTrue(objVisitConnection.fields.any{ it is IntegerGene && it.name == "totalCount"}) not yet
+         /**/
+         val pet = actionCluster.get("pet")  as GraphQLAction
+         assertEquals(1, pet.parameters.size)
+         assertTrue(pet.parameters[0] is GQReturnParam)
+         assertTrue(pet.parameters[0].gene is ObjectGene)
+        /**/
+         val specialties = actionCluster.get("specialties")  as GraphQLAction
+         assertEquals(1, specialties.parameters.size)
+         assertTrue(specialties.parameters[0] is GQReturnParam)
+         assertTrue(specialties.parameters[0].gene is ArrayGene<*> )
          //TODO other assertions on the actions
      }
  }

@@ -405,6 +405,9 @@ object GraphQLActionBuilder {
                                 if (template != null) {
                                     fields.add(template)
                                 }
+                            }else {
+                                fields.add(CycleObjectGene(element.tableType))
+
                             }
                         }
                     }
