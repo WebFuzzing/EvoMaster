@@ -6,7 +6,6 @@ import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.graphql.schema.SchemaObj
 import org.evomaster.core.problem.graphql.schema.__TypeKind
 import org.evomaster.core.problem.rest.param.Param
-import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -486,48 +485,57 @@ object GraphQLActionBuilder {
                 if(isKindOfTableTypeOptional){
                     val optObjGene=createObjectGene(tableName, tableType, kindOfTableType, history,
                                                     isKindOfTableTypeOptional,isKindOfKindOfTableFieldOptional)
-                   return OptionalGene(tableName, optObjGene)
+                    return OptionalGene(tableName, optObjGene)
                 }else {
                     return createObjectGene(tableName, tableType, kindOfTableType, history,
                                             isKindOfTableTypeOptional, isKindOfKindOfTableFieldOptional)
                 }
             }
 
-            "int" -> { if (isKindOfTableTypeOptional){
-                return OptionalGene(tableName,IntegerGene(tableName))
-                         }
-                    else { return IntegerGene(tableName)
-                            }
+            "int" -> {
+                if (isKindOfTableTypeOptional){
+                    return OptionalGene(tableName,IntegerGene(tableName))
+                }
+                else {
+                    return IntegerGene(tableName)
+                }
+            }
+            "string" -> {
+                if(isKindOfTableTypeOptional){
+                    return OptionalGene(tableName, StringGene(tableName))
+                }   else {
+                    return StringGene(tableName)
+                }
+            }
+            "float" -> {
+                if(isKindOfTableTypeOptional){
+                    return OptionalGene(tableName, FloatGene(tableName))
+                } else {
+                    return FloatGene(tableName)
+                }
             }
 
-            "string" -> {if(isKindOfTableTypeOptional){
-                return OptionalGene(tableName, StringGene(tableName))
-            } else {return StringGene(tableName)}
-
-            }
-            "float" -> {if(isKindOfTableTypeOptional){
-                return OptionalGene(tableName, FloatGene(tableName))
-            } else { return FloatGene(tableName)
-            }
-            }
-
-            "boolean" -> {if(isKindOfTableTypeOptional){
-                return OptionalGene(tableName, BooleanGene(tableName))
-            }else {
-                return BooleanGene(tableName)}
-            }
-            "null"-> {if(isKindOfTableTypeOptional){
-                val optNonListGene= getGene(tableName, kindOfTableType, kindOfTableField, tableType, history,
+            "boolean" -> {
+                if(isKindOfTableTypeOptional){
+                    return OptionalGene(tableName, BooleanGene(tableName))
+                }else {
+                    return BooleanGene(tableName)}
+                }
+            "null"-> {
+                if(isKindOfTableTypeOptional){
+                    val optNonListGene= getGene(tableName, kindOfTableType, kindOfTableField, tableType, history,
                         isKindOfTableTypeOptional,isKindOfKindOfTableFieldOptional )
-                return OptionalGene(tableName,optNonListGene)
-            }else {
-                return getGene(tableName, kindOfTableType, kindOfTableField,  tableType, history,
+                    return OptionalGene(tableName,optNonListGene)
+                }else {
+                 return getGene(tableName, kindOfTableType, kindOfTableField,  tableType, history,
                         isKindOfTableTypeOptional,isKindOfKindOfTableFieldOptional )}
-            }
-            "date"-> {if(isKindOfTableTypeOptional){return OptionalGene(tableName, BooleanGene(tableName))
-            }else {
-                return DateGene(tableName)}
-            }
+                }
+            "date"-> {
+                if(isKindOfTableTypeOptional){
+                    return OptionalGene(tableName, BooleanGene(tableName))
+                }else {
+                    return DateGene(tableName)}
+                }
 
             else -> {
                 LoggingUtil.uniqueWarn(log, "Kind Of Table Field not supported yet: $kindOfTableField")
