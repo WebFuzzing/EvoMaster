@@ -23,47 +23,21 @@ namespace RestApis.Tests.HelloWorld.Controller {
             instrumentedSutStarter.Start ();
         }
 
-        public override string GetDatabaseDriverName () {
-            throw new System.NotImplementedException ();
-        }
+        public override string GetDatabaseDriverName () => null;
 
-        public override List<AuthenticationDto> GetInfoForAuthentication () {
-            throw new System.NotImplementedException ();
-        }
+        public override List<AuthenticationDto> GetInfoForAuthentication () => null;
 
-        public override string GetPackagePrefixesToCover () {
-            throw new System.NotImplementedException ();
-        }
+        public override string GetPackagePrefixesToCover () => "RestApis.HelloWorld";
 
-        public override OutputFormat GetPreferredOutputFormat () {
-            throw new System.NotImplementedException ();
-        }
+        //TODO: later on we should create sth specific for C#
+        public override OutputFormat GetPreferredOutputFormat () => OutputFormat.JAVA_JUNIT_5;
+
         //TODO: check again
         public override IProblemInfo GetProblemInfo () {
             return new RestProblem ("http://localhost:" + GetSutPort () + "/swagger", null);
         }
 
-        public override UnitsInfoDto GetUnitsInfoDto () {
-            throw new System.NotImplementedException ();
-        }
-
-        public override bool IsInstrumentationActivated () {
-            throw new System.NotImplementedException ();
-        }
-
         public override bool IsSutRunning () => isSutRunning;
-
-        public override void NewActionSpecificHandler (ActionDto dto) {
-            throw new System.NotImplementedException ();
-        }
-
-        public override void NewSearch () {
-            throw new System.NotImplementedException ();
-        }
-
-        public override void NewTestSpecificHandler () {
-            throw new System.NotImplementedException ();
-        }
 
         public override void ResetStateOfSut () {
             throw new System.NotImplementedException ();
