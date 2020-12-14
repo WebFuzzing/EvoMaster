@@ -652,6 +652,7 @@ class EMConfig {
 
     enum class ProblemType(private val experimental: Boolean) : WithExperimentalOptions {
         REST(experimental = false),
+        GRAPHQL(experimental = true),
         WEB(experimental = true);
         override fun isExperimental() = experimental
     }

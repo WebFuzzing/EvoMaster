@@ -16,6 +16,7 @@ import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.output.PartialOracles
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.graphql.service.GraphQLModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.web.service.WebModule
@@ -221,6 +222,11 @@ class Main {
                     } else {
                         ResourceRestModule()
                     }
+                }
+
+                EMConfig.ProblemType.GRAPHQL -> {
+                    //TODO blackBox
+                    GraphQLModule()
                 }
 
                 EMConfig.ProblemType.WEB -> WebModule()
