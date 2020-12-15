@@ -39,9 +39,7 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
         public override bool IsSutRunning () => isSutRunning;
 
-        public override void ResetStateOfSut () {
-            throw new System.NotImplementedException ();
-        }
+        public override void ResetStateOfSut () { }
 
         //This method in java client is not async
         public override async Task<string> StartSutAsync () {
