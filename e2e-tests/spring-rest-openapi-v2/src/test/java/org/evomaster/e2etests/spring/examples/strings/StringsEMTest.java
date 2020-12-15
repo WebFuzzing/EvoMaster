@@ -26,6 +26,8 @@ public class StringsEMTest extends StringsTestBase {
                 "org.bar.StringsEM",
                 10_000,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

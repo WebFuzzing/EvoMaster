@@ -33,6 +33,9 @@ public class WeightBasedMutationXYZTest extends SpringTestBase {
                 1000,
                 true,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
+
                     args.add("--weightBasedMutationRate");
                     args.add("true");
 

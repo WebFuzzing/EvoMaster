@@ -19,6 +19,8 @@ public class HLEMTest extends HLTestBase {
                 "org.bar.HeaderLocationEM",
                 10_000,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

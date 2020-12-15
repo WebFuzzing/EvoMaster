@@ -38,7 +38,8 @@ public class DbDirectIntEMTest extends DbDirectIntTestBase {
                 "org.bar.db.DirectEM_" + strategy,
                 7_000,
                 (args) -> {
-
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
                     args.add("--secondaryObjectiveStrategy");
                     args.add("" + strategy);
                     args.add("--heuristicsForSQL");

@@ -37,6 +37,8 @@ public class RedirectEMTest extends SpringTestBase {
                 "org.bar.RedirectEM",
                 100,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

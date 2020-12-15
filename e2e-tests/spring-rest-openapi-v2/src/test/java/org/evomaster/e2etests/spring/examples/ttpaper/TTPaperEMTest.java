@@ -31,6 +31,8 @@ public class TTPaperEMTest  extends SpringTestBase {
                 10_000,
                 true,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     args.add("--endpointFocus=/api/numeric/{x}");
 
@@ -54,6 +56,8 @@ public class TTPaperEMTest  extends SpringTestBase {
                 1_000,
                 true,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     args.add("--endpointFocus=/api/param");
 
@@ -78,6 +82,8 @@ public class TTPaperEMTest  extends SpringTestBase {
                 1_000,
                 true,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     args.add("--endpointFocus=/api/body");
 

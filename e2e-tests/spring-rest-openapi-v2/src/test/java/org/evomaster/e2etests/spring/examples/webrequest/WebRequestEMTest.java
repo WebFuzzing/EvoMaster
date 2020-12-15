@@ -17,6 +17,8 @@ public class WebRequestEMTest extends WebRequestTestBase {
                 "org.bar.WebRequestEM",
                 500,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

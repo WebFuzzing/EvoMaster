@@ -672,9 +672,8 @@ class EMConfig {
         CODE
     }
 
-    @Experimental
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
-    var testSuiteSplitType = TestSuiteSplitType.NONE
+    var testSuiteSplitType = TestSuiteSplitType.CODE
 
     @Experimental
     @Cfg("Generate an executive summary, containing an example of each category of potential fault found")

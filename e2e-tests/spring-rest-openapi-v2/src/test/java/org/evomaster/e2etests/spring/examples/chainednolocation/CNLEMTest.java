@@ -17,6 +17,8 @@ public class CNLEMTest extends CNLTestBase {
                 "org.foo.CnlEM",
                 1000,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

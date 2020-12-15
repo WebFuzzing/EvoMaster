@@ -27,7 +27,9 @@ class BaseEMTest : SpringTestBase() {
                 "BaseEM",
                 "org.foo.BaseEM",
                 20
-        ) { args: List<String> ->
+        ) { args: MutableList<String> ->
+            args.add("--testSuiteSplitType")
+            args.add("NONE")
 
             val solution = initAndRun(args)
 

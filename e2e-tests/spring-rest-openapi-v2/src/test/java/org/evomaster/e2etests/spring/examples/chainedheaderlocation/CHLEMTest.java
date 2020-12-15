@@ -18,6 +18,8 @@ public class CHLEMTest extends CHLTestBase {
                 "org.foo.ChlEM",
                 1000,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

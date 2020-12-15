@@ -27,6 +27,8 @@ public class EnumsEMTest extends SpringTestBase {
                 "org.bar.EnumEM",
                 50,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

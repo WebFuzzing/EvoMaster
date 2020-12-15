@@ -26,7 +26,9 @@ class GsonEMTest : SpringTestBase() {
                 "GsonEM",
                 "org.foo.GsonEM",
                 1000
-        ) { args: List<String> ->
+        ) { args: MutableList<String> ->
+            args.add("--testSuiteSplitType")
+            args.add("NONE")
 
             val solution = initAndRun(args)
 

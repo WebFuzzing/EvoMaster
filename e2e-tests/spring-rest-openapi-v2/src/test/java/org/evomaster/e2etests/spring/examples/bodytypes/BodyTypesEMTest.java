@@ -30,6 +30,9 @@ public class BodyTypesEMTest extends SpringTestBase {
                 500,
                 (args) -> {
 
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/x", "0");

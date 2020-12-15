@@ -40,6 +40,8 @@ public class BlackBoxConstantEMTest extends SpringTestBase {
                 ClassName.get("org.foo.BlackBoxConstant"),
                 true);
 
+        args.add("--testSuiteSplitType");
+        args.add("NONE");
         args.add("--blackBox");
         args.add("true");
         args.add("--bbTargetUrl");

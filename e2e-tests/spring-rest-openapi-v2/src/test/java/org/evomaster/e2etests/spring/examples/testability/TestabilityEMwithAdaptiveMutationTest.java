@@ -33,6 +33,9 @@ public class TestabilityEMwithAdaptiveMutationTest extends SpringTestBase {
                 true,
                 (args) -> {
 
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
+
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
 

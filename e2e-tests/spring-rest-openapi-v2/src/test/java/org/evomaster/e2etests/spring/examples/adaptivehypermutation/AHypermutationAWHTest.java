@@ -102,6 +102,8 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
                 budget,
                 true,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     args.add("--probOfArchiveMutation");
                     args.add("0.5");

@@ -32,6 +32,9 @@ public class ArchiveGeneSelectionImpactXYZInfoTest extends SpringTestBase {
                 1000,
                 true,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
+
                     args.add("--weightBasedMutationRate");
                     args.add("false");
 
@@ -77,6 +80,9 @@ public class ArchiveGeneSelectionImpactXYZInfoTest extends SpringTestBase {
                 1000,
                 true,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
+
                     args.add("--probOfArchiveMutation");
                     args.add("0.5");
 

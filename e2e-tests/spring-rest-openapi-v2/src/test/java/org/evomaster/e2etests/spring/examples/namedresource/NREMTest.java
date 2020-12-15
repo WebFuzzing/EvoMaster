@@ -21,6 +21,8 @@ public class NREMTest extends NRTestBase {
                 "org.bar.NrEM",
                 3_000,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

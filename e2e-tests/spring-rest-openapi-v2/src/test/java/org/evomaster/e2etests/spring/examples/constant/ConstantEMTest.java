@@ -34,6 +34,8 @@ public class ConstantEMTest extends SpringTestBase {
                 "org.foo.ConstantEM",
                 2000,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

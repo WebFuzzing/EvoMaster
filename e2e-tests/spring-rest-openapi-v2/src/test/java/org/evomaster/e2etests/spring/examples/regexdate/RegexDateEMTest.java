@@ -30,6 +30,8 @@ public class RegexDateEMTest extends SpringTestBase {
                 "org.bar.RegexDateEM",
                 1000,
                 (args) -> {
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
