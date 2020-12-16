@@ -2,6 +2,7 @@ package org.evomaster.core.problem.graphql
 
 import com.google.gson.Gson
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.graphql.schema.SchemaObj
 import org.evomaster.core.problem.graphql.schema.__TypeKind
@@ -51,9 +52,12 @@ object GraphQLActionBuilder {
                         element.kindOfTableField.toString(),
                         element.tableName.toString(),
                         element.isKindOfTableTypeOptional,
-                        element.isKindOfKindOfTableFieldOptional)
+                        element.isKindOfKindOfTableFieldOptional,
+                        element.fieldWithArgs
+                )
             }
         }
+
     }
 
     private fun initTablesInfo(schemaObj: SchemaObj) {
@@ -409,7 +413,8 @@ object GraphQLActionBuilder {
             kindOfTableField: String?,
             tableName: String,
             isKindOfTableTypeOptional: Boolean,
-            isKindOfkindOfTableFieldOptional : Boolean
+            isKindOfkindOfTableFieldOptional: Boolean,
+            fieldWithArgs: Boolean
     ) {
         if (methodName == null) {
             //TODO log warn
@@ -432,29 +437,53 @@ object GraphQLActionBuilder {
 
         //TODO populate
 
-        val params = extractParams(tableType, kindOfTableType, kindOfTableField, tableName, isKindOfTableTypeOptional, isKindOfkindOfTableFieldOptional)
+        val params = extractParams(methodName, tableType, kindOfTableType, kindOfTableField,
+                tableName, isKindOfTableTypeOptional,
+                isKindOfkindOfTableFieldOptional, fieldWithArgs)
 
         val action = GraphQLAction(actionId, methodName, type, params)
 
         actionCluster[action.getName()] = action
-        //params.add(QueryParam(name, gene))
+
     }
 
     private fun extractParams(
+            methodName: String,
             tableType: String,
             kindOfTableType: String,
             kindOfTableField: String?,
             tableName: String,
             isKindOfTableTypeOptional: Boolean,
-            isKindOfKindOfTableFieldOptional : Boolean
+            isKindOfKindOfTableFieldOptional: Boolean,
+            fieldWithArgs: Boolean
+
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
         val history: Deque<String> = ArrayDeque<String>()
 
-        val gene = getGene(tableType, kindOfTableField, kindOfTableType, tableName, history,isKindOfTableTypeOptional,isKindOfKindOfTableFieldOptional)
+        if (fieldWithArgs) {
+
+            for (element in argsTables) {
+
+                if (element.tableName == methodName) {
+
+                    val gene = getGene(element.tableType, element.kindOfTableField.toString(), element.kindOfTableType.toString(), element.tableName.toString(), history,
+                            element.isKindOfTableTypeOptional, element.isKindOfKindOfTableFieldOptional)
+                    params.add(GQInputParam(element.tableType, gene))
+                }
+            }
+            val gene = getGene(tableType, kindOfTableField, kindOfTableType, tableName, history,
+                    isKindOfTableTypeOptional, isKindOfKindOfTableFieldOptional)
 
             params.add(GQReturnParam(tableType, gene))
+        } else {
+            val gene = getGene(tableType, kindOfTableField, kindOfTableType, tableName, history,
+                    isKindOfTableTypeOptional, isKindOfKindOfTableFieldOptional)
+
+            params.add(GQReturnParam(tableType, gene))
+
+        }
 
         return params
     }
@@ -468,8 +497,8 @@ object GraphQLActionBuilder {
             isKindOfTableTypeOptional: Boolean,
             isKindOfKindOfTableFieldOptional: Boolean
     ): Gene {
-
         when (kindOfTableField?.toLowerCase()) {
+
             "list" -> {
 
                 if (isKindOfKindOfTableFieldOptional) {
@@ -490,6 +519,16 @@ object GraphQLActionBuilder {
                     return OptionalGene(tableName, optObjGene)
                 } else {
                     return createObjectGene(tableName, tableType, kindOfTableType, history,
+                            isKindOfTableTypeOptional, isKindOfKindOfTableFieldOptional)
+                }
+            }
+            "input_object" -> {
+                if (isKindOfTableTypeOptional) {
+                    val optInputObjGene = createInputObjectGene(tableName, tableType, kindOfTableType, history,
+                            isKindOfTableTypeOptional, isKindOfKindOfTableFieldOptional)
+                    return OptionalGene(tableName, optInputObjGene)
+                } else {
+                    return createInputObjectGene(tableName, tableType, kindOfTableType, history,
                             isKindOfTableTypeOptional, isKindOfKindOfTableFieldOptional)
                 }
             }
@@ -567,7 +606,56 @@ object GraphQLActionBuilder {
                     val field = element.tableField
                     val template = field?.let {
                         getGene(tableName, element.tableType, kindOfTableType, it, history,
-                                element.isKindOfTableTypeOptional,isKindOfKindOfTableFieldOptional )
+                                element.isKindOfTableTypeOptional, isKindOfKindOfTableFieldOptional)
+                    }
+                    if (template != null) {
+                        fields.add(template)
+                    }
+                } else {
+                    if (element.kindOfTableField.toString().equals("LIST", ignoreCase = true)) {
+                        val template = getGene(element.tableType, element.kindOfTableField.toString(), element.kindOfTableType.toString(),
+                                element.tableType, history, isKindOfTableTypeOptional, isKindOfKindOfTableFieldOptional)
+
+                        if (template != null) {
+                            fields.add(template)
+                        }
+                    } else {
+                        if (element.kindOfTableType.toString().equals("OBJECT", ignoreCase = true)) {
+                            history.add(element.tableName)
+                            if (history.count { it == element.tableName } == 1) {
+                                val template = getGene(element.tableType, element.kindOfTableType.toString(), element.kindOfTableField.toString(),
+                                        element.tableType, history, isKindOfTableTypeOptional, isKindOfKindOfTableFieldOptional)
+                                if (template != null) {
+                                    fields.add(template)
+                                }
+                            } else {
+                                fields.add(CycleObjectGene(element.tableType))
+
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+        return ObjectGene(tableName, fields, tableName)
+    }
+
+    private fun createInputObjectGene(tableName: String,
+                                      tableType: String,
+                                      kindOfTableType: String,
+                                      history: Deque<String> = ArrayDeque<String>(),
+                                      isKindOfTableTypeOptional: Boolean,
+                                      isKindOfKindOfTableFieldOptional: Boolean
+    ): Gene {
+        val fields: MutableList<Gene> = mutableListOf()
+        for (element in argsTables) {
+            if (element.tableName == tableName) {
+                if (element.kindOfTableType.toString().equals("SCALAR", ignoreCase = true)) {
+                    val field = element.tableField
+                    val template = field?.let {
+                        getGene(tableName, element.tableType, kindOfTableType, it, history,
+                                element.isKindOfTableTypeOptional, isKindOfKindOfTableFieldOptional)
                     }
                     if (template != null) {
                         fields.add(template)
