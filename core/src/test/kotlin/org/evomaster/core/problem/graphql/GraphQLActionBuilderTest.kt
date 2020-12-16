@@ -8,18 +8,18 @@ import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Disabled
 
 
-class GraphQLActionBuilderTest{
+class GraphQLActionBuilderTest {
 
 
-     @Test
-     fun testPetClinic(){
+    @Test
+    fun testPetClinic() {
 
-         val actionCluster = mutableMapOf<String,Action>()
-         val json = PetClinicCheckMain::class.java.getResource("/graphql/QueryTypeGlobalPetsClinic.json").readText()
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/QueryTypeGlobalPetsClinic.json").readText()
 
-         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
 
-         assertEquals(15, actionCluster.size)
+        assertEquals(15, actionCluster.size)
 
          val pettypes = actionCluster.get("pettypes")  as GraphQLAction
          assertEquals(1, pettypes.parameters.size)
@@ -67,21 +67,27 @@ class GraphQLActionBuilderTest{
          assertTrue(objPet.fields.any{ it is ObjectGene && it.name == "Owner"})
          assertTrue(objPet.fields.any{ it is ObjectGene && it.name == "VisitConnection"})
 
-         //FIXME
-         val objVisitConnection= objPet.fields[5] as ObjectGene
-        // assertEquals(2, objVisitConnection.fields.size) not yet
-         //assertTrue(objVisitConnection.fields[0] is IntegerGene) not yet
-         //assertTrue(objVisitConnection.fields.any{ it is IntegerGene && it.name == "totalCount"}) not yet
-         /**/
-         val pet = actionCluster.get("pet")  as GraphQLAction
-         assertEquals(1, pet.parameters.size)
-         assertTrue(pet.parameters[0] is GQReturnParam)
-         assertTrue(pet.parameters[0].gene is ObjectGene)
+        val objVisitConnection = objPet.fields[5] as ObjectGene
+        /*
+        TODO
+         - assertEquals(2, objVisitConnection.fields.size)
+         - assertTrue(objVisitConnection.fields[0] is IntegerGene)
+         - assertTrue(objVisitConnection.fields.any{ it is IntegerGene && it.name == "totalCount"})
+         */
+
         /**/
-         val specialties = actionCluster.get("specialties")  as GraphQLAction
-         assertEquals(1, specialties.parameters.size)
-         assertTrue(specialties.parameters[0] is GQReturnParam)
-         assertTrue(specialties.parameters[0].gene is ArrayGene<*> )
-         //TODO other assertions on the actions
-     }
- }
+        val pet = actionCluster.get("pet") as GraphQLAction
+        assertEquals(2, pet.parameters.size)
+        assertTrue(pet.parameters[0] is GQInputParam)
+        assertTrue(pet.parameters[0].gene is IntegerGene)
+        assertTrue(pet.parameters[1] is GQReturnParam)
+        assertTrue(pet.parameters[1].gene is ObjectGene)
+        /**/
+        val specialties = actionCluster.get("specialties") as GraphQLAction
+        assertEquals(1, specialties.parameters.size)
+        assertTrue(specialties.parameters[0] is GQReturnParam)
+        assertTrue(specialties.parameters[0].gene is ArrayGene<*>)
+
+        //TODO other assertions on the actions
+    }
+}
