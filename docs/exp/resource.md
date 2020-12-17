@@ -25,10 +25,10 @@ You can start the driver with a specified port, e.g., 40100.
 ## Techniques
 
 In the paper, we conducted the experiment with the following techniques:
-* __Base1__: `--probOfSmartSampling 0.0 --resourceSampleStrategy NONE --probOfEnablingResourceDependencyHeuristics 0.0 --doesApplyNameMatching false`
-* __Base2__: `--probOfSmartSampling 0.5 --resourceSampleStrategy NONE --probOfEnablingResourceDependencyHeuristics 0.0 --doesApplyNameMatching false`
-* __R-MIO__: `--probOfSmartSampling 0.5 --resourceSampleStrategy ConArchive --probOfEnablingResourceDependencyHeuristics 0.0 --doesApplyNameMatching false`
-* __Rd-MIO__: `--probOfSmartSampling 1.0 --resourceSampleStrategy ConArchive --probOfEnablingResourceDependencyHeuristics 1.0 --doesApplyNameMatching true`
+* __Base1__: `--probOfSmartSampling 0.0 --resourceSampleStrategy NONE --probOfEnablingResourceDependencyHeuristics 0.0 --doesApplyNameMatching false --probOfArchiveMutation 0.0 --baseTaintAnalysisProbability 0.0 --enableTrackEvaluatedIndividual false --weightBasedMutationRate false`
+* __Base2__: `--probOfSmartSampling 0.5 --resourceSampleStrategy NONE --probOfEnablingResourceDependencyHeuristics 0.0 --doesApplyNameMatching false --probOfArchiveMutation 0.0 --baseTaintAnalysisProbability 0.0 --enableTrackEvaluatedIndividual false --weightBasedMutationRate false`
+* __R-MIO__: `--probOfSmartSampling 0.5 --resourceSampleStrategy ConArchive --probOfEnablingResourceDependencyHeuristics 0.0 --doesApplyNameMatching false --probOfArchiveMutation 0.0 --baseTaintAnalysisProbability 0.0 --enableTrackEvaluatedIndividual false --weightBasedMutationRate false`
+* __Rd-MIO__: `--probOfSmartSampling 1.0 --resourceSampleStrategy ConArchive --probOfEnablingResourceDependencyHeuristics 1.0 --doesApplyNameMatching true --probOfArchiveMutation 0.0 --baseTaintAnalysisProbability 0.0 --enableTrackEvaluatedIndividual false --weightBasedMutationRate false`
 
 For all of the techniques, we employ a budget 100k 
 `--maxActionEvaluations 100000 --stoppingCriterion FITNESS_EVALUATIONS`
@@ -43,5 +43,5 @@ To interact with a driver, you need to specify a port used when starting the dri
 To apply a technique to generate tests, you can run the evomaster with the corresponding configuration,
 e.g., apply __Rd-MIO__
 
-`java -jar evomaster.jar --maxActionEvaluations 100000 --stoppingCriterion FITNESS_EVALUATIONS --sutControllerPort 40100 --probOfSmartSampling 1.0 --resourceSampleStrategy ConArchive --probOfEnablingResourceDependencyHeuristics 1.0 --doesApplyNameMatching true`
+`java -jar evomaster.jar --maxActionEvaluations 100000 --stoppingCriterion FITNESS_EVALUATIONS --sutControllerPort 40100 --probOfSmartSampling 1.0 --resourceSampleStrategy ConArchive --probOfEnablingResourceDependencyHeuristics 1.0 --doesApplyNameMatching true --probOfArchiveMutation 0.0 --baseTaintAnalysisProbability 0.0 --enableTrackEvaluatedIndividual false --weightBasedMutationRate false`
 
