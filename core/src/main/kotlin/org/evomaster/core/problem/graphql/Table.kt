@@ -6,24 +6,36 @@ import org.evomaster.core.problem.graphql.schema.__TypeKind
  * Intermediate data structure to parse and organize the object graphQl-schema types
  * */
 class Table(
-
-        var tableName : String?=null,
-        var tableField : String?=null,
         /**
-     * For example integer, object, list, etc.
-     */
-    var tableType : String= "",
+         * Describing the name of the table type
+         */
+        var tableType: String? = null,
         /**
-     * describing what kind of type the the table field is
-     */
-    var kindOfTableField: __TypeKind?=null,
-        var isKindOfKindOfTableFieldOptional: Boolean= false,
-
+         * Describing the name of the table field
+         */
+        var tableField: String? = null,
         /**
-     * Describing what kind of sub-type, eg, if this is a list, then specify
-     * the type for the list elements
-     */
-    var kindOfTableType: __TypeKind?=null,
-    var isKindOfTableTypeOptional: Boolean= false,
-    var fieldWithArgs: Boolean=false
+         * Describing the kind of the tableField, eg: LIST
+         */
+        var kindOfTableField: __TypeKind? = null,
+        /**
+         * Describing if the kind of the table field is nullable
+         */
+        var isKindOfTableFieldOptional: Boolean = false,
+        /**
+         * Describing the type of the table field
+         */
+        var tableFieldType: String = "",
+        /**
+         * Describing the kind of the tableFieldType, eg: SCALAR, OBJECT,INPUT_OBJECT, ENUM
+         */
+        var kindOfTableFieldType: __TypeKind? = null,
+        /**
+         * Describing if the kind of the table field type is nullable
+         */
+        var isKindOfTableFieldTypeOptional: Boolean = false,
+        /**
+         * Describing if the table field has arguments
+         */
+        var tableFieldWithArgs: Boolean = false
 )
