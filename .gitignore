@@ -61,4 +61,20 @@ experiments/target/
 /coveredTargets.txt
 /core-driver-it/target/
 /core-it/src/test/kotlin/exp/
+
 /core-graphql-it/target/
+
+
+#DotNet Build Results
+[Dd]ebug/
+[Bb]in/
+[Oo]bj/
+*.dll
+client-dotnet/src/*/Properties/
+e2e-tests/*/Properties/
+.vscode/
+*.launchSettings.json
+
+#Generated Tests
+generated-test-cases/
+
