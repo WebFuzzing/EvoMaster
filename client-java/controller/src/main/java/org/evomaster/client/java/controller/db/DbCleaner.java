@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.db;
 
+import org.evomaster.client.java.utils.SimpleLogger;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -53,11 +55,19 @@ public class DbCleaner {
                 We could check the content of INFORMATION_SCHEMA.LOCKS, or simply look at error message
              */
             String msg = e.getMessage();
-            if(retries > 0 && msg != null && msg.toLowerCase().contains("timeout")){
-                //let's just wait a bit, and retry
-                try { Thread.sleep(2000); } catch (InterruptedException interruptedException) { }
-                retries--;
-                clearDatabase_H2(retries, connection, schemaName, tablesToSkip);
+            if(msg != null && msg.toLowerCase().contains("timeout")){
+                if(retries > 0) {
+                    SimpleLogger.warn("Timeout issue with cleaning DB. Trying again.");
+                    //let's just wait a bit, and retry
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException interruptedException) {
+                    }
+                    retries--;
+                    clearDatabase_H2(retries, connection, schemaName, tablesToSkip);
+                } else {
+                    SimpleLogger.error("Giving up cleaning the DB. There are still timeouts.");
+                }
             }
 
             throw new RuntimeException(e);
