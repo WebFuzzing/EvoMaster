@@ -23,6 +23,10 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tablesToSkip) {
+        clearDatabase_H2(3, connection, schemaName, tablesToSkip);
+    }
+
+    private static void clearDatabase_H2(int retries, Connection connection, String schemaName, List<String> tablesToSkip) {
         /*
             Code based on
             https://stackoverflow.com/questions/8523423/reset-embedded-h2-database-periodically
@@ -44,6 +48,18 @@ public class DbCleaner {
             s.execute("SET REFERENTIAL_INTEGRITY TRUE");
             s.close();
         } catch (Exception e) {
+            /*
+                this could happen if there is a current transaction with a lock on any table.
+                We could check the content of INFORMATION_SCHEMA.LOCKS, or simply look at error message
+             */
+            String msg = e.getMessage();
+            if(retries > 0 && msg != null && msg.toLowerCase().contains("timeout")){
+                //let's just wait a bit, and retry
+                try { Thread.sleep(2000); } catch (InterruptedException interruptedException) { }
+                retries--;
+                clearDatabase_H2(retries, connection, schemaName, tablesToSkip);
+            }
+
             throw new RuntimeException(e);
         }
     }
