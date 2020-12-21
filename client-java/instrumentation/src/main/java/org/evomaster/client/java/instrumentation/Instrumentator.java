@@ -5,6 +5,7 @@ package org.evomaster.client.java.instrumentation;
 import org.evomaster.client.java.instrumentation.coverage.CoverageClassVisitor;
 import org.evomaster.client.java.instrumentation.coverage.ThirdPartyClassVisitor;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
+import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -54,7 +55,7 @@ public class Instrumentator {
         }
 
         int asmFlags = ClassWriter.COMPUTE_FRAMES;
-        ClassWriter writer = new ComputeClassWriter(asmFlags);
+        ClassWriter writer = new ComputeClassWriter(asmFlags, classLoader);
         ClassVisitor cv = writer;
 
         //avoid reading frames, as we re-compute them
@@ -69,7 +70,12 @@ public class Instrumentator {
             cv = new ThirdPartyClassVisitor(cv, className);
         }
 
-        cn.accept(cv);
+        try {
+            cn.accept(cv);
+        } catch(Throwable e){
+            SimpleLogger.error("Failed to instrument " + className.getFullNameWithDots(), e);
+            throw e;
+        }
 
         return writer.toByteArray();
     }
