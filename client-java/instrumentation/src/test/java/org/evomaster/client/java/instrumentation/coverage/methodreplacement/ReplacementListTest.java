@@ -1,6 +1,5 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.WebRequestClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.junit.jupiter.api.Test;
 

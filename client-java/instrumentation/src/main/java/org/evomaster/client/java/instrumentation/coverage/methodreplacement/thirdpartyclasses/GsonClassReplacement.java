@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
+package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
@@ -28,6 +28,10 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             usageFilter = UsageFilter.ONLY_SUT)
     public static Object fromJson(Object caller, String json, Class<?> classOfT){
 
+        if(caller == null){
+            throw new NullPointerException();
+        }
+
         if(classOfT != null) {
             String name = classOfT.getName();
             String schema = ClassToSchema.getOrDeriveSchema(classOfT);
@@ -35,12 +39,14 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             ExecutionTracer.addParsedDtoName(name);
         }
 
-        Method original = getOriginal(singleton, "fromJson_string_class");
+        Method original = getOriginal(singleton, "fromJson_string_class", caller);
 
         try {
             return original.invoke(caller, json, classOfT);
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException e){
             throw new RuntimeException(e);// ah, the beauty of Java...
+        } catch (InvocationTargetException e){
+            throw (RuntimeException) e.getCause();
         }
     }
 
