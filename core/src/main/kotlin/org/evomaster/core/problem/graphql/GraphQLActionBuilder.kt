@@ -4,8 +4,11 @@ import com.google.gson.Gson
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
+import org.evomaster.core.problem.graphql.schema.FullType
 import org.evomaster.core.problem.graphql.schema.SchemaObj
+import org.evomaster.core.problem.graphql.schema.__Field
 import org.evomaster.core.problem.graphql.schema.__TypeKind
+import org.evomaster.core.problem.graphql.schema.__TypeKind.*
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
@@ -18,17 +21,25 @@ object GraphQLActionBuilder {
 
     private val log: Logger = LoggerFactory.getLogger(GraphQLActionBuilder::class.java)
     private val idGenerator = AtomicInteger()
-    var tables: MutableList<Table> = mutableListOf()
-    var argsTables: MutableList<Table> = mutableListOf()
-    var tempArgsTables: MutableList<Table> = mutableListOf()
+
+    private val systemTypes = listOf("__Schema", "__Directive", "__DirectiveLocation", "__EnumValue",
+            "__Field", "__InputValue", "__Type", "__TypeKind")
+
+
+    private data class TempState(
+            val tables: MutableList<Table> = mutableListOf(),
+            val argsTables: MutableList<Table> = mutableListOf(),
+            val tempArgsTables: MutableList<Table> = mutableListOf()
+    )
 
     /**
      * @param schema: the schema extracted from a GraphQL API, as a JSON string
      * @param actionCluster: for each mutation/query in the schema, populate this map with
      *                      new action templates.
      */
-
     fun addActionsFromSchema(schema: String, actionCluster: MutableMap<String, Action>) {
+
+        val state = TempState()
 
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(schema, SchemaObj::class.java)
@@ -41,10 +52,12 @@ object GraphQLActionBuilder {
          */
 
 
-        initTablesInfo(schemaObj)
-        for (element in tables) {
+        initTablesInfo(schemaObj, state)
+        for (element in state.tables) {
             if (element.tableType == "Mutation" || element.tableType == "Query") {
-                handleOperation(actionCluster,
+                handleOperation(
+                        state,
+                        actionCluster,
                         element.tableField,
                         element.tableType,
                         element.tableFieldType,
@@ -60,20 +73,14 @@ object GraphQLActionBuilder {
 
     }
 
-    private fun initTablesInfo(schemaObj: SchemaObj) {
-        for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
-            if (elementIntypes.name == "__Schema" ||
-                    elementIntypes.name == "__Directive" ||
-                    elementIntypes.name == "__DirectiveLocation" ||
-                    elementIntypes.name == "__EnumValue" ||
-                    elementIntypes.name == "__Field" ||
-                    elementIntypes.name == "__InputValue" ||
-                    elementIntypes.name == "__Type" ||
-                    elementIntypes.name == "__TypeKind"
+    private fun initTablesInfo(schemaObj: SchemaObj, state: TempState) {
 
-            ) {
-                break
+
+        for (elementIntypes in schemaObj.data?.__schema?.types) {
+            if (systemTypes.contains(elementIntypes.name)) {
+                continue
             }
+
             for (elementInfields in elementIntypes?.fields.orEmpty()) {
 
                 /**
@@ -81,136 +88,14 @@ object GraphQLActionBuilder {
                  */
                 val tableElement = Table()
                 tableElement.tableField = elementInfields?.name
-                val non_null: __TypeKind? = __TypeKind.NON_NULL
-                if (elementInfields?.type?.kind == non_null) {// non optional list or object or scalar
-                    val list: __TypeKind? = __TypeKind.LIST
-                    if (elementInfields?.type?.ofType?.kind == list) {// non optional list
-                        tableElement.kindOfTableField = list
-                        tableElement.isKindOfTableFieldOptional = false
-                        if (elementInfields?.type?.ofType?.ofType?.kind == non_null) {// non optional object or scalar
-                            val obj: __TypeKind? = __TypeKind.OBJECT
-                            if (elementInfields?.type?.ofType?.ofType?.ofType?.kind == obj) {// non optional object
-                                tableElement.kindOfTableFieldType = obj
-                                tableElement.isKindOfTableFieldTypeOptional = false
-                                tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.ofType?.name
-                                tableElement.tableType = elementIntypes?.name
-                                tables.add(tableElement)
-                            } else {
-                                val scalar: __TypeKind? = __TypeKind.SCALAR
-                                if (elementInfields?.type?.ofType?.ofType?.ofType?.kind == scalar) {// non optional scalar
-                                    tableElement.kindOfTableFieldType = scalar
-                                    tableElement.isKindOfTableFieldTypeOptional = false
-                                    tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.ofType?.name
-                                    tableElement.tableType = elementIntypes?.name
-                                    tables.add(tableElement)
-                                }
-                            }
 
-                        } else {
-                            val obj: __TypeKind? = __TypeKind.OBJECT // optional object
-                            if (elementInfields?.type?.ofType?.ofType?.kind == obj) {
-                                tableElement.kindOfTableFieldType = obj
-                                tableElement.isKindOfTableFieldTypeOptional = true
-                                tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
-                                tableElement.tableType = elementIntypes?.name
-                                tables.add(tableElement)
 
-                            } else {
-                                val scalar: __TypeKind? = __TypeKind.SCALAR //optional scalar
-                                if (elementInfields?.type?.ofType?.ofType?.kind == scalar) {
-                                    tableElement.kindOfTableFieldType = scalar
-                                    tableElement.isKindOfTableFieldTypeOptional = true
-                                    tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
-                                    tableElement.tableType = elementIntypes?.name
-                                    tables.add(tableElement)
-                                }
-                            }
-                        }
-                    } else {
-                        val obj: __TypeKind? = __TypeKind.OBJECT // object non optional not in a list
-                        if (elementInfields?.type?.ofType?.kind == obj) {
-                            tableElement.kindOfTableFieldType = obj
-                            tableElement.isKindOfTableFieldTypeOptional = false
-                            tableElement.tableFieldType = elementInfields?.type?.ofType?.name
-                            tableElement.tableType = elementIntypes?.name
-                            tables.add(tableElement)
-                        } else {
-                            val scalar: __TypeKind? = __TypeKind.SCALAR
-                            if (elementInfields?.type?.ofType?.kind == scalar) {
-                                tableElement.kindOfTableFieldType = scalar
-                                tableElement.isKindOfTableFieldTypeOptional = false
-                                tableElement.tableFieldType = elementInfields?.type?.ofType?.name
-                                tableElement.tableType = elementIntypes?.name
-                                tables.add(tableElement)
-                            }
+                if (elementInfields?.type?.kind == NON_NULL) {// non optional list or object or scalar
 
-                        }
-
-                    }
+                    handleNonNull(elementInfields, tableElement, elementIntypes, state)
 
                 } else {
-                    val list: __TypeKind? = __TypeKind.LIST//optional list or object or scalar
-                    if (elementInfields?.type?.kind == list) {//optional list in the top
-                        tableElement.kindOfTableField = list
-                        tableElement.isKindOfTableFieldOptional = true
-                        if (elementInfields?.type?.ofType.kind == non_null) {// non optional object or scalar
-                            val obj: __TypeKind? = __TypeKind.OBJECT
-                            if (elementInfields?.type?.ofType?.ofType?.kind == obj) {// non optional object
-                                tableElement.kindOfTableFieldType = obj
-                                tableElement.isKindOfTableFieldTypeOptional = false
-                                tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
-                                tableElement.tableType = elementIntypes?.name
-                                tables.add(tableElement)
-                            } else {
-                                val scalar: __TypeKind? = __TypeKind.SCALAR
-                                if (elementInfields?.type?.ofType?.ofType?.kind == scalar) {// non optional scalar
-                                    tableElement.kindOfTableFieldType = scalar
-                                    tableElement.isKindOfTableFieldTypeOptional = false
-                                    tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
-                                    tableElement.tableType = elementIntypes?.name
-                                    tables.add(tableElement)
-                                }
-                            }
-
-                        } else {
-                            val obj: __TypeKind? = __TypeKind.OBJECT //optional object or scalar
-                            if (elementInfields?.type?.ofType.kind == obj) {//optional object
-                                tableElement.kindOfTableFieldType = obj
-                                tableElement.isKindOfTableFieldTypeOptional = true
-                                tableElement.tableFieldType = elementInfields?.type?.ofType?.name
-                                tableElement.tableType = elementIntypes?.name
-                                tables.add(tableElement)
-                            } else {
-                                val scalar: __TypeKind? = __TypeKind.SCALAR
-                                if (elementInfields?.type?.ofType?.kind == scalar) {// optional scalar
-                                    tableElement.kindOfTableFieldType = scalar
-                                    tableElement.isKindOfTableFieldTypeOptional = true
-                                    tableElement.tableFieldType = elementInfields?.type?.ofType?.name
-                                    tableElement.tableType = elementIntypes?.name
-                                    tables.add(tableElement)
-                                }
-                            }
-                        }
-
-                    } else {
-                        val obj: __TypeKind? = __TypeKind.OBJECT
-                        if (elementInfields?.type?.kind == obj) {// optional object in the top
-                            tableElement.kindOfTableFieldType = obj
-                            tableElement.isKindOfTableFieldTypeOptional = true
-                            tableElement.tableFieldType = elementInfields?.type?.name
-                            tableElement.tableType = elementIntypes?.name
-                            tables.add(tableElement)
-                        } else {
-                            val scalar: __TypeKind? = __TypeKind.SCALAR
-                            if (elementInfields?.type?.kind == scalar) {/// optional scalar in the top
-                                tableElement.kindOfTableFieldType = scalar
-                                tableElement.isKindOfTableFieldTypeOptional = true
-                                tableElement.tableFieldType = elementInfields?.type?.name
-                                tableElement.tableType = elementIntypes?.name
-                                tables.add(tableElement)
-                            }
-                        }
-                    }
+                    handleNull(elementInfields, tableElement, elementIntypes, state)
                 }
 
                 /**
@@ -221,19 +106,19 @@ object GraphQLActionBuilder {
                     for (elementInArgs in elementInfields.args) {
                         val inputElement = Table()
                         inputElement.tableType = elementInfields?.name
-                        if (elementInArgs?.type?.kind == non_null) {//non optional list or object or scalar
+                        if (elementInArgs?.type?.kind == NON_NULL) {//non optional list or object or scalar
                             val list: __TypeKind? = __TypeKind.LIST
                             if (elementInArgs?.type?.ofType?.kind == list) {//non optional list
                                 inputElement.kindOfTableField = list
                                 inputElement.isKindOfTableFieldOptional = false
-                                if (elementInArgs?.type?.ofType?.ofType?.kind == non_null) {// non optional input object or scalar
+                                if (elementInArgs?.type?.ofType?.ofType?.kind == NON_NULL) {// non optional input object or scalar
                                     val inputObject: __TypeKind? = __TypeKind.INPUT_OBJECT
                                     if (elementInArgs?.type?.ofType?.ofType?.ofType?.kind == inputObject) {// non optional input object
                                         inputElement.kindOfTableFieldType = inputObject
                                         inputElement.isKindOfTableFieldTypeOptional = false
                                         inputElement.tableFieldType = elementInArgs?.type?.ofType?.ofType?.ofType?.name
                                         inputElement.tableField = elementInArgs?.name
-                                        argsTables.add(inputElement)
+                                        state.argsTables.add(inputElement)
                                     } else {
                                         val scalar: __TypeKind? = __TypeKind.SCALAR// non optional scalar
                                         if (elementInArgs?.type?.ofType?.ofType?.ofType?.kind == scalar) {
@@ -241,7 +126,7 @@ object GraphQLActionBuilder {
                                             inputElement.isKindOfTableFieldTypeOptional = false
                                             inputElement.tableFieldType = elementInArgs?.type?.ofType?.ofType?.ofType?.name
                                             inputElement.tableField = elementInArgs?.name
-                                            argsTables.add(inputElement)
+                                            state.argsTables.add(inputElement)
                                         }
                                     }
                                 } else {
@@ -251,7 +136,7 @@ object GraphQLActionBuilder {
                                         inputElement.isKindOfTableFieldTypeOptional = true
                                         inputElement.tableFieldType = elementInArgs?.type?.ofType?.ofType?.name
                                         inputElement.tableField = elementInArgs?.name
-                                        argsTables.add(inputElement)
+                                        state.argsTables.add(inputElement)
 
                                     } else {
                                         val scalar: __TypeKind? = __TypeKind.SCALAR //optional scalar
@@ -260,7 +145,7 @@ object GraphQLActionBuilder {
                                             inputElement.isKindOfTableFieldTypeOptional = true
                                             inputElement.tableFieldType = elementInArgs?.type?.ofType?.ofType?.name
                                             inputElement.tableField = elementInArgs?.name
-                                            argsTables.add(inputElement)
+                                            state.argsTables.add(inputElement)
                                         }
 
                                     }
@@ -273,7 +158,7 @@ object GraphQLActionBuilder {
                                     inputElement.isKindOfTableFieldTypeOptional = false
                                     inputElement.tableFieldType = elementInArgs?.type?.ofType?.name
                                     inputElement.tableField = elementInArgs?.name
-                                    argsTables.add(inputElement)
+                                    state.argsTables.add(inputElement)
                                 } else {
                                     val scalar: __TypeKind? = __TypeKind.SCALAR //non optional scalar not in a list
                                     if (elementInArgs?.type?.ofType?.kind == scalar) {
@@ -281,7 +166,7 @@ object GraphQLActionBuilder {
                                         inputElement.isKindOfTableFieldTypeOptional = false
                                         inputElement.tableFieldType = elementInArgs?.type?.ofType?.name
                                         inputElement.tableField = elementInArgs?.name
-                                        argsTables.add(inputElement)
+                                        state.argsTables.add(inputElement)
                                     }
                                 }
                             }
@@ -290,14 +175,14 @@ object GraphQLActionBuilder {
                             if (elementInArgs?.type?.kind == list) {//optional list in the top
                                 inputElement.kindOfTableField = list
                                 inputElement.isKindOfTableFieldOptional = true
-                                if (elementInArgs?.type?.ofType.kind == non_null) {// non optional input object or scalar
+                                if (elementInArgs?.type?.ofType.kind == NON_NULL) {// non optional input object or scalar
                                     val inputObject: __TypeKind? = __TypeKind.INPUT_OBJECT
                                     if (elementInArgs?.type?.ofType?.ofType?.kind == inputObject) {// non optional input object
                                         inputElement.kindOfTableFieldType = inputObject
                                         inputElement.isKindOfTableFieldTypeOptional = false
                                         inputElement.tableFieldType = elementInArgs?.type?.ofType?.ofType?.name
                                         inputElement.tableField = elementInArgs?.name
-                                        argsTables.add(inputElement)
+                                        state.argsTables.add(inputElement)
                                     } else {
                                         val scalar: __TypeKind? = __TypeKind.SCALAR
                                         if (elementInArgs?.type?.ofType?.ofType?.kind == scalar) {// non optional scalar
@@ -305,7 +190,7 @@ object GraphQLActionBuilder {
                                             inputElement.isKindOfTableFieldTypeOptional = false
                                             inputElement.tableFieldType = elementInArgs?.type?.ofType?.ofType?.name
                                             inputElement.tableField = elementInArgs?.name
-                                            argsTables.add(inputElement)
+                                            state.argsTables.add(inputElement)
                                         }
                                     }
 
@@ -316,7 +201,7 @@ object GraphQLActionBuilder {
                                         inputElement.isKindOfTableFieldTypeOptional = true
                                         inputElement.tableFieldType = elementInArgs?.type?.ofType?.name
                                         inputElement.tableField = elementInArgs?.name
-                                        argsTables.add(inputElement)
+                                        state.argsTables.add(inputElement)
                                     } else {
                                         val scalar: __TypeKind? = __TypeKind.SCALAR
                                         if (elementInArgs?.type?.ofType?.kind == scalar) {// optional scalar
@@ -324,7 +209,7 @@ object GraphQLActionBuilder {
                                             inputElement.isKindOfTableFieldTypeOptional = true
                                             inputElement.tableFieldType = elementInArgs?.type?.ofType?.name
                                             inputElement.tableField = elementInArgs?.name
-                                            argsTables.add(inputElement)
+                                            state.argsTables.add(inputElement)
                                         }
                                     }
                                 }
@@ -336,7 +221,7 @@ object GraphQLActionBuilder {
                                     inputElement.isKindOfTableFieldTypeOptional = true
                                     inputElement.tableFieldType = elementInArgs?.type?.name
                                     inputElement.tableField = elementInArgs?.name
-                                    argsTables.add(inputElement)
+                                    state.argsTables.add(inputElement)
                                 } else {
                                     val scalar: __TypeKind? = __TypeKind.SCALAR// optional scalar in the top
                                     if (elementInArgs?.type?.kind == scalar) {
@@ -344,7 +229,7 @@ object GraphQLActionBuilder {
                                         inputElement.isKindOfTableFieldTypeOptional = true
                                         inputElement.tableFieldType = elementInArgs?.type?.name
                                         inputElement.tableField = elementInArgs?.name
-                                        argsTables.add(inputElement)
+                                        state.argsTables.add(inputElement)
                                     }
                                 }
 
@@ -357,7 +242,7 @@ object GraphQLActionBuilder {
         /**
          *extracting tempArgsTables, an intermediate table for extracting argsTables
          */
-        for (elementInInputParamTable in argsTables) {
+        for (elementInInputParamTable in state.argsTables) {
             val inputObject: __TypeKind? = __TypeKind.INPUT_OBJECT
             if (elementInInputParamTable.kindOfTableFieldType == inputObject) {
                 for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
@@ -374,7 +259,7 @@ object GraphQLActionBuilder {
                                         inputElement.isKindOfTableFieldTypeOptional = false
                                         inputElement.tableFieldType = elementInInputFields?.type?.ofType?.name
                                         inputElement.tableField = elementInInputFields?.name
-                                        tempArgsTables.add(inputElement)
+                                        state.tempArgsTables.add(inputElement)
                                     }
                                 } else {
                                     val scalar: __TypeKind? = __TypeKind.SCALAR// optional scalar or enum
@@ -385,7 +270,7 @@ object GraphQLActionBuilder {
                                         inputElement.isKindOfTableFieldTypeOptional = true
                                         inputElement.tableFieldType = elementInInputFields?.type?.name
                                         inputElement.tableField = elementInInputFields?.name
-                                        tempArgsTables.add(inputElement)
+                                        state.tempArgsTables.add(inputElement)
                                     }
                                 }
                             }
@@ -401,10 +286,118 @@ object GraphQLActionBuilder {
         /**
          * merging argsTables with tempArgsTables: extracting argsTables: 2/2
          */
-        argsTables.addAll(tempArgsTables)
+        state.argsTables.addAll(state.tempArgsTables)
+    }
+
+    /*
+        This when an entry is optional
+     */
+    private fun handleNull(elementInfields: __Field, tableElement: Table, elementIntypes: FullType, state: TempState) {
+
+        val list: __TypeKind? = LIST//optional list or object or scalar
+
+        if (elementInfields?.type?.kind == list) {//optional list in the top
+            tableElement.kindOfTableField = list
+            tableElement.isKindOfTableFieldOptional = true
+            if (elementInfields?.type?.ofType.kind == NON_NULL) {// non optional object or scalar
+                val obj: __TypeKind? = OBJECT
+                if (elementInfields?.type?.ofType?.ofType?.kind == obj) {// non optional object
+                    tableElement.kindOfTableFieldType = obj
+                    tableElement.isKindOfTableFieldTypeOptional = false
+                    tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
+                    tableElement.tableType = elementIntypes?.name
+                    state.tables.add(tableElement)
+                } else {
+                    val scalar: __TypeKind? = SCALAR
+                    if (elementInfields?.type?.ofType?.ofType?.kind == scalar) {// non optional scalar
+                        tableElement.kindOfTableFieldType = scalar
+                        tableElement.isKindOfTableFieldTypeOptional = false
+                        tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
+                        tableElement.tableType = elementIntypes?.name
+                        state.tables.add(tableElement)
+                    }
+                }
+
+            } else {
+                val obj: __TypeKind? = OBJECT //optional object or scalar
+                if (elementInfields?.type?.ofType.kind == obj) {//optional object
+                    tableElement.kindOfTableFieldType = obj
+                    tableElement.isKindOfTableFieldTypeOptional = true
+                    tableElement.tableFieldType = elementInfields?.type?.ofType?.name
+                    tableElement.tableType = elementIntypes?.name
+                    state.tables.add(tableElement)
+                } else {
+                    val scalar: __TypeKind? = SCALAR
+                    if (elementInfields?.type?.ofType?.kind == scalar) {// optional scalar
+                        tableElement.kindOfTableFieldType = scalar
+                        tableElement.isKindOfTableFieldTypeOptional = true
+                        tableElement.tableFieldType = elementInfields?.type?.ofType?.name
+                        tableElement.tableType = elementIntypes?.name
+                        state.tables.add(tableElement)
+                    }
+                }
+            }
+
+        } else {
+            val obj: __TypeKind? = OBJECT
+            if (elementInfields?.type?.kind == obj) {// optional object in the top
+                tableElement.kindOfTableFieldType = obj
+                tableElement.isKindOfTableFieldTypeOptional = true
+                tableElement.tableFieldType = elementInfields?.type?.name
+                tableElement.tableType = elementIntypes?.name
+                state.tables.add(tableElement)
+            } else {
+                val scalar: __TypeKind? = SCALAR
+                if (elementInfields?.type?.kind == scalar) {/// optional scalar in the top
+                    tableElement.kindOfTableFieldType = scalar
+                    tableElement.isKindOfTableFieldTypeOptional = true
+                    tableElement.tableFieldType = elementInfields?.type?.name
+                    tableElement.tableType = elementIntypes?.name
+                    state.tables.add(tableElement)
+                }
+            }
+        }
+    }
+
+    /*
+        this is to handle entries that are NOT optional, and must be there, ie, they cannot be null
+     */
+    private fun handleNonNull(elementInfields: __Field, tableElement: Table, elementIntypes: FullType, state: TempState) {
+
+        val kind = elementInfields?.type?.ofType?.kind
+        val kind2 = elementInfields?.type?.ofType?.ofType?.kind
+        val kind3 = elementInfields?.type?.ofType?.ofType?.ofType?.kind
+        tableElement.isKindOfTableFieldOptional = false
+
+        if (kind == LIST) {// non optional list
+            tableElement.kindOfTableField = LIST
+
+            if (kind2 == NON_NULL) {// non optional object or scalar
+                tableElement.isKindOfTableFieldTypeOptional = false
+                tableElement.kindOfTableFieldType = kind3
+                tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.ofType?.name
+                tableElement.tableType = elementIntypes?.name
+                state.tables.add(tableElement)
+            } else {
+                tableElement.kindOfTableFieldType = kind2
+                tableElement.isKindOfTableFieldTypeOptional = true
+                tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
+                tableElement.tableType = elementIntypes?.name
+                state.tables.add(tableElement)
+            }
+        } else if (kind == OBJECT || kind == SCALAR) {
+            tableElement.kindOfTableFieldType = kind
+            tableElement.tableFieldType = elementInfields?.type?.ofType?.name
+            tableElement.tableType = elementIntypes?.name
+            state.tables.add(tableElement)
+        }  else {
+            throw IllegalArgumentException("Type not supported yet: " + elementInfields?.type?.ofType?.kind)
+        }
+
     }
 
     private fun handleOperation(
+            state: TempState,
             actionCluster: MutableMap<String, Action>,
             methodName: String?,
             methodType: String?,
@@ -435,7 +428,7 @@ object GraphQLActionBuilder {
 
         val actionId = "$methodName${idGenerator.incrementAndGet()}"
 
-        val params = extractParams(methodName, tableFieldType, kindOfTableFieldType, kindOfTableField,
+        val params = extractParams(state, methodName, tableFieldType, kindOfTableFieldType, kindOfTableField,
                 tableType, isKindOfTableFieldTypeOptional,
                 isKindOfTableFieldOptional, tableFieldWithArgs)
 
@@ -446,6 +439,7 @@ object GraphQLActionBuilder {
     }
 
     private fun extractParams(
+            state: TempState,
             methodName: String,
             tableFieldType: String,
             kindOfTableFieldType: String,
@@ -462,24 +456,24 @@ object GraphQLActionBuilder {
 
         if (tableFieldWithArgs) {
 
-            for (element in argsTables) {
+            for (element in state.argsTables) {
 
                 if (element.tableType == methodName) {
 
-                    val gene = getGene(element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(), element.tableType.toString(), history,
+                    val gene = getGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(), element.tableType.toString(), history,
                             element.isKindOfTableFieldTypeOptional, element.isKindOfTableFieldOptional)
 
                     params.add(GQInputParam(element.tableFieldType, gene))
                 }
             }
             history.addFirst(tableFieldType)
-            val gene = getGene(tableFieldType, kindOfTableField, kindOfTableFieldType, tableType, history,
+            val gene = getGene(state, tableFieldType, kindOfTableField, kindOfTableFieldType, tableType, history,
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
 
             params.add(GQReturnParam(tableFieldType, gene))
         } else {
             history.addFirst(tableFieldType)
-            val gene = getGene(tableFieldType, kindOfTableField, kindOfTableFieldType, tableType, history,
+            val gene = getGene(state, tableFieldType, kindOfTableField, kindOfTableFieldType, tableType, history,
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
 
             params.add(GQReturnParam(tableFieldType, gene))
@@ -490,6 +484,7 @@ object GraphQLActionBuilder {
     }
 
     private fun getGene(
+            state: TempState,
             tableFieldType: String,
             kindOfTableField: String?,
             kindOfTableFieldType: String,
@@ -503,33 +498,33 @@ object GraphQLActionBuilder {
             "list" -> {
 
                 if (isKindOfTableFieldOptional) {
-                    val template = getGene(tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
+                    val template = getGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                     return OptionalGene(tableType, ArrayGene(tableType, template))
 
                 } else {
-                    val template = getGene(tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
+                    val template = getGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                     return ArrayGene(tableType, template)
                 }
             }
             "object" -> {
                 if (isKindOfTableFieldTypeOptional) {
-                    val optObjGene = createObjectGene(tableType, kindOfTableFieldType, history,
+                    val optObjGene = createObjectGene(state, tableType, kindOfTableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                     return OptionalGene(tableType, optObjGene)
                 } else {
-                    return createObjectGene(tableType, kindOfTableFieldType, history,
+                    return createObjectGene(state, tableType, kindOfTableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                 }
             }
             "input_object" -> {
                 if (isKindOfTableFieldTypeOptional) {
-                    val optInputObjGene = createInputObjectGene(tableType, kindOfTableFieldType, history,
+                    val optInputObjGene = createInputObjectGene(state, tableType, kindOfTableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                     return OptionalGene(tableType, optInputObjGene)
                 } else {
-                    return createInputObjectGene(tableType, kindOfTableFieldType, history,
+                    return createInputObjectGene(state, tableType, kindOfTableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                 }
             }
@@ -564,7 +559,7 @@ object GraphQLActionBuilder {
                 }
             }
             "null" -> {
-                return getGene(tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
+                return getGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
             }
             "date" -> {
@@ -576,11 +571,11 @@ object GraphQLActionBuilder {
             }
             "scalar" -> {
                 if (isKindOfTableFieldTypeOptional) {
-                    return OptionalGene(tableType, getGene(tableFieldType, tableType, kindOfTableField, tableFieldType, history,
+                    return OptionalGene(tableType, getGene(state, tableFieldType, tableType, kindOfTableField, tableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional))
                 } else {
 
-                    return getGene(tableFieldType, tableType, kindOfTableFieldType, kindOfTableField, history,
+                    return getGene(state, tableFieldType, tableType, kindOfTableFieldType, kindOfTableField, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                 }
             }
@@ -592,19 +587,22 @@ object GraphQLActionBuilder {
         }
     }
 
-    private fun createObjectGene(tableType: String,
-                                 kindOfTableFieldType: String,
-                                 history: Deque<String> = ArrayDeque<String>(),
-                                 isKindOfTableFieldTypeOptional: Boolean,
-                                 isKindOfTableFieldOptional: Boolean
+    private fun createObjectGene(
+            state: TempState,
+            tableType: String,
+            kindOfTableFieldType: String,
+            history: Deque<String> = ArrayDeque<String>(),
+            isKindOfTableFieldTypeOptional: Boolean,
+            isKindOfTableFieldOptional: Boolean
     ): Gene {
+
         val fields: MutableList<Gene> = mutableListOf()
-        for (element in tables) {
+        for (element in state.tables) {
             if (element.tableType == tableType) {
                 if (element.kindOfTableFieldType.toString().equals("SCALAR", ignoreCase = true)) {
                     val field = element.tableField
                     val template = field?.let {
-                        getGene(tableType, element.tableFieldType, kindOfTableFieldType, it, history,
+                        getGene(state, tableType, element.tableFieldType, kindOfTableFieldType, it, history,
                                 element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                     }
                     if (template != null) {
@@ -612,7 +610,7 @@ object GraphQLActionBuilder {
                     }
                 } else {
                     if (element.kindOfTableField.toString().equals("LIST", ignoreCase = true)) {
-                        val template = getGene(element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(),
+                        val template = getGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(),
                                 element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
 
                         if (template != null) {
@@ -623,7 +621,7 @@ object GraphQLActionBuilder {
                             history.addLast(element.tableType)
                             history.addLast(element.tableFieldType)
                             if (history.count { it == element.tableFieldType } == 1) {
-                                val template = getGene(element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
+                                val template = getGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
                                         element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                                 history.removeLast()
                                 if (template != null) {
@@ -643,19 +641,21 @@ object GraphQLActionBuilder {
         return ObjectGene(tableType, fields, tableType)
     }
 
-    private fun createInputObjectGene(tableType: String,
-                                      kindOfTableFieldType: String,
-                                      history: Deque<String> = ArrayDeque<String>(),
-                                      isKindOfTableFieldTypeOptional: Boolean,
-                                      isKindOfTableFieldOptional: Boolean
+    private fun createInputObjectGene(
+            state: TempState,
+            tableType: String,
+            kindOfTableFieldType: String,
+            history: Deque<String> = ArrayDeque<String>(),
+            isKindOfTableFieldTypeOptional: Boolean,
+            isKindOfTableFieldOptional: Boolean
     ): Gene {
         val fields: MutableList<Gene> = mutableListOf()
-        for (element in argsTables) {
+        for (element in state.argsTables) {
             if (element.tableType == tableType) {
                 if (element.kindOfTableFieldType.toString().equals("SCALAR", ignoreCase = true)) {
                     val field = element.tableField
                     val template = field?.let {
-                        getGene(tableType, element.tableFieldType, kindOfTableFieldType, it, history,
+                        getGene(state, tableType, element.tableFieldType, kindOfTableFieldType, it, history,
                                 element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                     }
                     if (template != null) {
@@ -663,7 +663,7 @@ object GraphQLActionBuilder {
                     }
                 } else {
                     if (element.kindOfTableField.toString().equals("LIST", ignoreCase = true)) {
-                        val template = getGene(element.tableFieldType, element.kindOfTableField.toString(),
+                        val template = getGene(state, element.tableFieldType, element.kindOfTableField.toString(),
                                 element.kindOfTableFieldType.toString(),
                                 element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
 
@@ -672,7 +672,7 @@ object GraphQLActionBuilder {
                         }
                     } else {
                         if (element.kindOfTableFieldType.toString().equals("INPUT_OBJECT", ignoreCase = true)) {
-                            val template = getGene(element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
+                            val template = getGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
                                     element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional)
                             if (template != null) {
                                 fields.add(template)
