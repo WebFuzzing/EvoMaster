@@ -200,15 +200,17 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         !action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach {
-                        action.parameters.add(HeaderParam(it, OptionalGene(it, StringGene(it), false, requestSelection = true)))
+                        val gene = StringGene(it).apply { randomize(randomness, false, listOf()) }
+                        action.parameters.add(HeaderParam(it, OptionalGene(it, gene, false, requestSelection = true)))
                     }
 
             info.queryParameters
                     .filter { name ->
                         !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
                     }
-                    .forEach { name ->
-                        action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false, requestSelection = true)))
+                    .forEach {
+                        val gene = StringGene(it).apply { randomize(randomness, false, listOf()) }
+                        action.parameters.add(QueryParam(it, OptionalGene(it, gene, false, requestSelection = true)))
                     }
 
             if(result.getStatusCode() == 415){
@@ -265,6 +267,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 }
                 val name = dtoNames.first()
                 val obj = getObjectGeneForDto(name)
+                obj.randomize(randomness, false, listOf())
 
                 val body = BodyParam(obj, EnumGene("contentType", listOf("application/json")))
                 val update = UpdateForBodyParam(body)

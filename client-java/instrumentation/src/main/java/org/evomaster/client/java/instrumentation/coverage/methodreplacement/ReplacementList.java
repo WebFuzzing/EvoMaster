@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.*;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses.*;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 
 import java.util.*;
