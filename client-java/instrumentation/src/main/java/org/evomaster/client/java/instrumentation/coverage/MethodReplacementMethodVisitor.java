@@ -107,6 +107,21 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
         }
 
         Optional<Method> r = candidateClasses.stream()
+                .filter(i -> {
+                    /*
+                        This is tricky. 3rd party replacements might have references to
+                        classes that are not on the classpath (eg, as return, or as input),
+                        and so reflection on methods will crash.
+                        The weird thing is that, if that was the case, then the class should
+                        not had been in the candidate list in the first place...
+                        but this issue does happen in Proxyprint, but only for external driver,
+                        due to custom CL in Spring.
+
+                        TODO: should try to understand exactly what happens there...
+                     */
+                    try{i.getClass().getDeclaredMethods(); return true;}
+                    catch (Throwable t){return false;}
+                })
                 .flatMap(i -> Stream.of(i.getClass().getDeclaredMethods()))
                 .filter(m -> m.getDeclaredAnnotation(Replacement.class) != null)
                 .filter(m -> m.getName().equals(name))
