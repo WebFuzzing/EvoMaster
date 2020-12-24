@@ -150,6 +150,16 @@ namespace Controller.Controllers {
       return Ok (dto);
     }
 
+    [HttpPost ("newSearch")]
+    public IActionResult NewSearch () {
+
+      AssertTrackRequestSource (Request.HttpContext.Connection);
+
+      _sutController.NewSearch ();
+
+      return StatusCode (StatusCodes.Status201Created);
+    }
+
     //TODO: How to get url from another file
     //TODO: Log errors in web server instead of try-catch 
     [HttpPut ("runSUT")]
