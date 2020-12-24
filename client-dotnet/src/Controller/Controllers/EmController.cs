@@ -117,7 +117,7 @@ namespace Controller.Controllers {
         dto.RestProblem.EndpointsToSkip = rp.GetEndpointsToSkip ();
 
       } else {
-        string msg = "Unrecognized problem type: " + nameof (info);
+        string msg = "Unrecognized problem type: " + info.GetType ().FullName;
 
         //TODO: SimpleLogger.error (msg);
         System.Console.WriteLine (msg);
@@ -144,7 +144,7 @@ namespace Controller.Controllers {
       AssertTrackRequestSource (Request.HttpContext.Connection);
 
       ControllerInfoDto dto = new ControllerInfoDto ();
-      dto.FullName = _sutController.GetType().FullName;
+      dto.FullName = _sutController.GetType ().FullName;
       dto.IsInstrumentationOn = _sutController.IsInstrumentationActivated ();
 
       return Ok (dto);
