@@ -63,7 +63,7 @@ namespace Controller.Controllers {
     //Only used for debugging/testing
     public static void ResetConnectedClientsSoFar () => connectedClientsSoFar.Clear ();
 
-    [HttpGet ("/")]
+    [HttpGet ("")]
     public IActionResult GetWarning () => BadRequest (htmlWarning);
 
     [HttpGet ("infoSUT")]
@@ -138,11 +138,23 @@ namespace Controller.Controllers {
       return Ok (WrappedResponseDto<SutInfoDto>.WithData (dto));
     }
 
+    [HttpGet ("controllerInfo")]
+    public IActionResult GetControllerInfoDto () {
+
+      AssertTrackRequestSource (Request.HttpContext.Connection);
+
+      ControllerInfoDto dto = new ControllerInfoDto ();
+      dto.FullName = _sutController.GetType().FullName;
+      dto.IsInstrumentationOn = _sutController.IsInstrumentationActivated ();
+
+      return Ok (dto);
+    }
+
     //TODO: How to get url from another file
     //TODO: Log errors in web server instead of try-catch 
     [HttpPut ("runSUT")]
     public async Task<IActionResult> RunSutAsync ([FromBody] SutRunDto dto) {
-      
+
       AssertTrackRequestSource (Request.HttpContext.Connection);
 
       if (!dto.Run.HasValue) {
