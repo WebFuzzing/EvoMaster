@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Client.Util;
 using Controller.Api;
 using Microsoft.AspNetCore.Http;
@@ -61,10 +62,13 @@ namespace Controller.Controllers {
     //Only used for debugging/testing
     public static void ResetConnectedClientsSoFar () => connectedClientsSoFar.Clear ();
 
+    [HttpGet ("/")]
+    public IActionResult GetWarning () => BadRequest (htmlWarning);
+
     //TODO: How to get url from another file
     //TODO: Log errors in web server instead of try-catch 
     [HttpPut ("runSUT")]
-    public async System.Threading.Tasks.Task<IActionResult> RunSutAsync ([FromBody] SutRunDto dto) {
+    public async Task<IActionResult> RunSutAsync ([FromBody] SutRunDto dto) {
 
       AssertTrackRequestSource (Request.HttpContext.Connection);
 
@@ -112,7 +116,7 @@ namespace Controller.Controllers {
               If SUT is not up and running, let's start it
            */
           if (!_sutController.IsSutRunning ()) {
-            
+
             _baseUrlOfSut = await _sutController.StartSutAsync ();
 
             if (_baseUrlOfSut == null) {
