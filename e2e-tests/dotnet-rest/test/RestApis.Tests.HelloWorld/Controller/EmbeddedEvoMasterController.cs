@@ -14,12 +14,13 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
         public static void Main (string[] args) {
 
-            System.Console.WriteLine ("Driver is starting...\n");
 
             EmbeddedEvoMasterController embeddedEvoMasterController = new EmbeddedEvoMasterController ();
 
             InstrumentedSutStarter instrumentedSutStarter = new InstrumentedSutStarter (embeddedEvoMasterController);
 
+            System.Console.WriteLine ("Driver is starting...\n");
+            
             instrumentedSutStarter.Start ();
         }
 

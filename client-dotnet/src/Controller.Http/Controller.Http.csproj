@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Controller/Controller.csproj"/>
+    <ProjectReference Include="../Client.Util/Client.Util.csproj"/>
+    <ProjectReference Include="../../../e2e-tests/dotnet-rest/test/RestApis.Tests.HelloWorld/RestApis.Tests.HelloWorld.csproj"/>
+    
+  </ItemGroup>
+
+</Project>
