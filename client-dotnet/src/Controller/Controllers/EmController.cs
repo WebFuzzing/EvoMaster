@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Client.Util;
 using Controller.Api;
+using Controller.Problem;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +13,7 @@ namespace Controller.Controllers {
   public class EmController : ControllerBase {
 
     private readonly SutController _sutController;
-    private string _baseUrlOfSut;
+    private static string _baseUrlOfSut;
 
     /*
      Keep track of all host:port clients connect so far.
@@ -65,11 +66,83 @@ namespace Controller.Controllers {
     [HttpGet ("/")]
     public IActionResult GetWarning () => BadRequest (htmlWarning);
 
+    [HttpGet ("infoSUT")]
+    public IActionResult GetSutInfo () {
+
+      string connectionHeader = Request.Headers["Connection"];
+
+      if (connectionHeader == null ||
+        !connectionHeader.Equals ("keep-alive", StringComparison.OrdinalIgnoreCase)) {
+
+        return BadRequest (WrappedResponseDto<string>.WithError ("Requests should always contain a 'Connection: keep-alive'"));
+      }
+
+      AssertTrackRequestSource (Request.HttpContext.Connection);
+
+      //TODO: uncomment after implementing VerifySqlConnection method
+      // if (!_sutController.VerifySqlConnection ()) {
+      //   string msg = "SQL drivers are misconfigured. You must use a 'p6spy' wrapper when you " +
+      //     "run the SUT. For example, a database connection URL like 'jdbc:h2:mem:testdb' " +
+      //     "should be changed into 'jdbc:p6spy:h2:mem:testdb'. " +
+      //     "See documentation on how to configure P6Spy.";
+
+      //   //TODO: SimpleLogger.error (msg);
+      //   System.Console.WriteLine(msg);
+
+      //   return StatusCode(StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError(msg));
+      // }
+
+      SutInfoDto dto = new SutInfoDto ();
+      dto.IsSutRunning = _sutController.IsSutRunning ();
+      dto.BaseUrlOfSUT = _baseUrlOfSut;
+      dto.InfoForAuthentication = _sutController.GetInfoForAuthentication ();
+      //TODO: uncomment
+      //dto.SqlSchemaDto = _sutController.GetSqlDatabaseSchema ();
+      dto.DefaultOutputFormat = _sutController.GetPreferredOutputFormat ();
+
+      IProblemInfo info = _sutController.GetProblemInfo ();
+
+      if (info == null) {
+        string msg = "Undefined problem type in the EM Controller";
+
+        //TODO: SimpleLogger.error (msg);
+        System.Console.WriteLine (msg);
+
+        return StatusCode (StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError (msg));
+
+      } else if (info is RestProblem) {
+        RestProblem rp = (RestProblem) info;
+        dto.RestProblem = new RestProblemDto ();
+        dto.RestProblem.SwaggerJsonUrl = rp.GetSwaggerJsonUrl ();
+        dto.RestProblem.EndpointsToSkip = rp.GetEndpointsToSkip ();
+
+      } else {
+        string msg = "Unrecognized problem type: " + nameof (info);
+
+        //TODO: SimpleLogger.error (msg);
+        System.Console.WriteLine (msg);
+
+        return StatusCode (StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError (msg));
+      }
+
+      // dto.UnitsInfoDto = _sutController.GetUnitsInfoDto ();
+      // if (dto.UnitsInfoDto == null) {
+      //   string msg = "Failed to extract units info";
+
+      //   //TODO: SimpleLogger.error (msg);
+      //   System.Console.WriteLine (msg);
+
+      //   return StatusCode (StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError (msg));
+      // }
+
+      return Ok (WrappedResponseDto<SutInfoDto>.WithData (dto));
+    }
+
     //TODO: How to get url from another file
     //TODO: Log errors in web server instead of try-catch 
     [HttpPut ("runSUT")]
     public async Task<IActionResult> RunSutAsync ([FromBody] SutRunDto dto) {
-
+      
       AssertTrackRequestSource (Request.HttpContext.Connection);
 
       if (!dto.Run.HasValue) {
