@@ -43,7 +43,7 @@ namespace RestApis.HelloWorld {
 
             app.UseSwagger ();
             app.UseSwaggerUI (c => {
-                c.SwaggerEndpoint ("/swagger.json", "HelloWorld API");
+                c.SwaggerEndpoint ("/swagger/v1/swagger.json", "HelloWorld API");
             });
 
             app.UseEndpoints (endpoints => {
