@@ -266,5 +266,18 @@ namespace Controller.Controllers {
 
       return result;
     }
+
+    [HttpPut ("newAction")]
+    [Consumes ("application/json")]
+    public IActionResult NewAction ([FromBody] ActionDto dto) {
+
+      AssertTrackRequestSource (Request.HttpContext.Connection);
+
+      _sutController.NewAction (dto);
+
+      return NoContent ();
+    }
+    
+    //TODO: implement ExecuteDatabaseCommand method
   }
 }
