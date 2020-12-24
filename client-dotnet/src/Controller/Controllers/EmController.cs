@@ -6,7 +6,7 @@ using Controller.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Controller.Http.Controllers {
+namespace Controller.Controllers {
 
   public class EmController : ControllerBase {
 

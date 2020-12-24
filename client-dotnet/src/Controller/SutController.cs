@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Controller.Api;
 using Controller.Problem;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Controller {
@@ -337,6 +338,9 @@ namespace Controller {
 
         private IHostBuilder CreateHostBuilder () =>
             Host.CreateDefaultBuilder ()
+            .ConfigureServices ((hc, services) => {
+                services.Add (ServiceDescriptor.Singleton (typeof (SutController), this));
+            })
             .ConfigureWebHostDefaults (webBuilder => {
                 webBuilder.UseStartup<Startup> ().UseUrls ($"http://*:{controllerPort}");
             });
