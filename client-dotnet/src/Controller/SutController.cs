@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Client.Util;
 using Controller.Api;
 using Controller.Problem;
 using Microsoft.AspNetCore.Hosting;
@@ -54,8 +55,8 @@ namespace Controller {
             try {
                 CreateHostBuilder ().Build ().Run ();
             } catch (System.Exception e) {
-                //TODO: Use SimpleLogger
-                System.Console.WriteLine ($"Failed to start web server. Check this error out:\n{e}");
+
+                SimpleLogger.Error ("Failed to start web server", e);
 
                 return false;
             }

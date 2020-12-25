@@ -90,8 +90,7 @@ namespace Controller.Controllers {
       //     "should be changed into 'jdbc:p6spy:h2:mem:testdb'. " +
       //     "See documentation on how to configure P6Spy.";
 
-      //   //TODO: SimpleLogger.error (msg);
-      //   System.Console.WriteLine(msg);
+      //   SimpleLogger.Error (msg);
 
       //   return StatusCode(StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError(msg));
       // }
@@ -109,8 +108,7 @@ namespace Controller.Controllers {
       if (info == null) {
         string msg = "Undefined problem type in the EM Controller";
 
-        //TODO: SimpleLogger.error (msg);
-        System.Console.WriteLine (msg);
+        SimpleLogger.Error (msg);
 
         return StatusCode (StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError (msg));
 
@@ -123,8 +121,7 @@ namespace Controller.Controllers {
       } else {
         string msg = "Unrecognized problem type: " + info.GetType ().FullName;
 
-        //TODO: SimpleLogger.error (msg);
-        System.Console.WriteLine (msg);
+        SimpleLogger.Error (msg);
 
         return StatusCode (StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError (msg));
       }
@@ -133,8 +130,7 @@ namespace Controller.Controllers {
       // if (dto.UnitsInfoDto == null) {
       //   string msg = "Failed to extract units info";
 
-      //   //TODO: SimpleLogger.error (msg);
-      //   System.Console.WriteLine (msg);
+      //   SimpleLogger.Error (msg);
 
       //   return StatusCode (StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError (msg));
       // }
@@ -171,12 +167,11 @@ namespace Controller.Controllers {
 
       AssertTrackRequestSource (Request.HttpContext.Connection);
 
-      if (!dto.Run.HasValue) {
+      if (dto == null || !dto.Run.HasValue) {
 
         string errorMessage = "Invalid JSON: 'run' field is required";
 
-        //TODO: SimpleLogger.warn (errorMessage);
-        System.Console.WriteLine (errorMessage);
+        SimpleLogger.Warn (errorMessage);
 
         return BadRequest (WrappedResponseDto<string>.WithError (errorMessage));
       }
@@ -198,8 +193,7 @@ namespace Controller.Controllers {
 
             string errorMessage = "Invalid JSON: cannot reset state and stop service at same time";
 
-            //TODO: SimpleLogger.warn (errorMessage);
-            System.Console.WriteLine (errorMessage);
+            SimpleLogger.Warn (errorMessage);
 
             return BadRequest (WrappedResponseDto<string>.WithError (errorMessage));
           }
@@ -222,8 +216,7 @@ namespace Controller.Controllers {
               //there has been an internal failure in starting the SUT
               String msg = "Internal failure: cannot start SUT based on given configuration";
 
-              //TODO: SimpleLogger.warn (msg);
-              System.Console.WriteLine (msg);
+              SimpleLogger.Warn (msg);
 
               return StatusCode (StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError (msg));
             }
