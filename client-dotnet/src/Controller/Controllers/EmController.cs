@@ -27,8 +27,8 @@ namespace Controller.Controllers {
 
     private static readonly SemaphoreLocker _locker = new SemaphoreLocker ();
 
-    //TODO: read from warning.html
-    private static readonly string htmlWarning = "It's a warning!";
+    //ATTENTION: The relative path is from the SUT
+    private static readonly string htmlWarning = System.IO.File.ReadAllText ("../../../../client-dotnet/src/Controller/Resources/warning.html");
 
     private readonly object syncLock = new object ();
 
@@ -64,7 +64,11 @@ namespace Controller.Controllers {
     public static void ResetConnectedClientsSoFar () => connectedClientsSoFar.Clear ();
 
     [HttpGet ("")]
-    public IActionResult GetWarning () => BadRequest (htmlWarning);
+    public IActionResult GetWarning () => new ContentResult {
+      ContentType = "text/html",
+      StatusCode = StatusCodes.Status400BadRequest,
+      Content = htmlWarning
+    };
 
     [HttpGet ("infoSUT")]
     public IActionResult GetSutInfo () {
@@ -277,7 +281,7 @@ namespace Controller.Controllers {
 
       return NoContent ();
     }
-    
+
     //TODO: implement ExecuteDatabaseCommand method
   }
 }
