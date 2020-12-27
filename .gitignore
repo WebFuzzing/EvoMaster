@@ -62,6 +62,9 @@ experiments/target/
 /core-driver-it/target/
 /core-it/src/test/kotlin/exp/
 
+/core-graphql-it/target/
+
+
 #DotNet Build Results
 [Dd]ebug/
 [Bb]in/
@@ -74,3 +77,4 @@ e2e-tests/*/Properties/
 
 #Generated Tests
 generated-test-cases/
+
