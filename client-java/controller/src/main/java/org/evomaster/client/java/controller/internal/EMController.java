@@ -127,7 +127,7 @@ public class EMController {
             dto.restProblem.swaggerJsonUrl = rp.getSwaggerJsonUrl();
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
 
-        } if( info instanceof GraphQlProblem){
+        } else if( info instanceof GraphQlProblem){
             GraphQlProblem p = (GraphQlProblem) info;
             dto.graphQLProblem = new GraphQLProblemDto();
             dto.graphQLProblem.endpoint = p.getEndpoint();
