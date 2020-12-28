@@ -4,9 +4,11 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Client.Util;
 using Controller.Api;
 using Controller.Problem;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Controller {
@@ -53,8 +55,8 @@ namespace Controller {
             try {
                 CreateHostBuilder ().Build ().Run ();
             } catch (System.Exception e) {
-                //TODO: Use SimpleLogger
-                System.Console.WriteLine ($"Failed to start web server. Check this error out:\n{e}");
+
+                SimpleLogger.Error ("Failed to start web server", e);
 
                 return false;
             }
@@ -337,6 +339,9 @@ namespace Controller {
 
         private IHostBuilder CreateHostBuilder () =>
             Host.CreateDefaultBuilder ()
+            .ConfigureServices ((hc, services) => {
+                services.Add (ServiceDescriptor.Singleton (typeof (SutController), this));
+            })
             .ConfigureWebHostDefaults (webBuilder => {
                 webBuilder.UseStartup<Startup> ().UseUrls ($"http://*:{controllerPort}");
             });

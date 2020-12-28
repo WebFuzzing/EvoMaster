@@ -14,11 +14,11 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
         public static void Main (string[] args) {
 
-            System.Console.WriteLine ("Driver is starting...\n");
-
             EmbeddedEvoMasterController embeddedEvoMasterController = new EmbeddedEvoMasterController ();
 
             InstrumentedSutStarter instrumentedSutStarter = new InstrumentedSutStarter (embeddedEvoMasterController);
+
+            System.Console.WriteLine ("Driver is starting...\n");
 
             instrumentedSutStarter.Start ();
         }
@@ -33,9 +33,8 @@ namespace RestApis.Tests.HelloWorld.Controller {
         public override OutputFormat GetPreferredOutputFormat () => OutputFormat.JAVA_JUNIT_5;
 
         //TODO: check again
-        public override IProblemInfo GetProblemInfo () {
-            return new RestProblem ("http://localhost:" + GetSutPort () + "/swagger", null);
-        }
+        public override IProblemInfo GetProblemInfo () =>
+            GetSutPort () != 0 ? new RestProblem ("http://localhost:" + GetSutPort () + "/swagger/v1/swagger.json", null) : new RestProblem (null, null);
 
         public override bool IsSutRunning () => isSutRunning;
 
