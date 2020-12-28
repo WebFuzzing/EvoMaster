@@ -58,7 +58,7 @@ namespace Controller.Controllers {
 
     //Only used for debugging/testing
     ///<summary>Returns host:port of all clients connected so far</summary>
-    public static HashSet<string> GetConnectedClientsSoFar () => connectedClientsSoFar.ToHashSet ();
+    public static ISet<string> GetConnectedClientsSoFar () => connectedClientsSoFar.ToHashSet ();
 
     //Only used for debugging/testing
     public static void ResetConnectedClientsSoFar () => connectedClientsSoFar.Clear ();
