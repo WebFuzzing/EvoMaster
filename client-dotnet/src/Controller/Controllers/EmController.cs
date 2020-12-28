@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Client.Util;
@@ -27,8 +28,8 @@ namespace Controller.Controllers {
 
     private static readonly SemaphoreLocker _locker = new SemaphoreLocker ();
 
-    //ATTENTION: The relative path is from the SUT
-    private static readonly string htmlWarning = System.IO.File.ReadAllText ("../../../../client-dotnet/src/Controller/Resources/warning.html");
+    //The html file gets copied inside the SUT's bin folder after build
+    private static readonly string htmlWarning = System.IO.File.ReadAllText (Path.Combine (AppDomain.CurrentDomain.BaseDirectory, "warning.html"));
 
     private readonly object syncLock = new object ();
 
