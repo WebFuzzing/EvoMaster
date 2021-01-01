@@ -4,9 +4,9 @@ import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.search.gene.Gene
 
 
-class GQInputParam(name: String, gene : Gene) : Param(name, gene) {
+class GQInputParam(name: String, gene: Gene) : Param(name, gene) {
 
     override fun copy(): Param {
-        TODO("Not yet implemented")
+        return GQInputParam(name, gene.copy())
     }
 }

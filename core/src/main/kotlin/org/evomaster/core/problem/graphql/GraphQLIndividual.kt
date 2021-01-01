@@ -1,12 +1,12 @@
 package org.evomaster.core.problem.graphql
 
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.tracer.TrackOperator
 
 class GraphQLIndividual(
         val actions: MutableList<out Action>,
@@ -15,27 +15,40 @@ class GraphQLIndividual(
 ) : Individual() {
 
     override fun copy(): Individual {
-        TODO("Not yet implemented")
+
+        return GraphQLIndividual(
+                actions.map { it.copy() }.toMutableList(),
+                sampleType,
+                dbInitialization.map { it.copy() as DbAction } as MutableList<DbAction>
+        )
+
     }
 
+
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
-        TODO("Not yet implemented")
+        return when (filter) {
+            GeneFilter.ALL -> dbInitialization.flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
+            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
+            GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
+        }
     }
 
     override fun size(): Int {
-        TODO("Not yet implemented")
+        return seeActions().size
     }
 
     override fun seeActions(): List<out Action> {
-        TODO("Not yet implemented")
+        return actions
+
     }
 
     override fun verifyInitializationActions(): Boolean {
-        TODO("Not yet implemented")
+        return DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
     }
 
     override fun repairInitializationActions(randomness: Randomness) {
         TODO("Not yet implemented")
     }
+
 
 }

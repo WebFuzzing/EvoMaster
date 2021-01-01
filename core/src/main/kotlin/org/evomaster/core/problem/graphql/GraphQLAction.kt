@@ -27,14 +27,15 @@ class GraphQLAction(
         return "$methodName"
     }
 
-
     override fun seeGenes(): List<out Gene> {
-        TODO("Not yet implemented")
+
+        return parameters.flatMap { it.seeGenes() }
     }
 
 
     override fun copy(): Action {
-        TODO("Not yet implemented")
+
+        return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(),auth )
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
