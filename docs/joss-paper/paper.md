@@ -51,7 +51,8 @@ aimed at, for example, maximizing code coverage and fault detection.
 
 Our SBST tool called ``EvoMaster`` addresses these challenges by using evolutionary techniques to 
 automatically generate test cases.
-It currently focuses on RESTful web services, which are the pillars of modern web and enterprise applications  [@fielding2000architectural][@allamaraju2010restful]. 
+It currently focuses on RESTful web services, which are the pillars of modern web and enterprise applications 
+[@fielding2000architectural; @allamaraju2010restful].
 
  
 The ``EvoMaster`` tool is aimed  at:
@@ -102,8 +103,8 @@ To face and overcome those challenges, *EvoMaster* has been used to experiment w
 These techniques are now integrated in *EvoMaster*, where their best settings (based on empirical studies) are on by default.
 
 This research work led to several publications:
-novel search algorithms such as *MIO* [@mio2017][@arcuri2018test],
-addressing the white-box testing of RESTful APIs [@arcuri2017restful][@arcuri2019restful],
+novel search algorithms such as *MIO* [@mio2017; @arcuri2018test],
+addressing the white-box testing of RESTful APIs [@arcuri2017restful; @arcuri2019restful],
 resource-dependency handling [@zhang2019resource], accesses to SQL databases [@arcuri2019sql],
 and novel *testability transformations* [@arcuri2020testability].
 
@@ -111,8 +112,7 @@ and novel *testability transformations* [@arcuri2020testability].
 # Related Work
 
 In the recent years, different techniques have been proposed for _black-box_ testing 
-of RESTful APIs (e.g., [@restlerICSE2019][@karlsson2020QuickREST]
-[@viglianisi2020resttestgen][@eddouibi2018automatic]).
+of RESTful APIs [@restlerICSE2019; @karlsson2020QuickREST; @viglianisi2020resttestgen; @eddouibi2018automatic].
 Those present different variants of random testing, enhanced with heuristics based on the information provided in the API schemas.
 As those techniques are black-box, they do not access the source-code/bytecode of the tested APIs, and so cannot exploit any such information to improve the generation of test cases.
 
