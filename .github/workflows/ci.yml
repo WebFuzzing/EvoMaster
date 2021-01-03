@@ -26,3 +26,5 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
         run: mvn clean verify --fae
+      - name: Upload coverage to CodeCov
+        run: curl -s https://codecov.io/bash | bash
