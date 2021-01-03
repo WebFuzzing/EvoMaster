@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.graphql
 
+import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.Param
@@ -18,22 +19,23 @@ class GraphQLAction(
         val methodName: String,
         val methodType: GQMethodType,
         val parameters: MutableList<Param>,
-        var auth: AuthenticationInfo = NoAuth()
-        ) : Action{
+        auth: AuthenticationInfo = NoAuth()
+        ) : HttpWsAction(auth) {
 
     override fun getName(): String {
         //TODO what if have same name but different inputs? need to add input list as well
         return "$methodName"
     }
 
-
     override fun seeGenes(): List<out Gene> {
-        TODO("Not yet implemented")
+
+        return parameters.flatMap { it.seeGenes() }
     }
 
 
     override fun copy(): Action {
-        TODO("Not yet implemented")
+
+        return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(),auth )
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {

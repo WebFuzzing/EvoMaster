@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest
 
+import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -22,7 +23,7 @@ class RestCallAction(
         val verb: HttpVerb,
         val path: RestPath,
         val parameters: MutableList<Param>,
-        var auth: AuthenticationInfo = NoAuth(),
+        auth: AuthenticationInfo = NoAuth(),
         /**
          * If true, it means that it will
          * instruct to save the "location" header of the HTTP response for future
@@ -43,7 +44,7 @@ class RestCallAction(
         var locationId: String? = null,
         val produces: List<String> = listOf(),
         val responseRefs : MutableMap<String, String> = mutableMapOf()
-) : RestAction {
+) : HttpWsAction(auth), RestAction {
 
     /**
      * collect info of description and summary from swagger

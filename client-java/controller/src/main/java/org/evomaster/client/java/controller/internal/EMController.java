@@ -4,9 +4,11 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
+import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.problem.GraphQlProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
@@ -125,7 +127,11 @@ public class EMController {
             dto.restProblem.swaggerJsonUrl = rp.getSwaggerJsonUrl();
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
 
-        } else {
+        } else if( info instanceof GraphQlProblem){
+            GraphQlProblem p = (GraphQlProblem) info;
+            dto.graphQLProblem = new GraphQLProblemDto();
+            dto.graphQLProblem.endpoint = p.getEndpoint();
+        }else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();

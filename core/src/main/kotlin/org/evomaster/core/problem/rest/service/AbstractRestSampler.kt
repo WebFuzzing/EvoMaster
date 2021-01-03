@@ -7,6 +7,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.OpenApiAccess
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestIndividual
@@ -22,7 +23,7 @@ import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 
 
-abstract class AbstractRestSampler : Sampler<RestIndividual>() {
+abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestSampler::class.java)
     }
@@ -33,7 +34,7 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
     @Inject
     protected lateinit var configuration: EMConfig
 
-    protected val authentications: MutableList<AuthenticationInfo> = mutableListOf()
+
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
@@ -87,14 +88,7 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
 
         postInits()
 
-        if(configuration.outputFormat == OutputFormat.DEFAULT){
-            try {
-                val format = OutputFormat.valueOf(infoDto.defaultOutputFormat?.toString()!!)
-                configuration.outputFormat = format
-            } catch (e : Exception){
-                throw SutProblemException("Failed to use test output format: " + infoDto.defaultOutputFormat)
-            }
-        }
+        updateConfigForTestOutput(infoDto)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
@@ -155,50 +149,9 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
     }
 
 
-    private fun setupAuthentication(infoDto: SutInfoDto) {
 
-        val info = infoDto.infoForAuthentication ?: return
 
-        info.forEach { i ->
-            if (i.name == null || i.name.isBlank()) {
-                log.warn("Missing name in authentication info")
-                return@forEach
-            }
 
-            val headers: MutableList<AuthenticationHeader> = mutableListOf()
-
-            i.headers.forEach loop@{ h ->
-                val name = h.name?.trim()
-                val value = h.value?.trim()
-                if (name == null || value == null) {
-                    log.warn("Invalid header in ${i.name}")
-                    return@loop
-                }
-
-                headers.add(AuthenticationHeader(name, value))
-            }
-
-            val cookieLogin = if(i.cookieLogin != null){
-                CookieLogin.fromDto(i.cookieLogin)
-            } else {
-                null
-            }
-
-            val auth = AuthenticationInfo(i.name.trim(), headers, cookieLogin)
-
-            authentications.add(auth)
-        }
-    }
-
-    fun getRandomAuth(noAuthP: Double): AuthenticationInfo {
-        if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
-            return NoAuth()
-        } else {
-            //if there is auth, should have high probability of using one,
-            //as without auth we would do little.
-            return randomness.choose(authentications)
-        }
-    }
 
     fun getOpenAPI(): OpenAPI{
         return swagger

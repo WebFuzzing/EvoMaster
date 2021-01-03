@@ -55,37 +55,17 @@ class RestSampler : AbstractRestSampler(){
         val n = randomness.nextInt(1, config.maxTestSize)
 
         (0 until n).forEach {
-            actions.add(sampleRandomAction(0.05))
+            actions.add(sampleRandomAction(0.05) as RestAction)
         }
         return RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
     }
 
-    /**
-     * When genes are created, those are not necessarily initialized.
-     * The reason is that some genes might depend on other genes (eg., foreign keys in SQL).
-     * So, once all genes are created, we force their initialization, which will also randomize their values.
+
+    /*
+        FIXME: following call is likely unnecessary... originally under RestAction will could have different
+        action types like SQL, but in the end we used a different approach (ie pre-init steps).
+        So, likely can be removed, but need to check the refactoring RestResouce first
      */
-    private fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
-        action.seeGenes().forEach { it.randomize(randomness, false) }
-    }
-
-    /**
-     * Given the current schema definition, create a random action among the available ones.
-     * All the genes in such action will have their values initialized at random, but still within
-     * their given constraints (if any, e.g., a day number being between 1 and 12).
-     *
-     * @param noAuthP the probability of having an HTTP call without any authentication header.
-     */
-    fun sampleRandomAction(noAuthP: Double): RestAction {
-        val action = randomness.choose(actionCluster).copy() as RestAction
-        randomizeActionGenes(action)
-
-        if (action is RestCallAction) {
-            action.auth = getRandomAuth(noAuthP)
-        }
-
-        return action
-    }
 
     private fun sampleRandomCallAction(noAuthP: Double): RestCallAction {
         val action = randomness.choose(actionCluster.filter { a -> a.value is RestCallAction }).copy() as RestCallAction
