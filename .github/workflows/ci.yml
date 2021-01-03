@@ -2,6 +2,12 @@ name: CI
 
 on: [push]
 
+# This build is quite expensive (1ish hour), so we run it only on 1 JVM version, and 1 OS.
+# Recall that we also build on CircleCI, with different configurations.
+# For the moment, we need to support JVM 8 and 11, with 17 when it comes out.
+# EM should run an all OSs. As our main development machines are Windows and Mac, just
+# testing on Linux should be fine.
+
 jobs:
   build:
     runs-on: ubuntu-latest
