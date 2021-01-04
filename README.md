@@ -5,6 +5,7 @@
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
+![CI](https://github.com/EMResearch/EvoMaster/workflows/CI/badge.svg)
 [![CircleCI](https://circleci.com/gh/EMResearch/EvoMaster.svg?style=svg)](https://circleci.com/gh/EMResearch/EvoMaster)
 [![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
 <!---
