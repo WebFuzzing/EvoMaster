@@ -17,6 +17,7 @@ import org.evomaster.core.search.service.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.net.ConnectException
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.Files
@@ -91,8 +92,15 @@ class SearchProcessMonitor: SearchListener {
         initMonitorProcessOutputs()
         if(config.enableProcessMonitor){
             time.addListener(this)
-            val dto = if (config.blackBox && !config.bbExperiments) null else controller?.getControllerInfo()
-            controllerName = dto?.fullName
+            if (config.processFormat == EMConfig.ProcessDataFormat.TEST_IND || config.processFormat == EMConfig.ProcessDataFormat.TARGET_TEST_IND){
+                val dto = try {
+                    controller?.getControllerInfo()
+                }catch (e: Exception){
+                    log.warn("Remote driver does not response with the exception message: ${e.cause!!.message}")
+                    null
+                }
+                controllerName = dto?.fullName
+            }
         }
     }
 
