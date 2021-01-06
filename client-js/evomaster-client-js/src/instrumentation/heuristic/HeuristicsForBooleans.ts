@@ -9,8 +9,8 @@ export default class HeuristicsForBooleans {
 
     private static lastEvaluation: Truthness = null;
 
-    private static readonly FLAG_NO_EXCEPTION = 0.01;
-    private static readonly EXCEPTION = HeuristicsForBooleans.FLAG_NO_EXCEPTION / 2;
+    public static readonly FLAG_NO_EXCEPTION = 0.01;
+    public static readonly EXCEPTION = HeuristicsForBooleans.FLAG_NO_EXCEPTION / 2;
 
 
     public static handleNot(value: any) : any{
@@ -270,7 +270,8 @@ export default class HeuristicsForBooleans {
                 h = TruthnessUtils.getEqualityTruthnessString(left, right);
             } else {
                 const b = left === right;
-                h = new Truthness(b ? 1 : 0, b ? 0 : 1);
+                h = new Truthness(b ? 1 : HeuristicsForBooleans.FLAG_NO_EXCEPTION,
+                    b ? HeuristicsForBooleans.FLAG_NO_EXCEPTION : 1);
             }
         } else if (op === "!==") {
             h = HeuristicsForBooleans.compare(left, "===", right).invert();
@@ -281,7 +282,8 @@ export default class HeuristicsForBooleans {
                 h = HeuristicsForBooleans.compare("" + left, "===", "" + right);
             } else {
                 const b = left == right;
-                h = new Truthness(b ? 1 : 0, b ? 0 : 1);
+                h = new Truthness(b ? 1 : HeuristicsForBooleans.FLAG_NO_EXCEPTION,
+                    b ? HeuristicsForBooleans.FLAG_NO_EXCEPTION : 1);
             }
         } else if (op === "!=") {
             h = HeuristicsForBooleans.compare(left, "==", right).invert();
@@ -292,7 +294,8 @@ export default class HeuristicsForBooleans {
                 h = TruthnessUtils.getLessThanTruthnessString("" + left, "" + right);
             } else {
                 const b = left < right;
-                h = new Truthness(b ? 1 : 0, b ? 0 : 1);
+                h = new Truthness(b ? 1 : HeuristicsForBooleans.FLAG_NO_EXCEPTION,
+                    b ? HeuristicsForBooleans.FLAG_NO_EXCEPTION : 1);
             }
         } else if (op === ">=") {
             h = HeuristicsForBooleans.compare(left, "<", right).invert();
