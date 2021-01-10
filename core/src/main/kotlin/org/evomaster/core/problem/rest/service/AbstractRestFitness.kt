@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.ObjectGenerator
@@ -308,7 +309,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
      * Create local targets for each HTTP status code in each
      * API entry point
      */
-    protected fun handleResponseTargets(
+    fun handleResponseTargets(
             fv: FitnessValue,
             actions: List<RestAction>,
             actionResults: List<ActionResult>,
@@ -326,53 +327,76 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     val statusId = idMapper.handleLocalTarget("$status:$name")
                     fv.updateTarget(statusId, 1.0, it)
 
-                    /*
-                        Objectives for results on endpoints.
-                        Problem: we might get a 4xx/5xx, but then no gradient to keep sampling for
-                        that endpoint. If we get 2xx, and full coverage, then no gradient to try
-                        to keep sampling that endpoint to get a 5xx
-                     */
-                    val okId = idMapper.handleLocalTarget("HTTP_SUCCESS:$name")
-                    val faultId = idMapper.handleLocalTarget("HTTP_FAULT:$name")
+                    val location5xx : String? = getlocation5xx(status, additionalInfoList, it, result, name)
 
-                    //OK -> 5xx being better than 4xx, as code executed
-                    //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
-                    if (status in 200..299) {
-                        fv.updateTarget(okId, 1.0, it)
-                        fv.updateTarget(faultId, 0.5, it)
-                    } else if (status in 400..499) {
-                        fv.updateTarget(okId, 0.1, it)
-                        fv.updateTarget(faultId, 0.1, it)
-                    } else if (status in 500..599) {
-                        fv.updateTarget(okId, 0.5, it)
-                        fv.updateTarget(faultId, 1.0, it)
-                    }
+                    handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
-                    /*
-                        500 codes "might" be bugs. To distinguish between different bugs
-                        that crash the same endpoint, we need to know what was the last
-                        executed statement in the SUT.
-                        So, we create new targets for it.
-                     */
-                    if (status == 500) {
-                        val statement = additionalInfoList[it].lastExecutedStatement
-                        val source = statement ?: "framework_code"
-                        val descriptiveId = idMapper.getFaultDescriptiveId("$source $name")
-                        val bugId = idMapper.handleLocalTarget(descriptiveId)
-                        fv.updateTarget(bugId, 1.0, it)
-                        result.setLastStatementWhen500(source)
-                    }
-                    /*
-                        Objectives for the two partial oracles implemented thus far.
-                    */
-                    val call = actions[it] as RestCallAction
-                    val oracles = writer.getPartialOracles().activeOracles(call, result)
-                    oracles.filter { it.value }.forEach { entry ->
-                        val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
-                        val bugId = idMapper.handleLocalTarget(oracleId)
-                        fv.updateTarget(bugId, 1.0, it)
-                    }
+                    handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+
                 }
+    }
+
+    open fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: RestCallResult, name: String) : String?{
+        var location5xx : String? = null
+        if (status == 500){
+            val statement = additionalInfoList[indexOfAction].lastExecutedStatement
+            location5xx = statement ?: "framework_code"
+            result.setLastStatementWhen500(location5xx)
+        }
+        return location5xx
+    }
+
+    fun handleAdditionalOracleTargetDescription(fv: FitnessValue, actions: List<RestAction>, result : RestCallResult, name: String, indexOfAction : Int){
+        /*
+           Objectives for the two partial oracles implemented thus far.
+        */
+        val call = actions[indexOfAction] as RestCallAction
+        val oracles = writer.getPartialOracles().activeOracles(call, result)
+        oracles.filter { it.value }.forEach { entry ->
+            val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
+            val bugId = idMapper.handleLocalTarget(oracleId)
+            fv.updateTarget(bugId, 1.0, indexOfAction)
+        }
+    }
+
+
+    fun handleAdditionalStatusTargetDescription(fv: FitnessValue, status : Int, name: String, indexOfAction : Int, location5xx: String?){
+        /*
+           Objectives for results on endpoints.
+           Problem: we might get a 4xx/5xx, but then no gradient to keep sampling for
+           that endpoint. If we get 2xx, and full coverage, then no gradient to try
+           to keep sampling that endpoint to get a 5xx
+        */
+        val okId = idMapper.handleLocalTarget("HTTP_SUCCESS:$name")
+        val faultId = idMapper.handleLocalTarget("HTTP_FAULT:$name")
+
+        //OK -> 5xx being better than 4xx, as code executed
+        //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
+        if (status in 200..299) {
+            fv.updateTarget(okId, 1.0, indexOfAction)
+            fv.updateTarget(faultId, 0.5, indexOfAction)
+        } else if (status in 400..499) {
+            fv.updateTarget(okId, 0.1, indexOfAction)
+            fv.updateTarget(faultId, 0.1, indexOfAction)
+        } else if (status in 500..599) {
+            fv.updateTarget(okId, 0.5, indexOfAction)
+            fv.updateTarget(faultId, 1.0, indexOfAction)
+        }
+
+        if (status == 500){
+            Lazy.assert {
+                location5xx != null
+            }
+            /*
+                500 codes "might" be bugs. To distinguish between different bugs
+                that crash the same endpoint, we need to know what was the last
+                executed statement in the SUT.
+                So, we create new targets for it.
+            */
+            val descriptiveId = idMapper.getFaultDescriptiveId("${location5xx!!} $name")
+            val bugId = idMapper.handleLocalTarget(descriptiveId)
+            fv.updateTarget(bugId, 1.0, indexOfAction)
+        }
     }
 
 
