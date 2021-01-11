@@ -34,6 +34,7 @@ class SupportedCodeOracle : ImplementedOracle() {
             format.isJava() -> lines.add("private static boolean $variableName = false;")
             format.isKotlin() -> lines.add("private val $variableName = false")
             format.isJavaScript() -> lines.add("const $variableName = false;")
+            format.isPython() -> lines.add("$variableName = False")
         }
 
     }

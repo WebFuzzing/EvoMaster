@@ -1,36 +1,46 @@
 from typing import Set
+import abc
 
 from evomaster_client.instrumentation.execution_tracer import ExecutionTracer, Action, TargetInfo
 from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorder
 
 
-class SutHandler:
+class SutHandler(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
     def get_url(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def start_sut(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def stop_sut(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def reset_sut_state(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def setup_for_generated_test(self):
         raise NotImplementedError
 
     # --- other abstract methods ---
 
+    @abc.abstractmethod
     def get_info_for_authentication(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def get_preferred_output_format(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def is_sut_running(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def get_problem_info(self):
         raise NotImplementedError
 

@@ -48,5 +48,16 @@ def run_em(package_prefix, flask_module, flask_app):
     run_em({}, sut_handler=FlaskHandler(config))
 
 
+@evomaster.command()
+@click.option('--handler-module', '-m', required=True,
+              help='overriden embedded handler class name')
+@click.option('--handler-class', '-c', required=True,
+              help='overriden embedded handler module')
+def run_em_handler(handler_module, handler_class):
+    from evomaster_client.controller.em_app import run_em
+    cls = getattr(import_module(handler_module), handler_class)
+    run_em({}, sut_handler=cls())
+
+
 if __name__ == '__main__':
     evomaster()

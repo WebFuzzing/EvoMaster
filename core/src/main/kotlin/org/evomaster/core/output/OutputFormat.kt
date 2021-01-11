@@ -17,7 +17,8 @@ enum class OutputFormat {
     JAVA_JUNIT_4,
     KOTLIN_JUNIT_4,
     KOTLIN_JUNIT_5,
-    JS_JEST
+    JS_JEST,
+    PYTHON_UNITTEST
     ;
 
     /*
@@ -35,6 +36,8 @@ enum class OutputFormat {
     fun isKotlin() = this.name.startsWith("kotlin_", true)
 
     fun isJavaScript() = this.name.startsWith("js_", true)
+
+    fun isPython() = this.name.startsWith("python_", true)
 
     fun isJavaOrKotlin() = isJava() || isKotlin()
 

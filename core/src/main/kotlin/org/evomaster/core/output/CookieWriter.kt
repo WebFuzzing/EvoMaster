@@ -35,6 +35,7 @@ object CookieWriter {
             }
 
             //TODO JS
+            //TODO PYTHON
 
             lines.append("given()")
             lines.indented {

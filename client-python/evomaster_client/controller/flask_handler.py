@@ -1,3 +1,4 @@
+import abc
 import threading
 from importlib import import_module
 from werkzeug.serving import make_server
@@ -28,21 +29,33 @@ class FlaskHandlerError(Exception):
     pass
 
 
-class FlaskHandler(SutHandler):
-    def __init__(self, config):
-        self.package_prefixes_to_cover = config['package_prefixes_to_cover']
-        self.flask_module = config['flask_module']
-        self.flask_app = config['flask_app']
-        self.app = self._import_app()
+class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
+    def __init__(self):
         self.server = None  # SUT is not running
 
-    def _import_app(self):
+    def app(self):
         print('Importing Flask application')
-        with install_import_hook(self.package_prefixes_to_cover):
-            module = import_module(self.flask_module)
-            app = module.__getattribute__(self.flask_app)
-            return app
+        module = import_module(self.flask_module())
+        app = module.__getattribute__(self.flask_app())
+        return app
 
+    def instrumented_app(self):
+        with install_import_hook(self.package_prefixes_to_cover()):
+            return self.app()
+
+    @abc.abstractmethod
+    def package_prefixes_to_cover(self):
+        pass
+
+    @abc.abstractmethod
+    def flask_module(self):
+        pass
+
+    @abc.abstractmethod
+    def flask_app(self):
+        pass
+
+    @abc.abstractmethod
     def get_url(self):
         return f'http://{HOST}:{PORT}'
 
@@ -50,7 +63,7 @@ class FlaskHandler(SutHandler):
         if self.is_sut_running():
             print('server is running')
             return
-        self.server = ServerThread(self.app)
+        self.server = ServerThread(self.instrumented_app())
         self.server.start()
 
     def stop_sut(self):
@@ -61,16 +74,20 @@ class FlaskHandler(SutHandler):
         self.server.shutdown()
         self.server = None
 
+    @abc.abstractmethod
     def reset_sut_state(self):
         pass
 
+    @abc.abstractmethod
     def setup_for_generated_test(self):
         pass
 
+    @abc.abstractmethod
     def get_info_for_authentication(self):
         # TODO: must be an argument
         return []
 
+    @abc.abstractmethod
     def get_preferred_output_format(self):
         # TODO: must be an argument
         return 'JAVA_JUNIT_5'
@@ -78,6 +95,7 @@ class FlaskHandler(SutHandler):
     def is_sut_running(self):
         return bool(self.server)
 
+    @abc.abstractmethod
     def get_problem_info(self):
         # TODO: must be an argument
         return {

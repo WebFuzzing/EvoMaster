@@ -2,28 +2,18 @@ package org.evomaster.core.output
 
 import com.google.gson.Gson
 import io.swagger.v3.oas.models.OpenAPI
-import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
-import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.auth.CookieLogin
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
 
@@ -110,6 +100,7 @@ class TestCaseWriter {
             format.isJava() -> lines.add("public void ${test.name}() throws Exception {")
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
             format.isJavaScript() -> lines.add("test(\"${test.name}\", async () => {")
+            format.isPython() -> lines.add("def ${test.name}(self):")
         }
 
         lines.indented {
@@ -149,6 +140,7 @@ class TestCaseWriter {
                                 format.isJava() -> lines.add("String $name = \"\";")
                                 format.isKotlin() -> lines.add("var $name : String? = \"\"")
                                 format.isJavaScript() -> lines.add("let $name = \"\";")
+                                // Python: no need to declare variables
                             }
                         }
             }
@@ -162,7 +154,9 @@ class TestCaseWriter {
                 }
             }
         }
-        lines.add("}")
+        if (!format.isPython()) {
+            lines.add("}")
+        }
 
         if (format.isJavaScript()) {
             lines.append(");")
@@ -208,6 +202,7 @@ class TestCaseWriter {
              */
             format.isJavaOrKotlin() -> lines.add("try{")
             format.isJavaScript() -> lines.add("try{")
+            format.isPython() -> lines.add("try:")
         }
 
         lines.indented {
@@ -232,6 +227,7 @@ class TestCaseWriter {
         when {
             format.isJavaOrKotlin() -> lines.add("} catch(Exception e){")
             format.isJavaScript() -> lines.add("} catch(e){")
+            format.isPython() -> lines.add("except Exception as e:")
         }
 
         res.getErrorMessage()?.let {
@@ -257,6 +253,11 @@ class TestCaseWriter {
         //first handle the first line
         val name = createUniqueResponseVariableName()
 
+        if (format.isPython()) {
+            handleHeaders(call, lines)
+            lines.add(getAcceptHeader(call, res))
+        }
+
         handleFirstLine(call, lines, res, name)
 
         lines.indent(2)
@@ -274,9 +275,14 @@ class TestCaseWriter {
                 handleHeaders(call, lines)
                 handleBody(call, lines)
             }
+            format.isPython() -> {
+                handleVerb(baseUrlOfSut, call, lines)
+                // TODO PYTHON: handleBody(call, lines)
+                lines.deindent(2)
+            }
         }
 
-        handleResponse(call, res, lines)
+        handleResponse(call, res, lines, name)
         handleLastLine(call, res, lines, name)
 
         //BMR should expectations be here?
@@ -311,9 +317,10 @@ class TestCaseWriter {
         when {
             format.isJavaOrKotlin() -> lines.append("given()")
             format.isJavaScript() -> lines.append("await superagent")
+            format.isPython() -> lines.append("$resVarName = requests \\")
         }
 
-        if(!format.isJavaScript()) {
+        if(!format.isJavaScript() && !format.isPython()) {
             lines.append(getAcceptHeader(call, res))
         }
     }
@@ -321,7 +328,9 @@ class TestCaseWriter {
     private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, resVarName: String) {
 
         lines.appendSemicolon(format)
-        lines.deindent(2)
+        if (! format.isPython()) {
+            lines.deindent(2)
+        }
 
         if (call.saveLocation && !res.stopping) {
 
@@ -348,6 +357,9 @@ class TestCaseWriter {
                         val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty(${locationVar(call.path.lastElement())})"
                         lines.add("expect($validCheck).toBe(true);")
                     }
+                    format.isPython() -> {
+                        lines.add("self.assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}))")
+                    }
                 }
 
 
@@ -362,8 +374,10 @@ class TestCaseWriter {
                 } else {
                     call.path.resolveOnlyPath(call.parameters)
                 }
-
-                val extract = "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                val extract = when {
+                    format.isPython() -> "$resVarName.json()[\"${res.getResourceIdName()}\"]"
+                    else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                }
 
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + $extract")
                 lines.appendSemicolon(format)
@@ -382,10 +396,10 @@ class TestCaseWriter {
 
         } else {
 
-            if (format.isKotlin()) {
-                lines.append("\"\${$baseUrlOfSut}")
-            } else {
-                lines.append("$baseUrlOfSut + \"")
+            when {
+                format.isKotlin() -> lines.append("\"\${$baseUrlOfSut}")
+                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
+                else -> lines.append("$baseUrlOfSut + \"")
             }
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
@@ -404,10 +418,16 @@ class TestCaseWriter {
                 }
             }
         }
+        if (format.isPython()) {
+            lines.append(",")
+            lines.indented {
+                lines.add("headers=headers")
+            }
+        }
         lines.append(")")
     }
 
-    private fun handleResponse(call: RestCallAction, res: RestCallResult, lines: Lines) {
+    private fun handleResponse(call: RestCallAction, res: RestCallResult, lines: Lines, resVarName: String) {
         if (!res.failedCall()) {
 
             val code = res.getStatusCode()
@@ -422,11 +442,16 @@ class TestCaseWriter {
             }
 
             if (code == 500) {
-                lines.append(" // " + res.getLastStatementWhen500())
+                val comment = if (format.isPython()) "#" else "//"
+                lines.append(" $comment " + res.getLastStatementWhen500())
             }
 
             if (configuration.enableBasicAssertions) {
-                handleResponseContents(lines, res)
+                if (format.isPython()) {
+                    handlePythonResponseContents(lines, res, resVarName)
+                } else {
+                    handleResponseContents(lines, res)
+                }
             }
         }
         else if(partialOracles.generatesExpectation(call, res)
@@ -470,13 +495,27 @@ class TestCaseWriter {
         }
     }
 
+    private fun handlePythonResponseContents(lines: Lines, res: RestCallResult, resVarName: String) {
+        val bodyString = res.getBody()
+        if (bodyString.isNullOrBlank()) {
+            lines.add("assert not($resVarName.text)")
+        } else {
+            val type = res.getBodyType()!!
+            val escapedText = GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
+            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
+                lines.add("assert $resVarName.json() == json.loads(\"$escapedText\")")
+            } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
+                lines.add("assert \"$escapedText\" in $resVarName.text")
+            }
+        }
+    }
+
     private fun handleResponseContents(lines: Lines, res: RestCallResult) {
 
         if (format.isJavaScript()) {
             //TODO
             return
         }
-
 
         lines.add(".assertThat()")
 
@@ -680,23 +719,35 @@ class TestCaseWriter {
     }
 
     private fun handleHeaders(call: RestCallAction, lines: Lines) {
-
         val prechosenAuthHeaders = call.auth.headers.map { it.name }
 
         val set = when {
             format.isJavaOrKotlin() -> "header"
             format.isJavaScript() -> "set"
+            format.isPython() -> ""
             else -> throw IllegalArgumentException("Not supported format: $format")
         }
 
+        if (format.isPython()) {
+            lines.add("headers = {}")
+        }
+
         call.auth.headers.forEach {
-            lines.add(".$set(\"${it.name}\", \"${it.value}\") // ${call.auth.name}")
+            if (format.isPython()) {
+                lines.add("headers[\"${it.name}\"] = \"${it.value}\"")
+            } else {
+                lines.add(".$set(\"${it.name}\", \"${it.value}\") // ${call.auth.name}")
+            }
         }
 
         call.parameters.filterIsInstance<HeaderParam>()
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .forEach {
-                    lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
+                    if (format.isPython()) {
+                        lines.add("headers[\"${it.name}\"] = \"${it.gene.getValueAsPrintableString(targetFormat = format)}\"")
+                    } else {
+                        lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
+                    }
                 }
 
         val cookieLogin = call.auth.cookieLogin
@@ -704,6 +755,7 @@ class TestCaseWriter {
             when {
                 format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(cookieLogin)})")
                 format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(cookieLogin)})")
+                //TODO PYTHON
             }
         }
     }
@@ -720,20 +772,26 @@ class TestCaseWriter {
         val accept = when {
             format.isJavaOrKotlin() -> ".accept("
             format.isJavaScript() -> ".set('Accept', "
+            format.isPython() -> "headers['Accept'] = "
             else -> throw IllegalArgumentException("Invalid format: $format")
         }
 
+        val end = when {
+            format.isPython() -> ""
+            else -> ")"
+        }
+
         if (call.produces.isEmpty() || res.getBodyType() == null) {
-            return "$accept\"*/*\")"
+            return "$accept\"*/*\"$end"
         }
 
         val accepted = call.produces.filter { res.getBodyType().toString().contains(it, true) }
 
         if (accepted.size == 1)
-            return "$accept\"${accepted.first()}\")"
+            return "$accept\"${accepted.first()}\"$end"
         else
         //FIXME: there seems to have been something or a problem
-            return "$accept\"*/*\")"
+            return "$accept\"*/*\"$end"
     }
 
     /**

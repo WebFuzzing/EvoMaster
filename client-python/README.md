@@ -19,6 +19,10 @@ python -m evomaster_client.cli run-instrumented -p 'evomaster_client.proxy' -m '
 python -m evomaster_client.cli run-instrumented -p 'evomaster_benchmark.ncs' -m 'evomaster_benchmark.ncs.app'
 ```
 
+```python
+python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.ncs.em_handler' -c 'EMHandler'
+```
+
 Running tests:
 
 ```python

@@ -35,6 +35,7 @@ class TestSuiteFileName(
             format.isJava() -> ".java"
             format.isKotlin() -> ".kt"
             format.isJavaScript() -> ".js"
+            format.isPython() -> ".py"
             else -> ".txt"
         }
     }

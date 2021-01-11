@@ -45,11 +45,11 @@ def controller(sut_handler: SutHandler) -> Blueprint:
     def testResults():
         ids = set(int(_id) for _id in filter(None, request.args.get('ids', '').split(',')))
         target_infos = sut_handler.get_target_infos(ids)
-        if not target_infos:
-            abort(500, {'error': f"Failed to collect target information for {len(ids)} ids"})
+        # if not target_infos:
+        #     abort(500, {'error': f"Failed to collect target information for {len(ids)} ids"})
         additional_infos = sut_handler.get_additional_info_list()
-        if not additional_infos:
-            abort(500, {'error': 'Failed to collect additional info'})
+        # if not additional_infos:
+        #     abort(500, {'error': 'Failed to collect additional info'})
         test_results = {
             'targets': [ti.to_dto() for ti in target_infos],
             'additionalInfoList': [ai.to_dto() for ai in additional_infos],

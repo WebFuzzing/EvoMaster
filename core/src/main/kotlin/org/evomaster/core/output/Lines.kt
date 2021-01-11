@@ -18,10 +18,12 @@ class Lines {
         }
     }
 
-    fun block(indentention: Int = 1, expression: () -> Any){
-        append(" {")
-        indented(indentention, expression)
-        add("}")
+    fun block(indentation: Int = 1, format: OutputFormat, expression: () -> Any){
+        if (!format.isPython())
+            append(" {")
+        indented(indentation, expression)
+        if (!format.isPython())
+            add("}")
     }
 
     fun indented(times: Int = 1, expression: () -> Any){
