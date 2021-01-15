@@ -26,7 +26,8 @@ object GraphQLActionBuilder {
     private data class TempState(
             val tables: MutableList<Table> = mutableListOf(),
             val argsTables: MutableList<Table> = mutableListOf(),
-            val tempArgsTables: MutableList<Table> = mutableListOf()
+            val tempArgsTables: MutableList<Table> = mutableListOf(),
+            val tempEnumTables: MutableMap<String, MutableList<String>> = mutableMapOf()
     )
 
     /**
@@ -112,6 +113,7 @@ object GraphQLActionBuilder {
          *extracting tempArgsTables, an intermediate table for extracting argsTables
          */
         extractTempArgsTables(state, schemaObj)
+        handleEnum(state, schemaObj)
         /*
          * merging argsTables with tempArgsTables: extracting argsTables: 2/2
          */
@@ -290,21 +292,23 @@ object GraphQLActionBuilder {
                 for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
                     if ((elementInInputParamTable.tableFieldType == elementIntypes.name) && (elementIntypes.kind == INPUT_OBJECT))
                         for (elementInInputFields in elementIntypes.inputFields) {
-                            if (elementInInputFields?.type?.kind == NON_NULL) {//non optional scalar or enum //TODO enum
-                                if (elementInInputFields?.type?.ofType?.kind == SCALAR) {// non optional scalar
+                            val kind0 = elementInInputFields?.type?.kind
+                            val kind1 = elementInInputFields?.type?.ofType?.kind
+                            if (kind0 == NON_NULL) {//non optional scalar or enum
+                                if (kind1 == SCALAR || kind1 == ENUM) {// non optional scalar
                                     val inputElement = Table()
                                     inputElement.tableType = elementIntypes.name
-                                    inputElement.kindOfTableFieldType = SCALAR
+                                    inputElement.kindOfTableFieldType = kind1
                                     inputElement.isKindOfTableFieldTypeOptional = false
                                     inputElement.tableFieldType = elementInInputFields?.type?.ofType?.name
                                     inputElement.tableField = elementInInputFields?.name
                                     state.tempArgsTables.add(inputElement)
                                 }
                             } else // optional scalar or enum
-                                if (elementInInputFields?.type?.kind == SCALAR) {// optional scalar
+                                if (kind0 == SCALAR || kind0 == ENUM) {// optional scalar or enum
                                     val inputElement = Table()
                                     inputElement.tableType = elementIntypes.name
-                                    inputElement.kindOfTableFieldType = SCALAR
+                                    inputElement.kindOfTableFieldType = kind0
                                     inputElement.isKindOfTableFieldTypeOptional = true
                                     inputElement.tableFieldType = elementInInputFields?.type?.name
                                     inputElement.tableField = elementInInputFields?.name
@@ -317,6 +321,35 @@ object GraphQLActionBuilder {
         }
     }
 
+    private fun handleEnum(state: TempState, schemaObj: SchemaObj) {
+        val allEnumElement: MutableMap<String, MutableList<String>> = mutableMapOf()
+        for (elementInInputParamTable in state.tempArgsTables) {
+            for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
+                if ((elementInInputParamTable.kindOfTableFieldType == ENUM) && (elementIntypes.kind == ENUM) && (elementIntypes.name == elementInInputParamTable.tableFieldType)) {
+                    val enumElement: MutableList<String> = mutableListOf()
+                    for (elementInEnumValues in elementIntypes.enumValues) {
+                        enumElement.add(elementInEnumValues.name)
+                    }
+                    allEnumElement.put(elementInInputParamTable.tableFieldType, enumElement)
+                }
+            }
+        }
+        for (elementInInputParamTable in state.tempArgsTables) {
+
+            for (elemntInAllEnumElement in allEnumElement) {
+
+                if (elementInInputParamTable.tableFieldType == elemntInAllEnumElement.key)
+
+                    for (elementInElementInAllEnumElement in elemntInAllEnumElement.value) {
+
+                        elementInInputParamTable.enumValues.add(elementInElementInAllEnumElement)
+                    }
+
+            }
+
+        }
+
+    }
 
     private fun handleOperation(
             state: TempState,

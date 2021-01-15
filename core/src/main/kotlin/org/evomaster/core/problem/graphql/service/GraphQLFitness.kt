@@ -172,7 +172,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     }
 
 
-    private fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>): Invocation {
+    fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>): Invocation {
         val baseUrl = getBaseUrl()
 
         val path = "/graphql"
@@ -221,7 +221,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                if (mode != GeneUtils.EscapeMode.JSON){
                 throw IllegalStateException("Cannot handle body type: ")
             }
-            Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), "")
+            Entity.entity("{ \" ${a.methodType} \" : "+body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat)+",\"variables \":null,\"operationName \":null}", " ")
         } else if (body != null && body is GQInputParam) {
             val mode = GeneUtils.EscapeMode.JSON
             Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), "")
@@ -232,5 +232,79 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val invocation = builder.buildPost(bodyEntity)
         return invocation
     }
+
+    /*******************************************************************************************************/
+/*
+    protected fun handleResponseTargets(
+            fv: FitnessValue,
+            actions: List<GraphQLAction>,
+            actionResults: List<ActionResult>,
+            additionalInfoList: List<AdditionalInfoDto>) {
+
+
+        (0 until actionResults.size)
+                .filter { actions[it] is GraphQLAction }
+                .filter { actionResults[it] is GraphQlCallResult }
+                .forEach {
+                    val result = actionResults[it] as GraphQlCallResult
+                    val status = result.getStatusCode() ?: -1
+                    val name = actions[it].getName()
+
+                    //objective for HTTP specific status code
+                    val statusId = idMapper.handleLocalTarget("$status:$name")
+                    fv.updateTarget(statusId, 1.0, it)
+
+                    /*
+                        Objectives for results on endpoints.
+                        Problem: we might get a 4xx/5xx, but then no gradient to keep sampling for
+                        that endpoint. If we get 2xx, and full coverage, then no gradient to try
+                        to keep sampling that endpoint to get a 5xx
+                     */
+                    val okId = idMapper.handleLocalTarget("HTTP_SUCCESS:$name")
+                    val faultId = idMapper.handleLocalTarget("HTTP_FAULT:$name")
+
+                    //OK -> 5xx being better than 4xx, as code executed
+                    //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
+                    if (status in 200..299) {
+                        fv.updateTarget(okId, 1.0, it)
+                        fv.updateTarget(faultId, 0.5, it)
+                    } else if (status in 400..499) {
+                        fv.updateTarget(okId, 0.1, it)
+                        fv.updateTarget(faultId, 0.1, it)
+                    } else if (status in 500..599) {
+                        fv.updateTarget(okId, 0.5, it)
+                        fv.updateTarget(faultId, 1.0, it)
+                    }
+
+                    /*
+                        500 codes "might" be bugs. To distinguish between different bugs
+                        that crash the same endpoint, we need to know what was the last
+                        executed statement in the SUT.
+                        So, we create new targets for it.
+                     */
+                    if (status == 500) {
+                        val statement = additionalInfoList[it].lastExecutedStatement
+                        val source = statement ?: "framework_code"
+                        val descriptiveId = idMapper.getFaultDescriptiveId("$source $name")
+                        val bugId = idMapper.handleLocalTarget(descriptiveId)
+                        fv.updateTarget(bugId, 1.0, it)
+                        result.setLastStatementWhen500(source)
+                    }
+                    /*
+                        Objectives for the two partial oracles implemented thus far.
+                    */
+                    val call = actions[it] as RestCallAction
+                    val oracles = writer.getPartialOracles().activeOracles(call, result)
+                    oracles.filter { it.value }.forEach { entry ->
+                        val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
+                        val bugId = idMapper.handleLocalTarget(oracleId)
+                        fv.updateTarget(bugId, 1.0, it)
+                    }
+                }
+    }
+
+
+*/
+
 
 }

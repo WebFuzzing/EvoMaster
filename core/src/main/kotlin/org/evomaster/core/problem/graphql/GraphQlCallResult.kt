@@ -20,7 +20,6 @@ class GraphQlCallResult : ActionResult {
         const val TOO_LARGE_BODY = "TOO_LARGE_BODY"
         const val INFINITE_LOOP = "INFINITE_LOOP"
         const val ERROR_MESSAGE = "ERROR_MESSAGE"
-        const val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
         const val TIMEDOUT = "TIMEDOUT"
         const val LAST_STATEMENT_WHEN_500 = "LAST_STATEMENT_WHEN_500"
         const val TCP_PROBLEM = "TCP_PROBLEM"
@@ -41,28 +40,6 @@ class GraphQlCallResult : ActionResult {
     }
 
 
-    fun getResourceIdName() = "id"
-
-    fun getResourceId(): String? {
-
-        if(!MediaType.APPLICATION_JSON_TYPE.isCompatible(getBodyType())){
-            //TODO could also handle other media types
-            return null
-        }
-
-        return getBody()?.let {
-            try {
-                /*
-                    TODO: "id" is the most common word, but could check
-                    if others are used as well.
-                 */
-                Gson().fromJson(it, JsonObject::class.java).get(getResourceIdName())?.asString
-            } catch (e: Exception){
-                //nothing to do
-                null
-            }
-        }
-    }
 
 
     fun setStatusCode(code: Int) {
