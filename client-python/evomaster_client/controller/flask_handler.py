@@ -75,7 +75,7 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
         self.server = None
 
     @abc.abstractmethod
-    def reset_sut_state(self):
+    def reset_state_of_sut(self):
         pass
 
     @abc.abstractmethod

@@ -250,7 +250,8 @@ class TestSuiteWriter {
             lines.add("import json")
             lines.add("import requests")
             if(controllerName != null) {
-                lines.add("import $controllerName")
+                val moduleName = controllerName.substring(0, controllerName.lastIndexOf("."));
+                lines.add("import $moduleName")
             }
         }
 
@@ -349,9 +350,13 @@ class TestSuiteWriter {
                         addStatement("await $controller.setupForGeneratedTest()", lines)
                         addStatement("baseUrlOfSut = await $controller.startSut()", lines)
                     }
-                    config.outputFormat.isPython() -> {
+                    config.outputFormat.isPython()-> {
                         addStatement("cls.$controller.setup_for_generated_test()", lines)
-                        addStatement("cls.baseUrlOfSut = cls.$controller.start_sut()", lines)
+                        if (config.blackBox) {
+                            addStatement("cls.baseUrlOfSut = cls.$controller.start_sut()", lines)
+                        } else {
+                            addStatement("cls.test_client = cls.$controller.app().test_client()", lines)
+                        }
                     }
                     else -> {
                         addStatement("$controller.setupForGeneratedTest()", lines)

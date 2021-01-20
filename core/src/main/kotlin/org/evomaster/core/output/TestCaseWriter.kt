@@ -317,7 +317,13 @@ class TestCaseWriter {
         when {
             format.isJavaOrKotlin() -> lines.append("given()")
             format.isJavaScript() -> lines.append("await superagent")
-            format.isPython() -> lines.append("$resVarName = requests \\")
+            format.isPython() -> {
+                if (configuration.blackBox) {
+                    lines.append("$resVarName = requests \\")
+                } else {
+                    lines.append("$resVarName = self.test_client \\")
+                }
+            }
         }
 
         if(!format.isJavaScript() && !format.isPython()) {
@@ -375,7 +381,13 @@ class TestCaseWriter {
                     call.path.resolveOnlyPath(call.parameters)
                 }
                 val extract = when {
-                    format.isPython() -> "$resVarName.json()[\"${res.getResourceIdName()}\"]"
+                    format.isPython() -> {
+                        if (configuration.blackBox) {
+                            "$resVarName.json()[\"${res.getResourceIdName()}\"]"
+                        } else {
+                            "$resVarName.json[\"${res.getResourceIdName()}\"]"
+                        }
+                    }
                     else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
                 }
 
@@ -398,7 +410,8 @@ class TestCaseWriter {
 
             when {
                 format.isKotlin() -> lines.append("\"\${$baseUrlOfSut}")
-                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
+                format.isPython() && configuration.blackBox -> lines.append("self.$baseUrlOfSut + \"")
+                format.isPython() && !configuration.blackBox -> lines.append("\"")
                 else -> lines.append("$baseUrlOfSut + \"")
             }
 
@@ -503,7 +516,11 @@ class TestCaseWriter {
             val type = res.getBodyType()!!
             val escapedText = GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
             if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
-                lines.add("assert $resVarName.json() == json.loads(\"$escapedText\")")
+                if (configuration.blackBox) {
+                    lines.add("assert $resVarName.json() == json.loads(\"$escapedText\")")
+                } else {
+                    lines.add("assert $resVarName.json == json.loads(\"$escapedText\")")
+                }
             } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
                 lines.add("assert \"$escapedText\" in $resVarName.text")
             }

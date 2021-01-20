@@ -19,7 +19,7 @@ class SutHandler(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def reset_sut_state(self):
+    def reset_state_of_sut(self):
         raise NotImplementedError
 
     @abc.abstractmethod
