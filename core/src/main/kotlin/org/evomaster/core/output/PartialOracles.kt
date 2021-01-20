@@ -31,8 +31,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 class PartialOracles {
     private lateinit var objectGenerator: ObjectGenerator
     private lateinit var format: OutputFormat
-    //private var oracles = mutableListOf(SupportedCodeOracle())
-    private var oracles = mutableListOf(SupportedCodeOracle(), SchemaOracle())
+    private var oracles = mutableListOf(SupportedCodeOracle())
+    //private var oracles = mutableListOf(SupportedCodeOracle(), SchemaOracle())
     private val expectationsMasterSwitch = "ems"
 
     /**
