@@ -31,6 +31,10 @@ import org.evomaster.core.search.EvaluatedIndividual
 class PartialOracles {
     private lateinit var objectGenerator: ObjectGenerator
     private lateinit var format: OutputFormat
+
+    // Disabled the SchemaOracle, as it was causing problems (see https://github.com/EMResearch/EvoMaster/issues/237)
+    // TODO: Selection of what partial oracles to use should be revised.
+
     private var oracles = mutableListOf(SupportedCodeOracle())
     //private var oracles = mutableListOf(SupportedCodeOracle(), SchemaOracle())
     private val expectationsMasterSwitch = "ems"
