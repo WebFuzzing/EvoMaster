@@ -30,7 +30,12 @@ namespace Controller.Test
         private static DbConnection connection;
         private static PostgreSqlTestcontainer postgres;
         
-
+        /*
+            This test needs to be restructured. 
+            Man: there exist some problems for "beforeAll" with #C, so I put all tests (clean all, clean with skip, throw exception) in one.
+            with xunit, do not find a property way to override the "BeforeAll", https://xunit.net/docs/shared-context
+            with nunit, OneTimeSetUp methods can only be async if running under .NET 4.0 or higher. https://docs.nunit.org/articles/nunit/writing-tests/attributes/onetimesetup.html
+         */
         [Fact]
         public async Task testClean()
         {
