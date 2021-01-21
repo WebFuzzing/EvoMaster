@@ -159,10 +159,10 @@ namespace Controller.Controllers.db
             {
                 foreach (var s in tablesToSkip)
                 {
-                    var notcontain = tables.ToList().FindAll(t => s.Equals(t, StringComparison.InvariantCultureIgnoreCase));
-                    if (notcontain.Count > 0)
+                    var exist = tables.ToList().FindAll(t => s.Equals(t, StringComparison.InvariantCultureIgnoreCase));
+                    if (exist.Count == 0)
                     {
-                        string msg = "Asked to skip tables '" + string.Join(",", notcontain)+ "', but it does not exist.";
+                        string msg = "Asked to skip tables '" + s+ "', but it does not exist.";
                         msg += " Existing tables in schema '"+schema+"': [" +
                                string.Join(",", tables)+ "]";
                         throw new InvalidOperationException(msg);

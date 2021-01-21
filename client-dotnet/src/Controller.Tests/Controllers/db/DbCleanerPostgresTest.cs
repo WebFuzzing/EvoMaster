@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
 using Xunit;
@@ -42,17 +44,36 @@ namespace Controller.Test
                     
                     SeededTestData.seedFKData(connection);
 
-                    command.CommandText = "SELECT * FROM Foo;";
-                    DbDataReader reader = command.ExecuteReader();
+                    DbDataReader reader = SqlScriptRunner.execQueryCommand(connection, "SELECT * FROM Bar;");
                     Assert.Equal(true, reader.HasRows);
                     reader.Close();
-
-                    DbCleaner.clearDatabase_Postgres(connection);
-
-                    command.CommandText = "SELECT * FROM Foo;";
-                    reader = command.ExecuteReader();
+                    
+                    reader = SqlScriptRunner.execQueryCommand(connection, "SELECT * FROM Foo;");
+                    Assert.Equal(true, reader.HasRows);
+                    reader.Close();
+                    
+                    //clean all except Foo
+                    DbCleaner.clearDatabase_Postgres(connection, "public", new List<string>() { "Foo"});
+                    reader = SqlScriptRunner.execQueryCommand(connection, "SELECT * FROM Foo;");
+                    Assert.Equal(true, reader.HasRows);
+                    reader.Close();
+                    
+                    reader = SqlScriptRunner.execQueryCommand(connection, "SELECT * FROM Bar;");
                     Assert.Equal(false, reader.HasRows);
                     reader.Close();
+                    
+                    //clean all
+                    DbCleaner.clearDatabase_Postgres(connection);
+                    reader = SqlScriptRunner.execQueryCommand(connection, "SELECT * FROM Foo;");
+                    Assert.Equal(false, reader.HasRows);
+                    reader.Close();
+                    
+                    SeededTestData.seedFKData(connection, DatabaseType.NOT_SPECIFIED, false);
+                    // throws exception with incorrect skip table
+                    Assert.Throws<SystemException>(()=>DbCleaner.clearDatabase_Postgres(connection, "public", new List<string>() { "zoo"}));
+                    
+                    //clean all except Bar, but it should throw exception 
+                    Assert.Throws<SystemException>(()=>DbCleaner.clearDatabase_Postgres(connection, "public", new List<string>() { "Bar"}));
 
                     await connection.CloseAsync();
                     await postgres.StopAsync();
