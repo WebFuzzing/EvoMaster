@@ -1,40 +1,41 @@
+// This is created on 01-21-2021 by Man Zhang
+
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
-// for testcontainer
 using DotNet.Testcontainers.Containers.Builders;
 using DotNet.Testcontainers.Containers.Modules.Databases;
-using Npgsql;
-using Controller.Controllers.db;
 using DotNet.Testcontainers.Containers.Configurations.Databases;
+using MySql.Data.MySqlClient;
+using Controller.Controllers.db;
 
 namespace Controller.Test
 {
-    public class Tests
+    
+    public class DbCleanerMySQLTest
     {
-        private static ITestcontainersBuilder<PostgreSqlTestcontainer> postgresBuilder =
-            new TestcontainersBuilder<PostgreSqlTestcontainer>()
-                .WithDatabase(new PostgreSqlTestcontainerConfiguration
+        //for the moment, use this testcontainer for dotnet https://github.com/HofmeisterAn/dotnet-testcontainers
+        private static ITestcontainersBuilder<MySqlTestcontainer> mySqlBuilder =
+            new TestcontainersBuilder<MySqlTestcontainer>()
+                .WithDatabase(new MySqlTestcontainerConfiguration
                 {
                     Database = "db",
-                    Username = "postgres",
-                    Password = "postgres",
+                    Username = "mysql",
+                    Password = "mysql"
                 });
-
         private static DbConnection connection;
-        private static PostgreSqlTestcontainer postgres;
+        private static MySqlTestcontainer mySql;
         
-
         [Test]
         public async Task testClean()
         {
-            await using (postgres = postgresBuilder.Build())
+            await using (mySql = mySqlBuilder.Build())
             {
-                await postgres.StartAsync();
-                await using (connection = new NpgsqlConnection(postgres.ConnectionString))
+                await mySql.StartAsync();
+                await using (connection = new MySqlConnection(mySql.ConnectionString))
                 {
                     connection.Open();
                     var command = connection.CreateCommand();
@@ -48,19 +49,18 @@ namespace Controller.Test
                     DbDataReader reader = command.ExecuteReader();
                     Assert.AreEqual(reader.HasRows, true);
                     reader.Close();
-
-                    DbCleaner.clearDatabase_Postgres(connection);
+                    
+                    DbCleaner.clearDatabase_H2(connection, "db", null, DatabaseType.MySQL);
 
                     command.CommandText = "SELECT * FROM Foo;";
                     reader = command.ExecuteReader();
-                    Assert.AreEqual(reader.HasRows, false);
+                    Assert.AreEqual( false, reader.HasRows);
                     reader.Close();
 
                     await connection.CloseAsync();
-                    await postgres.StopAsync();
+                    await mySql.StopAsync();
                 }
             }
         }
-        
     }
 }
