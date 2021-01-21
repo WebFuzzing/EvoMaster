@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 // for testcontainer
 using DotNet.Testcontainers.Containers.Builders;
@@ -30,7 +29,7 @@ namespace Controller.Test
         private static PostgreSqlTestcontainer postgres;
         
 
-        [Test]
+        [Fact]
         public async Task testClean()
         {
             await using (postgres = postgresBuilder.Build())
@@ -40,22 +39,19 @@ namespace Controller.Test
                 {
                     connection.Open();
                     var command = connection.CreateCommand();
-                    command.CommandText = "CREATE TABLE Foo(x int, primary key (x));";
-                    command.ExecuteNonQuery();
-
-                    command.CommandText = "INSERT INTO Foo (x) VALUES (42)";
-                    command.ExecuteNonQuery();
+                    
+                    SeededTestData.seedFKData(connection);
 
                     command.CommandText = "SELECT * FROM Foo;";
                     DbDataReader reader = command.ExecuteReader();
-                    Assert.AreEqual(true, reader.HasRows);
+                    Assert.Equal(true, reader.HasRows);
                     reader.Close();
 
                     DbCleaner.clearDatabase_Postgres(connection);
 
                     command.CommandText = "SELECT * FROM Foo;";
                     reader = command.ExecuteReader();
-                    Assert.AreEqual(false, reader.HasRows);
+                    Assert.Equal(false, reader.HasRows);
                     reader.Close();
 
                     await connection.CloseAsync();
