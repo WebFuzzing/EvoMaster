@@ -183,7 +183,7 @@ namespace Controller.Controllers {
       //TODO: uncomment
       // _sutController.EnableComputeSqlHeuristicsOrExtractExecution (sqlHeuristics, sqlExecution);
 
-      bool doReset = dto.Reset‍State != null && dto.ResetState.Value;
+      bool doReset = dto.ResetState != null && dto.ResetState.Value;
 
       IActionResult result = await _locker.LockAsync<IActionResult> (async () => {
         // [async] calls can be used within this block 
