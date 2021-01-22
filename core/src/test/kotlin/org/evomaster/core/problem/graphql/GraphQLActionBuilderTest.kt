@@ -6,7 +6,6 @@ import org.junit.Test
 import org.junit.jupiter.api.Assertions.*
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
-import org.junit.jupiter.api.Disabled
 
 
 class GraphQLActionBuilderTest {
@@ -106,6 +105,55 @@ class GraphQLActionBuilderTest {
         assertTrue(specialties.parameters[0] is GQReturnParam)
         assertTrue(specialties.parameters[0].gene is ArrayGene<*>)
 
-        //TODO other assertions on the actions
     }
+
+    @Test
+    fun aniListSchemaTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/AniList.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+
+        assertEquals(50, actionCluster.size)// TODO They are 54 (50+4 (UNION)) but we do not handle UNION type yet
+        val page = actionCluster.get("Page") as GraphQLAction
+        assertEquals(3, page.parameters.size)
+        assertTrue(page.parameters[0] is GQInputParam)
+        assertTrue((page.parameters[0].gene as OptionalGene).gene is IntegerGene)
+        assertTrue((page.parameters[1].gene as OptionalGene).gene is IntegerGene)
+
+        assertTrue(page.parameters[1] is GQInputParam)
+        assertTrue(page.parameters[2] is GQReturnParam)
+
+        val genreCollection = actionCluster.get("GenreCollection") as GraphQLAction
+        assertTrue((genreCollection.parameters[0].gene as OptionalGene).gene is ArrayGene<*>)
+        val arrayGenreCollection = (genreCollection.parameters[0].gene as OptionalGene).gene as ArrayGene<*>
+        assertTrue(arrayGenreCollection.template is OptionalGene)
+        assertTrue((arrayGenreCollection.template as OptionalGene).gene is StringGene)
+
+        val mediaTagCollection = actionCluster.get("MediaTagCollection") as GraphQLAction
+        assertTrue((mediaTagCollection.parameters[1].gene as OptionalGene).gene is ArrayGene<*>)
+        val arrayMediaTagCollection = (mediaTagCollection.parameters[1].gene as OptionalGene).gene as ArrayGene<*>
+        assertTrue(arrayMediaTagCollection.template is OptionalGene)
+        assertTrue((arrayMediaTagCollection.template as OptionalGene).gene is ObjectGene)
+
+        val objPage = (page.parameters[2].gene as OptionalGene).gene as ObjectGene
+        assertTrue((objPage.fields[0] as OptionalGene).gene is ObjectGene)
+        val objPageInfo = (objPage.fields[0] as OptionalGene).gene as ObjectGene
+        objPageInfo.fields.any({ it is OptionalGene && it.name == "Total" })
+        assertTrue((objPageInfo.fields[0] as OptionalGene).gene is IntegerGene)
+        /**/
+    }
+
+    @Test
+    fun bitquerySchemaTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/Bitquery.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(12, actionCluster.size)
+
+    }
+
 }
