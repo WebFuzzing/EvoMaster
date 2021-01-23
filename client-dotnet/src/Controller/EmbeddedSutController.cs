@@ -1,5 +1,6 @@
 using System;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Controller.Api;
 
@@ -24,7 +25,7 @@ namespace Controller {
       throw new System.NotImplementedException ();
     }
 
-    protected async Task WaitUntilSutIsRunningAsync (int port) {
+    protected void WaitUntilSutIsRunning (int port) {
 
       using (TcpClient tcpClient = new TcpClient ()) {
 
@@ -33,7 +34,7 @@ namespace Controller {
             tcpClient.Connect ("127.0.0.1", port);
             break;
           } catch (Exception) {
-            await Task.Delay (50);
+            Thread.Sleep(50);
             continue;
           }
         }

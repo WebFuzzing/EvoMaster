@@ -40,8 +40,7 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
         public override void ResetStateOfSut () { }
 
-        //This method in java client is not async
-        public override async Task<string> StartSutAsync () {
+        public override string StartSut () {
 
             //TODO: check this again
             int ephemeralPort = GetEphemeralTcpPort ();
@@ -51,7 +50,7 @@ namespace RestApis.Tests.HelloWorld.Controller {
                 RestApis.HelloWorld.Program.Main (new string[] { ephemeralPort.ToString () });
             });
 
-            await WaitUntilSutIsRunningAsync (ephemeralPort);
+            WaitUntilSutIsRunning (ephemeralPort);
 
             sutPort = ephemeralPort;
 

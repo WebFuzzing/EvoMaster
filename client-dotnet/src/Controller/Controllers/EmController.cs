@@ -15,6 +15,7 @@ namespace Controller.Controllers {
 
     private readonly SutController _sutController;
     private static string _baseUrlOfSut;
+    private readonly object _lock = new object ();
 
     /*
      Keep track of all host:port clients connect so far.
@@ -164,7 +165,7 @@ namespace Controller.Controllers {
     //TODO: How to get url from another file
     //TODO: Log errors in web server instead of try-catch 
     [HttpPut ("runSUT")]
-    public async Task<IActionResult> RunSutAsync ([FromBody] SutRunDto dto) {
+    public IActionResult RunSut ([FromBody] SutRunDto dto) {
 
       AssertTrackRequestSource (Request.HttpContext.Connection);
 
@@ -185,9 +186,7 @@ namespace Controller.Controllers {
 
       bool doReset = dto.Reset‍State != null && dto.ResetState.Value;
 
-      IActionResult result = await _locker.LockAsync<IActionResult> (async () => {
-        // [async] calls can be used within this block 
-        // to handle a resource by one thread. 
+      lock (_lock) {
 
         if (dto.Run.HasValue && !dto.Run.Value) {
           if (doReset) {
@@ -211,7 +210,7 @@ namespace Controller.Controllers {
            */
           if (!_sutController.IsSutRunning ()) {
 
-            _baseUrlOfSut = await _sutController.StartSutAsync ();
+            _baseUrlOfSut = _sutController.StartSut ();
 
             if (_baseUrlOfSut == null) {
               //there has been an internal failure in starting the SUT
@@ -260,9 +259,7 @@ namespace Controller.Controllers {
            */
         }
         return StatusCode (StatusCodes.Status204NoContent);
-      });
-
-      return result;
+      }
     }
 
     [HttpPut ("newAction")]

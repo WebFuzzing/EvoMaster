@@ -39,7 +39,7 @@ namespace Controller {
 
         public abstract void ResetStateOfSut ();
 
-        public abstract Task<string> StartSutAsync ();
+        public abstract string StartSut ();
 
         public abstract void StopSut ();
 
