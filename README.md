@@ -141,6 +141,11 @@ as part of the *ERC Consolidator* project
 as part of the Frinatek project <i>Evolutionary Enterprise Testing</i>.  
 
 
+![](docs/img/LOGO_ERC-FLAG_EU_.jpg | width=100)
+
+This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No 864972).
+
+
 ### License
 _EvoMaster_'s source code is released under the LGPL (v3) license.
 For a list of the used third-party libraries, you can directly see the root [pom.xml](./pom.xml) file.
