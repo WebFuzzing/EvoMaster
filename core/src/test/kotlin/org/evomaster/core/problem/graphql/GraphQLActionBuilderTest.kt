@@ -29,10 +29,10 @@ class GraphQLActionBuilderTest {
         assertEquals(2, objPetType.fields.size)
         assertTrue(objPetType.fields.any { it is IntegerGene && it.name == "id" })
         assertTrue(objPetType.fields.any { it is StringGene && it.name == "name" })
-        val gQlInput= GQReturnParam(pettypes.parameters[0].name,pettypes.parameters[0].gene)
-        val gQlInputcopy=gQlInput.copy()
-        assertEquals(gQlInput.name,gQlInputcopy.name)
-        assertEquals(gQlInput.gene.name,gQlInputcopy.gene.name)
+        val gQlInput = GQReturnParam(pettypes.parameters[0].name, pettypes.parameters[0].gene)
+        val gQlInputcopy = gQlInput.copy()
+        assertEquals(gQlInput.name, gQlInputcopy.name)
+        assertEquals(gQlInput.gene.name, gQlInputcopy.gene.name)
         /**/
         val vets = actionCluster.get("vets") as GraphQLAction
         assertEquals(1, vets.parameters.size)
@@ -86,8 +86,8 @@ class GraphQLActionBuilderTest {
         val objVisitConnection = objPet.fields[5] as ObjectGene
         assertEquals(2, objVisitConnection.fields.size)
         assertTrue(objVisitConnection.fields[0] is IntegerGene)
-        assertTrue(objVisitConnection.fields.any{ it is IntegerGene && it.name == "totalCount"})
-        assertTrue(objVisitConnection.fields.any{ it is ArrayGene<*> && it.name == "Visit"})
+        assertTrue(objVisitConnection.fields.any { it is IntegerGene && it.name == "totalCount" })
+        assertTrue(objVisitConnection.fields.any { it is ArrayGene<*> && it.name == "Visit" })
 
         /**/
         val pet = actionCluster.get("pet") as GraphQLAction
@@ -143,6 +143,11 @@ class GraphQLActionBuilderTest {
         objPageInfo.fields.any({ it is OptionalGene && it.name == "Total" })
         assertTrue((objPageInfo.fields[0] as OptionalGene).gene is IntegerGene)
         /**/
+        val media = actionCluster.get("Media") as GraphQLAction
+        assertEquals(67, media.parameters.size)
+        assertTrue((media.parameters[6].gene as OptionalGene).gene is EnumGene<*>)
+
+
     }
 
     @Test
