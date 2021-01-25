@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
@@ -12,79 +11,124 @@ using Npgsql;
 using Controller.Controllers.db;
 using DotNet.Testcontainers.Containers.Configurations.Databases;
 
-namespace Controller.Test
+namespace Controller.Tests.Controllers.db
 {
-    public class DBCleanerPostgresTest
+    public class PostgresFixture : IAsyncLifetime
     {
-        //for the moment, use this testcontainer for dotnet https://github.com/HofmeisterAn/dotnet-testcontainers
-        private static ITestcontainersBuilder<PostgreSqlTestcontainer> postgresBuilder =
-            new TestcontainersBuilder<PostgreSqlTestcontainer>()
-                .WithDatabase(new PostgreSqlTestcontainerConfiguration
-                {
-                    Database = "db",
-                    Username = "postgres",
-                    Password = "postgres",
-                })
-                .WithExposedPort(5432);
 
-        private static DbConnection connection;
-        private static PostgreSqlTestcontainer postgres;
-        
-        /*
-            This test needs to be restructured. 
-            Man: there exist some problems for "beforeAll" with #C, so I put all tests (clean all, clean with skip, throw exception) in one.
-            with xunit, do not find a property way to override the "BeforeAll", https://xunit.net/docs/shared-context
-            with nunit, OneTimeSetUp methods can only be async if running under .NET 4.0 or higher. https://docs.nunit.org/articles/nunit/writing-tests/attributes/onetimesetup.html
-         */
-        [Fact]
-        public async Task testClean()
+        private DbConnection _connection;
+        private PostgreSqlTestcontainer _postgres;
+
+        public async Task InitializeAsync()
         {
-            await using (postgres = postgresBuilder.Build())
-            {
-                await postgres.StartAsync();
-                await using (connection = new NpgsqlConnection(postgres.ConnectionString))
-                {
-                    connection.Open();
-                    var command = connection.CreateCommand();
-                    
-                    SeededTestData.seedFKData(connection);
+            //for the moment, use this testcontainer for dotnet https://github.com/HofmeisterAn/dotnet-testcontainers
+            ITestcontainersBuilder<PostgreSqlTestcontainer> postgresBuilder =
+                new TestcontainersBuilder<PostgreSqlTestcontainer>()
+                    .WithDatabase(new PostgreSqlTestcontainerConfiguration
+                    {
+                        Database = "db",
+                        Username = "postgres",
+                        Password = "postgres",
+                    })
+                    .WithExposedPort(5432);
+            
+            _postgres = postgresBuilder.Build();
+            await _postgres.StartAsync();
+            _connection = new NpgsqlConnection(_postgres.ConnectionString);
+            await _connection.OpenAsync();
+        }
 
-                    DbDataReader reader = SqlScriptRunner.execQueryCommand(connection, "SELECT * FROM Bar;");
-                    Assert.Equal(true, reader.HasRows);
-                    reader.Close();
-                    
-                    reader = SqlScriptRunner.execQueryCommand(connection, "SELECT * FROM Foo;");
-                    Assert.Equal(true, reader.HasRows);
-                    reader.Close();
-                    
-                    //clean all except Foo
-                    DbCleaner.clearDatabase_Postgres(connection, "public", new List<string>() { "Foo"});
-                    reader = SqlScriptRunner.execQueryCommand(connection, "SELECT * FROM Foo;");
-                    Assert.Equal(true, reader.HasRows);
-                    reader.Close();
-                    
-                    reader = SqlScriptRunner.execQueryCommand(connection, "SELECT * FROM Bar;");
-                    Assert.Equal(false, reader.HasRows);
-                    reader.Close();
-                    
-                    //clean all
-                    DbCleaner.clearDatabase_Postgres(connection);
-                    reader = SqlScriptRunner.execQueryCommand(connection, "SELECT * FROM Foo;");
-                    Assert.Equal(false, reader.HasRows);
-                    reader.Close();
-                    
-                    SeededTestData.seedFKData(connection, DatabaseType.NOT_SPECIFIED, false);
-                    // throws exception with incorrect skip table
-                    Assert.Throws<SystemException>(()=>DbCleaner.clearDatabase_Postgres(connection, "public", new List<string>() { "zoo"}));
-                    
-                    //clean all except Bar, but it should throw exception 
-                    Assert.Throws<SystemException>(()=>DbCleaner.clearDatabase_Postgres(connection, "public", new List<string>() { "Bar"}));
+        public async Task DisposeAsync()
+        {
+            await _connection.CloseAsync();
+            await _postgres.StopAsync();
+        }
 
-                    await connection.CloseAsync();
-                    await postgres.StopAsync();
-                }
-            }
+        public DbConnection GetConnection()
+        {
+            return _connection;
+    }
+    }
+    
+    public class DBCleanerPostgresTest : IClassFixture<PostgresFixture>, IDisposable
+    {
+        
+        private readonly PostgresFixture _fixture;
+        private readonly DbConnection _connection;
+        
+        public DBCleanerPostgresTest(PostgresFixture fixture)
+        {
+            _fixture = fixture;
+            _connection = _fixture.GetConnection();
         }
         
+        [Fact]
+        public async Task TestAllClean()
+        {
+            SeededTestData.seedFKData(_connection);
+            
+            DbDataReader reader = SqlScriptRunner.ExecCommandWithDataReader(_connection, "SELECT * FROM Bar;");
+            Assert.True(reader.HasRows);
+            reader.Close();
+                    
+            reader = SqlScriptRunner.ExecCommandWithDataReader(_connection, "SELECT * FROM Foo;");
+            Assert.True(reader.HasRows);
+            reader.Close();
+            
+            //clean all
+            DbCleaner.ClearDatabase_Postgres(_fixture.GetConnection());
+            reader = SqlScriptRunner.ExecCommandWithDataReader(_connection, "SELECT * FROM Foo;");
+            Assert.False(reader.HasRows);
+            reader.Close();
+            
+            reader = SqlScriptRunner.ExecCommandWithDataReader(_connection, "SELECT * FROM Bar;");
+            Assert.False(reader.HasRows);
+            reader.Close();
+
+        }
+
+        [Fact]
+        public async Task TestCleanWithSkip()
+        {
+            SeededTestData.seedFKData(_connection);
+            
+            DbDataReader reader = SqlScriptRunner.ExecCommandWithDataReader(_connection, "SELECT * FROM Bar;");
+            Assert.True(reader.HasRows);
+            reader.Close();
+                    
+            reader = SqlScriptRunner.ExecCommandWithDataReader(_connection, "SELECT * FROM Foo;");
+            Assert.True(reader.HasRows);
+            reader.Close();
+                    
+            //clean all except Foo
+            DbCleaner.ClearDatabase_Postgres(_fixture.GetConnection(), new List<string>() { "Foo"});
+            reader = SqlScriptRunner.ExecCommandWithDataReader(_connection, "SELECT * FROM Foo;");
+            Assert.True(reader.HasRows);
+            reader.Close();
+                    
+            reader = SqlScriptRunner.ExecCommandWithDataReader(_connection, "SELECT * FROM Bar;");
+            Assert.False(reader.HasRows);
+            reader.Close();
+        }
+
+        [Fact]
+        public async Task TestCleanException()
+        {
+            SeededTestData.seedFKData(_fixture.GetConnection(), SupportedDatabaseType.POSTGRES);
+            
+            // throws exception with incorrect skip table
+            Assert.Throws<SystemException>(()=>DbCleaner.ClearDatabase_Postgres(_connection,  new List<string>() { "zoo"}));
+                    
+            //clean all except Bar, and it should throw exception since Bar depends on other table, i.e., Foo
+            Assert.Throws<SystemException>(()=>DbCleaner.ClearDatabase_Postgres(_connection, new List<string>() { "Bar"}));
+        }
+
+        public void Dispose()
+        {
+            SqlScriptRunner.ExecCommand(_connection, "DROP SCHEMA public CASCADE;");
+            SqlScriptRunner.ExecCommand(_connection, "CREATE SCHEMA public;");
+            SqlScriptRunner.ExecCommand(_connection, "GRANT ALL ON SCHEMA public TO postgres;");
+            SqlScriptRunner.ExecCommand(_connection, "GRANT ALL ON SCHEMA public TO public;");
+        }
     }
 }

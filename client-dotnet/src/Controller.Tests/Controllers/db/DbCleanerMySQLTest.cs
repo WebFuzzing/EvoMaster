@@ -11,9 +11,10 @@ using DotNet.Testcontainers.Containers.Configurations.Databases;
 using MySql.Data.MySqlClient;
 using Controller.Controllers.db;
 
-namespace Controller.Test
+namespace Controller.Tests.Controllers.db
 {
-    
+   
+
     public class DbCleanerMySQLTest 
     {
         //for the moment, use this testcontainer for dotnet https://github.com/HofmeisterAn/dotnet-testcontainers
@@ -39,14 +40,14 @@ namespace Controller.Test
                     connection.Open();
                     var command = connection.CreateCommand();
                     
-                    SeededTestData.seedFKData(connection, DatabaseType.MySQL);
+                    SeededTestData.seedFKData(connection, SupportedDatabaseType.MySQL);
 
                     command.CommandText = "SELECT * FROM Foo;";
                     DbDataReader reader = command.ExecuteReader();
                     Assert.Equal(reader.HasRows, true);
                     reader.Close();
                     
-                    DbCleaner.clearDatabase_H2(connection, "db", null, DatabaseType.MySQL);
+                    DbCleaner.ClearDatabase(connection, null, SupportedDatabaseType.MySQL);
 
                     command.CommandText = "SELECT * FROM Foo;";
                     reader = command.ExecuteReader();

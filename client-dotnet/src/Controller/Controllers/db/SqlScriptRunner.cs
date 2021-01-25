@@ -1,31 +1,36 @@
-// This is created on 01-21-2021 by Man Zhang
-
 using System;
 using System.Data.Common;
 
 namespace Controller.Controllers.db
 {
-    public class SqlScriptRunner
+    public static class SqlScriptRunner
     {
 
-        public static void execCommand(DbConnection connection,string command)
+        public static void ExecCommand(DbConnection connection,string command)
         {
             DbCommand cmd = connection.CreateCommand();
-            cmd.CommandText = command;
-            cmd.ExecuteNonQuery();
+            ExecCommand(cmd, command);
         }
-        
-        
-        public static DbDataReader execQueryCommand(DbConnection connection,string command)
+
+        //https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/executing-a-command
+        //https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbcommand?view=net-5.0
+        public static void ExecCommand(DbCommand command, string commandText)
         {
-            //Man: need to check.
-            if (!command.StartsWith("SELECT"))
-            {
-                throw new InvalidOperationException("it is not query command.");
-            }
+            command.CommandText = commandText;
+            command.ExecuteNonQuery();
+        }
+
+        public static DbDataReader ExecCommandWithDataReader(DbCommand command, string commandText)
+        {
+            command.CommandText = commandText;
+            return command.ExecuteReader();
+        }
+
+
+        public static DbDataReader ExecCommandWithDataReader(DbConnection connection,string command)
+        {
             DbCommand cmd = connection.CreateCommand();
-            cmd.CommandText = command;
-            return cmd.ExecuteReader();
+            return ExecCommandWithDataReader(cmd, command);
         }
     }
 }
