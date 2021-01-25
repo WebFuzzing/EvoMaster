@@ -141,7 +141,8 @@ as part of the *ERC Consolidator* project
 as part of the Frinatek project <i>Evolutionary Enterprise Testing</i>.  
 
 
-![](docs/img/LOGO_ERC-FLAG_EU_.jpg | width=100)
+<img src="https://github.com/EMResearch/EvoMaster/blob/master/docs/img/LOGO_ERC-FLAG_EU_.jpg?raw=true" width="200" >
+
 
 This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No 864972).
 
