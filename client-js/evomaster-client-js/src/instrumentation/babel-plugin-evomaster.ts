@@ -217,7 +217,7 @@ export default function evomasterPlugin(
         objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
 
         if( (t.isReturnStatement(stmt) && !stmt.argument)
-            || t.isContinueStatement(stmt)
+            || t.isContinueStatement(stmt) //FIXME: did i forget break? or was it included here?
             || t.isThrowStatement(stmt)
             /*
                 The following are tricky. They might have inside return stmts
