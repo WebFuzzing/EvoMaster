@@ -168,7 +168,7 @@ namespace Controller.Controllers.db
             return type switch
             {
                 SupportedDatabaseType.H2 => "PUBLIC",
-                SupportedDatabaseType.MySQL => "db",
+                SupportedDatabaseType.MYSQL => "db",
                 SupportedDatabaseType.POSTGRES => "public",
                 _ => throw new InvalidProgramException("NOT SUPPORT")
             };
@@ -189,7 +189,7 @@ namespace Controller.Controllers.db
             return type switch
             {
                 // there is no INFORMATION_SCHEMA.SEQUENCES in MySQL
-                SupportedDatabaseType.MySQL => GetAllTableCommand(GetSchema(type)),
+                SupportedDatabaseType.MYSQL => GetAllTableCommand(GetSchema(type)),
                 _ => GetAllSequenceCommand(GetSchema(type))
             };
         }
@@ -204,7 +204,7 @@ namespace Controller.Controllers.db
         {
             return type switch
             {
-                SupportedDatabaseType.MySQL => "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;",
+                SupportedDatabaseType.MYSQL => "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;",
                 _ => "ALTER SEQUENCE " + sequence + " RESTART WITH 1"
             };
         }
@@ -236,7 +236,7 @@ namespace Controller.Controllers.db
                 case SupportedDatabaseType.H2: 
                     SqlScriptRunner.ExecCommand(command, "SET REFERENTIAL_INTEGRITY FALSE");
                     break;
-                case SupportedDatabaseType.MySQL:
+                case SupportedDatabaseType.MYSQL:
                     SqlScriptRunner.ExecCommand(command, "SET @@foreign_key_checks = 0;");
                     break;
                 case SupportedDatabaseType.OTHERS:
@@ -254,7 +254,7 @@ namespace Controller.Controllers.db
                 case SupportedDatabaseType.H2: 
                     SqlScriptRunner.ExecCommand(command, "SET REFERENTIAL_INTEGRITY TRUE");
                     break;
-                case SupportedDatabaseType.MySQL:
+                case SupportedDatabaseType.MYSQL:
                     SqlScriptRunner.ExecCommand(command, "SET @@foreign_key_checks = 1;");
                     break;
                 case SupportedDatabaseType.OTHERS:

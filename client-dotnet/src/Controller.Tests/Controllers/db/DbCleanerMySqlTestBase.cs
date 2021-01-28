@@ -1,4 +1,3 @@
-// This is created on 01-21-2021 by Man Zhang
 
 using System;
 using System.Data.Common;
@@ -35,7 +34,7 @@ namespace Controller.Tests.Controllers.db
         
         protected override SupportedDatabaseType GetDbType()
         {
-            return SupportedDatabaseType.MySQL;
+            return SupportedDatabaseType.MYSQL;
         }
         
         
@@ -50,7 +49,7 @@ namespace Controller.Tests.Controllers.db
 
         public async Task DisposeAsync()
         {
-            DbCleaner.ClearDatabase(_connection, null, SupportedDatabaseType.MySQL);
+            DbCleaner.ClearDatabase(_connection, null, SupportedDatabaseType.MYSQL);
             
             SqlScriptRunner.ExecCommand(_connection, "DROP DATABASE db;");
             SqlScriptRunner.ExecCommand(_connection, "CREATE DATABASE db;");

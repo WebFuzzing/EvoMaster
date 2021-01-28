@@ -1,9 +1,7 @@
-// This is created on 01-27-2021 by Man Zhang
 
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Threading.Tasks;
 using Controller.Controllers.db;
 using Xunit;
 
@@ -18,7 +16,7 @@ namespace Controller.Tests.Controllers.db
         [Fact]
         public void TestAllClean()
         {
-            SeededTestData.seedFKData(GetConnection(), GetDbType());
+            seedFKData(GetConnection(), GetDbType());
             
             DbDataReader reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Bar;");
             Assert.True(reader.HasRows);
@@ -43,7 +41,7 @@ namespace Controller.Tests.Controllers.db
         [Fact]
         public void TestCleanWithSkip()
         {
-            SeededTestData.seedFKData(GetConnection(), GetDbType());
+            seedFKData(GetConnection(), GetDbType());
             
             DbDataReader reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Bar;");
             Assert.True(reader.HasRows);
@@ -67,10 +65,35 @@ namespace Controller.Tests.Controllers.db
         [Fact]
         public void TestCleanException()
         {
-            SeededTestData.seedFKData(GetConnection(), GetDbType());
+            seedFKData(GetConnection(), GetDbType());
             
             // throws exception with incorrect skip table
             Assert.Throws<SystemException>(()=>DbCleaner.ClearDatabase(GetConnection(),  new List<string>() { "zoo"}, GetDbType()));
+        }
+        
+        
+        public static void seedFKData(DbConnection connection, SupportedDatabaseType type = SupportedDatabaseType.H2)
+        {
+
+            SqlScriptRunner.ExecCommand(connection, "CREATE TABLE Foo(x int, primary key (x));");
+            SqlScriptRunner.ExecCommand(connection, "CREATE TABLE Bar(y int, primary key (y));");
+                
+            switch (type)
+            {
+                case SupportedDatabaseType.H2:
+                case SupportedDatabaseType.POSTGRES:
+                    SqlScriptRunner.ExecCommand(connection,  "alter table Bar add constraint FK foreign key (y) references Foo;");
+                    break;
+                case SupportedDatabaseType.MYSQL:
+                    SqlScriptRunner.ExecCommand(connection,  "alter table Bar add foreign key (y) references Foo(x);");
+                    break;
+                default:
+                    throw new InvalidOperationException("NOT SUPPORT");
+            }
+
+            SqlScriptRunner.ExecCommand(connection,  "INSERT INTO Foo (x) VALUES (42)");
+            SqlScriptRunner.ExecCommand(connection,  "INSERT INTO Bar (y) VALUES (42)");
+
         }
     }
 }

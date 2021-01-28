@@ -1,4 +1,3 @@
-// This is created on 01-21-2021 by Man Zhang
 
 namespace Controller.Controllers.db
 {
@@ -6,7 +5,7 @@ namespace Controller.Controllers.db
     {
         // is it property name for .net?
         H2,
-        MySQL,
+        MYSQL,
         POSTGRES,
         OTHERS
     }
