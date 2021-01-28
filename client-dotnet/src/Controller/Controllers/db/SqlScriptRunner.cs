@@ -3,6 +3,7 @@ using System.Data.Common;
 
 namespace Controller.Controllers.db
 {
+    //Man: I just enable a method to execute the command, and this needs to be further extended based on java version.
     public static class SqlScriptRunner
     {
 
@@ -13,7 +14,7 @@ namespace Controller.Controllers.db
         }
 
         //https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/executing-a-command
-        //https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbcommand?view=net-5.0
+        //https://docs.microsoft.com/en-us/dotnet/api/system.data.common.dbcommand
         public static void ExecCommand(DbCommand command, string commandText)
         {
             command.CommandText = commandText;
