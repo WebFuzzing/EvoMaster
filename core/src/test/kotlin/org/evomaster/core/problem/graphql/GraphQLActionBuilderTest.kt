@@ -147,7 +147,11 @@ class GraphQLActionBuilderTest {
         assertEquals(67, media.parameters.size)
         assertTrue((media.parameters[6].gene as OptionalGene).gene is EnumGene<*>)
 
-
+        val objMedia = (media.parameters[66].gene as OptionalGene).gene as ObjectGene
+        assertTrue(objMedia.fields.any { it is OptionalGene && it.name == "type" })
+        val enumV = (objMedia.fields[3] as OptionalGene).gene as EnumGene<*>
+        assertTrue(enumV.values.any { it == "ANIME" })
+        assertTrue(enumV.values.any { it == "MANGA" })
     }
 
     @Test
@@ -159,6 +163,226 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(12, actionCluster.size)
 
+        val algorand = actionCluster.get("algorand") as GraphQLAction
+        assertEquals(2, algorand.parameters.size)
+        assertTrue(algorand.parameters[0] is GQInputParam)
+        assertTrue(algorand.parameters[1] is GQReturnParam)
+        assertTrue((algorand.parameters[1].gene as OptionalGene).gene is ObjectGene)
+        val objAlgorand = (algorand.parameters[1].gene as OptionalGene).gene as ObjectGene
+        assertEquals(7, objAlgorand.fields.size)
+        assertTrue(objAlgorand.fields.any { it is ArrayGene<*> && it.name == "AlgorandAddressInfo" })
+
     }
 
+    @Test
+    fun catalysisHubSchemaTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/CatalysisHub.json").readText()
+
+        //GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        //   assertEquals(11, actionCluster.size)//TODO bug
+
+    }
+
+    @Test
+    fun contentfulSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/Contentful.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(22, actionCluster.size)
+
+        val asset = actionCluster.get("asset") as GraphQLAction
+        assertEquals(4, asset.parameters.size)
+        assertTrue(asset.parameters[0] is GQInputParam)
+        assertTrue(asset.parameters[1] is GQInputParam)
+        assertTrue(asset.parameters[2] is GQInputParam)
+        assertTrue(asset.parameters[3] is GQReturnParam)
+        assertTrue(asset.parameters[0].gene is StringGene)
+        assertTrue((asset.parameters[1].gene as OptionalGene).gene is BooleanGene)
+        assertTrue((asset.parameters[3].gene as OptionalGene).gene is ObjectGene)
+        /**/
+        val categoryCollection = actionCluster.get("categoryCollection") as GraphQLAction
+        assertEquals(7, categoryCollection.parameters.size)
+        assertTrue(categoryCollection.parameters[0] is GQInputParam)
+        assertTrue(categoryCollection.parameters[1] is GQInputParam)
+        assertTrue(categoryCollection.parameters[2] is GQInputParam)
+        assertTrue(categoryCollection.parameters[6] is GQReturnParam)
+        assertTrue((categoryCollection.parameters[0].gene as OptionalGene).gene is IntegerGene)
+        assertTrue((categoryCollection.parameters[4].gene as OptionalGene).gene is ObjectGene)
+        assertTrue((((categoryCollection.parameters[4].gene as OptionalGene).gene as ObjectGene).fields[6] as OptionalGene).gene is StringGene)
+
+
+    }
+
+    @Test
+    fun countriesSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/Countries.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(6, actionCluster.size)
+
+        val continents = actionCluster.get("continents") as GraphQLAction
+        assertEquals(2, continents.parameters.size)
+        assertTrue(continents.parameters[0] is GQInputParam)
+        assertTrue(continents.parameters[1] is GQReturnParam)
+        assertTrue((continents.parameters[1].gene as ArrayGene<*>).template is ObjectGene)
+        val objContinents = (continents.parameters[1].gene as ArrayGene<*>).template as ObjectGene
+        assertTrue((objContinents.fields[2] as ArrayGene<*>).template is ObjectGene)
+        val objCountry = (objContinents.fields[2] as ArrayGene<*>).template as ObjectGene
+        assertTrue((objCountry.fields[7] as ArrayGene<*>).template is ObjectGene)
+
+    }
+
+    @Test
+    fun deutscheBahnSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/DeutscheBahn.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(7, actionCluster.size)
+
+        val routing = actionCluster.get("routing") as GraphQLAction
+        assertEquals(3, routing.parameters.size)
+        assertTrue(routing.parameters[0] is GQInputParam)
+        assertTrue(routing.parameters[2] is GQReturnParam)
+        assertTrue((routing.parameters[2].gene as ArrayGene<*>).template is ObjectGene)
+
+    }
+
+    @Test
+    fun digitransitHSLSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/DigitransitHSL.json").readText()
+
+        //   GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        //   assertEquals(33, actionCluster.size)//todo bug
+
+    }
+
+    @Test
+    fun eHRISchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/EHRI.json").readText()
+
+        // GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        // assertEquals(18, actionCluster.size)//todo bug
+
+    }
+
+    @Test
+    fun etMDBSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/EtMDB.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(24, actionCluster.size)
+
+    }
+
+    @Test
+    fun everbaseSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/Everbase.json").readText()
+
+        //  GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        // assertEquals(14, actionCluster.size)//todo bug
+
+    }
+
+    @Test
+    fun gitLabSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/GitLab.json").readText()
+
+        //  GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        //  assertEquals(26, actionCluster.size)//todo bug (164 actions)
+
+    }
+
+    @Test
+    fun graphQLJobsSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/graphQLJobs.json").readText()
+
+        // GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        // assertEquals(11, actionCluster.size)//todo bug
+
+    }
+
+    @Test
+    fun HIVDBSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/HIVDB.json").readText()
+
+        //   GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        //  assertEquals(8, actionCluster.size)//todo bug (26 actions)
+
+    }
+
+    @Test
+    fun melodyRepoSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/melodyRepo.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(2, actionCluster.size)
+
+        val ppackage = actionCluster.get("package") as GraphQLAction
+        assertEquals(2, ppackage.parameters.size)
+        assertTrue(ppackage.parameters[0] is GQInputParam)
+        assertTrue(ppackage.parameters[0].gene is StringGene)
+        val objPackage = (ppackage.parameters[1].gene as OptionalGene).gene as ObjectGene
+        assertTrue(objPackage.fields.any { it is BooleanGene && it.name == "isMain" })
+        assertTrue((((objPackage.fields[2] as ArrayGene<*>).template as OptionalGene).gene) is ObjectGene)
+        val objVersion = (((objPackage.fields[2] as ArrayGene<*>).template as OptionalGene).gene) as ObjectGene
+        objVersion.fields.any { it is StringGene && it.name == "name" }
+        assertTrue(ppackage.parameters[1] is GQReturnParam)
+        assertTrue((ppackage.parameters[1].gene as OptionalGene).gene is ObjectGene)
+
+    }
+
+    @Test
+    fun reactFinlandSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/ReactFinland.json").readText()
+
+        // GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        //assertEquals(11, actionCluster.size)//todo bug
+
+    }
+
+    @Test
+    fun travelgateXSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/TravelgateX.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(9, actionCluster.size)
+        /**/
+        val admin = actionCluster.get("admin") as GraphQLAction
+        assertEquals(1, admin.parameters.size)
+        assertTrue(admin.parameters[0] is GQReturnParam)
+        assertTrue((admin.parameters[0].gene as OptionalGene).gene is ObjectGene)
+        /**/
+        val hotelX = actionCluster.get("hotelX") as GraphQLAction
+        assertEquals(1, admin.parameters.size)
+        assertTrue(hotelX.parameters[0] is GQReturnParam)
+        /**/
+        val logging = actionCluster.get("logging") as GraphQLAction
+        assertEquals(1, logging.parameters.size)
+        assertTrue(logging.parameters[0] is GQReturnParam)
+        assertTrue((logging.parameters[0].gene as OptionalGene).gene is ObjectGene)
+    }
+
+    @Test
+    fun universeSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/Universe.json").readText()
+
+        //  GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        //  assertEquals(27, actionCluster.size)//todo bug
+    }
 }

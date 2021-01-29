@@ -20321,6 +20321,23 @@
                   "defaultValue": null
                 },
                 {
+                  "name": "makerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
                   "name": "taker",
                   "type": {
                     "kind": "LIST",
@@ -20331,6 +20348,23 @@
                       "ofType": {
                         "kind": "INPUT_OBJECT",
                         "name": "EthereumAddressSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "takerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
                         "ofType": null
                       }
                     }
@@ -31318,6 +31352,23 @@
                   "defaultValue": null
                 },
                 {
+                  "name": "makerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
                   "name": "taker",
                   "type": {
                     "kind": "LIST",
@@ -31328,6 +31379,23 @@
                       "ofType": {
                         "kind": "INPUT_OBJECT",
                         "name": "EthereumAddressSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "takerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
                         "ofType": null
                       }
                     }
@@ -41139,6 +41207,23 @@
               "defaultValue": null
             },
             {
+              "name": "makerSmartContractType",
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "SmartContractTypeSelector",
+                    "ofType": null
+                  }
+                }
+              },
+              "defaultValue": null
+            },
+            {
               "name": "taker",
               "type": {
                 "kind": "LIST",
@@ -41149,6 +41234,23 @@
                   "ofType": {
                     "kind": "INPUT_OBJECT",
                     "name": "EthereumAddressSelector",
+                    "ofType": null
+                  }
+                }
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "takerSmartContractType",
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "SmartContractTypeSelector",
                     "ofType": null
                   }
                 }
@@ -41704,6 +41806,23 @@
                   "defaultValue": null
                 },
                 {
+                  "name": "makerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
                   "name": "taker",
                   "type": {
                     "kind": "LIST",
@@ -41714,6 +41833,23 @@
                       "ofType": {
                         "kind": "INPUT_OBJECT",
                         "name": "EthereumAddressSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "takerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
                         "ofType": null
                       }
                     }
@@ -42124,6 +42260,23 @@
                   "defaultValue": null
                 },
                 {
+                  "name": "makerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
                   "name": "taker",
                   "type": {
                     "kind": "LIST",
@@ -42134,6 +42287,23 @@
                       "ofType": {
                         "kind": "INPUT_OBJECT",
                         "name": "EthereumAddressSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "takerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
                         "ofType": null
                       }
                     }
@@ -42487,6 +42657,23 @@
                   "defaultValue": null
                 },
                 {
+                  "name": "makerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
                   "name": "taker",
                   "type": {
                     "kind": "LIST",
@@ -42497,6 +42684,23 @@
                       "ofType": {
                         "kind": "INPUT_OBJECT",
                         "name": "EthereumAddressSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "takerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
                         "ofType": null
                       }
                     }
@@ -42981,6 +43185,23 @@
                   "defaultValue": null
                 },
                 {
+                  "name": "makerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
                   "name": "taker",
                   "type": {
                     "kind": "LIST",
@@ -42991,6 +43212,23 @@
                       "ofType": {
                         "kind": "INPUT_OBJECT",
                         "name": "EthereumAddressSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "takerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
                         "ofType": null
                       }
                     }
@@ -43432,6 +43670,23 @@
                   "defaultValue": null
                 },
                 {
+                  "name": "makerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
                   "name": "taker",
                   "type": {
                     "kind": "LIST",
@@ -43442,6 +43697,23 @@
                       "ofType": {
                         "kind": "INPUT_OBJECT",
                         "name": "EthereumAddressSelector",
+                        "ofType": null
+                      }
+                    }
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "takerSmartContractType",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "SmartContractTypeSelector",
                         "ofType": null
                       }
                     }
@@ -59128,6 +59400,11 @@
           "inputFields": null,
           "interfaces": null,
           "enumValues": [
+            {
+              "name": "None",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
             {
               "name": "Generic",
               "isDeprecated": false,

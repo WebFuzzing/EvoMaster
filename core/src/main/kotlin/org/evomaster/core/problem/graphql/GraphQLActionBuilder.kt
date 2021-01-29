@@ -51,7 +51,7 @@ object GraphQLActionBuilder {
 
         initTablesInfo(schemaObj, state)
         for (element in state.tables) {
-            if (element.tableType == "Mutation" || element.tableType == "Query") {
+            if (element.tableType == "Mutation" || element.tableType == "Query" || element.tableType == "Root") {
                 handleOperation(
                         state,
                         actionCluster,
@@ -185,12 +185,16 @@ object GraphQLActionBuilder {
                 tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.ofType?.name
                 tableElement.tableType = elementIntypes?.name
                 state.tables.add(tableElement)
-            } else {
-                tableElement.kindOfTableFieldType = kind2
-                tableElement.isKindOfTableFieldTypeOptional = true
-                tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
-                tableElement.tableType = elementIntypes?.name
-                state.tables.add(tableElement)
+            } else {//optional object or scalar or enum
+                if (elementInfields?.type?.ofType?.ofType?.name == null) {
+                    LoggingUtil.uniqueWarn(log, "Depth not supported yet ${elementIntypes}")
+                } else {
+                    tableElement.kindOfTableFieldType = kind2
+                    tableElement.isKindOfTableFieldTypeOptional = true
+                    tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
+                    tableElement.tableType = elementIntypes?.name
+                    state.tables.add(tableElement)
+                }
             }
         } else if (kind == OBJECT || kind == SCALAR || kind == ENUM) {
             tableElement.kindOfTableFieldType = kind
@@ -429,6 +433,7 @@ object GraphQLActionBuilder {
         }
         val type = when {
             methodType.equals("QUERY", true) -> GQMethodType.QUERY
+            methodType.equals("Root", true) -> GQMethodType.QUERY
             methodType.equals("MUTATION", true) -> GQMethodType.MUTATION
             else -> {
                 //TODO log warn
@@ -619,6 +624,15 @@ object GraphQLActionBuilder {
                                 history.removeLast()
 
                             }
+                        } else if (element.kindOfTableFieldType.toString().equals("ENUM", ignoreCase = true)) {
+                            val field = element.tableField
+                            val template = field?.let {
+                                getGene(state, tableType, element.kindOfTableFieldType.toString(), kindOfTableFieldType, it, history,
+                                        element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
+                            }
+                            if (template != null)
+                                fields.add(template)
+
                         }
                 }
             }
@@ -661,6 +675,15 @@ object GraphQLActionBuilder {
                         if (element.kindOfTableFieldType.toString().equals("INPUT_OBJECT", ignoreCase = true)) {
                             val template = getGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
                                     element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
+                            if (template != null)
+                                fields.add(template)
+
+                        } else if (element.kindOfTableFieldType.toString().equals("ENUM", ignoreCase = true)) {
+                            val field = element.tableField
+                            val template = field?.let {
+                                getGene(state, tableType, element.kindOfTableFieldType.toString(), kindOfTableFieldType, it, history,
+                                        element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
+                            }
                             if (template != null)
                                 fields.add(template)
 
