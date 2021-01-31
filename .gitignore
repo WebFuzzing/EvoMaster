@@ -75,6 +75,7 @@ client-dotnet/src/*/Properties/
 e2e-tests/*/Properties/
 .vscode/
 *.launchSettings.json
+*.sln.DotSettings.user
 
 #Generated Tests
 generated-test-cases/
