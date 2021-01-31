@@ -184,7 +184,7 @@ namespace Controller.Controllers {
       //TODO: uncomment
       // _sutController.EnableComputeSqlHeuristicsOrExtractExecution (sqlHeuristics, sqlExecution);
 
-      bool doReset = dto.Reset‍State != null && dto.ResetState.Value;
+      bool doReset = dto.ResetState != null && dto.ResetState.Value;
 
       lock (_lock) {
 
