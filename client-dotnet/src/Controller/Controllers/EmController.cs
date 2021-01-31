@@ -72,7 +72,7 @@ namespace Controller.Controllers {
       Content = htmlWarning
     };
 
-    [HttpGet ("infoSUT")]
+    [HttpGet ("controller/api/infoSUT")]
     public IActionResult GetSutInfo () {
 
       string connectionHeader = Request.Headers["Connection"];
@@ -140,7 +140,7 @@ namespace Controller.Controllers {
       return Ok (WrappedResponseDto<SutInfoDto>.WithData (dto));
     }
 
-    [HttpGet ("controllerInfo")]
+    [HttpGet ("controller/api/controllerInfo")]
     public IActionResult GetControllerInfoDto () {
 
       AssertTrackRequestSource (Request.HttpContext.Connection);
@@ -149,10 +149,10 @@ namespace Controller.Controllers {
       dto.FullName = _sutController.GetType ().FullName;
       dto.IsInstrumentationOn = _sutController.IsInstrumentationActivated ();
 
-      return Ok (dto);
+      return Ok (WrappedResponseDto<ControllerInfoDto>.WithData (dto));
     }
 
-    [HttpPost ("newSearch")]
+    [HttpPost ("controller/api/newSearch")]
     public IActionResult NewSearch () {
 
       AssertTrackRequestSource (Request.HttpContext.Connection);
@@ -164,7 +164,7 @@ namespace Controller.Controllers {
 
     //TODO: How to get url from another file
     //TODO: Log errors in web server instead of try-catch 
-    [HttpPut ("runSUT")]
+    [HttpPut ("controller/api/runSUT")]
     public IActionResult RunSut ([FromBody] SutRunDto dto) {
 
       AssertTrackRequestSource (Request.HttpContext.Connection);
@@ -209,9 +209,7 @@ namespace Controller.Controllers {
               If SUT is not up and running, let's start it
            */
           if (!_sutController.IsSutRunning ()) {
-
             _baseUrlOfSut = _sutController.StartSut ();
-
             if (_baseUrlOfSut == null) {
               //there has been an internal failure in starting the SUT
               String msg = "Internal failure: cannot start SUT based on given configuration";
@@ -262,7 +260,7 @@ namespace Controller.Controllers {
       }
     }
 
-    [HttpPut ("newAction")]
+    [HttpPut ("controller/api/newAction")]
     [Consumes ("application/json")]
     public IActionResult NewAction ([FromBody] ActionDto dto) {
 

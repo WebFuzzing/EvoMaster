@@ -162,7 +162,7 @@ namespace Controller {
          */
         //TODO: Complete this method
         public void NewTest () {
-            throw new NotImplementedException ();
+            //throw new NotImplementedException (); //TODO:ZXC
         }
 
         /**

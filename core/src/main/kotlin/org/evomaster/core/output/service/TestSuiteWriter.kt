@@ -244,6 +244,13 @@ class TestSuiteWriter {
             }
         }
 
+        if(format.isDotnet()){
+            addUsing("Xunit", lines)
+            addUsing("System.Net.Http", lines)
+            addUsing("System.Threading.Tasks", lines)
+
+        }
+
         lines.addEmpty(4)
 
         classDescriptionComment(solution, lines)
@@ -277,6 +284,13 @@ class TestSuiteWriter {
                 lines.add("let $baseUrlOfSut;")
             } else {
                 lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
+            }
+        }
+        else if(config.outputFormat.isDotnet()){
+            if (!config.blackBox || config.bbExperiments){
+                lines.add("private static readonly HttpClient client = new HttpClient ();")
+                lines.add("private static readonly ISutHandler $controller = new $controllerName();")
+                lines.add("private static string $baseUrlOfSut;")
             }
         }
 
@@ -317,16 +331,26 @@ class TestSuiteWriter {
                 lines.add("fun initClass()")
             }
             format.isJavaScript() -> lines.add("beforeAll( async () =>");
+            format.isDotnet() -> lines.add("static EvoMasterTest()"); //TODO: get the constructor name from the class name
+
         }
 
         lines.block {
             if (!config.blackBox) {
-                if(config.outputFormat.isJavaScript()){
-                    addStatement("await $controller.setupForGeneratedTest()", lines)
-                    addStatement("baseUrlOfSut = await $controller.startSut()", lines)
-                } else {
-                    addStatement("$controller.setupForGeneratedTest()", lines)
-                    addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                when {
+                    config.outputFormat.isJavaScript() -> {
+                        addStatement("await $controller.setupForGeneratedTest()", lines)
+                        addStatement("baseUrlOfSut = await $controller.startSut()", lines)
+                    }
+                    config.outputFormat.isDotnet() -> {
+                        //Anything you add here goes inside the static constructor
+                        addStatement("$controller.SetupForGeneratedTest()", lines)
+                        addStatement("baseUrlOfSut = $controller.StartSut ()", lines)
+                    }
+                    else -> {
+                        addStatement("$controller.setupForGeneratedTest()", lines)
+                        addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                    }
                 }
 
                 when {
@@ -466,6 +490,7 @@ class TestSuiteWriter {
         when {
             format.isJava() -> lines.append("public ")
             format.isKotlin() -> lines.append("internal ")
+            format.isDotnet() -> lines.append("public ")
         }
 
         lines.append("class ${name.getClassName()} {")
@@ -477,6 +502,13 @@ class TestSuiteWriter {
         val s = if (static && config.outputFormat.isJava()) "static" else ""
 
         addStatement("import $s $klass", lines)
+    }
+
+    private fun addUsing(library:String, lines: Lines, static: Boolean = false){
+
+        val s = if(static) "static" else ""
+
+        addStatement("using $s $library", lines)
     }
 
     private fun addStatement(statement: String, lines: Lines) {

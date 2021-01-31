@@ -17,7 +17,8 @@ enum class OutputFormat {
     JAVA_JUNIT_4,
     KOTLIN_JUNIT_4,
     KOTLIN_JUNIT_5,
-    JS_JEST
+    JS_JEST,
+    DOTNET_CORE_3
     ;
 
     /*
@@ -28,8 +29,8 @@ enum class OutputFormat {
         and in the future, also support other languages,
         eg JavaScript
      */
-
-
+//TODO: Uncomment these lines of code
+/*
     fun isJava() = this.name.startsWith("java_", true)
 
     fun isKotlin() = this.name.startsWith("kotlin_", true)
@@ -43,5 +44,24 @@ enum class OutputFormat {
     fun isJUnit4() = this.name.endsWith("junit_4", true)
 
     fun isJUnit() = this.name.contains("_junit_", true)
+
+    fun isDotnet() = this.name.startsWith("dotnet",ignoreCase = true)
+*/
+    //TODO: Remove these lines of code
+    fun isJava() = false
+
+    fun isKotlin() = false
+
+    fun isJavaScript() = false
+
+    fun isJavaOrKotlin() = isJava() || isKotlin()
+
+    fun isJUnit5() = false
+
+    fun isJUnit4() = false
+
+    fun isJUnit() = false
+
+    fun isDotnet() = true
 
 }
