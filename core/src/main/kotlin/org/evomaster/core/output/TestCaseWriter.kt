@@ -155,12 +155,24 @@ class TestCaseWriter {
 
             CookieWriter.handleGettingCookies(format, test.test, lines, baseUrlOfSut)
 
-            test.test.evaluatedActions().forEach { a ->
-                when (a.action) {
-                    is RestCallAction -> handleRestCall(a, lines, baseUrlOfSut)
-                    else -> throw IllegalStateException("Cannot handle " + a.action.getName())
+            //TODO Man for add SQL in between
+            if (test.test.individual is RestIndividual && config.enableSQLInBetween()){
+                test.test.evaluatedResourceActions().forEach {c->
+                    // db
+                    if (c.first.isNotEmpty())
+                        SqlWriter.handleDbInitialization(format, c.first, lines)
+                    //actions
+                    c.second.forEach { a->
+                        handleEvaluatedAction(a, lines, baseUrlOfSut)
+                    }
+                }
+            }else{
+                test.test.evaluatedActions().forEach { a ->
+                    handleEvaluatedAction(a, lines, baseUrlOfSut)
                 }
             }
+
+
         }
         lines.add("}")
 
@@ -169,6 +181,13 @@ class TestCaseWriter {
         }
 
         return lines
+    }
+
+    private fun handleEvaluatedAction(a : EvaluatedAction, lines: Lines, baseUrlOfSut: String){
+        when (a.action) {
+            is RestCallAction -> handleRestCall(a, lines, baseUrlOfSut)
+            else -> throw IllegalStateException("Cannot handle " + a.action.getName())
+        }
     }
 
 

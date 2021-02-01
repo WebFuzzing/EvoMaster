@@ -173,6 +173,21 @@ class RestIndividual(
 
     fun getResourceCalls() : List<RestResourceCalls> = resourceCalls.toList()
 
+    fun getResourceCalls(size : Int) : List<RestResourceCalls> {
+        if (size == size()) return resourceCalls.toList()
+        var sum = 0
+        var last = 0
+        var partial : RestResourceCalls? =null
+        resourceCalls.forEachIndexed { index, call ->
+            if (sum + call.actions.size <= size) last = index
+            else if (sum < size){
+                partial = RestResourceCalls(null, call.resourceInstance, call.actions.subList(0, size-sum))
+            }
+            sum += call.actions.size
+        }
+        return resourceCalls.subList(0, last+1).apply { if (partial!=null) plus(partial) }.toList()
+    }
+
     /****************************** manipulate resource call in an individual *******************************************/
     fun removeResourceCall(position : Int) {
         if(position >= resourceCalls.size)

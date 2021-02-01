@@ -1321,7 +1321,16 @@ class EMConfig {
      */
     fun enableArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
 
-
     fun enableArchiveSolution() = enableArchiveGeneMutation() || enableArchiveGeneSelection()
+
+    /**
+     * @return whether enable resource-dependency based method
+     */
+    fun enableResourceDependency() = probOfSmartSampling > 0.0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+
+    /**
+     * @return whether to generate SQL between rest actions
+     */
+    fun enableSQLInBetween() = enableResourceDependency() && heuristicsForSQL && probOfApplySQLActionToCreateResources > 0.0
 
 }

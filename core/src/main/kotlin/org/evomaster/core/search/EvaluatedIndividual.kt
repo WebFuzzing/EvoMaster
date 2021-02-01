@@ -9,6 +9,7 @@ import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -106,6 +107,25 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             list.add(EvaluatedAction(actions[i], results[i]))
         }
 
+        return list
+    }
+
+    /**
+     * @return grouped db and evaluated actions based on its resource structure
+     */
+    fun evaluatedResourceActions() : List<Pair<List<DbAction>, List<EvaluatedAction>>>{
+        if (individual !is RestIndividual)
+            throw IllegalStateException("the method do not support the individual with the type: ${individual::class.java.simpleName}");
+
+        val list = mutableListOf<Pair<List<DbAction>, List<EvaluatedAction>>>();
+
+        var index = 0;
+
+        individual.getResourceCalls(results.size).forEach { c->
+            list.add(
+                c.dbActions to c.actions.map { a-> EvaluatedAction(a, results[index]).also { index++ } }
+            )
+        }
         return list
     }
 
