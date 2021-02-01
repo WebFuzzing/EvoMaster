@@ -26,10 +26,26 @@ class BodyParam(gene: Gene,
 
         val options = typeGene.values.filter { isSupportedType(it) }.toMutableList()
         if(options.isEmpty()){
-            /*
-                If no info, or not supported, we just try with JSON
-             */
-            options.add("application/json")
+
+            if(typeGene.values.any { isMultipartForm(it) }){
+                /*
+                    This is tricky... we have seen cases in V2 in which formData without an explicit
+                    application/x-www-form-urlencoded  turns by V3 parser into a multipart/form-data.
+                    This was a major issue that happened for features-service when updating parser
+                    from V2 to V3.
+                    We currently do not support multipart/form-data properly.
+                    If we see it, we just treat it as a regular form for now
+                    TODO handle it properly
+                 */
+                options.add("application/x-www-form-urlencoded")
+
+            } else {
+
+                /*
+                 If no info, or not supported, we just try with JSON
+                */
+                options.add("application/json")
+            }
         }
 
        contenTypeGene = EnumGene(typeGene.name, options, typeGene.index)
@@ -66,4 +82,8 @@ class BodyParam(gene: Gene,
     private fun isForm(s: String) = s.contains("application/x-www-form-urlencoded", ignoreCase = true)
 
     fun isForm() = isForm(contentType())
+
+    private fun isMultipartForm(s: String ) = s.contains("multipart/form-data", ignoreCase = true)
+
+    fun isMultipartForm() = isMultipartForm(contentType())
 }
