@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
  * resource-based sampler
  * the sampler handles resource-based rest individual
  */
-abstract class ResourceSampler : AbstractRestSampler() {
+open class ResourceSampler : AbstractRestSampler() {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(ResourceSampler::class.java)

@@ -19,8 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ResourceDependencyEMTest extends ResourceTestBase {
 
-
-    @Disabled("Started to fail since update to OpenApi V3")
     @Test
     public void testRunEM() throws Throwable {
 
@@ -30,6 +28,22 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                 1_000,
                 false,
                 (args) -> {
+                    // disable taint analysis
+                    args.add("--baseTaintAnalysisProbability");
+                    args.add("0.0");
+
+                    //disable hypermutation
+                    args.add("--enableTrackEvaluatedIndividual");
+                    args.add("false");
+                    args.add("--weightBasedMutationRate");
+                    args.add("false");
+                    args.add("--adaptiveGeneSelectionMethod");
+                    args.add("NONE");
+                    args.add("--archiveGeneMutation");
+                    args.add("NONE");
+                    args.add("--probOfArchiveMutation");
+                    args.add("0.0");
+
                     args.add("--heuristicsForSQL");
                     args.add("false");
                     args.add("--generateSqlDataWithSearch");
@@ -60,6 +74,7 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     args.add("1.0");
                     args.add("--structureMutationProbability");
                     args.add("1.0");
+
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
