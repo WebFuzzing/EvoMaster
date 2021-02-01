@@ -23,10 +23,10 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "none",
-                "none",
+                "ResourceEM",
+                "org.bar.resource.ResourceEM",
                 1_000,
-                false,
+                true,
                 (args) -> {
                     // disable taint analysis
                     args.add("--baseTaintAnalysisProbability");
@@ -44,6 +44,7 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     args.add("--probOfArchiveMutation");
                     args.add("0.0");
 
+                    //disable SQL
                     args.add("--heuristicsForSQL");
                     args.add("false");
                     args.add("--generateSqlDataWithSearch");
