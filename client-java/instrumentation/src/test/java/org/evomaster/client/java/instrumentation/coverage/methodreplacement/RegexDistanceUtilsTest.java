@@ -30,6 +30,59 @@ import java.util.regex.Pattern;
  */
 public class RegexDistanceUtilsTest {
 
+
+    private void verifyYesNo(String regex, String yes, String no){
+
+        assertTrue(Pattern.compile(regex).matcher(yes).matches());
+        assertFalse(Pattern.compile(regex).matcher(no).matches());
+
+        assertEquals(0d, RegexDistanceUtils.getStandardDistance(yes, regex));
+        assertTrue(RegexDistanceUtils.getStandardDistance(no,regex) > 0);
+    }
+
+    @Test
+    public void testD(){
+
+        String regex = "\\d";
+        String yes =  "1";
+        String no = "foo";
+
+        verifyYesNo(regex, yes, no);
+    }
+
+
+    @Test
+    public void testTab(){
+
+        String yes = "\t";
+        String no = " ";
+
+        verifyYesNo("[\t]", yes, no);
+        verifyYesNo("\t", yes, no);
+    }
+
+    @Test
+    public void testS(){
+
+        verifyYesNo("\\s", " ", "s");
+        //FIXME
+        //verifyYesNo("\\s", "\t", "s");
+    }
+
+    @Test
+    public void testLanguageToolIssue02(){
+
+        String regex = ".*\\s$";
+        String target = "Abdel Nasser";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(target);
+        assertFalse(matcher.matches());
+
+        int distance = RegexDistanceUtils.getStandardDistance(target, regex);
+        assertTrue(distance > 0 );
+    }
+
     @Test
     public void testLanguageToolIssue(){
 

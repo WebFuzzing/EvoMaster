@@ -113,6 +113,12 @@ public class RegexDistanceUtils {
      * @return
      */
     private static String expandRegex(String regex) {
+
+        /*
+            FIXME: all these checks assume that replaced character is not already
+            inside a []
+         */
+
         // .	Any character (may or may not match line terminators)
         // \d	A digit: [0-9]
         String newRegex = regex.replaceAll("\\\\d", "[0-9]");
@@ -121,10 +127,12 @@ public class RegexDistanceUtils {
         newRegex = newRegex.replaceAll("\\\\D", "[^0-9]");
 
         // \s	A whitespace character: [ \t\n\x0B\f\r]
-        newRegex = newRegex.replaceAll("\\\\s", "[ \\t\\n\\f\\r]");
+        //newRegex = newRegex.replaceAll("\\\\s", "[ \\t\\n\\f\\r]"); //FIXME does not work
+        newRegex = newRegex.replaceAll("\\\\s", " ");
 
         // \S	A non-whitespace character: [^\s]
-        newRegex = newRegex.replaceAll("\\\\S", "[^ \\t\\n\\f\\r]");
+        //newRegex = newRegex.replaceAll("\\\\S", "[^ \\t\\n\\f\\r]"); //FIXME does not work
+        newRegex = newRegex.replaceAll("\\\\S", "[a-zA-Z_0-9]");
 
         // \w	A word character: [a-zA-Z_0-9]
         newRegex = newRegex.replaceAll("\\\\w", "[a-zA-Z_0-9]");
