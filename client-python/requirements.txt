@@ -1,5 +1,8 @@
 Flask==1.1.2
 flask-restx==0.2.0
+flask-sqlalchemy==2.4.4
+flask-marshmallow==0.14.0
+marshmallow-sqlalchemy==0.24.1
 click==7.1.2
 python-dotenv==0.14.0
 requests==2.24.0
