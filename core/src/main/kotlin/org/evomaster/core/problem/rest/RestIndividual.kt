@@ -51,7 +51,7 @@ class RestIndividual(
                 resourceCalls.map { it.copy() }.toMutableList(),
                 sampleType,
                 sampleSpec?.copy(),
-                dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                seeInitializingActions().map { d -> d.copy() as DbAction } as MutableList<DbAction>,
                 trackOperator,
                 index
         )
@@ -76,9 +76,9 @@ class RestIndividual(
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
         return when (filter) {
-            GeneFilter.ALL -> dbInitialization.flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
+            GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
             GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-            GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
+            GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(DbAction::seeGenes)
         }
     }
 
@@ -92,12 +92,12 @@ class RestIndividual(
 
     override fun seeActions(): List<RestAction> = resourceCalls.flatMap { it.actions }
 
-    override fun seeInitializingActions(): List<Action> {
-        return dbInitialization
+    override fun seeInitializingActions(): List<DbAction> {
+        return dbInitialization.plus(resourceCalls.flatMap { c-> c.dbActions })
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
+        return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
     }
 
 
@@ -112,7 +112,7 @@ class RestIndividual(
          * Now repair database constraints (primary keys, foreign keys, unique fields, etc.)
          */
         if (!verifyInitializationActions()) {
-            DbActionUtils.repairBrokenDbActionsList(dbInitialization, randomness)
+            DbActionUtils.repairBrokenDbActionsList(seeInitializingActions().toMutableList(), randomness)
             Lazy.assert{verifyInitializationActions()}
         }
     }

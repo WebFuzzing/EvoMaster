@@ -272,9 +272,9 @@ class EMConfig {
             resource-mio and sql configuration
             TODO if required
          */
-        if (resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)) {
-            throw IllegalArgumentException("Resource-mio does not support SQL strategies for the moment")
-        }
+//        if (resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)) {
+//            throw IllegalArgumentException("Resource-mio does not support SQL strategies for the moment")
+//        }
 
         //archive-based mutation
 //        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {

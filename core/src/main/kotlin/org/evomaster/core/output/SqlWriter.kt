@@ -16,7 +16,7 @@ import org.evomaster.core.search.gene.sql.SqlWrapperGene
  */
 object SqlWriter {
 
-    fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines) {
+    fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines, allDbInitialization: List<DbAction> = dbInitialization) {
 
         if (dbInitialization.isEmpty() || dbInitialization.none { !it.representExistingData }) {
             return
@@ -42,7 +42,7 @@ object SqlWriter {
                                 .forEach { g ->
                                     when {
                                         g is SqlWrapperGene && g.getForeignKey() != null -> {
-                                            val line = handleFK(format, g.getForeignKey()!!, dbAction, dbInitialization)
+                                            val line = handleFK(format, g.getForeignKey()!!, dbAction, allDbInitialization)
                                             lines.add(line)
                                         }
                                         g is ObjectGene -> {

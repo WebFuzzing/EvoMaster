@@ -141,7 +141,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
     override fun doInitializingActions(ind: RestIndividual) {
 
-        if (ind.dbInitialization.none { !it.representExistingData }) {
+        if (ind.seeInitializingActions().none { !it.representExistingData }) {
             /*
                 We are going to do an initialization of database only if there
                 is data to add.
@@ -151,7 +151,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             return
         }
 
-        val dto = DbActionTransformer.transform(ind.dbInitialization)
+        val dto = DbActionTransformer.transform(ind.seeInitializingActions())
 
         val ok = rc.executeDatabaseCommand(dto)
         if (!ok) {

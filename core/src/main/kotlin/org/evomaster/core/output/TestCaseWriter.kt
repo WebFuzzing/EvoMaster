@@ -122,7 +122,7 @@ class TestCaseWriter {
                     //TODO: -> also check expectation generation before adding declarations
                 }
                 if (ind.individual.dbInitialization.isNotEmpty()) {
-                    SqlWriter.handleDbInitialization(format, ind.individual.dbInitialization, lines)
+                    SqlWriter.handleDbInitialization(format, ind.individual.seeInitializingActions(), lines)
                 }
             }
 
@@ -157,10 +157,13 @@ class TestCaseWriter {
 
             //TODO Man for add SQL in between
             if (test.test.individual is RestIndividual && config.enableSQLInBetween()){
+
+
                 test.test.evaluatedResourceActions().forEach {c->
+
                     // db
                     if (c.first.isNotEmpty())
-                        SqlWriter.handleDbInitialization(format, c.first, lines)
+                        SqlWriter.handleDbInitialization(format, c.first, lines, test.test.individual.seeInitializingActions())
                     //actions
                     c.second.forEach { a->
                         handleEvaluatedAction(a, lines, baseUrlOfSut)

@@ -43,8 +43,8 @@ class RestStructureMutator : StructureMutator() {
 
         val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
 
-        if(ind.dbInitialization.isEmpty()
-                || ! ind.dbInitialization.any { it.representExistingData }) {
+        if(ind.seeInitializingActions().isEmpty()
+                || ! ind.seeInitializingActions().any { it.representExistingData }) {
             //add existing data only once
             ind.dbInitialization.addAll(0, sampler.existingSqlData)
 
@@ -107,7 +107,7 @@ class RestStructureMutator : StructureMutator() {
 
         return fw.filter { e ->
             //shouldn't have already an action adding such SQL data
-            ind.dbInitialization
+            ind.seeInitializingActions()
                     .filter { ! it.representExistingData }
                     .none { a ->
                 a.table.name.equals(e.key, ignoreCase = true) && e.value.all { c ->
