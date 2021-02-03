@@ -92,6 +92,10 @@ class RestIndividual(
 
     override fun seeActions(): List<RestAction> = resourceCalls.flatMap { it.actions }
 
+    /*
+        TODO, Man: need to discuss this method with Andrea, only return [dbInitialization] or return all db actions
+        This is related to several functions which requires to return db genes.
+     */
     override fun seeInitializingActions(): List<DbAction> {
         return dbInitialization.plus(resourceCalls.flatMap { c-> c.dbActions })
     }

@@ -1056,7 +1056,7 @@ class TestCaseWriterTest {
         val barInsertion = DbAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
 
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
-        val barAction = RestCallAction("1", HttpVerb.GET, RestPath("/bar"), mutableListOf())
+        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
@@ -1096,6 +1096,54 @@ public void test() throws Exception {
             .d("fkId", "42")
         .dtos();
     controller.execInsertionsIntoDatabase(insertions);
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/bar");
+    } catch(Exception e){
+    }
+}
+
+""".trimIndent()
+
+        assertEquals(expectedLines, lines.toString())
+    }
+
+    @Test
+    fun testDbInBetweenWithEmptyDb() {
+
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<DbAction>() to mutableListOf(fooAction as RestAction)),
+                (mutableListOf<DbAction>() to mutableListOf(barAction as RestAction))
+            )
+        )
+
+        val config = EMConfig()
+        config.outputFormat = format
+        config.expectationsActive = false
+        config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
+        config.probOfApplySQLActionToCreateResources=0.1
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+        writer.setPartialOracles(PartialOracles())
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+        val expectedLines = """
+@Test
+public void test() throws Exception {
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/foo");
+    } catch(Exception e){
+    }
     
     try{
         given().accept("*/*")
