@@ -19,6 +19,10 @@ class EMHandler(FlaskHandler):
     def reset_state_of_sut(self):
         pass
 
+    # todo: review duplicated method
+    def reset_sut_state(self):
+        pass
+
     def setup_for_generated_test(self):
         pass
 

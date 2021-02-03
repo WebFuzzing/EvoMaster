@@ -2,29 +2,46 @@
 
 Environment:
 ```
-pyenv virtualenv venv-evomaster
-pyenv activate venv-evomaster
+pyenv virtualenv evomaster
+pyenv activate evomaster
 pip install -r requirements-dev.txt
 ```
 
 Running the instrumented version of EvoMaster Proxy controller:
-
 ```python
 python -m evomaster_client.cli run-em -p 'evomaster_client.proxy' -m 'evomaster_client.proxy.em_app'
 python -m evomaster_client.cli run-em -p 'evomaster_benchmark.ncs' -m 'evomaster_benchmark.ncs.app'
 ```
-
 ```python
 python -m evomaster_client.cli run-instrumented -p 'evomaster_client.proxy' -m 'evomaster_client.proxy.em_app'
 python -m evomaster_client.cli run-instrumented -p 'evomaster_benchmark.ncs' -m 'evomaster_benchmark.ncs.app'
 ```
 
+Running EvoMaster benchmark applications
 ```python
-python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.ncs.em_handler' -c 'EMHandler'
+python -m 'evomaster_benchmark.ncs.app'
+python -m 'evomaster_benchmark.scs.app'
+python -m 'evomaster_benchmark.news.app'
 ```
 
-Running tests:
+Generating black-box tests
+```
+java -jar ../core/target/evomaster.jar --maxTime 60s  --outputFolder tests/generated/APP --outputFormat PYTHON_UNITTEST --blackBox true --bbTargetUrl http://localhost:8080/ --bbSwaggerUrl http://localhost:8080/swagger.json
+```
 
+Running EvoMaster benchmark handlers
 ```python
-pytest [-s] tests
+python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.ncs.em_handler' -c 'EMHandler'
+python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.scs.em_handler' -c 'EMHandler'
+python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.news.em_handler' -c 'EMHandler'
+```
+
+Generating white-box tests
+```
+java -jar ../core/target/evomaster.jar --maxTime 60s  --outputFolder tests/generated/APP --outputFormat PYTHON_UNITTEST
+```
+
+Running generated tests
+```
+python -m pytest tests/generated/path/to/test
 ```
