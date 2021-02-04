@@ -2,10 +2,8 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
-import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
-import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.ObjectGenerator
@@ -23,10 +21,12 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.taint.TaintAnalysis
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -780,5 +780,79 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         if (Files.notExists(path.parent)) Files.createDirectories(path.parent)
         if (Files.notExists(path)) Files.createFile(path)
         Files.write(path, listOf(time.evaluatedIndividuals.toString()).plus(targets.map { idMapper.getDescriptiveId(it) }), StandardOpenOption.APPEND)
+    }
+
+
+    protected fun registerNewAction(action: RestAction, index: Int){
+
+        rc.registerNewAction(ActionDto().apply {
+            this.index = index
+            //for now, we only include specialized regex
+            this.inputVariables = action.seeGenes()
+                .flatMap { it.flatView() }
+                .filterIsInstance<StringGene>()
+                .filter { it.getSpecializationGene() != null && it.getSpecializationGene() is RegexGene }
+                .map { it.getSpecializationGene()!!.getValueAsRawString()}
+        })
+    }
+
+
+    protected fun restActionResultHandling(
+        individual: RestIndividual, targets: Set<Int>, actionResults: MutableList<ActionResult>, fv: FitnessValue) : TestResultsDto?{
+
+        if(actionResults.any { it is RestCallResult && it.getTcpProblem() }){
+            /*
+                If there are socket issues, we avoid trying to compute any coverage.
+                The caller might restart the SUT and try again.
+                Hopefully, this should be just a glitch...
+                TODO if we see this happening often, we need to find a proper solution.
+                For example, we could re-run the test, and see if this one always fails,
+                while others in the archive do pass.
+                It could be handled specially in the archive.
+             */
+            return null
+        }
+
+        val ids = targetsToEvaluate(targets, individual as T)
+
+        val dto = rc.getTestResults(ids)
+        if (dto == null) {
+            log.warn("Cannot retrieve coverage")
+            return null
+        }
+
+        dto.targets.forEach { t ->
+
+            if (t.descriptiveId != null) {
+
+                val noMethodReplacement = !config.useMethodReplacement && t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
+                val noNonIntegerReplacement = !config.useNonIntegerReplacement && t.descriptiveId.startsWith(
+                    ObjectiveNaming.NUMERIC_COMPARISON)
+
+                if (noMethodReplacement || noNonIntegerReplacement) {
+                    return@forEach
+                }
+
+                idMapper.addMapping(t.id, t.descriptiveId)
+            }
+
+            fv.updateTarget(t.id, t.value, t.actionIndex)
+        }
+
+        handleExtra(dto, fv)
+
+        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
+
+        if (config.expandRestIndividuals) {
+            expandIndividual(individual, dto.additionalInfoList, actionResults)
+        }
+
+        if (config.baseTaintAnalysisProbability > 0) {
+            assert(actionResults.size == dto.additionalInfoList.size)
+            //TODO add taint analysis for resource-based solution
+            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
+        }
+
+        return dto
     }
 }

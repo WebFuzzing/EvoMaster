@@ -65,7 +65,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             for (a in call.actions){
 
                 //TODO handling of inputVariables
-                rc.registerNewAction(ActionDto().apply { index = indexOfAction})
+                registerNewAction(a, indexOfAction)
 
                 var ok = false
 
@@ -93,42 +93,17 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 break
         }
 
-        val dto = rc.getTestResults(targetsToEvaluate(targets, individual))
-        if (dto == null) {
-            log.warn("Cannot retrieve coverage")
-            return null
-        }
-
+        val dto = restActionResultHandling(individual, targets, actionResults, fv)?:return null
         /*
          update dependency regarding executed dto
          */
         if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
 
-        dto.targets.forEach { t ->
-
-            if (t.descriptiveId != null) {
-                idMapper.addMapping(t.id, t.descriptiveId)
-            }
-
-            fv.updateTarget(t.id, t.value, t.actionIndex)
-        }
-
-        handleExtra(dto, fv)
-
-        handleResponseTargets(fv, individual.seeActions().toMutableList(), actionResults, dto.additionalInfoList)
-
-        if (config.expandRestIndividuals) {
-            expandIndividual(individual, dto.additionalInfoList, actionResults)
-        }
 
         return EvaluatedIndividual(
                 fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)
 
-        /*
-            TODO when dealing with seeding, might want to extend EvaluatedIndividual
-            to keep track of AdditionalInfo
-         */
     }
 
     private fun doInitializingCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>) {
