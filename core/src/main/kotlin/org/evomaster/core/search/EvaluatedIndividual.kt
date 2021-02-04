@@ -13,6 +13,8 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -121,10 +123,17 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         var index = 0;
 
-        individual.getResourceCalls(results.size).forEach { c->
-            list.add(
-                c.dbActions to c.actions.map { a-> EvaluatedAction(a, results[index]).also { index++ } }
-            )
+        individual.getResourceCalls().forEach { c->
+            if (index < results.size){
+                list.add(
+                    c.dbActions to c.actions.subList(0, min(c.actions.size, results.size-index)).map {
+                            a-> EvaluatedAction(a, results[index]).also { index++ }
+                    }.toList()
+                )
+            }
+        }
+        Lazy.assert {
+            index + 1 == results.size
         }
         return list
     }
