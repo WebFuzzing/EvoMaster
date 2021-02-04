@@ -1081,21 +1081,21 @@ class TestCaseWriterTest {
         val expectedLines = """
 @Test
 public void test() throws Exception {
-    List<InsertionDto> insertions = sql().insertInto("Foo", 1001L)
+    List<InsertionDto> insertions0 = sql().insertInto("Foo", 1001L)
             .d("Id", "42")
         .dtos();
-    controller.execInsertionsIntoDatabase(insertions);
+    controller.execInsertionsIntoDatabase(insertions0);
     
     try{
         given().accept("*/*")
                 .get(baseUrlOfSut + "/foo");
     } catch(Exception e){
     }
-    List<InsertionDto> insertions = sql().insertInto("Bar", 1002L)
+    List<InsertionDto> insertions1 = sql().insertInto("Bar", 1002L)
             .d("Id", "42")
             .d("fkId", "42")
         .dtos();
-    controller.execInsertionsIntoDatabase(insertions);
+    controller.execInsertionsIntoDatabase(insertions1);
     
     try{
         given().accept("*/*")

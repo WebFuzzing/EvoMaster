@@ -163,10 +163,10 @@ class TestCaseWriter {
             //SQL actions are generated in between
             if (test.test.individual is RestIndividual && config.enableSQLInBetween()){
 
-                test.test.evaluatedResourceActions().forEach {c->
+                test.test.evaluatedResourceActions().forEachIndexed { index, c->
                     // db
                     if (c.first.isNotEmpty())
-                        SqlWriter.handleDbInitialization(format, c.first, lines, test.test.individual.seeInitializingActions())
+                        SqlWriter.handleDbInitialization(format, c.first, lines, test.test.individual.seeInitializingActions(), groupIndex = index.toString())
                     //actions
                     c.second.forEach { a->
                         handleEvaluatedAction(a, lines, baseUrlOfSut)
