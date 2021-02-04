@@ -133,7 +133,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             }
         }
         Lazy.assert {
-            index + 1 == results.size
+            index == results.size
         }
         return list
     }
