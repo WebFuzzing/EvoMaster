@@ -6,6 +6,7 @@ import org.junit.Test
 import org.junit.jupiter.api.Assertions.*
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.junit.jupiter.api.Disabled
 
 
 class GraphQLActionBuilderTest {
@@ -80,7 +81,7 @@ class GraphQLActionBuilderTest {
         assertTrue(objPet.fields.any { it is StringGene && it.name == "name" })
         assertTrue(objPet.fields.any { it is DateGene && it.name == "birthDate" })
         assertTrue(objPet.fields.any { it is ObjectGene && it.name == "PetType" })
-        assertTrue(objPet.fields.any { it is CycleObjectGene && it.name == "Owner" })
+        // assertTrue(objPet.fields.any { it is CycleObjectGene && it.name == "Owner" })//fausse it is not a cycle
         assertTrue(objPet.fields.any { it is ObjectGene && it.name == "VisitConnection" })
         assertTrue(objPet.fields[5] is ObjectGene)
         val objVisitConnection = objPet.fields[5] as ObjectGene
@@ -292,13 +293,26 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Test
+    @Disabled
     fun gitLabSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/GitLab.json").readText()
 
-        //  GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        //  assertEquals(26, actionCluster.size)//todo bug (164 actions)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        /*Important: They are 162 in the documentation but in the retrieved schema they are only 157
+        So there is 5 mentioned in the documentation but not mentioned in the schema*/
+        assertEquals(157, actionCluster.size)
+
+    }
+
+    @Test
+    fun gitLabSchema04202021Test() {
+        /*Important: This is the gitLab schema updates */
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/GitLab04022021.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(169, actionCluster.size)
 
     }
 
@@ -316,9 +330,8 @@ class GraphQLActionBuilderTest {
     fun HIVDBSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/HIVDB.json").readText()
-
-        //   GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        //  assertEquals(8, actionCluster.size)//todo bug (26 actions)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(9, actionCluster.size)
 
     }
 

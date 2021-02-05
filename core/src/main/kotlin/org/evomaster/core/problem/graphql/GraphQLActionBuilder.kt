@@ -50,30 +50,74 @@ object GraphQLActionBuilder {
          */
 
         initTablesInfo(schemaObj, state)
-        for (element in state.tables) {
-            if (element.tableType == "Mutation" || element.tableType == "Query" || element.tableType == "Root") {
-                handleOperation(
-                        state,
-                        actionCluster,
-                        element.tableField,
-                        element.tableType,
-                        element.tableFieldType,
-                        element.kindOfTableFieldType.toString(),
-                        element.kindOfTableField.toString(),
-                        element.tableType.toString(),
-                        element.isKindOfTableFieldTypeOptional,
-                        element.isKindOfTableFieldOptional,
-                        element.tableFieldWithArgs,
-                        element.enumValues
-                )
-            }
-        }
 
+        if (schemaObj.data.__schema.queryType != null && schemaObj.data.__schema.mutationType != null)
+            for (element in state.tables) {
+                /*
+                In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
+                 */
+                if (element.tableType == "Mutation" || element.tableType == "Query" || element.tableType == "Root" || element.tableType == "QueryType") {
+                    handleOperation(
+                            state,
+                            actionCluster,
+                            element.tableField,
+                            element.tableType,
+                            element.tableFieldType,
+                            element.kindOfTableFieldType.toString(),
+                            element.kindOfTableField.toString(),
+                            element.tableType.toString(),
+                            element.isKindOfTableFieldTypeOptional,
+                            element.isKindOfTableFieldOptional,
+                            element.tableFieldWithArgs,
+                            element.enumValues
+                    )
+                }
+            }
+        else if (schemaObj.data.__schema.queryType != null && schemaObj.data.__schema.mutationType == null)
+            for (element in state.tables) {
+                if (element.tableType == "Query" || element.tableType == "Root" || element.tableType == "QueryType") {
+                    handleOperation(
+                            state,
+                            actionCluster,
+                            element.tableField,
+                            element.tableType,
+                            element.tableFieldType,
+                            element.kindOfTableFieldType.toString(),
+                            element.kindOfTableField.toString(),
+                            element.tableType.toString(),
+                            element.isKindOfTableFieldTypeOptional,
+                            element.isKindOfTableFieldOptional,
+                            element.tableFieldWithArgs,
+                            element.enumValues
+                    )
+                }
+            }
+        else if (schemaObj.data.__schema.queryType == null && schemaObj.data.__schema.mutationType != null)
+            for (element in state.tables) {
+                if (element.tableType == "Mutation") {
+                    handleOperation(
+                            state,
+                            actionCluster,
+                            element.tableField,
+                            element.tableType,
+                            element.tableFieldType,
+                            element.kindOfTableFieldType.toString(),
+                            element.kindOfTableField.toString(),
+                            element.tableType.toString(),
+                            element.isKindOfTableFieldTypeOptional,
+                            element.isKindOfTableFieldOptional,
+                            element.tableFieldWithArgs,
+                            element.enumValues
+                    )
+                }
+            }
+        else if (schemaObj.data.__schema.queryType == null && schemaObj.data.__schema.mutationType == null)
+            LoggingUtil.uniqueWarn(log, "No entrance for the schema")
     }
 
     private fun initTablesInfo(schemaObj: SchemaObj, state: TempState) {
 
-        for (elementIntypes in schemaObj.data?.__schema?.types) {
+        for (elementIntypes in schemaObj.data.__schema.types) {
             if (systemTypes.contains(elementIntypes.name)) {
                 continue
             }
@@ -433,7 +477,11 @@ object GraphQLActionBuilder {
         }
         val type = when {
             methodType.equals("QUERY", true) -> GQMethodType.QUERY
+            /*
+               In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
+                */
             methodType.equals("Root", true) -> GQMethodType.QUERY
+            methodType.equals("QueryType", true) -> GQMethodType.QUERY
             methodType.equals("MUTATION", true) -> GQMethodType.MUTATION
             else -> {
                 //TODO log warn
@@ -481,14 +529,16 @@ object GraphQLActionBuilder {
                     params.add(GQInputParam(element.tableFieldType, gene))
                 }
             }
-            history.addFirst(tableFieldType)
+
+
             val gene = getGene(state, tableFieldType, kindOfTableField, kindOfTableFieldType, tableType, history,
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues)
             params.add(GQReturnParam(tableFieldType, gene))
         } else {
-            history.addFirst(tableFieldType)
+            history.addFirst(tableType)//root
             val gene = getGene(state, tableFieldType, kindOfTableField, kindOfTableFieldType, tableType, history,
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues)
+            history.removeFirst()
 
             params.add(GQReturnParam(tableFieldType, gene))
 
@@ -556,6 +606,11 @@ object GraphQLActionBuilder {
                     return OptionalGene(tableType, BooleanGene(tableType))
                 else
                     return BooleanGene(tableType)
+            "long" ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(tableType, LongGene(tableType))
+                else
+                    return LongGene(tableType)
             "null" ->
                 return getGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues)
@@ -615,6 +670,7 @@ object GraphQLActionBuilder {
                             if (history.count { it == element.tableFieldType } == 1) {
                                 val template = getGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
                                         element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
+                                history.removeLast()
                                 history.removeLast()
                                 if (template != null) {
                                     fields.add(template)
