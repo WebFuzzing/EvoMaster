@@ -6,6 +6,7 @@ import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -546,6 +547,8 @@ class ParamUtil {
                 if(gene.gene is SqlAutoIncrementGene)
                     return gene
                 else return getValueGene(gene.gene)
+            }else if(gene is SqlNullable){
+                return getValueGene(gene.gene)
             }
             return gene
         }
