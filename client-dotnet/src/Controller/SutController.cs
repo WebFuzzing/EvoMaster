@@ -174,7 +174,7 @@ namespace Controller {
          */
         //TODO: Complete this method
         public void NewAction (ActionDto dto) {
-            throw new NotImplementedException ();
+           
         }
 
         /**
