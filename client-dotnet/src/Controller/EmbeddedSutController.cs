@@ -18,7 +18,8 @@ namespace Controller {
     }
 
     public override sealed void NewSearch () {
-      throw new System.NotImplementedException ();
+      //TODO: Implement this method
+      
     }
 
     public override sealed void NewTestSpecificHandler () {
