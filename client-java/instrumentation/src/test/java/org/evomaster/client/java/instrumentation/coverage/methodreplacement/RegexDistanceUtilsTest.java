@@ -1,5 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.regex.Matcher;
@@ -29,6 +31,11 @@ import java.util.regex.Pattern;
  *
  */
 public class RegexDistanceUtilsTest {
+
+    @BeforeEach
+    public void reset(){
+        ExecutionTracer.reset();
+    }
 
 
     private void verifyYesNo(String regex, String yes, String no){
