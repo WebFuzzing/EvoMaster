@@ -81,7 +81,7 @@ class GraphQLActionBuilderTest {
         assertTrue(objPet.fields.any { it is StringGene && it.name == "name" })
         assertTrue(objPet.fields.any { it is DateGene && it.name == "birthDate" })
         assertTrue(objPet.fields.any { it is ObjectGene && it.name == "PetType" })
-        // assertTrue(objPet.fields.any { it is CycleObjectGene && it.name == "Owner" })//fausse it is not a cycle
+        // assertTrue(objPet.fields.any { it is CycleObjectGene && it.name == "Owner" })// it is not a cycle
         assertTrue(objPet.fields.any { it is ObjectGene && it.name == "VisitConnection" })
         assertTrue(objPet.fields[5] is ObjectGene)
         val objVisitConnection = objPet.fields[5] as ObjectGene
@@ -181,8 +181,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/CatalysisHub.json").readText()
 
-        //GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        //   assertEquals(11, actionCluster.size)//TODO bug
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+           assertEquals(10, actionCluster.size)//TODO (10 + 1 interface)
 
     }
 
@@ -258,8 +258,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/DigitransitHSL.json").readText()
 
-        //   GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        //   assertEquals(33, actionCluster.size)//todo bug
+           GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+           assertEquals(32, actionCluster.size)// TODO 33 (32 + 1 interface)
 
     }
 
@@ -268,8 +268,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/EHRI.json").readText()
 
-        // GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        // assertEquals(18, actionCluster.size)//todo bug
+         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+         assertEquals(19, actionCluster.size)
 
     }
 
@@ -288,8 +288,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/Everbase.json").readText()
 
-        //  GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        // assertEquals(14, actionCluster.size)//todo bug
+          GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+         assertEquals(14, actionCluster.size)
 
     }
 
@@ -321,8 +321,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/graphQLJobs.json").readText()
 
-        // GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        // assertEquals(11, actionCluster.size)//todo bug
+         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+         assertEquals(15, actionCluster.size)
 
     }
 
@@ -362,8 +362,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/ReactFinland.json").readText()
 
-        // GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        //assertEquals(11, actionCluster.size)//todo bug
+         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(12, actionCluster.size)
 
     }
 
@@ -395,7 +395,16 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/Universe.json").readText()
 
-        //  GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        //  assertEquals(27, actionCluster.size)//todo bug
+         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+         assertEquals(87, actionCluster.size)
+    }
+
+    @Test
+    fun recEgTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/recEg.json").readText()
+
+          GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+         assertEquals(1, actionCluster.size)
     }
 }

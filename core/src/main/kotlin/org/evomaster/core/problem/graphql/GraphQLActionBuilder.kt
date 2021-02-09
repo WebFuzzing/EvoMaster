@@ -535,10 +535,8 @@ object GraphQLActionBuilder {
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues)
             params.add(GQReturnParam(tableFieldType, gene))
         } else {
-            history.addFirst(tableType)//root
             val gene = getGene(state, tableFieldType, kindOfTableField, kindOfTableFieldType, tableType, history,
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues)
-            history.removeFirst()
 
             params.add(GQReturnParam(tableFieldType, gene))
 
@@ -562,12 +560,16 @@ object GraphQLActionBuilder {
         when (kindOfTableField?.toLowerCase()) {
             "list" ->
                 if (isKindOfTableFieldOptional) {
+                    history.addLast(tableType)
                     val template = getGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues)
+                    history.removeLast()
                     return OptionalGene(tableType, ArrayGene(tableType, template))
                 } else {
+                    history.addLast(tableType)
                     val template = getGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues)
+                    history.removeLast()
                     return ArrayGene(tableType, template)
                 }
             "object" ->
@@ -645,56 +647,61 @@ object GraphQLActionBuilder {
     ): Gene {
 
         val fields: MutableList<Gene> = mutableListOf()
-        for (element in state.tables) {
-            if (element.tableType == tableType) {
-                if (element.kindOfTableFieldType.toString().equals("SCALAR", ignoreCase = true)) {
-                    val field = element.tableField
-                    val template = field?.let {
-                        getGene(state, tableType, element.tableFieldType, kindOfTableFieldType, it, history,
-                                element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
-                    }
-                    if (template != null)
-                        fields.add(template)
-
-                } else {
-                    if (element.kindOfTableField.toString().equals("LIST", ignoreCase = true)) {
-                        val template = getGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(),
-                                element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
-
+        if (history.count { it == tableType } <= 1) {
+            for (element in state.tables) {
+                if (element.tableType == tableType) {
+                    if (element.kindOfTableFieldType.toString().equals("SCALAR", ignoreCase = true)) {
+                        val field = element.tableField
+                        val template = field?.let {
+                            getGene(state, tableType, element.tableFieldType, kindOfTableFieldType, it, history,
+                                    element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
+                        }
                         if (template != null)
                             fields.add(template)
-                    } else
-                        if (element.kindOfTableFieldType.toString().equals("OBJECT", ignoreCase = true)) {
-                            history.addLast(element.tableType)
-                            history.addLast(element.tableFieldType)
-                            if (history.count { it == element.tableFieldType } == 1) {
-                                val template = getGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
-                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
-                                history.removeLast()
-                                history.removeLast()
-                                if (template != null) {
-                                    fields.add(template)
-                                }
-                            } else {
-                                fields.add(CycleObjectGene(element.tableFieldType))
-                                history.removeLast()
 
-                            }
-                        } else if (element.kindOfTableFieldType.toString().equals("ENUM", ignoreCase = true)) {
-                            val field = element.tableField
-                            val template = field?.let {
-                                getGene(state, tableType, element.kindOfTableFieldType.toString(), kindOfTableFieldType, it, history,
-                                        element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
-                            }
+                    } else {
+                        if (element.kindOfTableField.toString().equals("LIST", ignoreCase = true)) {
+                            val template = getGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(),
+                                    element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
+
                             if (template != null)
                                 fields.add(template)
+                        } else
+                            if (element.kindOfTableFieldType.toString().equals("OBJECT", ignoreCase = true)) {
+                                history.addLast(element.tableType)
+                                history.addLast(element.tableFieldType)
+                                if (history.count { it == element.tableFieldType } == 1) {
+                                    val template = getGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
+                                            element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
+                                    history.removeLast()
+                                    history.removeLast()
+                                    if (template != null) {
+                                        fields.add(template)
+                                    }
+                                } else {
+                                    fields.add(CycleObjectGene(element.tableFieldType))
+                                    history.removeLast()
 
-                        }
+                                }
+                            } else if (element.kindOfTableFieldType.toString().equals("ENUM", ignoreCase = true)) {
+                                val field = element.tableField
+                                val template = field?.let {
+                                    getGene(state, tableType, element.kindOfTableFieldType.toString(), kindOfTableFieldType, it, history,
+                                            element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues)
+                                }
+                                if (template != null)
+                                    fields.add(template)
+
+                            }
+                    }
                 }
-            }
 
+            }
+            return ObjectGene(tableType, fields, tableType)
+        } else {
+            fields.add(CycleObjectGene(tableType))
+            return ObjectGene(tableType, fields, tableType)
         }
-        return ObjectGene(tableType, fields, tableType)
     }
 
     private fun createInputObjectGene(
