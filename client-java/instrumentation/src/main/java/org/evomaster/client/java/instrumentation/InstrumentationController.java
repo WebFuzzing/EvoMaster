@@ -36,6 +36,10 @@ public class InstrumentationController {
         ExecutionTracer.setAction(action);
     }
 
+    public static void setKillSwitch(boolean b){
+        ExecutionTracer.setKillSwitch(b);
+    }
+
     public static List<TargetInfo> getTargetInfos(Collection<Integer> ids){
 
         List<TargetInfo> list = new ArrayList<>();
