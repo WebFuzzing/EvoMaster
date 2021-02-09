@@ -83,6 +83,7 @@ public class AgentController {
                         break;
                     case KILL_SWITCH:
                         handleKillSwitch();
+                        sendCommand(Command.ACK);
                         break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
