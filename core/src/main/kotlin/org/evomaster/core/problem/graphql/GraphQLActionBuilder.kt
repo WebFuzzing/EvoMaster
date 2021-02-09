@@ -42,13 +42,6 @@ object GraphQLActionBuilder {
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(schema, SchemaObj::class.java)
 
-        /*
-         TODO
-            - go through every Query and Mutation
-            - create action for it which the needed genes
-            - add the action to actionCluster
-         */
-
         initTablesInfo(schemaObj, state)
 
         if (schemaObj.data.__schema.queryType != null && schemaObj.data.__schema.mutationType != null)
@@ -468,11 +461,11 @@ object GraphQLActionBuilder {
             enumValues: MutableList<String>
     ) {
         if (methodName == null) {
-            //TODO log warn
+            log.warn("Skipping operation, as no method name is defined.")
             return;
         }
         if (methodType == null) {
-            //TODO log warn
+            log.warn("Skipping operation, as no method type is defined.")
             return;
         }
         val type = when {

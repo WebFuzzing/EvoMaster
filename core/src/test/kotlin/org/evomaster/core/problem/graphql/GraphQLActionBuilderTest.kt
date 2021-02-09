@@ -2,10 +2,11 @@ package org.evomaster.core.problem.graphql
 
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
-import org.junit.Test
-import org.junit.jupiter.api.Assertions.*
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
 
 
@@ -182,7 +183,7 @@ class GraphQLActionBuilderTest {
         val json = PetClinicCheckMain::class.java.getResource("/graphql/CatalysisHub.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-           assertEquals(10, actionCluster.size)//TODO (10 + 1 interface)
+        assertEquals(10, actionCluster.size)//TODO (10 + 1 interface)
 
     }
 
@@ -258,8 +259,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/DigitransitHSL.json").readText()
 
-           GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-           assertEquals(32, actionCluster.size)// TODO 33 (32 + 1 interface)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(32, actionCluster.size)// TODO 33 (32 + 1 interface)
 
     }
 
@@ -268,8 +269,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/EHRI.json").readText()
 
-         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-         assertEquals(19, actionCluster.size)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(19, actionCluster.size)
 
     }
 
@@ -288,8 +289,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/Everbase.json").readText()
 
-          GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-         assertEquals(14, actionCluster.size)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(14, actionCluster.size)
 
     }
 
@@ -321,8 +322,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/graphQLJobs.json").readText()
 
-         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-         assertEquals(15, actionCluster.size)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(15, actionCluster.size)
 
     }
 
@@ -362,7 +363,7 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/ReactFinland.json").readText()
 
-         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(12, actionCluster.size)
 
     }
@@ -395,8 +396,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/Universe.json").readText()
 
-         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-         assertEquals(87, actionCluster.size)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(87, actionCluster.size)
     }
 
     @Test
@@ -404,7 +405,7 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/recEg.json").readText()
 
-          GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-         assertEquals(1, actionCluster.size)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(1, actionCluster.size)
     }
 }
