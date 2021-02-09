@@ -63,6 +63,12 @@ public class ExecutionTracer {
      */
     private static final List<AdditionalInfo> additionalInfoList = new ArrayList<>();
 
+    /**
+     * Keep track of expensive operations. Might want to skip doing them if too many.
+     * This should be re-set for each action
+     */
+    private static  int expensiveOperation = 0;
+
     private static final Object lock = new Object();
 
 
@@ -86,6 +92,7 @@ public class ExecutionTracer {
             additionalInfoList.add(new AdditionalInfo());
             inputVariables = new HashSet<>();
             killSwitch = false;
+            expensiveOperation = 0;
         }
     }
 
@@ -100,6 +107,7 @@ public class ExecutionTracer {
     public static void setAction(Action action) {
         synchronized (lock) {
             setKillSwitch(false);
+            expensiveOperation = 0;
 
             if (action.getIndex() != actionIndex) {
                 actionIndex = action.getIndex();
@@ -110,6 +118,14 @@ public class ExecutionTracer {
                 inputVariables = action.getInputVariables();
             }
         }
+    }
+
+    public static void increaseExpensiveOperationCount(){
+        expensiveOperation++;
+    }
+
+    public static boolean isTooManyExpensiveOperations(){
+        return expensiveOperation >= 50;
     }
 
     /**
@@ -329,7 +345,17 @@ public class ExecutionTracer {
             String name = Thread.currentThread().getName();
             //TODO this is now hardcoded for languagetool... but should be rather configurable from Driver
             if(name.startsWith("remote-rule-pool-") || name.startsWith("lt-textchecker-thread-")) {
-            //    throw new KillSwitchException();
+
+                /*
+                    if we are in the middle of a class initialization, we should NOT throw an exception, otherwise
+                    the entire SUT will end up in a inconsistent state
+                 */
+                boolean initClass = Arrays.stream(Thread.currentThread().getStackTrace())
+                        .anyMatch(e -> e.getMethodName().equals("<clinit>"));
+
+                if(!initClass) {
+                    throw new KillSwitchException();
+                }
             }
         }
 

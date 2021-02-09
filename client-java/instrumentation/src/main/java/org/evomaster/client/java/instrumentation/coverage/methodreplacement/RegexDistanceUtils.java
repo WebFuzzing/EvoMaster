@@ -28,6 +28,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.regex.CostMatrix;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.regex.RegexGraph;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.regex.RegexUtils;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.Map;
@@ -50,8 +51,6 @@ public class RegexDistanceUtils {
      * inputs by EM.
      * However, this code is really expensive... so any saving would be worthy.
      *
-     * TODO in the future we could put a max number of regex evaluations per test, eg 50, if this
-     * workaround is still not enough
      */
     private static final Map<String, Map<String, RegexGraph>> graphCache = new ConcurrentHashMap<>();
 
@@ -62,17 +61,34 @@ public class RegexDistanceUtils {
      * There is no assumption on where and how the operations
      * can be done (ie all sequences are valid).
      * </p>
+     *
+     * Note that this quite expensive. If done too often, instrumentation can
+     * decide to rather compute a flag.
      */
     public static int getStandardDistance(String arg, String regex) {
-        if (!RegexUtils.isSupportedRegex(regex) || notSupported.contains(regex)) {
+        if (!RegexUtils.isSupportedRegex(regex)
+                || notSupported.contains(regex)
+                || ExecutionTracer.isTooManyExpensiveOperations()
+        ) {
             return getDefaultDistance(arg, regex);
         }
-        RegexGraph graph;
+        RegexGraph graph = null;
 
-        //TODO
+        Map<String, RegexGraph> graphs = graphCache.get(regex);
+        if(graphs != null){
+            graph = graphs.get(arg);
+        }
 
         try {
-            graph = new RegexGraph(arg, regex);
+            if(graph == null) {
+                graph = new RegexGraph(arg, regex);
+
+                if(graphs == null){
+                    graphs = new ConcurrentHashMap<>();
+                    graphs.put(regex, graph);
+                }
+                graphs.put(arg, graph);
+            }
         }catch (Exception e){
             SimpleLogger.uniqueWarn("Failed to build graph for regex: " + regex);
             notSupported.add(regex);
@@ -80,6 +96,7 @@ public class RegexDistanceUtils {
         }
 
         try {
+            ExecutionTracer.increaseExpensiveOperationCount();
             return CostMatrix.calculateStandardCost(graph);
         }catch (Exception e){
             SimpleLogger.uniqueWarn("Failed to compute distance cost for regex: " + regex);

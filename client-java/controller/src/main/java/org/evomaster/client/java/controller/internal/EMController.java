@@ -413,7 +413,8 @@ public class EMController {
 
         assert trackRequestSource(httpServletRequest);
 
-        noKillSwitch(() -> sutController.newAction(dto));
+        //this MUST not be inside a noKillSwitch, as it sets to false
+        sutController.newAction(dto);
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
     }
