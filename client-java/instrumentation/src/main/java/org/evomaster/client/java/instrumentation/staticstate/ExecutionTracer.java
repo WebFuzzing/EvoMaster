@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.staticstate;
 
 import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.KillSwitchException;
 import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
@@ -64,6 +65,14 @@ public class ExecutionTracer {
 
     private static final Object lock = new Object();
 
+
+    /**
+     * One problem is that, once a test case is evaluated, some background tests might still be running.
+     * We want to kill them to avoid issue (eg, when evaluating new tests while previous threads
+     * are still running).
+     */
+    private static volatile boolean killSwitch = false;
+
     static {
         reset();
     }
@@ -76,11 +85,22 @@ public class ExecutionTracer {
             additionalInfoList.clear();
             additionalInfoList.add(new AdditionalInfo());
             inputVariables = new HashSet<>();
+            killSwitch = false;
         }
+    }
+
+    public static boolean isKillSwitch() {
+        return killSwitch;
+    }
+
+    public static void setKillSwitch(boolean killSwitch) {
+        ExecutionTracer.killSwitch = killSwitch;
     }
 
     public static void setAction(Action action) {
         synchronized (lock) {
+            setKillSwitch(false);
+
             if (action.getIndex() != actionIndex) {
                 actionIndex = action.getIndex();
                 additionalInfoList.add(new AdditionalInfo());
@@ -304,6 +324,15 @@ public class ExecutionTracer {
      * Report on the fact that a given line has been executed.
      */
     public static void executedLine(String className, String methodName, String descriptor, int line) {
+
+        if(isKillSwitch()){
+            String name = Thread.currentThread().getName();
+            //TODO this is now hardcoded for languagetool... but should be rather configurable from Driver
+            if(name.startsWith("remote-rule-pool-") || name.startsWith("lt-textchecker-thread-")) {
+            //    throw new KillSwitchException();
+            }
+        }
+
         //for targets to cover
         String lineId = ObjectiveNaming.lineObjectiveName(className, line);
         String classId = ObjectiveNaming.classObjectiveName(className);
