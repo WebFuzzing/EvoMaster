@@ -441,7 +441,7 @@ class SqlInsertBuilder(
             throw IllegalStateException("No Database Executor registered for this object")
         }
 
-        val table = tables.values.find { it.name.toLowerCase() == tableName.toLowerCase() }
+        val table = tables.values.find { it.name.equals(tableName, ignoreCase = true) }
                 ?: throw  IllegalArgumentException("cannot find the table by name $tableName")
 
 

@@ -222,7 +222,7 @@ class ResourceManageService {
                 */
                 val created = handleDbActionForCall( call, forceInsert, false)
                 if(!created){
-                    //TODO MAN record the call when postCreation fails
+                    log.warn("resource creation for {} fails", resourceKey);
                 }
             }
         }

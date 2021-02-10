@@ -671,7 +671,7 @@ class ResourceDepManageService {
                 var isAnyChange = false
 
                 seqCur[indexOfCalls].actions.forEach { curAction ->
-                    var actionA = actionIndex - distance
+                    val actionA = actionIndex - distance
                     val compareResult = added.actions.find { it.getName() == curAction.getName() }.run {
                         if (this == null) compare(actionIndex, current, actionA, previous)
                         else compare(this.getName(), current, previous)
@@ -961,7 +961,7 @@ class ResourceDepManageService {
      * sample an individual which contains related resources
      */
     fun sampleRelatedResources(calls: MutableList<RestResourceCalls>, sizeOfResource: Int, maxSize: Int) {
-        var start = -calls.sumBy { it.actions.size }
+        val start = -calls.sumBy { it.actions.size }
 
         val first = randomness.choose(dependencies.keys)
         rm.sampleCall(first, true, calls, maxSize)
@@ -1039,19 +1039,27 @@ class ResourceDepManageService {
                 }
                 if (list != null && list.isNotEmpty()) {
                     list.forEach { pToGene ->
-                        var dbAction = dbActions.find { it.table.name.toLowerCase() == pToGene.tableName.toLowerCase() }
-                                ?: throw IllegalArgumentException("cannot find ${pToGene.tableName} in db actions ${dbActions.map { it.table.name }.joinToString(";")}")
-                        var columngene = dbAction.seeGenes().first { g -> g.name.toLowerCase() == pToGene.column.toLowerCase() }
-                        val param = a.parameters.find { p -> rm.getResourceCluster()[a.path.toString()]!!.getParamId(a.parameters, p).toLowerCase() == pToGene.paramId.toLowerCase() }
-                        param?.let {
-                            if (pToGene.isElementOfParam) {
-                                if (param is BodyParam && param.gene is ObjectGene) {
-                                    param.gene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
-                                        ParamUtil.bindParamWithDbAction(columngene, paramGene, forceBindParamBasedOnDB || dbAction.representExistingData)
+                        val dbAction = dbActions.find { it.table.name.equals(pToGene.tableName, ignoreCase = true) }
+                                ?: throw IllegalArgumentException("cannot find ${pToGene.tableName} in db actions ${
+                                    dbActions.joinToString(
+                                        ";"
+                                    ) { it.table.name }
+                                }")
+                        // columngene might be null if the column is nullable
+                        val columngene = dbAction.seeGenes().firstOrNull { g -> g.name.equals(pToGene.column, ignoreCase = true) }
+                        if (columngene != null){
+                            val param = a.parameters.find { p -> rm.getResourceCluster()[a.path.toString()]!!.getParamId(a.parameters, p)
+                                .equals(pToGene.paramId, ignoreCase = true) }
+                            param?.let {
+                                if (pToGene.isElementOfParam) {
+                                    if (param is BodyParam && param.gene is ObjectGene) {
+                                        param.gene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
+                                            ParamUtil.bindParamWithDbAction(columngene, paramGene, forceBindParamBasedOnDB || dbAction.representExistingData)
+                                        }
                                     }
+                                } else {
+                                    ParamUtil.bindParamWithDbAction(columngene, param.gene, forceBindParamBasedOnDB || dbAction.representExistingData)
                                 }
-                            } else {
-                                ParamUtil.bindParamWithDbAction(columngene, param.gene, forceBindParamBasedOnDB || dbAction.representExistingData)
                             }
                         }
 

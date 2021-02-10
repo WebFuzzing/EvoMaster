@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
@@ -91,6 +92,22 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         updateConfigForTestOutput(infoDto)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
+    }
+
+    fun canInsertInto(tableName: String) : Boolean {
+        //TODO might need to refactor/remove once we deal with VIEWs
+
+        return sqlInsertBuilder?.isTable(tableName) ?: false
+    }
+
+    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
+
+        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
+            ?: throw IllegalStateException("No DB schema is available")
+
+        DbActionUtils.randomizeDbActionGenes(actions, randomness)
+
+        return actions
     }
 
     abstract fun initSqlInfo(infoDto: SutInfoDto)

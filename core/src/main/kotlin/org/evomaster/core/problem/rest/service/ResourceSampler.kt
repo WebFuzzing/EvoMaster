@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -68,10 +69,11 @@ open class ResourceSampler : AbstractRestSampler() {
 
         var left = n
         while(left > 0){
-            var call = sampleRandomResourceAction(0.05, left)
+            val call = sampleRandomResourceAction(0.05, left)
             left -= call.actions.size
             restCalls.add(call)
         }
+
         return RestIndividual(
                 resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
     }

@@ -1,6 +1,7 @@
 package org.evomaster.core.database
 
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -359,8 +360,8 @@ object DbActionUtils {
             return repaired
 
         val pks = previous.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
-        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().forEach { fk->
-            var  found = pks.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
+        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().filter { fk-> pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey } }.forEach { fk->
+            var found = pks.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
             if (found == null){
                 val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf())
                 found = created?.flatMap { it.seeGenes() }?.filterIsInstance<SqlPrimaryKeyGene>()?.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
@@ -374,4 +375,5 @@ object DbActionUtils {
         return repaired
 
     }
+
 }

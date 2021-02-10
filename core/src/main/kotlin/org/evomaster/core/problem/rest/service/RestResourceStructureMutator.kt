@@ -1,22 +1,27 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.evomaster.core.search.service.mutator.StructureMutator
 
-class RestResourceStructureMutator : StructureMutator() {
+class RestResourceStructureMutator : AbstractRestStructureMutator() {
 
     @Inject
     private lateinit var rm : ResourceManageService
 
     @Inject
     private lateinit var dm : ResourceDepManageService
+
+
+    @Inject
+    private lateinit var sampler : ResourceSampler
 
     //var executedStructureMutator :MutationType? = null
 
@@ -221,7 +226,7 @@ class RestResourceStructureMutator : StructureMutator() {
 
         max += ind.getResourceCalls()[pos].actions.size
 
-        var pair = if(fromDependency && pos != ind.getResourceCalls().size -1){
+        val pair = if(fromDependency && pos != ind.getResourceCalls().size -1){
                         dm.handleAddDepResource(ind, max, if (pos == ind.getResourceCalls().size-1) mutableListOf() else ind.getResourceCalls().subList(pos+1, ind.getResourceCalls().size).toMutableList())
                     }else null
 
@@ -275,7 +280,34 @@ class RestResourceStructureMutator : StructureMutator() {
      * for ResourceRestIndividual, dbaction(s) has been distributed to each resource call [ResourceRestCalls]
      */
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
-        //do noting
+        if (!config.shouldGenerateSqlData()) {
+            return
+        }
+
+        val ind = individual.individual as? RestIndividual
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
+            //TODO likely to remove/change once we ll support VIEWs
+            .filter { sampler.canInsertInto(it.key) }
+
+        if (fw.isEmpty()) {
+            return
+        }
+
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
+
+        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
+
+        ind.repairInitializationActions(randomness)
+        // update impact based on added genes
+        if(mutatedGenes != null && config.enableArchiveGeneSelection()){
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                old,
+                addedInsertions
+            )
+        }
     }
 
     private fun maintainAuth(authInfo: AuthenticationInfo?, mutated: RestResourceCalls){

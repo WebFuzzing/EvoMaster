@@ -216,9 +216,9 @@ class RestIndividual(
         val previousDbActions = mutableListOf<DbAction>()
 
         getResourceCalls().filter { it.dbActions.isNotEmpty() }.forEach {
-            var result = try{
+            val result = try{
                 DbActionUtils.verifyActions(it.dbActions) && DbActionUtils.verifyActions(previousDbActions.plus(it.dbActions))
-            }catch (e : IllegalArgumentException ){false}
+            }catch (e : Exception ){false}
 
             if(!result){
                 val created = mutableListOf<DbAction>()
@@ -233,8 +233,10 @@ class RestIndividual(
             }
         }
 
-        if(!DbActionUtils.verifyForeignKeys(previousDbActions))
+        if(!DbActionUtils.verifyForeignKeys(getResourceCalls().flatMap { it.dbActions })){
             throw IllegalStateException("referred fk cannot be found!")
+        }
+
     }
 
     private fun validateSwap(first : Int, second : Int) : Boolean{
