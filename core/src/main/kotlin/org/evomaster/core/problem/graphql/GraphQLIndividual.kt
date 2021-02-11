@@ -37,7 +37,7 @@ class GraphQLIndividual(
         return seeActions().size
     }
 
-    override fun seeActions(): List<out Action> {
+    override fun seeActions(): List<GraphQLAction> {
         return actions
 
     }

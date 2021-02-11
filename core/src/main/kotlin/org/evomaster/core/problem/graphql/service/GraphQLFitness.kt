@@ -1,9 +1,9 @@
 package org.evomaster.core.problem.graphql.service
 
-import GraphQlCallResult
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness

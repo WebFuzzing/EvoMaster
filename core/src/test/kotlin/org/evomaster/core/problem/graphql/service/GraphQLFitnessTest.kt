@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.graphql.service
 
-import GraphQlCallResult
 import io.restassured.assertion.CookieMatcher.getCookies
 import org.evomaster.client.java.controller.problem.GraphQlProblem
 import org.evomaster.core.database.DbAction

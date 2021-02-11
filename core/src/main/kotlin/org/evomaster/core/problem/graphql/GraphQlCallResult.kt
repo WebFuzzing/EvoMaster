@@ -1,4 +1,4 @@
-
+package org.evomaster.core.problem.graphql
 
 import com.google.common.annotations.VisibleForTesting
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
