@@ -81,6 +81,9 @@ public class AgentController {
                     case UNITS_INFO:
                         handleUnitsInfo();
                         break;
+                    case KILL_SWITCH:
+                        handleKillSwitch();
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -93,6 +96,7 @@ public class AgentController {
 
         thread.start();
     }
+
 
     private static void sendCommand(Command command){
         try {
@@ -120,6 +124,17 @@ public class AgentController {
             SimpleLogger.error("Failure in handling action index: "+e.getMessage());
         }
     }
+
+    private static void handleKillSwitch() {
+        try {
+            Object msg = in.readObject();
+            Boolean killSwitch = (Boolean) msg;
+            InstrumentationController.setKillSwitch(killSwitch);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling kill-switch: "+e.getMessage());
+        }
+    }
+
 
     private static void handleAdditionalInfo(){
         try {

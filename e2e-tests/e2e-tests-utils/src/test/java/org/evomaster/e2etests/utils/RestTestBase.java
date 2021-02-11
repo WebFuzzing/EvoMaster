@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.core.Main;
 import org.evomaster.core.StaticCounter;
 import org.evomaster.core.logging.LoggingUtil;
@@ -243,6 +244,8 @@ public abstract class RestTestBase {
     }
 
     protected void compileRunAndVerifyTests(String outputFolderName, ClassName className){
+
+        ExecutionTracer.setKillSwitch(false); //make sure it is not on
 
         Class<?> klass = loadClass(className);
         assertNull(klass);

@@ -73,4 +73,9 @@ public abstract class EmbeddedSutController extends SutController {
     public final UnitsInfoDto getUnitsInfoDto(){
          return getUnitsInfoDto(UnitsInfoRecorder.getInstance());
     }
+
+    @Override
+    public void setKillSwitch(boolean b) {
+        ExecutionTracer.setKillSwitch(b);
+    }
 }

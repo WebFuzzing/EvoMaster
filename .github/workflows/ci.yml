@@ -1,0 +1,32 @@
+name: CI
+
+on: [push]
+
+# This build is quite expensive (1ish hour), so we run it only on 1 JVM version, and 1 OS.
+# Recall that we also build on CircleCI, with different configurations.
+# For the moment, we need to support JVM 8 and 11, with 17 when it comes out.
+# EM should run an all OSs. As our main development machines are Windows and Mac, just
+# testing on Linux should be fine.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Currently does not like Docker...
+#    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup JDK 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn clean verify --fae
+      - name: Upload coverage to CodeCov
+        run: curl -s https://codecov.io/bash | bash

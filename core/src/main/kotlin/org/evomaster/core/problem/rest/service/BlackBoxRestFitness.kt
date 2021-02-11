@@ -20,10 +20,6 @@ class BlackBoxRestFitness : RestFitness() {
         private val log: Logger = LoggerFactory.getLogger(BlackBoxRestFitness::class.java)
     }
 
-    @Inject(optional = true)
-    private lateinit var rc: RemoteController
-
-
     override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
 
         if(config.bbExperiments){

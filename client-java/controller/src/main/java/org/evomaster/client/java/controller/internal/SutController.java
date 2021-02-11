@@ -459,6 +459,9 @@ public abstract class SutController implements SutHandler {
 
     public abstract UnitsInfoDto getUnitsInfoDto();
 
+    public abstract void setKillSwitch(boolean b);
+
+
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
 
         if(recorder == null){

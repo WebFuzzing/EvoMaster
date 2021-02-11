@@ -5,6 +5,7 @@
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
+![CI](https://github.com/EMResearch/EvoMaster/workflows/CI/badge.svg)
 [![CircleCI](https://circleci.com/gh/EMResearch/EvoMaster.svg?style=svg)](https://circleci.com/gh/EMResearch/EvoMaster)
 [![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
 <!---
@@ -138,6 +139,12 @@ as part of the *ERC Consolidator* project
 <i>Using Evolutionary Algorithms to Understand and Secure Web/Enterprise Systems</i>.
 *  2018-2021: a 7.8 million Norwegian Kroner grant  by the Research Council of Norway (RCN), 
 as part of the Frinatek project <i>Evolutionary Enterprise Testing</i>.  
+
+
+<img src="https://github.com/EMResearch/EvoMaster/blob/master/docs/img/LOGO_ERC-FLAG_EU_.jpg?raw=true" width="200" >
+
+
+This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No 864972).
 
 
 ### License

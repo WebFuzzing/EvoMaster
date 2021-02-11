@@ -37,5 +37,10 @@ class Table(
         /**
          * Describing if the table field has arguments
          */
-        var tableFieldWithArgs: Boolean = false
+        var tableFieldWithArgs: Boolean = false,
+
+        /*
+        * Containing the enum values
+         */
+        var enumValues: MutableList<String> = mutableListOf()
 )
