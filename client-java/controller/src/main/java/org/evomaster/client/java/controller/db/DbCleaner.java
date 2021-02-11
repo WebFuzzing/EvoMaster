@@ -159,7 +159,7 @@ public class DbCleaner {
                 s.execute("SET @@foreign_key_checks = 0;");
                 break;
             case OTHERS:
-                throw new IllegalStateException("NOT SUPPORT");
+                throw new IllegalStateException("Database type " + type + " is not supported");
         }
     }
 
