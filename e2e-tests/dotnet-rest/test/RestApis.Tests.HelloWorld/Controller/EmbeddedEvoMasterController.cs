@@ -14,9 +14,9 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
         public static void Main (string[] args) {
 
-            EmbeddedEvoMasterController embeddedEvoMasterController = new EmbeddedEvoMasterController ();
+            var embeddedEvoMasterController = new EmbeddedEvoMasterController ();
 
-            InstrumentedSutStarter instrumentedSutStarter = new InstrumentedSutStarter (embeddedEvoMasterController);
+            var instrumentedSutStarter = new InstrumentedSutStarter (embeddedEvoMasterController);
 
             System.Console.WriteLine ("Driver is starting...\n");
 
@@ -43,7 +43,7 @@ namespace RestApis.Tests.HelloWorld.Controller {
         public override string StartSut () {
 
             //TODO: check this again
-            int ephemeralPort = GetEphemeralTcpPort ();
+            var ephemeralPort = GetEphemeralTcpPort ();
 
             var task = Task.Run (() => {
 
