@@ -217,7 +217,7 @@ class RestIndividual(
 
         getResourceCalls().filter { it.dbActions.isNotEmpty() }.forEach {
             val result = try{
-                DbActionUtils.verifyActions(it.dbActions) && DbActionUtils.verifyActions(previousDbActions.plus(it.dbActions))
+                DbActionUtils.verifyActions(previousDbActions.plus(it.dbActions))
             }catch (e : Exception ){false}
 
             if(!result){

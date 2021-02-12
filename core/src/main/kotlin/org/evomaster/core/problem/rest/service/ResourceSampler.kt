@@ -74,8 +74,10 @@ open class ResourceSampler : AbstractRestSampler() {
             restCalls.add(call)
         }
 
-        return RestIndividual(
+        val ind = RestIndividual(
                 resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
+        ind.repairDBActions(sqlInsertBuilder)
+        return ind
     }
 
 
@@ -151,7 +153,6 @@ open class ResourceSampler : AbstractRestSampler() {
     private fun sampleOneResource(resourceCalls: MutableList<RestResourceCalls>){
         val key = selectAIndResourceHasNonInd(randomness)
         rm.sampleCall(key, true, resourceCalls, config.maxTestSize)
-
     }
 
     private fun sampleComResource(resourceCalls: MutableList<RestResourceCalls>, withDependency : Boolean){

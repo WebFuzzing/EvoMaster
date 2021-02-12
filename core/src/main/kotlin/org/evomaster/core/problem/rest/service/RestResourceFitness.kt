@@ -40,6 +40,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         rc.resetSUT()
 
+        val sqlIdMap = mutableMapOf<Long, Long>()
+        doInitializingCalls(individual.dbInitialization, sqlIdMap)
+
         //individual.enforceCoherence()
 
         val cookies = getCookies(individual)
@@ -50,8 +53,6 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
-
-        val sqlIdMap = mutableMapOf<Long, Long>()
 
         //run the test, one action at a time
         var indexOfAction = 0
