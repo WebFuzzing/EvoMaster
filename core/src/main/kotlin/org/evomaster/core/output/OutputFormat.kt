@@ -44,9 +44,6 @@ enum class OutputFormat {
 
     fun isJUnit() = this.name.contains("_junit_", true)
 
-    fun isDotnet() = isCsharp()
-
-    //We may have isFsharp or isVisualBasic in the future
     fun isCsharp() = this.name.startsWith("csharp",ignoreCase = true)
 
 }

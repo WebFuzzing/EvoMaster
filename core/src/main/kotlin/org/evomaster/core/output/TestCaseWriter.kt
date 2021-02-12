@@ -720,7 +720,7 @@ class TestCaseWriter {
         val accept = when {
             format.isJavaOrKotlin() -> ".accept("
             format.isJavaScript() -> ".set('Accept', "
-            format.isDotnet() -> "TODO: accept"
+            format.isCsharp() -> "TODO: accept"
             else -> throw IllegalArgumentException("Invalid format: $format")
         }
 

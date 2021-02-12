@@ -244,7 +244,7 @@ class TestSuiteWriter {
             }
         }
 
-        if(format.isDotnet()){
+        if(format.isCsharp()){
             addUsing("Xunit", lines)
             addUsing("System.Net.Http", lines)
             addUsing("System.Threading.Tasks", lines)
@@ -286,7 +286,7 @@ class TestSuiteWriter {
                 lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
             }
         }
-        else if(config.outputFormat.isDotnet()){
+        else if(config.outputFormat.isCsharp()){
             if (!config.blackBox || config.bbExperiments){
                 lines.add("private static readonly HttpClient client = new HttpClient ();")
                 lines.add("private static readonly ISutHandler $controller = new $controllerName();")
@@ -331,7 +331,7 @@ class TestSuiteWriter {
                 lines.add("fun initClass()")
             }
             format.isJavaScript() -> lines.add("beforeAll( async () =>");
-            format.isDotnet() -> lines.add("static EvoMasterTest()"); //TODO: get the constructor name from the class name
+            format.isCsharp() -> lines.add("static EvoMasterTest()"); //TODO: get the constructor name from the class name
 
         }
 
@@ -342,7 +342,7 @@ class TestSuiteWriter {
                         addStatement("await $controller.setupForGeneratedTest()", lines)
                         addStatement("baseUrlOfSut = await $controller.startSut()", lines)
                     }
-                    config.outputFormat.isDotnet() -> {
+                    config.outputFormat.isCsharp() -> {
                         //Anything you add here goes inside the static constructor
                         addStatement("$controller.SetupForGeneratedTest()", lines)
                         addStatement("baseUrlOfSut = $controller.StartSut ()", lines)
@@ -490,7 +490,7 @@ class TestSuiteWriter {
         when {
             format.isJava() -> lines.append("public ")
             format.isKotlin() -> lines.append("internal ")
-            format.isDotnet() -> lines.append("public ")
+            format.isCsharp() -> lines.append("public ")
         }
 
         lines.append("class ${name.getClassName()} {")
