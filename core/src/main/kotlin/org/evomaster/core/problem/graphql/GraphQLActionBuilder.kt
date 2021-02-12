@@ -622,10 +622,26 @@ object GraphQLActionBuilder {
             "scalar" ->
                 return getGene(state, tableFieldType, tableType, kindOfTableFieldType, kindOfTableField, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues)
-            else -> {
+            "id" ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(tableType, StringGene(tableType))
+                else
+                    return StringGene(tableType)
+
+            "union" -> {
                 LoggingUtil.uniqueWarn(log, "Kind Of Table Field not supported yet: $kindOfTableField")
                 return StringGene("TODO")
             }
+            "interface" -> {
+                LoggingUtil.uniqueWarn(log, "Kind Of Table Field not supported yet: $kindOfTableField")
+                return StringGene("TODO")
+            }
+            else ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(tableType, StringGene(tableType))
+                else
+                    return StringGene(tableType)
+
         }
     }
 

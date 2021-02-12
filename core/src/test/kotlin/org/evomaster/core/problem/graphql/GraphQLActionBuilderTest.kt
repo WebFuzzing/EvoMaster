@@ -408,4 +408,34 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
     }
+    @Test
+    fun spaceXTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/SpaceX.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(43, actionCluster.size)
+
+        val coresUpcoming = actionCluster.get("coresUpcoming") as GraphQLAction
+        assertEquals(6, coresUpcoming.parameters.size)
+        assertTrue(coresUpcoming.parameters[0] is GQInputParam)
+        assertTrue(coresUpcoming.parameters[1] is GQInputParam)
+        assertTrue(coresUpcoming.parameters[2] is GQInputParam)
+        assertTrue(coresUpcoming.parameters[5] is GQReturnParam)
+        assertTrue((coresUpcoming.parameters[0].gene as OptionalGene).gene is ObjectGene)
+        assertTrue((coresUpcoming.parameters[5].gene as OptionalGene).gene is ArrayGene<*>)
+        val objCore = (((coresUpcoming.parameters[5].gene as OptionalGene).gene as ArrayGene<*>).template as OptionalGene).gene as ObjectGene
+        assertTrue(objCore.fields.any { it is OptionalGene && it.name == "water_landing" })
+
+    }
+
+    @Test
+    fun bookTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/Book.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(3, actionCluster.size)
+    }
+
 }
