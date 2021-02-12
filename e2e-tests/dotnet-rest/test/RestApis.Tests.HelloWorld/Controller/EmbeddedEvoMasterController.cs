@@ -28,9 +28,8 @@ namespace RestApis.Tests.HelloWorld.Controller {
         public override List<AuthenticationDto> GetInfoForAuthentication () => null;
 
         public override string GetPackagePrefixesToCover () => "RestApis.HelloWorld";
-
-        //TODO: later on we should create sth specific for C#
-        public override OutputFormat GetPreferredOutputFormat () => OutputFormat.JAVA_JUNIT_5;
+        
+        public override OutputFormat GetPreferredOutputFormat () => OutputFormat.CSHARP_XUNIT;
 
         //TODO: check again
         public override IProblemInfo GetProblemInfo () =>

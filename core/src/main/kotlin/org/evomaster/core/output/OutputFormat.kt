@@ -18,7 +18,7 @@ enum class OutputFormat {
     KOTLIN_JUNIT_4,
     KOTLIN_JUNIT_5,
     JS_JEST,
-    DOTNET_CORE_3
+    CSHARP_XUNIT
     ;
 
     /*
@@ -29,8 +29,7 @@ enum class OutputFormat {
         and in the future, also support other languages,
         eg JavaScript
      */
-//TODO: Uncomment these lines of code
-/*
+
     fun isJava() = this.name.startsWith("java_", true)
 
     fun isKotlin() = this.name.startsWith("kotlin_", true)
@@ -45,23 +44,9 @@ enum class OutputFormat {
 
     fun isJUnit() = this.name.contains("_junit_", true)
 
-    fun isDotnet() = this.name.startsWith("dotnet",ignoreCase = true)
-*/
-    //TODO: Remove these lines of code
-    fun isJava() = false
+    fun isDotnet() = isCsharp()
 
-    fun isKotlin() = false
-
-    fun isJavaScript() = false
-
-    fun isJavaOrKotlin() = isJava() || isKotlin()
-
-    fun isJUnit5() = false
-
-    fun isJUnit4() = false
-
-    fun isJUnit() = false
-
-    fun isDotnet() = true
+    //We may have isFsharp or isVisualBasic in the future
+    fun isCsharp() = this.name.startsWith("csharp",ignoreCase = true)
 
 }
