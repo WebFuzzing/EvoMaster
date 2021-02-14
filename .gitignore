@@ -66,7 +66,7 @@ experiments/target/
 /core-graphql-it/target/
 
 
-#DotNet Build Results
+#DotNet
 [Dd]ebug/
 [Bb]in/
 [Oo]bj/
@@ -76,6 +76,9 @@ e2e-tests/*/Properties/
 .vscode/
 *.launchSettings.json
 *.sln.DotSettings.user
+
+.LocalNuget/*
+!.LocalNuget/.gitkeep
 
 #Generated Tests
 generated-test-cases/
