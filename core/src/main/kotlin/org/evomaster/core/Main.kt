@@ -167,6 +167,9 @@ class Main {
 
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
+                val statistics = injector.getInstance(Statistics::class.java)
+                val data = statistics.getData(solution)
+
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
                 info("Evaluated actions: ${stc.evaluatedActions}")
                 info("Needed budget: ${stc.neededBudget()}")
@@ -175,6 +178,10 @@ class Main {
                     info("Passed time (seconds): ${stc.getElapsedSeconds()}")
                     info("Execution time per test (ms): ${stc.averageTestTimeMs}")
                     info("Computation overhead between tests (ms): ${stc.averageOverheadMsBetweenTests}")
+                    val timeouts = data.find { p -> p.header == Statistics.TEST_TIMEOUTS }!!.element.toInt()
+                    if(timeouts > 0){
+                        info("TCP timeouts: $timeouts")
+                    }
                 }
 
                 if(!config.blackBox || config.bbExperiments) {

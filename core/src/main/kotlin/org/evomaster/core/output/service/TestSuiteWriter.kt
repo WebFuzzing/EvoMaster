@@ -65,7 +65,7 @@ class TestSuiteWriter {
     }
 
 
-    private fun convertToCompilableTestCode(
+    fun convertToCompilableTestCode(
             solution: Solution<*>,
             testSuiteFileName: TestSuiteFileName,
             controllerName: String?
