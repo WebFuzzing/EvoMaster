@@ -312,8 +312,8 @@ class TestCaseWriter {
             format.isJavaOrKotlin() -> lines.append("given()")
             format.isJavaScript() -> lines.append("await superagent")
         }
-
-        if(!format.isJavaScript()) {
+        //TODO: check for C#
+        if(!format.isJavaScript() && !format.isCsharp()) {
             lines.append(getAcceptHeader(call, res))
         }
     }
@@ -476,7 +476,10 @@ class TestCaseWriter {
             //TODO
             return
         }
-
+        if (format.isCsharp()) {
+            //TODO
+            return
+        }
 
         lines.add(".assertThat()")
 
@@ -720,7 +723,7 @@ class TestCaseWriter {
         val accept = when {
             format.isJavaOrKotlin() -> ".accept("
             format.isJavaScript() -> ".set('Accept', "
-            format.isCsharp() -> "TODO: accept"
+            //format.isCsharp() -> "TODO: accept"
             else -> throw IllegalArgumentException("Invalid format: $format")
         }
 
