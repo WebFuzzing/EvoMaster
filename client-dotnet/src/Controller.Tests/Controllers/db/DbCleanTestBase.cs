@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using Controller.Api;
 using Controller.Controllers.db;
 using Xunit;
 
@@ -11,7 +12,7 @@ namespace Controller.Tests.Controllers.db
     {
 
         protected abstract DbConnection GetConnection();
-        protected abstract SupportedDatabaseType GetDbType();
+        protected abstract DatabaseType GetDbType();
         
         [Fact]
         public void TestAllClean()
@@ -72,7 +73,7 @@ namespace Controller.Tests.Controllers.db
         }
         
         
-        public static void seedFKData(DbConnection connection, SupportedDatabaseType type = SupportedDatabaseType.H2)
+        public static void seedFKData(DbConnection connection, DatabaseType type = DatabaseType.H2)
         {
 
             SqlScriptRunner.ExecCommand(connection, "CREATE TABLE Foo(x int, primary key (x));");
@@ -80,11 +81,11 @@ namespace Controller.Tests.Controllers.db
                 
             switch (type)
             {
-                case SupportedDatabaseType.H2:
-                case SupportedDatabaseType.POSTGRES:
+                case DatabaseType.H2:
+                case DatabaseType.POSTGRES:
                     SqlScriptRunner.ExecCommand(connection,  "alter table Bar add constraint FK foreign key (y) references Foo;");
                     break;
-                case SupportedDatabaseType.MYSQL:
+                case DatabaseType.MYSQL:
                     SqlScriptRunner.ExecCommand(connection,  "alter table Bar add foreign key (y) references Foo(x);");
                     break;
                 default:

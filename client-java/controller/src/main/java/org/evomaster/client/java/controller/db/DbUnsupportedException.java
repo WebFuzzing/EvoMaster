@@ -1,8 +1,10 @@
 package org.evomaster.client.java.controller.db;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+
 public class DbUnsupportedException extends IllegalStateException{
 
-    DbUnsupportedException(SupportedDatabaseType type){
+    DbUnsupportedException(DatabaseType type){
         this(type.toString());
     }
 

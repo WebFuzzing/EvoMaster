@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.db;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -10,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 
 /**
  * Class used to clean/reset the state of the current database
@@ -25,10 +27,10 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tablesToSkip) {
-        clearDatabase(3, connection, schemaName, tablesToSkip, SupportedDatabaseType.H2);
+        clearDatabase(3, connection, schemaName, tablesToSkip, DatabaseType.H2);
     }
 
-    private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> tablesToSkip, SupportedDatabaseType type) {
+    private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type) {
         /*
             Code based on
             https://stackoverflow.com/questions/8523423/reset-embedded-h2-database-periodically
@@ -79,7 +81,7 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tablesToSkip) {
-        clearDatabase(0, connection, schemaName, tablesToSkip, SupportedDatabaseType.POSTGRES);
+        clearDatabase(0, connection, schemaName, tablesToSkip, DatabaseType.POSTGRES);
     }
 
     private static void truncateTables(List<String> tablesToSkip, Statement s, String schema, boolean singleCommand) throws SQLException {
@@ -126,7 +128,7 @@ public class DbCleaner {
         }
     }
 
-    private static void resetSequences(Statement s, SupportedDatabaseType type) throws SQLException {
+    private static void resetSequences(Statement s, DatabaseType type) throws SQLException {
         ResultSet rs;// Idem for sequences
         Set<String> sequences = new HashSet<>();
         rs = s.executeQuery(getAllSequenceCommand(type));
@@ -148,7 +150,7 @@ public class DbCleaner {
     }
 
 
-    private static void disableReferentialIntegrity(Statement s, SupportedDatabaseType type) throws SQLException {
+    private static void disableReferentialIntegrity(Statement s, DatabaseType type) throws SQLException {
         switch (type)
         {
             case POSTGRES: break;
@@ -158,12 +160,12 @@ public class DbCleaner {
             case MYSQL:
                 s.execute("SET @@foreign_key_checks = 0;");
                 break;
-            case OTHERS:
+            case OTHER:
                 throw new DbUnsupportedException(type);
         }
     }
 
-    private static void enableReferentialIntegrity(Statement s, SupportedDatabaseType type) throws SQLException {
+    private static void enableReferentialIntegrity(Statement s, DatabaseType type) throws SQLException {
         switch (type)
         {
             case POSTGRES: break;
@@ -177,13 +179,13 @@ public class DbCleaner {
             case MYSQL:
                 s.execute("SET @@foreign_key_checks = 1;");
                 break;
-            case OTHERS:
+            case OTHER:
                 throw new DbUnsupportedException(type);
         }
     }
 
 
-    private static String getSchema(SupportedDatabaseType type){
+    private static String getSchema(DatabaseType type){
         switch (type){
             case H2: return "PUBLIC";
             case MYSQL: return "db";
@@ -192,11 +194,11 @@ public class DbCleaner {
         throw new DbUnsupportedException(type);
     }
 
-    private static boolean isSingleCleanCommand(SupportedDatabaseType type){
-        return type == SupportedDatabaseType.POSTGRES;
+    private static boolean isSingleCleanCommand(DatabaseType type){
+        return type == DatabaseType.POSTGRES;
     }
 
-    private static String getAllTableCommand(SupportedDatabaseType type)
+    private static String getAllTableCommand(DatabaseType type)
     {
         return getAllTableCommand(getSchema(type));
     }
@@ -205,7 +207,7 @@ public class DbCleaner {
         return "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES  where TABLE_SCHEMA='" + schema + "' AND (TABLE_TYPE='TABLE' OR TABLE_TYPE='BASE TABLE')";
     }
 
-    private static String getAllSequenceCommand(SupportedDatabaseType type)
+    private static String getAllSequenceCommand(DatabaseType type)
     {
         switch (type){
             case MYSQL: return getAllTableCommand(getSchema(type));
@@ -221,7 +223,7 @@ public class DbCleaner {
         return "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_SCHEMA='" + schema + "'";
     }
 
-    private static String resetSequenceCommand(String sequence, SupportedDatabaseType type) {
+    private static String resetSequenceCommand(String sequence, DatabaseType type) {
         switch (type){
             case MYSQL: return "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;";
             case H2:

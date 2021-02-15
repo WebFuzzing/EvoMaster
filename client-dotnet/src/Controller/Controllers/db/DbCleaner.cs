@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 
 using Client.Util;
+using Controller.Api;
 
 namespace Controller.Controllers.db
 {
@@ -13,17 +14,19 @@ namespace Controller.Controllers.db
     public static class DbCleaner
     {
 
+        // this is for default cleaner. if H2 is removed, we might also remove this one.
         public static void ClearDatabase(DbConnection connection) {
             ClearDatabase(connection, null);
         }
         
-        public static void ClearDatabase(DbConnection connection, List<string> tablesToSkip, SupportedDatabaseType type=SupportedDatabaseType.H2) {
+        // this is for default cleaner. if H2 is removed, we might also remove this one.
+        public static void ClearDatabase(DbConnection connection, List<string> tablesToSkip, DatabaseType type=DatabaseType.H2) {
             ClearDatabase(GetDefaultRetries(type), connection, GetSchema(type), tablesToSkip,type);
         }
 
         public static void ClearDatabase_Postgres(DbConnection connection, List<string> tablesToSkip=null)
         {
-            ClearDatabase(GetDefaultRetries(SupportedDatabaseType.POSTGRES), connection, GetSchema(SupportedDatabaseType.POSTGRES) ,tablesToSkip, SupportedDatabaseType.POSTGRES);
+            ClearDatabase(GetDefaultRetries(DatabaseType.POSTGRES), connection, GetSchema(DatabaseType.POSTGRES) ,tablesToSkip, DatabaseType.POSTGRES);
         }
 
         private static void ConnectionStateCheck(DbConnection connection)
@@ -38,7 +41,7 @@ namespace Controller.Controllers.db
         // Man: restructure clearDatabase_Postgres here if Andrea agrees with.
         // for more information about dbcommand and dbconnection
         // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/dbconnection-dbcommand-and-dbexception
-        public static void ClearDatabase(int retries, DbConnection connection, string schemaName, List<string> tablesToSkip, SupportedDatabaseType type)
+        public static void ClearDatabase(int retries, DbConnection connection, string schemaName, List<string> tablesToSkip, DatabaseType type)
         {
             // Check for valid DbConnection.
             if (connection != null)
@@ -85,7 +88,7 @@ namespace Controller.Controllers.db
             }
         }
         
-        private static void TruncateTables(List<string> tablesToSkip, DbCommand command, SupportedDatabaseType type)
+        private static void TruncateTables(List<string> tablesToSkip, DbCommand command, DatabaseType type)
         {
             TruncateTables(tablesToSkip, command, GetSchema(type), GetDefaultTrunctionSingleCommand(type));
         }
@@ -145,7 +148,7 @@ namespace Controller.Controllers.db
             }
         }
 
-        private static void ResetSequences(DbCommand command, SupportedDatabaseType type)
+        private static void ResetSequences(DbCommand command, DatabaseType type)
         {
             ISet<string> sequences = new HashSet<string>();
             command.CommandText = GetAllSequenceCommand(type);
@@ -163,18 +166,18 @@ namespace Controller.Controllers.db
             }
         }
 
-        private static string GetSchema(SupportedDatabaseType type)
+        private static string GetSchema(DatabaseType type)
         {
             return type switch
             {
-                SupportedDatabaseType.H2 => "PUBLIC",
-                SupportedDatabaseType.MYSQL => "db",
-                SupportedDatabaseType.POSTGRES => "public",
-                _ => throw new InvalidProgramException("NOT SUPPORT")
+                DatabaseType.H2 => "PUBLIC",
+                DatabaseType.MYSQL => "db",
+                DatabaseType.POSTGRES => "public",
+                _ => throw new DbUnsupportedException(type)
             };
         }
 
-        private static string GetAllTableCommand(SupportedDatabaseType type)
+        private static string GetAllTableCommand(DatabaseType type)
         {
             return GetAllTableCommand(GetSchema(type));
         }
@@ -184,12 +187,12 @@ namespace Controller.Controllers.db
             return "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES  where TABLE_SCHEMA='" + schema + "' AND (TABLE_TYPE='TABLE' OR TABLE_TYPE='BASE TABLE')";
         }
 
-        private static string GetAllSequenceCommand(SupportedDatabaseType type)
+        private static string GetAllSequenceCommand(DatabaseType type)
         {
             return type switch
             {
                 // there is no INFORMATION_SCHEMA.SEQUENCES in MySQL
-                SupportedDatabaseType.MYSQL => GetAllTableCommand(GetSchema(type)),
+                DatabaseType.MYSQL => GetAllTableCommand(GetSchema(type)),
                 _ => GetAllSequenceCommand(GetSchema(type))
             };
         }
@@ -200,65 +203,65 @@ namespace Controller.Controllers.db
             return "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_SCHEMA='" + schema + "'";
         }
 
-        private static string ResetSequenceCommand(string sequence, SupportedDatabaseType type)
+        private static string ResetSequenceCommand(string sequence, DatabaseType type)
         {
             return type switch
             {
-                SupportedDatabaseType.MYSQL => "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;",
+                DatabaseType.MYSQL => "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;",
                 _ => "ALTER SEQUENCE " + sequence + " RESTART WITH 1"
             };
         }
 
-        private static int GetDefaultRetries(SupportedDatabaseType type)
+        private static int GetDefaultRetries(DatabaseType type)
         {
             switch (type)
             {
-                case SupportedDatabaseType.POSTGRES: return 0;
+                case DatabaseType.POSTGRES: return 0;
                 default:
                     return 3;
             }
         }
 
-        private static bool GetDefaultTrunctionSingleCommand(SupportedDatabaseType type)
+        private static bool GetDefaultTrunctionSingleCommand(DatabaseType type)
         {
             return type switch
             {
-                SupportedDatabaseType.POSTGRES => true,
+                DatabaseType.POSTGRES => true,
                 _ => false
             };
         }
         
-        private static void DisableReferentialIntegrity(DbCommand command, SupportedDatabaseType type)
+        private static void DisableReferentialIntegrity(DbCommand command, DatabaseType type)
         {
             switch (type)
             {
-                case SupportedDatabaseType.POSTGRES: break;
-                case SupportedDatabaseType.H2: 
+                case DatabaseType.POSTGRES: break;
+                case DatabaseType.H2: 
                     SqlScriptRunner.ExecCommand(command, "SET REFERENTIAL_INTEGRITY FALSE");
                     break;
-                case SupportedDatabaseType.MYSQL:
+                case DatabaseType.MYSQL:
                     SqlScriptRunner.ExecCommand(command, "SET @@foreign_key_checks = 0;");
                     break;
-                case SupportedDatabaseType.OTHERS:
-                    throw new InvalidOperationException("NOT SUPPORT");
+                case DatabaseType.OTHER:
+                    throw new DbUnsupportedException(type);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
         }
         
-        private static void EnableReferentialIntegrity(DbCommand command, SupportedDatabaseType type)
+        private static void EnableReferentialIntegrity(DbCommand command, DatabaseType type)
         {
             switch (type)
             {
-                case SupportedDatabaseType.POSTGRES: break;
-                case SupportedDatabaseType.H2: 
+                case DatabaseType.POSTGRES: break;
+                case DatabaseType.H2: 
                     SqlScriptRunner.ExecCommand(command, "SET REFERENTIAL_INTEGRITY TRUE");
                     break;
-                case SupportedDatabaseType.MYSQL:
+                case DatabaseType.MYSQL:
                     SqlScriptRunner.ExecCommand(command, "SET @@foreign_key_checks = 1;");
                     break;
-                case SupportedDatabaseType.OTHERS:
-                    throw new InvalidOperationException("NOT SUPPORT");
+                case DatabaseType.OTHER:
+                    throw new DbUnsupportedException(type);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }

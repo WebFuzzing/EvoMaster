@@ -2,6 +2,7 @@
 using System;
 using System.Data.Common;
 using System.Threading.Tasks;
+using Controller.Api;
 using Xunit;
 
 using DotNet.Testcontainers.Containers.Builders;
@@ -32,13 +33,11 @@ namespace Controller.Tests.Controllers.db
             return _connection;
         }
         
-        protected override SupportedDatabaseType GetDbType()
+        protected override DatabaseType GetDbType()
         {
-            return SupportedDatabaseType.MYSQL;
+            return DatabaseType.MYSQL;
         }
         
-        
-
         public async Task InitializeAsync()
         {
             mySql = mySqlBuilder.Build();
@@ -49,10 +48,12 @@ namespace Controller.Tests.Controllers.db
 
         public async Task DisposeAsync()
         {
-            DbCleaner.ClearDatabase(_connection, null, SupportedDatabaseType.MYSQL);
+            DbCleaner.ClearDatabase(_connection, null, DatabaseType.MYSQL);
             
-            SqlScriptRunner.ExecCommand(_connection, "DROP DATABASE db;");
-            SqlScriptRunner.ExecCommand(_connection, "CREATE DATABASE db;");
+            // TODO find a proper solution to clean all data in mysql db, instead of dropping db and closing connection
+            // SqlScriptRunner.ExecCommand(_connection, "DROP DATABASE db;");
+            // SqlScriptRunner.ExecCommand(_connection, "CREATE DATABASE db;");
+            
             
             await _connection.CloseAsync();
             await mySql.StopAsync();

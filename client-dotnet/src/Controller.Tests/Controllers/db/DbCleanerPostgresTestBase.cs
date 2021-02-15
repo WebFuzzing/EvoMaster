@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
+using Controller.Api;
 using Xunit;
 
 // for testcontainer
@@ -75,9 +76,9 @@ namespace Controller.Tests.Controllers.db
             return _connection;
         }
 
-        protected override SupportedDatabaseType GetDbType()
+        protected override DatabaseType GetDbType()
         {
-            return SupportedDatabaseType.POSTGRES;
+            return DatabaseType.POSTGRES;
         }
     }
 }

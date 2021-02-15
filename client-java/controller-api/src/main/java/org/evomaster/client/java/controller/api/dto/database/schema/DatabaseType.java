@@ -6,6 +6,8 @@ public enum DatabaseType {
 
     DERBY,
 
+    MYSQL,
+
     POSTGRES,
 
     /**
