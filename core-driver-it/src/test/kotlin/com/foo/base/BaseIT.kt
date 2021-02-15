@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Assertions.*
 import java.io.File
 import java.nio.file.Paths
 
-//FIXME: currently flacky on CI
-@Disabled
+
+@Disabled("No CI (Travis, CircleCI and GitHub) likes this test... :( ")
 class BaseIT {
 
 
@@ -34,8 +34,9 @@ class BaseIT {
         @JvmStatic
         @BeforeAll
         fun beforeAll() {
-            //Travis does not like spawn processes... :(
+            //Travis and CircleCI do not like this test...
             CIUtils.skipIfOnTravis()
+            CIUtils.skipIfOnCircleCI()
 
             setupJarAgent()
             driver.controllerPort = 0

@@ -3,10 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
@@ -233,7 +230,7 @@ class RestStructureMutator : StructureMutator() {
     private fun mutateForRandomType(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?) {
 
         if (ind.seeActions().size == 1) {
-            val sampledAction = sampler.sampleRandomAction(0.05)
+            val sampledAction = sampler.sampleRandomAction(0.05) as RestAction
 
             //save mutated genes
             mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
@@ -265,7 +262,7 @@ class RestStructureMutator : StructureMutator() {
 
             //add one at random
             log.trace("Adding action to test")
-            val sampledAction = sampler.sampleRandomAction(0.05)
+            val sampledAction = sampler.sampleRandomAction(0.05) as RestAction
             val chosen = randomness.nextInt(ind.seeActions().size)
             //ind.seeActions().add(chosen, sampledAction)
             ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction)))

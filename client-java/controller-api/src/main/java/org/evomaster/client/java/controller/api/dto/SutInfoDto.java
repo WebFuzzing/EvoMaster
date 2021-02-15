@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 
 import java.util.List;
 
@@ -12,6 +13,12 @@ public class SutInfoDto {
      * on how to interact with it
      */
     public RestProblemDto restProblem;
+
+    /**
+     * If the SUT is a GraphQL API, here there will be the info
+     * on how to interact with it
+     */
+    public GraphQLProblemDto graphQLProblem;
 
     /**
      * Whether the SUT is running or not

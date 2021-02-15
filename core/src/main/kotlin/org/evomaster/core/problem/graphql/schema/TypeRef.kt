@@ -5,7 +5,7 @@ package org.evomaster.core.problem.graphql.schema
  */
 data class TypeRef (var kind: __TypeKind,
                     var name: String,
-                    var ofType: ofTypeOn__Type){
+                    var ofType: ofType){
 
 
 

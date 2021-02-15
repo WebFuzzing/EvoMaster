@@ -41,7 +41,6 @@
         </dependency>
 
 
-
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-controller</artifactId>

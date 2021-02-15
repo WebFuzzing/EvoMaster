@@ -652,6 +652,7 @@ class EMConfig {
 
     enum class ProblemType(private val experimental: Boolean) : WithExperimentalOptions {
         REST(experimental = false),
+        GRAPHQL(experimental = true),
         WEB(experimental = true);
         override fun isExperimental() = experimental
     }
@@ -663,7 +664,6 @@ class EMConfig {
     @Cfg("Specify if test classes should be created as output of the tool. " +
             "Usually, you would put it to 'false' only when debugging EvoMaster itself")
     var createTests = true
-
 
     enum class TestSuiteSplitType {
         NONE,
@@ -889,13 +889,42 @@ class EMConfig {
     var enableProcessMonitor = false
 
     @Experimental
+    @Cfg("Specify a format to save the process data")
+    var processFormat = ProcessDataFormat.JSON_ALL
+
+    enum class ProcessDataFormat{
+        /**
+         * save evaluated individuals and Archive with a json format
+         */
+        JSON_ALL,
+//        /**
+//         * save Archive with a json format and save the evaluated individual with the specified test format
+//         */
+//        JSON_ARCHIVE_TEST_IND,
+//        /**
+//         * only save the evaluated individuals with json format
+//         */
+//        JSON_IND,
+        /**
+         * only save the evaluated individual with the specified test format
+         */
+        TEST_IND,
+        /**
+         * save covered targets with the specified target format and tests with the specified test format
+         */
+        TARGET_TEST_IND
+    }
+
+    @Experimental
     @Cfg("Specify a folder to save results when a search monitor is enabled")
     @Folder
     var processFiles = "process_data"
 
     @Experimental
-    @Cfg("Specify how often to save results when a search monitor is enabled ")
-    var processInterval = 100
+    @Cfg("Specify how often to save results when a search monitor is enabled, and 0.0 presents to record all evaluated individual")
+    @Max(50.0)
+    @Min(0.0)
+    var processInterval = 0.0
 
     @Experimental
     @Cfg("Whether to enable tracking the history of modifications of the individuals during the search")

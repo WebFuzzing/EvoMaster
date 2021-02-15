@@ -58,6 +58,11 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-core-graphql-it</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
             <artifactId>evomaster-core-it</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -66,11 +71,11 @@
             <artifactId>evomaster-dbconstraint</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
+        <!-- <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-e2e-tests-spring-rest-openapi-v2</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency> -->
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-e2e-tests-spring-rest-postgres</artifactId>
