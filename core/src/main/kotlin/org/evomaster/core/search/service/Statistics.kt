@@ -23,6 +23,8 @@ class Statistics : SearchListener {
 
         private const val DESCRIPTION_TARGET = "description"
         private const val TEST_INDEX = "indexOfTests"
+
+        const val TEST_TIMEOUTS = "testTimeouts"
     }
 
     @Inject
@@ -57,7 +59,7 @@ class Statistics : SearchListener {
     private var coverageFailures = 0
 
 
-    private class Pair(val header: String, val element: String)
+   class Pair(val header: String, val element: String)
 
 
     /**
@@ -162,7 +164,7 @@ class Statistics : SearchListener {
         snapshotThreshold += config.snapshotInterval
     }
 
-    private fun getData(solution: Solution<*>): List<Pair> {
+    fun getData(solution: Solution<*>): List<Pair> {
 
         val unitsInfo = remoteController?.getSutInfo()?.unitsInfoDto
 
@@ -198,7 +200,7 @@ class Statistics : SearchListener {
             add(Pair("avgReturnCodes", "" + codes.average()))
             add(Pair("maxReturnCodes", "" + codes.max()))
 
-            add(Pair("testTimeouts", "$timeouts"))
+            add(Pair(TEST_TIMEOUTS, "$timeouts"))
             add(Pair("coverageFailures", "$coverageFailures"))
 
             add(Pair("ClusteringTime", "${solution.clusteringTime}"))

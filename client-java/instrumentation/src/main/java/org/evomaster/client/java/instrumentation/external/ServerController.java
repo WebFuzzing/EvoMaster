@@ -198,6 +198,10 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.ACTION_INDEX, action);
     }
 
+    public boolean setKillSwitch(boolean b){
+        return sendWithDataAndExpectACK(Command.KILL_SWITCH, b);
+    }
+
     public synchronized List<TargetInfo> getTargetsInfo(Collection<Integer> ids) {
         boolean sent = sendCommand(Command.TARGETS_INFO);
         if (!sent) {

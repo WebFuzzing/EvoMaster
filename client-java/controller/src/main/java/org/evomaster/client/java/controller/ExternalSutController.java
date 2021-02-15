@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
 import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.InputProperties;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.databasespy.P6SpyFormatter;
@@ -336,6 +337,13 @@ public abstract class ExternalSutController extends SutController {
         }
 
         return getUnitsInfoDto(serverController.getUnitsInfoRecorder());
+    }
+
+    @Override
+    public void setKillSwitch(boolean b) {
+        checkInstrumentation();
+
+        serverController.setKillSwitch(b);
     }
 
 
