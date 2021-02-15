@@ -6,6 +6,9 @@ public enum DatabaseType {
 
     DERBY,
 
+    /**
+     * there exist some problem in its dbcleaner
+     */
     MYSQL,
 
     POSTGRES,
