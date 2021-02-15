@@ -159,7 +159,7 @@ public class DbCleaner {
                 s.execute("SET @@foreign_key_checks = 0;");
                 break;
             case OTHERS:
-                throw new IllegalStateException("Database type " + type + " is not supported");
+                throw new DbUnsupportedException(type);
         }
     }
 
@@ -178,7 +178,7 @@ public class DbCleaner {
                 s.execute("SET @@foreign_key_checks = 1;");
                 break;
             case OTHERS:
-                throw new IllegalStateException("NOT SUPPORT");
+                throw new DbUnsupportedException(type);
         }
     }
 
@@ -189,7 +189,7 @@ public class DbCleaner {
             case MYSQL: return "db";
             case POSTGRES: return "public";
         }
-        throw new IllegalStateException("NOT SUPPORT");
+        throw new DbUnsupportedException(type);
     }
 
     private static boolean isSingleCleanCommand(SupportedDatabaseType type){
@@ -212,7 +212,7 @@ public class DbCleaner {
             case H2:
             case POSTGRES: return getAllSequenceCommand(getSchema(type));
         }
-        throw new IllegalArgumentException("NOT SUPPORT");
+        throw new DbUnsupportedException(type);
     }
 
 
@@ -221,13 +221,13 @@ public class DbCleaner {
         return "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_SCHEMA='" + schema + "'";
     }
 
-    private static String resetSequenceCommand(String sequence, SupportedDatabaseType type)
-    {
+    private static String resetSequenceCommand(String sequence, SupportedDatabaseType type) {
         switch (type){
             case MYSQL: return "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;";
             case H2:
             case POSTGRES: return "ALTER SEQUENCE " + sequence + " RESTART WITH 1";
         }
-        throw new IllegalArgumentException("NOT SUPPORT");
+        throw new DbUnsupportedException(type);
     }
+
 }
