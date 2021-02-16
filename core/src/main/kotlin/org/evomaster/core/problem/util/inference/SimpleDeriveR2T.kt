@@ -46,7 +46,8 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
                 ParamUtil.parseParams(seg).forEachIndexed stop@{ sindex, token ->
                     //check whether any table name matches token
                     val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, token)) }.asSequence().sortedBy { e->e.second }
-                    if(matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
+
+                    if(matchedMap.lastOrNull()!= null && matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedMap.filter { it.second == matchedMap.last().second }.forEach {
                             resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
                                 mutableListOf()
@@ -58,7 +59,7 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
                     val matchedPropertyMap = allTables.flatMap { t->t.value.columns.filter { c-> !ParamUtil.isGeneralName(c.name) }.map { c->Pair(t.value.name, c.name) } }
                         .map { p-> Pair(p.first, Pair(p.second,StringSimilarityComparator.stringSimilarityScore(p.second, token))) }.asSequence().sortedBy { e->e.second.second }
 
-                    if(matchedPropertyMap.last().second.second >= StringSimilarityComparator.SimilarityThreshold){
+                    if(matchedMap.lastOrNull() != null && matchedPropertyMap.last().second.second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedPropertyMap.filter { it.second.second == matchedPropertyMap.last().second.second }.forEach {
                             resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
                                 mutableListOf()
