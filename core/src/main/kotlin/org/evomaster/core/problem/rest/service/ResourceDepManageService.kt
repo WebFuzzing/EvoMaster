@@ -956,6 +956,35 @@ class ResourceDepManageService {
         return null
     }
 
+
+    fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 0.8) : List<DbAction>{
+        val allrelated = getAllRelatedTables(ind)
+
+        val other = if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
+            val notincluded = allrelated.filterNot {
+                ind.dbInitialization.any { d-> it.equals(d.table.name, ignoreCase = true) }
+            }
+            if (notincluded.isNotEmpty() && randomness.nextBoolean()){
+                randomness.choose(notincluded)
+            }else randomness.choose(allrelated)
+        }else{
+            val left = rm.getTableInfo().keys.filterNot {
+                ind.dbInitialization.any { d-> it.equals(d.table.name, ignoreCase = true) }
+            }
+            if (left.isEmpty() && randomness.nextBoolean()) randomness.choose(rm.getTableInfo().keys)
+            else randomness.choose(left)
+        }
+        return createDbActions(other, num)
+    }
+
+    fun createDbActions(name : String, num : Int) : List<DbAction>{
+        rm.getSqlBuilder() ?:throw IllegalStateException("attempt to create resource with SQL but the sqlBuilder is null")
+        if (num <= 0)
+            throw IllegalArgumentException("invalid num (i.e.,$num) for creating resource")
+
+        return (0 until num).flatMap { rm.getSqlBuilder()!!.createSqlInsertionAction(name, setOf()) }
+    }
+
     /************************  sample resource individual regarding dependency ***********************************/
     /**
      * sample an individual which contains related resources
@@ -985,6 +1014,37 @@ class ResourceDepManageService {
             size = calls.sumBy { it.actions.size } + start
         }
     }
+
+    /**
+     * add related resource with SQL as its initialization of [ind], i.e., [RestIndividual.dbInitialization]
+     * [maxPerResource] is a maximum resources to be added per resource
+     */
+    fun sampleResourceWithRelatedDbActions(ind: RestIndividual, maxPerResource : Int) {
+        if (maxPerResource == 0) return
+        rm.getSqlBuilder()?:return
+
+        val added = mutableListOf<DbAction>()
+
+        val relatedTables = getAllRelatedTables(ind)
+
+        rm.sortTableBasedOnFK(relatedTables).forEach { t->
+            val num = randomness.nextInt(1, maxPerResource) - added.filter { it.table.name.equals(t.name, ignoreCase = true) }.size
+            if (num > 0){
+                added.addAll((0 until num).flatMap {
+                    rm.getSqlBuilder()!!.createSqlInsertionAction(t.name, setOf())
+                })
+            }
+        }
+        ind.dbInitialization.addAll(added)
+    }
+
+    private fun getAllRelatedTables(ind: RestIndividual) : Set<String>{
+        return ind.getResourceCalls().flatMap { c->
+            extractRelatedTablesForCall(c).values.flatMap { it.map { g->g.tableName } }.toSet()
+        }.toSet()
+    }
+
+
 
     /**************************************** apply parser to derive ************************************************************************/
 
@@ -1091,7 +1151,7 @@ class ResourceDepManageService {
                 previous.add(dbaction)
             }
             call.dbActions.addAll(0, created)
-            rm.repairDbActions(dbActions.plus(call.dbActions).toMutableList())
+            rm.repairDbActionsForResource(dbActions.plus(call.dbActions).toMutableList())
             //call.dbActions.addAll(0, selections)
         }
 

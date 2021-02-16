@@ -50,6 +50,10 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      */
     open fun seeInitializingActions(): List<Action> = listOf()
 
+    /**
+     * return a list of all db actions that could include all initializing actions plus db actions among rest actions
+     */
+    open fun seeDbActions() : List<Action> = seeInitializingActions()
 
     open fun seeActions(isInitialization : Boolean) = if (isInitialization) seeInitializingActions() else seeActions()
 

@@ -2,16 +2,15 @@ package org.evomaster.core.problem.rest.service
 
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.service.IdMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -41,7 +40,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         rc.resetSUT()
 
         val sqlIdMap = mutableMapOf<Long, Long>()
-        doInitializingCalls(individual.dbInitialization, sqlIdMap)
+        var failureBefore = doInitializingCalls(individual.dbInitialization, sqlIdMap, false)
 
         //individual.enforceCoherence()
 
@@ -59,7 +58,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            doInitializingCalls(call.dbActions, sqlIdMap)
+            failureBefore = failureBefore || doInitializingCalls(call.dbActions, sqlIdMap, failureBefore)
 
             var terminated = false
 
@@ -107,10 +106,14 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
     }
 
-    private fun doInitializingCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>) {
+    /**
+     * @param allSuccessBefore indicates whether all SQL before this [allDbActions] are executed successfully
+     * @return whether [allDbActions] execute successfully
+     */
+    private fun doInitializingCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>, allSuccessBefore : Boolean) : Boolean {
 
         if (allDbActions.isEmpty()) {
-            return
+            return true
         }
 
         if (allDbActions.none { !it.representExistingData }) {
@@ -120,18 +123,25 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 Note that current data structure also keeps info on already
                 existing data (which of course should not be re-inserted...)
              */
-            return
+            return true
         }
-
-
-        val dto = DbActionTransformer.transform(allDbActions, sqlIdMap)
+        val dto = try {
+            DbActionTransformer.transform(allDbActions, sqlIdMap)
+        }catch (e : IllegalArgumentException){
+            if (!allSuccessBefore)
+                return false
+            else
+                throw e
+        }
 
 
         val map = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
         if (map == null) {
-            log.warn("Failed in executing database command")
+            LoggingUtil.uniqueWarn(log, "Failed in executing database command")
+            return false
         }else
             sqlIdMap.putAll(map)
+        return true
     }
 
     override fun hasParameterChild(a: RestCallAction): Boolean {

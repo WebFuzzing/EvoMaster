@@ -140,6 +140,8 @@ open class ResourceSampler : AbstractRestSampler() {
             val individual =  RestIndividual(restCalls, SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency),
                     trackOperator = if(config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1)
             individual.repairDBActions(sqlInsertBuilder)
+            if (withDependency)
+                dm.sampleResourceWithRelatedDbActions(individual, config.maxSqlInitActionsPerResource)
             return individual
         }
         return null

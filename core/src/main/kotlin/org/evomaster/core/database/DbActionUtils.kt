@@ -101,7 +101,9 @@ object DbActionUtils {
         while (geneToRepair != null && attemptCounter < maxNumberOfAttemptsToRepairAnAction) {
 
             val previousGenes = actions.subList(0, geneToRepairAndActionIndex.second).flatMap { it.seeGenes() }
-            geneToRepair.randomize(randomness, true, previousGenes)
+            //Please check this. there throw java.lang.IllegalStateException: Not supposed to modify an immutable gene
+            if (geneToRepair.isMutable())
+                geneToRepair.randomize(randomness, true, previousGenes)
 
             if (actionIndexToRepair == previousActionIndexToRepair) {
                 //
@@ -366,14 +368,32 @@ object DbActionUtils {
                 val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf())
                 found = created?.flatMap { it.seeGenes() }?.filterIsInstance<SqlPrimaryKeyGene>()?.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
                         ?:throw IllegalStateException("fail to create insert db action")
+                repairFkForInsertions(created)
                 createdDbActions.addAll(created)
                 previous.addAll(created)
+                repaired.addAll(created.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>())
             }
             fk.uniqueIdOfPrimaryKey = found.uniqueId
             repaired.add(found)
         }
-        return repaired
 
+        return repaired
+    }
+
+    fun repairFkForInsertions(dbActions: List<DbAction>){
+        dbActions.forEachIndexed { index, dbAction ->
+            val fks = dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>()
+            if (fks.any { !it.nullable && !it.isBound() } && index == 0)
+                throw IllegalStateException("invalid insertion, there exists invalid fk at $index")
+            val pks = dbActions.subList(0, index).flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
+            fks.filter { !it.nullable && !it.isBound() || pks.none { p->p.uniqueId == it.uniqueIdOfPrimaryKey }}.forEach {fk->
+                val found = pks.find { pk -> pk.tableName.equals(fk.targetTable, ignoreCase = true) }
+                    ?: throw IllegalStateException("fail to target table ${fk.targetTable} for the fk ${fk.name}")
+                fk.uniqueIdOfPrimaryKey = found.uniqueId
+            }
+        }
+        if (!verifyForeignKeys(dbActions))
+            throw IllegalStateException("FK repair fails")
     }
 
 }

@@ -35,41 +35,62 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
 
     fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null, mutatedGenes: MutatedGeneSpecification? = null) {
 
-        val num = ind.getResourceCalls().size
-
-        val validCandidates =  MutationType.values()
-                .filter {  num >= it.minSize }
-                .filterNot{
-                    (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
-                            //if the individual includes all resources, ADD and REPLACE are not applicable
-                            (ind.getResourceCalls().map {
-                                it.resourceInstance?.getKey()
-                            }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
-                            //if the size of deletable individual is less 2, Delete and SWAP are not applicable
-                            (ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size < 2 && (it == MutationType.DELETE || it == MutationType.SWAP))
-                }
         val executedStructureMutator = specified?:
-            randomness.choose(validCandidates )
+            randomness.choose(getAvailableMutator(ind) )
+
         when(executedStructureMutator){
             MutationType.ADD -> handleAdd(ind, mutatedGenes)
             MutationType.DELETE -> handleDelete(ind, mutatedGenes)
             MutationType.SWAP -> handleSwap(ind, mutatedGenes)
             MutationType.REPLACE -> handleReplace(ind, mutatedGenes)
             MutationType.MODIFY -> handleModify(ind, mutatedGenes)
+            MutationType.SQL_REMOVE -> handleRemoveSQL(ind, mutatedGenes)
+            MutationType.SQL_ADD -> handleAdd(ind, mutatedGenes)
         }
 
         ind.repairDBActions(rm.getSqlBuilder())
     }
 
+    private fun getAvailableMutator(ind: RestIndividual) : List<MutationType>{
+        val num = ind.getResourceCalls().size
+        val sqlNum = ind.seeResource(RestIndividual.ResourceFilter.ONLY_SQL_INSERTION).size
+        return MutationType.values()
+            .filter {  num >= it.minSize && sqlNum >= it.minSQLSize}
+            .filterNot { config.maxSqlInitActionsPerResource == 0 && (it == MutationType.SQL_ADD || it == MutationType.SQL_REMOVE) }
+            .filterNot{
+                (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
+                        //if the individual includes all resources, ADD and REPLACE are not applicable
+                        (ind.getResourceCalls().map {
+                            it.resourceInstance?.getKey()
+                        }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
+                        //if the size of deletable individual is less 2, Delete and SWAP are not applicable
+                        (ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size < 2 && (it == MutationType.DELETE || it == MutationType.SWAP))
+            }
+    }
+
     /**
      * the class defines possible methods to mutate ResourceRestIndividual regarding its resources
      */
-    enum class MutationType(val minSize: Int){
+    enum class MutationType(val minSize: Int, val minSQLSize : Int = 0){
         DELETE(2),
         SWAP(2),
         ADD(1),
         REPLACE(1),
-        MODIFY(1)
+        MODIFY(1),
+        SQL_REMOVE(1, 1),
+        SQL_ADD(1, 1)
+    }
+
+    private fun handleAddSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
+        val numOfResource = randomness.nextInt(1, config.maxSqlInitActionsPerResource)
+        val added = dm.addRelatedSQL(ind, numOfResource)
+
+
+        TODO()
+    }
+
+    private fun handleRemoveSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
+        TODO()
     }
 
     /**
@@ -112,7 +133,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         }
 
         if(config.probOfEnablingResourceDependencyHeuristics > 0.0){
-            val position = (0 until ind.getResourceCalls().size).toMutableList()
+            val position = (ind.getResourceCalls().indices).toMutableList()
             while (position.isNotEmpty()){
                 val chosen = randomness.choose(position)
                 if(ind.isMovable(chosen)) {

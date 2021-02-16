@@ -126,7 +126,7 @@ class TestCaseWriter {
                 However, we still keep dbInitialization which presents dbaction in front of all rest actions in a test.
                 HERE, please do not use ind.individual.seeInitializingActions(), otherwise the "in between dbactions" will also show here.
                  */
-                if (ind.individual.dbInitialization.isNotEmpty()) {
+                if (ind.individual.seeInitializingActions().isNotEmpty()) {
                     SqlWriter.handleDbInitialization(format, ind.individual.seeInitializingActions(), lines)
                 }
             }
@@ -166,7 +166,7 @@ class TestCaseWriter {
                 test.test.evaluatedResourceActions().forEachIndexed { index, c->
                     // db
                     if (c.first.isNotEmpty())
-                        SqlWriter.handleDbInitialization(format, c.first, lines, test.test.individual.seeInitializingActions(), groupIndex = index.toString())
+                        SqlWriter.handleDbInitialization(format, c.first, lines, test.test.individual.seeDbActions(), groupIndex = index.toString())
                     //actions
                     c.second.forEach { a->
                         handleEvaluatedAction(a, lines, baseUrlOfSut)
