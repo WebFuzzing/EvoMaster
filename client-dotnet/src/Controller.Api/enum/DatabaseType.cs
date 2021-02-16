@@ -3,9 +3,12 @@ namespace Controller.Api {
   //TODO: Review possible values for this enum
   public enum DatabaseType {
 
+    // discussed it a bit with Andrea, might remove this one for .net
     H2,
 
     DERBY,
+
+    MYSQL,
 
     POSTGRES,
 

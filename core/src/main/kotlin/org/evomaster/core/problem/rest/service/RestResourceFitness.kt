@@ -19,8 +19,7 @@ import org.slf4j.LoggerFactory
  */
 class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
-    @Inject
-    private lateinit var rc: RemoteController
+
 
     @Inject
     private lateinit var sampler : ResourceSampler

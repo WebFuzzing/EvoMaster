@@ -278,6 +278,7 @@ class RemoteController() : DatabaseExecutor {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
                     .queryParam("ids", queryParam)
+                    .queryParam("killSwitch", true)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }

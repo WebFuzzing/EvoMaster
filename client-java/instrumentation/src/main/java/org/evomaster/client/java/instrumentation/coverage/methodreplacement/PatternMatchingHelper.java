@@ -13,11 +13,6 @@ public class PatternMatchingHelper {
 
     /**
      * Invocation to Pattern.matches() is free of side-effects.
-     *
-     * @param regex
-     * @param input
-     * @param idTemplate
-     * @return
      */
     public static boolean matches(String regex, String input, String idTemplate) {
         Objects.requireNonNull(regex);
@@ -39,7 +34,7 @@ public class PatternMatchingHelper {
                     new Truthness(1d, 0d));
 
         } else {
-            int distance = RegexDistanceUtils.getStandardDistance(input.toString(), regex);
+            int distance = RegexDistanceUtils.getStandardDistance(input, regex);
             ExecutionTracer.executedReplacedMethod(idTemplate,
                     ReplacementType.BOOLEAN,
                     new Truthness(1d / (1d + distance), 1d));

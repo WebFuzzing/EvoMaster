@@ -3,10 +3,10 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../Controller.Api/Controller.Api.csproj"/>
-    <ProjectReference Include="../Client.Util/Client.Util.csproj"/>
+    <ProjectReference Include="../Controller.Api/Controller.Api.csproj" />
+    <ProjectReference Include="../Client.Util/Client.Util.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.0"/>
+    <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.0" />
   </ItemGroup>
 </Project>

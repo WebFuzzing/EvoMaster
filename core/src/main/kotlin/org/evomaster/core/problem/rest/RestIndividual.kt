@@ -4,6 +4,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
@@ -316,14 +317,5 @@ class RestIndividual(
                 }
     }
 
-    /**
-     *  Return the distinct auth info on cookie-based login in all actions
-     *  of this individual
-     */
-    fun getCookieLoginAuth() =  this.seeActions()
-            .filterIsInstance<RestCallAction>()
-            .filter { it.auth.cookieLogin != null }
-            .map { it.auth.cookieLogin!! }
-            .distinctBy { it.username }
 
 }
