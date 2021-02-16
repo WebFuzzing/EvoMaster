@@ -41,8 +41,6 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         val sqlIdMap = mutableMapOf<Long, Long>()
         var failureBefore = doInitializingCalls(individual.dbInitialization, sqlIdMap, false)
 
-        //individual.enforceCoherence()
-
         val cookies = getCookies(individual)
 
         val fv = FitnessValue(individual.size().toDouble())
