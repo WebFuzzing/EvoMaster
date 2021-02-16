@@ -1,0 +1,13 @@
+<Project>
+    <Target Name="CopyFilesToProject" BeforeTargets="Build">
+        <Message Text="Copying warning.html to project" />
+        <ItemGroup>
+            <SourceScripts Include="$(MSBuildThisFileDirectory)..\..\content\any\any\**\*.*"/>
+        </ItemGroup>
+        <Copy
+                SourceFiles="@(SourceScripts)"
+                DestinationFiles="@(SourceScripts -> '$(MSBuildProjectDirectory)\%(RecursiveDir)%(Filename)%(Extension)')"
+        />
+    </Target>
+
+</Project>
