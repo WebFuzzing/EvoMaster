@@ -1,27 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <IsPackable>true</IsPackable>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    
-    <PackageId>Controller</PackageId>
-    <Version>1.0.0-alpha</Version>
-    <Authors>EvoMaster Team</Authors>
-    <Company>Kristiania</Company>
-    
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="../Controller.Api/Controller.Api.csproj"/>
-    <ProjectReference Include="../Client.Util/Client.Util.csproj"/>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.0"/>
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <IsPackable>true</IsPackable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
-  <Target Name="PublishNuGetLocally" AfterTargets="Build">
-    <Exec Command="dotnet pack $(ProjectPath)"/>
-    <Exec Command="dotnet nuget delete --source LocalNuget $(PackageId) $(PackageVersion) --non-interactive" ContinueOnError="WarnAndContinue"/>
-    <Exec Command="dotnet nuget push --source LocalNuget $(ProjectDir)bin\$(ConfigurationName)\$(PackageId).$(PackageVersion).nupkg" />
-  </Target>
-  
+        <PackageId>Controller</PackageId>
+        <Version>1.1.1-SNAPSHOT</Version>
+        <Authors>EvoMaster Team</Authors>
+        <Company>Kristiania</Company>
+
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="../Controller.Api/Controller.Api.csproj"/>
+        <ProjectReference Include="../Client.Util/Client.Util.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.0"/>
+    </ItemGroup>
+    
+    <Target Name="PublishNuGetLocally" AfterTargets="Build">
+        <Exec Command="dotnet pack $(ProjectPath)"/>
+
+        <Exec Command="dotnet nuget delete --source $HOME/.nuget/packages $(PackageId) $(PackageVersion) --non-interactive" ContinueOnError="WarnAndContinue" Condition="$(OS.Contains('Unix'))"/>
+        <Exec Command="dotnet nuget push --source $HOME/.nuget/packages $(ProjectDir)bin\$(ConfigurationName)\$(PackageId).$(PackageVersion).nupkg" Condition="$(OS.Contains('Unix'))"/>
+
+        <Exec Command="dotnet nuget delete --source $(UserProfile)\.nuget\packages $(PackageId) $(PackageVersion) --non-interactive" ContinueOnError="WarnAndContinue" Condition="$(OS.Contains('Windows'))"/>
+        <Exec Command="dotnet nuget push --source $(UserProfile)\.nuget\packages $(ProjectDir)bin\$(ConfigurationName)\$(PackageId).$(PackageVersion).nupkg" Condition="$(OS.Contains('Windows'))"/>
+    </Target>
+
 </Project>
