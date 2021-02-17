@@ -62,7 +62,11 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
     }
 
     override fun getProblemInfo(): ProblemInfo {
-        return GraphQlProblem("/graphql")
+        return GraphQlProblem("${getBaseURL()}/graphql")
+    }
+
+    fun getBaseURL(): String {
+        return "http://localhost:$sutPort"
     }
 
     override fun getDatabaseDriverName(): String? {

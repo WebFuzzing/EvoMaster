@@ -7,6 +7,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 
 class GraphQLIndividual(
         val actions: MutableList<GraphQLAction>,
@@ -50,5 +51,15 @@ class GraphQLIndividual(
         TODO("Not yet implemented")
     }
 
+    override fun copy(copyFilter: TraceableElementCopyFilter): GraphQLIndividual {
+        val copy = copy() as GraphQLIndividual
+        when(copyFilter){
+            TraceableElementCopyFilter.NONE-> {}
+            TraceableElementCopyFilter.WITH_TRACK, TraceableElementCopyFilter.DEEP_TRACK  ->{
+                copy.wrapWithTracking(null, tracking!!.copy())
+            }else -> throw IllegalStateException("${copyFilter.name} is not implemented!")
+        }
+        return copy
+    }
 
 }
