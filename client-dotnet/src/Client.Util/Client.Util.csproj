@@ -11,13 +11,10 @@
   </PropertyGroup>
 
   <Target Name="PublishNuGetLocally" AfterTargets="Build">
-    <Exec Command="dotnet pack $(ProjectPath)"/>
-<!--    <Exec Command="dotnet nuget delete &#45;&#45;source LocalNuget $(PackageId) $(PackageVersion) &#45;&#45;non-interactive" ContinueOnError="WarnAndContinue"/>-->
-<!--    <Exec Command="dotnet nuget push &#45;&#45;source LocalNuget $(ProjectDir)bin\$(ConfigurationName)\$(PackageId).$(PackageVersion).nupkg" />-->
-
-    <Exec Command="dotnet nuget delete --source $HOME/.nuget/packages $(PackageId) $(PackageVersion) --non-interactive" ContinueOnError="WarnAndContinue" Condition="$(OS.Contains('Unix'))"/>
-    <Exec Command="dotnet nuget push --source $HOME/.nuget/packages $(ProjectDir)bin\$(ConfigurationName)\$(PackageId).$(PackageVersion).nupkg" Condition="$(OS.Contains('Unix'))"/>
-
+    <Exec Command="dotnet pack $(ProjectPath)" />
+    <Exec Command="dotnet nuget delete --source ~/.nuget/packages $(PackageId) $(PackageVersion) --non-interactive" ContinueOnError="WarnAndContinue" />
+    <Exec Command="dotnet nuget push --source ~/.nuget/packages $(ProjectDir)bin\$(ConfigurationName)\$(PackageId).$(PackageVersion).nupkg" />
   </Target>
+
   
 </Project>
