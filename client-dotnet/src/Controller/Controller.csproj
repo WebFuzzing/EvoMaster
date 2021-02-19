@@ -18,13 +18,6 @@
         <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.0" />
     </ItemGroup>
 
-<!--    <ItemGroup>-->
-<!--        <Content Include="Resources/warning.html">-->
-<!--            <Pack>true</Pack>-->
-<!--            <PackagePath>/contentFiles</PackagePath>-->
-<!--        </Content>-->
-<!--    </ItemGroup>-->
-
         <ItemGroup>
             <Content Include="Resources/warning.html">
                 <Pack>true</Pack>

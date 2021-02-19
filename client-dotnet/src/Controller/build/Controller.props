@@ -4,9 +4,10 @@
         <ItemGroup>
             <SourceScripts Include="$(MSBuildThisFileDirectory)..\..\content\any\any\**\*.*"/>
         </ItemGroup>
+
         <Copy
                 SourceFiles="@(SourceScripts)"
-                DestinationFiles="@(SourceScripts -> '$(MSBuildProjectDirectory)\%(RecursiveDir)%(Filename)%(Extension)')"
+                DestinationFiles="@(SourceScripts -> '$(MSBuildProjectDirectory)\$(OutDir)\%(RecursiveDir)%(Filename)%(Extension)')"
         />
     </Target>
 
