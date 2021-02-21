@@ -378,16 +378,31 @@ object RestActionBuilderV3 {
             when (type) {
                 "string" ->
                     return EnumGene(name, (schema.enum as MutableList<String>).apply { add("EVOMASTER") })
+                /*
+                    Looks like a possible bug in the parser, where numeric enums can be read as strings... got this
+                    issue in GitLab schemas, eg for visibility_level
+                 */
                 "integer" -> {
                     if (format == "int64") {
-                        return EnumGene(name, (schema.enum as MutableList<Long>).apply { add(42) })
+                        val data : MutableList<Long> = schema.enum
+                                .map{ if(it is String) it.toLong() else it as Long}
+                                .toMutableList()
+
+                        return EnumGene(name, (data).apply { add(42L) })
                     }
-                    return EnumGene(name, (schema.enum as MutableList<Int>).apply { add(42) })
+
+                    val data : MutableList<Int> = schema.enum
+                            .map{ if(it is String) it.toInt() else it as Int}
+                            .toMutableList()
+                    return EnumGene(name, data.apply { add(42) })
                 }
                 "number" -> {
                     //if (format == "double" || format == "float") {
                     //TODO: Is it always casted as Double even for Float??? Need test
-                    return EnumGene(name, (schema.enum as MutableList<Double>).apply { add(42.0) })
+                    val data : MutableList<Double> = schema.enum
+                            .map{ if(it is String) it.toDouble() else it as Double}
+                            .toMutableList()
+                    return EnumGene(name, data.apply { add(42.0) })
                 }
                 else -> log.warn("Cannot handle enum of type: $type")
             }
