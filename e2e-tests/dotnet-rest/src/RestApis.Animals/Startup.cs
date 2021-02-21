@@ -29,7 +29,7 @@ namespace RestApis.Animals
             services.AddControllers();
             
             services.AddDbContext<AnimalsDbContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("LocalDb")));
+                options.UseNpgsql(Configuration.GetConnectionString("LocalDb")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

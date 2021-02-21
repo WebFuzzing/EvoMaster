@@ -20,7 +20,9 @@ namespace RestApis.Animals
 
             context.Animals.AddRange(
                 new Animal("Giraffe"),
-                new Animal("Horse")
+                new Animal("Horse"),
+                new Animal("Monkey"),
+                new Animal("Swan")
             );
             
             context.SaveChanges();
