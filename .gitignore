@@ -76,10 +76,14 @@ e2e-tests/*/Properties/
 .vscode/
 *.launchSettings.json
 *.sln.DotSettings.user
+*appsettings.Development.json
 
 .LocalNuget/*
 !.LocalNuget/.gitkeep
 
 #Generated Tests
 generated-test-cases/
+
+#EF Migrations
+Migrations/
 
