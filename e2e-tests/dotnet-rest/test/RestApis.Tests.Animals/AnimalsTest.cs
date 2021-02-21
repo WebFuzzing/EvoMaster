@@ -19,10 +19,13 @@ namespace RestApis.Tests.Animals
             var baseUrlOfSut = "http://localhost:5000";
             HttpResponseMessage response = await Client.GetAsync($"{baseUrlOfSut}/animals");
             string responseBody = await response.Content.ReadAsStringAsync();
+            
+            //just to show how deserialization can be done
             var body = (JsonConvert.DeserializeObject<IEnumerable<Animal>>(responseBody) ?? Array.Empty<Animal>()).ToList();
             
             Assert.Equal(200, (int) response.StatusCode);
-            Assert.Equal("application/json",response.Content.Headers.ContentType.MediaType);
+            Assert.Contains("application/json",response.Content.Headers.ContentType.ToString());
+            Assert.Contains("Giraffe", responseBody);
         }
         
         [Fact]
