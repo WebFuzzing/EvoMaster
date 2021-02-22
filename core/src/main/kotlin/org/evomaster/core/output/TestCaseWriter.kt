@@ -9,6 +9,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -42,6 +43,11 @@ class TestCaseWriter {
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private lateinit var configuration: EMConfig
+
+    /*
+        The following are just for REST
+        TODO: refactor, considering we are adding GraphQL and others
+     */
     private lateinit var expectationsWriter: ExpectationsWriter
     private lateinit var swagger: OpenAPI
     private lateinit var partialOracles: PartialOracles
@@ -49,8 +55,8 @@ class TestCaseWriter {
     companion object {
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
 
-        /*
-            Internal flag to mark cases which do not support yet
+        /**
+         *   Internal flag to mark cases which do not support yet
          */
         const val NOT_COVERED_YET = "NotCoveredYet"
     }
@@ -126,7 +132,15 @@ class TestCaseWriter {
                 }
             }
 
+            if(ind.individual is GraphQLIndividual){
+                //TODO refactor
+                if (ind.individual.dbInitialization.isNotEmpty()) {
+                    SqlWriter.handleDbInitialization(format, ind.individual.dbInitialization, lines)
+                }
+            }
+
             if (test.hasChainedLocations()) {
+                assert(ind.individual is RestIndividual)
                 /*
                     If the "location" header of a HTTP response is used in a following
                     call, we need to save it in a variable.
@@ -476,7 +490,6 @@ class TestCaseWriter {
             //TODO
             return
         }
-
 
         lines.add(".assertThat()")
 
