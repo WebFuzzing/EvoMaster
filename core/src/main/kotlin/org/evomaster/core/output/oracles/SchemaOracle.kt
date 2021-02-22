@@ -229,7 +229,8 @@ class SchemaOracle : ImplementedOracle() {
         if(!::objectGenerator.isInitialized) return false
         val supportedObjs = getSupportedResponse(call)
         val expectedObject = supportedObjs.get("${res.getStatusCode()}") ?: return false
-        if(!objectGenerator.containsKey(expectedObject)) return false
+
+        if(!objectGenerator.containsKey(expectedObject)) return true
         val referenceObject = objectGenerator.getNamedReference(expectedObject)
         val supported = supportedObject(referenceObject, call)
         return !supported
