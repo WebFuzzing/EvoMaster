@@ -30,7 +30,6 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -92,8 +91,11 @@ public abstract class RestTestBase {
         return TESTS_OUTPUT_ROOT_FOLDER + outputFolderName;
     }
 
-
     protected void runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda){
+        runAndCheckDeterminism(iterations, lambda, 2);
+    }
+
+    protected void runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda, int times){
 
         List<String> args =  new ArrayList<>(Arrays.asList(
                 "--createTests", "false",
@@ -106,22 +108,31 @@ public abstract class RestTestBase {
                 "--useTimeInFeedbackSampling" , "false"
         ));
 
-        checkDeterminism(args, lambda);
+
+        isDeterminismConsumer(args, lambda, times);
+    }
+    protected void isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda) {
+        isDeterminismConsumer(args, lambda, 2);
     }
 
+    protected void isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda, int times) {
+        assert(times >= 2);
 
-    protected void checkDeterminism(List<String> args, Consumer<List<String>> lambda){
         StaticCounter.Companion.reset();
         String firstRun = LoggingUtil.Companion.runWithDeterministicLogger(
                 () -> {lambda.accept(args); return Unit.INSTANCE;}
         );
 
-        StaticCounter.Companion.reset();
-        String secondRun = LoggingUtil.Companion.runWithDeterministicLogger(
-                () -> {lambda.accept(args); return Unit.INSTANCE;}
-        );
-
-        assertEquals(firstRun, secondRun);
+        int c = 1;
+        while (c < times){
+            StaticCounter.Companion.reset();
+            String secondRun = LoggingUtil.Companion.runWithDeterministicLogger(
+                    () -> {lambda.accept(args); return Unit.INSTANCE;}
+            );
+            assertEquals(firstRun, secondRun);
+            firstRun = secondRun;
+            c++;
+        }
     }
 
     protected void runTestHandlingFlaky(
