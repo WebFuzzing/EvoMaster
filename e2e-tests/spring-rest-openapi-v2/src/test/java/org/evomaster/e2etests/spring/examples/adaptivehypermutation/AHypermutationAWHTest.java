@@ -43,10 +43,6 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     private static int budget = 20_000;
     private static String statisticsFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/statistics.csv";
     private static String snapshotFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/snapshot.csv";
-    private static String mutatedGeneFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/mutatedGeneInfo.csv";
-    private static String impactFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/impactSnapshot.csv";
-
-
 
     @Test
     public void testDeterminismOfLog(){
@@ -167,17 +163,6 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
 
                     args.add("--statisticsColumnId");
                     args.add("awh-example-awh");
-
-                    args.add("--saveMutationInfo");
-                    args.add("true");
-
-                    args.add("--mutatedGeneFile");
-                    args.add(mutatedGeneFile);
-
-                    args.add("--saveImpactAfterMutation");
-                    args.add("true");
-                    args.add("--impactAfterMutationFile");
-                    args.add(impactFile);
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
