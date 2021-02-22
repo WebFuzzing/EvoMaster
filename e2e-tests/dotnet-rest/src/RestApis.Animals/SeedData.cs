@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using RestApis.Animals.Entities;
 
 namespace RestApis.Animals
 {
@@ -12,19 +13,19 @@ namespace RestApis.Animals
             using var context = new AnimalsDbContext(
                 serviceProvider.GetRequiredService<
                     DbContextOptions<AnimalsDbContext>>());
-            
-            if (context.Animals.Any())
+
+            if (context.Mammals.Any())
             {
                 return; // DB has been seeded
             }
 
-            context.Animals.AddRange(
-                new Animal("Giraffe"),
-                new Animal("Horse"),
-                new Animal("Monkey"),
-                new Animal("Swan")
+            context.Mammals.AddRange(
+                new Mammal {Name = "Giraffe"},
+                new Mammal {Name = "Horse"},
+            new Mammal {Name = "Human"},
+            new Mammal {Name = "Cat"}
             );
-            
+
             context.SaveChanges();
         }
     }

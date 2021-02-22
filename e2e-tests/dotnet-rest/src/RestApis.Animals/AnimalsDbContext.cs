@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RestApis.Animals.Entities;
 
 namespace RestApis.Animals
 {
@@ -10,10 +11,14 @@ namespace RestApis.Animals
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Animal>().HasIndex(x => x.Id);
-            modelBuilder.Entity<Animal>().Property(x => x.Name).HasMaxLength(50);
+            modelBuilder.Entity<Mammal>().HasIndex(x => x.Id);
+            modelBuilder.Entity<Mammal>().Property(x => x.Name).HasMaxLength(50);
+            
+            modelBuilder.Entity<Bird>().HasIndex(x => x.Id);
+            modelBuilder.Entity<Bird>().Property(x => x.Name).HasMaxLength(50);
         }
 
-        public DbSet<Animal> Animals { get; set; }
+        public DbSet<Mammal> Mammals { get; set; }
+        public DbSet<Bird> Birds { get; set; }
     }
 }

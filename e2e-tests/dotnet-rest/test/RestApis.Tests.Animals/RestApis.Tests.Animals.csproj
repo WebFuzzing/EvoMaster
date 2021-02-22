@@ -4,6 +4,8 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
 
     <IsPackable>false</IsPackable>
+
+    <StartupObject>RestApis.Tests.Animals.Controller.EmbeddedEvoMasterController</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\client-dotnet\src\Controller\Controller.csproj" />
     <ProjectReference Include="..\..\src\RestApis.Animals\RestApis.Animals.csproj" />
   </ItemGroup>
-
+  
 </Project>

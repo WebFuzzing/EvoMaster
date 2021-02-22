@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,34 +15,56 @@ namespace RestApis.Animals
 {
     public class Program
     {
-        public static void Main(string[] args)
-        {
-            var host = CreateHostBuilder(args).Build();
+        private static ConcurrentDictionary<int, CancellationTokenSource> tokens = new ConcurrentDictionary<int, CancellationTokenSource> ();
+        public static void Main (string[] args) {
 
-            using (var scope = host.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
+            if (args.Length > 0) {
 
-                try
-                {
-                    SeedData.Initialize(services);
-                }
-                catch (Exception ex)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(ex);
-                    Console.ResetColor();
-                }
+                int port = Convert.ToInt32 (args[0]);
+                tokens.TryAdd (port, new CancellationTokenSource ());
+                var host = CreateWebHostBuilder (args).Build ();
+                Seed(host);
+                host.RunAsync (tokens[port].Token).GetAwaiter ().GetResult ();
+            } else {
+                var host = CreateWebHostBuilder (args).Build ();
+                Seed(host);
+                host.RunAsync ().GetAwaiter ().GetResult ();
             }
-
-            host.Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+        public static IWebHostBuilder CreateWebHostBuilder (string[] args) {
+
+            var webHostBuilder = WebHost.CreateDefaultBuilder (args)
+                .UseStartup<Startup> ();
+
+            return args.Length > 0 ? webHostBuilder.UseUrls ($"http://*:{args[0]}") : webHostBuilder;
+        }
+
+        public static void Shutdown () {
+
+            foreach (var pair in tokens) {
+                pair.Value.Cancel ();
+            }
+
+            tokens.Clear ();
+        }
+
+        private static void Seed(IWebHost host)
+        {
+            using var scope = host.Services.CreateScope();
+                
+            var services = scope.ServiceProvider;
+
+            try
+            {
+                SeedData.Initialize(services);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex);
+                Console.ResetColor();
+            }
+        }
     }
 }
