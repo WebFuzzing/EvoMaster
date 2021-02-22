@@ -1,12 +1,9 @@
 package org.evomaster.core.problem.rest.service
 
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
-import kotlin.math.max
 
 abstract class AbstractRestStructureMutator : StructureMutator(){
 
@@ -15,9 +12,14 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
         ind: RestIndividual, fw: Map<String, Set<String>>,
         mutatedGenes: MutatedGeneSpecification?, sampler: AbstractRestSampler): MutableList<List<Action>>?{
 
+        /*
+            because there might exist representExistingData in db actions which are in between rest actions,
+            we use seeDbActions() instead of seeInitializingActions() here
 
-        if(ind.seeInitializingActions().isEmpty()
-            || ! ind.seeInitializingActions().any { it.representExistingData }) {
+            Man: shall we add all existing data here?
+         */
+        if(ind.seeDbActions().isEmpty()
+            || ! ind.seeDbActions().any { it.representExistingData }) {
             //add existing data only once
             ind.dbInitialization.addAll(0, sampler.existingSqlData)
 

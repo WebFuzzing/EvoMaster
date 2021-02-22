@@ -26,6 +26,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.math.max
@@ -47,6 +49,7 @@ class ResourceDepManageService {
 
     companion object{
         private const val DERIVE_RELATED = 1.0
+        val log: Logger = LoggerFactory.getLogger(ResourceDepManageService::class.java)
     }
     /**
      * key is either a path of one resource, or a list of paths of resources
@@ -68,7 +71,7 @@ class ResourceDepManageService {
      * update relationship between resource and tables.
      * Note that the entry point is on the rest fitness.
      */
-    fun updateResourceTables(resourceRestIndividual: RestIndividual, dto: TestResultsDto) {
+    fun updateResourceTables(restIndividual: RestIndividual, dto: TestResultsDto) {
 
         val tables = rm.getTableInfo()
         /*
@@ -77,8 +80,8 @@ class ResourceDepManageService {
         val addedMap = mutableMapOf<String, MutableSet<String>>()
         val removedMap = mutableMapOf<String, MutableSet<String>>()
 
-        resourceRestIndividual.seeActions().forEachIndexed { index, action ->
-            if (action is RestAction && config.doesApplyNameMatching) updateParamInfo(action, tables)
+        restIndividual.seeActions().forEachIndexed { index, action ->
+            if (config.doesApplyNameMatching) updateParamInfo(action, tables)
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
             if (index < dto.extraHeuristics.size) {
                 val dbDto = dto.extraHeuristics[index].databaseExecutionDto
@@ -186,9 +189,9 @@ class ResourceDepManageService {
                     action.parameters.forEach { p ->
                         val paramId = ar.getParamId(action.parameters, p)
                         val paramInfo = ar.paramsInfo[paramId].run {
-                            if (this == null) ar.updateAdditionalParam(action, p).also {
-                                inference.deriveParamsToTable(paramId, it, ar, tables)
-                            } else this
+                            this ?: ar.updateAdditionalParam(action, p).also {
+                                    inference.deriveParamsToTable(paramId, it, ar, tables)
+                                }
                         }
                         // ?:throw IllegalArgumentException("cannot find the param Id $paramId in the rest resource ${referResource.getName()}")
                         val hasMatchedParam = inference.deriveRelatedTable(ar, paramId, paramInfo, mutableSetOf(t), p is BodyParam, -1, alltables = tables)
@@ -956,15 +959,28 @@ class ResourceDepManageService {
         return null
     }
 
+    fun unRelatedSQL(ind: RestIndividual) : List<DbAction>{
+        val allrelated = getAllRelatedTables(ind)
+        return ind.dbInitialization.filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
+    }
 
-    fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 0.8) : List<DbAction>{
+    /**
+     * add [num] related resources into [ind] with SQL
+     * @param probability represent a probability of using identified dependent tables, otherwise employ the tables which are
+     * not part of the current dbInitialization
+     *
+     * Man: shall we set probability 1.0? because the related tables for the resource might be determinate based on
+     * tracking of SQL execution.
+     */
+    fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 1.0) : List<DbAction>{
         val allrelated = getAllRelatedTables(ind)
 
         val other = if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
             val notincluded = allrelated.filterNot {
                 ind.dbInitialization.any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
-            if (notincluded.isNotEmpty() && randomness.nextBoolean()){
+            //prioritize notincluded related ones with a probability 0.8
+            if (notincluded.isNotEmpty() && randomness.nextBoolean(0.8)){
                 randomness.choose(notincluded)
             }else randomness.choose(allrelated)
         }else{
@@ -982,7 +998,12 @@ class ResourceDepManageService {
         if (num <= 0)
             throw IllegalArgumentException("invalid num (i.e.,$num) for creating resource")
 
-        return (0 until num).flatMap { rm.getSqlBuilder()!!.createSqlInsertionAction(name, setOf()) }
+        val list= (0 until num).flatMap { rm.getSqlBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
+
+        DbActionUtils.randomizeDbActionGenes(list, randomness)
+        DbActionUtils.repairBrokenDbActionsList(list, randomness)
+
+        return list
     }
 
     /************************  sample resource individual regarding dependency ***********************************/
@@ -1035,6 +1056,10 @@ class ResourceDepManageService {
                 })
             }
         }
+
+        DbActionUtils.randomizeDbActionGenes(added, randomness)
+        DbActionUtils.repairBrokenDbActionsList(added,randomness)
+
         ind.dbInitialization.addAll(added)
     }
 
@@ -1087,7 +1112,7 @@ class ResourceDepManageService {
             call: RestResourceCalls,
             dbActions: MutableList<DbAction>,
             candidates: MutableMap<RestAction, MutableList<ParamGeneBindMap>>,
-            forceBindParamBasedOnDB: Boolean = false) {
+            forceBindParamBasedOnDB: Boolean = false, dbDemovedDueToRepair : Boolean) {
 
         assert(call.actions.isNotEmpty())
 
@@ -1100,29 +1125,33 @@ class ResourceDepManageService {
                 if (list != null && list.isNotEmpty()) {
                     list.forEach { pToGene ->
                         val dbAction = dbActions.find { it.table.name.equals(pToGene.tableName, ignoreCase = true) }
-                                ?: throw IllegalArgumentException("cannot find ${pToGene.tableName} in db actions ${
-                                    dbActions.joinToString(
-                                        ";"
-                                    ) { it.table.name }
-                                }")
-                        // columngene might be null if the column is nullable
-                        val columngene = dbAction.seeGenes().firstOrNull { g -> g.name.equals(pToGene.column, ignoreCase = true) }
-                        if (columngene != null){
-                            val param = a.parameters.find { p -> rm.getResourceCluster()[a.path.toString()]!!.getParamId(a.parameters, p)
-                                .equals(pToGene.paramId, ignoreCase = true) }
-                            param?.let {
-                                if (pToGene.isElementOfParam) {
-                                    if (param is BodyParam && param.gene is ObjectGene) {
-                                        param.gene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
-                                            ParamUtil.bindParamWithDbAction(columngene, paramGene, forceBindParamBasedOnDB || dbAction.representExistingData)
+                        //there might due to a repair for dbactions
+                        if (dbAction == null && !dbDemovedDueToRepair)
+                            throw java.lang.IllegalStateException("cannot find ${pToGene.tableName} in db actions ${
+                                dbActions.joinToString(
+                                    ";"
+                                ) { it.table.name }
+                            }")
+
+                        if(dbAction != null){
+                            // columngene might be null if the column is nullable
+                            val columngene = dbAction.seeGenes().firstOrNull { g -> g.name.equals(pToGene.column, ignoreCase = true) }
+                            if (columngene != null){
+                                val param = a.parameters.find { p -> rm.getResourceCluster()[a.path.toString()]!!.getParamId(a.parameters, p)
+                                    .equals(pToGene.paramId, ignoreCase = true) }
+                                param?.let {
+                                    if (pToGene.isElementOfParam) {
+                                        if (param is BodyParam && param.gene is ObjectGene) {
+                                            param.gene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
+                                                ParamUtil.bindParamWithDbAction(columngene, paramGene, forceBindParamBasedOnDB || dbAction.representExistingData)
+                                            }
                                         }
+                                    } else {
+                                        ParamUtil.bindParamWithDbAction(columngene, param.gene, forceBindParamBasedOnDB || dbAction.representExistingData)
                                     }
-                                } else {
-                                    ParamUtil.bindParamWithDbAction(columngene, param.gene, forceBindParamBasedOnDB || dbAction.representExistingData)
                                 }
                             }
                         }
-
                     }
                 }
             }
@@ -1133,6 +1162,7 @@ class ResourceDepManageService {
         val dbRelatedToTables = dbActions.map { it.table.name }.toMutableList()
         val dbTables = call.dbActions.map { it.table.name }.toMutableList()
 
+        var remove = false
         if (dbRelatedToTables.containsAll(dbTables)) {
             call.dbActions.clear()
         } else {
@@ -1145,22 +1175,20 @@ class ResourceDepManageService {
             val created = mutableListOf<DbAction>()
             call.dbActions.forEach { dbaction ->
                 if (dbaction.table.foreignKeys.find { dbRelatedToTables.contains(it.targetTable) } != null) {
-                    val refers = DbActionUtils.repairFK(dbaction, dbActions.plus(previous).toMutableList(), created, rm.getSqlBuilder())
+                    val refers = DbActionUtils.repairFK(dbaction, dbActions.plus(previous).toMutableList(), created, rm.getSqlBuilder(), randomness)
                     //selections.addAll( (sampler as ResourceRestSampler).sqlInsertBuilder!!.generateSelect(refers) )
                 }
                 previous.add(dbaction)
             }
             call.dbActions.addAll(0, created)
-            rm.repairDbActionsForResource(dbActions.plus(call.dbActions).toMutableList())
+            remove = remove || rm.repairDbActionsForResource(dbActions.plus(call.dbActions).toMutableList())
             //call.dbActions.addAll(0, selections)
         }
 
         val dbActions = dbActions.plus(call.dbActions).toMutableList()
         inference.generateRelatedTables(call, dbActions).let {
-            bindCallWithDBAction(call, dbActions, it, forceBindParamBasedOnDB = true)
+            bindCallWithDBAction(call, dbActions, it, forceBindParamBasedOnDB = true, dbDemovedDueToRepair = remove)
         }
-
-
     }
 
     /**
@@ -1215,7 +1243,6 @@ class ResourceDepManageService {
         front.flatMap { it.dbActions }.apply {
             if (isNotEmpty()) {
                 bindCallWithOtherDBAction(call, this.toMutableList())
-
             }
         }
 

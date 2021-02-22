@@ -4,7 +4,6 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
@@ -255,18 +254,15 @@ class RestIndividual(
     }
 
 
-    fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?){
+    fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?, randomness: Randomness){
         val previousDbActions = mutableListOf<DbAction>()
-
-        //remove later
-        val old = getResourceCalls().map { it.dbActions }.toList()
 
         getResourceCalls().filter { it.dbActions.isNotEmpty() }.forEach {
             val result = DbActionUtils.verifyForeignKeys( previousDbActions.plus(it.dbActions))
             if(!result){
                 val created = mutableListOf<DbAction>()
                 it.dbActions.forEach { db->
-                    DbActionUtils.repairFK(db, previousDbActions, created, sqlInsertBuilder)
+                    DbActionUtils.repairFK(db, previousDbActions, created, sqlInsertBuilder, randomness)
                     previousDbActions.add(db)
                 }
                 it.dbActions.addAll(0, created)
@@ -277,8 +273,7 @@ class RestIndividual(
         }
 
         if(!DbActionUtils.verifyForeignKeys(getResourceCalls().flatMap { it.dbActions })){
-            throw IllegalStateException("referred fk cannot be found!")
-            //repairDBActions(sqlInsertBuilder)
+            throw IllegalStateException("after a FK repair, there still exist invalid FKs")
         }
 
     }

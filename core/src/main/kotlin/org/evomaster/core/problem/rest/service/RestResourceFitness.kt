@@ -7,7 +7,6 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.ResourceStatus
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -38,8 +37,14 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         rc.resetSUT()
 
+        /*
+            there might some dbaction between rest actions.
+            This map is used to record the key mapping in SQL, e.g., PK, FK
+         */
         val sqlIdMap = mutableMapOf<Long, Long>()
-        var failureBefore = doInitializingCalls(individual.dbInitialization, sqlIdMap, false)
+
+        //whether there exist some SQL execution failure
+        var failureBefore = doDbCalls(individual.dbInitialization, sqlIdMap, false)
 
         val cookies = getCookies(individual)
 
@@ -55,7 +60,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            failureBefore = failureBefore || doInitializingCalls(call.dbActions, sqlIdMap, failureBefore)
+            failureBefore = failureBefore || doDbCalls(call.dbActions, sqlIdMap, failureBefore)
 
             var terminated = false
 
@@ -97,6 +102,11 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
 
+        /*
+            TODO Man: shall we update SQL Insertion fails here for resource creation?
+            then we prioritize to employ existing data if there exist
+            but there might be various reasons which lead to the failure.
+         */
 
         return EvaluatedIndividual(
                 fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)
@@ -107,7 +117,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
      * @param allSuccessBefore indicates whether all SQL before this [allDbActions] are executed successfully
      * @return whether [allDbActions] execute successfully
      */
-    private fun doInitializingCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>, allSuccessBefore : Boolean) : Boolean {
+    private fun doDbCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>, allSuccessBefore : Boolean) : Boolean {
 
         if (allDbActions.isEmpty()) {
             return true
@@ -122,15 +132,16 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
              */
             return true
         }
+
         val dto = try {
             DbActionTransformer.transform(allDbActions, sqlIdMap)
         }catch (e : IllegalArgumentException){
+            // the failure might be due to previous failure
             if (!allSuccessBefore)
                 return false
             else
                 throw e
         }
-
 
         val map = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
         if (map == null) {

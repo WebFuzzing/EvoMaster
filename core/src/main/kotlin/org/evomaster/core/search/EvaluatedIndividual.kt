@@ -529,6 +529,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         )
     }
 
+    //TODO check this when integrating with SQL resource handling
     fun updateImpactGeneDueToAddedInitializationGenes(mutatedGenes: MutatedGeneSpecification, old : List<Action>, addedInsertions : List<List<Action>>?){
         impactInfo?:throw IllegalStateException("there is no any impact initialized")
 

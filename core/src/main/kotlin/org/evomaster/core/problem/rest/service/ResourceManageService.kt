@@ -63,7 +63,6 @@ class ResourceManageService {
     private var sqlInsertBuilder : SqlInsertBuilder? = null
     /**
      * init resource nodes based on [actionCluster] and [sqlInsertBuilder]
-     *
      */
     fun initResourceNodes(actionCluster : MutableMap<String, Action>, sqlInsertBuilder: SqlInsertBuilder? = null) {
         if (resourceCluster.isNotEmpty()) return
@@ -294,7 +293,7 @@ class ResourceManageService {
 
             dbActions.forEachIndexed { index, dbAction ->
                 if(index != 0 && dbAction.table.foreignKeys.isNotEmpty() && dbAction.table.foreignKeys.find { fk -> removedDbAction.find { it.table.name == fk.targetTable } !=null } != null)
-                    DbActionUtils.repairFK(dbAction, previous, created, getSqlBuilder())
+                    DbActionUtils.repairFK(dbAction, previous, created, getSqlBuilder(), randomness)
                 previous.add(dbAction)
             }
 
@@ -308,11 +307,10 @@ class ResourceManageService {
         val paramToTables = dm.extractRelatedTablesForCall(call)
         if(paramToTables.isEmpty()) return false
 
-        val relatedTables = removeDuplicatedTables(paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet())
-
+        //val relatedTables = removeDuplicatedTables(paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet())
+        val relatedTables = paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet().toList()
 
         val dbActions = mutableListOf<DbAction>()
-
         val failToGenDb = generateDbActionForCall( forceInsert = forceInsert, forceSelect = forceSelect, dbActions = dbActions, relatedTables = relatedTables)
 
         if(failToGenDb) return false
@@ -331,7 +329,7 @@ class ResourceManageService {
 //                }
 //            }
             DbActionUtils.randomizeDbActionGenes(dbActions, randomness)
-            repairDbActionsForResource(dbActions)
+            val removed = repairDbActionsForResource(dbActions)
 
             //shrinkDbActions(dbActions)
 
@@ -341,7 +339,7 @@ class ResourceManageService {
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
 
              */
-            dm.bindCallWithDBAction(call,dbActions, paramToTables)
+            dm.bindCallWithDBAction(call,dbActions, paramToTables, dbDemovedDueToRepair = removed)
 
             call.dbActions.addAll(dbActions)
         }
@@ -389,13 +387,13 @@ class ResourceManageService {
         }
     }
 
-    fun repairDbActionsForResource(dbActions: MutableList<DbAction>){
+    fun repairDbActionsForResource(dbActions: MutableList<DbAction>) : Boolean{
         /**
          * First repair SQL Genes (i.e. SQL Timestamps)
          */
         GeneUtils.repairGenes(dbActions.flatMap { it.seeGenes() })
 
-        DbActionUtils.repairBrokenDbActionsList(dbActions, randomness)
+        return DbActionUtils.repairBrokenDbActionsList(dbActions, randomness)
         //DbActionUtils.repairFkForInsertions(dbActions)
     }
 

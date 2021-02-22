@@ -9,6 +9,8 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 
 class RestResourceStructureMutator : AbstractRestStructureMutator() {
@@ -19,11 +21,8 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
     @Inject
     private lateinit var dm : ResourceDepManageService
 
-
     @Inject
     private lateinit var sampler : ResourceSampler
-
-    //var executedStructureMutator :MutationType? = null
 
     override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
         if(individual !is RestIndividual)
@@ -45,10 +44,10 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
             MutationType.REPLACE -> handleReplace(ind, mutatedGenes)
             MutationType.MODIFY -> handleModify(ind, mutatedGenes)
             MutationType.SQL_REMOVE -> handleRemoveSQL(ind, mutatedGenes)
-            MutationType.SQL_ADD -> handleAdd(ind, mutatedGenes)
+            MutationType.SQL_ADD -> handleAddSQL(ind, mutatedGenes)
         }
 
-        ind.repairDBActions(rm.getSqlBuilder())
+        ind.repairDBActions(rm.getSqlBuilder(), randomness)
     }
 
     private fun getAvailableMutator(ind: RestIndividual) : List<MutationType>{
@@ -56,7 +55,12 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         val sqlNum = ind.seeResource(RestIndividual.ResourceFilter.ONLY_SQL_INSERTION).size
         return MutationType.values()
             .filter {  num >= it.minSize && sqlNum >= it.minSQLSize}
-            .filterNot { config.maxSqlInitActionsPerResource == 0 && (it == MutationType.SQL_ADD || it == MutationType.SQL_REMOVE) }
+            .filterNot {
+                // if there is no db or sql resource handling is not enabled, SQL_REMOVE and SQL_ALL are not applicable
+                ((config.maxSqlInitActionsPerResource == 0 || rm.getTableInfo().isEmpty()) && (it == MutationType.SQL_ADD || it == MutationType.SQL_REMOVE) ) ||
+                        // if there is no dbInitialization, SQL_REMOVE is not applicable
+                        (ind.dbInitialization.isEmpty() && it == MutationType.SQL_REMOVE)
+            }
             .filterNot{
                 (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
                         //if the individual includes all resources, ADD and REPLACE are not applicable
@@ -81,16 +85,64 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         SQL_ADD(1, 1)
     }
 
+    /**
+     * add resources with SQL to [ind]
+     * a number of resources to be added is related to EMConfig.maxSqlInitActionsPerResource
+     */
     private fun handleAddSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
         val numOfResource = randomness.nextInt(1, config.maxSqlInitActionsPerResource)
-        val added = dm.addRelatedSQL(ind, numOfResource)
+        val added = if (doesApplyDependencyHeuristics()) dm.addRelatedSQL(ind, numOfResource)
+                    else dm.createDbActions(randomness.choose(rm.getTableInfo().keys),numOfResource)
 
+        DbActionUtils.repairFkForInsertions(added)
 
-        TODO()
+        if(config.enableArchiveSolution()){
+            TODO("update impacts")
+        }
+
+        mutatedGenes?.addedDbActions?.addAll(added)
+        ind.dbInitialization.addAll(added)
     }
 
+    /**
+     * remove one resource which are created by SQL
+     *
+     * Man: shall we remove SQLs which represents existing data?
+     * It might be useful to reduce the useless db genes.
+     */
     private fun handleRemoveSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
-        TODO()
+        // remove unrelated tables
+        var candidates = if (doesApplyDependencyHeuristics()) dm.unRelatedSQL(ind) else ind.dbInitialization
+
+        if (candidates.isEmpty())
+            candidates = ind.dbInitialization
+
+        val remove = randomness.choose(candidates)
+
+        val pks = remove.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
+        if (pks.isNotEmpty()){
+            val removeDbFKs = ind.dbInitialization.subList(ind.dbInitialization.indexOf(remove)+1, ind.dbInitialization.size).filter {
+                it.seeGenes().flatMap { g-> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
+                    .any {fk-> pks.any {pk->fk.uniqueIdOfPrimaryKey == pk.uniqueId} } }
+
+            ind.dbInitialization.remove(remove)
+            ind.dbInitialization.removeAll(removeDbFKs)
+            mutatedGenes?.removedDbActions?.add(remove)
+            mutatedGenes?.removedDbActions?.addAll(removeDbFKs)
+        }else{
+            ind.dbInitialization.remove(remove)
+            mutatedGenes?.removedDbActions?.add(remove)
+        }
+
+
+        if(config.enableArchiveSolution()){
+            TODO("update impacts")
+        }
+    }
+
+    private fun doesApplyDependencyHeuristics() : Boolean{
+        return dm.isDependencyNotEmpty()
+                && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
     }
 
     /**
@@ -98,8 +150,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
      */
     private fun handleDelete(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
 
-        val fromDependency = dm.isDependencyNotEmpty()
-                && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
+        val fromDependency = doesApplyDependencyHeuristics()
 
         val removed = if(fromDependency){
                 dm.handleDelNonDepResource(ind)
@@ -119,8 +170,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
      * swap two resource calls
      */
     private fun handleSwap(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
-        val fromDependency = dm.isDependencyNotEmpty()
-                && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
+        val fromDependency = doesApplyDependencyHeuristics()
 
         if(fromDependency){
             val pair = dm.handleSwapDepResource(ind)
@@ -177,8 +227,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
             return
         }
 
-        val fromDependency = dm.isDependencyNotEmpty()
-                && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
+        val fromDependency = doesApplyDependencyHeuristics()
 
         val pair = if(fromDependency){
                         dm.handleAddDepResource(ind, max)
@@ -231,8 +280,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.actions.size }
 
-        val fromDependency = dm.isDependencyNotEmpty()
-                && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
+        val fromDependency = doesApplyDependencyHeuristics()
 
         var pos = if(fromDependency){
             dm.handleDelNonDepResource(ind)?.run {
