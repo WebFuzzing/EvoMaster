@@ -166,7 +166,11 @@ class Statistics : SearchListener {
 
     fun getData(solution: Solution<*>): List<Pair> {
 
-        val unitsInfo = remoteController?.getSutInfo()?.unitsInfoDto
+        val unitsInfo = if(!config.blackBox || config.bbExperiments) {
+            remoteController?.getSutInfo()?.unitsInfoDto
+        } else {
+            null
+        }
 
         val list: MutableList<Pair> = mutableListOf()
 
