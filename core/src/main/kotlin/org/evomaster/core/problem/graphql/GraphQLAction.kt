@@ -40,6 +40,6 @@ class GraphQLAction(
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 }

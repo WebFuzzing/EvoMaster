@@ -221,10 +221,12 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                if (mode != GeneUtils.EscapeMode.JSON){
                 throw IllegalStateException("Cannot handle body type: ")
             }
-            Entity.entity("{ \" ${a.methodType} \" : "+body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat)+",\"variables \":null,\"operationName \":null}", " ")
+            Entity.entity("{ \" ${a.methodType} \" : "+
+                    body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat)+
+                    ",\"variables \":null,\"operationName \":null}",MediaType.APPLICATION_JSON)
         } else if (body != null && body is GQInputParam) {
             val mode = GeneUtils.EscapeMode.JSON
-            Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), "")
+            Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), MediaType.APPLICATION_JSON)
         } else {
             null
         }
