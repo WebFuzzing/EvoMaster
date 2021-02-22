@@ -106,6 +106,11 @@ public abstract class RestTestBase {
                 "--useTimeInFeedbackSampling" , "false"
         ));
 
+        checkDeterminism(args, lambda);
+    }
+
+
+    protected void checkDeterminism(List<String> args, Consumer<List<String>> lambda){
         StaticCounter.Companion.reset();
         String firstRun = LoggingUtil.Companion.runWithDeterministicLogger(
                 () -> {lambda.accept(args); return Unit.INSTANCE;}
@@ -118,7 +123,6 @@ public abstract class RestTestBase {
 
         assertEquals(firstRun, secondRun);
     }
-
 
     protected void runTestHandlingFlaky(
             String outputFolderName,

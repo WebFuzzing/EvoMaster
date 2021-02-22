@@ -1,15 +1,20 @@
 package org.evomaster.e2etests.spring.examples.adaptivehypermutation;
 
 import com.foo.rest.examples.spring.adaptivehypermutation.AHypermutationRestController;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
 import org.evomaster.core.problem.rest.HttpVerb;
+import org.evomaster.core.problem.rest.RestActionBuilderV3;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.evomaster.e2etests.utils.CIUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,6 +43,23 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     private static int budget = 20_000;
     private static String statisticsFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/statistics.csv";
     private static String snapshotFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/snapshot.csv";
+
+    @Test
+    public void testDeterminismOfLog(){
+
+        OpenAPI schema = (new OpenAPIParser()).readLocation("swagger-ahm/ahm.json", null, null).getOpenAPI();
+        checkDeterminism( new ArrayList<>(), (args) -> {
+            RestActionBuilderV3.INSTANCE.getModelsFromSwagger(schema, new HashMap<>());
+        });
+    }
+
+    @Test
+    public void testDeterminism(){
+        runAndCheckDeterminism(50, (args)->{
+            initAndRun(args);
+        });
+    }
+
     @Test
     public void testRunMIO() {
 
