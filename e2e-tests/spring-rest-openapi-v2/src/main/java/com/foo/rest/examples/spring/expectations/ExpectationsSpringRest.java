@@ -41,6 +41,7 @@ public class ExpectationsSpringRest extends SwaggerConfiguration {
     public class OtherExampleObject {
         private int id;
         private String name;
+        private String category;
 
         public OtherExampleObject(int id, String name){
             this.id = id;
@@ -49,6 +50,7 @@ public class ExpectationsSpringRest extends SwaggerConfiguration {
 
         public OtherExampleObject(){
             this.name = "Unnamed";
+            this.category = "None";
         }
 
         public int getId() {

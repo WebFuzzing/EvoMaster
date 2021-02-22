@@ -1,6 +1,7 @@
 package org.evomaster.core.output.oracles
 
 import com.google.gson.Gson
+import com.google.gson.internal.LinkedTreeMap
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.*
 import org.evomaster.core.output.Lines
@@ -16,13 +17,16 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.concurrent.LinkedTransferQueue
 
 
 /**
  * The [SchemaOracle] class generates expectations and writes them to the code.
  *
  * A check is made to see if the structure of te response matches a structure in the schema.
- * If a response is successful and returns an object. The [SchemaOracle]
+ * If a response is successful and returns an object.
+ *
+ * The [SchemaOracle]
  * checks that the returned object is of the appropriate type and structure (not content). I.e., the method
  * checks that the returned object has all the compulsory field that the type has (according to the
  * swagger definition) and that all the optional fields present are included in the definition.
@@ -65,7 +69,7 @@ class SchemaOracle : ImplementedOracle() {
 
         //}
 
-        getSupportedResponse(call)
+        val supportedRes = getSupportedResponse(call)
         val bodyString = res.getBody()
         when (bodyString?.first()) {
             '[' -> {
@@ -158,6 +162,37 @@ class SchemaOracle : ImplementedOracle() {
         }
     }
 
+    fun supportedObject(obj: LinkedTreeMap<*,*>, call: RestCallAction): Boolean{
+        val supportedObjects = getSupportedResponse(call)
+        return supportedObjects.any { o ->
+            val refObject = objectGenerator.getNamedReference(o.value)
+            val refKeys = refObject.fields
+                .filterNot { it is OptionalGene }
+                .map { it.name }
+                .toMutableSet()
+            val actualKeys = obj.keys
+                .filterNot { it is OptionalGene }
+                .map { it }
+                .toMutableSet()
+
+            val compulsoryMatch = refKeys.containsAll(actualKeys) && actualKeys.containsAll(refKeys)
+
+            val refOptionalKeys = refObject.fields
+                .filter { it is OptionalGene }
+                .map { it.name }
+                .toMutableSet()
+
+            val actualOptionalKeys = obj.keys
+                .filter { it is OptionalGene }
+                .map { it }
+                .toMutableSet()
+
+            val optionalMatch = refOptionalKeys.containsAll(actualOptionalKeys)
+
+            return compulsoryMatch && optionalMatch
+        }
+    }
+
     fun matchesStructure(call: RestCallAction, res: RestCallResult): Boolean{
         val supportedTypes = getSupportedResponse(call)
         val actualType = res.getBody()
@@ -232,7 +267,18 @@ class SchemaOracle : ImplementedOracle() {
 
         if(!objectGenerator.containsKey(expectedObject)) return true
         val referenceObject = objectGenerator.getNamedReference(expectedObject)
-        val supported = supportedObject(referenceObject, call)
+
+        val actualObject = Gson().fromJson(res.getBody(), Object::class.java) as LinkedTreeMap<*,*>
+        //val supported = supportedObject(referenceObject, call)
+
+        val supported = supportedObject(actualObject, call)
+
+        // A call should generate an expectation if:
+
+        // The return object differs in structure from the expected (i.e. swagger object).
+
+        // The return type is different than the actual type (i.e. return type is not supported)
+
         return !supported
     }
 
