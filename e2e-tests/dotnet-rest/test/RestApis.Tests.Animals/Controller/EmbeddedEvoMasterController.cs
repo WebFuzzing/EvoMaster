@@ -4,14 +4,15 @@ using Controller;
 using Controller.Api;
 using Controller.Controllers.db;
 using Controller.Problem;
+using Npgsql;
 using RestApis.Animals;
 
 namespace RestApis.Tests.Animals.Controller
 {
     public class EmbeddedEvoMasterController : EmbeddedSutController {
 
-        private bool isSutRunning;
-        private int sutPort;
+        private bool _isSutRunning;
+        private int _sutPort;
 
         public static void Main (string[] args) {
 
@@ -36,11 +37,13 @@ namespace RestApis.Tests.Animals.Controller
         public override IProblemInfo GetProblemInfo () =>
             GetSutPort () != 0 ? new RestProblem ("http://localhost:" + GetSutPort () + "/swagger/v1/swagger.json", null) : new RestProblem (null, null);
 
-        public override bool IsSutRunning () => isSutRunning;
+        public override bool IsSutRunning () => _isSutRunning;
 
         public override void ResetStateOfSut()
         {
-           // DbCleaner.ClearDatabase_Postgres();
+            DbCleaner.ClearDatabase_Postgres(
+                new NpgsqlConnection("Host=localhost;Database=AnimalsDb;Username=user;Password=password123"),
+                new List<string> {"Mammals"});
         }
 
         public override string StartSut () {
@@ -55,9 +58,9 @@ namespace RestApis.Tests.Animals.Controller
 
             WaitUntilSutIsRunning (ephemeralPort);
 
-            sutPort = ephemeralPort;
+            _sutPort = ephemeralPort;
 
-            isSutRunning = true;
+            _isSutRunning = true;
 
             return $"http://localhost:{ephemeralPort}";
         }
@@ -66,9 +69,9 @@ namespace RestApis.Tests.Animals.Controller
 
             RestApis.Animals.Program.Shutdown ();
 
-            isSutRunning = false;
+            _isSutRunning = false;
         }
 
-        protected int GetSutPort () => sutPort;
+        protected int GetSutPort () => _sutPort;
     }
 }
