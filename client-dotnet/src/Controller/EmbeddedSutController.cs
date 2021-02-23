@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Controller.Api;
+using Microsoft.Extensions.Configuration;
 
 namespace Controller
 {
@@ -58,6 +59,13 @@ namespace Controller
                 return;
             
             throw new TimeoutException($"The SUT didn't start within {timeout} seconds on port {port}.");
+        }
+        protected static IConfiguration GetConfiguration(string settingFileName)
+        {
+            var config = new ConfigurationBuilder()
+                .AddJsonFile(settingFileName)
+                .Build();
+            return config;
         }
     }
 }
