@@ -40,6 +40,8 @@ namespace RestApis.Animals
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            CreateDatabase(app);
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -60,6 +62,32 @@ namespace RestApis.Animals
             {
                 endpoints.MapControllers();
             });
+        }
+
+        private static void CreateDatabase(IApplicationBuilder app, bool seed = true)
+        {
+            using var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>()?.CreateScope();
+
+            if (serviceScope == null) return;
+            
+            var context = serviceScope.ServiceProvider.GetRequiredService<AnimalsDbContext>();
+
+            context.Database.EnsureCreated();
+                
+            var serviceProvider = serviceScope.ServiceProvider;
+
+            if (!seed) return;
+            
+            try
+            {
+                SeedData.Initialize(serviceProvider);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex);
+                Console.ResetColor();
+            }
         }
     }
 }

@@ -15,24 +15,22 @@ namespace RestApis.Animals
 {
     public class Program
     {
-        private static ConcurrentDictionary<int, CancellationTokenSource> tokens = new ConcurrentDictionary<int, CancellationTokenSource> ();
+        private static readonly ConcurrentDictionary<int, CancellationTokenSource> Tokens = new ConcurrentDictionary<int, CancellationTokenSource> ();
         public static void Main (string[] args) {
 
             if (args.Length > 0) {
 
-                int port = Convert.ToInt32 (args[0]);
-                tokens.TryAdd (port, new CancellationTokenSource ());
+                var port = Convert.ToInt32 (args[0]);
+                Tokens.TryAdd (port, new CancellationTokenSource ());
                 var host = CreateWebHostBuilder (args).Build ();
-                Seed(host);
-                host.RunAsync (tokens[port].Token).GetAwaiter ().GetResult ();
+                host.RunAsync (Tokens[port].Token).GetAwaiter ().GetResult ();
             } else {
                 var host = CreateWebHostBuilder (args).Build ();
-                Seed(host);
                 host.RunAsync ().GetAwaiter ().GetResult ();
             }
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder (string[] args) {
+        private static IWebHostBuilder CreateWebHostBuilder (string[] args) {
 
             var webHostBuilder = WebHost.CreateDefaultBuilder (args)
                 .UseStartup<Startup> ();
@@ -42,29 +40,11 @@ namespace RestApis.Animals
 
         public static void Shutdown () {
 
-            foreach (var pair in tokens) {
+            foreach (var pair in Tokens) {
                 pair.Value.Cancel ();
             }
 
-            tokens.Clear ();
-        }
-
-        private static void Seed(IWebHost host)
-        {
-            using var scope = host.Services.CreateScope();
-                
-            var services = scope.ServiceProvider;
-
-            try
-            {
-                SeedData.Initialize(services);
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(ex);
-                Console.ResetColor();
-            }
+            Tokens.Clear ();
         }
     }
 }
