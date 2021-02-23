@@ -208,6 +208,48 @@
         },
         "deprecated": false
       }
+    },
+    "/api/responseMultipleObjs/{value}": {
+      "get": {
+        "tags":[
+          "expectations-test"
+        ],
+        "summary": "get-objs",
+        "operationId": "getMultipleObjects",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "value",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ExampleObject"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
     }
   },
   "definitions": {
@@ -222,6 +264,22 @@
           "type": "string"
         },
         "description": {
+          "type": "string"
+        }
+      },
+      "required": ["id"]
+    },
+    "OtherExampleObject": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "category": {
           "type": "string"
         }
       }

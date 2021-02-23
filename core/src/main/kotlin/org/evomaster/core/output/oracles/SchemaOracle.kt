@@ -75,6 +75,19 @@ class SchemaOracle : ImplementedOracle() {
             '[' -> {
                 // TODO: Handle arrays of objects
                 val responseObject = Gson().fromJson(bodyString, ArrayList::class.java)
+                val supportedObjs = getSupportedResponse(call)
+                val expectedObject = supportedObjs.get("${res.getStatusCode()}")
+                when {
+                    responseObject.isNullOrEmpty() -> return
+                    else -> {
+                        responseObject
+                            .forEachIndexed { index, obj ->
+                                val json_ref = "$name.extract().response().jsonPath().getJsonObject<Any>(\"\") as ArrayList<*>"
+                                val moreRef = "($json_ref).get($index)"
+                                writeExpectation(call, lines, moreRef, format, expectedObject)
+                        }
+                    }
+                }
             }
             '{' -> {
                 // TODO: Handle individual objects
@@ -87,16 +100,17 @@ class SchemaOracle : ImplementedOracle() {
                     // handling single values appears to be a known problem with RestAssured and Groovy
                     // see https://github.com/rest-assured/rest-assured/issues/949
                     else -> {
-                        writeExpectation(call, lines, name, format, expectedObject)
+                        val json_ref = "$name.extract().response().jsonPath().getJsonObject<Any>(\"\")"
+                        writeExpectation(call, lines, json_ref, format, expectedObject)
                     }
                 }
             }
         }
     }
 
-    fun writeExpectation(call: RestCallAction, lines: Lines,  name: String, format: OutputFormat, expectedObject: String?){
+    fun writeExpectation(call: RestCallAction, lines: Lines,  json_ref: String, format: OutputFormat, expectedObject: String?){
         // if the contents are objects with a ref in the schema
-        val json_ref = "$name.extract().response().jsonPath()"
+        //val json_ref = "$name.extract().response().jsonPath()"
         val referenceObject = objectGenerator.getNamedReference("$expectedObject")
 
 
@@ -107,8 +121,8 @@ class SchemaOracle : ImplementedOracle() {
 
         //this differs between kotlin and java
         when{
-            format.isJava() ->lines.add(".that($variableName, $json_ref.getMap(\"\").keySet().containsAll(Arrays.asList($referenceKeys)))")
-            format.isKotlin() -> lines.add(".that($variableName, $json_ref.getMap<Any, Any>(\"\").keys.containsAll(Arrays.asList($referenceKeys)))")
+            format.isJava() ->lines.add(".that($variableName, ($json_ref as LinkedHashMap<*,*>).keys.containsAll(Arrays.asList($referenceKeys)))")
+            format.isKotlin() -> lines.add(".that($variableName, ($json_ref as LinkedHashMap<*,*>).keys.containsAll(Arrays.asList($referenceKeys)))")
         }
         val referenceOptionalKeys = referenceObject.fields
                 .filter { it is OptionalGene }
@@ -119,13 +133,13 @@ class SchemaOracle : ImplementedOracle() {
             format.isJava() -> {
                 lines.add(".that($variableName, Arrays.asList($referenceOptionalKeys)")
                 lines.indented {
-                    lines.add(".containsAll($json_ref.getMap(\"\").keySet()))")
+                    lines.add(".containsAll(($json_ref as LinkedHashMap<*,*>).keys))")
                 }
             }
             format.isKotlin() -> {
                 lines.add(".that($variableName, listOf<Any>($referenceOptionalKeys)")
                 lines.indented {
-                    lines.add(".containsAll($json_ref.getMap<Any, Any>(\"\").keys))")
+                    lines.add(".containsAll(($json_ref as LinkedHashMap<*,*>).keys))")
                 }
             }
         }
@@ -268,10 +282,16 @@ class SchemaOracle : ImplementedOracle() {
         if(!objectGenerator.containsKey(expectedObject)) return true
         val referenceObject = objectGenerator.getNamedReference(expectedObject)
 
-        val actualObject = Gson().fromJson(res.getBody(), Object::class.java) as LinkedTreeMap<*,*>
-        //val supported = supportedObject(referenceObject, call)
+        val actualObject = Gson().fromJson(res.getBody(), Object::class.java)
 
-        val supported = supportedObject(actualObject, call)
+        var supported = true;
+        if  (actualObject is LinkedTreeMap<*,*>)
+            supported = supportedObject(actualObject, call)
+        else if (actualObject is ArrayList<*>
+                && (actualObject as ArrayList<*>).isNotEmpty()
+                && (actualObject as ArrayList<*>).first() is LinkedTreeMap<*,*>){
+            supported = supportedObject((actualObject as ArrayList<*>).first() as LinkedTreeMap<*, *>, call)
+        }
 
         // A call should generate an expectation if:
 

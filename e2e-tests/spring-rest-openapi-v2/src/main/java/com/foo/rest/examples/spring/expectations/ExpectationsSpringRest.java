@@ -93,7 +93,12 @@ public class ExpectationsSpringRest extends SwaggerConfiguration {
     public OtherExampleObject getObject(
             @PathVariable("s") int succeeded
     ){
-        return new OtherExampleObject(succeeded, "object_" + succeeded);
+        if(succeeded >= 0) {
+            return new OtherExampleObject(succeeded, "object_" + succeeded);
+        }
+        else{
+            return new OtherExampleObject();
+        }
     }
 
     // A test looking at wrong output structure
@@ -107,6 +112,28 @@ public class ExpectationsSpringRest extends SwaggerConfiguration {
         }
         else {
             return new ExampleObject();
+        }
+    }
+
+    // A test looking at an array of returned objects
+
+    @GetMapping(path = "/api/responseMultipleObjs/{s}")
+    public ExampleObject[] getMultipleObjects(
+            @PathVariable("s") int succeeded
+    ){
+        if( succeeded >= 0 ) {
+            ExampleObject [] res = {
+                    new ExampleObject(succeeded, "validObject_" + succeeded),
+                    new ExampleObject(succeeded+1, "validObject_" + (succeeded+1))
+            };
+            return res;
+        }
+        else {
+            ExampleObject [] res = {
+                    new ExampleObject(),
+                    new ExampleObject()
+            };
+            return res;
         }
     }
 }
