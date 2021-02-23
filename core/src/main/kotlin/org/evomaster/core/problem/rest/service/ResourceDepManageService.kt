@@ -1109,10 +1109,10 @@ class ResourceDepManageService {
      * [forceBindParamBasedOnDB] is an option to bind params of [call] based on [dbActions]
      */
     fun bindCallWithDBAction(
-            call: RestResourceCalls,
-            dbActions: MutableList<DbAction>,
-            candidates: MutableMap<RestAction, MutableList<ParamGeneBindMap>>,
-            forceBindParamBasedOnDB: Boolean = false, dbDemovedDueToRepair : Boolean) {
+        call: RestResourceCalls,
+        dbActions: MutableList<DbAction>,
+        candidates: MutableMap<RestAction, MutableList<ParamGeneBindMap>>,
+        forceBindParamBasedOnDB: Boolean = false, dbRemovedDueToRepair : Boolean) {
 
         assert(call.actions.isNotEmpty())
 
@@ -1126,8 +1126,8 @@ class ResourceDepManageService {
                     list.forEach { pToGene ->
                         val dbAction = dbActions.find { it.table.name.equals(pToGene.tableName, ignoreCase = true) }
                         //there might due to a repair for dbactions
-                        if (dbAction == null && !dbDemovedDueToRepair)
-                            throw java.lang.IllegalStateException("cannot find ${pToGene.tableName} in db actions ${
+                        if (dbAction == null && !dbRemovedDueToRepair)
+                            log.warn("cannot find ${pToGene.tableName} in db actions ${
                                 dbActions.joinToString(
                                     ";"
                                 ) { it.table.name }
@@ -1187,7 +1187,7 @@ class ResourceDepManageService {
 
         val dbActions = dbActions.plus(call.dbActions).toMutableList()
         inference.generateRelatedTables(call, dbActions).let {
-            bindCallWithDBAction(call, dbActions, it, forceBindParamBasedOnDB = true, dbDemovedDueToRepair = remove)
+            bindCallWithDBAction(call, dbActions, it, forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
         }
     }
 

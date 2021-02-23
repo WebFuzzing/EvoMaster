@@ -266,6 +266,7 @@ class ResourceManageService {
                     failToGenDB = true
             }
         }
+
         return failToGenDB
     }
 
@@ -308,12 +309,14 @@ class ResourceManageService {
         if(paramToTables.isEmpty()) return false
 
         //val relatedTables = removeDuplicatedTables(paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet())
-        val relatedTables = paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet().toList()
+        val relatedTables = paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet()
 
         val dbActions = mutableListOf<DbAction>()
-        val failToGenDb = generateDbActionForCall( forceInsert = forceInsert, forceSelect = forceSelect, dbActions = dbActions, relatedTables = relatedTables)
+        val failToGenDb = generateDbActionForCall( forceInsert = forceInsert, forceSelect = forceSelect, dbActions = dbActions, relatedTables = relatedTables.toList())
 
         if(failToGenDb) return false
+
+        containTables(dbActions, relatedTables)
 
         if(dbActions.isNotEmpty()){
 
@@ -339,13 +342,21 @@ class ResourceManageService {
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
 
              */
-            dm.bindCallWithDBAction(call,dbActions, paramToTables, dbDemovedDueToRepair = removed)
+            dm.bindCallWithDBAction(call,dbActions, paramToTables, dbRemovedDueToRepair = removed)
 
             call.dbActions.addAll(dbActions)
         }
         return paramToTables.isNotEmpty() && !failToGenDb
     }
 
+
+    private fun containTables(dbActions: MutableList<DbAction>, tables: Set<String>) : Boolean{
+
+        val missing = tables.filter { t-> dbActions.none { d-> d.table.name.equals(t, ignoreCase = true) } }
+        if (missing.isNotEmpty())
+            log.warn("missing rows of tables {} to be created.", missing.joinToString(",") { it })
+        return missing.isEmpty()
+    }
 
 
     /**
