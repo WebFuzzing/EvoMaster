@@ -74,7 +74,7 @@ jobs: # a collection of steps
           path: report/target/site/jacoco-aggregate
 
       # Upload to CodeCov
-      # Moved to GitHub Actions, as in CircleCI fews tests are disabled as flacky
+      # Moved to GitHub Actions, as in CircleCI few tests are disabled as flacky
 #      - run:
 #          name: Upload coverage to CodeCov
 #          command: curl -s https://codecov.io/bash | bash
