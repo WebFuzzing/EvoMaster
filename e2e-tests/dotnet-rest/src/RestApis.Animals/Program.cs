@@ -30,12 +30,17 @@ namespace RestApis.Animals
             }
         }
 
-        private static IWebHostBuilder CreateWebHostBuilder (string[] args) {
-
+        private static IWebHostBuilder CreateWebHostBuilder (string[] args)
+        {
             var webHostBuilder = WebHost.CreateDefaultBuilder (args)
                 .UseStartup<Startup> ();
 
-            return args.Length > 0 ? webHostBuilder.UseUrls ($"http://*:{args[0]}") : webHostBuilder;
+            return args.Length switch
+            {
+                0 => webHostBuilder,
+                1 => webHostBuilder.UseUrls($"http://*:{args[0]}"),
+                _ => webHostBuilder.UseUrls($"http://*:{args[0]}").UseSetting("ConnectionString", args[1])
+            };
         }
 
         public static void Shutdown () {
