@@ -95,7 +95,7 @@ public abstract class RestTestBase {
         runAndCheckDeterminism(iterations, lambda, 2);
     }
 
-    protected void runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda, int times){
+    protected String runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda, int times){
 
         List<String> args =  new ArrayList<>(Arrays.asList(
                 "--createTests", "false",
@@ -108,31 +108,32 @@ public abstract class RestTestBase {
                 "--useTimeInFeedbackSampling" , "false"
         ));
 
-
-        isDeterminismConsumer(args, lambda, times);
+        return isDeterminismConsumer(args, lambda, times);
     }
-    protected void isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda) {
-        isDeterminismConsumer(args, lambda, 2);
+    protected String isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda) {
+        return isDeterminismConsumer(args, lambda, 2);
     }
 
-    protected void isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda, int times) {
+    protected String isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda, int times) {
         assert(times >= 2);
 
-        StaticCounter.Companion.reset();
-        String firstRun = LoggingUtil.Companion.runWithDeterministicLogger(
-                () -> {lambda.accept(args); return Unit.INSTANCE;}
-        );
+        String firstRun = consumerToString(args, lambda);
 
         int c = 1;
         while (c < times){
-            StaticCounter.Companion.reset();
-            String secondRun = LoggingUtil.Companion.runWithDeterministicLogger(
-                    () -> {lambda.accept(args); return Unit.INSTANCE;}
-            );
+            String secondRun = consumerToString(args, lambda);
             assertEquals(firstRun, secondRun);
             firstRun = secondRun;
             c++;
         }
+        return firstRun;
+    }
+
+    protected String consumerToString(List<String> args, Consumer<List<String>> lambda){
+        StaticCounter.Companion.reset();
+        return LoggingUtil.Companion.runWithDeterministicLogger(
+                () -> {lambda.accept(args); return Unit.INSTANCE;}
+        );
     }
 
     protected void runTestHandlingFlaky(
@@ -466,8 +467,11 @@ public abstract class RestTestBase {
 
         boolean ok = solution.getIndividuals().stream().anyMatch(
                 ind -> hasAtLeastOne(ind, verb, expectedStatusCode, path, inResponse));
+        if (!ok){
+            msg.add("Seed " + (defaultSeed-1)+". ");
+            msg.add("Missing " + expectedStatusCode + " " + verb + " " + path + " " + inResponse + "\n");
+        }
 
-        msg.add("Missing " + expectedStatusCode + " " + verb + " " + path + " " + inResponse + "\n");
         return ok? count+1: count;
     }
 

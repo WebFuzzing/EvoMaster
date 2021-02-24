@@ -90,6 +90,7 @@ class LoggingUtil {
             val byteStream = ByteArrayOutputStream()
             val outStream = PrintStream(byteStream)
             val latestOut = System.out
+            //Man: there exist some side-effect on the results of evomaster
             System.setOut(outStream)
 
             changeLogbackFile("logback_for_determinism_check.xml")

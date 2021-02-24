@@ -40,9 +40,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * 4) target/em-tests/AWH/snapshot.csv records more detailed performance i.e., every 5% of the used budget, throughout search,
  */
 public class AHypermutationAWHTest extends AHypermuationTestBase {
-    private static int budget = 20_000;
+    private final static int budget = 20_000;
     private static String statisticsFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/statistics.csv";
     private static String snapshotFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/snapshot.csv";
+//    private static String targetFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/coveredTargetFile.txt";
 
     @Test
     public void testDeterminismOfLog(){
@@ -55,9 +56,13 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
 
     @Test
     public void testDeterminism(){
-        runAndCheckDeterminism(budget, (args)->{
-            initAndRun(args);
-        }, 10);
+        String response = runAndCheckDeterminism(budget, (args)->{
+            Solution<RestIndividual> solution = initAndRun(args);
+            int count = countExpectedCoveredTargets(solution, new ArrayList<>());
+            System.out.println(count);
+            System.out.println(defaultSeed);
+        }, 2);
+//        System.out.println(response);
     }
 
     @Test
@@ -109,7 +114,6 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
 
                         Solution<RestIndividual> solution = initAndRun(args);
 
-
                         int count = countExpectedCoveredTargets(solution, msg);
 
                         assertTrue(count >= 2);
@@ -121,8 +125,6 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     public void testRunMIOAWH() throws Throwable {
 
         CIUtils.skipIfOnCircleCI();
-
-
 
         runTestHandlingFlakyAndCompilation(
                 "AWH/TestAHW",
