@@ -4,10 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     
-    <PackageId>Controller.Api</PackageId>
+    <PackageId>EvoMaster.Controller.Api</PackageId>
     <Version>1.1.1-SNAPSHOT</Version>
     <Authors>EvoMaster Team</Authors>
-    <Company>Kristiania</Company>
+<!--    <Company>Kristiania</Company>-->
   </PropertyGroup>
 
   <Target Name="PublishNuGetLocally" AfterTargets="Build">

@@ -4,10 +4,10 @@
         <IsPackable>true</IsPackable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
-        <PackageId>Controller</PackageId>
+        <PackageId>EvoMaster.Controller</PackageId>
         <Version>1.1.1-SNAPSHOT</Version>
         <Authors>EvoMaster Team</Authors>
-        <Company>Kristiania</Company>
+<!--        <Company>Kristiania</Company>-->
     
     </PropertyGroup>
     <ItemGroup>
