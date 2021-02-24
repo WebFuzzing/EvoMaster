@@ -411,7 +411,7 @@ class ResourceManageService {
     private fun generateInserSql(tableName : String, dbActions: MutableList<DbAction>) : Boolean{
         val insertDbAction =
                 sqlInsertBuilder!!
-                        .createSqlInsertionActionWithAllColumn(tableName)
+                        .createSqlInsertionAction(tableName, forceAll = true)
 
         if(insertDbAction.isEmpty()) return false
 
