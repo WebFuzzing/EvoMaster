@@ -14,9 +14,9 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
         public static void Main (string[] args) {
 
-            EmbeddedEvoMasterController embeddedEvoMasterController = new EmbeddedEvoMasterController ();
+            var embeddedEvoMasterController = new EmbeddedEvoMasterController ();
 
-            InstrumentedSutStarter instrumentedSutStarter = new InstrumentedSutStarter (embeddedEvoMasterController);
+            var instrumentedSutStarter = new InstrumentedSutStarter (embeddedEvoMasterController);
 
             System.Console.WriteLine ("Driver is starting...\n");
 
@@ -28,9 +28,8 @@ namespace RestApis.Tests.HelloWorld.Controller {
         public override List<AuthenticationDto> GetInfoForAuthentication () => null;
 
         public override string GetPackagePrefixesToCover () => "RestApis.HelloWorld";
-
-        //TODO: later on we should create sth specific for C#
-        public override OutputFormat GetPreferredOutputFormat () => OutputFormat.JAVA_JUNIT_5;
+        
+        public override OutputFormat GetPreferredOutputFormat () => OutputFormat.CSHARP_XUNIT;
 
         //TODO: check again
         public override IProblemInfo GetProblemInfo () =>
@@ -40,18 +39,17 @@ namespace RestApis.Tests.HelloWorld.Controller {
 
         public override void ResetStateOfSut () { }
 
-        //This method in java client is not async
-        public override async Task<string> StartSutAsync () {
+        public override string StartSut () {
 
             //TODO: check this again
-            int ephemeralPort = GetEphemeralTcpPort ();
+            var ephemeralPort = GetEphemeralTcpPort ();
 
             var task = Task.Run (() => {
 
                 RestApis.HelloWorld.Program.Main (new string[] { ephemeralPort.ToString () });
             });
 
-            await WaitUntilSutIsRunningAsync (ephemeralPort);
+            WaitUntilSutIsRunning (ephemeralPort);
 
             sutPort = ephemeralPort;
 
