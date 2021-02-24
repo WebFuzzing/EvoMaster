@@ -7,7 +7,6 @@
     <PackageId>EvoMaster.Client.Util</PackageId>
     <Version>1.1.1-SNAPSHOT</Version>
     <Authors>EvoMaster Team</Authors>
-<!--    <Company>Kristiania</Company>-->
   </PropertyGroup>
 
   <Target Name="PublishNuGetLocally" AfterTargets="Build">
