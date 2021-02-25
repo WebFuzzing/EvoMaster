@@ -1,9 +1,8 @@
 package org.evomaster.e2etests.spring.examples.resource;
 
-import com.foo.rest.examples.spring.impactXYZ.ImpactXYZRestController;
 import com.foo.rest.examples.spring.resource.ResourceRestController;
-import org.evomaster.core.problem.rest.*;
-import org.evomaster.core.search.EvaluatedIndividual;
+import org.evomaster.core.problem.rest.HttpVerb;
+import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,7 +24,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "ResourceEM",
-                "org.bar.resource.ResourceEM",
+                "org.db.resource.ResourceEM",
                 1_000,
                 true,
                 (args) -> {

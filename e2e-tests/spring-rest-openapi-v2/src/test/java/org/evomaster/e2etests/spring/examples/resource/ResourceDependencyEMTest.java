@@ -1,16 +1,12 @@
 package org.evomaster.e2etests.spring.examples.resource;
 
-import org.evomaster.core.problem.rest.*;
-import org.evomaster.core.search.Action;
-import org.evomaster.core.search.EvaluatedIndividual;
+import org.evomaster.core.problem.rest.HttpVerb;
+import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,7 +20,7 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "ResourceEM",
-                "org.bar.resource.ResourceEM",
+                "org.resource.ResourceEM",
                 1_000,
                 true,
                 (args) -> {
