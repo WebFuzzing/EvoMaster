@@ -180,6 +180,16 @@ Finally, the `startSut()` method must return the URL of where the SUT is listeni
 When running tests locally, this is as simple as returning `"http://localhost:" + getSutPort()`.
 
 
+Note that you need to make sure you can run your application programmatically, regardless of EvoMaster. A simple way is to check if the following works:
+
+```
+public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+}
+```
+
+The issue could arise when using `spring-boot-maven-plugin` to start the application, and there are some classpath problems in your application.
+
 ## SQL Databases
 
 If the application is using a SQL database, you must configure `getConnection()` and `getDatabaseDriverName()`,

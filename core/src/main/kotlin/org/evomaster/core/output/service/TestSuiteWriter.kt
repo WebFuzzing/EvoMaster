@@ -41,6 +41,8 @@ class TestSuiteWriter {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
+        private const val fixtureClass = "ControllerFixture"
+        private const val fixture = "fixture"
 
         private val testCaseWriter = TestCaseWriter()
 
@@ -88,7 +90,7 @@ class TestSuiteWriter {
             lines.indent()
         }
 
-        beforeAfterMethods(controllerName, lines)
+        beforeAfterMethods(controllerName, lines, config.outputFormat, testSuiteFileName)
 
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
@@ -173,6 +175,37 @@ class TestSuiteWriter {
 
     }
 
+    private fun defineFixture(lines: Lines, controllerName: String?){
+        lines.add("public class $fixtureClass : IDisposable")
+
+        lines.block {
+            lines.addEmpty(2)
+            lines.add("public ISutHandler $controller { get; private set; }")
+            lines.add("public string $baseUrlOfSut { get; private set; }")
+
+            lines.addEmpty()
+
+            lines.add("public $fixtureClass()")
+            lines.block {
+
+                lines.addEmpty(1)
+                addStatement("$controller = new $controllerName()", lines)
+                addStatement("$controller.SetupForGeneratedTest()", lines)
+                addStatement("$baseUrlOfSut = $controller.StartSut ()", lines)
+                addStatement("Assert.NotNull($baseUrlOfSut)", lines)
+
+            }
+
+            lines.addEmpty()
+
+            lines.add("public void Dispose()")
+            lines.block {
+                addStatement("$controller.StopSut ()", lines)
+            }
+        }
+        lines.addEmpty()
+    }
+
     private fun header(solution: Solution<*>,
                        name: TestSuiteFileName,
                        lines: Lines,
@@ -244,11 +277,21 @@ class TestSuiteWriter {
             }
         }
 
+        if(format.isCsharp()){
+            addUsing("Xunit", lines)
+            addUsing("System.Net.Http", lines)
+            addUsing("System.Threading.Tasks", lines)
+
+        }
+
         lines.addEmpty(4)
 
         classDescriptionComment(solution, lines)
 
-        if (format.isJavaOrKotlin()) {
+        if(format.isCsharp()){
+            defineFixture(lines, controllerName)
+        }
+        if (format.isJavaOrKotlin() || format.isCsharp()) {
             defineClass(name, lines)
             lines.addEmpty()
         }
@@ -277,6 +320,11 @@ class TestSuiteWriter {
                 lines.add("let $baseUrlOfSut;")
             } else {
                 lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
+            }
+        }
+        else if(config.outputFormat.isCsharp()){
+            if (!config.blackBox || config.bbExperiments){
+                lines.add("private static readonly HttpClient client = new HttpClient ();")
             }
         }
 
@@ -321,12 +369,15 @@ class TestSuiteWriter {
 
         lines.block {
             if (!config.blackBox) {
-                if(config.outputFormat.isJavaScript()){
-                    addStatement("await $controller.setupForGeneratedTest()", lines)
-                    addStatement("baseUrlOfSut = await $controller.startSut()", lines)
-                } else {
-                    addStatement("$controller.setupForGeneratedTest()", lines)
-                    addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                when {
+                    config.outputFormat.isJavaScript() -> {
+                        addStatement("await $controller.setupForGeneratedTest()", lines)
+                        addStatement("baseUrlOfSut = await $controller.startSut()", lines)
+                    }
+                    config.outputFormat.isJavaOrKotlin() -> {
+                        addStatement("$controller.setupForGeneratedTest()", lines)
+                        addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                    }
                 }
 
                 when {
@@ -377,11 +428,16 @@ class TestSuiteWriter {
             format.isJavaScript() -> lines.add("afterAll( async () =>")
         }
 
-        lines.block {
-            if(format.isJavaScript()){
-                addStatement("await $controller.stopSut()", lines)
-            } else {
-                addStatement("$controller.stopSut()", lines)
+        if(!format.isCsharp()){
+            lines.block {
+                when {
+                    format.isJavaScript() -> {
+                        addStatement("await $controller.stopSut()", lines)
+                    }
+                    else -> {
+                        addStatement("$controller.stopSut()", lines)
+                    }
+                }
             }
         }
 
@@ -390,7 +446,7 @@ class TestSuiteWriter {
         }
     }
 
-    private fun initTestMethod(lines: Lines) {
+    private fun initTestMethod(lines: Lines, name: TestSuiteFileName) {
 
         if (config.blackBox) {
             return
@@ -408,33 +464,44 @@ class TestSuiteWriter {
                 lines.add("fun initTest()")
             }
             format.isJavaScript() -> lines.add("beforeEach(async () => ");
+            format.isCsharp() -> lines.add("public ${name.getClassName()} ()")
         }
 
-        lines.block {
-            if(format.isJavaScript()){
-                addStatement("await $controller.resetStateOfSUT()", lines)
-            } else {
-                addStatement("$controller.resetStateOfSUT()", lines)
+
+            lines.block {
+                if(format.isJavaScript()){
+                    addStatement("await $controller.resetStateOfSUT()", lines)
+                } else if(format.isJavaOrKotlin()) {
+                    addStatement("$controller.resetStateOfSUT()", lines)
+                }
+                else if(format.isCsharp()){
+                    addStatement("$controller.ResetStateOfSUT()", lines)
+                }
             }
-        }
+
 
         if (format.isJavaScript()) {
             lines.append(");")
         }
     }
 
-    private fun beforeAfterMethods(controllerName: String?, lines: Lines) {
+    private fun beforeAfterMethods(controllerName: String?, lines: Lines, format: OutputFormat, testSuiteFileName: TestSuiteFileName) {
 
         lines.addEmpty()
 
         val staticInit = {
             staticVariables(controllerName, lines)
-            lines.addEmpty(2)
 
-            initClassMethod(lines)
-            lines.addEmpty(2)
+            if(!format.isCsharp()){
+                lines.addEmpty(2)
+                initClassMethod(lines)
+                lines.addEmpty(2)
 
-            tearDownMethod(lines)
+                tearDownMethod(lines)
+            }
+            else{
+                addStatement("$fixtureClass $fixture",lines)
+            }
         }
 
         if (config.outputFormat.isKotlin()) {
@@ -445,7 +512,7 @@ class TestSuiteWriter {
         }
         lines.addEmpty(2)
 
-        initTestMethod(lines)
+        initTestMethod(lines, testSuiteFileName)
         lines.addEmpty(2)
     }
 
@@ -466,9 +533,13 @@ class TestSuiteWriter {
         when {
             format.isJava() -> lines.append("public ")
             format.isKotlin() -> lines.append("internal ")
+            format.isCsharp() -> lines.append("public ")
         }
 
-        lines.append("class ${name.getClassName()} {")
+        if(!format.isCsharp())
+            lines.append("class ${name.getClassName()} {")
+        else
+            lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
     }
 
     private fun addImport(klass: String, lines: Lines, static: Boolean = false) {
@@ -479,13 +550,20 @@ class TestSuiteWriter {
         addStatement("import $s $klass", lines)
     }
 
+    private fun addUsing(library:String, lines: Lines, static: Boolean = false){
+
+        val s = if(static) "static" else ""
+
+        addStatement("using $s $library", lines)
+    }
+
     private fun addStatement(statement: String, lines: Lines) {
         lines.add(statement)
         appendSemicolon(lines)
     }
 
     private fun appendSemicolon(lines: Lines) {
-        if (config.outputFormat.let { it.isJava() || it.isJavaScript() }) {
+        if (config.outputFormat.let { it.isJava() || it.isJavaScript() || it.isCsharp() }) {
             lines.append(";")
         }
     }

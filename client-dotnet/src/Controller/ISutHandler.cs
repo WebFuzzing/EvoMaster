@@ -19,7 +19,7 @@ namespace Controller {
     ///</summary>
     ///<returns>Returns the base url of the SUT</returns>
     ///This method in java client is not async
-    Task<string> StartSutAsync ();
+    string StartSut ();
 
     ///<summary>
     ///Stops the SUT

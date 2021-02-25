@@ -30,6 +30,10 @@ object DbActionUtils {
                     return false
             }
 
+            /*
+                note: a row could have FK to itself... weird, but possible.
+                but not sure if we should allow it
+             */
             val previous = actions.subList(0, i)
 
             fks.filter { it.isBound() }
