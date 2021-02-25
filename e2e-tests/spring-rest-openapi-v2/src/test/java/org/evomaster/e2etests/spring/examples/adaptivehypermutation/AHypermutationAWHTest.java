@@ -54,16 +54,15 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
         });
     }
 
-    @Test
-    public void testDeterminism(){
-        String response = runAndCheckDeterminism(budget, (args)->{
-            Solution<RestIndividual> solution = initAndRun(args);
-            int count = countExpectedCoveredTargets(solution, new ArrayList<>());
-            System.out.println(count);
-            System.out.println(defaultSeed);
-        }, 2);
-//        System.out.println(response);
-    }
+//    @Test
+//    public void testDeterminism(){
+//        runAndCheckDeterminism(budget, (args)->{
+//            Solution<RestIndividual> solution = initAndRun(args);
+//            int count = countExpectedCoveredTargets(solution, new ArrayList<>());
+//            System.out.println(count);
+//            System.out.println(defaultSeed);
+//        }, 2);
+//    }
 
     @Test
     public void testRunMIO() {

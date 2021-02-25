@@ -28,7 +28,7 @@
             -->
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-controller</artifactId>
-            <scope>test</scope>
+<!--            <scope>test</scope>-->
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>

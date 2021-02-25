@@ -3,6 +3,8 @@ package org.evomaster.core.logging
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.joran.spi.JoranException
+import org.evomaster.client.java.controller.internal.db.StandardOutputTracker
+import org.evomaster.client.java.controller.internal.db.WrappedPrintStream
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
@@ -86,12 +88,17 @@ class LoggingUtil {
          */
         fun runWithDeterministicLogger(lambda: () -> Unit) : String{
 
+            val latestOut = System.out
+
             //create an in-memory buffer to write to
             val byteStream = ByteArrayOutputStream()
             val outStream = PrintStream(byteStream)
-            val latestOut = System.out
-            //Man: there exist some side-effect on the results of evomaster
-            System.setOut(outStream)
+
+            if (latestOut is WrappedPrintStream){
+                latestOut.out.setPrintStream(outStream);
+            }else{
+                System.setOut(outStream)
+            }
 
             changeLogbackFile("logback_for_determinism_check.xml")
 
@@ -100,7 +107,10 @@ class LoggingUtil {
             } finally {
                 //before returning the logs, restore the default settings
                 changeLogbackFile("logback.xml")
-                System.setOut(latestOut)
+                if (latestOut is WrappedPrintStream){
+                    latestOut.out.setPrintStream(null)
+                }else
+                    System.setOut(latestOut)
             }
 
             val logs = byteStream.toString()
@@ -109,3 +119,5 @@ class LoggingUtil {
         }
     }
 }
+
+
