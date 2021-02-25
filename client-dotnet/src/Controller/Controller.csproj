@@ -23,7 +23,7 @@
                 <PackageCopyToOutput>true</PackageCopyToOutput>
             </Content>
 
-            <None Include="build/Controller.props">
+            <None Include="build/EvoMaster.Controller.props">
                 <Pack>true</Pack>
                 <PackagePath>build\$(TargetFramework)</PackagePath>
                 <PackageCopyToOutput>true</PackageCopyToOutput>
