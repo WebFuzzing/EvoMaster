@@ -58,7 +58,7 @@ namespace Controller.Controllers.db
                     //disable referential integrity constraint for cleaning the data in tables
                     DisableReferentialIntegrity(command, type);
 
-                    TruncateTables(tablesToSkip, command, schemaName, GetDefaultTrunctionSingleCommand(type));
+                    TruncateTables(tablesToSkip, command, schemaName, GetDefaultTrunctionSingleCommand(type), type);
 
                     ResetSequences(command, type);
 
@@ -97,11 +97,11 @@ namespace Controller.Controllers.db
 
         private static void TruncateTables(List<string> tablesToSkip, DbCommand command, DatabaseType type)
         {
-            TruncateTables(tablesToSkip, command, GetSchema(type), GetDefaultTrunctionSingleCommand(type));
+            TruncateTables(tablesToSkip, command, GetSchema(type), GetDefaultTrunctionSingleCommand(type), type);
         }
 
         private static void TruncateTables(List<string> tablesToSkip, DbCommand command, String schema,
-            bool singleCommand)
+            bool singleCommand, DatabaseType databaseType)
         {
             // Retrieve all tables
             command.CommandText = GetAllTableCommand(schema);
@@ -138,12 +138,17 @@ namespace Controller.Controllers.db
             }
 
             var tablesToClear = tables.ToList().FindAll(t =>
-                    tablesToSkip == null || tablesToSkip.Count == 0 ||
-                    !tablesToSkip.Any(s => t.Equals(s, StringComparison.InvariantCultureIgnoreCase)))
-                .Select(x => $"\"{x}\"");
+                tablesToSkip == null || tablesToSkip.Count == 0 ||
+                !tablesToSkip.Any(s => t.Equals(s, StringComparison.InvariantCultureIgnoreCase)));
+                //.Select(x => $"\"{x}\"");
 
             if (singleCommand)
             {
+                if (databaseType.Equals(DatabaseType.POSTGRES))
+                {
+                    tablesToClear =  tablesToClear.Select(x => $"\"{x}\"").ToList();
+                }
+
                 var all = string.Join(",", tablesToClear);
                 command.CommandText = "TRUNCATE " + all;
                 command.ExecuteNonQuery();
@@ -153,7 +158,7 @@ namespace Controller.Controllers.db
                 //note from DbCleaner.java: if one at a time, need to make sure to first disable FK checks
                 foreach (var t in tablesToClear)
                 {
-                    command.CommandText = "TRUNCATE " + t;
+                    command.CommandText = "TRUNCATE TABLE " + t;
                     command.ExecuteNonQuery();
                 }
             }
