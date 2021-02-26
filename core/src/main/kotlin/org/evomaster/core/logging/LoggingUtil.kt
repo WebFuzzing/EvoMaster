@@ -95,7 +95,7 @@ class LoggingUtil {
             val outStream = PrintStream(byteStream)
 
             if (latestOut is WrappedPrintStream){
-                latestOut.out.setPrintStream(outStream);
+                System.setOut(latestOut.copyWithRestPrintStream(outStream))
             }else{
                 System.setOut(outStream)
             }
@@ -107,10 +107,7 @@ class LoggingUtil {
             } finally {
                 //before returning the logs, restore the default settings
                 changeLogbackFile("logback.xml")
-                if (latestOut is WrappedPrintStream){
-                    latestOut.out.setPrintStream(null)
-                }else
-                    System.setOut(latestOut)
+                System.setOut(latestOut)
             }
 
             val logs = byteStream.toString()

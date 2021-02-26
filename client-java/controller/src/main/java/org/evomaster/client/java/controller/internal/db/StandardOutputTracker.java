@@ -32,7 +32,7 @@ public class StandardOutputTracker extends ByteArrayOutputStream{
 
     private volatile SutController sutController;
 
-    private PrintStream printStream;
+    private final PrintStream printStream;
 
     public static void setTracker(boolean on, SutController sutController){
         if(on){
@@ -46,7 +46,7 @@ public class StandardOutputTracker extends ByteArrayOutputStream{
         this(sutController, null);
     }
 
-    private StandardOutputTracker(SutController sutController, PrintStream printStream) {
+    protected StandardOutputTracker(SutController sutController, PrintStream printStream) {
         super(2048);
         this.printStream = printStream;
         this.sutController = sutController;
@@ -103,8 +103,7 @@ public class StandardOutputTracker extends ByteArrayOutputStream{
         return printStream;
     }
 
-    public void setPrintStream(PrintStream printStream){
-        this.printStream = printStream;
+    public StandardOutputTracker copyWithPrintStream(PrintStream printStream){
+        return new StandardOutputTracker(sutController, printStream);
     }
-
 }
