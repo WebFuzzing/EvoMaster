@@ -67,7 +67,7 @@ namespace RestApis.Tests.Animals.Controller
                 RestApis.Animals.Program.Main(new[] {ephemeralPort.ToString(), connectionString});
             });
 
-            WaitUntilSutIsRunning(ephemeralPort);
+            WaitUntilSutIsRunning(ephemeralPort, 90);
 
             _sutPort = ephemeralPort;
 
