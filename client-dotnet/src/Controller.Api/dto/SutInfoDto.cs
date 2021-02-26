@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 
-namespace Controller.Api
-{
+namespace Controller.Api {
   public class SutInfoDto {
 
     /**
@@ -46,5 +45,19 @@ namespace Controller.Api
      * Information about the "units" in the SUT.
      */
     public UnitsInfoDto UnitsInfoDto { get; set; }
+  }
+
+  //TODO: Review possible values for this enum
+  /*
+    Note: this enum must be kept in sync with what declared in
+    org.evomaster.core.output.OutputFormat
+ */
+  public enum OutputFormat {
+    JAVA_JUNIT_5,
+    JAVA_JUNIT_4,
+    KOTLIN_JUNIT_4,
+    KOTLIN_JUNIT_5,
+    JS_JEST,
+    CSHARP_XUNIT
   }
 }

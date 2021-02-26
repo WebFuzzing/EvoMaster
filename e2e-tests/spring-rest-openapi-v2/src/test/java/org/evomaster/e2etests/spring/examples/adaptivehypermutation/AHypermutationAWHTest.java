@@ -5,6 +5,7 @@ import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
+import org.evomaster.e2etests.utils.CIUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
@@ -39,7 +40,9 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     private static String snapshotFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/snapshot.csv";
     @Test
     public void testRunMIO() {
-        
+
+        CIUtils.skipIfOnCircleCI();
+
         List<String> msg = new ArrayList<>();
         assertThrows(Throwable.class, () -> {
             runTestHandlingFlakyAndCompilation(
@@ -95,6 +98,8 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
 
     @Test
     public void testRunMIOAWH() throws Throwable {
+
+        CIUtils.skipIfOnCircleCI();
 
         runTestHandlingFlakyAndCompilation(
                 "AWH/TestAHW",

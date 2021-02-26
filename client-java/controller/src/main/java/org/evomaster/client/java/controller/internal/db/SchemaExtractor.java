@@ -151,6 +151,9 @@ public class SchemaExtractor {
             dt = DatabaseType.DERBY;
         } else if (protocol.contains(":postgresql")) {
             dt = DatabaseType.POSTGRES;
+        } else if (protocol.contains(":mysql")){
+            //https://dev.mysql.com/doc/refman/8.0/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri
+            dt = DatabaseType.MYSQL;
         }
         schemaDto.databaseType = dt;
 

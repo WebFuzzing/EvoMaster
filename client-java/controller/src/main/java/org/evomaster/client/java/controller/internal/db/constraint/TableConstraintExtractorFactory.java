@@ -19,6 +19,7 @@ public class TableConstraintExtractorFactory {
             case POSTGRES:
                 return new PostgresConstraintExtractor();
             case DERBY:
+            case MYSQL:
             case OTHER:
                 return null;
             default:
