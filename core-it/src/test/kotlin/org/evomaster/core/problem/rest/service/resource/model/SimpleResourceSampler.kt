@@ -24,6 +24,5 @@ class SimpleResourceSampler : ResourceSampler() {
 
     @PostConstruct
     override fun initialize(){
-        print("")
     }
 }

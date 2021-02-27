@@ -121,11 +121,6 @@ class TestCaseWriter {
                     expectationsWriter.addDeclarations(lines, ind as EvaluatedIndividual<RestIndividual>)
                     //TODO: -> also check expectation generation before adding declarations
                 }
-                /*
-                Man: note that we allow SQL action be in between rest actions.
-                However, we still keep dbInitialization which presents dbaction in front of all rest actions in a test.
-                HERE, please do not use ind.individual.seeInitializingActions(), otherwise the "in between dbactions" will also show here.
-                 */
                 if (ind.individual.seeInitializingActions().isNotEmpty()) {
                     SqlWriter.handleDbInitialization(format, ind.individual.seeInitializingActions(), lines)
                 }
