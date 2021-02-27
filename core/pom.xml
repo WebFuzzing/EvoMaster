@@ -28,6 +28,7 @@
             -->
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-controller</artifactId>
+            <!-- Need this module for runWithDeterministicLogger in LoggingUtil -->
 <!--            <scope>test</scope>-->
         </dependency>
         <dependency>

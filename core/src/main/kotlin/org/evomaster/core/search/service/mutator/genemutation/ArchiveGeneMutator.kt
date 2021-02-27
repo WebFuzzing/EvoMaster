@@ -272,6 +272,7 @@ class ArchiveGeneMutator{
             employBinding = doEmploy(impact = impact.employBinding, targets = targets)
             if (preferSpec && employSpec){
                 if (specializationGene == null){
+                    log.trace("select a specification of String when current is not specified")
                     gene.selectedSpecialization = randomness.nextInt(0, gene.specializationGenes.size - 1)
                 }else {
                     val selected = selectSpec(gene, impact, targets)
@@ -292,7 +293,7 @@ class ArchiveGeneMutator{
                 return
             }
         }
-
+        log.trace("redoTaint from Archive Mutation")
         if (gene.redoTaint(apc, randomness, allGenes)) return
 
         if(additionalGeneMutationInfo.hasHistory())
@@ -319,6 +320,7 @@ class ArchiveGeneMutator{
         if (impact.getSpecializationImpacts().size != gene.specializationGenes.size){
             log.warn("mismatched specialization impacts, {} impact but {} spec", impact.getSpecializationImpacts().size, gene.specializationGenes.size)
             if(impact.getSpecializationImpacts().isEmpty()){
+                log.trace("select a specification of String")
                 return randomness.nextInt(0, gene.specializationGenes.size - 1)
             }
         }

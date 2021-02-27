@@ -50,6 +50,8 @@ class RestStructureMutator : StructureMutator() {
 
             //record newly added existing sql data
             mutatedGenes?.addedExistingDataInitialization?.addAll(0, sampler.existingSqlData)
+
+            log.trace("add {} existingSqlData", sampler.existingSqlData.size)
         }
 
         val max = config.maxSqlInitActionsPerMissingData

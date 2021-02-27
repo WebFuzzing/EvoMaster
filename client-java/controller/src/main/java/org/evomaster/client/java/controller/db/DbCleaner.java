@@ -30,6 +30,9 @@ public class DbCleaner {
         clearDatabase(3, connection, schemaName, tablesToSkip, DatabaseType.H2);
     }
 
+    /*
+        Man: retries might lead to non-determinate logs
+     */
     private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type) {
         /*
             Code based on

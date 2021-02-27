@@ -9,12 +9,12 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.evomaster.e2etests.utils.CIUtils;
+import org.jetbrains.kotlin.com.intellij.util.containers.hash.LinkedHashMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,19 +50,59 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
 
         OpenAPI schema = (new OpenAPIParser()).readLocation("swagger-ahm/ahm.json", null, null).getOpenAPI();
         isDeterminismConsumer( new ArrayList<>(), (args) -> {
-            RestActionBuilderV3.INSTANCE.getModelsFromSwagger(schema, new HashMap<>());
+            RestActionBuilderV3.INSTANCE.getModelsFromSwagger(schema, new LinkedHashMap<>());
         });
     }
 
-//    @Test
-//    public void testDeterminism(){
-//        runAndCheckDeterminism(budget, (args)->{
-//            Solution<RestIndividual> solution = initAndRun(args);
-//            int count = countExpectedCoveredTargets(solution, new ArrayList<>());
-//            System.out.println(count);
-//            System.out.println(defaultSeed);
-//        }, 2);
-//    }
+    //NotDeterminism can be identified by AHY-MIO with 3k budget
+    @Test
+    public void testNotDeterminismAHyMIO(){
+        runAndCheckDeterminism(3000, (args)->{
+
+            Solution<RestIndividual> solution = initAndRun(args);
+            int count = countExpectedCoveredTargets(solution, new ArrayList<>());
+            System.out.println(count);
+            System.out.println(defaultSeed);
+        }, 2, true);
+    }
+
+    //NotDeterminism can be identified by MIO with 4k budget
+    @Test
+    public void testNotDeterminismMIO(){
+        List<String> args =  new ArrayList<>(Arrays.asList(
+                "--createTests", "false",
+                "--seed", "42",
+                "--showProgress", "false",
+                "--avoidNonDeterministicLogs", "true",
+                "--sutControllerPort", "" + controllerPort,
+                "--maxActionEvaluations", "" + 4000,
+                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--useTimeInFeedbackSampling" , "false"
+        ));
+
+        args.add("--probOfArchiveMutation");
+        args.add("0.0");
+
+        args.add("--weightBasedMutationRate");
+        args.add("false");
+
+        args.add("--adaptiveGeneSelectionMethod");
+        args.add("NONE");
+
+        args.add("--archiveGeneMutation");
+        args.add("NONE");
+
+        args.add("--enableTrackEvaluatedIndividual");
+        args.add("false");
+
+        isDeterminismConsumer(args, (x)->{
+
+            Solution<RestIndividual> solution = initAndRun(args);
+            int count = countExpectedCoveredTargets(solution, new ArrayList<>());
+            System.out.println(count);
+            System.out.println(defaultSeed);
+        }, 2, true);
+    }
 
     @Test
     public void testRunMIO() {

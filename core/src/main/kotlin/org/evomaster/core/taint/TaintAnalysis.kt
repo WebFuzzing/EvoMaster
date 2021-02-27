@@ -4,7 +4,10 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintType
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.rest.RestAction
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.StringGene
@@ -30,7 +33,15 @@ object TaintAnalysis {
         if (individual.seeActions().size < additionalInfoList.size) {
             throw IllegalArgumentException("Less actions than info entries")
         }
-
+        log.trace("do taint analysis for individual which contains dbactions: {} and rest actions: {}",
+            individual.seeInitializingActions().joinToString(",") {
+                if (it is DbAction) it.getResolvedName() else it.getName()
+            },
+            individual.seeActions().joinToString(","){
+                if (it is RestCallAction) it.resolvedPath() else it.getName()
+            }
+            )
+        //log.trace("do taint analysis for {} additionalInfoList: {}", additionalInfoList.size, additionalInfoList.flatMap { a-> a.stringSpecializations.keys }.joinToString(","))
         for (i in 0 until additionalInfoList.size) {
 
             val dto = additionalInfoList[i]
@@ -50,8 +61,10 @@ object TaintAnalysis {
                         }
                     }.toMap()
 
+            //log.trace("handle single Gene")
             handleSingleGenes(specsMap, action, randomness)
 
+            //log.trace("handle multiple Genes")
             handleMultiGenes(specsMap, action, randomness)
         }
     }
@@ -145,10 +158,11 @@ object TaintAnalysis {
 
                 if (genes.isEmpty()) {
                     /*
-                            This can happen if the taint input is manipulated, but still with
-                            same prefix and postfix
-                         */
-                    log.debug("No taint input '{}'",taintedInput)
+                        This can happen if the taint input is manipulated, but still with
+                        same prefix and postfix
+                        TODO: this debug log might lead to non-determinate logs
+                    */
+                    //log.debug("No taint input '{}'",taintedInput)
                 } else {
                     genes.forEach { it.addSpecializations(taintedInput, fullMatch, randomness) }
                 }

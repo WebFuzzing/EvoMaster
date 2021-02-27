@@ -163,6 +163,8 @@ class StringGene(
         val specializationGene = getSpecializationGene()
 
         if (specializationGene == null && specializationGenes.isNotEmpty() && randomness.nextBoolean(0.5)) {
+            log.trace("random a specializationGene of String at StandardMutation with string: {}; size: {}; content: {}", name, specializationGenes.size,
+                specializationGenes.joinToString(",") { s -> s.getValueAsRawString() })
             selectedSpecialization = randomness.nextInt(0, specializationGenes.size - 1)
             selectionUpdatedSinceLastMutation = false
             handleBinding(allGenes)
@@ -285,8 +287,8 @@ class StringGene(
                                 (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
                         )
         ) {
-
             value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+            log.trace("redo taint analysis, and set value to {}", value)
             tainted = true
             return true
         }
@@ -361,6 +363,7 @@ class StringGene(
                     EnumGene<String>(
                             name,
                             toAddSpecs.filter { it.stringSpecialization == CONSTANT }.map { it.value }))
+            log.trace("CONSTANT, added specification size: {}", toAddGenes.size)
         }
 
         if (toAddSpecs.any { it.stringSpecialization == CONSTANT_IGNORE_CASE }) {
@@ -369,31 +372,39 @@ class StringGene(
                             .map { "^(${RegexUtils.ignoreCaseRegex(it.value)})$" }
                             .joinToString("|")
             ))
+            log.trace("CONSTANT_IGNORE_CASE, added specification size: {}", toAddGenes.size)
         }
 
 
         if (toAddSpecs.any { it.stringSpecialization == DATE_YYYY_MM_DD }) {
             toAddGenes.add(DateGene(name))
+            log.trace("DATE_YYYY_MM_DD, added specification size: {}", toAddGenes.size)
         }
 
         if (toAddSpecs.any { it.stringSpecialization == BOOLEAN }) {
             toAddGenes.add(BooleanGene(name))
+            log.trace("BOOLEAN, added specification size: {}", toAddGenes.size)
         }
 
         if (toAddSpecs.any { it.stringSpecialization == INTEGER }) {
             toAddGenes.add(IntegerGene(name))
+            log.trace("INTEGER, added specification size: {}", toAddGenes.size)
+
         }
 
         if (toAddSpecs.any { it.stringSpecialization == LONG }) {
             toAddGenes.add(LongGene(name))
+            log.trace("LONG, added specification size: {}", toAddGenes.size)
         }
 
         if (toAddSpecs.any { it.stringSpecialization == FLOAT }) {
             toAddGenes.add(FloatGene(name))
+            log.trace("FLOAT, added specification size: {}", toAddGenes.size)
         }
 
         if (toAddSpecs.any { it.stringSpecialization == DOUBLE }) {
             toAddGenes.add(DoubleGene(name))
+            log.trace("DOUBLE, added specification size: {}", toAddGenes.size)
         }
 
         //all regex are combined with disjunction in a single gene
@@ -415,6 +426,7 @@ class StringGene(
                 it.randomize(randomness, false, listOf())
                 it.parent = this
             }
+            log.trace("in total added specification size: {}", toAddGenes.size)
             specializationGenes.addAll(toAddGenes)
             specializations.addAll(toAddSpecs)
         }
@@ -443,6 +455,8 @@ class StringGene(
 
             try {
                 toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+                log.trace("Regex, added specification size: {}", toAddGenes.size)
+
             } catch (e: Exception) {
                 LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
             }

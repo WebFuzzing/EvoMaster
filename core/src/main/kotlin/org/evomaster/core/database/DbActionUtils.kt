@@ -6,9 +6,12 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 object DbActionUtils {
 
+    private val log: Logger = LoggerFactory.getLogger(DbActionUtils::class.java)
 
     fun verifyForeignKeys(actions: List<DbAction>): Boolean {
 
@@ -58,6 +61,7 @@ object DbActionUtils {
         all.asSequence()
                 .filter { it.isMutable() }
                 .forEach {
+                    log.trace("randomness DB genes {}", it.name)
                     it.randomize(randomness, false, all)
                 }
 

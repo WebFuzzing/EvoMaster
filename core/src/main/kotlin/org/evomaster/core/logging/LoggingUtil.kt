@@ -95,6 +95,11 @@ class LoggingUtil {
             val outStream = PrintStream(byteStream)
 
             if (latestOut is WrappedPrintStream){
+                /*
+                    we can also manipulate the current [latestOut], i.e., set [outStream] as printStream of
+                    the current StandardOutputTracker, but it might cause some problems when setting its status back.
+                    therefore, here, we create a new PrintStream which keeps the same setting with the current one.
+                 */
                 System.setOut(latestOut.copyWithRestPrintStream(outStream))
             }else{
                 System.setOut(outStream)

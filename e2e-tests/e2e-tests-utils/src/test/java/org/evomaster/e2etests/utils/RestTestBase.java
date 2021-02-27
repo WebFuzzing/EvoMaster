@@ -92,10 +92,10 @@ public abstract class RestTestBase {
     }
 
     protected void runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda){
-        runAndCheckDeterminism(iterations, lambda, 2);
+        runAndCheckDeterminism(iterations, lambda, 2, false);
     }
 
-    protected String runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda, int times){
+    protected String runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda, int times, boolean notDeterminism){
 
         List<String> args =  new ArrayList<>(Arrays.asList(
                 "--createTests", "false",
@@ -108,13 +108,13 @@ public abstract class RestTestBase {
                 "--useTimeInFeedbackSampling" , "false"
         ));
 
-        return isDeterminismConsumer(args, lambda, times);
+        return isDeterminismConsumer(args, lambda, times, notDeterminism);
     }
     protected String isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda) {
-        return isDeterminismConsumer(args, lambda, 2);
+        return isDeterminismConsumer(args, lambda, 2, false);
     }
 
-    protected String isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda, int times) {
+    protected String isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda, int times, boolean notEqual) {
         assert(times >= 2);
 
         String firstRun = consumerToString(args, lambda);
@@ -122,7 +122,10 @@ public abstract class RestTestBase {
         int c = 1;
         while (c < times){
             String secondRun = consumerToString(args, lambda);
-            assertEquals(firstRun, secondRun);
+            if (notEqual)
+                assertNotEquals(firstRun, secondRun);
+            else
+                assertEquals(firstRun, secondRun);
             firstRun = secondRun;
             c++;
         }

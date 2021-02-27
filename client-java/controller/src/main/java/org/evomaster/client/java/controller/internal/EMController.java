@@ -362,7 +362,7 @@ public class EMController {
                     info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
                     info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
 
-                    info.stringSpecializations = new HashMap<>();
+                    info.stringSpecializations = new LinkedHashMap<>();
                     for(Map.Entry<String, Set<StringSpecializationInfo>> entry :
                             a.getStringSpecializationsView().entrySet()){
 

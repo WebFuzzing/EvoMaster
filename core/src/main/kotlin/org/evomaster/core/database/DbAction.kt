@@ -97,4 +97,9 @@ class DbAction(
     fun geInsertionId(): Long {
         return this.id
     }
+
+    fun getResolvedName() : String{
+        return "SQL_Insert_${table.name}_${selectedColumns.mapIndexed { index, column -> "${column.name}:${genes.getOrNull(index)?.getValueAsRawString()?:"null"}" }.sorted().joinToString("_")}"
+
+    }
 }
