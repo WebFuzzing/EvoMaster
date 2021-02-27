@@ -27,8 +27,8 @@ object ParserUtil {
     private const val REGEX_NOUN = "([{pos:/NN|NNS|NNP/}])"
     private const val REGEX_VERB = "([{pos:/VB|VBD|VBG|VBN|VBP|VBZ/}])"
 
-    private var PATTERN_NOUN : TokenSequencePattern? =null
-    private var PATTERN_VERB : TokenSequencePattern? =null
+    private var pattern_noun : TokenSequencePattern? =null
+    private var pattern_verb : TokenSequencePattern? =null
 
     /**
      * configure stanford parser
@@ -47,15 +47,15 @@ object ParserUtil {
     }
 
     private fun getNoun() : TokenSequencePattern{
-        if(PATTERN_NOUN == null)
-            PATTERN_NOUN = TokenSequencePattern.compile(REGEX_NOUN);
-        return PATTERN_NOUN!!
+        if(pattern_noun == null)
+            pattern_noun = TokenSequencePattern.compile(REGEX_NOUN);
+        return pattern_noun!!
     }
 
     private fun getVerb() : TokenSequencePattern{
-        if(PATTERN_VERB == null)
-            PATTERN_VERB = TokenSequencePattern.compile(REGEX_VERB)
-        return PATTERN_VERB!!
+        if(pattern_verb == null)
+            pattern_verb = TokenSequencePattern.compile(REGEX_VERB)
+        return pattern_verb!!
     }
 
     private fun formatKey(source : String) : String = source.toLowerCase()

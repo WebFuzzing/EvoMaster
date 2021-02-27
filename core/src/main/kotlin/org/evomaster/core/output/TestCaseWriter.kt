@@ -2,28 +2,18 @@ package org.evomaster.core.output
 
 import com.google.gson.Gson
 import io.swagger.v3.oas.models.OpenAPI
-import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
-import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.auth.CookieLogin
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
 
@@ -156,7 +146,7 @@ class TestCaseWriter {
             CookieWriter.handleGettingCookies(format, test.test, lines, baseUrlOfSut)
 
             //SQL actions are generated in between
-            if (test.test.individual is RestIndividual && config.enableSQLInBetween()){
+            if (test.test.individual is RestIndividual && config.isEnabledSQLInBetween()){
 
                 test.test.evaluatedResourceActions().forEachIndexed { index, c->
                     // db

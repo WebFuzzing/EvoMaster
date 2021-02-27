@@ -13,7 +13,6 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.math.max
 import kotlin.math.min
 
 /**
@@ -74,7 +73,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             this(fitness, individual, results,
                     trackOperator = trackOperator,
                     index = index,
-                    impactInfo = if ((config.collectImpact()))
+                    impactInfo = if ((config.isEnabledImpactCollection()))
                         ImpactsOfIndividual(individual, config.abstractInitializationGeneToMutate, config.maxSqlInitActionsPerMissingData, fitness)
                     else
                         null)

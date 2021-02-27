@@ -74,6 +74,8 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
 
     /**
      * the class defines possible methods to mutate ResourceRestIndividual regarding its resources
+     * @param minSize is a minimum number of rest actions in order to apply the mutation
+     * @param minSQLSize is a minimum number of db actions in order to apply the mutation
      */
     enum class MutationType(val minSize: Int, val minSQLSize : Int = 0){
         DELETE(2),
@@ -96,7 +98,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
 
         DbActionUtils.repairFkForInsertions(added)
 
-        if(config.enableArchiveSolution()){
+        if(config.isEnabledArchiveSolution()){
             TODO("update impacts")
         }
 
@@ -135,7 +137,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         }
 
 
-        if(config.enableArchiveSolution()){
+        if(config.isEnabledArchiveSolution()){
             TODO("update impacts")
         }
     }
@@ -370,7 +372,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
 
         ind.repairInitializationActions(randomness)
         // update impact based on added genes
-        if(mutatedGenes != null && config.enableArchiveGeneSelection()){
+        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
             individual.updateImpactGeneDueToAddedInitializationGenes(
                 mutatedGenes,
                 old,

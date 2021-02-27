@@ -959,6 +959,9 @@ class ResourceDepManageService {
         return null
     }
 
+    /**
+     * @return a list of db actions of [ind] which are possibly not related to rest actions of [ind]
+     */
     fun unRelatedSQL(ind: RestIndividual) : List<DbAction>{
         val allrelated = getAllRelatedTables(ind)
         return ind.dbInitialization.filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }

@@ -2,15 +2,12 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -49,7 +46,7 @@ class RestStructureMutator : AbstractRestStructureMutator() {
         ind.repairInitializationActions(randomness)
 
         // update impact based on added genes
-        if(mutatedGenes != null && config.enableArchiveGeneSelection()){
+        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
             individual.updateImpactGeneDueToAddedInitializationGenes(
                     mutatedGenes,
                     old,

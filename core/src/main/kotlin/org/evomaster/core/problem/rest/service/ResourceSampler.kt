@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -34,7 +33,7 @@ open class ResourceSampler : AbstractRestSampler() {
 
     override fun initSqlInfo(infoDto: SutInfoDto) {
         //when ResourceDependency is enabled, SQL info is required to identify dependency
-        if (infoDto.sqlSchemaDto != null && (configuration.shouldGenerateSqlData() || config.enableResourceDependency())) {
+        if (infoDto.sqlSchemaDto != null && (configuration.shouldGenerateSqlData() || config.isEnabledResourceDependency())) {
 
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
             existingSqlData = sqlInsertBuilder!!.extractExistingPKs()

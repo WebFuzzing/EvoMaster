@@ -1025,6 +1025,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("When generating resource using SQL (e.g., sampler or mutator), how many new rows (max) to generate for the specific resource each time")
+    @Min(0.0)
     var maxSqlInitActionsPerResource = 0
 
     @Experimental
@@ -1341,28 +1342,28 @@ class EMConfig {
     /**
      * impact info can be collected when archive-based solution is enabled or doCollectImpact
      */
-    fun collectImpact() = algorithm == Algorithm.MIO && doCollectImpact || enableArchiveGeneSelection()
+    fun isEnabledImpactCollection() = algorithm == Algorithm.MIO && doCollectImpact || isEnabledArchiveGeneSelection()
 
     /**
      * @return whether archive-based gene selection is enabled
      */
-    fun enableArchiveGeneSelection() = algorithm == Algorithm.MIO && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+    fun isEnabledArchiveGeneSelection() = algorithm == Algorithm.MIO && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
 
     /**
      * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
      */
-    fun enableArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+    fun isEnabledArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
 
-    fun enableArchiveSolution() = enableArchiveGeneMutation() || enableArchiveGeneSelection()
+    fun isEnabledArchiveSolution() = isEnabledArchiveGeneMutation() || isEnabledArchiveGeneSelection()
 
     /**
      * @return whether enable resource-dependency based method
      */
-    fun enableResourceDependency() = probOfSmartSampling > 0.0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+    fun isEnabledResourceDependency() = probOfSmartSampling > 0.0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE
 
     /**
      * @return whether to generate SQL between rest actions
      */
-    fun enableSQLInBetween() = enableResourceDependency() && heuristicsForSQL && probOfApplySQLActionToCreateResources > 0.0
+    fun isEnabledSQLInBetween() = isEnabledResourceDependency() && heuristicsForSQL && probOfApplySQLActionToCreateResources > 0.0
 
 }
