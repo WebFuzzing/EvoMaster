@@ -33,14 +33,14 @@ object TaintAnalysis {
         if (individual.seeActions().size < additionalInfoList.size) {
             throw IllegalArgumentException("Less actions than info entries")
         }
-        log.trace("do taint analysis for individual which contains dbactions: {} and rest actions: {}",
-            individual.seeInitializingActions().joinToString(",") {
-                if (it is DbAction) it.getResolvedName() else it.getName()
-            },
-            individual.seeActions().joinToString(","){
-                if (it is RestCallAction) it.resolvedPath() else it.getName()
-            }
-            )
+//        log.trace("do taint analysis for individual which contains dbactions: {} and rest actions: {}",
+//            individual.seeInitializingActions().joinToString(",") {
+//                if (it is DbAction) it.getResolvedName() else it.getName()
+//            },
+//            individual.seeActions().joinToString(","){
+//                if (it is RestCallAction) it.resolvedPath() else it.getName()
+//            }
+//            )
         //log.trace("do taint analysis for {} additionalInfoList: {}", additionalInfoList.size, additionalInfoList.flatMap { a-> a.stringSpecializations.keys }.joinToString(","))
         for (i in 0 until additionalInfoList.size) {
 
