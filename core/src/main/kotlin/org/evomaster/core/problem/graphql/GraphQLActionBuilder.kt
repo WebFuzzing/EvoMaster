@@ -488,8 +488,7 @@ object GraphQLActionBuilder {
                 tableType, isKindOfTableFieldTypeOptional,
                 isKindOfTableFieldOptional, tableFieldWithArgs, enumValues)
 
-        val verb = GQLHttpVerb.POST
-        val action = GraphQLAction(actionId, methodName, type, params, verb )
+        val action = GraphQLAction(actionId, methodName, type, params )
 
         actionCluster[action.getName()] = action
     }
