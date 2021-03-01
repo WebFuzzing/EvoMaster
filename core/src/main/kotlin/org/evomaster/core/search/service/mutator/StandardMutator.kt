@@ -40,7 +40,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
         val mutable = individual.seeGenes(filterMutate).filter { it.isMutable() }
-        if (!config.enableArchiveGeneMutation())
+        if (!config.isEnabledArchiveGeneMutation())
             return mutable
 
         return mutable
@@ -126,9 +126,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             // enable weight based mutation when mutating gene
             val enableWGS = config.weightBasedMutationRate && config.enableWeightBasedMutationRateSelectionForGene
             // enable gene selection when mutating gene, eg, ObjectGene
-            val enableAGS = enableWGS && adaptive && config.enableArchiveGeneSelection()
+            val enableAGS = enableWGS && adaptive && config.isEnabledArchiveGeneSelection()
             // enable gene mutation based on history
-            val enableAGM = adaptive && config.enableArchiveGeneMutation()
+            val enableAGM = adaptive && config.isEnabledArchiveGeneMutation()
 
             val selectionStrategy = when {
                 enableAGS -> SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT

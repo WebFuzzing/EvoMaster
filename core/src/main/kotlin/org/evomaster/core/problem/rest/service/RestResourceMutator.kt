@@ -23,7 +23,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     override fun postActionAfterMutation(mutatedIndividual: RestIndividual) {
         super.postActionAfterMutation(mutatedIndividual)
         mutatedIndividual.getResourceCalls().forEach { rm.repairRestResourceCalls(it) }
-        mutatedIndividual.repairDBActions(rm.getSqlBuilder())
+        mutatedIndividual.repairDBActions(rm.getSqlBuilder(), randomness)
     }
 
     override fun doesStructureMutation(individual : RestIndividual): Boolean {
@@ -50,7 +50,10 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
             update resource dependency after mutating structure of the resource-based individual
             NOTE THAT [this] can be only applied with MIO. In MIO, [mutatedGenes] must not be null.
          */
-        if(mutatedGenes!!.mutatedGenes.isEmpty() && (previous.individual.getResourceCalls().size > 1 || mutated.individual.getResourceCalls().size > 1) && config.probOfEnablingResourceDependencyHeuristics > 0){
+        if(mutatedGenes!!.mutatedGenes.isEmpty()
+            && (previous.individual.getResourceCalls().size > 1 || mutated.individual.getResourceCalls().size > 1)
+            && config.probOfEnablingResourceDependencyHeuristics > 0){
+
             dm.detectDependencyAfterStructureMutation(previous, mutated, mutationEvaluated)
         }
 

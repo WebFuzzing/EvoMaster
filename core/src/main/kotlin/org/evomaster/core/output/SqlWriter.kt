@@ -16,7 +16,7 @@ import org.evomaster.core.search.gene.sql.SqlWrapperGene
  */
 object SqlWriter {
 
-    fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines) {
+    fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines, allDbInitialization: List<DbAction> = dbInitialization, groupIndex: String ="") {
 
         if (dbInitialization.isEmpty() || dbInitialization.none { !it.representExistingData }) {
             return
@@ -27,8 +27,8 @@ object SqlWriter {
                 .forEachIndexed { index, dbAction ->
 
                     lines.add(when {
-                        index == 0 && format.isJava() -> "List<InsertionDto> insertions = sql()"
-                        index == 0 && format.isKotlin() -> "val insertions = sql()"
+                        index == 0 && format.isJava() -> "List<InsertionDto> insertions${groupIndex} = sql()"
+                        index == 0 && format.isKotlin() -> "val insertions${groupIndex} = sql()"
                         else -> ".and()"
                     } + ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)")
 
@@ -42,7 +42,7 @@ object SqlWriter {
                                 .forEach { g ->
                                     when {
                                         g is SqlWrapperGene && g.getForeignKey() != null -> {
-                                            val line = handleFK(format, g.getForeignKey()!!, dbAction, dbInitialization)
+                                            val line = handleFK(format, g.getForeignKey()!!, dbAction, allDbInitialization)
                                             lines.add(line)
                                         }
                                         g is ObjectGene -> {
@@ -66,7 +66,7 @@ object SqlWriter {
 
         lines.deindent()
 
-        lines.add("controller.execInsertionsIntoDatabase(insertions)")
+        lines.add("controller.execInsertionsIntoDatabase(insertions${groupIndex})")
         lines.appendSemicolon(format)
     }
 
