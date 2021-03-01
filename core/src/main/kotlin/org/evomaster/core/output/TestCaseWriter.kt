@@ -548,7 +548,9 @@ class TestCaseWriter {
     }
 
     private fun handleGQLVerb(baseUrlOfSut: String, call: GraphQLAction, lines: Lines) {
-        val verb = call.verb.name.toLowerCase()
+
+        // TODO maybe in future might want to have GET for QUERY types
+        val verb = "post"
         lines.add(".$verb(")
 
         if (format.isKotlin()) {

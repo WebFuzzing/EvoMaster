@@ -19,7 +19,6 @@ class GraphQLAction(
         val methodName: String,
         val methodType: GQMethodType,
         val parameters: MutableList<Param>,
-        val verb: GQLHttpVerb,
         auth: AuthenticationInfo = NoAuth()
         ) : HttpWsAction(auth) {
 
@@ -36,7 +35,7 @@ class GraphQLAction(
 
     override fun copy(): Action {
 
-        return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(), verb, auth )
+        return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(), auth )
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
