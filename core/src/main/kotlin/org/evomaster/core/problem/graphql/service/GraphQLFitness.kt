@@ -15,6 +15,7 @@ import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.RuntimeException
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -212,23 +213,19 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         }
 
 
-        val body = a.parameters.find { p -> p is GQReturnParam }
+        val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
+                //in GraphQL, there is ALWAYS a return type
+                ?: throw RuntimeException("ERROR: not specified return type")
 
+        //this might be optional
+        val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
-        val bodyEntity = if (body != null && body is GQReturnParam) {
-            val mode = GeneUtils.EscapeMode.JSON
-               if (mode != GeneUtils.EscapeMode.JSON){
-                throw IllegalStateException("Cannot handle body type: ")
-            }
-            Entity.entity("{ \" ${a.methodType} \" : "+
-                    body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat)+
-                    ",\"variables \":null,\"operationName \":null}",MediaType.APPLICATION_JSON)
-        } else if (body != null && body is GQInputParam) {
-            val mode = GeneUtils.EscapeMode.JSON
-            Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), MediaType.APPLICATION_JSON)
-        } else {
-            null
-        }
+        //TODO inputGenes
+        val query = "{${a.methodName}{${returnGene.getValueAsPrintableString(mode=GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}}"
+
+        val bodyEntity = Entity.json("""
+            {"query" : "$query"}
+        """.trimIndent())
 
         val invocation = builder.buildPost(bodyEntity)
         return invocation

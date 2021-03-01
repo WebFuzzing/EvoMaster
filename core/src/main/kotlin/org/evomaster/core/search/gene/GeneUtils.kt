@@ -1,12 +1,12 @@
 package org.evomaster.core.search.gene
 
+import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import kotlin.math.pow
-import org.apache.commons.lang3.StringEscapeUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.pow
 
 object GeneUtils {
 
@@ -41,7 +41,8 @@ object GeneUtils {
         XML,
         BODY,
         NONE,
-        X_WWW_FORM_URLENCODED
+        X_WWW_FORM_URLENCODED,
+        BOOLEAN_SELECTION_MODE
     }
 
     fun getDelta(
@@ -177,7 +178,7 @@ object GeneUtils {
             EscapeMode.EXPECTATION -> applyExpectationEscapes(string, format)
             EscapeMode.JSON -> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
-            EscapeMode.NONE, EscapeMode.X_WWW_FORM_URLENCODED -> string
+            EscapeMode.NONE, EscapeMode.X_WWW_FORM_URLENCODED, EscapeMode.BOOLEAN_SELECTION_MODE -> string
             EscapeMode.BODY -> applyBodyEscapes(string, format)
             EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
         }
@@ -346,7 +347,7 @@ object GeneUtils {
                 }
             }
 
-            if(p==null) {
+            if (p == null) {
                 return true
             }
         }
@@ -380,6 +381,33 @@ object GeneUtils {
         }
 
         return true
+    }
+
+
+    /**
+     * In some cases, in particular GraphQL, given an object we might want to specify
+     * just which fields we want to have, which is a boolean selection (ie, either a filed should
+     * be present, or not). But we need to handle this recursively, because an object could have
+     * objects inside, and so on recursively.
+     *
+     * However, to be able to print such selection for GraphQL, we need then to have a special mode
+     * for its string representation
+     */
+    fun getBooleanSelection(gene: Gene): ObjectGene {
+
+        return when (gene) {
+            is ObjectGene -> ObjectGene(gene.name, gene.fields.map {
+                val k = getBooleanSelection(it)
+                if (k.fields.isEmpty()) {
+                    BooleanGene(it.name)
+                } else {
+                    OptionalGene(k.name, k)
+                }
+            }
+            )
+            is ArrayGene<*> -> getBooleanSelection(gene.template)
+            else -> ObjectGene(gene.name, listOf())
+        }
     }
 }
 

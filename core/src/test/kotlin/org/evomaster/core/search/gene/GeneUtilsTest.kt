@@ -102,4 +102,34 @@ internal class GeneUtilsTest {
     }
 
 
+    @Test
+    fun testBooleanSelectionSimple(){
+
+        val obj = ObjectGene("foo", listOf(StringGene("a","hello"),IntegerGene("b",42)))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+
+        val rep = selection.getValueAsPrintableString(mode=GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ","") // remove empty space to make assertion less brittle
+
+        //without randomization, should be both on by default
+        assertEquals("foo{a,b}", rep)
+    }
+
+    @Test
+    fun testBooleanSectionSkip(){
+
+        val obj = ObjectGene("foo", listOf(StringGene("a","hello"),IntegerGene("b",42)))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+        val a  = selection.fields.find { it.name == "a" } as BooleanGene
+        a.value = false
+
+        val rep = selection.getValueAsPrintableString(mode=GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ","") // remove empty space to make assertion less brittle
+
+        assertEquals("foo{b}", rep)
+    }
+
+    //TODO more tests for BooleanSelection, eg, for Objects inside Objects, and Array, etc.
 }
