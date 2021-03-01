@@ -4,9 +4,12 @@ using System.Configuration;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Client.Util;
 using Controller;
 using Controller.Controllers.db;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Npgsql;
@@ -37,7 +40,7 @@ namespace RestApis.Tests.Animals
 
             Assert.Equal(200, (int) response.StatusCode);
             Assert.Contains("application/json", response.Content.Headers.ContentType.ToString());
-            Assert.Contains("Giraffe", responseBody);
+            Assert.True(JsonInspector.ContainsKeyValue(responseBody, "Name", "Giraffe"));
         }
 
         [Fact]
@@ -45,8 +48,8 @@ namespace RestApis.Tests.Animals
         {
             var response = await Client.GetAsync($"{_fixture.BaseUrlOfSut}/birds");
             var responseBody = await response.Content.ReadAsStringAsync();
-            
-            Assert.DoesNotContain("Eagle", responseBody);
+
+            Assert.False(JsonInspector.ContainsKeyValue(responseBody, "Name", "Eagle"));
             
             var dto = new Bird {Name = "Eagle"};
             var httpContent = new StringContent(JsonConvert.SerializeObject(dto), Encoding.UTF8, "application/json");
