@@ -45,6 +45,10 @@ class RestStructureMutator : AbstractRestStructureMutator() {
 
         ind.repairInitializationActions(randomness)
 
+        if (log.isTraceEnabled){
+            log.trace("{} sql actions are added", addedInsertions?.size?:0)
+        }
+
         // update impact based on added genes
         if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
             individual.updateImpactGeneDueToAddedInitializationGenes(

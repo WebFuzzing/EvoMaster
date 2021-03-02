@@ -1,15 +1,10 @@
 package org.evomaster.e2etests.spring.examples.adaptivehypermutation;
 
 import com.foo.rest.examples.spring.adaptivehypermutation.AHypermutationRestController;
-import io.swagger.parser.OpenAPIParser;
-import io.swagger.v3.oas.models.OpenAPI;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestActionBuilderV3;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.evomaster.e2etests.utils.CIUtils;
-import org.jetbrains.kotlin.com.intellij.util.containers.hash.LinkedHashMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -43,66 +38,7 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     private final static int budget = 20_000;
     private static String statisticsFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/statistics.csv";
     private static String snapshotFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/snapshot.csv";
-//    private static String targetFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/coveredTargetFile.txt";
 
-    @Test
-    public void testDeterminismOfLog(){
-
-        OpenAPI schema = (new OpenAPIParser()).readLocation("swagger-ahm/ahm.json", null, null).getOpenAPI();
-        isDeterminismConsumer( new ArrayList<>(), (args) -> {
-            RestActionBuilderV3.INSTANCE.getModelsFromSwagger(schema, new LinkedHashMap<>());
-        });
-    }
-
-    //NotDeterminism can be identified by AHY-MIO with 3k budget
-    @Test
-    public void testNotDeterminismAHyMIO(){
-        runAndCheckDeterminism(3000, (args)->{
-
-            Solution<RestIndividual> solution = initAndRun(args);
-            int count = countExpectedCoveredTargets(solution, new ArrayList<>());
-            System.out.println(count);
-            System.out.println(defaultSeed);
-        }, 2, true);
-    }
-
-    //NotDeterminism can be identified by MIO with 4k budget
-    @Test
-    public void testNotDeterminismMIO(){
-        List<String> args =  new ArrayList<>(Arrays.asList(
-                "--createTests", "false",
-                "--seed", "42",
-                "--showProgress", "false",
-                "--avoidNonDeterministicLogs", "true",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + 4000,
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--useTimeInFeedbackSampling" , "false"
-        ));
-
-        args.add("--probOfArchiveMutation");
-        args.add("0.0");
-
-        args.add("--weightBasedMutationRate");
-        args.add("false");
-
-        args.add("--adaptiveGeneSelectionMethod");
-        args.add("NONE");
-
-        args.add("--archiveGeneMutation");
-        args.add("NONE");
-
-        args.add("--enableTrackEvaluatedIndividual");
-        args.add("false");
-
-        isDeterminismConsumer(args, (x)->{
-
-            Solution<RestIndividual> solution = initAndRun(args);
-            int count = countExpectedCoveredTargets(solution, new ArrayList<>());
-            System.out.println(count);
-            System.out.println(defaultSeed);
-        }, 2, true);
-    }
 
     @Test
     public void testRunMIO() {
@@ -214,16 +150,7 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
                 }, 10);
     }
 
-    private int countExpectedCoveredTargets(Solution<RestIndividual> solution , List<String> msg){
-        int count = 0;
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B0", count, msg);
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B1", count, msg);
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B2", count, msg);
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B3", count, msg);
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B4", count, msg);
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B5", count, msg);
-        return count;
-    }
+
 
     @BeforeAll
     public static void initClass() throws Exception {
