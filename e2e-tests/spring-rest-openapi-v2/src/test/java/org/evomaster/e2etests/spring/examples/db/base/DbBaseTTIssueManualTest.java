@@ -9,14 +9,11 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DbBaseTTIssueManualTest extends DbBaseTestBase {
@@ -88,7 +85,8 @@ public class DbBaseTTIssueManualTest extends DbBaseTestBase {
 
         //No EQUAL specialization in the first action
         List<StringSpecializationInfoDto> spec0 =  result.additionalInfoList.get(0).stringSpecializations.get(foo);
-        assertFalse(spec0.stream().anyMatch(s -> s.stringSpecialization.equals(StringSpecialization.EQUAL.toString())));
+        assertNull(spec0);
+        //assertFalse(spec0.stream().anyMatch(s -> s.stringSpecialization.equals(StringSpecialization.EQUAL.toString())));
 
 
         // In the second action, we should get 2 EQUAL, for both variables
