@@ -5,6 +5,8 @@ import com.foo.rest.examples.spring.resource.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 import javax.ws.rs.core.MediaType;
 import java.util.*;
 /** automatically created on 2019-08-29 */
@@ -14,7 +16,7 @@ public class RARestAPI {
   @Autowired private RARepository rARepository;
 
   @RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
-  public ResponseEntity createRAEntity(@RequestBody RA rA) {
+  public ResponseEntity createRAEntity(@Valid @RequestBody RA rA) {
     if (rARepository.findById(rA.id).isPresent()) return ResponseEntity.status(400).build();
     RAEntity node = new RAEntity();
     node.setId(rA.id);

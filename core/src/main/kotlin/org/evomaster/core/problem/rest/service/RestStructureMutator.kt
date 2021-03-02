@@ -2,19 +2,17 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class RestStructureMutator : StructureMutator() {
+class RestStructureMutator : AbstractRestStructureMutator() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestStructureMutator::class.java)
@@ -31,11 +29,11 @@ class RestStructureMutator : StructureMutator() {
         }
 
         val ind = individual.individual as? RestIndividual
-                ?: throw IllegalArgumentException("Invalid individual type")
+            ?: throw IllegalArgumentException("Invalid individual type")
 
         val fw = individual.fitness.getViewOfAggregatedFailedWhere()
-                //TODO likely to remove/change once we ll support VIEWs
-                .filter { sampler.canInsertInto(it.key) }
+            //TODO likely to remove/change once we ll support VIEWs
+            .filter { sampler.canInsertInto(it.key) }
 
         if (fw.isEmpty()) {
             return
@@ -43,60 +41,12 @@ class RestStructureMutator : StructureMutator() {
 
         val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
 
-        if(ind.dbInitialization.isEmpty()
-                || ! ind.dbInitialization.any { it.representExistingData }) {
-            //add existing data only once
-            ind.dbInitialization.addAll(0, sampler.existingSqlData)
-
-            //record newly added existing sql data
-            mutatedGenes?.addedExistingDataInitialization?.addAll(0, sampler.existingSqlData)
-
-            log.trace("add {} existingSqlData", sampler.existingSqlData.size)
-        }
-
-        val max = config.maxSqlInitActionsPerMissingData
-
-        var missing = findMissing(fw, ind)
-
-        val addedInsertions = if (mutatedGenes != null) mutableListOf<List<Action>>() else null
-
-        while (!missing.isEmpty()) {
-
-            val first = missing.entries.first()
-
-            val k = randomness.nextInt(1, max)
-
-            (0 until k).forEach {
-                val insertions = sampler.sampleSqlInsertion(first.key, first.value)
-                /*
-                    New action should be before existing one, but still after the
-                    initializing ones
-                 */
-                val position = sampler.existingSqlData.size
-                ind.dbInitialization.addAll(position, insertions)
-
-                //record newly added insertions
-                addedInsertions?.add(0, insertions)
-            }
-
-            /*
-                When we miss A and B, and we add for A, it can still happen that
-                then B is covered as well. For example, if A has a non-null
-                foreign key to B, then generating an action for A would also
-                imply generating an action for B as well.
-                So, we need to recompute "missing" each time
-             */
-            missing = findMissing(fw, ind)
-        }
-
-        if (config.generateSqlDataWithDSE) {
-            //TODO DSE could be plugged in here
-        }
+        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
 
         ind.repairInitializationActions(randomness)
 
         // update impact based on added genes
-        if(mutatedGenes != null && config.enableArchiveGeneSelection()){
+        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
             individual.updateImpactGeneDueToAddedInitializationGenes(
                     mutatedGenes,
                     old,
@@ -105,24 +55,6 @@ class RestStructureMutator : StructureMutator() {
         }
     }
 
-    private fun findMissing(fw: Map<String, Set<String>>, ind: RestIndividual): Map<String, Set<String>> {
-
-        return fw.filter { e ->
-            //shouldn't have already an action adding such SQL data
-            ind.dbInitialization
-                    .filter { ! it.representExistingData }
-                    .none { a ->
-                a.table.name.equals(e.key, ignoreCase = true) && e.value.all { c ->
-                    // either the selected column is already in existing action
-                    (c != "*" && a.selectedColumns.any { x ->
-                        x.name.equals(c, ignoreCase = true)
-                    }) // or we want all, and existing action has all columns
-                            || (c == "*" && a.table.columns.map { it.name.toLowerCase() }
-                            .containsAll(a.selectedColumns.map { it.name.toLowerCase() }))
-                }
-            }
-        }
-    }
 
 
     override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {

@@ -20,12 +20,12 @@ class ArchiveMutationTrackService : TrackService(){
             initTraceableElementCopyFilter(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED)
         }
 
-        if (config.enableTrackEvaluatedIndividual && config.collectImpact()){
+        if (config.enableTrackEvaluatedIndividual && config.isEnabledImpactCollection()){
             initTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT)
             initTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_COPY_IMPACT)
         }
 
-        if (config.collectImpact()){
+        if (config.isEnabledImpactCollection()){
             initTraceableElementCopyFilter(EvaluatedIndividual.ONLY_WITH_COPY_IMPACT)
             initTraceableElementCopyFilter(EvaluatedIndividual.ONLY_WITH_CLONE_IMPACT)
         }
@@ -39,12 +39,12 @@ class ArchiveMutationTrackService : TrackService(){
 
 
     fun getCopyFilterForEvalInd(chosen: EvaluatedIndividual<*>) : TraceableElementCopyFilter {
-        return if (config.enableTrackEvaluatedIndividual && config.collectImpact()){
+        return if (config.enableTrackEvaluatedIndividual && config.isEnabledImpactCollection()){
             if (!exists(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT)){
                 throw IllegalStateException("WITH_TRACK_WITH_CLONE_IMPACT should be registered.")
             }
             getTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT, chosen)
-        }else if(config.collectImpact()){
+        }else if(config.isEnabledImpactCollection()){
             if (!exists(EvaluatedIndividual.ONLY_WITH_CLONE_IMPACT)){
                 throw IllegalStateException("ONLY_WITH_CLONE_IMPACT should be registered.")
             }

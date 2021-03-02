@@ -57,39 +57,10 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             }
         }
 
-        if(actionResults.any { it is RestCallResult && it.getTcpProblem() }){
-            /*
-                If there are socket issues, we avoid trying to compute any coverage.
-                The caller might restart the SUT and try again.
-                Hopefully, this should be just a glitch...
-                TODO if we see this happening often, we need to find a proper solution.
-                For example, we could re-run the test, and see if this one always fails,
-                while others in the archive do pass.
-                It could be handled specially in the archive.
-             */
-            return null
-        }
-
-        val dto = updateFitnessAfterEvaluation(targets, individual, fv)
-                ?: return null
-
-        handleExtra(dto, fv)
-
-        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
-
-        if (config.expandRestIndividuals) {
-            expandIndividual(individual, dto.additionalInfoList, actionResults)
-        }
-
-        if (config.baseTaintAnalysisProbability > 0) {
-            assert(actionResults.size == dto.additionalInfoList.size)
-            //TODO add taint analysis for resource-based solution
-            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
-        }
+        restActionResultHandling(individual, targets, actionResults, fv)?:return null
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
-
 
 
     override fun doInitializingActions(ind: RestIndividual) {

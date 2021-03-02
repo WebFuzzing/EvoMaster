@@ -2,6 +2,9 @@ package com.foo.rest.examples.spring.resource.dto;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+
+import javax.validation.constraints.Pattern;
+
 /** automatically created on 2019-08-29 */
 @ApiModel
 public class RA {
@@ -17,6 +20,7 @@ public class RA {
   public Long id;
 
   @ApiModelProperty(required = true)
+  @Pattern(regexp = "\\s+-\\d+-\\s+")
   public String name;
 
   @ApiModelProperty(required = true)

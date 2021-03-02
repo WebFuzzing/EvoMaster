@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
  * resource-based sampler
  * the sampler handles resource-based rest individual
  */
-abstract class ResourceSampler : AbstractRestSampler() {
+open class ResourceSampler : AbstractRestSampler() {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(ResourceSampler::class.java)
@@ -32,7 +32,8 @@ abstract class ResourceSampler : AbstractRestSampler() {
     private lateinit var dm : ResourceDepManageService
 
     override fun initSqlInfo(infoDto: SutInfoDto) {
-        if (infoDto.sqlSchemaDto != null && (configuration.shouldGenerateSqlData() || config.probOfApplySQLActionToCreateResources > 0.0 )) {
+        //when ResourceDependency is enabled, SQL info is required to identify dependency
+        if (infoDto.sqlSchemaDto != null && (configuration.shouldGenerateSqlData() || config.isEnabledResourceDependency())) {
 
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
             existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
@@ -67,12 +68,15 @@ abstract class ResourceSampler : AbstractRestSampler() {
 
         var left = n
         while(left > 0){
-            var call = sampleRandomResourceAction(0.05, left)
+            val call = sampleRandomResourceAction(0.05, left)
             left -= call.actions.size
             restCalls.add(call)
         }
-        return RestIndividual(
+
+        val ind = RestIndividual(
                 resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
+        ind.repairDBActions(sqlInsertBuilder, randomness)
+        return ind
     }
 
 
@@ -134,7 +138,9 @@ abstract class ResourceSampler : AbstractRestSampler() {
         if (restCalls.isNotEmpty()) {
             val individual =  RestIndividual(restCalls, SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency),
                     trackOperator = if(config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1)
-            individual.repairDBActions(sqlInsertBuilder)
+            individual.repairDBActions(sqlInsertBuilder, randomness)
+            if (withDependency)
+                dm.sampleResourceWithRelatedDbActions(individual, config.maxSqlInitActionsPerResource)
             return individual
         }
         return null
@@ -148,7 +154,6 @@ abstract class ResourceSampler : AbstractRestSampler() {
     private fun sampleOneResource(resourceCalls: MutableList<RestResourceCalls>){
         val key = selectAIndResourceHasNonInd(randomness)
         rm.sampleCall(key, true, resourceCalls, config.maxTestSize)
-
     }
 
     private fun sampleComResource(resourceCalls: MutableList<RestResourceCalls>, withDependency : Boolean){

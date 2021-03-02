@@ -1,9 +1,8 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.problem.rest.RestAction
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -26,6 +25,29 @@ class EvaluatedIndividualBuilder {
             val fitnessVal = FitnessValue(0.0)
 
             val results = emptyList<ActionResult>().toMutableList()
+
+            val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
+            return Triple(format, baseUrlOfSut, ei)
+        }
+
+        fun buildResourceEvaluatedIndividual(
+            dbInitialization: MutableList<DbAction>,
+            groups: MutableList<Pair<MutableList<DbAction>, MutableList<RestAction>>>
+        ): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
+
+            val format = OutputFormat.JAVA_JUNIT_4
+            val baseUrlOfSut = "baseUrlOfSut"
+            val sampleType = SampleType.SMART_RESOURCE
+
+            val calls = groups.map {
+                RestResourceCalls(null, null, it.second, it.first)
+            }.toMutableList()
+
+            val individual = RestIndividual(calls, sampleType, null, dbInitialization)
+
+            val fitnessVal = FitnessValue(0.0)
+
+            val results = (0 until individual.size()).map { RestCallResult().also { it.setTimedout(true) } }
 
             val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
             return Triple(format, baseUrlOfSut, ei)
