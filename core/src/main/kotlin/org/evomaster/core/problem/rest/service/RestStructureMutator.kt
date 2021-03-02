@@ -42,12 +42,9 @@ class RestStructureMutator : AbstractRestStructureMutator() {
         val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
 
         val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
+        log.trace("{} insertions are added at structure mutator", addedInsertions?.flatten()?.size?:0)
 
         ind.repairInitializationActions(randomness)
-
-        if (log.isTraceEnabled){
-            log.trace("{} sql actions are added", addedInsertions?.size?:0)
-        }
 
         // update impact based on added genes
         if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
@@ -71,6 +68,9 @@ class RestStructureMutator : AbstractRestStructureMutator() {
             Or should that be better to handle with DSE?
          */
 
+        if (log.isTraceEnabled){
+            log.trace("Structure will be mutated, yes? {} and the type is {}", individual.canMutateStructure(), individual.sampleType)
+        }
 
         if (!individual.canMutateStructure()) {
             return // nothing to do

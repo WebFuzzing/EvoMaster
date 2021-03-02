@@ -28,7 +28,14 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
         val cookies = getCookies(individual)
 
+        if (log.isTraceEnabled){
+            log.trace("do evaluate the individual, which contains {} dbactions and {} rest actions",
+                individual.seeInitializingActions().size,
+                individual.seeActions().size)
+        }
+
         doInitializingActions(individual)
+
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -41,6 +48,22 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         for (i in 0 until individual.seeActions().size) {
 
             val a = individual.seeActions()[i]
+
+            if (log.isTraceEnabled){
+                log.trace("handle rest action at index {}, and the action is {}, and the genes are",
+                    i,
+                    if (a is RestCallAction)  "${a.verb}:${a.resolvedPath()}" else a.getName(),
+                    a.seeGenes().joinToString(","){
+                        "${it::class.java.simpleName}:${
+                            try {
+                                it.getValueAsRawString()
+                            }catch (e: Exception){
+                                "null"
+                            }
+                        }"
+                    }
+                )
+            }
 
             registerNewAction(a, i)
 
@@ -57,13 +80,28 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             }
         }
 
+        if (log.isTraceEnabled){
+            log.trace("evaluation ends")
+        }
+
         restActionResultHandling(individual, targets, actionResults, fv)?:return null
+
+        if (log.isTraceEnabled){
+            log.trace("restActionResult are handled")
+        }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
 
     override fun doInitializingActions(ind: RestIndividual) {
+
+        if (log.isTraceEnabled){
+            log.trace("do InitializingActions",
+                ind.dbInitialization.joinToString(","){
+                    it.getResolvedName()
+                })
+        }
 
         if (ind.dbInitialization.none { !it.representExistingData }) {
             /*

@@ -288,7 +288,6 @@ class StringGene(
                         )
         ) {
             value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-            log.trace("redo taint analysis, and set value to {}", value)
             tainted = true
             return true
         }

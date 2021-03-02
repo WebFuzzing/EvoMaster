@@ -29,17 +29,17 @@ public class DeterminismTest extends AHypermuationTestBase {
 
     @Disabled("non-determinism may due to SQL execution failure or multiple retries of cleaning H2 database")
     @Test
-    public void testNotDeterminismAHyMIO() throws Throwable {
+    public void testNotDeterminismAHyMIO() {
         runAndCheckDeterminism(3000, (args)->{
             Solution<RestIndividual> solution = initAndRun(args);
             int count = countExpectedCoveredTargets(solution, new ArrayList<>());
             System.out.println(count);
-        }, 2,  false);
+        }, 5,  false);
     }
 
     @Disabled("non-determinism may due to SQL execution failure or multiple retries of cleaning H2 database")
     @Test
-    public void testNotDeterminismMIO() throws Throwable {
+    public void testNotDeterminismMIO() {
         List<String> args =  new ArrayList<>(Arrays.asList(
                 "--createTests", "false",
                 "--seed", "42",

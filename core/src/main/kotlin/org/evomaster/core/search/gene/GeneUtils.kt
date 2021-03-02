@@ -98,6 +98,17 @@ object GeneUtils {
      */
     fun repairGenes(genes: Collection<Gene>) {
 
+        if (log.isTraceEnabled){
+            log.trace("repair genes {}", genes.joinToString(",") {
+                //note that check whether the gene is printable is not enough here
+                try {
+                    it.getValueAsRawString()
+                } catch (e: Exception) {
+                    "null"
+                }
+            })
+        }
+
         for (g in genes) {
             when (g) {
                 is DateGene -> repairDateGene(g)

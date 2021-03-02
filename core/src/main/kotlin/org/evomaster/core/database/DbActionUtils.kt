@@ -66,7 +66,6 @@ object DbActionUtils {
         all.asSequence()
                 .filter { it.isMutable() }
                 .forEach {
-                    log.trace("randomness DB genes {}", it.name)
                     it.randomize(randomness, false, all)
                 }
 
@@ -94,6 +93,10 @@ object DbActionUtils {
                                   randomness: Randomness,
                                   maxNumberOfAttemptsToRepairAnAction: Int = DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS
     ): Boolean {
+
+        if (log.isTraceEnabled){
+            log.trace("before repairBrokenDbActionsList, the actions are {}", actions.joinToString(",") { it.getResolvedName() })
+        }
 
         if (maxNumberOfAttemptsToRepairAnAction < 0) {
             throw IllegalArgumentException("Maximum umber of attempts to fix an action should be non negative but it is: $maxNumberOfAttemptsToRepairAnAction")
@@ -129,7 +132,13 @@ object DbActionUtils {
             actionIndexToRepair = geneToRepairAndActionIndex.second
         }
 
+
         if (geneToRepair == null) {
+
+            if (log.isTraceEnabled){
+                log.trace("nothing is changed, and after repairBrokenDbActionsList, the actions are {}", actions.joinToString(",") { it.getResolvedName() })
+            }
+
             return true
         } else {
             Lazy.assert { actionIndexToRepair >= 0 && actionIndexToRepair < actions.size }
@@ -137,6 +146,11 @@ object DbActionUtils {
             val truncatedListOfActions = actions.subList(0, actionIndexToRepair).toMutableList()
             actions.clear()
             actions.addAll(truncatedListOfActions)
+
+            if (log.isTraceEnabled){
+                log.trace("genes are repaired ,and after repairBrokenDbActionsList, the actions are {}", actions.joinToString(",") { it.getResolvedName() })
+            }
+
             return false
         }
     }
@@ -375,6 +389,10 @@ object DbActionUtils {
             if (found == null){
                 val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf())?.toMutableList()
                 created?:throw IllegalStateException("fail to create insert db action for table (${fk.targetTable})")
+                if (log.isTraceEnabled){
+                    log.trace("insertion which is created at repairFK is {}",
+                        created.joinToString(",") { it.getResolvedName() })
+                }
                 randomizeDbActionGenes(created, randomness)
                 found = created.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
                     ?:throw IllegalStateException("fail to create target table (${fk.targetTable}) for ${fk.name}")

@@ -95,6 +95,9 @@ class RemoteController() : DatabaseExecutor {
 
                     TcpUtils.handleEphemeralPortIssue()
 
+                    /*
+                        [non-determinism-source] Man: this might lead to non-determinism
+                     */
                     lambda.invoke()
                 }
                 TcpUtils.isRefusedConnection(e) -> {
@@ -112,6 +115,10 @@ class RemoteController() : DatabaseExecutor {
                     log.warn("EvoMaster Driver TCP connection is having issues: '${e.cause!!.message}'." +
                             " Let's wait a bit and try again.")
                     Thread.sleep(5_000)
+
+                    /*
+                        [non-determinism-source] Man: this might lead to non-determinism
+                     */
                     lambda.invoke()
                 }
                 else -> throw e
@@ -313,7 +320,11 @@ class RemoteController() : DatabaseExecutor {
                     .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
         }
 
+        /*
+           [non-determinism-source] Man: this might lead to non-determinism
+        */
         if (!wasSuccess(response)) {
+
             LoggingUtil.uniqueWarn(log, "Failed to execute database command. HTTP status: {}.", response.status)
 
             if(response.mediaType == MediaType.TEXT_PLAIN_TYPE){

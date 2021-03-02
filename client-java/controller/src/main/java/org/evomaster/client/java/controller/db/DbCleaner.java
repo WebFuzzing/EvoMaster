@@ -31,7 +31,7 @@ public class DbCleaner {
     }
 
     /*
-        Man: retries might lead to non-determinate logs
+        [non-determinism-source] Man: retries might lead to non-determinate logs
      */
     private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type) {
         /*
