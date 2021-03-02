@@ -9,6 +9,7 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.jetbrains.kotlin.com.intellij.util.containers.hash.LinkedHashMap;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -26,20 +27,17 @@ public class DeterminismTest extends AHypermuationTestBase {
         });
     }
 
-    //NotDeterminism can be identified by AHY-MIO with 3k budget
+    @Disabled("non-determinism may due to SQL execution failure or multiple retries of cleaning H2 database")
     @Test
     public void testNotDeterminismAHyMIO() throws Throwable {
-        handleFlaky(()->{
-            runAndCheckDeterminism(3000, (args)->{
-                Solution<RestIndividual> solution = initAndRun(args);
-                int count = countExpectedCoveredTargets(solution, new ArrayList<>());
-                System.out.println(count);
-            }, 2,  false);
-        });
-
+        runAndCheckDeterminism(3000, (args)->{
+            Solution<RestIndividual> solution = initAndRun(args);
+            int count = countExpectedCoveredTargets(solution, new ArrayList<>());
+            System.out.println(count);
+        }, 2,  false);
     }
 
-    //NotDeterminism can be identified by MIO with 4k budget
+    @Disabled("non-determinism may due to SQL execution failure or multiple retries of cleaning H2 database")
     @Test
     public void testNotDeterminismMIO() throws Throwable {
         List<String> args =  new ArrayList<>(Arrays.asList(
@@ -68,11 +66,9 @@ public class DeterminismTest extends AHypermuationTestBase {
         args.add("--enableTrackEvaluatedIndividual");
         args.add("false");
 
-        handleFlaky(()->{
-            isDeterminismConsumer(args, (x)->{
-                initAndRun(args);
-            }, 2, false);
-        });
+        isDeterminismConsumer(args, (x)->{
+            initAndRun(args);
+        }, 2, false);
     }
 
     @BeforeAll
