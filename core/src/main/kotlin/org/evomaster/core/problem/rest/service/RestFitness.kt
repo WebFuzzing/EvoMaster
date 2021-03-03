@@ -97,7 +97,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
     override fun doInitializingActions(ind: RestIndividual) {
 
         if (log.isTraceEnabled){
-            log.trace("do InitializingActions",
+            log.trace("do {} InitializingActions: {}", ind.dbInitialization.size,
                 ind.dbInitialization.joinToString(","){
                     it.getResolvedName()
                 })

@@ -313,6 +313,8 @@ class RemoteController() : DatabaseExecutor {
 
     override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
 
+        log.trace("Going to execute database command. Command:{} , Insertion.size={}",dto.command,dto.insertions?.size ?: 0)
+
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.DATABASE_COMMAND)

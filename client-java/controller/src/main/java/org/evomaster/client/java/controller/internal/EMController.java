@@ -428,6 +428,9 @@ public class EMController {
         assert trackRequestSource(httpServletRequest);
 
         try {
+
+            SimpleLogger.debug("Received database command");
+
             Connection connection = noKillSwitch(() -> sutController.getConnection());
             if (connection == null) {
                 String msg = "No active database connection";
