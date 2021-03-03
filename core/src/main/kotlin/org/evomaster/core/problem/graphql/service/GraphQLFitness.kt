@@ -214,17 +214,18 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
 
         val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
-                //in GraphQL, there is ALWAYS a return type
+        //in GraphQL, there is ALWAYS a return type
                 ?: throw RuntimeException("ERROR: not specified return type")
+        val selection = GeneUtils.getBooleanSelection(returnGene)
 
         //this might be optional
         val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
         //TODO inputGenes
-        val query = "{${a.methodName}{${returnGene.getValueAsPrintableString(mode=GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}}"
+        val query = "{${a.methodName}${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
 
         val bodyEntity = Entity.json("""
-            {"query" : "$query"}
+            {"query" : "$query","variables":null}
         """.trimIndent())
 
         val invocation = builder.buildPost(bodyEntity)

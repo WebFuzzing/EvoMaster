@@ -112,33 +112,35 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             }.joinToString("&"))
 
         } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE) {
+            if (includedFields.isEmpty()) {
+                buffer.append("$name")
+            } else {
+                buffer.append("{")
 
-            buffer.append("$name{")
-
-            val selection = includedFields.filter {
-                when (it) {
-                    is OptionalGene -> it.isActive
-                    is BooleanGene -> it.value
-                    else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+                val selection = includedFields.filter {
+                    when (it) {
+                        is OptionalGene -> it.isActive
+                        is BooleanGene -> it.value
+                        else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+                    }
                 }
+
+                buffer.append(selection.map {
+                    val s: String = when (it) {
+                        is OptionalGene -> {
+                            it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
+                        }
+                        is BooleanGene -> {
+                            it.name
+                        }
+                        else -> {
+                            throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+                        }
+                    }
+                    s
+                }.joinToString(","))
+                buffer.append("}")
             }
-
-            buffer.append(selection.map {
-                val s : String = when (it) {
-                    is OptionalGene -> {
-                        it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
-                    }
-                    is BooleanGene -> {
-                        it.name
-                    }
-                    else -> {
-                        throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
-                    }
-                }
-                s
-            }.joinToString(","))
-            buffer.append("}")
-
         } else {
             throw IllegalArgumentException("Unrecognized mode: $mode")
         }

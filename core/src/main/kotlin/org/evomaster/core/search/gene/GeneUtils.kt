@@ -406,6 +406,7 @@ object GeneUtils {
             }
             )
             is ArrayGene<*> -> getBooleanSelection(gene.template)
+            is OptionalGene -> getBooleanSelection(gene.gene)
             else -> ObjectGene(gene.name, listOf())
         }
     }
