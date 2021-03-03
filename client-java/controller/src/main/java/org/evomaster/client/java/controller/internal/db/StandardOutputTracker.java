@@ -70,6 +70,7 @@ public class StandardOutputTracker extends ByteArrayOutputStream{
             reset();
 
             getOut().print(data);
+            getOut().flush();
         }
 
         if (data != null) {
