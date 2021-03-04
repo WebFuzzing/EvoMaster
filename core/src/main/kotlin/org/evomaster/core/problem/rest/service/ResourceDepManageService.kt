@@ -858,7 +858,7 @@ class ResourceDepManageService {
                 else if (randomness.nextBoolean(0.2)) dep.targets else mutableListOf()
             }.let { templates ->
                 if (templates.isNotEmpty()) {
-                    rm.getResourceNodeFromCluster(randomness.choose(templates)).sampleAnyRestResourceCalls(randomness, maxTestSize, prioriDependent = true).let { second ->
+                    rm.sampleAnyRestResourceCalls(randomness.choose(templates),maxTestSize).let { second ->
                         return Pair(first, second)
                     }
                 }
@@ -874,7 +874,7 @@ class ResourceDepManageService {
 
         rm.getResourceCluster().keys.filter { !checked.contains(it) }.let { keys ->
             if (keys.isNotEmpty()) {
-                rm.getResourceNodeFromCluster(randomness.choose(keys)).sampleAnyRestResourceCalls(randomness, maxTestSize, prioriDependent = true).let { second ->
+                rm.sampleAnyRestResourceCalls(randomness.choose(keys), maxTestSize, prioriDependent = true).let { second ->
                     return Pair(null, second)
                 }
             }

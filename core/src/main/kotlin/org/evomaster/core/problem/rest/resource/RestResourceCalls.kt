@@ -81,25 +81,26 @@ class RestResourceCalls(
 
 }
 
-enum class ResourceStatus{
+enum class ResourceStatus(val value: Int){
+    CREATED_SQL(2),
     /**
      * DO NOT require resource
      */
-    NOT_EXISTING,
+    NOT_EXISTING(1),
     /**
      * resource is created
      */
-    CREATED,
+    CREATED_REST(0),
     /**
      * require resource, but not enough length for post actions
      */
-    NOT_ENOUGH_LENGTH,
+    NOT_ENOUGH_LENGTH(-1),
     /**
      * require resource, but do not find post action
      */
-    NOT_FOUND,
+    NOT_FOUND(-2),
     /**
      * require resource, but post action requires another resource which cannot be created
      */
-    NOT_FOUND_DEPENDENT
+    NOT_FOUND_DEPENDENT(-3)
 }

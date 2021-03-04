@@ -146,7 +146,7 @@ class TestCaseWriter {
             CookieWriter.handleGettingCookies(format, test.test, lines, baseUrlOfSut)
 
             //SQL actions are generated in between
-            if (test.test.individual is RestIndividual && config.isEnabledSQLInBetween()){
+            if (test.test.individual is RestIndividual && config.isEnabledResourceWithSQL()){
 
                 test.test.evaluatedResourceActions().forEachIndexed { index, c->
                     // db

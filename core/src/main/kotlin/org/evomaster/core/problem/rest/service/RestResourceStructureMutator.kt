@@ -334,7 +334,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.actions.size }
         max += ind.getResourceCalls()[pos].actions.size
-        var new = old.getResourceNode().generateAnother(old, randomness, max)
+        var new = old.getResourceNode().generateAnother(old, randomness, max, sqlInsertBuilder = rm.getSqlBuilder())
         if(new == null){
             new = old.getResourceNode().sampleOneAction(null, randomness)
         }

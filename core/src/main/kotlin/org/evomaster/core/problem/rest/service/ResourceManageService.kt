@@ -10,10 +10,9 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.resource.InitMode
-import org.evomaster.core.problem.rest.resource.ResourceStatus
-import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.problem.rest.resource.RestResourceNode
+import org.evomaster.core.problem.rest.resource.*
+import org.evomaster.core.problem.rest.resource.dependency.CreationChain
+import org.evomaster.core.problem.rest.resource.dependency.PostCreationChain
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.GeneUtils
@@ -31,6 +30,7 @@ class ResourceManageService {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(ResourceManageService::class.java)
+        private const val PROB_EXTRA_PATCH = 0.8
     }
 
     @Inject
@@ -61,6 +61,7 @@ class ResourceManageService {
     private val tables : MutableMap<String, Table> = mutableMapOf()
 
     private var sqlInsertBuilder : SqlInsertBuilder? = null
+
     /**
      * init resource nodes based on [actionCluster] and [sqlInsertBuilder]
      */
@@ -88,7 +89,7 @@ class ResourceManageService {
         }
         resourceCluster.values.forEach{it.initAncestors(getResourceCluster().values.toList())}
 
-        resourceCluster.values.forEach{it.init()}
+        resourceCluster.values.forEach{it.init(config.isEnabledResourceWithSQL() || notEmptyDb())}
 
         if(config.extractSqlExecutionInfo && config.doesApplyNameMatching){
             dm.initRelatedTables(resourceCluster.values.toMutableList(), getTableInfo())
@@ -110,7 +111,7 @@ class ResourceManageService {
         //GET, PATCH, DELETE
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb != HttpVerb.POST && it.verb != HttpVerb.PUT }.forEach {a->
-                val call = ar.sampleOneAction(a.copy() as RestAction, randomness)
+                val call = sampleOneAction(ar, a.copy() as RestAction)
                 call.actions.forEach {a->
                     if(a is RestCallAction) a.auth = auth
                 }
@@ -121,7 +122,7 @@ class ResourceManageService {
         //all POST with one post action
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST}.forEach { a->
-                val call = ar.sampleOneAction(a.copy() as RestAction, randomness)
+                val call = sampleOneAction(ar, a.copy() as RestAction)
                 call.actions.forEach { (it as RestCallAction).auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }
@@ -130,7 +131,7 @@ class ResourceManageService {
         sortedResources
                 .filter { it.actions.find { a -> a is RestCallAction && a.verb == HttpVerb.POST } != null && it.getPostChain()?.actions?.run { this.size > 1 }?:false  }
                 .forEach { ar->
-                    ar.genPostChain(randomness, config.maxTestSize)?.let {call->
+                    genPostChain(ar, config.maxTestSize)?.let {call->
                         call.actions.forEach { (it as RestCallAction).auth = auth }
                         adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
                     }
@@ -139,7 +140,7 @@ class ResourceManageService {
         //PUT
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.PUT }.forEach {a->
-                val call = ar.sampleOneAction(a.copy() as RestAction, randomness)
+                val call = sampleOneAction(ar, a.copy() as RestAction)
                 call.actions.forEach { (it as RestCallAction).auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }
@@ -149,7 +150,7 @@ class ResourceManageService {
         sortedResources.forEach { ar->
             ar.getTemplates().values.filter { t-> RestResourceTemplateHandler.isNotSingleAction(t.template) }
                     .forEach {ct->
-                        val call = ar.sampleRestResourceCalls(ct.template, randomness, config.maxTestSize)
+                        val call = sampleRestResourceCalls(ar, ct.template, config.maxTestSize)
                         call.actions.forEach { if(it is RestCallAction) it.auth = auth }
                         adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
                     }
@@ -164,9 +165,249 @@ class ResourceManageService {
     fun handleAddResource(ind : RestIndividual, maxTestSize : Int) : RestResourceCalls {
         val existingRs = ind.getResourceCalls().map { it.getResourceNodeKey() }
         val candidate = randomness.choose(getResourceCluster().filterNot { r-> existingRs.contains(r.key) }.keys)
-        return resourceCluster[candidate]!!.sampleAnyRestResourceCalls(randomness,maxTestSize )
+        return sampleAnyRestResourceCalls(resourceCluster[candidate]!!,maxTestSize)
     }
 
+    /************************** sampling *********************************/
+
+    fun generateAnother(node: RestResourceNode, calls : RestResourceCalls, maxTestSize: Int) : RestResourceCalls?{
+        val current = calls.template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(calls.actions.filterIsInstance<RestCallAction>())
+        val rest = node.getTemplates().filter { it.value.template != current}
+        if(rest.isEmpty()) return null
+        val selected = randomness.choose(rest.keys)
+        return genCalls(node, selected, maxTestSize)
+
+    }
+
+    fun randomRestResourceCalls(node: RestResourceNode, maxTestSize: Int): RestResourceCalls{
+        val randomTemplates = node.getTemplates().filter { e->
+            e.value.size in 1..maxTestSize
+        }.map { it.key }
+        if(randomTemplates.isEmpty()) return sampleOneAction(node)
+        return genCalls(node, randomness.choose(randomTemplates),  maxTestSize)
+    }
+
+    fun sampleIndResourceCall(node: RestResourceNode, maxTestSize: Int) : RestResourceCalls{
+        node.selectTemplate({ call : CallsTemplate -> call.independent || (call.template == HttpVerb.POST.toString() && call.size > 1)}, randomness)?.let {
+            return genCalls(node, it.template, maxTestSize, false, false)
+        }
+        return genCalls(node, HttpVerb.POST.toString(), maxTestSize)
+    }
+
+
+    fun sampleOneAction(node: RestResourceNode, verb : HttpVerb? = null) : RestResourceCalls{
+        val al = node.sampleOneAvailableAction(verb, randomness)
+        return sampleOneAction(node, al)
+    }
+
+    fun sampleOneAction(node: RestResourceNode, action : RestAction) : RestResourceCalls{
+        val copy = action.copy()
+        node.randomizeActionGenes(copy as RestCallAction, randomness)
+
+        val template = node.getTemplates()[copy.verb.toString()]
+            ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${node.path}")
+        val call =  RestResourceCalls(template, RestResourceInstance(node, copy.parameters), mutableListOf(copy))
+
+        if(action is RestCallAction && action.verb == HttpVerb.POST){
+            node.getCreation { c : CreationChain -> (c is PostCreationChain) }.let {
+                if(it != null && (it as PostCreationChain).actions.size == 1 && it.isComplete()){
+                    call.status = ResourceStatus.CREATED_REST
+                }else{
+                    call.status = ResourceStatus.NOT_FOUND_DEPENDENT
+                }
+            }
+        }else
+            call.status = ResourceStatus.NOT_EXISTING
+
+        return call
+    }
+
+    /**
+     * sample a resource call without a specific template
+     * @param key a key of resource
+     * @param maxTestSize a maximum size of rest actions in this resource calls
+     * @param prioriIndependent specify whether to prioritize independent templates
+     * @param prioriDependent specify whether to prioritize dependent templates
+     */
+    fun sampleAnyRestResourceCalls(key: String, maxTestSize: Int, prioriIndependent : Boolean = false, prioriDependent : Boolean = false): RestResourceCalls{
+        val node = getResourceNodeFromCluster(key)
+        return sampleAnyRestResourceCalls(node, maxTestSize, prioriIndependent, prioriDependent)
+    }
+
+    private fun sampleAnyRestResourceCalls(
+        node: RestResourceNode, maxTestSize: Int, prioriIndependent : Boolean = false, prioriDependent : Boolean = false): RestResourceCalls {
+        if (maxTestSize < 1 && prioriDependent == prioriIndependent && prioriDependent){
+            throw IllegalArgumentException("unaccepted args")
+        }
+        val fchosen = node.getTemplates().filter { it.value.size <= maxTestSize }
+        if(fchosen.isEmpty())
+            return sampleOneAction(node)
+        val chosen =
+            if (prioriDependent)  fchosen.filter { !it.value.independent }
+            else if (prioriIndependent) fchosen.filter { it.value.independent }
+            else fchosen
+        if (chosen.isEmpty())
+            return genCalls(node, randomness.choose(fchosen).template, maxTestSize)
+        return genCalls(node, randomness.choose(chosen).template,maxTestSize)
+    }
+
+
+    private fun sampleRestResourceCalls(node: RestResourceNode, template: String, maxTestSize: Int) : RestResourceCalls{
+        assert(maxTestSize > 0)
+        return genCalls(node, template, maxTestSize)
+    }
+
+    private fun genPostChain(node: RestResourceNode, maxTestSize: Int) : RestResourceCalls?{
+        val template = node.getTemplates()["POST"]?:
+        return null
+
+        return genCalls(node, template.template, maxTestSize)
+    }
+
+    /**
+     * generate ResourceCall for [node]
+     * @param node the resource
+     * @param template specify a template for the resource calls
+     * @param maxTestSize is a maximum number of rest actions in this resource calls
+     * @param checkSize specify whether to check the size constraint
+     * @param createResource specify whether to preprate the resource for the calls
+     * @param additionalPatch specify whether to add additional patch
+     *
+     * TODO update postCreation accordingly
+     */
+    fun genCalls(
+        node: RestResourceNode,
+        template : String,
+        maxTestSize : Int = 1,
+        checkSize : Boolean = true,
+        createResource : Boolean = true,
+        additionalPatch : Boolean = true
+    ) : RestResourceCalls{
+        if(!node.getTemplates().containsKey(template))
+            throw IllegalArgumentException("$template does not exist in ${node.path}")
+
+        val ats = RestResourceTemplateHandler.parseTemplate(template)
+        val callsTemplate = node.getTemplates().getValue(template)
+
+        val creationNeeded = createResource && ats[0] == HttpVerb.POST
+
+        if (creationNeeded){
+            if (config.probOfApplySQLActionToCreateResources == 0.0 && node.hasPostCreation())
+                throw IllegalStateException("there does not exist any POST/PUT to create actions and the SQL creation is alo disabled")
+        }
+
+        val options = mutableListOf(
+            if(node.hasPostCreation()) 1 else 0,
+            if(node.getSqlCreationPoints().isNotEmpty()) 2 else 0
+        ).filter { it > 0 }
+
+        val withSql = randomness.choose(options) == 2
+
+        if (!withSql) return generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, checkSize, createResource, additionalPatch)
+
+        TODO()
+    }
+
+    private fun generateRestActionsForCalls(
+        node: RestResourceNode,
+        ats : Array<HttpVerb>,
+        callsTemplate: CallsTemplate,
+        maxTestSize : Int = 1,
+        checkSize : Boolean = true,
+        createResource : Boolean = true,
+        additionalPatch : Boolean = true,
+        checkPostChain : Boolean = true
+    ) : RestResourceCalls{
+
+        //val ats = RestResourceTemplateHandler.parseTemplate(template)
+
+        val result : MutableList<RestAction> = mutableListOf()
+        var resource : RestResourceInstance? = null
+
+        val skipBind : MutableList<RestAction> = mutableListOf()
+
+        var isCreated = ResourceStatus.NOT_EXISTING
+
+        if(createResource && ats[0] == HttpVerb.POST){
+            val nonPostIndex = ats.indexOfFirst { it != HttpVerb.POST }
+            val ac = node.getActionByHttpVerb( if(nonPostIndex==-1) HttpVerb.POST else ats[nonPostIndex])!!.copy() as RestCallAction
+            node.randomizeActionGenes(ac, randomness)
+            result.add(ac)
+
+            isCreated = node.createResourcesFor(ac, result, maxTestSize , randomness, checkSize && (!callsTemplate.sizeAssured))
+
+            if(checkPostChain && !callsTemplate.sizeAssured){
+                node.getPostChain()?:throw IllegalStateException("fail to init post creation")
+                val pair = node.checkDifferenceOrInit(postactions = (if(ac.verb == HttpVerb.POST) result else result.subList(0, result.size - 1)).map { (it as RestCallAction).copy() as RestCallAction}.toMutableList())
+                if (!pair.first) {
+                    RestResourceNode.log.warn("the post action are not matched with initialized post creation.")
+                }
+                else {
+                    node.updateTemplateSize()
+                }
+            }
+
+            val lastPost = result.last()
+            resource = RestResourceInstance(node, (lastPost as RestCallAction).parameters)
+            skipBind.addAll(result)
+            if(nonPostIndex == -1){
+                (1 until ats.size).forEach{ _ ->
+                    result.add(lastPost.copy().also {
+                        skipBind.add(it as RestAction)
+                    } as RestAction)
+                }
+            }else{
+                if(nonPostIndex != ats.size -1){
+                    (nonPostIndex + 1 until ats.size).forEach {
+                        val action = node.getActionByHttpVerb(ats[it])!!.copy() as RestCallAction
+                        node.randomizeActionGenes(action, randomness)
+                        result.add(action)
+                    }
+                }
+            }
+
+        }else{
+            ats.forEach {at->
+                val ac = (node.getActionByHttpVerb(at)?:throw IllegalArgumentException("cannot find $at verb in ${
+                    node.actions.joinToString(
+                        ","
+                    ) { a -> a.getName() }
+                }")).copy() as RestCallAction
+                node.randomizeActionGenes(ac, randomness)
+                result.add(ac)
+            }
+
+            if(resource == null)
+                resource = node.createResourceInstance(result, randomness, skipBind)
+            if(checkPostChain){
+                callsTemplate.sizeAssured = (result.size  == callsTemplate.size)
+            }
+        }
+
+        if(result.size > 1)
+            result.filterNot { ac -> skipBind.contains(ac) }.forEach { ac ->
+                if((ac as RestCallAction).parameters.isNotEmpty()){
+                    ac.bindToSamePathResolution(ac.path, resource.params)
+                }
+            }
+
+        assert(result.isNotEmpty())
+
+        if(additionalPatch
+            && randomness.nextBoolean(PROB_EXTRA_PATCH)
+            &&!callsTemplate.independent
+            && callsTemplate.template.contains(HttpVerb.PATCH.toString()) && result.size + 1 <= maxTestSize){
+
+            val index = result.indexOfFirst { (it is RestCallAction) && it.verb == HttpVerb.PATCH }
+            val copy = result.get(index).copy() as RestAction
+            result.add(index, copy)
+        }
+        val calls = RestResourceCalls(callsTemplate, resource, result)
+
+        calls.status = isCreated
+
+        return calls
+    }
 
     /**
      * sample an resource call which refers to [resourceKey]
@@ -180,8 +421,8 @@ class ResourceManageService {
         val ar = resourceCluster[resourceKey]
                 ?: throw IllegalArgumentException("resource path $resourceKey does not exist!")
 
-        if(!doesCreateResource ){
-            val call = ar.sampleIndResourceCall(randomness,size)
+        if(!doesCreateResource){
+            val call = sampleIndResourceCall(ar,size)
             calls.add(call)
             //TODO shall we control the probability to sample GET with an existing resource.
             if(hasDBHandler() && call.template?.template == HttpVerb.GET.toString() && randomness.nextBoolean(0.5)){
@@ -208,11 +449,11 @@ class ResourceManageService {
             }
         } else candidateForInsertion
 
-        val call = ar.genCalls(candidate, randomness, size,true, true)
+        val call = genCalls(ar, candidate, size,true, true)
         calls.add(call)
 
         if(hasDBHandler()){
-            if(call.status != ResourceStatus.CREATED
+            if(call.status != ResourceStatus.CREATED_REST
                     || dm.checkIfDeriveTable(call)
                     || candidateForInsertion != null
             ){
@@ -241,7 +482,7 @@ class ResourceManageService {
 
         relatedTables.forEach { tableName->
             if(forceInsert){
-                generateInserSql(tableName, dbActions)
+                generateInsertSql(tableName, dbActions)
             }else if(forceSelect){
                 if(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty()) generateSelectSql(tableName, dbActions)
                 else failToGenDB = true
@@ -249,14 +490,14 @@ class ResourceManageService {
                 if(getDataInDb(tableName)!= null ){
                     val size = getDataInDb(tableName)!!.size
                     when{
-                        size < config.minRowOfTable -> generateInserSql(tableName, dbActions).apply {
+                        size < config.minRowOfTable -> generateInsertSql(tableName, dbActions).apply {
                             failToGenDB = failToGenDB || !this
                         }
                         else ->{
                             if(randomness.nextBoolean(config.probOfSelectFromDatabase)){
                                 generateSelectSql(tableName, dbActions)
                             }else{
-                                generateInserSql(tableName, dbActions).apply {
+                                generateInsertSql(tableName, dbActions).apply {
                                     failToGenDB = failToGenDB || !this
                                 }
                             }
@@ -320,20 +561,8 @@ class ResourceManageService {
 
         if(dbActions.isNotEmpty()){
 
-//            (0 until (dbActions.size - 1)).forEach { i ->
-//                (i+1 until dbActions.size).forEach { j ->
-//                    dbActions[i].table.foreignKeys.any { f->f.targetTable == dbActions[j].table.name}.let {
-//                        if(it){
-//                            val idb = dbActions[i]
-//                            dbActions[i] = dbActions[j]
-//                            dbActions[j] = idb
-//                        }
-//                    }
-//                }
-//            }
             DbActionUtils.randomizeDbActionGenes(dbActions, randomness)
             val removed = repairDbActionsForResource(dbActions)
-
             //shrinkDbActions(dbActions)
 
             /*
@@ -425,7 +654,7 @@ class ResourceManageService {
         dbActions.add(selectDbAction)
     }
 
-    private fun generateInserSql(tableName : String, dbActions: MutableList<DbAction>) : Boolean{
+    private fun generateInsertSql(tableName : String, dbActions: MutableList<DbAction>) : Boolean{
         val insertDbAction =
                 sqlInsertBuilder!!
                         .createSqlInsertionAction(tableName, forceAll = true)
@@ -466,6 +695,8 @@ class ResourceManageService {
         return sqlInsertBuilder
     }
 
+    fun notEmptyDb() = getSqlBuilder() != null && getSqlBuilder()!!.anyTable()
+
     private fun getDataInDb(tableName: String) : MutableList<DataRowDto>?{
         val found = dataInDB.filterKeys { k-> k.equals(tableName, ignoreCase = true) }.keys
         if (found.isEmpty()) return null
@@ -497,8 +728,6 @@ class ResourceManageService {
         sorted.toMutableList().removeIf { t->
             sorted.any { s-> s!= t && s.foreignKeys.any { fk-> fk.targetTable.equals(t.name, ignoreCase = true) } }
         }
-
         return sorted.map { it.name }
-
     }
 }

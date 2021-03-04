@@ -76,7 +76,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     /*
                     update creation of resources regarding response status
                      */
-                    if (a.verb.run { this == HttpVerb.POST || this == HttpVerb.PUT} && call.status == ResourceStatus.CREATED && (actionResults[indexOfAction] as RestCallResult).getStatusCode().run { this != 201 || this != 200 }){
+                    if (a.verb.run { this == HttpVerb.POST || this == HttpVerb.PUT} && call.status == ResourceStatus.CREATED_REST && (actionResults[indexOfAction] as RestCallResult).getStatusCode().run { this != 201 || this != 200 }){
                         call.getResourceNode().confirmFailureCreationByPost(call)
                     }
 

@@ -1364,6 +1364,6 @@ class EMConfig {
     /**
      * @return whether to generate SQL between rest actions
      */
-    fun isEnabledSQLInBetween() = isEnabledResourceDependency() && heuristicsForSQL && probOfApplySQLActionToCreateResources > 0.0
+    fun isEnabledResourceWithSQL() = isEnabledResourceDependency() && heuristicsForSQL && probOfApplySQLActionToCreateResources > 0.0
 
 }

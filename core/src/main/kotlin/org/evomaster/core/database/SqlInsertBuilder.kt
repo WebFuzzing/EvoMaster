@@ -528,6 +528,8 @@ class SqlInsertBuilder(
     }
 
 
+    fun anyTable() = tables.isNotEmpty()
+
 
     /**
      * get existing pks in db
@@ -556,8 +558,6 @@ class SqlInsertBuilder(
                     ?: continue
             dataInDB.getOrPut(table.name) { result.rows.map { it }.toMutableList() }
         }
-
-
     }
 
     /**
@@ -569,7 +569,5 @@ class SqlInsertBuilder(
             tablesMap.clear()
             tablesMap.putAll(tables)
         }
-
-
     }
 }
