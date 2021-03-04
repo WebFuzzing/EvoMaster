@@ -1,12 +1,15 @@
 package org.evomaster.core.problem.graphql.service
 
 import org.evomaster.client.java.controller.api.EMTestUtils
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
+import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -108,6 +111,10 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val gqlcr = GraphQlCallResult()
         actionResults.add(gqlcr)
 
+        /*
+            TODO quite a lot of code here is the same as in Rest... need to refactor out into WsHttp
+         */
+
         val response = try {
             createInvocation(action, cookies).invoke()
         } catch (e: ProcessingException) {
@@ -166,9 +173,47 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         }
 
+        gqlcr.setStatusCode(response.status)
 
-        //TODO
-        return false
+        handlePossibleConnectionClose(response)
+
+        try {
+            if (response.hasEntity()) {
+                if (response.mediaType != null) {
+                    gqlcr.setBodyType(response.mediaType)
+                }
+                /*
+                  Note: here we are always assuming a JSON, so reading as string should be fine
+                 */
+                val body = response.readEntity(String::class.java)
+
+                if (body.length < configuration.maxResponseByteSize) {
+                    gqlcr.setBody(body)
+                } else {
+                    LoggingUtil.uniqueWarn(log,
+                            "A very large response body was retrieved from the action '${action.methodName}'." +
+                                    " If that was expected, increase the 'maxResponseByteSize' threshold" +
+                                    " in the configurations.")
+                    gqlcr.setTooLargeBody(true)
+                }
+            }
+        } catch (e: Exception) {
+
+            if(e is ProcessingException && TcpUtils.isTimeout(e)){
+                gqlcr.setTimedout(true)
+                statistics.reportTimeout()
+                return false
+            } else {
+               log.warn("Failed to parse HTTP response: ${e.message}")
+            }
+        }
+
+        if (response.status == 401 && action.auth !is NoAuth) {
+            //this would likely be a misconfiguration in the SUT controller
+            log.warn("Got 401 although having auth for '${action.auth.name}'")
+        }
+
+        return true
     }
 
 

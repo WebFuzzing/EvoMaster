@@ -404,17 +404,28 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
-            val writer = setupPartialOracles(injector, config)
+            if(config.problemType == EMConfig.ProblemType.REST) {
 
-            val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
+                val writer = setupPartialOracles(injector, config)
 
-            solution.clusteringTime = splitResult.clusteringTime.toInt()
-            splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
+                val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
-            if(config.executiveSummary){
-                writeExecSummary(injector, controllerInfoDto, splitResult)
-                //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
+                solution.clusteringTime = splitResult.clusteringTime.toInt()
+                splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
+                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
+
+                if (config.executiveSummary) {
+                    writeExecSummary(injector, controllerInfoDto, splitResult)
+                    //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
+                }
+            } else {
+                /*
+                    TODO refactor all the PartialOracle stuff that is meant for only REST
+                 */
+
+                val writer = injector.getInstance(TestSuiteWriter::class.java)
+
+                writer.writeTests(solution, controllerInfoDto?.fullName)
             }
         }
 
