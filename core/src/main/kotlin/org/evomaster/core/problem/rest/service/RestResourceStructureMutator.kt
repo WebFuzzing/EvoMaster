@@ -334,14 +334,14 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.actions.size }
         max += ind.getResourceCalls()[pos].actions.size
-        var new = old.getResourceNode().generateAnother(old, randomness, max, sqlInsertBuilder = rm.getSqlBuilder())
+        var new = rm.generateAnother(old.getResourceNode(), old, max)
         if(new == null){
-            new = old.getResourceNode().sampleOneAction(null, randomness)
+            new = rm.sampleOneAction(old.getResourceNode())
         }
         maintainAuth(auth, new)
 
         mutatedGenes?.removedGene?.addAll(ind.getResourceCalls()[pos].actions.flatMap { it.seeGenes() })
-        mutatedGenes?.addedGenes?.addAll(new!!.actions.flatMap { it.seeGenes() })
+        mutatedGenes?.addedGenes?.addAll(new.actions.flatMap { it.seeGenes() })
         mutatedGenes?.mutatedPosition?.add(pos)
 
         ind.replaceResourceCall(pos, new)
