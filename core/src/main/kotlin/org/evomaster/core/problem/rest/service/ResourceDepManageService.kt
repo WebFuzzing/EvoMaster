@@ -990,8 +990,8 @@ class ResourceDepManageService {
             val left = rm.getTableInfo().keys.filterNot {
                 ind.dbInitialization.any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
-            if (left.isEmpty() && randomness.nextBoolean()) randomness.choose(rm.getTableInfo().keys)
-            else randomness.choose(left)
+            if (left.isNotEmpty() && randomness.nextBoolean()) randomness.choose(left)
+            else randomness.choose(rm.getTableInfo().keys)
         }
         return createDbActions(other, num)
     }
