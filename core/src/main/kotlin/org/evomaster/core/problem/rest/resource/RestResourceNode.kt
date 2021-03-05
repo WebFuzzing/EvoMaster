@@ -644,7 +644,10 @@ class RestResourceNode(
 
         when(actions[0]){
             HttpVerb.POST->{
-                return paramsInfo.values.filter { it.missing }
+                val params = paramsInfo.values.filter { it.missing }
+                if (params.isNotEmpty()) return params
+                //for POST-POST
+                return  paramsInfo.values.toList()
             }
             HttpVerb.PATCH, HttpVerb.PUT->{
                 return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) && (it.referParam is PathParam || it.name.toLowerCase().contains("id"))}

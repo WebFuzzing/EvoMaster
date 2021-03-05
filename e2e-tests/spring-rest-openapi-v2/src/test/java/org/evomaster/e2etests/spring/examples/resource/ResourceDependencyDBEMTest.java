@@ -8,8 +8,6 @@ import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -25,7 +23,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ResourceEM",
                 "org.db.resource.ResourceEM",
-                50,
+                10,
                 true,
                 (args) -> {
                     // disable taint analysis
@@ -55,14 +53,6 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     args.add("--maxTestSize");
                     args.add("4");
 
-                    args.add("--exportDependencies");
-                    args.add("true");
-
-                    String dependencies = "target/dependencyInfo/dependencies.csv";
-
-                    args.add("--dependencyFile");
-                    args.add(dependencies);
-
                     args.add("--resourceSampleStrategy");
                     args.add("ConArchive");
 
@@ -84,8 +74,6 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
-
-                    assert(Files.exists(Paths.get(dependencies)));
 
                     boolean anyDBExecution = solution.getIndividuals().stream().anyMatch(
                             s -> s.getFitness().isAnyDatabaseExecutionInfo()

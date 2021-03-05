@@ -14,10 +14,9 @@ object DbActionTransformer {
     /**
      * @param sqlIdMap is a map from Insertion Id to generated Id in database
      */
-    fun transform(insertions: List<DbAction>, sqlIdMap : Map<Long, Long> = mapOf()) : DatabaseCommandDto {
+    fun transform(insertions: List<DbAction>, sqlIdMap : Map<Long, Long> = mapOf(), previous: MutableList<Gene> = mutableListOf()) : DatabaseCommandDto {
 
         val list = mutableListOf<InsertionDto>()
-        val previous = mutableListOf<Gene>()
 
         for (i in 0 until insertions.size) {
 

@@ -10,6 +10,7 @@ import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.gene.Gene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -42,9 +43,10 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             This map is used to record the key mapping in SQL, e.g., PK, FK
          */
         val sqlIdMap = mutableMapOf<Long, Long>()
+        val previousDbGenes = mutableListOf<Gene>()
 
         //whether there exist some SQL execution failure
-        var failureBefore = doDbCalls(individual.dbInitialization, sqlIdMap, false)
+        var failureBefore = doDbCalls(individual.dbInitialization, sqlIdMap, false, previousDbGenes)
 
         val cookies = getCookies(individual)
 
@@ -60,7 +62,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            val result = doDbCalls(call.dbActions, sqlIdMap, failureBefore)
+            val result = doDbCalls(call.dbActions, sqlIdMap, failureBefore, previousDbGenes)
 
             failureBefore = failureBefore || result
 
@@ -119,7 +121,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
      * @param allSuccessBefore indicates whether all SQL before this [allDbActions] are executed successfully
      * @return whether [allDbActions] execute successfully
      */
-    private fun doDbCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>, allSuccessBefore : Boolean) : Boolean {
+    private fun doDbCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>, allSuccessBefore : Boolean, previous: MutableList<Gene>) : Boolean {
 
         if (allDbActions.isEmpty()) {
             return true
@@ -136,7 +138,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         val dto = try {
-            DbActionTransformer.transform(allDbActions, sqlIdMap)
+            DbActionTransformer.transform(allDbActions, sqlIdMap, previous)
         }catch (e : IllegalArgumentException){
             // the failure might be due to previous failure
             if (!allSuccessBefore)

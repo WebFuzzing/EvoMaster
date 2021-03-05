@@ -1029,15 +1029,9 @@ class EMConfig {
     var maxSqlInitActionsPerResource = 0
 
     @Experimental
-    @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
-            "In other word, if the number is less than the specified, insertion is always applied.")
-    @Min(0.0)
-    var minRowOfTable = 10
-
-    @Experimental
     @Cfg("Specify a probability that enables selection (i.e., SELECT sql) of data from database instead of insertion (i.e., INSERT sql) for preparing resources for REST actions")
     @Probability(false)
-    var probOfSelectFromDatabase = 0.1
+    var probOfSelectFromDatabase = 0.0
 
     @Experimental
     @Cfg("Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table")

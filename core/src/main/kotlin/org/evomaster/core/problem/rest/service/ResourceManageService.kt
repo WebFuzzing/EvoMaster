@@ -89,7 +89,7 @@ class ResourceManageService {
         }
         resourceCluster.values.forEach{it.initAncestors(getResourceCluster().values.toList())}
 
-        resourceCluster.values.forEach{it.init(config.isEnabledResourceWithSQL() || notEmptyDb())}
+        resourceCluster.values.forEach{it.init(config.isEnabledResourceWithSQL() && notEmptyDb())}
 
         if(config.extractSqlExecutionInfo && config.doesApplyNameMatching){
             dm.initRelatedTables(resourceCluster.values.toMutableList(), getTableInfo())
@@ -313,7 +313,7 @@ class ResourceManageService {
                 checkSize, createResource, additionalPatch, false)  //remove post from verbs
         }
 
-        if (!withSql && (call.status == ResourceStatus.CREATED_REST || node.getSqlCreationPoints().isEmpty())) return call
+        if (!config.isEnabledResourceWithSQL() || !withSql && (call.status == ResourceStatus.CREATED_REST || node.getSqlCreationPoints().isEmpty())) return call
 
         val created = handleDbActionForCall( call, forceInsert, false)
         if(!created){
@@ -469,37 +469,20 @@ class ResourceManageService {
     private fun generateDbActionForCall(forceInsert: Boolean, forceSelect: Boolean, dbActions: MutableList<DbAction>, relatedTables : List<String>) : Boolean{
         var failToGenDB = false
 
-        snapshotDB()
-
         relatedTables.forEach { tableName->
-            if(forceInsert){
-                generateInsertSql(tableName, dbActions).apply {
-                    failToGenDB = failToGenDB || !this
-                }
-            }else if(forceSelect){
-                if(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty())
+            var added = false
+            val select = forceSelect || randomness.nextBoolean(config.probOfSelectFromDatabase)
+            if (!forceInsert && select){
+                if(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty()){
+                    added = true
                     generateSelectSql(tableName, dbActions)
-                else failToGenDB = true
-            }else{
-                if(getDataInDb(tableName)!= null ){
-                    val size = getDataInDb(tableName)!!.size
-                    when{
-                        size < config.minRowOfTable -> generateInsertSql(tableName, dbActions).apply {
-                            failToGenDB = failToGenDB || !this
-                        }
-                        else ->{
-                            if(randomness.nextBoolean(config.probOfSelectFromDatabase)){
-                                generateSelectSql(tableName, dbActions)
-                            }else{
-                                generateInsertSql(tableName, dbActions).apply {
-                                    failToGenDB = failToGenDB || !this
-                                }
-                            }
-                        }
-                    }
-                }else
-                    failToGenDB = true
+                }
             }
+
+            if (!added){
+                added = generateInsertSql(tableName, dbActions)
+            }
+            failToGenDB = failToGenDB || !added
         }
 
         return failToGenDB
@@ -689,6 +672,7 @@ class ResourceManageService {
     fun notEmptyDb() = getSqlBuilder() != null && getSqlBuilder()!!.anyTable()
 
     private fun getDataInDb(tableName: String) : MutableList<DataRowDto>?{
+        if (dataInDB.isEmpty()) snapshotDB()
         val found = dataInDB.filterKeys { k-> k.equals(tableName, ignoreCase = true) }.keys
         if (found.isEmpty()) return null
         assert(found.size == 1)
