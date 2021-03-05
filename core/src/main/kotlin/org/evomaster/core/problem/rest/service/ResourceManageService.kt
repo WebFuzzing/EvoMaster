@@ -291,19 +291,16 @@ class ResourceManageService {
 
         val creationNeeded = createResource && ats[0] == HttpVerb.POST
 
-        if (creationNeeded){
-            if (config.probOfApplySQLActionToCreateResources == 0.0 && node.hasPostCreation())
-                throw IllegalStateException("there does not exist any POST/PUT to create actions and the SQL creation is alo disabled")
-        }
+        if (!creationNeeded)
+            return generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, checkSize, createResource, additionalPatch)
 
-        val options = mutableListOf(
-            if(node.hasPostCreation()) 1 else 0,
-            if(node.getSqlCreationPoints().isNotEmpty()) 2 else 0
-        ).filter { it > 0 }
+        if (config.probOfApplySQLActionToCreateResources == 0.0 && !node.hasPostCreation())
+            throw IllegalStateException("for resource ${node.path}, there does not exist any POST/PUT to create actions and the SQL creation is alo disabled")
 
-        val withSql = randomness.choose(options) == 2
+        val withSql = !node.hasPostCreation() || randomness.nextBoolean(config.probOfApplySQLActionToCreateResources)
 
-        if (!withSql) return generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, checkSize, createResource, additionalPatch)
+        if (!withSql)
+            return generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, checkSize, createResource, additionalPatch)
 
         TODO()
     }
