@@ -121,7 +121,7 @@ class ArchiveGeneMutator{
     }
 
     private fun<T: Number> sampleValue(history : List<Pair<T, Int>>, value: T, valueUpdate: MutationBoundaryUpdate<T>, start: Int, end: Int) : T {
-        (0 until history.size).forEach {i->
+        (history.indices).forEach { i->
             valueUpdate.updateOrRestBoundary(
                     index = i,
                     current = history[i].first,
@@ -150,7 +150,7 @@ class ArchiveGeneMutator{
 
         val lenMutationUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, gene.minLength.toLong(), gene.maxLength.toLong())
         val charsMutationUpdate = (0 until gene.value.length).map { createCharMutationUpdate() }
-        (0 until history.size).forEach { i ->
+        (history.indices).forEach { i ->
             val c = ( history[i].first as? StringGene)?.value ?: throw IllegalStateException("invalid extracted history element")
             val better = history[i].second.result?.value?:-2
 

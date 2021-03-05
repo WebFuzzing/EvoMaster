@@ -151,7 +151,7 @@ class ArchiveGeneSelector {
             EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.RATIO -> values.map { it.sum() + 1.0 }.toTypedArray()
             EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> {
                 val weights = Array(impacts.size){Array(properties.size){0.0}}
-                (0 until properties.size).map {pi->
+                (properties.indices).map { pi->
                     values.mapIndexed { index, list -> Pair(index, list[pi]) }.sortedBy { it.second }.forEachIndexed { index, pair ->
                         weights[pair.first][pi] = index + 1.0
                     }

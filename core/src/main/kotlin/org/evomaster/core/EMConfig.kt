@@ -1119,11 +1119,6 @@ class EMConfig {
     var specializeSQLGeneSelection = true
 
     @Experimental
-    @Cfg("Specify a maximum mutation rate when enabling 'adaptiveMutationRate'")
-    @PercentageAsProbability(false)
-    var maxMutationRate = 0.9
-
-    @Experimental
     @Cfg("Specify a starting percentage of genes of an individual to mutate")
     @PercentageAsProbability(false)
     var startingPerOfGenesToMutate = 0.5

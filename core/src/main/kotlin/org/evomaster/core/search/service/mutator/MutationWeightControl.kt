@@ -31,11 +31,15 @@ class MutationWeightControl {
     @Inject
     lateinit var archiveMutator : ArchiveGeneSelector
 
-    companion object{
-        private val log: Logger = LoggerFactory.getLogger(MutationWeightControl::class.java)
-    }
-
     /**
+     * @param candidateGenesToMutate a list of candidates to mutate
+     * @param adaptiveWeight specify whether to employ adaptive weights (i.e., impact) for gene selection
+     * @param targets specify a set of targets for this mutation
+     * @param impacts specify a set of impacts info of [candidateGenesToMutate]
+     * @param individual is the individual to be mutated
+     * @param evi is the evaluated individual which will be used to extract fitness info
+     * @param forceNotEmpty specify whether it is required to return a value
+     * @param numOfGroup is a number of group
      * @return a subset of [candidateGenesToMutate] to mutate with weight-based solution.
      */
     fun selectSubGene(

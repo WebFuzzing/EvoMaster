@@ -97,8 +97,8 @@ abstract class Gene(var name: String) {
      *   @param mwc mutation weight control
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
      *          we need to refer to them
-     *   @param interalGeneSelectionStrategy a strategy to select internal genes to mutate
-     *   @param enableAdaptiveMutation whether apply adaptive gene mutation, e.g., archive-based gene mutation
+     *   @param internalGeneSelectionStrategy a strategy to select internal genes to mutate
+     *   @param enableAdaptiveGeneMutation whether apply adaptive gene mutation, e.g., archive-based gene mutation
      *   @param additionalGeneMutationInfo contains additional info for gene mutation
      */
     fun standardMutation(
@@ -178,7 +178,10 @@ abstract class Gene(var name: String) {
             if (it.isEmpty())
                 throw IllegalStateException("with $selectionStrategy strategy and ${internalGenes.size} candidates, none is selected to mutate")
             if (it.any { a -> a.second?.impact?.validate(a.first) == false})
-                throw IllegalStateException("mismatched impact for gene ${it.filter { a -> a.second?.impact?.validate(a.first) == false}.map { "${it.first}:${it.second}" }.joinToString(",")}")
+                throw IllegalStateException("mismatched impact for gene ${
+                    it.filter { a -> a.second?.impact?.validate(a.first) == false }
+                        .joinToString(",") { i-> "${i.first}:${i.second}" }
+                }")
         }
     }
 

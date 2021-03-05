@@ -133,6 +133,9 @@ class ArrayGene<T>(
         return if (randomness.nextBoolean(p)) listOf() else mutable
     }
 
+    /**
+     * hypermutation is not applied on internal genes of ArrayGene
+     */
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         /*
             element is dynamically modified, then we do not collect impacts for it now.
