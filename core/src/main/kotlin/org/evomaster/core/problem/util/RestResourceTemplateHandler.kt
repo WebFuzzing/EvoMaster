@@ -72,7 +72,7 @@ class RestResourceTemplateHandler{
             }
         }
 
-        private fun formatTemplate(verbs : Array<HttpVerb>) : String = verbs.joinToString(SeparatorTemplate)
+        fun formatTemplate(verbs : Array<HttpVerb>) : String = verbs.joinToString(SeparatorTemplate)
 
         private fun formatTemplate(stringVerbs : Array<String>) : String = stringVerbs.joinToString(SeparatorTemplate)
 

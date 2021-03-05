@@ -60,7 +60,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            failureBefore = failureBefore || doDbCalls(call.dbActions, sqlIdMap, failureBefore)
+            val result = doDbCalls(call.dbActions, sqlIdMap, failureBefore)
+
+            failureBefore = failureBefore || result
 
             var terminated = false
 

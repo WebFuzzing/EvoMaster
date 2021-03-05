@@ -6,7 +6,6 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -20,14 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ResourceDependencyDBEMTest extends ResourceTestBase {
 
-    @Disabled("disable it for the moment, I am fixing the problem")
     @Test
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "ResourceEM",
                 "org.db.resource.ResourceEM",
-                1_000,
+                50,
                 true,
                 (args) -> {
                     // disable taint analysis
@@ -95,7 +93,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     assertTrue(anyDBExecution);
 
                     boolean ok = solution.getIndividuals().stream().anyMatch(
-                            s -> hasAtLeastOneSequence(s, new HttpVerb[]{HttpVerb.GET,}, new int[]{200}, new String[]{"/api/rd/{rdId}"})
+                            s -> hasAtLeastOneSequence(s, new HttpVerb[]{HttpVerb.GET}, new int[]{200}, new String[]{"/api/rd/{rdId}"})
                     );
 
                     assertTrue(ok);

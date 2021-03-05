@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeAll;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * created by manzh on 2019-08-12
@@ -25,8 +25,8 @@ public class ResourceTestBase extends SpringTestBase {
                                             HttpVerb[] verbs,
                                             int[] expectedStatusCodes,
                                             String[] paths) {
-        assertTrue(verbs.length == expectedStatusCodes.length);
-        assertTrue(verbs.length == paths.length);
+        assertEquals(expectedStatusCodes.length, verbs.length);
+        assertEquals(paths.length, verbs.length);
 
         boolean[] matched = new boolean[verbs.length];
         Arrays.fill(matched, false);

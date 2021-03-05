@@ -187,7 +187,7 @@ class ResourceManageService {
         return genCalls(node, randomness.choose(randomTemplates),  maxTestSize)
     }
 
-    fun sampleIndResourceCall(node: RestResourceNode, maxTestSize: Int) : RestResourceCalls{
+    private fun sampleIndResourceCall(node: RestResourceNode, maxTestSize: Int) : RestResourceCalls{
         node.selectTemplate({ call : CallsTemplate -> call.independent || (call.template == HttpVerb.POST.toString() && call.size > 1)}, randomness)?.let {
             return genCalls(node, it.template, maxTestSize, false, false)
         }
@@ -200,7 +200,7 @@ class ResourceManageService {
         return sampleOneAction(node, al)
     }
 
-    fun sampleOneAction(node: RestResourceNode, action : RestAction) : RestResourceCalls{
+    private fun sampleOneAction(node: RestResourceNode, action : RestAction) : RestResourceCalls{
         val copy = action.copy()
         node.randomizeActionGenes(copy as RestCallAction, randomness)
 
@@ -281,7 +281,8 @@ class ResourceManageService {
         maxTestSize : Int = 1,
         checkSize : Boolean = true,
         createResource : Boolean = true,
-        additionalPatch : Boolean = true
+        additionalPatch : Boolean = true,
+        forceInsert : Boolean = false
     ) : RestResourceCalls{
         if(!node.getTemplates().containsKey(template))
             throw IllegalArgumentException("$template does not exist in ${node.path}")
@@ -294,15 +295,33 @@ class ResourceManageService {
         if (!creationNeeded)
             return generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, checkSize, createResource, additionalPatch)
 
-        if (config.probOfApplySQLActionToCreateResources == 0.0 && !node.hasPostCreation())
-            throw IllegalStateException("for resource ${node.path}, there does not exist any POST/PUT to create actions and the SQL creation is alo disabled")
+        if (node.getSqlCreationPoints().isEmpty() && !node.hasPostCreation())
+            log.info("for resource ${node.path}, there does not exist any POST/PUT to create actions and the SQL creation is alo disabled")
 
-        val withSql = !node.hasPostCreation() || randomness.nextBoolean(config.probOfApplySQLActionToCreateResources)
+        if (forceInsert && !hasDBHandler())
+            throw IllegalStateException("force to employ SQL for resource creation, but there is no db")
 
-        if (!withSql)
-            return generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, checkSize, createResource, additionalPatch)
+        val withSql = hasDBHandler() && (!node.hasPostCreation() || randomness.nextBoolean(config.probOfApplySQLActionToCreateResources) || forceInsert)
 
-        TODO()
+        //in case there is no related table, post is employed
+        val call = if (!withSql && node.hasPostCreation() && node.getSqlCreationPoints().isEmpty())
+            generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, checkSize, createResource, additionalPatch)
+        else{
+            val verbs = if (ats.size > 1) ats.sliceArray(1 until ats.size) else ats
+            val cTemplate = if (ats.size > 1)  node.getTemplates().getValue(RestResourceTemplateHandler.formatTemplate(verbs)) else callsTemplate
+            generateRestActionsForCalls(node, verbs, cTemplate, maxTestSize,
+                checkSize, createResource, additionalPatch, false)  //remove post from verbs
+        }
+
+        if (!withSql && (call.status == ResourceStatus.CREATED_REST || node.getSqlCreationPoints().isEmpty())) return call
+
+        val created = handleDbActionForCall( call, forceInsert, false)
+        if(!created){
+            LoggingUtil.uniqueWarn(log, "resource creation for ${node.path} fails")
+        }else
+            call.status = ResourceStatus.CREATED_SQL
+
+        return call
     }
 
     private fun generateRestActionsForCalls(
@@ -428,15 +447,7 @@ class ResourceManageService {
             return
         }
 
-        var candidateForInsertion : String? = null
-
-        if(hasDBHandler() && ar.getDerivedTables().isNotEmpty() && (if(forceInsert) forceInsert else randomness.nextBoolean(config.probOfApplySQLActionToCreateResources))){
-            //Insert - GET/PUT/PATCH
-            val candidates = ar.getTemplates().filter { setOf("GET", "PUT", "PATCH").contains(it.value.template) && it.value.independent}
-            candidateForInsertion = if(candidates.isNotEmpty()) randomness.choose(candidates.keys) else null
-        }
-
-        val candidate = if(candidateForInsertion.isNullOrBlank()) {
+        val candidate =
             //prior to select the template with POST
             ar.getTemplates().filter { !it.value.independent }.run {
                 if(isNotEmpty())
@@ -444,27 +455,10 @@ class ResourceManageService {
                 else
                     randomness.choose(ar.getTemplates().keys)
             }
-        } else candidateForInsertion
 
-        val call = genCalls(ar, candidate, size,true, true)
+
+        val call = genCalls(ar, candidate, size,true, true, forceInsert = forceInsert)
         calls.add(call)
-
-        if(hasDBHandler()){
-            if(call.status != ResourceStatus.CREATED_REST
-                    || dm.checkIfDeriveTable(call)
-                    || candidateForInsertion != null
-            ){
-
-                /*
-                    derive possible db, and bind value according to db
-                */
-                val created = handleDbActionForCall( call, forceInsert, false)
-                if(!created){
-                    //shall we only print the error msg only once?
-                    LoggingUtil.uniqueWarn(log, "resource creation for $resourceKey fails")
-                }
-            }
-        }
 
         if(bindWith != null){
             dm.bindCallWithFront(call, bindWith)
@@ -479,9 +473,12 @@ class ResourceManageService {
 
         relatedTables.forEach { tableName->
             if(forceInsert){
-                generateInsertSql(tableName, dbActions)
+                generateInsertSql(tableName, dbActions).apply {
+                    failToGenDB = failToGenDB || !this
+                }
             }else if(forceSelect){
-                if(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty()) generateSelectSql(tableName, dbActions)
+                if(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty())
+                    generateSelectSql(tableName, dbActions)
                 else failToGenDB = true
             }else{
                 if(getDataInDb(tableName)!= null ){
@@ -563,10 +560,7 @@ class ResourceManageService {
             //shrinkDbActions(dbActions)
 
             /*
-             TODO bind data according to action or dbaction?
-
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
-
              */
             dm.bindCallWithDBAction(call,dbActions, paramToTables, dbRemovedDueToRepair = removed)
 
