@@ -97,7 +97,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     );
 
                     assertTrue(ok);
-                }, 3);
+                }, 5);
     }
 
     @BeforeAll

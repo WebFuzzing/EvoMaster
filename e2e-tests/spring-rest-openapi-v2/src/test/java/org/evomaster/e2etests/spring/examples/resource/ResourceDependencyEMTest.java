@@ -91,6 +91,6 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     );
 
                     assertTrue(ok);
-                }, 3);
+                }, 5);
     }
 }
