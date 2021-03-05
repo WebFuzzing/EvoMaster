@@ -238,7 +238,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     ) {
         val resourceNode = rm.getResourceCluster().getValue(resource)
 
-        val call = resourceNode.genCalls(template, randomness, config.maxTestSize, true, true)
+        val call = rm.genCalls(resourceNode, template, config.maxTestSize, true, true)
 
         call.apply {
             val paramsRequiredToBind = actions.filterIsInstance<RestCallAction>()
@@ -359,7 +359,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
     fun testResourceStructureMutatorWithDependencyWithSpecified(resource: String, expectedRelated : String?){
         val callA = rm.getResourceNodeFromCluster(resource).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            rm.genCalls(this, randomness.choose(getTemplates().values).template, config.maxTestSize)
         }
         val ind = RestIndividual(mutableListOf(callA), SampleType.SMART_RESOURCE)
 
@@ -387,19 +387,19 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     fun simulateDerivationOfDependencyRegardingFitness(resourceA: String, resourceB:String, resourceC:String) {
         assert(!dm.getRelatedResource(resourceC).contains(resourceA))
         val callA = rm.getResourceNodeFromCluster(resourceA).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            rm.genCalls(this, randomness.choose(getTemplates().values).template, config.maxTestSize)
         }
 
         val targetsOfA = callA.actions.mapIndexed { index, _ -> index + 1}
 
         val callB = rm.getResourceNodeFromCluster(resourceB).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            rm.genCalls(this, randomness.choose(getTemplates().values).template, config.maxTestSize)
         }
 
         val targetsOfB = callB.actions.mapIndexed { index, _ -> targetsOfA.last() + 1 + index }
 
         val callC = rm.getResourceNodeFromCluster(resourceC).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            rm.genCalls(this, randomness.choose(getTemplates().values).template, config.maxTestSize)
         }
 
         val targetsOfC = callC.actions.mapIndexed { index, _ -> targetsOfB.last() + 1 + index  }
