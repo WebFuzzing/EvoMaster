@@ -59,7 +59,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     args.add("--probOfSmartSampling");
                     args.add("1.0");
                     args.add("--doesApplyNameMatching");
-                    args.add("true");
+                    args.add("false");
 
                     args.add("--probOfEnablingResourceDependencyHeuristics");
                     args.add("1.0");
@@ -68,7 +68,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
 
                     //enable sql to create resources
                     args.add("--probOfApplySQLActionToCreateResources");
-                    args.add("0.9");
+                    args.add("0.5");
 
 
                     Solution<RestIndividual> solution = initAndRun(args);

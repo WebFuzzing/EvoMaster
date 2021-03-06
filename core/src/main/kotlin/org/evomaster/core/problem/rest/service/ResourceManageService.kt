@@ -589,7 +589,7 @@ class ResourceManageService {
 
     private fun selectToDataRowDto(dbAction : DbAction, tableName : String) : DataRowDto{
         dbAction.seeGenes().forEach { assert((it is SqlPrimaryKeyGene || it is ImmutableDataHolderGene || it is SqlForeignKeyGene)) }
-        val set = dbAction.seeGenes().filter { it is SqlPrimaryKeyGene }.map { ((it as SqlPrimaryKeyGene).gene as ImmutableDataHolderGene).value }.toSet()
+        val set = dbAction.seeGenes().filterIsInstance<SqlPrimaryKeyGene>().map { ((it as SqlPrimaryKeyGene).gene as ImmutableDataHolderGene).value }.toSet()
         return randomness.choose(getDataInDb(tableName)!!.filter { it.columnData.toSet().equals(set) })
     }
 

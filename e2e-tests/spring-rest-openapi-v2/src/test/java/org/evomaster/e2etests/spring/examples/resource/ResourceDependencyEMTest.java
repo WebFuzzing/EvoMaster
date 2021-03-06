@@ -5,9 +5,6 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -51,16 +48,8 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     args.add("--maxTestSize");
                     args.add("4");
 
-                    args.add("--exportDependencies");
-                    args.add("true");
-
-                    String dependencies = "target/dependencyInfo/dependencies.csv";
-
-                    args.add("--dependencyFile");
-                    args.add(dependencies);
-
                     args.add("--resourceSampleStrategy");
-                    args.add("EqualProbability");
+                    args.add("ConArchive");
 
                     args.add("--probOfSmartSampling");
                     args.add("1.0");
@@ -76,8 +65,6 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
-
-                    assert(Files.exists(Paths.get(dependencies)));
 
                     boolean anyDBExecution = solution.getIndividuals().stream().anyMatch(
                             s -> s.getFitness().isAnyDatabaseExecutionInfo()

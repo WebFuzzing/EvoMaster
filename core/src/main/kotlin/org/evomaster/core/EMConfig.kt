@@ -1356,7 +1356,7 @@ class EMConfig {
     fun isEnabledResourceDependency() = probOfSmartSampling > 0.0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE
 
     /**
-     * @return whether to generate SQL between rest actions
+     * @return whether to enable SQL to create resource
      */
     fun isEnabledResourceWithSQL() = probOfApplySQLActionToCreateResources > 0.0
 

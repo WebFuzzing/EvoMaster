@@ -31,7 +31,6 @@ class RestResourceNode(
 ) {
 
     companion object {
-
         val log: Logger = LoggerFactory.getLogger(RestResourceNode::class.java)
     }
 
