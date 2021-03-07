@@ -29,6 +29,7 @@ import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import org.slf4j.LoggerFactory
+import java.lang.RuntimeException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
@@ -372,9 +373,6 @@ class TestCaseWriter {
                                     res: GraphQlCallResult,
                                     baseUrlOfSut: String) {
 
-
-        //val name = createUniqueResponseVariableName()//not need
-
         handleGQLFirstLine(call, lines, res)
 
         lines.indent(2)
@@ -397,8 +395,8 @@ class TestCaseWriter {
         handleGQLResponse(call, res, lines)
         handleGQLLastLine(lines)
 
-        //what is expectations
-        /*if (configuration.expectationsActive) {
+        /*what is expectations?
+        if (configuration.expectationsActive) {
             expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
         }*/
     }
@@ -555,9 +553,11 @@ class TestCaseWriter {
 
         if (format.isKotlin()) {
             lines.append("\"\${$baseUrlOfSut}")
-        } else {//todo if i need to add something
+        } else {
             lines.append("$baseUrlOfSut + \"")
         }
+        val path = "/graphql"
+        lines.append("${GeneUtils.applyEscapes(path, mode = GeneUtils.EscapeMode.NONE, format = format)}\"")
         lines.append(")")
     }
 
@@ -733,6 +733,85 @@ class TestCaseWriter {
         }
     }
 
+    private fun handleGQLResponseContents(lines: Lines, res: GraphQlCallResult) {
+
+        if (format.isJavaScript()) {
+            //TODO
+            return
+        }
+
+        lines.add(".assertThat()")
+
+        if (res.getBodyType() == null) {
+            lines.add(".contentType(\"\")")
+            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
+
+        } else lines.add(".contentType(\"${res.getBodyType()
+                .toString()
+                .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
+        }\")")
+
+        val bodyString = res.getBody()
+
+        if (res.getBodyType() != null) {
+            val type = res.getBodyType()!!
+            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
+                when (bodyString?.trim()?.first()) {
+                    '[' -> {
+                        // This would be run if the JSON contains an array of objects.
+                        val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
+                        lines.add(".body(\"size()\", equalTo(${resContents.size}))")
+                        //assertions on contents
+                        if (resContents.size > 0) {
+                            var longArray = false
+                            resContents.forEachIndexed { test_index, value ->
+                                when {
+                                    (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
+                                    (value is String) -> longArray = true
+                                    else -> {
+                                        val printableFieldValue = handleFieldValues(value)
+                                        if (printSuitable(printableFieldValue)) {
+                                            lines.add(".body(\"\", $printableFieldValue)")
+                                        }
+                                    }
+                                }
+                            }
+                            if (longArray) {
+                                val printableContent = handleFieldValues(resContents)
+                                if (printSuitable(printableContent)) {
+                                    lines.add(".body(\"\", $printableContent)")
+                                }
+                            }
+                        } else {
+                            // the object is empty
+                            if (format.isKotlin()) lines.add(".body(\"isEmpty()\", `is`(true))")
+                            else lines.add(".body(\"isEmpty()\", is(true))")
+                        }
+                    }
+                    '{' -> {
+                        // JSON contains an object
+                        val resContents = Gson().fromJson(res.getBody(), Map::class.java)
+                        addObjectAssertions(resContents, lines)
+
+                    }
+                    else -> {
+                        // This branch will be called if the JSON is null (or has a basic type)
+                        // Currently, it converts the contents to String.
+                        when {
+                            res.getTooLargeBody() -> lines.add("/* very large body, which was not handled during the search */")
+
+                            bodyString.isNullOrBlank() -> lines.add(".body(isEmptyOrNullString())")
+
+                            else -> lines.add(".body(containsString(\"${
+                            GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
+                            }\"))")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun addObjectAssertions(resContents: Map<*, *>, lines: Lines) {
         if (resContents.isEmpty()) {
             if (format.isKotlin()) lines.add(".body(\"isEmpty()\", `is`(true))")
@@ -859,7 +938,9 @@ class TestCaseWriter {
 
     private fun handleGQLBody(call: GraphQLAction, lines: Lines, readable: Boolean) {
 
-        val bodyParam = call.parameters.find { p -> p is GQReturnParam }
+        val bodyParam = call.parameters.find { p -> p is GQReturnParam }?.gene
+                ?: throw RuntimeException("ERROR: Body param not specified ")
+        val selection = GeneUtils.getBooleanSelection(bodyParam)
 
         val send = when {
             format.isJavaOrKotlin() -> "body"
@@ -867,20 +948,19 @@ class TestCaseWriter {
             else -> throw IllegalArgumentException("Format not supported $format")
         }
 
-        if (bodyParam != null && bodyParam is BodyParam) {
+        if (selection != null ) {
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
                 format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
 
             }
-            if (bodyParam.isJson()) {
+
                 //todo
                 val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{ \" ${bodyParam.name} \" : " + bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format) +
-                            ",\"variables \":null,\"operationName \":null}")
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\":\" ${call.methodName}${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}\",\"variables\":null }")
                 } else {//what is readable?
-                    bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+                    selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 }
                 //todo the input param
                 //needed as JSON uses ""
@@ -900,10 +980,6 @@ class TestCaseWriter {
                     }
                 }
 
-            } else {
-
-                LoggingUtil.uniqueWarn(log, "Unrecognized type: " + bodyParam.contentType())
-            }
         }
 
     }
