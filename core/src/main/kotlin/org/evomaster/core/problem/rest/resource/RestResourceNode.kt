@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
@@ -10,10 +9,10 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.dependency.*
+import org.evomaster.core.problem.rest.service.RestActionHandlingUtil
 import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -67,7 +66,6 @@ class RestResourceNode(
      */
     private val ancestors : MutableList<RestResourceNode> = mutableListOf()
 
-
     /**
      * possible solutions to prepare resources
      */
@@ -110,7 +108,6 @@ class RestResourceNode(
             else -> { }
         }
     }
-
     fun initAncestors(resources : List<RestResourceNode>){
         resources.forEach {r ->
             if(!r.path.isEquivalent(this.path) && r.path.isAncestorOf(this.path))
@@ -331,7 +328,7 @@ class RestResourceNode(
 
     private fun chooseClosestAncestor(target: RestCallAction, verbs: List<HttpVerb>, randomness: Randomness): RestCallAction? {
         var others = sameOrAncestorEndpoints(target)
-        others = hasWithVerbs(others, verbs).filter { t -> t.getName() != target.getName() }
+        others = RestActionHandlingUtil.hasWithVerbs(others, verbs).filter { t -> t.getName() != target.getName() }
         if(others.isEmpty()) return null
         return chooseLongestPath(others, randomness)
     }
@@ -343,21 +340,16 @@ class RestResourceNode(
             ancestors.find { it.path.toString() == path.toString() }
         }
         ar?.let{
-            val others = hasWithVerbs(it.ancestors.flatMap { it.actions }.filterIsInstance<RestCallAction>(), verbs)
+            val others = RestActionHandlingUtil.hasWithVerbs(it.ancestors.flatMap { it.actions }.filterIsInstance<RestCallAction>(), verbs)
             if(others.isEmpty()) return null
             return chooseLongestPath(others)
         }
         return null
     }
 
-    private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
-        return actions.filter { a ->
-            verbs.contains(a.verb)
-        }
-    }
-
-    private fun sameOrAncestorEndpoints(target: RestCallAction): List<RestCallAction> {
-        if(target.path.toString() == this.path.toString()) return ancestors.flatMap { a -> a.actions }.plus(actions).filterIsInstance<RestCallAction>()
+    fun sameOrAncestorEndpoints(target: RestCallAction): List<RestCallAction> {
+        if(target.path.toString() == this.path.toString())
+            return ancestors.flatMap { a -> a.actions }.plus(actions).filterIsInstance<RestCallAction>()
         else {
             ancestors.find { it.path.toString() == target.path.toString() }?.let {
                 return it.ancestors.flatMap { a -> a.actions }.plus(it.actions).filterIsInstance<RestCallAction>()
@@ -365,35 +357,6 @@ class RestResourceNode(
         }
         return mutableListOf()
     }
-
-
-    private fun createActionFor(template: RestCallAction, target: RestCallAction, randomness: Randomness): RestCallAction {
-        val restAction = template.copy() as RestCallAction
-        randomizeActionGenes(restAction, randomness)
-        restAction.auth = target.auth
-        restAction.bindToSamePathResolution(restAction.path, target.parameters)
-        return restAction
-    }
-
-    fun randomizeActionGenes(action: Action, randomness: Randomness) {
-        action.seeGenes().forEach { it.randomize(randomness, false) }
-        if(action is RestCallAction)
-            repairRandomGenes(action.parameters)
-    }
-
-    private fun repairRandomGenes(params : List<Param>){
-        if(ParamUtil.existBodyParam(params)){
-            params.filter { p -> p is BodyParam }.forEach { bp->
-                ParamUtil.bindParam(bp, path, path, params.filter { p -> !(p is BodyParam )}, true)
-            }
-        }
-        params.forEach { p->
-            params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.apply {
-                ParamUtil.bindParam(this, path, path, mutableListOf(p))
-            }
-        }
-    }
-
 
     private fun independentPost() : RestAction? {
         if(!verbs.last()) return null
@@ -404,70 +367,6 @@ class RestResourceNode(
             return post
         }
         return null
-    }
-
-    /**
-     * return resource for [target]
-     * @return  0 means that the resource is created
-     *          -1 means that the resource fails to be created due to limited size of tests
-     *          -2 means that the resource fails to be created due to failure to find the PUT/POST
-     *          -3 means that the resource fails to be created due to failure to create dependent resource
-     */
-    fun createResourcesFor(target: RestCallAction, test: MutableList<RestAction>, maxTestSize: Int, randomness: Randomness, forCheckSize : Boolean)
-            : ResourceStatus {
-
-        if (!forCheckSize && test.size >= maxTestSize) {
-            return ResourceStatus.NOT_ENOUGH_LENGTH
-        }
-
-        val template = chooseClosestAncestor(target, listOf(HttpVerb.POST), randomness)?:
-                    return (if(target.verb == HttpVerb.POST) ResourceStatus.CREATED_REST else ResourceStatus.NOT_FOUND)
-
-        val post = createActionFor(template, target, randomness)
-
-        test.add(0, post)
-
-        /*
-            Check if POST depends itself on the postCreation of
-            some intermediate resource
-         */
-        if (post.path.hasVariablePathParameters() &&
-                (!post.path.isLastElementAParameter()) ||
-                post.path.getVariableNames().size >= 2) {
-            val dependencyCreated = createResourcesFor(post, test, maxTestSize, randomness, forCheckSize)
-            if (ResourceStatus.CREATED_REST != dependencyCreated) {
-                return ResourceStatus.NOT_FOUND_DEPENDENT
-            }
-        }
-
-        /*
-            Once the POST is fully initialized, need to fix
-            links with target
-         */
-        if (!post.path.isEquivalent(target.path)) {
-            /*
-                eg
-                POST /x
-                GET  /x/{id}
-             */
-            post.saveLocation = true
-            target.locationId = post.path.lastElement()
-        } else {
-            /*
-                eg
-                POST /x
-                POST /x/{id}/y
-                GET  /x/{id}/y
-             */
-            //not going to save the position of last POST, as same as target
-            post.saveLocation = false
-
-            // the target (eg GET) needs to use the location of first POST, or more correctly
-            // the same location used for the last POST (in case there is a deeper chain)
-            target.locationId = post.locationId
-        }
-
-        return ResourceStatus.CREATED_REST
     }
 
     fun createResourceInstance(result: List<RestAction>, randomness: Randomness, skipBind : MutableList<RestAction>) : RestResourceInstance{
@@ -686,7 +585,7 @@ enum class InitMode{
 /**
  * extract info for a parm
  */
-class ParamInfo(
+data class ParamInfo(
         val name : String,
         val key : String,
         val preSegment : String, //by default is flatten segment

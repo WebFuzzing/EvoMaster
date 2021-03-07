@@ -32,9 +32,6 @@ class RestSampler : AbstractRestSampler(){
         }
     }
 
-
-
-
     override fun sampleAtRandom(): RestIndividual {
 
         val actions = mutableListOf<RestAction>()
@@ -173,7 +170,7 @@ class RestSampler : AbstractRestSampler(){
         test.add(write)
 
         //Need to find a POST on a parent collection resource
-        createResourcesFor(write, test)
+        RestActionHandlingUtil.createResourcesFor(randomness, actionCluster, config.maxTestSize, write, test)
 
         if (write.verb == HttpVerb.PATCH &&
                 config.maxTestSize >= test.size + 1 &&
@@ -182,13 +179,13 @@ class RestSampler : AbstractRestSampler(){
                 As PATCH is not idempotent (in contrast to PUT), it can make sense to test
                 two patches in sequence
              */
-            val secondPatch = createActionFor(write, write)
+            val secondPatch = RestActionHandlingUtil.createActionFor(randomness, write, write)
             test.add(secondPatch)
             secondPatch.locationId = write.locationId
         }
 
         test.forEach { t ->
-            preventPathParamMutation(t as RestCallAction)
+            RestActionHandlingUtil.preventPathParamMutation(t as RestCallAction)
         }
     }
 
@@ -220,7 +217,10 @@ class RestSampler : AbstractRestSampler(){
 
         test.add(get)
 
-        val created = createResourcesFor(get, test)
+        val created =
+            RestActionHandlingUtil.isCreatedByRestAction(
+                RestActionHandlingUtil.createResourcesFor(randomness, actionCluster, config.maxTestSize, get, test)
+            )
 
         if (!created) {
             /*
@@ -233,7 +233,7 @@ class RestSampler : AbstractRestSampler(){
         } else {
             //only lock path params if it is not a single GET
             test.forEach { t ->
-                preventPathParamMutation(t as RestCallAction)
+                RestActionHandlingUtil.preventPathParamMutation(t as RestCallAction)
             }
         }
 
@@ -259,8 +259,8 @@ class RestSampler : AbstractRestSampler(){
                 val k = 1 + randomness.nextInt(available)
 
                 (0 until k).forEach {
-                    val create = createActionFor(lastPost, get)
-                    preventPathParamMutation(create)
+                    val create = RestActionHandlingUtil.createActionFor(randomness, lastPost, get)
+                    RestActionHandlingUtil.preventPathParamMutation(create)
                     create.locationId = lastPost.locationId
 
                     //add just before the last GET
@@ -272,126 +272,6 @@ class RestSampler : AbstractRestSampler(){
         }
 
         return SampleType.SMART
-    }
-
-
-    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestAction>)
-            : Boolean {
-
-        if (test.size >= config.maxTestSize) {
-            return false
-        }
-
-        val template = chooseClosestAncestor(target, listOf(HttpVerb.POST))
-                ?: return false
-
-        val post = createActionFor(template, target)
-
-        test.add(0, post)
-
-        /*
-            Check if POST depends itself on the creation of
-            some intermediate resource
-         */
-        if (post.path.hasVariablePathParameters() &&
-                (!post.path.isLastElementAParameter()) ||
-                post.path.getVariableNames().size >= 2) {
-
-            val dependencyCreated = createResourcesFor(post, test)
-            if (!dependencyCreated) {
-                return false
-            }
-        }
-
-
-        /*
-            Once the POST is fully initialized, need to fix
-            links with target
-         */
-        if (!post.path.isEquivalent(target.path)) {
-            /*
-                eg
-                POST /x
-                GET  /x/{id}
-             */
-            post.saveLocation = true
-            target.locationId = post.path.lastElement()
-        } else {
-            /*
-                eg
-                POST /x
-                POST /x/{id}/y
-                GET  /x/{id}/y
-             */
-            //not going to save the position of last POST, as same as target
-            post.saveLocation = false
-
-            // the target (eg GET) needs to use the location of first POST, or more correctly
-            // the same location used for the last POST (in case there is a deeper chain)
-            target.locationId = post.locationId
-        }
-
-        return true
-    }
-
-    private fun preventPathParamMutation(action: RestCallAction) {
-        action.parameters.forEach { p -> if (p is PathParam) p.preventMutation() }
-    }
-
-    fun createActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
-        val res = template.copy() as RestCallAction
-        randomizeActionGenes(res)
-        res.auth = target.auth
-        res.bindToSamePathResolution(target)
-
-        return res
-    }
-
-    /**
-     * Make sure that what returned is different from the target.
-     * This can be a strict ancestor (shorter path), or same
-     * endpoint but with different HTTP verb.
-     * Among the different ancestors, return one of the longest
-     */
-    private fun chooseClosestAncestor(target: RestCallAction, verbs: List<HttpVerb>): RestCallAction? {
-
-        var others = sameOrAncestorEndpoints(target.path)
-        others = hasWithVerbs(others, verbs).filter { t -> t.getName() != target.getName() }
-
-        if (others.isEmpty()) {
-            return null
-        }
-
-        return chooseLongestPath(others)
-    }
-
-    /**
-     * Get all ancestor (same path prefix) endpoints that do at least one
-     * of the specified operations
-     */
-    private fun sameOrAncestorEndpoints(path: RestPath): List<RestCallAction> {
-        return actionCluster.values.asSequence()
-                .filter { a -> a is RestCallAction && a.path.isAncestorOf(path) }
-                .map { a -> a as RestCallAction }
-                .toList()
-    }
-
-    private fun chooseLongestPath(actions: List<RestCallAction>): RestCallAction {
-
-        if (actions.isEmpty()) {
-            throw IllegalArgumentException("Cannot choose from an empty collection")
-        }
-
-        val max = actions.asSequence().map { a -> a.path.levels() }.max()!!
-        val candidates = actions.filter { a -> a.path.levels() == max }
-
-        return randomness.choose(candidates)
-    }
-
-    private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
-        return actions.filter { a ->
-            verbs.contains(a.verb)
-        }
     }
 
 
@@ -418,20 +298,20 @@ class RestSampler : AbstractRestSampler(){
 
     private fun createSingleCallOnEachEndpoint(auth: AuthenticationInfo) {
         actionCluster.asSequence()
-                .filter { a -> a.value is RestCallAction }
-                .forEach { a ->
-                    val copy = a.value.copy() as RestCallAction
-                    copy.auth = auth
-                    randomizeActionGenes(copy)
-                    randomizeActionGenes(copy, false)
-                    val ind = createIndividual(mutableListOf(copy))
-                    adHocInitialIndividuals.add(ind)
-                }
+            .filter { a -> a.value is RestCallAction }
+            .forEach { a ->
+                val copy = a.value.copy() as RestCallAction
+                copy.auth = auth
+                randomizeActionGenes(copy)
+                randomizeActionGenes(copy, false)
+                val ind = createIndividual(mutableListOf(copy))
+                adHocInitialIndividuals.add(ind)
+            }
     }
 
     private fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
         return RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
-                ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+            ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
     }
 
     private fun getParser(): Parser {
@@ -439,5 +319,4 @@ class RestSampler : AbstractRestSampler(){
             EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger)
         }
     }
-
 }

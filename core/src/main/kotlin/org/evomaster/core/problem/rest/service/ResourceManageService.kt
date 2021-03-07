@@ -189,7 +189,7 @@ class ResourceManageService {
 
     private fun sampleIndResourceCall(node: RestResourceNode, maxTestSize: Int) : RestResourceCalls{
         node.selectTemplate({ call : CallsTemplate -> call.independent || (call.template == HttpVerb.POST.toString() && call.size > 1)}, randomness)?.let {
-            return genCalls(node, it.template, maxTestSize, false, false)
+            return genCalls(node, it.template, maxTestSize, false)
         }
         return genCalls(node, HttpVerb.POST.toString(), maxTestSize)
     }
@@ -202,7 +202,7 @@ class ResourceManageService {
 
     private fun sampleOneAction(node: RestResourceNode, action : RestAction) : RestResourceCalls{
         val copy = action.copy()
-        node.randomizeActionGenes(copy as RestCallAction, randomness)
+        RestActionHandlingUtil.randomizeActionGenes(copy as RestCallAction, randomness, node)
 
         val template = node.getTemplates()[copy.verb.toString()]
             ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${node.path}")
@@ -279,7 +279,6 @@ class ResourceManageService {
         node: RestResourceNode,
         template : String,
         maxTestSize : Int = 1,
-        checkSize : Boolean = true,
         createResource : Boolean = true,
         additionalPatch : Boolean = true,
         forceInsert : Boolean = false
@@ -293,7 +292,7 @@ class ResourceManageService {
         val creationNeeded = createResource && ats[0] == HttpVerb.POST
 
         if (!creationNeeded)
-            return generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, checkSize, createResource, additionalPatch)
+            return generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, createResource, additionalPatch)
 
         if (node.getSqlCreationPoints().isEmpty() && !node.hasPostCreation())
             log.info("for resource ${node.path}, there does not exist any POST/PUT to create actions and the SQL creation is alo disabled")
@@ -305,12 +304,12 @@ class ResourceManageService {
 
         //in case there is no related table, post is employed
         val call = if (!withSql && node.hasPostCreation() && node.getSqlCreationPoints().isEmpty())
-            generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, checkSize, createResource, additionalPatch)
+            generateRestActionsForCalls(node, ats, callsTemplate, maxTestSize, createResource, additionalPatch)
         else{
             val verbs = if (ats.size > 1) ats.sliceArray(1 until ats.size) else ats
             val cTemplate = if (ats.size > 1)  node.getTemplates().getValue(RestResourceTemplateHandler.formatTemplate(verbs)) else callsTemplate
             generateRestActionsForCalls(node, verbs, cTemplate, maxTestSize,
-                checkSize, createResource, additionalPatch, false)  //remove post from verbs
+                createResource, additionalPatch, false)  //remove post from verbs
         }
 
         if (!config.isEnabledResourceWithSQL() || !withSql && (call.status == ResourceStatus.CREATED_REST || node.getSqlCreationPoints().isEmpty())) return call
@@ -329,7 +328,6 @@ class ResourceManageService {
         ats : Array<HttpVerb>,
         callsTemplate: CallsTemplate,
         maxTestSize : Int = 1,
-        checkSize : Boolean = true,
         createResource : Boolean = true,
         additionalPatch : Boolean = true,
         checkPostChain : Boolean = true
@@ -347,10 +345,11 @@ class ResourceManageService {
         if(createResource && ats[0] == HttpVerb.POST){
             val nonPostIndex = ats.indexOfFirst { it != HttpVerb.POST }
             val ac = node.getActionByHttpVerb( if(nonPostIndex==-1) HttpVerb.POST else ats[nonPostIndex])!!.copy() as RestCallAction
-            node.randomizeActionGenes(ac, randomness)
+            RestActionHandlingUtil.randomizeActionGenes(ac, randomness, node)
             result.add(ac)
 
-            isCreated = node.createResourcesFor(ac, result, maxTestSize , randomness, checkSize && (!callsTemplate.sizeAssured))
+            isCreated = RestActionHandlingUtil.
+                createResourcesFor(randomness, null, maxTestSize, ac, result , node)
 
             if(checkPostChain && !callsTemplate.sizeAssured){
                 node.getPostChain()?:throw IllegalStateException("fail to init post creation")
@@ -376,7 +375,7 @@ class ResourceManageService {
                 if(nonPostIndex != ats.size -1){
                     (nonPostIndex + 1 until ats.size).forEach {
                         val action = node.getActionByHttpVerb(ats[it])!!.copy() as RestCallAction
-                        node.randomizeActionGenes(action, randomness)
+                        RestActionHandlingUtil.randomizeActionGenes(action, randomness, node)
                         result.add(action)
                     }
                 }
@@ -389,7 +388,7 @@ class ResourceManageService {
                         ","
                     ) { a -> a.getName() }
                 }")).copy() as RestCallAction
-                node.randomizeActionGenes(ac, randomness)
+                RestActionHandlingUtil.randomizeActionGenes(ac, randomness, node)
                 result.add(ac)
             }
 
