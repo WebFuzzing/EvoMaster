@@ -145,7 +145,7 @@ class RestStructureMutator : AbstractRestStructureMutator() {
             val postTemplate = ind.seeActions()[idx] as RestCallAction
             Lazy.assert{postTemplate.verb == HttpVerb.POST && !postTemplate.saveLocation}
 
-            val post = sampler.createActionFor(postTemplate, ind.seeActions().last() as RestCallAction)
+            val post = RestActionHandlingUtil.createActionFor(randomness, postTemplate, ind.seeActions().last() as RestCallAction)
 
             //save mutated genes
             mutatedGenes?.addedGenes?.addAll(post.seeGenes())
