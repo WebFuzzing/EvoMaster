@@ -71,8 +71,8 @@ class CompareAvgNumberToMutate {
         config.d = d
 
         val all = individual.seeGenes().filter { it.isMutable() }
-        val rest = individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }
-        val sql = individual.seeGenes(Individual.GeneFilter.ONLY_SQL).filter { it.isMutable() }
+        val rest = individual.seeGenes(Individual.GeneFilter.NO_INIT_SQL).filter { it.isMutable() }
+        val sql = individual.seeGenes(Individual.GeneFilter.ONLY_INIT_SQL).filter { it.isMutable() }
 
         val s11 = mutableListOf<Double>()
         val s12 = mutableListOf<Double>()

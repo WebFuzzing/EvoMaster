@@ -1,6 +1,7 @@
 package org.evomaster.core.search.algorithms.onemax
 
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.GeneFilter
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene

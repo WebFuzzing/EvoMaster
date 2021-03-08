@@ -4,7 +4,7 @@ import com.foo.rest.examples.spring.impactXYZ.ImpactXYZRestController;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
-import org.evomaster.core.search.Individual;
+import org.evomaster.core.search.GeneFilter;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact;
@@ -15,7 +15,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class ArchiveGeneSelectionImpactXYZInfoTest extends SpringTestBase {
@@ -112,7 +113,7 @@ public class ArchiveGeneSelectionImpactXYZInfoTest extends SpringTestBase {
 
     private String getGeneIdByName(String geneName, EvaluatedIndividual<RestIndividual> ind){
 
-        Gene gene = ind.getIndividual().seeGenes(Individual.GeneFilter.NO_SQL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
+        Gene gene = ind.getIndividual().seeGenes(GeneFilter.NO_SQL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
                 .findAny()
                 .orElse(null);
 

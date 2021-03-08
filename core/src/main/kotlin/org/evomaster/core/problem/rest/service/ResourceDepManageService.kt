@@ -63,8 +63,6 @@ class ResourceDepManageService {
      */
     private val uncorrelated: MutableMap<String, MutableSet<String>> = mutableMapOf()
 
-    private val inference = SimpleDeriveResourceBinding()
-
     /************************  manage relationship between resource and tables ***********************************/
 
     /**
@@ -99,7 +97,7 @@ class ResourceDepManageService {
             val r = rm.getResourceNodeFromCluster(action.path.toString())
             val additionalInfo = r.updateAdditionalParams(action)
             if (!additionalInfo.isNullOrEmpty()) {
-                inference.deriveParamsToTable(additionalInfo, r, allTables = tables)
+                RestActionHandlingUtil.inference.deriveParamsToTable(additionalInfo, r, allTables = tables)
             }
         }
     }
@@ -190,11 +188,11 @@ class ResourceDepManageService {
                         val paramId = ar.getParamId(action.parameters, p)
                         val paramInfo = ar.paramsInfo[paramId].run {
                             this ?: ar.updateAdditionalParam(action, p).also {
-                                    inference.deriveParamsToTable(paramId, it, ar, tables)
+                                    RestActionHandlingUtil.inference.deriveParamsToTable(paramId, it, ar, tables)
                                 }
                         }
                         // ?:throw IllegalArgumentException("cannot find the param Id $paramId in the rest resource ${referResource.getName()}")
-                        val hasMatchedParam = inference.deriveRelatedTable(ar, paramId, paramInfo, mutableSetOf(t), p is BodyParam, -1, alltables = tables)
+                        val hasMatchedParam = RestActionHandlingUtil.inference.deriveRelatedTable(ar, paramId, paramInfo, mutableSetOf(t), p is BodyParam, -1, alltables = tables)
                         ar.resourceToTable.paramToTable[paramId]?.let { paramToTable ->
                             paramToTable.getRelatedColumn(t)?.apply {
                                 paramToTable.confirmedColumn.addAll(this.intersect(u.filter { it != "*" }))
@@ -1068,7 +1066,7 @@ class ResourceDepManageService {
 
     private fun getAllRelatedTables(ind: RestIndividual) : Set<String>{
         return ind.getResourceCalls().flatMap { c->
-            extractRelatedTablesForCall(c).values.flatMap { it.map { g->g.tableName } }.toSet()
+            RestActionHandlingUtil.inference.generateRelatedTables(c, mutableListOf()).values.flatMap { it.map { g->g.tableName } }.toSet()
         }.toSet()
     }
 
@@ -1096,7 +1094,7 @@ class ResourceDepManageService {
      */
     fun initRelatedTables(resourceCluster: MutableList<RestResourceNode>, tables: Map<String, Table>) {
         resourceCluster.forEach {
-            inference.deriveResourceToTable(it, tables)
+            RestActionHandlingUtil.inference.deriveResourceToTable(it, tables)
         }
     }
     /**
@@ -1104,62 +1102,7 @@ class ResourceDepManageService {
      * if [dbActions] is not empty, return related table from tables in [dbActions]
      * if [dbActions] is empty, return all derived related table
      */
-    fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf()) = inference.generateRelatedTables(call, dbActions)
-
-    /**
-     * bind values between [call] and [dbActions]
-     * [candidates] presents how to map [call] and [dbActions] at Gene-level
-     * [forceBindParamBasedOnDB] is an option to bind params of [call] based on [dbActions]
-     */
-    fun bindCallWithDBAction(
-        call: RestResourceCalls,
-        dbActions: MutableList<DbAction>,
-        candidates: MutableMap<RestAction, MutableList<ParamGeneBindMap>>,
-        forceBindParamBasedOnDB: Boolean = false, dbRemovedDueToRepair : Boolean) {
-
-        assert(call.actions.isNotEmpty())
-
-        for (a in call.actions) {
-            if (a is RestCallAction) {
-                var list = candidates[a]
-                if (list == null) list = candidates.filter { a.getName() == it.key.getName() }.values.run {
-                    if (this.isEmpty()) null else this.first()
-                }
-                if (list != null && list.isNotEmpty()) {
-                    list.forEach { pToGene ->
-                        val dbAction = dbActions.find { it.table.name.equals(pToGene.tableName, ignoreCase = true) }
-                        //there might due to a repair for dbactions
-                        if (dbAction == null && !dbRemovedDueToRepair)
-                            log.warn("cannot find ${pToGene.tableName} in db actions ${
-                                dbActions.joinToString(
-                                    ";"
-                                ) { it.table.name }
-                            }")
-
-                        if(dbAction != null){
-                            // columngene might be null if the column is nullable
-                            val columngene = dbAction.seeGenes().firstOrNull { g -> g.name.equals(pToGene.column, ignoreCase = true) }
-                            if (columngene != null){
-                                val param = a.parameters.find { p -> rm.getResourceCluster()[a.path.toString()]!!.getParamId(a.parameters, p)
-                                    .equals(pToGene.paramId, ignoreCase = true) }
-                                param?.let {
-                                    if (pToGene.isElementOfParam) {
-                                        if (param is BodyParam && param.gene is ObjectGene) {
-                                            param.gene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
-                                                ParamUtil.bindParamWithDbAction(columngene, paramGene, forceBindParamBasedOnDB || dbAction.representExistingData)
-                                            }
-                                        }
-                                    } else {
-                                        ParamUtil.bindParamWithDbAction(columngene, param.gene, forceBindParamBasedOnDB || dbAction.representExistingData)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    //fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf()) = RestActionHandlingUtil.inference.generateRelatedTables(call, dbActions)
 
     private fun bindCallWithOtherDBAction(call: RestResourceCalls, dbActions: MutableList<DbAction>) {
         val dbRelatedToTables = dbActions.map { it.table.name }.toMutableList()
@@ -1189,8 +1132,8 @@ class ResourceDepManageService {
         }
 
         val dbActions = dbActions.plus(call.dbActions).toMutableList()
-        inference.generateRelatedTables(call, dbActions).let {
-            bindCallWithDBAction(call, dbActions, it, forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
+        RestActionHandlingUtil.inference.generateRelatedTables(call, dbActions).let {
+            RestActionHandlingUtil.bindCallWithDBAction(call, dbActions, it, forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
         }
     }
 

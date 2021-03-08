@@ -524,7 +524,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 actionName = null,
                 actionIndex = null,
                 geneId = id,
-                fromInitialization = individual.seeGenes(Individual.GeneFilter.ONLY_SQL).contains(gene)
+                fromInitialization = individual.seeGenes(GeneFilter.ONLY_SQL).contains(gene)
         )
     }
 

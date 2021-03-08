@@ -1,17 +1,29 @@
 package org.evomaster.core.problem.rest.service
 
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ResourceStatus
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.rest.util.inference.SimpleDeriveResourceBinding
+import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 object RestActionHandlingUtil {
+
+    val inference = SimpleDeriveResourceBinding()
+
+    val log: Logger = LoggerFactory.getLogger(RestActionHandlingUtil::class.java)
 
     /**
      * create resource for the [target]
@@ -184,6 +196,74 @@ object RestActionHandlingUtil {
         }
     }
 
-    public fun isCreatedByRestAction(status : ResourceStatus) = status == ResourceStatus.CREATED_REST
+    fun isCreatedByRestAction(status : ResourceStatus) = status == ResourceStatus.CREATED_REST
+
+
+    fun bindRestActionsWithDbActions(
+        dbActions: MutableList<DbAction>,
+        calls: RestResourceCalls,
+        forceBindParamBasedOnDB: Boolean
+    ){
+        val candidates = inference.generateRelatedTables(calls = calls, dbActions= dbActions)
+        bindCallWithDBAction(calls, dbActions, candidates, forceBindParamBasedOnDB, false)
+    }
+
+    /**
+     * bind values between [call] and [dbActions]
+     * [candidates] presents how to map [call] and [dbActions] at Gene-level
+     * [forceBindParamBasedOnDB] is an option to bind params of [call] based on [dbActions]
+     */
+    fun bindCallWithDBAction(
+        call: RestResourceCalls,
+        dbActions: MutableList<DbAction>,
+        candidates: MutableMap<RestAction, MutableList<ParamGeneBindMap>>,
+        forceBindParamBasedOnDB: Boolean = false,
+        dbRemovedDueToRepair : Boolean
+        ) {
+
+        assert(call.actions.isNotEmpty())
+
+        for (a in call.actions) {
+            if (a is RestCallAction) {
+                var list = candidates[a]
+                if (list == null) list = candidates.filter { a.getName() == it.key.getName() }.values.run {
+                    if (this.isEmpty()) null else this.first()
+                }
+                if (list != null && list.isNotEmpty()) {
+                    list.forEach { pToGene ->
+                        val dbAction = dbActions.find { it.table.name.equals(pToGene.tableName, ignoreCase = true) }
+                        //there might due to a repair for dbactions
+                        if (dbAction == null && !dbRemovedDueToRepair)
+                            log.warn("cannot find ${pToGene.tableName} in db actions ${
+                                dbActions.joinToString(
+                                    ";"
+                                ) { it.table.name }
+                            }")
+
+                        if(dbAction != null){
+                            // columngene might be null if the column is nullable
+                            val columngene = dbAction.seeGenes().firstOrNull { g -> g.name.equals(pToGene.column, ignoreCase = true) }
+                            if (columngene != null){
+                                val param = a.parameters.find { p ->
+                                    //resourceCluster[a.path.toString()]!!.getParamId(a.parameters, p)
+                                    call.getResourceNode().getResourceNode(a.path)?.getParamId(a.parameters, p)?.equals(pToGene.paramId, ignoreCase = true) == true }
+                                param?.let {
+                                    if (pToGene.isElementOfParam) {
+                                        if (param is BodyParam && param.gene is ObjectGene) {
+                                            param.gene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
+                                                ParamUtil.bindParamWithDbAction(columngene, paramGene, forceBindParamBasedOnDB || dbAction.representExistingData)
+                                            }
+                                        }
+                                    } else {
+                                        ParamUtil.bindParamWithDbAction(columngene, param.gene, forceBindParamBasedOnDB || dbAction.representExistingData)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 }

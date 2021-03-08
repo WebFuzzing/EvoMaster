@@ -286,7 +286,7 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
     private fun getBindMap(paramId: String, pToTable : ParamRelatedToTable, tables : Set<String>, resourceToTable: ResourceRelatedToTable, result :  MutableList<ParamGeneBindMap>) : Boolean{
         if(pToTable is SimpleParamRelatedToTable){
             resourceToTable.findBestTableForParam(tables, pToTable)?.let {pair->
-                var target = pair.first.toList()[(0..(pair.first.size-1)).shuffled().first()]//
+                val target = pair.first.toList()[(pair.first.indices).shuffled().first()]//
                 val column = resourceToTable.getSimpleParamToSpecifiedTable(target, pToTable)!!.second
                 result.add(ParamGeneBindMap(paramId, false, pToTable.referParam.name, tableName = target, column = column))
                 return true

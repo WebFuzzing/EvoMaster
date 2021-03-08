@@ -522,7 +522,7 @@ class ResourceManageService {
 
     private fun handleDbActionForCall(call: RestResourceCalls, forceInsert: Boolean, forceSelect: Boolean) : Boolean{
 
-        val paramToTables = dm.extractRelatedTablesForCall(call)
+        val paramToTables = RestActionHandlingUtil.inference.generateRelatedTables(call, mutableListOf())//dm.extractRelatedTablesForCall(call)
         if(paramToTables.isEmpty()) return false
 
         //val relatedTables = removeDuplicatedTables(paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet())
@@ -544,7 +544,7 @@ class ResourceManageService {
             /*
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
              */
-            dm.bindCallWithDBAction(call,dbActions, paramToTables, dbRemovedDueToRepair = removed)
+            RestActionHandlingUtil.bindCallWithDBAction(call,dbActions, paramToTables, dbRemovedDueToRepair = removed)
 
             call.dbActions.addAll(dbActions)
         }
@@ -569,20 +569,20 @@ class ResourceManageService {
     fun repairRestResourceCalls(call: RestResourceCalls) {
         call.repairGenesAfterMutation()
 
-        if(hasDBHandler() && call.dbActions.isNotEmpty()){
-
-            val previous = call.dbActions.map { it.table.name }
-            call.dbActions.clear()
-            //handleCallWithDBAction(referResource, call, true, false)
-            handleDbActionForCall(call, forceInsert = true, forceSelect = false)
-
-            if(call.dbActions.size != previous.size){
-                //remove additions
-                call.dbActions.removeIf {
-                    !previous.contains(it.table.name)
-                }
-            }
-        }
+//        if(hasDBHandler() && call.dbActions.isNotEmpty()){
+//
+//            val previous = call.dbActions.map { it.table.name }
+//            call.dbActions.clear()
+//            //handleCallWithDBAction(referResource, call, true, false)
+//            handleDbActionForCall(call, forceInsert = true, forceSelect = false)
+//
+//            if(call.dbActions.size != previous.size){
+//                //remove additions
+//                call.dbActions.removeIf {
+//                    !previous.contains(it.table.name)
+//                }
+//            }
+//        }
     }
     /*********************************** database ***********************************/
 
@@ -668,7 +668,7 @@ class ResourceManageService {
         return sqlInsertBuilder
     }
 
-    fun notEmptyDb() = getSqlBuilder() != null && getSqlBuilder()!!.anyTable()
+    private fun notEmptyDb() = getSqlBuilder() != null && getSqlBuilder()!!.anyTable()
 
     private fun getDataInDb(tableName: String) : MutableList<DataRowDto>?{
         if (dataInDB.isEmpty()) snapshotDB()
@@ -678,7 +678,7 @@ class ResourceManageService {
         return dataInDB.getValue(found.first())
     }
 
-    fun getTableByName(name : String) = tables.keys.find { it.equals(name, ignoreCase = true) }?.run { tables[this] }
+    private fun getTableByName(name : String) = tables.keys.find { it.equals(name, ignoreCase = true) }?.run { tables[this] }
 
 
     /**

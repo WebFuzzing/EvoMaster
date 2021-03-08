@@ -9,7 +9,7 @@ import org.evomaster.core.problem.rest.service.RestFitness;
 import org.evomaster.core.problem.rest.service.RestSampler;
 import org.evomaster.core.problem.rest.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
-import org.evomaster.core.search.Individual;
+import org.evomaster.core.search.GeneFilter;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.StringGene;
 import org.evomaster.core.search.service.Archive;
@@ -117,7 +117,7 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
 
 
     private void setValue(String geneName, String value, RestIndividual individual){
-        Gene gene = individual.seeGenes(Individual.GeneFilter.ALL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
+        Gene gene = individual.seeGenes(GeneFilter.ALL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
                 .findAny()
                 .orElse(null);
         Gene g = ParamUtil.Companion.getValueGene(gene);

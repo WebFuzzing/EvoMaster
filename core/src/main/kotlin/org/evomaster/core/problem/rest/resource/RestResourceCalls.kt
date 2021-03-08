@@ -3,6 +3,9 @@ package org.evomaster.core.problem.rest.resource
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.service.RestActionHandlingUtil
+import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
+import org.evomaster.core.search.GeneFilter
 import org.evomaster.core.search.gene.Gene
 
 /**
@@ -48,20 +51,54 @@ class RestResourceCalls(
     /**
      * @return genes that represents this resource, i.e., longest action in this resource call
      */
-    fun seeGenes() : List<out Gene>{
-        return longestPath().seeGenes()
-    }
-
-    fun repairGenesAfterMutation(gene: Gene? = null){
-        val target = longestPath()
-        if(gene != null) repairGenePerAction(gene, target)
-        else{
-            actions.filter { it is RestCallAction && it != target }
-                    .forEach{a-> (a as RestCallAction).bindToSamePathResolution(target as RestCallAction)}
+    fun seeGenes(filter : GeneFilter = GeneFilter.NO_SQL) : List<out Gene>{
+        return when(filter){
+            GeneFilter.NO_SQL -> seeRestGenes()
+            GeneFilter.ONLY_SQL -> seeSQLGenes()
+            GeneFilter.ALL-> seeSQLGenes().plus(seeRestGenes())
+            else -> throw IllegalArgumentException("there is no initialization in an ResourceCall")
         }
     }
 
+    /**
+     * @return the mutable SQL genes and they do not bind with any of Rest Actions
+     *
+     * FIXME Man: shall we only return mutable genes?
+     */
+    private fun seeSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getTemplate())
+
+    private fun seeRestGenes() : List<out Gene> = getResourceNode().getMutableRestGenes(actions, getTemplate())
+
+    /**
+     * repair binding after mutation
+     */
+    fun repairGenesAfterMutation(){
+        /*
+            since we do not mutate the SQL genes which related to Rest Actions,
+            we do not need to update rest actions based on mutated SQL genes
+         */
+        seeRestGenes().map {g->
+            val target = actions.find { it.seeGenes().contains(g) }
+                ?:throw IllegalArgumentException("${g.name} cannot be found in any rest actions, and the current actions are ${actions.joinToString(","){ it.getName() }}")
+            val param = (target as? RestCallAction)?.parameters?.find { it.gene == g }?:throw IllegalStateException("${g.name} cannot be found in rest action ${target.getName()}")
+            actions.filter { it != target }
+                .forEach{a-> (a as RestCallAction).bindToSamePathResolution(target.path, listOf(param))}
+        }
+
+        // update dbactions based on rest actions
+        RestActionHandlingUtil.bindRestActionsWithDbActions(
+            dbActions,
+            this,
+            false
+        )
+    }
+
+
+    /**
+     * employing the longest action to represent a group of calls on a resource
+     */
     private fun longestPath() : RestAction{
+        if (actions.size == 1) return actions.first()
         val max = actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }.max()!!
         val candidates = actions.filter { a -> a is RestCallAction && a.path.levels() == max }
         return candidates.first()
@@ -75,9 +112,16 @@ class RestResourceCalls(
             }
     }
 
+    fun getTemplate() = template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(actions as List<RestCallAction>)
+
     fun getResourceNode() : RestResourceNode = resourceInstance?.referResourceNode?:throw IllegalArgumentException("the individual does not have resource structure")
 
     fun getResourceNodeKey() : String = getResourceNode().getName()
+
+    // if the action is bounded with existing data from db, it is not mutable
+    fun isMutable() = dbActions.none {
+        it.representExistingData
+    }
 
 }
 

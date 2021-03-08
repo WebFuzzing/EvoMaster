@@ -22,8 +22,6 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      */
     abstract fun copy(): Individual
 
-    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL }
-
     /**
      * Return a view of all the Genes in this chromosome/individual
      */

@@ -13,6 +13,7 @@ import org.evomaster.core.problem.rest.service.RestActionHandlingUtil
 import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -114,6 +115,56 @@ class RestResourceNode(
                 ancestors.add(r)
         }
     }
+
+    fun getResourceNode(path: RestPath) : RestResourceNode?{
+        if (path.toString() == path.toString()) return this
+        return ancestors.find { it.path.toString() == path.toString() }
+    }
+
+
+    /**
+     * @return mutable genes in [dbactions] and they do not bind with rest actions.
+     */
+    fun getMutableSQLGenes(dbactions: MutableList<DbAction>, template: String) : List<out Gene>{
+
+        val related = getMissingParams(template).map {
+            resourceToTable.paramToTable[it.key]
+        }
+
+        return dbactions.filterNot { it.representExistingData }.flatMap { db->
+            val exclude = related.flatMap { r-> r?.getRelatedColumn(db.getName())?.toList()?:listOf() }
+            db.seeGenesForInsertion(exclude)
+        }.filter(Gene::isMutable)
+    }
+
+    /**
+     * @return mutable genes in [actions] which perform action on current [this] resource node
+     *          with [callsTemplate] template, e.g., POST-GET
+     */
+    fun getMutableRestGenes(actions: List<RestAction>, template: String) : List<out Gene>{
+        if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestAction::seeGenes).filter(Gene::isMutable)
+
+        val missing = getMissingParams(template)
+        val params = mutableListOf<Param>()
+        (actions.indices).forEach { i ->
+            val a = actions[i]
+            if (a is RestCallAction){
+                if (i == 0 || a.verb == HttpVerb.POST) params.addAll(a.parameters)
+                else{
+                    params.addAll(a.parameters.filter { p->
+                        missing.none { m->
+                            m.key == getParamId(a.parameters, p)
+                        }
+                    })
+                }
+            }else{
+                throw IllegalStateException("Rest action at index $i is not a RestCallAction")
+            }
+        }
+        return params.flatMap(Param::seeGenes).filter(Gene::isMutable)
+    }
+
+
 
     private fun initVerbs(withDB: Boolean){
         actions.forEach { a->

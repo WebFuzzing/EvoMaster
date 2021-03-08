@@ -8,7 +8,7 @@ import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.Individual
+import org.evomaster.core.search.GeneFilter
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.gene.DateGene
 import org.evomaster.core.search.gene.Gene
@@ -35,12 +35,12 @@ class IndividualMutationweightTest {
     fun testRestIndividual(){
         val individual = newRestIndividual()
 
-        val sql = individual.seeGenes(Individual.GeneFilter.ONLY_SQL)
+        val sql = individual.seeGenes(GeneFilter.ONLY_SQL)
         assertEquals(3, sql.size)
         //1 sql key , 1 for date, 2 for info obj
         assertEquals(4.0, sumWeight(sql))
 
-        val other = individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }
+        val other = individual.seeGenes(GeneFilter.NO_SQL).filter { it.isMutable() }
         assertEquals(1, other.size)
         /*
             by default, fields of object genes are OptionalGene that might increase the static weight

@@ -1,10 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.individual
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.Individual
+import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
@@ -297,6 +294,7 @@ class IndividualGeneImpactTest {
                GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeGenes)
                GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
                GeneFilter.ALL -> seeInitializingActions().plus(seeActions()).flatMap(Action::seeGenes)
+               else -> throw IllegalArgumentException("$filter is not supported by ImpactTest Individual")
            }
         }
 

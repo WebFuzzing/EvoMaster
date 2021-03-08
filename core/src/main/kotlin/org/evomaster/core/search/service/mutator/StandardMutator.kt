@@ -10,8 +10,8 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Individual.GeneFilter.ALL
-import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
+import org.evomaster.core.search.GeneFilter.ALL
+import org.evomaster.core.search.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -39,11 +39,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
-        val mutable = individual.seeGenes(filterMutate).filter { it.isMutable() }
-        if (!config.isEnabledArchiveGeneMutation())
-            return mutable
-
-        return mutable
+        return individual.seeGenes(filterMutate).filter { it.isMutable() }
     }
 
     override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>{

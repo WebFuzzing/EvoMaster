@@ -4,6 +4,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.GeneFilter
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
@@ -30,6 +31,7 @@ class GraphQLIndividual(
             GeneFilter.ALL -> dbInitialization.flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
             GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
             GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
+            else -> throw IllegalArgumentException("$filter is not supported for GraphQLIndividual")
         }
     }
 
