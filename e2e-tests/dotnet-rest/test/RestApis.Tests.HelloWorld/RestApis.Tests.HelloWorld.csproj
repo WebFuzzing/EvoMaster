@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <Target Name="htmlWarning" AfterTargets="AfterBuild">
-    <Copy SourceFiles="../../../../client-dotnet/src/Controller/Resources/warning.html" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../../../../client-dotnet/src/EvoMaster.Controller/Resources/warning.html" DestinationFolder="$(OutDir)" />
   </Target>
   
   <ItemGroup>
@@ -22,8 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../../client-dotnet/src/Controller/Controller.csproj" />
     <ProjectReference Include="../../src/RestApis.HelloWorld/RestApis.HelloWorld.csproj" />
+    <ProjectReference Include="..\..\..\..\client-dotnet\src\EvoMaster.Controller\EvoMaster.Controller.csproj" />
   </ItemGroup>
 
 </Project>
