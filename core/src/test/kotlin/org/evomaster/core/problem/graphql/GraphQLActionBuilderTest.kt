@@ -45,8 +45,8 @@ class GraphQLActionBuilderTest {
         assertTrue(objVets.fields.any { it is IntegerGene && it.name == "id" })
         assertTrue(objVets.fields.any { it is StringGene && it.name == "firstName" })
         assertTrue(objVets.fields.any { it is StringGene && it.name == "lastName" })
-        assertTrue(objVets.fields.any { it is ArrayGene<*> && it.name == "Specialty" })
-        val objSpecialty = (objVets.fields.first { it.name == "Specialty" } as ArrayGene<*>).template as ObjectGene
+        assertTrue(objVets.fields.any { it is ArrayGene<*> && it.name == "specialties" })
+        val objSpecialty = (objVets.fields.first { it.name == "specialties" } as ArrayGene<*>).template as ObjectGene
         assertEquals(2, objSpecialty.fields.size)
         assertTrue(objSpecialty.fields.any { it is IntegerGene && it.name == "id" })
         assertTrue(objSpecialty.fields.any { it is StringGene && it.name == "name" })
@@ -75,21 +75,20 @@ class GraphQLActionBuilderTest {
         assertTrue(owner.fields.any { it is StringGene && it.name == "address" })
         assertTrue(owner.fields.any { it is StringGene && it.name == "city" })
         assertTrue(owner.fields.any { it is StringGene && it.name == "telephone" })
-        assertTrue(owner.fields.any { it is ArrayGene<*> && it.name == "Pet" })
-        val objPet = (owner.fields.first { it.name == "Pet" } as ArrayGene<*>).template as ObjectGene
+        assertTrue(owner.fields.any { it is ArrayGene<*> && it.name == "pets" })
+        val objPet = (owner.fields.first { it.name == "pets" } as ArrayGene<*>).template as ObjectGene
         assertEquals(6, objPet.fields.size)
         assertTrue(objPet.fields.any { it is IntegerGene && it.name == "id" })
         assertTrue(objPet.fields.any { it is StringGene && it.name == "name" })
         assertTrue(objPet.fields.any { it is DateGene && it.name == "birthDate" })
-        assertTrue(objPet.fields.any { it is ObjectGene && it.name == "PetType" })
-        // assertTrue(objPet.fields.any { it is CycleObjectGene && it.name == "Owner" })// it is not a cycle
-        assertTrue(objPet.fields.any { it is ObjectGene && it.name == "VisitConnection" })
+        assertTrue(objPet.fields.any { it is ObjectGene && it.name == "type" })
+        assertTrue(objPet.fields.any { it is ObjectGene && it.name == "visits" })
         assertTrue(objPet.fields[5] is ObjectGene)
         val objVisitConnection = objPet.fields[5] as ObjectGene
         assertEquals(2, objVisitConnection.fields.size)
         assertTrue(objVisitConnection.fields[0] is IntegerGene)
         assertTrue(objVisitConnection.fields.any { it is IntegerGene && it.name == "totalCount" })
-        assertTrue(objVisitConnection.fields.any { it is ArrayGene<*> && it.name == "Visit" })
+        assertTrue(objVisitConnection.fields.any { it is ArrayGene<*> && it.name == "visits" })
 
         /**/
         val pet = actionCluster.get("pet") as GraphQLAction
@@ -100,7 +99,7 @@ class GraphQLActionBuilderTest {
         assertTrue(pet.parameters[1].gene is ObjectGene)
         val objPet2 = (pet.parameters[1].gene as ObjectGene)
         assertEquals(6, objPet2.fields.size)
-        assertTrue(objPet2.fields.any { it is ObjectGene && it.name == "VisitConnection" })
+        assertTrue(objPet2.fields.any { it is ObjectGene && it.name == "visits" })
         /**/
         val specialties = actionCluster.get("specialties") as GraphQLAction
         assertEquals(1, specialties.parameters.size)
@@ -172,7 +171,7 @@ class GraphQLActionBuilderTest {
         assertTrue((algorand.parameters[1].gene as OptionalGene).gene is ObjectGene)
         val objAlgorand = (algorand.parameters[1].gene as OptionalGene).gene as ObjectGene
         assertEquals(7, objAlgorand.fields.size)
-        assertTrue(objAlgorand.fields.any { it is ArrayGene<*> && it.name == "AlgorandAddressInfo" })
+        assertTrue(objAlgorand.fields.any { it is ArrayGene<*> && it.name == "address" })
 
     }
 

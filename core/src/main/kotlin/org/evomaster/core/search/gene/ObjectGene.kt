@@ -115,6 +115,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             if (includedFields.isEmpty()) {
                 buffer.append("$name")
             } else {
+                buffer.append("$name")
                 buffer.append("{")
 
                 val selection = includedFields.filter {

@@ -267,7 +267,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
         //TODO inputGenes
-        val query = "{${a.methodName}${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+       val query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
 
         val bodyEntity = Entity.json("""
             {"query" : "$query","variables":null}

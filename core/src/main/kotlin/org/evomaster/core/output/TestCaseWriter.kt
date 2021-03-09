@@ -394,11 +394,6 @@ class TestCaseWriter {
 
         handleGQLResponse(call, res, lines)
         handleGQLLastLine(lines)
-
-        /*what is expectations?
-        if (configuration.expectationsActive) {
-            expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
-        }*/
     }
 
     /**
@@ -956,10 +951,9 @@ class TestCaseWriter {
 
             }
 
-                //todo
                 val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\":\" ${call.methodName}${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}\",\"variables\":null }")
-                } else {//what is readable?
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\":\"{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}\",\"variables\":null }")
+                } else {
                     selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 }
                 //todo the input param
