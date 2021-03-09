@@ -47,7 +47,7 @@ class EvaluatedIndividualBuilder {
 
             val fitnessVal = FitnessValue(0.0)
 
-            val results = (0 until individual.size()).map { RestCallResult().also { it.setTimedout(true) } }
+            val results = (individual.seeRestAction().indices).map { RestCallResult().also { it.setTimedout(true) } }
 
             val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
             return Triple(format, baseUrlOfSut, ei)
