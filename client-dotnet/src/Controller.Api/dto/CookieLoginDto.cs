@@ -1,5 +1,4 @@
-namespace Controller.Api
-{
+namespace Controller.Api {
   /**
    * Information on how to do a login based on username/password,
    * from which we then get a cookie back
@@ -42,5 +41,15 @@ namespace Controller.Api
      * The encoding type used to specify how the data is sent
      */
     public ContentType ContentType { get; set; }
+  }
+
+  public enum ContentType {
+    JSON,
+    X_WWW_FORM_URLENCODED
+  }
+
+  public enum HttpVerb {
+    GET,
+    POST
   }
 }

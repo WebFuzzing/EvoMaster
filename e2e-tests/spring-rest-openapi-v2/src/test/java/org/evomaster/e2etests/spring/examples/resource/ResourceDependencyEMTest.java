@@ -1,16 +1,12 @@
 package org.evomaster.e2etests.spring.examples.resource;
 
-import org.evomaster.core.problem.rest.*;
-import org.evomaster.core.search.Action;
-import org.evomaster.core.search.EvaluatedIndividual;
+import org.evomaster.core.problem.rest.HttpVerb;
+import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,17 +15,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ResourceDependencyEMTest extends ResourceTestBase {
 
-
-    @Disabled("Started to fail since update to OpenApi V3")
     @Test
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "none",
-                "none",
+                "ResourceEM",
+                "org.resource.ResourceEM",
                 1_000,
-                false,
+                true,
                 (args) -> {
+                    // disable taint analysis
+                    args.add("--baseTaintAnalysisProbability");
+                    args.add("0.0");
+
+                    //disable hypermutation
+                    args.add("--enableTrackEvaluatedIndividual");
+                    args.add("false");
+                    args.add("--weightBasedMutationRate");
+                    args.add("false");
+                    args.add("--adaptiveGeneSelectionMethod");
+                    args.add("NONE");
+                    args.add("--archiveGeneMutation");
+                    args.add("NONE");
+                    args.add("--probOfArchiveMutation");
+                    args.add("0.0");
+
+                    //disable SQL
                     args.add("--heuristicsForSQL");
                     args.add("false");
                     args.add("--generateSqlDataWithSearch");
@@ -61,6 +72,7 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     args.add("--structureMutationProbability");
                     args.add("1.0");
 
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
@@ -80,42 +92,5 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
 
                     assertTrue(ok);
                 }, 3);
-    }
-
-
-    protected boolean hasAtLeastOneSequence(EvaluatedIndividual<RestIndividual> ind,
-                                            HttpVerb[] verbs,
-                                            int[] expectedStatusCodes,
-                                            String[] paths) {
-        assertTrue(verbs.length == expectedStatusCodes.length);
-        assertTrue(verbs.length == paths.length);
-
-        boolean[] matched = new boolean[verbs.length];
-        Arrays.fill(matched, false);
-        List<RestAction> actions = ind.getIndividual().seeActions();
-
-        Loop:
-        for (int i = 0; i < actions.size(); i++) {
-            RestAction action = actions.get(i);
-            if (action instanceof RestCallAction){
-                int index = getIndexOfFT(matched) + 1;
-                if (index == matched.length) break Loop;
-                if (((RestCallAction) action).getVerb() == verbs[index]
-                        && ((RestCallAction) action).getPath().isEquivalent(new RestPath(paths[index]))
-                        && ((RestCallResult) ind.getResults().get(i)).getStatusCode() == expectedStatusCodes[index]){
-                    matched[index] = true;
-                }
-            }
-        }
-
-        return getIndexOfFT(matched) == (matched.length - 1);
-    }
-
-    private int getIndexOfFT(boolean[] matched){
-        if (!matched[0]) return -1;
-        for (int i = 0; i < matched.length - 1; i++){
-            if(!matched[i+1]) return i;
-        }
-        return matched.length -1;
     }
 }

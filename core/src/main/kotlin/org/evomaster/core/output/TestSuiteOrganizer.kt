@@ -75,7 +75,7 @@ class NamingHelper {
      * the [RestIndividual] and will change with a new problem
      */
     private fun criterion4_dbInit(individual: EvaluatedIndividual<*>): String{
-        if ((individual.individual is RestIndividual) && (individual.individual as RestIndividual).dbInitialization.isNotEmpty()){
+        if ((individual.individual is RestIndividual) && (individual.individual as RestIndividual).seeInitializingActions().isNotEmpty()){
             return "_" + "hasDbInit"
         }
         else return ""
@@ -178,7 +178,7 @@ class SortingHelper {
      */
     private val dbInitSize: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>>{ ind ->
         if(ind.individual is RestIndividual) {
-            ind.individual.dbInitialization.size
+            ind.individual.seeInitializingActions().size
         }
         else 0
     }.reversed()

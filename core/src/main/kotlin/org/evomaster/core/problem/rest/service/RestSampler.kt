@@ -33,21 +33,7 @@ class RestSampler : AbstractRestSampler(){
     }
 
 
-    fun canInsertInto(tableName: String) : Boolean {
-        //TODO might need to refactor/remove once we deal with VIEWs
 
-        return sqlInsertBuilder?.isTable(tableName) ?: false
-    }
-
-    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
-
-        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
-                ?: throw IllegalStateException("No DB schema is available")
-
-        DbActionUtils.randomizeDbActionGenes(actions, randomness)
-
-        return actions
-    }
 
     override fun sampleAtRandom(): RestIndividual {
 

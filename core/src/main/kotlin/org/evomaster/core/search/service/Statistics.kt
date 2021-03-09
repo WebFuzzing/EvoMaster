@@ -254,6 +254,7 @@ class Statistics : SearchListener {
                 .filter {
                     it.result is RestCallResult
                             && it.action is RestCallAction
+                            && !it.result.hasErrorCode()
                             && oracles.activeOracles(it.action, it.result).any { or -> or.value }
                 }
                 .map { it.action.getName() }

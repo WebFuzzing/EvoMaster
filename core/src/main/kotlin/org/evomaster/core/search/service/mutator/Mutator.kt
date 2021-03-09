@@ -139,7 +139,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val targetsInfo =
                 evaluateMutationInDetails(mutated = mutated, current = current, targets = targets, archive = archive)
 
-            if (config.collectImpact()){
+            if (config.isEnabledImpactCollection()){
                 /*
                     update impact info regarding targets.
                     To avoid side-effect to impactful gene, remove covered targets
@@ -201,7 +201,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      */
     private fun evaluateMutationInDetails(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, targets: Set<Int>, archive: Archive<T>): Map<Int, EvaluatedMutation> {
 
-        if (!config.collectImpact() && !config.enableArchiveSolution()) return emptyMap()
+        if (!config.isEnabledImpactCollection() && !config.isEnabledArchiveSolution()) return emptyMap()
 
         val evaluatedTargets = targets.map { it to EvaluatedMutation.UNSURE }.toMap().toMutableMap()
 

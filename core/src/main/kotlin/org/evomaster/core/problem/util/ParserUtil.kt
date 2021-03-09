@@ -27,8 +27,8 @@ object ParserUtil {
     private const val REGEX_NOUN = "([{pos:/NN|NNS|NNP/}])"
     private const val REGEX_VERB = "([{pos:/VB|VBD|VBG|VBN|VBP|VBZ/}])"
 
-    private val PATTERN_NOUN = TokenSequencePattern.compile(REGEX_NOUN)
-    private val PATTERN_VERB = TokenSequencePattern.compile(REGEX_VERB)
+    private var pattern_noun : TokenSequencePattern? =null
+    private var pattern_verb : TokenSequencePattern? =null
 
     /**
      * configure stanford parser
@@ -44,6 +44,18 @@ object ParserUtil {
             })
         }
         return PIPELINE!!
+    }
+
+    private fun getNoun() : TokenSequencePattern{
+        if(pattern_noun == null)
+            pattern_noun = TokenSequencePattern.compile(REGEX_NOUN);
+        return pattern_noun!!
+    }
+
+    private fun getVerb() : TokenSequencePattern{
+        if(pattern_verb == null)
+            pattern_verb = TokenSequencePattern.compile(REGEX_VERB)
+        return pattern_verb!!
     }
 
     private fun formatKey(source : String) : String = source.toLowerCase()
@@ -259,8 +271,8 @@ object ParserUtil {
         if(text.isNotBlank()){
             val tokens = getNlpTokens(text)
 
-            val resultNouns = getMatched(PATTERN_NOUN, tokens)
-            val resultVerbs = getMatched(PATTERN_VERB, tokens)
+            val resultNouns = getMatched(getNoun(), tokens)
+            val resultVerbs = getMatched(getVerb(), tokens)
 
             return tokens.filter { resultNouns.plus(resultVerbs).contains(it.originalText()) }
         }

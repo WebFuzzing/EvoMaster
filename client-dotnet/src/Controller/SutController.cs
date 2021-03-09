@@ -39,7 +39,7 @@ namespace Controller {
 
         public abstract void ResetStateOfSut ();
 
-        public abstract Task<string> StartSutAsync ();
+        public abstract string StartSut ();
 
         public abstract void StopSut ();
 
@@ -162,7 +162,7 @@ namespace Controller {
          */
         //TODO: Complete this method
         public void NewTest () {
-            throw new NotImplementedException ();
+            //throw new NotImplementedException (); //TODO:ZXC
         }
 
         /**
@@ -174,7 +174,7 @@ namespace Controller {
          */
         //TODO: Complete this method
         public void NewAction (ActionDto dto) {
-            throw new NotImplementedException ();
+           
         }
 
         /**

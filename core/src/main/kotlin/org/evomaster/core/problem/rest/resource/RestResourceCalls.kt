@@ -10,17 +10,14 @@ import org.evomaster.core.search.gene.Gene
  * @property template is a resource template, e.g., POST-GET
  * @property resourceInstance presents a resource that [actions] perform on. [resourceInstance] is an instance of [RestResourceNode]
  * @property actions is a sequence of actions in the [RestResourceCalls] that follows [template]
+ * @property dbActions are used to initialize data for rest actions, either select from db or insert new data into db
  */
 class RestResourceCalls(
         val template: CallsTemplate? = null,
         val resourceInstance: RestResourceInstance?=null,
-        val actions: MutableList<RestAction>
+        val actions: MutableList<RestAction>,
+        val dbActions : MutableList<DbAction> = mutableListOf()
 ){
-
-    /**
-     * [dbActions] are used to initialize data for rest actions, either select from db or insert new data into db
-     */
-    val dbActions = mutableListOf<DbAction>()
 
     var status = ResourceStatus.NOT_FOUND
 
