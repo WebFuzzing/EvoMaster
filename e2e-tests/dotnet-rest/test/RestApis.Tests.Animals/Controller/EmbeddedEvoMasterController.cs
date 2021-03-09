@@ -21,7 +21,6 @@ namespace RestApis.Tests.Animals.Controller
         private int _sutPort;
         private TestcontainerDatabase _database;
         private NpgsqlConnection _connection;
-        private string _connectionString;
 
         public static void Main(string[] args)
         {
@@ -52,7 +51,7 @@ namespace RestApis.Tests.Animals.Controller
 
         public override void ResetStateOfSut()
         {
-            DbCleaner.ClearDatabase_Postgres(new NpgsqlConnection(_connectionString),
+            DbCleaner.ClearDatabase_Postgres(_connection,
                 new List<string> {"Mammals"});
         }
 
@@ -67,7 +66,7 @@ namespace RestApis.Tests.Animals.Controller
                 RestApis.Animals.Program.Main(new[] {ephemeralPort.ToString(), connectionString});
             });
 
-            WaitUntilSutIsRunning(ephemeralPort, 90);
+            WaitUntilSutIsRunning(ephemeralPort, 190);
 
             _sutPort = ephemeralPort;
 
@@ -79,11 +78,12 @@ namespace RestApis.Tests.Animals.Controller
         public override void StopSut()
         {
             RestApis.Animals.Program.Shutdown();
-            
+
             //TODO
             _connection.Close();
-            _database.StopAsync().GetAwaiter().GetResult();
             
+            _database.StopAsync().GetAwaiter().GetResult();
+
             _isSutRunning = false;
         }
 
@@ -96,19 +96,18 @@ namespace RestApis.Tests.Animals.Controller
                 {
                     Database = "AnimalsDatabase",
                     Username = "user",
-                    Password = "password123",
+                    Password = "password123"
                 })
                 .WithExposedPort(5432);
-        
+
             _database = postgresBuilder.Build();
             await _database.StartAsync();
-            
+
             _connection = new NpgsqlConnection(_database.ConnectionString);
             await _connection.OpenAsync();
             
             //No idea why the password is missing in the connection string
-            _connectionString = $"{_connection.ConnectionString};Password={_database.Password}";
-            return _connectionString;
+            return $"{_connection.ConnectionString};Password={_database.Password}";
         }
     }
 }
