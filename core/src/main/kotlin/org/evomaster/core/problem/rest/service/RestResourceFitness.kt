@@ -68,7 +68,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
             var terminated = false
 
-            for (a in call.actions){
+            for (a in call.restActions){
 
                 //TODO handling of inputVariables
                 registerNewAction(a, indexOfAction)

@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -57,7 +58,7 @@ class BlackBoxRestFitness : RestFitness() {
             }
         }
 
-        handleResponseTargets(fv, individual.seeActions(), actionResults, listOf())
+        handleResponseTargets(fv, individual.seeRestAction(), actionResults, listOf())
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }

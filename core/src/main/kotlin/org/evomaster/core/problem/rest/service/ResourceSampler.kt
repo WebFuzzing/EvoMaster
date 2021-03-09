@@ -69,7 +69,7 @@ open class ResourceSampler : AbstractRestSampler() {
         var left = n
         while(left > 0){
             val call = sampleRandomResourceAction(0.05, left)
-            left -= call.actions.size
+            left -= call.restActions.size
             restCalls.add(call)
         }
 
@@ -83,7 +83,7 @@ open class ResourceSampler : AbstractRestSampler() {
     private fun sampleRandomResourceAction(noAuthP: Double, left: Int) : RestResourceCalls{
         val r = randomness.choose(rm.getResourceCluster().filter { it.value.isAnyAction() })
         val rc = if (randomness.nextBoolean()) rm.sampleOneAction(r) else rm.randomRestResourceCalls(r,left)
-        rc.actions.forEach {
+        rc.restActions.forEach {
             if(it is RestCallAction){
                 it.auth = getRandomAuth(noAuthP)
             }
@@ -123,13 +123,13 @@ open class ResourceSampler : AbstractRestSampler() {
         //auth management
         if(authentications.isNotEmpty()){
             val auth = getRandomAuth(0.0)
-            restCalls.flatMap { it.actions }.forEach {
+            restCalls.flatMap { it.restActions }.forEach {
                 if(it is RestCallAction)
                     it.auth = auth
             }
         }else{
             val auth = NoAuth()
-            restCalls.flatMap { it.actions }.forEach {
+            restCalls.flatMap { it.restActions }.forEach {
                 if(it is RestCallAction)
                     it.auth = auth
             }
@@ -189,7 +189,7 @@ open class ResourceSampler : AbstractRestSampler() {
         var size = config.maxTestSize
         keys.forEach {
             rm.sampleCall(it, true, resourceCalls, size)
-            size -= resourceCalls.last().actions.size
+            size -= resourceCalls.last().restActions.size
         }
     }
 
@@ -204,7 +204,7 @@ open class ResourceSampler : AbstractRestSampler() {
         while(size > 1 && executed.size < resourceSize){
             val key = if(executed.size < resourceSize-1 && size > 2) randomness.choose(depCand.keys.filter { !executed.contains(it) }) else randomness.choose(candR.keys.filter { !executed.contains(it) })
             rm.sampleCall(key, true, resourceCalls, size)
-            size -= resourceCalls.last().actions.size
+            size -= resourceCalls.last().restActions.size
             executed.add(key)
         }
     }

@@ -3,6 +3,7 @@ package org.evomaster.core.output
 import com.google.gson.Gson
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -11,6 +12,7 @@ import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils
@@ -151,7 +153,7 @@ class TestCaseWriter {
                 test.test.evaluatedResourceActions().forEachIndexed { index, c->
                     // db
                     if (c.first.isNotEmpty())
-                        SqlWriter.handleDbInitialization(format, c.first, lines, test.test.individual.seeDbActions(), groupIndex = index.toString())
+                        SqlWriter.handleDbInitialization(format, c.first, lines, test.test.individual.seeActions(ActionFilter.DB).filterIsInstance<DbAction>(), groupIndex = index.toString())
                     //actions
                     c.second.forEach { a->
                         handleEvaluatedAction(a, lines, baseUrlOfSut)

@@ -2,11 +2,47 @@ package org.evomaster.core.problem.rest.service
 
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 
 abstract class AbstractRestStructureMutator : StructureMutator(){
 
+    abstract fun getSampler() : AbstractRestSampler
+
+
+    override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
+
+        if (!config.shouldGenerateSqlData()) {
+            return
+        }
+
+        val ind = individual.individual as? RestIndividual
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
+            //TODO likely to remove/change once we ll support VIEWs
+            .filter { getSampler().canInsertInto(it.key) }
+
+        if (fw.isEmpty()) {
+            return
+        }
+
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
+
+        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, getSampler())
+
+        ind.repairInitializationActions(randomness)
+
+        // update impact based on added genes
+        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                old,
+                addedInsertions
+            )
+        }
+    }
 
     fun handleFailedWhereSQL(
         ind: RestIndividual, fw: Map<String, Set<String>>,
@@ -18,8 +54,8 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
 
             Man: shall we add all existing data here?
          */
-        if(ind.seeDbActions().isEmpty()
-            || ! ind.seeDbActions().any { it.representExistingData }) {
+        if(ind.seeDbAction().isEmpty()
+            || ! ind.seeDbAction().any { it.representExistingData }) {
             //add existing data only once
             ind.dbInitialization.addAll(0, sampler.existingSqlData)
 
@@ -70,7 +106,7 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
         return addedInsertions
     }
 
-    fun findMissing(fw: Map<String, Set<String>>, ind: RestIndividual): Map<String, Set<String>> {
+    private fun findMissing(fw: Map<String, Set<String>>, ind: RestIndividual): Map<String, Set<String>> {
 
         return fw.filter { e ->
             //shouldn't have already an action adding such SQL data

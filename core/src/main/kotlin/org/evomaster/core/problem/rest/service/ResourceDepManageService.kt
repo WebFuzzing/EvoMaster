@@ -19,11 +19,9 @@ import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToReso
 import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToTable
 import org.evomaster.core.problem.rest.resource.dependency.SelfResourcesRelation
 import org.evomaster.core.problem.rest.util.ParamUtil
-import org.evomaster.core.problem.rest.util.inference.SimpleDeriveResourceBinding
-import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
@@ -78,7 +76,7 @@ class ResourceDepManageService {
         val addedMap = mutableMapOf<String, MutableSet<String>>()
         val removedMap = mutableMapOf<String, MutableSet<String>>()
 
-        restIndividual.seeActions().forEachIndexed { index, action ->
+        (restIndividual.seeRestAction()).forEachIndexed { index, action ->
             if (config.doesApplyNameMatching) updateParamInfo(action, tables)
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
             if (index < dto.extraHeuristics.size) {
@@ -440,7 +438,7 @@ class ResourceDepManageService {
 
         if (isBetter != EvaluatedMutation.EQUAL_WITH) {
             val locOfF = swapsloc[0]
-            val distance = swapF.actions.size - swapB.actions.size
+            val distance = swapF.restActions.size - swapB.restActions.size
 
             //check F
             val middles = seqCur.subList(swapsloc[0] + 1, swapsloc[1] + 1).map { it.getResourceNodeKey() }
@@ -456,7 +454,7 @@ class ResourceDepManageService {
 
             //check FCDE
             var actionIndex = seqCur.mapIndexed { index, restResourceCalls ->
-                if (index <= locOfF) restResourceCalls.actions.size
+                if (index <= locOfF) restResourceCalls.restActions.size
                 else 0
             }.sum()
 
@@ -464,10 +462,10 @@ class ResourceDepManageService {
                 var isAnyChange = false
                 var changeDegree = 0
 
-                seqCur[indexOfCalls].actions.forEach { curAction ->
+                seqCur[indexOfCalls].restActions.forEach { curAction ->
                     val actionA = actionIndex - distance
 
-                    val compareResult = swapF.actions.plus(swapB.actions).find { it.getName() == curAction.getName() }.run {
+                    val compareResult = swapF.restActions.plus(swapB.restActions).find { it.getName() == curAction.getName() }.run {
                         if (this == null) compare(actionIndex, current, actionA, previous)
                         else compare(this.getName(), current, previous)
                     }.also { r -> changeDegree += r }
@@ -544,16 +542,16 @@ class ResourceDepManageService {
             //throw IllegalArgumentException("mutator does not change anything.")
 
             val modified = seqCur[locOfModified]
-            val distance = seqCur[locOfModified].actions.size - seqPre[locOfModified].actions.size
+            val distance = seqCur[locOfModified].restActions.size - seqPre[locOfModified].restActions.size
 
             var actionIndex = seqCur.mapIndexed { index, restResourceCalls ->
-                if (index <= locOfModified) restResourceCalls.actions.size
+                if (index <= locOfModified) restResourceCalls.restActions.size
                 else 0
             }.sum()
 
             ((locOfModified + 1) until seqCur.size).forEach { indexOfCalls ->
                 var isAnyChange = false
-                seqCur[indexOfCalls].actions.forEach {
+                seqCur[indexOfCalls].restActions.forEach {
                     val actionA = actionIndex - distance
                     isAnyChange = isAnyChange || compare(actionIndex, current, actionA, previous) != 0
                     actionIndex += 1
@@ -576,9 +574,7 @@ class ResourceDepManageService {
         /*
             For instance, ABCDEFG, if we replace B with H become AHCDEFG, then check CDEFG.
             if C is worse, C rely on B; else if C is better, C rely on H; else C may not rely on B and H
-
          */
-
         val mutatedIndex = (0 until seqCur.size).find { seqCur[it].resourceInstance!!.getKey() != seqPre[it].resourceInstance!!.getKey() }!!
 
         val replaced = seqCur[mutatedIndex]
@@ -589,17 +585,17 @@ class ResourceDepManageService {
             val distance = locOfReplaced - seqPre.indexOf(replace)
 
             var actionIndex = seqCur.mapIndexed { index, restResourceCalls ->
-                if (index <= locOfReplaced) restResourceCalls.actions.size
+                if (index <= locOfReplaced) restResourceCalls.restActions.size
                 else 0
             }.sum()
 
             ((locOfReplaced + 1) until seqCur.size).forEach { indexOfCalls ->
                 var isAnyChange = false
                 var changeDegree = 0
-                seqCur[indexOfCalls].actions.forEach { curAction ->
+                seqCur[indexOfCalls].restActions.forEach { curAction ->
                     val actionA = actionIndex - distance
 
-                    val compareResult = replaced.actions.plus(replace.actions).find { it.getName() == curAction.getName() }.run {
+                    val compareResult = replaced.restActions.plus(replace.restActions).find { it.getName() == curAction.getName() }.run {
                         if (this == null) compare(actionIndex, current, actionA, previous)
                         else compare(this.getName(), current, previous)
                     }.also { r -> changeDegree += r }
@@ -662,18 +658,18 @@ class ResourceDepManageService {
 
         if (isBetter != EvaluatedMutation.EQUAL_WITH) {
             var actionIndex = seqCur.mapIndexed { index, restResourceCalls ->
-                if (index <= locOfAdded) restResourceCalls.actions.size
+                if (index <= locOfAdded) restResourceCalls.restActions.size
                 else 0
             }.sum()
 
-            val distance = added.actions.size
+            val distance = added.restActions.size
 
             (locOfAdded + 1 until seqCur.size).forEach { indexOfCalls ->
                 var isAnyChange = false
 
-                seqCur[indexOfCalls].actions.forEach { curAction ->
+                seqCur[indexOfCalls].restActions.forEach { curAction ->
                     val actionA = actionIndex - distance
-                    val compareResult = added.actions.find { it.getName() == curAction.getName() }.run {
+                    val compareResult = added.restActions.find { it.getName() == curAction.getName() }.run {
                         if (this == null) compare(actionIndex, current, actionA, previous)
                         else compare(this.getName(), current, previous)
                     }
@@ -726,19 +722,19 @@ class ResourceDepManageService {
         if (isBetter != EvaluatedMutation.EQUAL_WITH) {
 
             var actionIndex = seqPre.mapIndexed { index, restResourceCalls ->
-                if (index < locOfDelete) restResourceCalls.actions.size
+                if (index < locOfDelete) restResourceCalls.restActions.size
                 else 0
             }.sum()
 
-            val distance = 0 - delete.actions.size
+            val distance = 0 - delete.restActions.size
 
             (locOfDelete until seqCur.size).forEach { indexOfCalls ->
                 var isAnyChange = false
 
-                seqCur[indexOfCalls].actions.forEach { curAction ->
+                seqCur[indexOfCalls].restActions.forEach { curAction ->
                     val actionA = actionIndex - distance
 
-                    val compareResult = delete.actions.find { it.getName() == curAction.getName() }.run {
+                    val compareResult = delete.restActions.find { it.getName() == curAction.getName() }.run {
                         if (this == null) compare(actionIndex, current, actionA, previous)
                         else compare(this.getName(), current, previous)
                     }
@@ -1002,8 +998,7 @@ class ResourceDepManageService {
         val list= (0 until num).flatMap { rm.getSqlBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
 
         DbActionUtils.randomizeDbActionGenes(list, randomness)
-        DbActionUtils.repairBrokenDbActionsList(list, randomness)
-
+        DbActionUtils.repairBrokenDbActionsList(list.toMutableList(), randomness)
         return list
     }
 
@@ -1012,11 +1007,11 @@ class ResourceDepManageService {
      * sample an individual which contains related resources
      */
     fun sampleRelatedResources(calls: MutableList<RestResourceCalls>, sizeOfResource: Int, maxSize: Int) {
-        val start = -calls.sumBy { it.actions.size }
+        val start = -calls.sumBy { it.restActions.size }
 
         val first = randomness.choose(dependencies.keys)
         rm.sampleCall(first, true, calls, maxSize)
-        var size = calls.sumBy { it.actions.size } + start
+        var size = calls.sumBy { it.restActions.size } + start
         val excluded = mutableListOf<String>()
         val relatedResources = mutableListOf<RestResourceCalls>()
         excluded.add(first)
@@ -1033,7 +1028,7 @@ class ResourceDepManageService {
             excluded.add(related)
             rm.sampleCall(related, true, calls, size, false, if (related.isEmpty()) null else relatedResources)
             relatedResources.add(calls.last())
-            size = calls.sumBy { it.actions.size } + start
+            size = calls.sumBy { it.restActions.size } + start
         }
     }
 
@@ -1080,7 +1075,7 @@ class ResourceDepManageService {
     fun checkIfDeriveTable(call: RestResourceCalls): Boolean {
         if (!call.template!!.independent) return false
 
-        call.actions.first().apply {
+        call.restActions.first().apply {
             if (this is RestCallAction) {
                 if (this.parameters.isNotEmpty()) return true
             }
@@ -1142,7 +1137,7 @@ class ResourceDepManageService {
      */
     fun bindCallWithFront(call: RestResourceCalls, front: MutableList<RestResourceCalls>) {
 
-        val targets = front.flatMap { it.actions.filter { a -> a is RestCallAction } }
+        val targets = front.flatMap { it.restActions.filter { a -> a is RestCallAction } }
 
         /*
         TODO
@@ -1173,7 +1168,7 @@ class ResourceDepManageService {
         /*
          bind values based front actions,
          */
-        call.actions
+        call.restActions
                 .filter { it is RestCallAction }
                 .forEach { a ->
                     (a as RestCallAction).parameters.forEach { p ->

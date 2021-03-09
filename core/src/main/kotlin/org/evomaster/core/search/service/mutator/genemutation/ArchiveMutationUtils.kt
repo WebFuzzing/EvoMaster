@@ -31,25 +31,25 @@ object ArchiveMutationUtils {
         content.addAll(mutatedGenes.mutatedGenes.mapIndexed { gindex, geneInfo -> listOf(
                 index,
                 evaluatedMutation,
-                geneInfo.gene.name,
+                geneInfo.gene?.name,
                 geneInfo.previousValue,
-                geneInfo.gene.getValueAsPrintableString(),
+                geneInfo.gene?.getValueAsPrintableString(),
                 "#${targets.joinToString("#")}",
-                if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[gindex] else "",
-                if (mutatedGenes.mutatedPosition.isNotEmpty() && individual.seeActions().isNotEmpty())
-                    getActionInfo(individual.seeActions()[mutatedGenes.mutatedPosition[gindex]])
+                geneInfo.actionPosition,
+                if (geneInfo.actionPosition!=null)
+                    getActionInfo(individual.seeActions()[geneInfo.actionPosition])
                 else "").joinToString(",")} )
 
         content.addAll(mutatedGenes.mutatedDbGenes.mapIndexed { gindex, geneInfo -> listOf(
                 index,
                 evaluatedMutation,
-                geneInfo.gene.name,
+                geneInfo.gene?.name,
                 geneInfo.previousValue,
-                geneInfo.gene.getValueAsPrintableString(),
+                geneInfo.gene?.getValueAsPrintableString(),
                 "#${targets.joinToString("#")}",
-                if (mutatedGenes.mutatedDbActionPosition.isNotEmpty()) mutatedGenes.mutatedDbActionPosition[gindex] else "",
-                if (mutatedGenes.mutatedDbActionPosition.isNotEmpty() && individual.seeInitializingActions().isNotEmpty())
-                    getActionInfo(individual.seeInitializingActions()[mutatedGenes.mutatedDbActionPosition[gindex]])
+                geneInfo.actionPosition,
+                if (geneInfo.actionPosition != null)
+                    getActionInfo(individual.seeInitializingActions()[geneInfo.actionPosition])
                 else "" ).joinToString(",")})
 
         if (content.isNotEmpty()) {

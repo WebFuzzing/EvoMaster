@@ -112,7 +112,7 @@ class ResourceManageService {
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb != HttpVerb.POST && it.verb != HttpVerb.PUT }.forEach {a->
                 val call = sampleOneAction(ar, a.copy() as RestAction)
-                call.actions.forEach {a->
+                call.restActions.forEach { a->
                     if(a is RestCallAction) a.auth = auth
                 }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
@@ -123,7 +123,7 @@ class ResourceManageService {
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST}.forEach { a->
                 val call = sampleOneAction(ar, a.copy() as RestAction)
-                call.actions.forEach { (it as RestCallAction).auth = auth }
+                call.restActions.forEach { (it as RestCallAction).auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }
         }
@@ -132,7 +132,7 @@ class ResourceManageService {
                 .filter { it.actions.find { a -> a is RestCallAction && a.verb == HttpVerb.POST } != null && it.getPostChain()?.actions?.run { this.size > 1 }?:false  }
                 .forEach { ar->
                     genPostChain(ar, config.maxTestSize)?.let {call->
-                        call.actions.forEach { (it as RestCallAction).auth = auth }
+                        call.restActions.forEach { (it as RestCallAction).auth = auth }
                         adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
                     }
                 }
@@ -141,7 +141,7 @@ class ResourceManageService {
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.PUT }.forEach {a->
                 val call = sampleOneAction(ar, a.copy() as RestAction)
-                call.actions.forEach { (it as RestCallAction).auth = auth }
+                call.restActions.forEach { (it as RestCallAction).auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }
         }
@@ -151,7 +151,7 @@ class ResourceManageService {
             ar.getTemplates().values.filter { t-> RestResourceTemplateHandler.isNotSingleAction(t.template) }
                     .forEach {ct->
                         val call = sampleRestResourceCalls(ar, ct.template, config.maxTestSize)
-                        call.actions.forEach { if(it is RestCallAction) it.auth = auth }
+                        call.restActions.forEach { if(it is RestCallAction) it.auth = auth }
                         adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
                     }
         }
@@ -171,7 +171,7 @@ class ResourceManageService {
     /************************** sampling *********************************/
 
     fun generateAnother(node: RestResourceNode, calls : RestResourceCalls, maxTestSize: Int) : RestResourceCalls?{
-        val current = calls.template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(calls.actions.filterIsInstance<RestCallAction>())
+        val current = calls.template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(calls.restActions.filterIsInstance<RestCallAction>())
         val rest = node.getTemplates().filter { it.value.template != current}
         if(rest.isEmpty()) return null
         val selected = randomness.choose(rest.keys)
@@ -473,8 +473,7 @@ class ResourceManageService {
             val select = forceSelect || randomness.nextBoolean(config.probOfSelectFromDatabase)
             if (!forceInsert && select){
                 if(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty()){
-                    added = true
-                    generateSelectSql(tableName, dbActions)
+                    added = generateSelectSql(tableName, dbActions)
                 }
             }
 
@@ -611,8 +610,8 @@ class ResourceManageService {
     }
 
 
-    private fun generateSelectSql(tableName : String, dbActions: MutableList<DbAction>, forceDifferent: Boolean = false, withDbAction: DbAction?=null){
-        if(dbActions.map { it.table.name }.contains(tableName)) return
+    private fun generateSelectSql(tableName : String, dbActions: MutableList<DbAction>, forceDifferent: Boolean = false, withDbAction: DbAction?=null) : Boolean{
+        if(dbActions.map { it.table.name }.contains(tableName)) return true
 
         assert(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty())
         assert(!forceDifferent || withDbAction == null)
@@ -624,7 +623,10 @@ class ResourceManageService {
         }
 
         val selectDbAction = sqlInsertBuilder!!.extractExistingByCols(tableName, columns)
+        selectDbAction?:return false
+
         dbActions.add(selectDbAction)
+        return true
     }
 
     private fun generateInsertSql(tableName : String, dbActions: MutableList<DbAction>) : Boolean{

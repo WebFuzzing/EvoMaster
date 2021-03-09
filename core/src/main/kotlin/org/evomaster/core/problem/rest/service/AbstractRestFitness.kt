@@ -17,6 +17,7 @@ import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.remote.TcpUtils
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
@@ -583,7 +584,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         handleExtra(dto, fv)
 
-        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
+        handleResponseTargets(fv, individual.seeRestAction(), actionResults, dto.additionalInfoList)
 
         if (config.expandRestIndividuals) {
             expandIndividual(individual, dto.additionalInfoList, actionResults)

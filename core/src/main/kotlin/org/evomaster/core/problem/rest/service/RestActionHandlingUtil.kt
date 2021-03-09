@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rest.service
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.Param
@@ -221,9 +220,9 @@ object RestActionHandlingUtil {
         dbRemovedDueToRepair : Boolean
         ) {
 
-        assert(call.actions.isNotEmpty())
+        assert(call.restActions.isNotEmpty())
 
-        for (a in call.actions) {
+        for (a in call.restActions) {
             if (a is RestCallAction) {
                 var list = candidates[a]
                 if (list == null) list = candidates.filter { a.getName() == it.key.getName() }.values.run {

@@ -8,6 +8,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.GeneFilter.ALL
@@ -102,7 +103,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
 
         if(doesStructureMutation(individual.individual)){
-            structureMutator.mutateStructure(copy, mutatedGene)
+            structureMutator.mutateStructure(copy, individual, mutatedGene)
             return copy
         }
 
@@ -198,7 +199,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             enableAGM: Boolean,
             targets: Set<Int>, mutatedGene: MutatedGeneSpecification?, includeSameValue : Boolean = false) : AdditionalGeneMutationInfo?{
 
-        val isDb = individual.seeInitializingActions().any { it.seeGenes().contains(gene) }
+        val isFromInit = individual.seeInitializingActions().any { it.seeGenes().contains(gene) }
+        val filter = if (isFromInit) ActionFilter.INIT else ActionFilter.NO_INIT
 
         val value = try {
             if(gene.isPrintable()) gene.getValueAsPrintableString() else "null"
@@ -206,19 +208,19 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             "exception"
         }
         val position = when {
-            individual.seeActions(isDb).isEmpty() -> individual.seeGenes().indexOf(gene)
-            isDb -> individual.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
+            individual.seeActions(filter).isEmpty() -> individual.seeGenes().indexOf(gene)
+            isFromInit -> individual.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
             else -> individual.seeActions().indexOfFirst { it.seeGenes().contains(gene) }
         }
 
-        mutatedGene?.addMutatedGene(isDb, valueBeforeMutation = value, gene = gene, position = position)
+        mutatedGene?.addMutatedGene(isFromInit, valueBeforeMutation = value, gene = gene, position = position)
 
         val additionInfo = if(enableAGS || enableAGM){
             val id = ImpactUtils.generateGeneId(individual, gene)
             //root gene impact
             val impact = eval.getImpact(individual, gene)
             AdditionalGeneMutationInfo(
-                    config.adaptiveGeneSelectionMethod, impact, id, archiveGeneSelector, archiveGeneMutator, eval,targets, fromInitialization = isDb, position = position, rootGene = gene)
+                    config.adaptiveGeneSelectionMethod, impact, id, archiveGeneSelector, archiveGeneMutator, eval,targets, fromInitialization = isFromInit, position = position, rootGene = gene)
         }else null
 
         if (enableAGM){
@@ -226,42 +228,42 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 TODO might conduct further experiment on the 'maxlengthOfHistoryForAGM'?
              */
             val effective = eval.getLast<EvaluatedIndividual<T>>(config.maxlengthOfHistoryForAGM, EvaluatedMutation.range(min = EvaluatedMutation.BETTER_THAN.value)).filter {
-                it.individual.seeActions(isDb).isEmpty() ||
-                        (it.individual.seeActions(isDb).size > position && it.individual.seeActions(isDb)[position].getName() == individual.seeActions(isDb)[position].getName())
+                it.individual.seeActions(filter).isEmpty() ||
+                        (it.individual.seeActions(filter).size > position && it.individual.seeActions(filter)[position].getName() == individual.seeActions(filter)[position].getName())
             }
             val history = eval.getLast<EvaluatedIndividual<T>>(config.maxlengthOfHistoryForAGM, EvaluatedMutation.range()).filter {
-                it.individual.seeActions(isDb).isEmpty() ||
-                        (it.individual.seeActions(isDb).size > position && it.individual.seeActions(isDb)[position].getName() == individual.seeActions(isDb)[position].getName())
+                it.individual.seeActions(filter).isEmpty() ||
+                        (it.individual.seeActions(filter).size > position && it.individual.seeActions(filter)[position].getName() == individual.seeActions(filter)[position].getName())
             }
 
 
             additionInfo!!.effectiveHistory.addAll(effective.mapNotNull {
-                if (it.individual.seeActions(isDb).isEmpty())
+                if (it.individual.seeActions(filter).isEmpty())
                     ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
                 else
                     ImpactUtils.findMutatedGene(
-                        it.individual.seeActions(isDb)[position], gene, includeSameValue)
+                        it.individual.seeActions(filter)[position], gene, includeSameValue)
             })
 
             additionInfo.history.addAll(history.mapNotNull {e->
-                if (e.individual.seeActions(isDb).isEmpty())
+                if (e.individual.seeActions(filter).isEmpty())
                     ImpactUtils.findMutatedGene(
                            e.individual.seeGenes(), gene, includeSameValue)?.run {
                         this to EvaluatedInfo(
                                 index =  e.index,
                                 result = e.evaluatedResult,
                                 targets = e.fitness.getViewOfData().keys,
-                                specificTargets = if (!isDb) e.fitness.getTargetsByAction(position) else setOf()
+                                specificTargets = if (!isFromInit) e.fitness.getTargetsByAction(position) else setOf()
                         )
                     }
                 else
                     ImpactUtils.findMutatedGene(
-                            e.individual.seeActions(isDb)[position], gene, includeSameValue)?.run {
+                            e.individual.seeActions(filter)[position], gene, includeSameValue)?.run {
                         this to EvaluatedInfo(
                                 index =  e.index,
                                 result = e.evaluatedResult,
                                 targets = e.fitness.getViewOfData().keys,
-                                specificTargets = if (!isDb) e.fitness.getTargetsByAction(position) else setOf()
+                                specificTargets = if (!isFromInit) e.fitness.getTargetsByAction(position) else setOf()
                         )
                     }
             })

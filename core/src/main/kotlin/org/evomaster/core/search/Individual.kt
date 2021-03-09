@@ -37,8 +37,11 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
     /**
      * Return a view of all the "actions" defined in this individual.
      * Note: each action could be composed by 0 or more genes
+     *
+     * @return actions based on [filter] in this individual.
+     *      By default ([ActionFilter.NO_INIT]), return actions excluding [seeInitializingActions]
      */
-    abstract fun seeActions(): List<out Action>
+    abstract fun seeActions(filter: ActionFilter = ActionFilter.NO_INIT): List<out Action>
 
     /**
      * Return a view of all initializing actions done before the main
@@ -48,21 +51,6 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      */
     open fun seeInitializingActions(): List<Action> = listOf()
 
-    /**
-     * return a list of all db actions in [this] individual
-     * that include all initializing actions plus db actions among rest actions.
-     *
-     * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
-     * would be same with [seeInitializingActions]
-     */
-    open fun seeDbActions() : List<Action> = seeInitializingActions()
-
-    /**
-     *  TODO MAN
-     *  when integrating resource-based solutions with impact-based solutions,
-     *  this method needs to be refactored.
-     */
-    open fun seeActions(isInitialization : Boolean) = if (isInitialization) seeInitializingActions() else seeActions()
 
     /**
      * Determine if the structure (ie the actions) of this individual
@@ -129,9 +117,9 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
             return false
         if (seeActions().size != other.seeActions().size)
             return false
-        if (!excludeInitialization || (0 until seeInitializingActions().size).any { seeInitializingActions()[it].getName() != other.seeInitializingActions()[it].getName() })
+        if (!excludeInitialization || (seeInitializingActions().indices).any { seeInitializingActions()[it].getName() != other.seeInitializingActions()[it].getName() })
             return false
-        if ((0 until seeActions().size).any { seeActions()[it].getName() != other.seeActions()[it].getName() })
+        if ((seeActions().indices).any { seeActions()[it].getName() != other.seeActions()[it].getName() })
             return false
         return true
     }

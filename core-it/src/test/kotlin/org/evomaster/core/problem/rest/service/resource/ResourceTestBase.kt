@@ -198,7 +198,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
         val dbGene = resourceCalls.dbActions.find { it.table.name.equals(tableName, ignoreCase = true) }!!.seeGenes().find { it.name.equals(colName, ignoreCase = true) }?: return false
 
-        return resourceCalls.actions.filterIsInstance<RestCallAction>().flatMap { it.parameters.filter { it.name == paramName } }.all { p->
+        return resourceCalls.restActions.filterIsInstance<RestCallAction>().flatMap { it.parameters.filter { it.name == paramName } }.all { p->
             ParamUtil.compareGenesWithValue(ParamUtil.getValueGene(dbGene!!), ParamUtil.getValueGene(p.gene))
         }
     }
@@ -241,7 +241,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         val call = rm.genCalls(resourceNode, template, config.maxTestSize, true, true)
 
         call.apply {
-            val paramsRequiredToBind = actions.filterIsInstance<RestCallAction>()
+            val paramsRequiredToBind = restActions.filterIsInstance<RestCallAction>()
                     .flatMap { it.parameters.filter { it.name == paramName }}
             assert(paramsRequiredToBind.size > 1)
             val base = ParamUtil.getValueGene(paramsRequiredToBind.first().gene)
@@ -306,45 +306,44 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         assertNotNull(individual)
         assert(individual!!.getResourceCalls().size == 1)
         val addSpec = MutatedGeneSpecification()
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.ADD, addSpec)
-        assert(addSpec.mutatedPosition.size == 1)
-        assert(addSpec.addedGenes.isNotEmpty() || individual.getResourceCalls()[addSpec.mutatedPosition.first()].actions.flatMap { it.seeGenes() }.isEmpty())
+        val evaluatedIndividual = EvaluatedIndividual(FitnessValue(0.0), individual, listOf())
+        structureMutator.mutateRestResourceCalls(individual, evaluatedIndividual, RestResourceStructureMutator.MutationType.ADD, addSpec)
+        assert(addSpec.mutatedGenes.mapNotNull { it.resourcePosition }.toSet().size == 1)
+        assert(addSpec.getAdded(true).isNotEmpty())
         assert(individual.getResourceCalls().size == 2)
 
         val first = individual.getResourceCalls()[0].getResourceNode()
         val second = individual.getResourceCalls()[1].getResourceNode()
         val swapSpec = MutatedGeneSpecification()
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.SWAP, swapSpec)
-        assert(swapSpec.addedGenes.isEmpty())
-        assert(swapSpec.removedGene.isEmpty())
-        assert(swapSpec.mutatedPosition.size == 2)
+        structureMutator.mutateRestResourceCalls(individual, evaluatedIndividual, RestResourceStructureMutator.MutationType.SWAP, swapSpec)
+        assert(swapSpec.getSwap().isEmpty())
 
         assert(individual.getResourceCalls()[1].getResourceNode().getName() == first.getName())
         assert(individual.getResourceCalls()[0].getResourceNode().getName() == second.getName())
 
         val previousIndividual = individual.copy() as RestIndividual
         val delSpec = MutatedGeneSpecification()
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.DELETE, delSpec)
-        assert(delSpec.mutatedPosition.size == 1)
-        assert(delSpec.removedGene.isNotEmpty() || previousIndividual.getResourceCalls()[delSpec.mutatedPosition.first()].actions.flatMap { it.seeGenes() }.isEmpty())
+        structureMutator.mutateRestResourceCalls(individual, evaluatedIndividual, RestResourceStructureMutator.MutationType.DELETE, delSpec)
+        assert(delSpec.getRemoved(true).mapNotNull { it.resourcePosition }.toSet().size == 1)
+        assert(delSpec.getRemoved(true).isNotEmpty())
         assert(individual.getResourceCalls().size == 1)
 
         val current = individual.getResourceCalls()[0].getResourceNode()
         val replaceSpec = MutatedGeneSpecification()
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.REPLACE, replaceSpec)
+        structureMutator.mutateRestResourceCalls(individual, evaluatedIndividual,RestResourceStructureMutator.MutationType.REPLACE, replaceSpec)
         val replaced = individual.getResourceCalls()[0]
-        assert(replaceSpec.removedGene.isNotEmpty() || current.actions.flatMap { it.seeGenes() }.isEmpty())
-        assert(replaceSpec.addedGenes.isNotEmpty() || replaced.actions.flatMap { it.seeGenes() }.isEmpty())
-        assert(replaceSpec.mutatedPosition.size == 1)
+        assert(replaceSpec.getRemoved(true).isNotEmpty())
+        assert(replaceSpec.getAdded(true).isNotEmpty())
+        assert(replaceSpec.mutatedGenes.mapNotNull { it.resourcePosition }.toSet().size == 1)
         assert(current.getName() != replaced.getResourceNode().getName())
 
         if (replaced.getResourceNode().numOfTemplates() > 1){
             val modifySpec = MutatedGeneSpecification()
-            structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.MODIFY, modifySpec)
+            structureMutator.mutateRestResourceCalls(individual, evaluatedIndividual, RestResourceStructureMutator.MutationType.MODIFY, modifySpec)
             val modified = individual.getResourceCalls()[0]
-            assert(modifySpec.removedGene.isNotEmpty() || replaced.actions.flatMap { it.seeGenes() }.isEmpty())
-            assert(modifySpec.addedGenes.isNotEmpty() || modified.actions.flatMap { it.seeGenes() }.isEmpty())
-            assert(modifySpec.mutatedPosition.size == 1)
+            assert(modifySpec.getRemoved(true).isNotEmpty())
+            assert(modifySpec.getAdded(true).isNotEmpty())
+            assert(modifySpec.mutatedGenes.mapNotNull { it.resourcePosition }.toSet().size == 1)
             assert(modified.getResourceNode().getName() == replaced.getResourceNode().getName())
             assertNotNull(modified.template)
             assertNotNull(replaced.template)
@@ -364,7 +363,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         val ind = RestIndividual(mutableListOf(callA), SampleType.SMART_RESOURCE)
 
         TestUtils.handleFlaky {
-            structureMutator.mutateRestResourceCalls(ind, RestResourceStructureMutator.MutationType.ADD)
+            structureMutator.mutateRestResourceCalls(ind, EvaluatedIndividual(FitnessValue(0.0), ind, listOf()),RestResourceStructureMutator.MutationType.ADD)
             if (expectedRelated != null){
                 assert(ind.getResourceCalls().any {
                     c-> c.getResourceNode().getName() == expectedRelated
@@ -390,19 +389,19 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
             rm.genCalls(this, randomness.choose(getTemplates().values).template, config.maxTestSize)
         }
 
-        val targetsOfA = callA.actions.mapIndexed { index, _ -> index + 1}
+        val targetsOfA = callA.restActions.mapIndexed { index, _ -> index + 1}
 
         val callB = rm.getResourceNodeFromCluster(resourceB).run {
             rm.genCalls(this, randomness.choose(getTemplates().values).template, config.maxTestSize)
         }
 
-        val targetsOfB = callB.actions.mapIndexed { index, _ -> targetsOfA.last() + 1 + index }
+        val targetsOfB = callB.restActions.mapIndexed { index, _ -> targetsOfA.last() + 1 + index }
 
         val callC = rm.getResourceNodeFromCluster(resourceC).run {
             rm.genCalls(this, randomness.choose(getTemplates().values).template, config.maxTestSize)
         }
 
-        val targetsOfC = callC.actions.mapIndexed { index, _ -> targetsOfB.last() + 1 + index  }
+        val targetsOfC = callC.restActions.mapIndexed { index, _ -> targetsOfB.last() + 1 + index  }
 
         val ind1With2Resources = RestIndividual(mutableListOf(callB, callA), SampleType.SMART_RESOURCE)
 

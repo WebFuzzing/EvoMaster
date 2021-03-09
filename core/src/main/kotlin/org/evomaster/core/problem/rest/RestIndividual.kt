@@ -7,6 +7,7 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.GeneFilter
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
@@ -38,7 +39,7 @@ class RestIndividual(
             trackOperator: TrackOperator? = null,
             index : Int = TraceableElement.DEFAULT_INDEX) :
             this(
-                    actions.map { RestResourceCalls(actions= mutableListOf(it as RestAction)) }.toMutableList(),
+                    actions.map { RestResourceCalls(restActions= mutableListOf(it as RestAction)) }.toMutableList(),
                     sampleType,
                     null,
                     dbInitialization,
@@ -64,14 +65,13 @@ class RestIndividual(
                 sampleType == SampleType.SMART_RESOURCE
     }
 
-
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
         return when (filter) {
-            GeneFilter.ALL -> seeDbActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
-            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeGenes)
-            GeneFilter.ONLY_INIT_SQL -> seeInitializingActions().flatMap(DbAction::seeGenes)
+            GeneFilter.ALL -> seeActions(ActionFilter.ALL).flatMap(Action::seeGenes)
+            GeneFilter.NO_SQL -> seeActions(ActionFilter.REST).flatMap(Action::seeGenes)
+            GeneFilter.ONLY_SQL -> seeActions(ActionFilter.DB).flatMap(Action::seeGenes)
+            GeneFilter.ONLY_INIT_SQL -> seeActions(ActionFilter.INIT).filterIsInstance<DbAction>().flatMap(Action::seeGenes)
         }
     }
 
@@ -104,24 +104,38 @@ class RestIndividual(
         need to think about it
      */
 
-    override fun size() = seeActions().size
+    override fun size() = seeActions(ActionFilter.NO_INIT).size
 
-    override fun seeActions(): List<RestAction> = resourceCalls.flatMap { it.actions }
-
-    /*
-        TODO, Man: need to discuss this method with Andrea, only return [dbInitialization] or return all db actions
-        This is related to several functions which requires to return db genes.
+    /**
+     * @return a list of action to be executed which might include DbActions and RestActions
      */
+    override fun seeActions(filter : ActionFilter): List<out Action>{
+        return when(filter){
+            ActionFilter.ALL -> seeInitializingActions().plus(resourceCalls.flatMap(RestResourceCalls::seeActions))
+            ActionFilter.DB -> seeInitializingActions().plus(resourceCalls.flatMap(RestResourceCalls::dbActions))
+            ActionFilter.INIT -> seeInitializingActions()
+            ActionFilter.NO_INIT -> resourceCalls.flatMap(RestResourceCalls::seeActions)
+            ActionFilter.REST -> resourceCalls.flatMap(RestResourceCalls::restActions)
+        }
+    }
+
+    fun seeRestAction() : List<RestAction>{
+        return (seeActions(ActionFilter.REST) as? List<RestAction>)
+            ?:throw IllegalStateException("there exist actions which are not RestAction, ${seeActions(ActionFilter.REST).filterNot { it is RestAction }.joinToString(","){it.getName()}}")
+    }
+
+    fun seeDbAction() : List<DbAction>{
+        return (seeActions(ActionFilter.DB) as? List<DbAction>)
+            ?:throw IllegalStateException("there exist actions which are not DbAction, ${seeActions(ActionFilter.DB).filterNot { it is DbAction }.joinToString(","){it.getName()}}")
+    }
+
     override fun seeInitializingActions(): List<DbAction> {
         return dbInitialization
     }
 
-    override fun seeDbActions(): List<DbAction> {
-        return dbInitialization.plus(resourceCalls.flatMap { c-> c.dbActions })
-    }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeDbActions())
+        return DbActionUtils.verifyActions(seeDbAction())
     }
 
 
@@ -136,7 +150,7 @@ class RestIndividual(
          * Now repair database constraints (primary keys, foreign keys, unique fields, etc.)
          */
         if (!verifyInitializationActions()) {
-            DbActionUtils.repairBrokenDbActionsList(seeDbActions().toMutableList(), randomness)
+            DbActionUtils.repairBrokenDbActionsList((seeDbAction()).toMutableList(), randomness)
             Lazy.assert{verifyInitializationActions()}
         }
     }
@@ -246,6 +260,9 @@ class RestIndividual(
         resourceCalls.set(position2, first)
     }
 
+    fun getActionIndexes(resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions().map {
+        seeActions(ActionFilter.NO_INIT).indexOf(it)
+    }
 
     fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?, randomness: Randomness){
         val previousDbActions = mutableListOf<DbAction>()

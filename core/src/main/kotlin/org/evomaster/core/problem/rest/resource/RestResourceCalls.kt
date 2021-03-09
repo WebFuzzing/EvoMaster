@@ -5,21 +5,22 @@ import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.service.RestActionHandlingUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.GeneFilter
 import org.evomaster.core.search.gene.Gene
 
 /**
  * the class is used to structure actions regarding resources.
  * @property template is a resource template, e.g., POST-GET
- * @property resourceInstance presents a resource that [actions] perform on. [resourceInstance] is an instance of [RestResourceNode]
- * @property actions is a sequence of actions in the [RestResourceCalls] that follows [template]
+ * @property resourceInstance presents a resource that [restActions] perform on. [resourceInstance] is an instance of [RestResourceNode]
+ * @property restActions is a sequence of actions in the [RestResourceCalls] that follows [template]
  * @property dbActions are used to initialize data for rest actions, either select from db or insert new data into db
  */
 class RestResourceCalls(
-        val template: CallsTemplate? = null,
-        val resourceInstance: RestResourceInstance?=null,
-        val actions: MutableList<RestAction>,
-        val dbActions : MutableList<DbAction> = mutableListOf()
+    val template: CallsTemplate? = null,
+    val resourceInstance: RestResourceInstance?=null,
+    val restActions: MutableList<RestAction>,
+    val dbActions : MutableList<DbAction> = mutableListOf()
 ){
 
     var status = ResourceStatus.NOT_FOUND
@@ -35,7 +36,7 @@ class RestResourceCalls(
     var shouldBefore = mutableListOf<String>()
 
     fun copy() : RestResourceCalls{
-        val copy = RestResourceCalls(template, resourceInstance?.copy(), actions.map { a -> a.copy() as RestAction}.toMutableList())
+        val copy = RestResourceCalls(template, resourceInstance?.copy(), restActions.map { a -> a.copy() as RestAction}.toMutableList())
         if(dbActions.isNotEmpty()){
             dbActions.forEach { db->
                 copy.dbActions.add(db.copy() as DbAction)
@@ -60,6 +61,8 @@ class RestResourceCalls(
         }
     }
 
+    fun seeActions() : List<out Action> = dbActions.plus(restActions)
+
     /**
      * @return the mutable SQL genes and they do not bind with any of Rest Actions
      *
@@ -67,7 +70,7 @@ class RestResourceCalls(
      */
     private fun seeSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getTemplate())
 
-    private fun seeRestGenes() : List<out Gene> = getResourceNode().getMutableRestGenes(actions, getTemplate())
+    private fun seeRestGenes() : List<out Gene> = getResourceNode().getMutableRestGenes(restActions, getTemplate())
 
     /**
      * repair binding after mutation
@@ -78,19 +81,21 @@ class RestResourceCalls(
             we do not need to update rest actions based on mutated SQL genes
          */
         seeRestGenes().map {g->
-            val target = actions.find { it.seeGenes().contains(g) }
-                ?:throw IllegalArgumentException("${g.name} cannot be found in any rest actions, and the current actions are ${actions.joinToString(","){ it.getName() }}")
+            val target = restActions.find { it.seeGenes().contains(g) }
+                ?:throw IllegalArgumentException("${g.name} cannot be found in any rest actions, and the current actions are ${restActions.joinToString(","){ it.getName() }}")
             val param = (target as? RestCallAction)?.parameters?.find { it.gene == g }?:throw IllegalStateException("${g.name} cannot be found in rest action ${target.getName()}")
-            actions.filter { it != target }
+            restActions.filter { it != target }
                 .forEach{a-> (a as RestCallAction).bindToSamePathResolution(target.path, listOf(param))}
         }
 
         // update dbactions based on rest actions
-        RestActionHandlingUtil.bindRestActionsWithDbActions(
-            dbActions,
-            this,
-            false
-        )
+        if (dbActions.isNotEmpty()){
+            RestActionHandlingUtil.bindRestActionsWithDbActions(
+                dbActions,
+                this,
+                false
+            )
+        }
     }
 
 
@@ -98,9 +103,9 @@ class RestResourceCalls(
      * employing the longest action to represent a group of calls on a resource
      */
     private fun longestPath() : RestAction{
-        if (actions.size == 1) return actions.first()
-        val max = actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }.max()!!
-        val candidates = actions.filter { a -> a is RestCallAction && a.path.levels() == max }
+        if (restActions.size == 1) return restActions.first()
+        val max = restActions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }.max()!!
+        val candidates = restActions.filter { a -> a is RestCallAction && a.path.levels() == max }
         return candidates.first()
     }
 
@@ -112,7 +117,7 @@ class RestResourceCalls(
             }
     }
 
-    fun getTemplate() = template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(actions as List<RestCallAction>)
+    fun getTemplate() = template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(restActions as List<RestCallAction>)
 
     fun getResourceNode() : RestResourceNode = resourceInstance?.referResourceNode?:throw IllegalArgumentException("the individual does not have resource structure")
 

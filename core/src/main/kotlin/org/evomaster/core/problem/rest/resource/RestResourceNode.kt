@@ -614,7 +614,7 @@ class RestResourceNode(
 
     fun confirmFailureCreationByPost(calls: RestResourceCalls){
         if (creations.isNotEmpty()){
-            creations.filter { it is PostCreationChain && calls.actions.map { a->a.getName() }.containsAll(it.actions.map { a-> a.getName() }) }.apply {
+            creations.filter { it is PostCreationChain && calls.restActions.map { a->a.getName() }.containsAll(it.actions.map { a-> a.getName() }) }.apply {
                 if (size == 1)
                     (first() as PostCreationChain).confirmFailure()
             }

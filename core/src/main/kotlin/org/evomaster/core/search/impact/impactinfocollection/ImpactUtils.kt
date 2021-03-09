@@ -153,7 +153,7 @@ class ImpactUtils {
             if (actions.isNotEmpty()){
                 actions.forEach { a ->
                     val index = actions.indexOf(a)
-                    val manipulated = if (fromInitialization) mutatedGeneSpecification.mutatedDbActionPosition.contains(index) else mutatedGeneSpecification.mutatedPosition.contains(index)
+                    val manipulated = mutatedGeneSpecification.isActionMutated(index, !fromInitialization)
                     if (manipulated){
                         a.seeGenes().filter {
                             if (fromInitialization)

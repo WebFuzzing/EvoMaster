@@ -464,7 +464,7 @@ class SqlInsertBuilder(
      *
      * Note that [pkValues] only points to one row.
      */
-    fun extractExistingByCols(tableName: String, pkValues: DataRowDto): DbAction {
+    fun extractExistingByCols(tableName: String, pkValues: DataRowDto): DbAction? {
 
         if (dbExecutor == null) {
             throw IllegalStateException("No Database Executor registered for this object")
@@ -496,7 +496,8 @@ class SqlInsertBuilder(
             val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
                     ?: throw IllegalArgumentException("rows regarding pks can not be found")
             if (result.rows.size != 1) {
-                throw IllegalArgumentException("the size of rows regarding pks is ${result.rows.size}, and except is 1")
+                //throw IllegalArgumentException("the size of rows regarding pks is ${result.rows.size}, and except is 1")
+                return null
             }
             row = result.rows.first()
         } else

@@ -1,6 +1,7 @@
 package org.evomaster.core.search.matchproblem
 
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.GeneFilter
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
@@ -35,7 +36,7 @@ open class PrimitiveTypeMatchIndividual (
         fun stringTemplate() = PrimitiveTypeMatchIndividual(StringGene(name()))
     }
 
-    override fun seeActions(): List<out Action> = listOf()
+    override fun seeActions(filter: ActionFilter): List<out Action> = listOf()
 
     override fun verifyInitializationActions(): Boolean {
         //do nothing

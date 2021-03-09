@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -22,42 +22,12 @@ class RestStructureMutator : AbstractRestStructureMutator() {
     private lateinit var sampler: RestSampler
 
 
-    override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
 
-        if (!config.shouldGenerateSqlData()) {
-            return
-        }
-
-        val ind = individual.individual as? RestIndividual
-            ?: throw IllegalArgumentException("Invalid individual type")
-
-        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
-            //TODO likely to remove/change once we ll support VIEWs
-            .filter { sampler.canInsertInto(it.key) }
-
-        if (fw.isEmpty()) {
-            return
-        }
-
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
-
-        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
-
-        ind.repairInitializationActions(randomness)
-
-        // update impact based on added genes
-        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                    mutatedGenes,
-                    old,
-                    addedInsertions
-            )
-        }
-    }
-
-
-
-    override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
+    override fun mutateStructure(
+        individual: Individual,
+        evaluated: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?
+    ) {
         if (individual !is RestIndividual) {
             throw IllegalArgumentException("Invalid individual type")
         }
@@ -130,10 +100,16 @@ class RestStructureMutator : AbstractRestStructureMutator() {
             val chosen = randomness.choose(indices)
 
             //save mutated genes
-            val removedActions = ind.getResourceCalls()[chosen].actions
+            val removedActions = ind.getResourceCalls()[chosen].seeActions()
+            // if resource-mio is not enabled, each call should only contain one action
             assert(removedActions.size == 1)
-            mutatedGenes?.removedGene?.addAll(removedActions.first().seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+
+            mutatedGenes?.addRemovedOrAddedByAction(
+                removedActions.first(),
+                chosen,
+                true,
+                chosen
+            )
 
             //ind.seeActions().removeAt(chosen)
             ind.removeResourceCall(chosen)
@@ -148,8 +124,12 @@ class RestStructureMutator : AbstractRestStructureMutator() {
             val post = RestActionHandlingUtil.createActionFor(randomness, postTemplate, ind.seeActions().last() as RestCallAction)
 
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(post.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(idx)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                post,
+                idx,
+                false,
+                idx
+            )
 
             /*
                 where it is inserted should not matter, as long as
@@ -157,7 +137,7 @@ class RestStructureMutator : AbstractRestStructureMutator() {
                 POSTs
              */
             //ind.seeActions().add(idx, post)
-            ind.addResourceCall(idx, RestResourceCalls(actions = mutableListOf(post)))
+            ind.addResourceCall(idx, RestResourceCalls(restActions = mutableListOf(post)))
         }
     }
 
@@ -166,12 +146,17 @@ class RestStructureMutator : AbstractRestStructureMutator() {
         if (ind.seeActions().size == 1) {
             val sampledAction = sampler.sampleRandomAction(0.05) as RestAction
 
+            val pos = ind.seeActions().size
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(ind.seeActions().size)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                sampledAction,
+                pos,
+                false,
+                pos
+            )
 
             //ind.seeActions().add(sampledAction)
-            ind.addResourceCall(RestResourceCalls(actions = mutableListOf(sampledAction)))
+            ind.addResourceCall(RestResourceCalls(restActions = mutableListOf(sampledAction)))
 
             //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             return
@@ -184,10 +169,14 @@ class RestStructureMutator : AbstractRestStructureMutator() {
             val chosen = randomness.nextInt(ind.seeActions().size)
 
             //save mutated genes
-            val removedActions = ind.getResourceCalls()[chosen].actions
+            val removedActions = ind.getResourceCalls()[chosen].restActions
             assert(removedActions.size == 1)
-            mutatedGenes?.removedGene?.addAll(removedActions.first().seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                removedActions.first(),
+                chosen,
+                true,
+                chosen
+            )
 
             //ind.seeActions().removeAt(chosen)
             ind.removeResourceCall(chosen)
@@ -199,11 +188,15 @@ class RestStructureMutator : AbstractRestStructureMutator() {
             val sampledAction = sampler.sampleRandomAction(0.05) as RestAction
             val chosen = randomness.nextInt(ind.seeActions().size)
             //ind.seeActions().add(chosen, sampledAction)
-            ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction)))
+            ind.addResourceCall(chosen, RestResourceCalls(restActions = mutableListOf(sampledAction)))
 
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                sampledAction,
+                chosen,
+                false,
+                chosen
+            )
 
             //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             // BMR: Perhaps we could have a function for individual.addAction(action) which would cover both
@@ -212,4 +205,5 @@ class RestStructureMutator : AbstractRestStructureMutator() {
 
     }
 
+    override fun getSampler() = sampler
 }

@@ -9,6 +9,7 @@ import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.ActionFilter.NO_INIT
 
 /**
  * created by manzh on 2019-10-31
@@ -115,14 +116,14 @@ class ImpactsOfIndividual private constructor(
         }
 
         //for action
-        if ((individual.seeActions().isNotEmpty() && individual.seeActions().size != actionGeneImpacts.size) ||
-                (individual.seeActions().isEmpty() && !noneActionIndividual()))
+        if ((individual.seeActions(NO_INIT).isNotEmpty() && individual.seeActions(NO_INIT).size != actionGeneImpacts.size) ||
+                (individual.seeActions(NO_INIT).isEmpty() && !noneActionIndividual()))
             throw IllegalArgumentException("inconsistent size of actions and impacts")
 
-        individual.seeActions().forEach { action ->
+        individual.seeActions(NO_INIT).forEach { action ->
             val actionName = action.getName()
-            val index = individual.seeActions().indexOf(action)
-            action.seeGenes().filter { !mutatedGene.allManipulatedGenes().contains(it) }.forEach { g ->
+            val index = individual.seeActions(NO_INIT).indexOf(action)
+            action.seeGenes().filter { !mutatedGene.isMutated(it) }.forEach { g ->
                 val id = ImpactUtils.generateGeneId(action, g)
                 if (getGene(actionName, id, index, false) == null) {
                     val impact = ImpactUtils.createGeneImpact(g, id)
@@ -142,6 +143,27 @@ class ImpactsOfIndividual private constructor(
         return true
     }
 
+
+    fun swapActionGeneImpact(actionIndex: List<Int>, swapTo: List<Int>){
+        var a = actionIndex
+        var b = swapTo
+
+        if (swapTo.first() < actionIndex.first()){
+            a = swapTo
+            b = actionIndex
+        }
+
+        val aImpacts = a.map { actionGeneImpacts[it] }
+        val bImpacts = b.map { actionGeneImpacts[it] }
+
+        actionGeneImpacts.removeAll(aImpacts)
+        actionGeneImpacts.removeAll(bImpacts)
+
+        actionGeneImpacts.addAll(a.first(), bImpacts)
+        val bIndex = b.first() + (b.size - a.size)
+        actionGeneImpacts.addAll(bIndex, aImpacts)
+    }
+
     fun updateInitializationImpactsAtBeginning(groupedActions: List<List<Action>>, existingDataSize: Int) {
         initializationGeneImpacts.updateInitializationImpactsAtBeginning(groupedActions, existingDataSize)
     }
@@ -149,6 +171,10 @@ class ImpactsOfIndividual private constructor(
 
     fun initInitializationImpacts(groupedActions: List<List<Action>>, existingDataSize: Int) {
         initializationGeneImpacts.initInitializationActions(groupedActions, existingDataSize)
+    }
+
+    fun appendInitializationImpacts(groupedActions: List<List<Action>>) {
+        initializationGeneImpacts.appenedInitialization(groupedActions)
     }
 
     fun updateInitializationGeneImpacts(other: ImpactsOfIndividual) {
@@ -225,6 +251,25 @@ class ImpactsOfIndividual private constructor(
             null
         }
     }
+
+
+//    private data class ImpactOfResourceCalls(
+//        val resourceNodeKey: String?,
+//        val template : String?,
+//        val dbActionImpacts: InitializationActionImpacts?,
+//        val restActionsImpacts: List<ImpactsOfAction>){
+//
+//        constructor(calls: RestResourceCalls):this(
+//            calls.getResourceNodeKey(),
+//            calls.getTemplate(),
+//            InitializationActionImpacts(false, false).also {
+//                it.initInitializationActions(listOf(calls.dbActions), calls.dbActions.indexOfLast { it.representExistingData } + 1)
+//            },
+//            calls.actions.s
+//        )
+//
+//
+//    }
 
     /**
      * @property actionName name of action if action exists, versus null
@@ -386,16 +431,30 @@ class ImpactsOfIndividual private constructor(
                 a sequence of dbaction is abababc, then its abstraction is ab-c
             */
             groupedActions.forEach { t->
-                val group = t.map { a-> ImpactsOfAction(a) }
-                val key = generateTemplateKey(group.map { i-> i.actionName!! })
-                completeSequence.addAll(group)
-                t.forEachIndexed { i, _ ->
-                    indexMap.add(Pair(key, i))
-                }
-                template.putIfAbsent(key, t.map { a-> ImpactsOfAction(a) })
-                if (enableImpactOnDuplicatedTimes)
-                    templateDuplicateTimes.putIfAbsent(key, Impact(id = key))
+                addedInitialization(t, completeSequence, indexMap)
             }
+        }
+
+        fun appenedInitialization(addedInsertions: List<List<Action>>){
+            addedInsertions.forEach { t->
+                addedInitialization(t, completeSequence, indexMap)
+            }
+        }
+
+        private fun addedInitialization(
+            insertions: List<Action>,
+            completeSequence : MutableList<ImpactsOfAction>,
+            indexMap: MutableList<Pair<String, Int>>
+        ){
+            val group = insertions.map { a-> ImpactsOfAction(a) }
+            val key = generateTemplateKey(group.map { i-> i.actionName!! })
+            completeSequence.addAll(group)
+            insertions.forEachIndexed { i, _ ->
+                indexMap.add(Pair(key, i))
+            }
+            template.putIfAbsent(key, insertions.map { a-> ImpactsOfAction(a) })
+            if (enableImpactOnDuplicatedTimes)
+                templateDuplicateTimes.putIfAbsent(key, Impact(id = key))
         }
 
         fun updateInitializationImpactsAtBeginning(addedInsertions: List<List<Action>>, existingDataSize : Int){
@@ -404,15 +463,7 @@ class ImpactsOfIndividual private constructor(
             val newCompleteSequence =  mutableListOf<ImpactsOfAction>()
             val newIndex = mutableListOf<Pair<String, Int>>()
             addedInsertions.forEach { t->
-                val group = t.map { a-> ImpactsOfAction(a) }
-                val key = generateTemplateKey(group.map { i-> i.actionName!! })
-                newCompleteSequence.addAll(group)
-                t.forEachIndexed { i, _ ->
-                    newIndex.add(Pair(key, i))
-                }
-                template.putIfAbsent(key, t.map { a-> ImpactsOfAction(a) })
-                if (enableImpactOnDuplicatedTimes)
-                    templateDuplicateTimes.putIfAbsent(key, Impact(id = key))
+                addedInitialization(t, newCompleteSequence, newIndex)
             }
             indexMap.addAll(0, newIndex)
             completeSequence.addAll(0, newCompleteSequence)

@@ -242,7 +242,7 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
             list.forEach { p->
                 if(!cleanList.any { e->e.equalWith(p)}) cleanList.add(p)
             }
-            calls.actions.filter { it is RestCallAction  && it.path.toString() == resource.getName()}.forEach { a->
+            calls.restActions.filter { it is RestCallAction  && it.path.toString() == resource.getName()}.forEach { a->
                 result.put(a, cleanList.filter { p-> (a is RestCallAction) && (missingParamsInfo.any { m-> m.key == p.paramId && m.involvedAction.contains(a.verb) })}.toMutableList())
             }
         }
