@@ -19,6 +19,16 @@ jobs:
       # Checkout code
       - uses: actions/checkout@v2
 
+      # Build/test for .Net
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.x
+      - name: Build with .Net
+        run: dotnet build --configuration Release
+      - name: Tests for .Net
+        run: dotnet test
+
       # Build/test for JDK
       - name: Setup JDK 8
         uses: actions/setup-java@v1
@@ -33,15 +43,6 @@ jobs:
       - name: Build with Maven
         run: mvn clean verify --fae
 
-      # Build/test for .Net
-      - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 3.1.x
-      - name: Build with .Net
-        run: dotnet build --configuration Release
-      - name: Tests for .Net
-        run: dotnet test
 
       # Upload coverage results
       - name: Upload coverage to CodeCov
