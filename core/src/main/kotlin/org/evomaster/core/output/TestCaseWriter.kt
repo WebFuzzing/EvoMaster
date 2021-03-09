@@ -844,15 +844,12 @@ class TestCaseWriter {
         */
     }
 
-    private fun handleBody(call: RestCallAction, lines: Lines) {
-        handleBody(call, lines, true)
-    }
 
     private fun handleGQLBody(call: GraphQLAction, lines: Lines) {
         handleGQLBody(call, lines, true)
     }
 
-    private fun handleBody(call: RestCallAction, lines: Lines, readable: Boolean) {
+    private fun handleBody(call: RestCallAction, lines: Lines) {
 
         val bodyParam = call.parameters.find { p -> p is BodyParam }
         val form = call.getBodyFormData()
@@ -876,10 +873,12 @@ class TestCaseWriter {
 
             if (bodyParam.isJson()) {
 
-                val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format))
+                val json = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+
+                val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
+                    OutputFormatter.JSON_FORMATTER.getFormatted(json)
                 } else {
-                    bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+                    json
                 }
 
                 //needed as JSON uses ""
