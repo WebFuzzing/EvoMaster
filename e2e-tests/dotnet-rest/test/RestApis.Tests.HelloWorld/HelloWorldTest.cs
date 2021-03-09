@@ -11,11 +11,11 @@ namespace RestApis.Tests.HelloWorld {
         [InlineData ("helloworld", 200)]
         [InlineData ("swagger", 200)]
         [InlineData ("wrongUri", 404)]
-        public async Task StartApi_RetrunExpectedStatusCodeAsync (string uri, int expectedStatusCode) {
+        public async Task StartApi_RetrunExpectedStatusCode (string uri, int expectedStatusCode) {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var baseUrl = await evoMasterController.StartSutAsync ();
+            var baseUrl = evoMasterController.StartSut ();
 
             var response = await client.GetAsync ($"{baseUrl}/{uri}");
 
@@ -24,13 +24,12 @@ namespace RestApis.Tests.HelloWorld {
             Assert.Equal (expectedStatusCode, (int) response.StatusCode);
         }
 
-
         [Fact]
-        public async Task CallApiWhenStopped_FailAsync () {
+        public async Task CallApiWhenStopped_Fail () {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            var baseUrl = await evoMasterController.StartSutAsync ();
+            var baseUrl = evoMasterController.StartSut ();
 
             evoMasterController.StopSut ();
 
@@ -38,11 +37,11 @@ namespace RestApis.Tests.HelloWorld {
         }
 
         [Fact]
-        public async Task StartApi_IsSutRunningShouldReturnTrueAsync () {
+        public void StartApi_IsSutRunningShouldReturnTrue () {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            await evoMasterController.StartSutAsync ();
+            evoMasterController.StartSut ();
 
             Assert.True (evoMasterController.IsSutRunning ());
 
@@ -50,11 +49,11 @@ namespace RestApis.Tests.HelloWorld {
         }
 
         [Fact]
-        public async Task StartAndStopApi_IsSutRunningShouldReturnFalseAsync () {
+        public void StartAndStopApi_IsSutRunningShouldReturnFalse () {
 
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController ();
 
-            await evoMasterController.StartSutAsync ();
+            evoMasterController.StartSut ();
 
             evoMasterController.StopSut ();
 

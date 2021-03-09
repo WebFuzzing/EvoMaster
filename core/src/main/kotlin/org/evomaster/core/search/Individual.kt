@@ -50,7 +50,20 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      */
     open fun seeInitializingActions(): List<Action> = listOf()
 
+    /**
+     * return a list of all db actions in [this] individual
+     * that include all initializing actions plus db actions among rest actions.
+     *
+     * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
+     * would be same with [seeInitializingActions]
+     */
+    open fun seeDbActions() : List<Action> = seeInitializingActions()
 
+    /**
+     *  TODO MAN
+     *  when integrating resource-based solutions with impact-based solutions,
+     *  this method needs to be refactored.
+     */
     open fun seeActions(isInitialization : Boolean) = if (isInitialization) seeInitializingActions() else seeActions()
 
     /**
