@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using RestApis.Animals.Dtos;
 using RestApis.Animals.Entities;
 
 namespace RestApis.Animals.Controllers
@@ -19,18 +21,19 @@ namespace RestApis.Animals.Controllers
         {
             _context = context;
         }
+
         [HttpGet]
         public async Task<IActionResult> GetAsync()
         {
             var mammals = await _context.Mammals.ToListAsync();
-            
+
             return Ok(mammals);
         }
-        
+
         [HttpPost]
-        public async Task<IActionResult> CreateAsync([FromBody] Mammal mammal)
+        public async Task<IActionResult> CreateAsync([FromBody] CreateAnimalDto dto)
         {
-            await _context.Mammals.AddAsync(mammal);
+            await _context.Mammals.AddAsync(new Mammal {Name = dto.Name});
 
             await _context.SaveChangesAsync();
 

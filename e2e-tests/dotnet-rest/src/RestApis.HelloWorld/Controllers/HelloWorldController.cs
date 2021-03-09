@@ -12,6 +12,7 @@ namespace RestApis.HelloWorld.Controllers {
     public class HelloWorldController : ControllerBase {
 
         [HttpGet]
-        public IActionResult Get () => Ok ("Hello World");
+        [Consumes("application/json")]
+        public IActionResult Get () => Ok("Hello World");
     }
 }
