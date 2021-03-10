@@ -21,7 +21,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class ResourceTest extends ResourceTestBase {
+public class ResourceMIOTest extends ResourceTestBase {
 
     final Map<String, Set<String>> keysToTable = new HashMap<String, Set<String>>(){{
         put("/api/rA", new HashSet<>(Arrays.asList("RA")));
@@ -45,7 +45,8 @@ public class ResourceTest extends ResourceTestBase {
     public void testResourceMIO() {
 
         List<String> args = generalArgs(1);
-        disableAHW(args);
+        hypmutation(args, false);
+        adaptiveMutation(args, false);
         defaultResourceConfig(args);
 
         Injector injector = init(args);
@@ -81,12 +82,14 @@ public class ResourceTest extends ResourceTestBase {
         assertEquals(2, rAIdcall.seeActions().size());
         // {rAId} should not be included because it can be bound with ObjectGene of POST
         assertEquals(1, rAIdcall.seeGenes(GeneFilter.ALL).size());
+        checkingBinding(rAIdcall, raIdPostTemplate, raIdKey, false);
     }
 
     @Test
     public void testResourceMIOWithPMAndSQLHandling() {
-        List<String> args = generalArgs(5);
-        disableAHW(args);
+        List<String> args = generalArgs(3);
+        hypmutation(args, false);
+        adaptiveMutation(args, false);
         defaultResourceConfig(args);
         args.add("--probOfApplySQLActionToCreateResources");
         args.add("1.0");
@@ -140,10 +143,8 @@ public class ResourceTest extends ResourceTestBase {
         assertEquals(2, rAIdcall.seeActions().size());
         assertEquals(1, rAIdcall.getDbActions().size());
         assertEquals(1, rAIdcall.getRestActions().size());
-        Gene rdIdInRest = rAIdcall.getRestActions().stream().findFirst().orElse(null).seeGenes().stream().findFirst().orElse(null);
-        Gene rdIdInDB = getGeneByName(Objects.requireNonNull(rAIdcall.getDbActions().stream().findFirst().orElse(null)),"ID");
-        // test binding between DB and RestAction
-        assertEquals(rdIdInRest.getValueAsRawString(), rdIdInDB.getValueAsRawString());
+        checkingBinding(rAIdcall, "POST-GET", raIdKey,true);
+
         //exclude 'id' gene as it can be bound with GET
         assertEquals(2, rAIdcall.seeGenes(GeneFilter.ONLY_SQL).size());
         assertEquals(1, rAIdcall.seeGenes(GeneFilter.NO_SQL).size());
@@ -158,14 +159,11 @@ public class ResourceTest extends ResourceTestBase {
 
         MutatedGeneSpecification mutatedSpec = new MutatedGeneSpecification();
         RestIndividual mutatedInd = mutator.mutate(rdIdEval, Collections.emptySet(), mutatedSpec);
-
+        assertFalse(mutatedSpec.didStructureMutation());
         rAIdcall = mutatedInd.getResourceCalls().get(0);
-        rdIdInRest = rAIdcall.getRestActions().stream().findFirst().orElse(null).seeGenes().stream().findFirst().orElse(null);
-        rdIdInDB = getGeneByName(Objects.requireNonNull(rAIdcall.getDbActions().stream().findFirst().orElse(null)),"ID");
-        // test binding between DB and RestAction
-        assertEquals(rdIdInRest.getValueAsRawString(), rdIdInDB.getValueAsRawString());
+        checkingBinding(rAIdcall, "POST-GET", raIdKey,true);
 
-        //test binding after stucturemutator, rA, GET->POST-GET
+        //test stucturemutator and binding, rA/{rAId}, GET->POST-GET
         RestResourceCalls raGetIdCall = rmanger.genCalls(raIdNode, "GET", 10, false, true, false);
         calls.clear();
         calls.add(raGetIdCall);
@@ -177,12 +175,72 @@ public class ResourceTest extends ResourceTestBase {
         assertEquals(1, raGetIdMutatedInd.getResourceCalls().size());
         RestResourceCalls mutatedCall = raGetIdMutatedInd.getResourceCalls().get(0);
         assertEquals("POST-GET", mutatedCall.getSampledTemplate());
-
+        checkingBinding(mutatedCall, "POST-GET", raIdKey,true);
     }
 
 
+    /**
+     * this test mainly aims to checking the value binding with hypermutation
+     */
+    @Test
+    public void testResourceHypermutation(){
+
+        List<String> args = generalArgs(3);
+        hypmutation(args, true);
+        adaptiveMutation(args, false);
+        defaultResourceConfig(args);
+        args.add("--probOfApplySQLActionToCreateResources");
+        args.add("0.0");
+        args.add("--doesApplyNameMatching");
+        args.add("false");
+        args.add("--structureMutationProbability");
+        args.add("0.0");
+
+    }
+
+    /**
+     * this test mainly aims to checking the value binding with hypermutation and enabled SQL handling on resources
+     */
+    @Test
+    public void testResourceWithSQLAndHypermutation(){
+
+        List<String> args = generalArgs(3);
+        hypmutation(args, true);
+        adaptiveMutation(args, false);
+        defaultResourceConfig(args);
+        args.add("--probOfApplySQLActionToCreateResources");
+        args.add("1.0");
+        args.add("--doesApplyNameMatching");
+        args.add("true");
+        args.add("--structureMutationProbability");
+        args.add("0.0");
+
+    }
+
+    private void checkingBinding(RestResourceCalls call, String template, String nodeKey, Boolean withSQL){
+        if (nodeKey.equals("/api/rA/{rAId}")){
+            if (template.equals("POST-GET")){
+                if (withSQL){
+                    Gene rdIdInRest = call.getRestActions().get(0).seeGenes().stream().findFirst().orElse(null);
+                    Gene rdIdInDB = getGeneByName(Objects.requireNonNull(call.getDbActions().stream().findFirst().orElse(null)),"ID");
+                    // test binding between DB and RestAction
+                    assertEquals(rdIdInRest.getValueAsRawString(), rdIdInDB.getValueAsRawString());
+                    return;
+                }else {
+                    Gene bodyInPOST = getGeneByName(call.getRestActions().get(0), "id");
+                    Gene rdIdInGet = call.getRestActions().get(1).seeGenes().stream().findFirst().orElse(null);
+                    assertEquals(bodyInPOST.getValueAsRawString(), rdIdInGet.getValueAsRawString());
+                    return;
+                }
+            }
+        }
+
+        fail();
+
+    }
+
     private Gene getGeneByName(Action action, String name){
-        return action.seeGenes().stream().filter(s-> s.getName().equalsIgnoreCase(name)).findAny()
+        return action.seeGenes().stream().flatMap(s-> s.flatView(gene -> false).stream()).filter(s-> s.getName().equalsIgnoreCase(name)).findAny()
                 .orElse(null);
     }
 
@@ -199,6 +257,33 @@ public class ResourceTest extends ResourceTestBase {
                         "--baseTaintAnalysisProbability", "0.0"
                 )
         );
+    }
+
+    private void hypmutation(List<String> args, Boolean enable){
+        //disable hypermutation
+        args.add("--weightBasedMutationRate");
+        args.add(""+enable);
+    }
+
+    private void adaptiveMutation(List<String> args, Boolean enable){
+        args.add("--enableTrackEvaluatedIndividual");
+        args.add(""+enable);
+        args.add("--adaptiveGeneSelectionMethod");
+        if (enable) args.add("APPROACH_IMPACT"); else args.add("NONE");
+        args.add("--archiveGeneMutation");
+        if (enable) args.add("SPECIFIED_WITH_SPECIFIC_TARGETS"); else args.add("NONE");
+        args.add("--probOfArchiveMutation");
+        if (!enable) args.add("0.0");
+    }
+
+    private void defaultResourceConfig(List<String> args){
+
+        args.add("--resourceSampleStrategy");
+        args.add("ConArchive");
+        args.add("--probOfSmartSampling");
+        args.add("1.0");
+        args.add("--probOfEnablingResourceDependencyHeuristics");
+        args.add("1.0");
     }
 
 }

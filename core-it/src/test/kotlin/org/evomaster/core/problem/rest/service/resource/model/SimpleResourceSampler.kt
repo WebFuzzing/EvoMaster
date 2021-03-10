@@ -18,6 +18,7 @@ class SimpleResourceSampler : ResourceSampler() {
         this.sqlInsertBuilder = sqlInsertBuilder
         existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
 
+        preInits();
         initAdHocInitialIndividuals()
         postInits()
     }

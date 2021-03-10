@@ -364,7 +364,9 @@ class ResourceManageService {
 
             val lastPost = result.last()
             resource = RestResourceInstance(node, (lastPost as RestCallAction).parameters)
-            skipBind.addAll(result)
+            // if id info is not in the path, we need to further bind with fields
+            skipBind.add(lastPost)
+            //skipBind.addAll(result)
             if(nonPostIndex == -1){
                 (1 until ats.size).forEach{ _ ->
                     result.add(lastPost.copy().also {

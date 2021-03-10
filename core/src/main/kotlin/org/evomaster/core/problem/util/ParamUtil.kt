@@ -142,12 +142,21 @@ class ParamUtil {
             }
         }
 
+        private fun findField(fieldName : String, refType : String?, name : String) :Boolean{
+            if (!isGeneralName(fieldName) || refType == null) return fieldName.equals(name, ignoreCase = true)
+            val prefix = "$refType$fieldName".equals(name, ignoreCase = true)
+            if (prefix) return true
+            return "$fieldName$refType".equals(name, ignoreCase = true)
+        }
+
         private fun bindBodyAndOther(body : BodyParam, bodyPath:RestPath, other : Param, otherPath : RestPath, b2g: Boolean, inner : Boolean){
             val otherGene = getValueGene(other.gene)
             if (!isGeneralName(otherGene.name)){
                 val f = getValueGene(body.gene).run {
                     if (this is ObjectGene){
-                        fields.find { it.name == otherGene.name}
+                        fields.find { f->
+                            findField(f.name, refType, otherGene.name)
+                        }
                     }else
                         null
                 }
