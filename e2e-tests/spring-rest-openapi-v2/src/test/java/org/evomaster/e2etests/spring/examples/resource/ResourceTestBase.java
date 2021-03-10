@@ -56,4 +56,28 @@ public class ResourceTestBase extends SpringTestBase {
         }
         return matched.length -1;
     }
+
+    protected void disableAHW(List<String> args){
+        //disable hypermutation
+        args.add("--enableTrackEvaluatedIndividual");
+        args.add("false");
+        args.add("--weightBasedMutationRate");
+        args.add("false");
+        args.add("--adaptiveGeneSelectionMethod");
+        args.add("NONE");
+        args.add("--archiveGeneMutation");
+        args.add("NONE");
+        args.add("--probOfArchiveMutation");
+        args.add("0.0");
+    }
+
+    protected void defaultResourceConfig(List<String> args){
+
+        args.add("--resourceSampleStrategy");
+        args.add("ConArchive");
+        args.add("--probOfSmartSampling");
+        args.add("1.0");
+        args.add("--probOfEnablingResourceDependencyHeuristics");
+        args.add("1.0");
+    }
 }

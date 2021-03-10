@@ -42,8 +42,6 @@ open class ResourceSampler : AbstractRestSampler() {
 
     override fun initAdHocInitialIndividuals() {
 
-        rm.initResourceNodes(actionCluster, sqlInsertBuilder)
-
         adHocInitialIndividuals.clear()
 
         rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals)
@@ -53,6 +51,13 @@ open class ResourceSampler : AbstractRestSampler() {
         }
     }
 
+    override fun preInits() {
+        rm.initResourceNodes(actionCluster, sqlInsertBuilder)
+    }
+
+    /**
+     * FIXME: why it is post handling of initAdHocInitialIndividuals?
+     */
     override fun postInits() {
         ssc.initialize()
     }

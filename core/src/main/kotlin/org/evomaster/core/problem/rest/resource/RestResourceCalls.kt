@@ -17,6 +17,7 @@ import org.evomaster.core.search.gene.Gene
  * @property dbActions are used to initialize data for rest actions, either select from db or insert new data into db
  */
 class RestResourceCalls(
+    val sampledTemplate : String? = null,
     val template: CallsTemplate? = null,
     val resourceInstance: RestResourceInstance?=null,
     val restActions: MutableList<RestAction>,
@@ -36,7 +37,7 @@ class RestResourceCalls(
     var shouldBefore = mutableListOf<String>()
 
     fun copy() : RestResourceCalls{
-        val copy = RestResourceCalls(template, resourceInstance?.copy(), restActions.map { a -> a.copy() as RestAction}.toMutableList())
+        val copy = RestResourceCalls(sampledTemplate, template, resourceInstance?.copy(), restActions.map { a -> a.copy() as RestAction}.toMutableList())
         if(dbActions.isNotEmpty()){
             dbActions.forEach { db->
                 copy.dbActions.add(db.copy() as DbAction)
@@ -68,9 +69,9 @@ class RestResourceCalls(
      *
      * FIXME Man: shall we only return mutable genes?
      */
-    private fun seeSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getTemplate())
+    private fun seeSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getRestTemplate())
 
-    private fun seeRestGenes() : List<out Gene> = getResourceNode().getMutableRestGenes(restActions, getTemplate())
+    private fun seeRestGenes() : List<out Gene> = getResourceNode().getMutableRestGenes(restActions, getRestTemplate())
 
     /**
      * repair binding after mutation
@@ -117,7 +118,12 @@ class RestResourceCalls(
             }
     }
 
-    fun getTemplate() = template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(restActions as List<RestCallAction>)
+    fun getTemplate() : String{
+        return sampledTemplate?:RestResourceTemplateHandler.getStringTemplateByCalls(this)
+    }
+
+
+    fun getRestTemplate() = template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(restActions as List<RestCallAction>)
 
     fun getResourceNode() : RestResourceNode = resourceInstance?.referResourceNode?:throw IllegalArgumentException("the individual does not have resource structure")
 

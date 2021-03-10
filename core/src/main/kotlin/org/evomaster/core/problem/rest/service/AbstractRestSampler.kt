@@ -85,8 +85,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         setupAuthentication(infoDto)
         initSqlInfo(infoDto)
 
+        preInits()
         initAdHocInitialIndividuals()
-
         postInits()
 
         updateConfigForTestOutput(infoDto)
@@ -114,6 +114,16 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     abstract fun initAdHocInitialIndividuals()
 
+    /**
+     * handling before initAdHocInitialIndividuals
+     */
+    open fun preInits(){
+        // do nothing
+    }
+
+    /**
+     * handling after initAdHocInitialIndividuals
+     */
     open fun postInits(){
         //do nothing
     }
@@ -160,15 +170,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         //modelCluster.clear()
         // RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
 
+        //plugin resource-mio here for bb
+        preInits()
         initAdHocInitialIndividuals()
+        postInits()
 
         log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
-
-
-
-
-
 
     fun getOpenAPI(): OpenAPI{
         return swagger

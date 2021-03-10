@@ -40,7 +40,7 @@ class EvaluatedIndividualBuilder {
             val sampleType = SampleType.SMART_RESOURCE
 
             val calls = groups.map {
-                RestResourceCalls(null, null, it.second, it.first)
+                RestResourceCalls(null, null, null, it.second, it.first)
             }.toMutableList()
 
             val individual = RestIndividual(calls, sampleType, null, dbInitialization)

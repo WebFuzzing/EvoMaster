@@ -132,7 +132,7 @@ class RestResourceNode(
         }
 
         return dbactions.filterNot { it.representExistingData }.flatMap { db->
-            val exclude = related.flatMap { r-> r?.getRelatedColumn(db.getName())?.toList()?:listOf() }
+            val exclude = related.flatMap { r-> r?.getRelatedColumn(db.table.name)?.toList()?:listOf() }
             db.seeGenesForInsertion(exclude)
         }.filter(Gene::isMutable)
     }
@@ -142,6 +142,7 @@ class RestResourceNode(
      *          with [callsTemplate] template, e.g., POST-GET
      */
     fun getMutableRestGenes(actions: List<RestAction>, template: String) : List<out Gene>{
+
         if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestAction::seeGenes).filter(Gene::isMutable)
 
         val missing = getMissingParams(template)
@@ -149,7 +150,7 @@ class RestResourceNode(
         (actions.indices).forEach { i ->
             val a = actions[i]
             if (a is RestCallAction){
-                if (i == 0 || a.verb == HttpVerb.POST) params.addAll(a.parameters)
+                if (i != actions.size-1 && (i == 0 || a.verb == HttpVerb.POST)) params.addAll(a.parameters)
                 else{
                     params.addAll(a.parameters.filter { p->
                         missing.none { m->
@@ -608,6 +609,11 @@ class RestResourceNode(
                 return listOf()
             }
         }
+    }
+
+    fun getTemplate(key: String) : CallsTemplate{
+        if (templates.containsKey(key)) return templates.getValue(key)
+        throw IllegalArgumentException("cannot find $key template in the node $path")
     }
 
     fun getTemplates() : Map<String, CallsTemplate> = templates.toMap()

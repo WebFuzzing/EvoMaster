@@ -144,10 +144,6 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
             mutatedGenes?.removedDbActions?.add(remove)
         }
 
-
-        if(config.isEnabledArchiveSolution()){
-            TODO("update impacts")
-        }
     }
 
     private fun doesApplyDependencyHeuristics() : Boolean{

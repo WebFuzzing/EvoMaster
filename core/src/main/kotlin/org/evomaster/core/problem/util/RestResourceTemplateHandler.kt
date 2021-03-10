@@ -3,7 +3,9 @@ package org.evomaster.core.problem.rest.util
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.resource.CallsTemplate
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.service.Randomness
+import kotlin.math.min
 
 
 /**
@@ -16,7 +18,6 @@ class RestResourceTemplateHandler{
 
         private val arrayHttpVerbs : Array<HttpVerb> = arrayOf(HttpVerb.POST, HttpVerb.GET, HttpVerb.PUT, HttpVerb.PATCH,HttpVerb.DELETE, HttpVerb.OPTIONS, HttpVerb.HEAD)
         private const val SeparatorTemplate = "-"
-        private const val SQL_CREATED = "SQL_CREATED"
 
 
         fun getIndexOfHttpVerb (verb: HttpVerb) : Int = arrayHttpVerbs.indexOf(verb)
@@ -31,7 +32,17 @@ class RestResourceTemplateHandler{
             return temp.split(SeparatorTemplate).map { HttpVerb.valueOf(it) }.toTypedArray()
         }
 
-        fun getStringTemplateByActions(actions : List<RestCallAction>) : String = formatTemplate(actions.map { it.verb }.toTypedArray())
+        fun getStringTemplateByActions(actions : List<RestCallAction>) : String{
+            return formatTemplate(actions.map { it.verb }.toTypedArray())
+        }
+
+        fun getStringTemplateByCalls(calls: RestResourceCalls) : String{
+            val verbs = (if (calls.dbActions.isNotEmpty()) listOf(HttpVerb.POST) else listOf()).plus(
+                (calls.restActions as List<RestCallAction>).map { it.verb }
+            ).toTypedArray()
+            return  formatTemplate(verbs)
+
+        }
 
         private fun combination(space : Array<HttpVerb>, len : Int = 5, excluding: Array<HttpVerb>? = null) : Array<String>{
             val cspace = if(excluding!= null) space.filter { !excluding.contains(it) }.toList() else space.toList()
@@ -72,10 +83,9 @@ class RestResourceTemplateHandler{
             }
         }
 
-        fun formatTemplate(verbs : Array<HttpVerb>) : String = verbs.joinToString(SeparatorTemplate)
-
-        private fun formatTemplate(stringVerbs : Array<String>) : String = stringVerbs.joinToString(SeparatorTemplate)
-
+        fun formatTemplate(verbs : Array<HttpVerb>) : String{
+            return verbs.sliceArray((verbs.size-min(2, verbs.size)) until verbs.size).joinToString(SeparatorTemplate)
+        }
 
         fun sample(_space : Array<Boolean>, randomness: Randomness, slen : Int = 0) : String{
             val space = arrayHttpVerbs.filterIndexed{index, _ ->  _space[index]}

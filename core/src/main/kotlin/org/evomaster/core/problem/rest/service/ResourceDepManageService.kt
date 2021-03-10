@@ -20,7 +20,6 @@ import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToTabl
 import org.evomaster.core.problem.rest.resource.dependency.SelfResourcesRelation
 import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.problem.util.StringSimilarityComparator
-import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
