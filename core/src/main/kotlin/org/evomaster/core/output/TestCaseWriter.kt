@@ -176,10 +176,11 @@ class TestCaseWriter {
                         handleEvaluatedAction(a, lines, baseUrlOfSut)
                     }
                 }
-            } else {
+            } else {if (test.test.individual is RestIndividual) {
                 test.test.evaluatedActions().forEach { a ->
                     handleEvaluatedAction(a, lines, baseUrlOfSut)
                 }
+            }
             }
             if (test.test.individual is GraphQLIndividual) {
                 test.test.evaluatedActions().forEach { a ->
