@@ -316,7 +316,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         val second = individual.getResourceCalls()[1].getResourceNode()
         val swapSpec = MutatedGeneSpecification()
         structureMutator.mutateRestResourceCalls(individual, evaluatedIndividual, RestResourceStructureMutator.MutationType.SWAP, swapSpec)
-        assert(swapSpec.getSwap().isEmpty())
+        assert(swapSpec.getSwap().isNotEmpty())
 
         assert(individual.getResourceCalls()[1].getResourceNode().getName() == first.getName())
         assert(individual.getResourceCalls()[0].getResourceNode().getName() == second.getName())
