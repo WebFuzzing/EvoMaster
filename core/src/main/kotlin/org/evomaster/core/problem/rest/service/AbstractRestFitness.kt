@@ -238,7 +238,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         val call = actions[indexOfAction] as RestCallAction
         val oracles = writer.getPartialOracles().activeOracles(call, result)
         oracles.filter { it.value }.forEach { entry ->
-            val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
+            val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
             val bugId = idMapper.handleLocalTarget(oracleId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }
@@ -278,7 +278,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 executed statement in the SUT.
                 So, we create new targets for it.
             */
-            val descriptiveId = idMapper.getFaultDescriptiveId("${location5xx!!} $name")
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }
