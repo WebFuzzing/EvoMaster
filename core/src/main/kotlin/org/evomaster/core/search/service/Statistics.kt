@@ -185,9 +185,19 @@ class Statistics : SearchListener {
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
             add(Pair("endpoints", "" + numberOfEndpoints()))
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
+            // this counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))
+            //this count the number of 500 (and NOT the other in 5xx), per endpoint, and distinct based on the last
+            //executed line
+            add(Pair("distinct500Faults", "" )) //TODO
+            // this is per endpoint (so, the same type of failed expectation in 2 different endpoints gets counted twice).
+            // However, 5xx are not counted here. FIXME
+            add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
+            //this is the total of all potential faults, eg distinct500Faults + failedOracleExpectations + any other
+            //potential oracle we are going to introduce.
+            //Note: that 500 (and 5xx in general) MUST not be counted in failedOracles
+            //FIXME
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
-            add(Pair("FailedOracleExpectations", "" + failedOracle(solution)))
 
             add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
             add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))
@@ -206,9 +216,7 @@ class Statistics : SearchListener {
 
             add(Pair(TEST_TIMEOUTS, "$timeouts"))
             add(Pair("coverageFailures", "$coverageFailures"))
-
-            add(Pair("ClusteringTime", "${solution.clusteringTime}"))
-
+            add(Pair("clusteringTime", "${solution.clusteringTime}"))
             add(Pair("id", config.statisticsColumnId))
         }
         addConfig(list)
