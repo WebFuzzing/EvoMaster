@@ -44,7 +44,7 @@ public class ResourceMIOTest extends ResourceTestBase {
     @Test
     public void testResourceMIO() {
 
-        List<String> args = generalArgs(1);
+        List<String> args = generalArgs(1, 42);
         hypmutation(args, false);
         adaptiveMutation(args, false);
         defaultResourceConfig(args);
@@ -87,7 +87,7 @@ public class ResourceMIOTest extends ResourceTestBase {
 
     @Test
     public void testResourceMIOWithPMAndSQLHandling() {
-        List<String> args = generalArgs(3);
+        List<String> args = generalArgs(3, 42);
         hypmutation(args, false);
         adaptiveMutation(args, false);
         defaultResourceConfig(args);
@@ -179,13 +179,10 @@ public class ResourceMIOTest extends ResourceTestBase {
     }
 
 
-    /**
-     * this test mainly aims to checking the value binding with hypermutation
-     */
     @Test
     public void testResourceHypermutation(){
 
-        List<String> args = generalArgs(3);
+        List<String> args = generalArgs(3, 0);
         hypmutation(args, true);
         adaptiveMutation(args, false);
         defaultResourceConfig(args);
@@ -196,15 +193,39 @@ public class ResourceMIOTest extends ResourceTestBase {
         args.add("--structureMutationProbability");
         args.add("0.0");
 
+        Injector injector = init(args);
+        initPartialOracles(injector);
+
+        ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
+        ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
+        RestResourceFitness ff = injector.getInstance(RestResourceFitness.class);
+
+        String raIdkey = "/api/rA/{rAId}";
+        String rdkey = "/api/rd";
+
+        RestResourceNode raIdNode = rmanger.getResourceNodeFromCluster(raIdkey);
+        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, "POST-GET", 10, false, true, false);
+        RestResourceNode rdNode = rmanger.getResourceNodeFromCluster(rdkey);
+        RestResourceCalls rdcall = rmanger.genCalls(rdNode, "POST-POST", 8, false, true, false);
+
+        List<RestResourceCalls> calls = Arrays.asList(rAIdcall, rdcall);
+        RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
+        EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet());
+
+        MutatedGeneSpecification spec = new MutatedGeneSpecification();
+        RestIndividual mutatedTwoCalls = mutator.mutate(twoCallsEval, Collections.emptySet(), spec);
+        assertEquals(0, spec.mutatedDbGeneInfo().size());
+        // with specified seed, this should be determinate
+        assertEquals(2, spec.mutatedGeneInfo().size());
+        mutatedTwoCalls.getResourceCalls().forEach(c->
+                checkingBinding(c, c.getSampledTemplate(), c.getResourceNodeKey(), false)
+                );
     }
 
-    /**
-     * this test mainly aims to checking the value binding with hypermutation and enabled SQL handling on resources
-     */
     @Test
     public void testResourceWithSQLAndHypermutation(){
 
-        List<String> args = generalArgs(3);
+        List<String> args = generalArgs(3, 42);
         hypmutation(args, true);
         adaptiveMutation(args, false);
         defaultResourceConfig(args);
@@ -215,28 +236,64 @@ public class ResourceMIOTest extends ResourceTestBase {
         args.add("--structureMutationProbability");
         args.add("0.0");
 
+        Injector injector = init(args);
+        initPartialOracles(injector);
+
+        ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
+        ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
+        RestResourceFitness ff = injector.getInstance(RestResourceFitness.class);
+
+        String raIdkey = "/api/rA/{rAId}";
+        String rdkey = "/api/rd";
+
+        RestResourceNode raIdNode = rmanger.getResourceNodeFromCluster(raIdkey);
+        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, "POST-GET", 10, false, true, false);
+        RestResourceNode rdNode = rmanger.getResourceNodeFromCluster(rdkey);
+        RestResourceCalls rdcall = rmanger.genCalls(rdNode, "POST-POST", 8, false, true, false);
+
+        List<RestResourceCalls> calls = Arrays.asList(rAIdcall, rdcall);
+        RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
+        EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet());
+
+        MutatedGeneSpecification spec = new MutatedGeneSpecification();
+        RestIndividual mutatedTwoCalls = mutator.mutate(twoCallsEval, Collections.emptySet(), spec);
+        // with specified seed, this should be determinate
+        assertEquals(1, spec.mutatedDbGeneInfo().size());
+        assertEquals(1, spec.mutatedGeneInfo().size());
+        mutatedTwoCalls.getResourceCalls().forEach(c->
+                checkingBinding(c, c.getSampledTemplate(), c.getResourceNodeKey(), true)
+        );
+
     }
 
     private void checkingBinding(RestResourceCalls call, String template, String nodeKey, Boolean withSQL){
-        if (nodeKey.equals("/api/rA/{rAId}")){
+        if (nodeKey.endsWith("Id}")){
             if (template.equals("POST-GET")){
                 if (withSQL){
                     Gene rdIdInRest = call.getRestActions().get(0).seeGenes().stream().findFirst().orElse(null);
                     Gene rdIdInDB = getGeneByName(Objects.requireNonNull(call.getDbActions().stream().findFirst().orElse(null)),"ID");
                     // test binding between DB and RestAction
                     assertEquals(rdIdInRest.getValueAsRawString(), rdIdInDB.getValueAsRawString());
-                    return;
                 }else {
                     Gene bodyInPOST = getGeneByName(call.getRestActions().get(0), "id");
                     Gene rdIdInGet = call.getRestActions().get(1).seeGenes().stream().findFirst().orElse(null);
                     assertEquals(bodyInPOST.getValueAsRawString(), rdIdInGet.getValueAsRawString());
-                    return;
+                }
+            }
+        }else{
+            if (template.equals("POST-POST")){
+                if (withSQL){
+                    Gene rdIdInRest = getGeneByName(call.getRestActions().get(0), "id");
+                    Gene rdIdInDB = getGeneByName(Objects.requireNonNull(call.getDbActions().stream().findFirst().orElse(null)),"ID");
+                    // test binding between DB and RestAction
+                    assertEquals(rdIdInRest.getValueAsRawString(), rdIdInDB.getValueAsRawString());
+                }else {
+                    Gene bodyInPOST = getGeneByName(call.getRestActions().get(0), "id");
+                    Gene rdIdInGet = getGeneByName(call.getRestActions().get(0), "id");
+                    assertEquals(bodyInPOST.getValueAsRawString(), rdIdInGet.getValueAsRawString());
                 }
             }
         }
-
-        fail();
-
     }
 
     private Gene getGeneByName(Action action, String name){
@@ -244,11 +301,11 @@ public class ResourceMIOTest extends ResourceTestBase {
                 .orElse(null);
     }
 
-    private List<String> generalArgs(int budget){
+    private List<String> generalArgs(int budget, int seed){
         return new ArrayList<>(
                 Arrays.asList(
                         "--createTests", "false",
-                        "--seed", "" + defaultSeed,
+                        "--seed", ""+seed,
                         "--useTimeInFeedbackSampling", "false",
                         "--sutControllerPort", "" + controllerPort,
                         "--maxActionEvaluations", "" + budget,

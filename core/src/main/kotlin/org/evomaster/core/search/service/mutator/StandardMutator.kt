@@ -6,6 +6,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.search.ActionFilter
@@ -200,6 +201,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             targets: Set<Int>, mutatedGene: MutatedGeneSpecification?, includeSameValue : Boolean = false) : AdditionalGeneMutationInfo?{
 
         val isFromInit = individual.seeInitializingActions().any { it.seeGenes().contains(gene) }
+        val isDbInResourceCall = (individual as? RestIndividual)?.getResourceCalls()?.any {
+            it.dbActions.any { d-> d.seeGenes().contains(gene) }
+        }?:false
+
         val filter = if (isFromInit) ActionFilter.INIT else ActionFilter.NO_INIT
 
         val value = try {
@@ -210,10 +215,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val position = when {
             individual.seeActions(filter).isEmpty() -> individual.seeGenes().indexOf(gene)
             isFromInit -> individual.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
-            else -> individual.seeActions().indexOfFirst { it.seeGenes().contains(gene) }
+            else -> individual.seeActions(ActionFilter.NO_INIT).indexOfFirst { it.seeGenes().contains(gene) }
         }
 
-        mutatedGene?.addMutatedGene(isFromInit, valueBeforeMutation = value, gene = gene, position = position)
+        mutatedGene?.addMutatedGene(isFromInit || isDbInResourceCall, valueBeforeMutation = value, gene = gene, position = position)
 
         val additionInfo = if(enableAGS || enableAGM){
             val id = ImpactUtils.generateGeneId(individual, gene)
