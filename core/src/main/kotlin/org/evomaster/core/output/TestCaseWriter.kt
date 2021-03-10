@@ -2,10 +2,7 @@ package org.evomaster.core.output
 
 import com.google.gson.Gson
 import io.swagger.v3.oas.models.OpenAPI
-import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
-import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -17,17 +14,11 @@ import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.auth.CookieLogin
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import org.slf4j.LoggerFactory
 import java.lang.RuntimeException
 import javax.ws.rs.client.Entity
@@ -132,8 +123,8 @@ class TestCaseWriter {
                     expectationsWriter.addDeclarations(lines, ind as EvaluatedIndividual<RestIndividual>)
                     //TODO: -> also check expectation generation before adding declarations
                 }
-                if (ind.individual.dbInitialization.isNotEmpty()) {
-                    SqlWriter.handleDbInitialization(format, ind.individual.dbInitialization, lines)
+                if (ind.individual.seeInitializingActions().isNotEmpty()) {
+                    SqlWriter.handleDbInitialization(format, ind.individual.seeInitializingActions(), lines)
                 }
             } else {
                 if (ind.individual is GraphQLIndividual) {
@@ -173,11 +164,26 @@ class TestCaseWriter {
 
             CookieWriter.handleGettingCookies(format, test.test, lines, baseUrlOfSut)
 
-            test.test.evaluatedActions().forEach { a ->
-                when (a.action) {
-                    is RestCallAction -> handleRestCall(a, lines, baseUrlOfSut)
-                    is GraphQLAction -> handleGraphQlCall(a, lines, baseUrlOfSut)
-                    else -> throw IllegalStateException("Cannot handle " + a.action.getName())
+            //SQL actions are generated in between
+            if (test.test.individual is RestIndividual && config.isEnabledSQLInBetween()) {
+
+                test.test.evaluatedResourceActions().forEachIndexed { index, c ->
+                    // db
+                    if (c.first.isNotEmpty())
+                        SqlWriter.handleDbInitialization(format, c.first, lines, test.test.individual.seeDbActions(), groupIndex = index.toString())
+                    //actions
+                    c.second.forEach { a ->
+                        handleEvaluatedAction(a, lines, baseUrlOfSut)
+                    }
+                }
+            } else {
+                test.test.evaluatedActions().forEach { a ->
+                    handleEvaluatedAction(a, lines, baseUrlOfSut)
+                }
+            }
+            if (test.test.individual is GraphQLIndividual) {
+                test.test.evaluatedActions().forEach { a ->
+                    handleGraphQlCall(a, lines, baseUrlOfSut)
                 }
             }
         }
@@ -186,8 +192,14 @@ class TestCaseWriter {
         if (format.isJavaScript()) {
             lines.append(");")
         }
-
         return lines
+    }
+
+    private fun handleEvaluatedAction(a: EvaluatedAction, lines: Lines, baseUrlOfSut: String) {
+        when (a.action) {
+            is RestCallAction -> handleRestCall(a, lines, baseUrlOfSut)
+            else -> throw IllegalStateException("Cannot handle " + a.action.getName())
+        }
     }
 
 
@@ -422,8 +434,9 @@ class TestCaseWriter {
             format.isJavaOrKotlin() -> lines.append("given()")
             format.isJavaScript() -> lines.append("await superagent")
         }
+        //TODO: check for C#
+        if (!format.isJavaScript() && !format.isCsharp()) {
 
-        if (!format.isJavaScript()) {
             lines.append(getAcceptHeader(call, res))
         }
     }
@@ -647,6 +660,12 @@ class TestCaseWriter {
             //TODO
             return
         }
+
+        if (format.isCsharp()) {
+            //TODO
+            return
+        }
+
 
         lines.add(".assertThat()")
 
@@ -942,7 +961,7 @@ class TestCaseWriter {
             else -> throw IllegalArgumentException("Format not supported $format")
         }
 
-        if (selection != null ) {
+        if (selection != null) {
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
@@ -950,28 +969,28 @@ class TestCaseWriter {
 
             }
 
-                val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\":\"{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}\",\"variables\":null }")
-                } else {
-                    selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
-                }
-                //todo the input param
-                //needed as JSON uses ""
-                val bodyLines = body.split("\n").map { s ->
-                    "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
-                }
+            val body = if (readable) {
+                OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\":\"{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}\",\"variables\":null }")
+            } else {
+                selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+            }
+            //todo the input param
+            //needed as JSON uses ""
+            val bodyLines = body.split("\n").map { s ->
+                "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
+            }
 
-                if (bodyLines.size == 1) {
-                    lines.add(".$send(${bodyLines.first()})")
-                } else {
-                    lines.add(".$send(${bodyLines.first()} + ")
-                    lines.indented {
-                        (1 until bodyLines.lastIndex).forEach { i ->
-                            lines.add("${bodyLines[i]} + ")
-                        }
-                        lines.add("${bodyLines.last()})")
+            if (bodyLines.size == 1) {
+                lines.add(".$send(${bodyLines.first()})")
+            } else {
+                lines.add(".$send(${bodyLines.first()} + ")
+                lines.indented {
+                    (1 until bodyLines.lastIndex).forEach { i ->
+                        lines.add("${bodyLines[i]} + ")
                     }
+                    lines.add("${bodyLines.last()})")
                 }
+            }
 
         }
 
@@ -1047,6 +1066,7 @@ class TestCaseWriter {
         val accept = when {
             format.isJavaOrKotlin() -> ".accept("
             format.isJavaScript() -> ".set('Accept', "
+            //format.isCsharp() -> "TODO: accept"
             else -> throw IllegalArgumentException("Invalid format: $format")
         }
 
