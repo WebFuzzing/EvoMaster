@@ -40,11 +40,11 @@ data class MutatedGeneSpecification (
         mutatedIndividual = individual
     }
 
-    fun addMutatedGene(isDb : Boolean, valueBeforeMutation : String, gene : Gene, position : Int?){
+    fun addMutatedGene(isDb : Boolean, valueBeforeMutation : String, gene : Gene, position : Int?, resourcePosition: Int? = null){
         if (isDb){
-            mutatedDbGenes.add(MutatedGene(valueBeforeMutation, gene, actionPosition=position))
+            mutatedDbGenes.add(MutatedGene(valueBeforeMutation, gene, actionPosition=position, resourcePosition = resourcePosition))
         }else{
-            mutatedGenes.add(MutatedGene(valueBeforeMutation, gene, actionPosition=position))
+            mutatedGenes.add(MutatedGene(valueBeforeMutation, gene, actionPosition=position, resourcePosition = resourcePosition))
         }
     }
 

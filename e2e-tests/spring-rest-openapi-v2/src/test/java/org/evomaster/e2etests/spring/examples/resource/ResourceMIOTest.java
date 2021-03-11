@@ -13,10 +13,12 @@ import org.evomaster.core.search.Action;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.GeneFilter;
 import org.evomaster.core.search.gene.Gene;
+import org.evomaster.core.search.gene.ObjectGene;
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -182,7 +184,7 @@ public class ResourceMIOTest extends ResourceTestBase {
     @Test
     public void testResourceHypermutation(){
 
-        List<String> args = generalArgs(3, 0);
+        List<String> args = generalArgs(3, 42);
         hypmutation(args, true);
         adaptiveMutation(args, false);
         defaultResourceConfig(args);
@@ -211,15 +213,27 @@ public class ResourceMIOTest extends ResourceTestBase {
         List<RestResourceCalls> calls = Arrays.asList(rAIdcall, rdcall);
         RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
         EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet());
+        // only two ObjectGenes should be candidates
+        assertEquals(2, mutator.genesToMutation(twoCalls, twoCallsEval, Collections.emptySet()).size());
 
         MutatedGeneSpecification spec = new MutatedGeneSpecification();
         RestIndividual mutatedTwoCalls = mutator.mutate(twoCallsEval, Collections.emptySet(), spec);
         assertEquals(0, spec.mutatedDbGeneInfo().size());
         // with specified seed, this should be determinate
-        assertEquals(2, spec.mutatedGeneInfo().size());
+        assertEquals(1, spec.mutatedGeneInfo().size());
+
+        Gene rdObj = rdcall.seeGenes(GeneFilter.NO_SQL).stream().findFirst().orElse(null);
+        Gene mrdObj = mutatedTwoCalls.getResourceCalls().get(1).seeGenes(GeneFilter.NO_SQL).stream().findFirst().orElse(null);
+        assert(rdObj instanceof ObjectGene);
+        assert(mrdObj instanceof ObjectGene);
+        //two fields are mutated
+        assertEquals(2, IntStream.range(0, ((ObjectGene)rdObj).getFields().size()).filter(i->
+                !((ObjectGene) rdObj).getFields().get(i).containsSameValueAs(((ObjectGene) mrdObj).getFields().get(i))
+        ).count());
+
+        //value should be bound
         mutatedTwoCalls.getResourceCalls().forEach(c->
-                checkingBinding(c, c.getSampledTemplate(), c.getResourceNodeKey(), false)
-                );
+                checkingBinding(c, c.getSampledTemplate(), c.getResourceNodeKey(), false));
     }
 
     @Test

@@ -28,11 +28,10 @@ public class DbTreeEMTest  extends SpringTestBase  {
                 1000,
                 (args) -> {
 
-                    //this should now be on by default
-//                    args.add("--heuristicsForSQL");
-//                    args.add("true");
-//                    args.add("--generateSqlDataWithSearch");
-//                    args.add("true");
+                    args.add("--heuristicsForSQL");
+                    args.add("true");
+                    args.add("--generateSqlDataWithSearch");
+                    args.add("true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
