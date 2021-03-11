@@ -253,24 +253,6 @@ class ImpactsOfIndividual private constructor(
     }
 
 
-//    private data class ImpactOfResourceCalls(
-//        val resourceNodeKey: String?,
-//        val template : String?,
-//        val dbActionImpacts: InitializationActionImpacts?,
-//        val restActionsImpacts: List<ImpactsOfAction>){
-//
-//        constructor(calls: RestResourceCalls):this(
-//            calls.getResourceNodeKey(),
-//            calls.getTemplate(),
-//            InitializationActionImpacts(false, false).also {
-//                it.initInitializationActions(listOf(calls.dbActions), calls.dbActions.indexOfLast { it.representExistingData } + 1)
-//            },
-//            calls.actions.s
-//        )
-//
-//
-//    }
-
     /**
      * @property actionName name of action if action exists, versus null
      * @property geneImpacts impact info of genes of the action or the individual (actionName == null)
