@@ -614,7 +614,7 @@ class EMConfig {
 
     @Important(3.0)
     @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
-    var blackBox = false
+    var blackBox = true
 
     @Important(3.2)
     @Url
@@ -1251,7 +1251,7 @@ class EMConfig {
     var baseTaintAnalysisProbability = 0.9
 
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
-    var bbExperiments = false
+    var bbExperiments = true
 
     @Cfg("Specify whether to export covered targets info")
     var exportCoveredTarget = false

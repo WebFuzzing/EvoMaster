@@ -134,14 +134,14 @@ namespace EvoMaster.Controller.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError(msg));
             }
 
-            // dto.UnitsInfoDto = _sutController.GetUnitsInfoDto ();
-            // if (dto.UnitsInfoDto == null) {
-            //   string msg = "Failed to extract units info";
+            dto.UnitsInfoDto = _sutController.GetUnitsInfoDto ();
+            if (dto.UnitsInfoDto == null) {
+              string msg = "Failed to extract units info";
 
-            //   SimpleLogger.Error (msg);
+              SimpleLogger.Error (msg);
 
-            //   return StatusCode (StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError (msg));
-            // }
+              return StatusCode (StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError (msg));
+            }
 
             return Ok(WrappedResponseDto<SutInfoDto>.WithData(dto));
         }

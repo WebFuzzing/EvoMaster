@@ -11,7 +11,8 @@ namespace EvoMaster.Controller
     {
         public sealed override UnitsInfoDto GetUnitsInfoDto()
         {
-            throw new System.NotImplementedException();
+            //TODO
+            return new UnitsInfoDto();
         }
 
         public sealed override bool IsInstrumentationActivated() => false;
