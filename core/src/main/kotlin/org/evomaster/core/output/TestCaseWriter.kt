@@ -463,15 +463,16 @@ class TestCaseWriter {
 
         if (format.isCsharp()) {
             if (hasBody) {
-                when (verb) {
-                    "post", "put" -> lines.append(", httpContent);")
-                    else -> lines.append(");")
-                }
+                if (isVerbWithPossibleBodyPayload(verb))
+                    lines.append(", httpContent);")
+                else
+                    lines.append(");")
+
             } else {
-                when (verb) {
-                    "post", "put" -> lines.append(", null);")
-                    else -> lines.append(");")
-                }
+                if (isVerbWithPossibleBodyPayload(verb))
+                    lines.append(", null);")
+                else
+                    lines.append(");")
             }
             lines.add("responseBody = await response.Content.ReadAsStringAsync();")
         } else
@@ -923,5 +924,14 @@ class TestCaseWriter {
                 && printableContent != NOT_COVERED_YET
                 && !printableContent.contains("logged")
                 && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
+    }
+
+    private fun isVerbWithPossibleBodyPayload(verb: String): Boolean {
+
+        var verbs = arrayOf("post", "put", "patch")
+
+        if (verbs.contains(verb.toLowerCase()))
+            return true;
+        return false;
     }
 }
