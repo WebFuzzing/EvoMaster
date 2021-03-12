@@ -5,13 +5,12 @@ import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.RuntimeException
 import java.net.URLEncoder
 
 /**
@@ -20,16 +19,12 @@ import java.net.URLEncoder
 open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null) : Gene(name) {
 
     companion object {
-        val JSON_MODE = "json"
-
-        val XML_MODE = "xml"
-
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
 
     }
 
     init {
-        for(f in fields){
+        for (f in fields) {
             f.parent = this
         }
     }
@@ -64,7 +59,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        fields.filter { it.isMutable()}
+        fields.filter { it.isMutable() }
                 .forEach { it.randomize(randomness, forceNewValue, allGenes) }
     }
 
@@ -116,6 +111,37 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 "$name=$value"
             }.joinToString("&"))
 
+        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE) {
+            if (includedFields.isEmpty()) {
+                buffer.append("$name")
+            } else {
+                buffer.append("$name")
+                buffer.append("{")
+
+                val selection = includedFields.filter {
+                    when (it) {
+                        is OptionalGene -> it.isActive
+                        is BooleanGene -> it.value
+                        else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+                    }
+                }
+
+                buffer.append(selection.map {
+                    val s: String = when (it) {
+                        is OptionalGene -> {
+                            it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
+                        }
+                        is BooleanGene -> {
+                            it.name
+                        }
+                        else -> {
+                            throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+                        }
+                    }
+                    s
+                }.joinToString(","))
+                buffer.append("}")
+            }
         } else {
             throw IllegalArgumentException("Unrecognized mode: $mode")
         }
@@ -136,8 +162,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
 
         if (additionalGeneMutationInfo.impact != null
-                && additionalGeneMutationInfo.impact is ObjectGeneImpact){
-            val impacts = internalGenes.map { additionalGeneMutationInfo.impact.fields.getValue(it.name)}
+                && additionalGeneMutationInfo.impact is ObjectGeneImpact) {
+            val impacts = internalGenes.map { additionalGeneMutationInfo.impact.fields.getValue(it.name) }
             val selected = mwc.selectSubGene(
                     internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
             )

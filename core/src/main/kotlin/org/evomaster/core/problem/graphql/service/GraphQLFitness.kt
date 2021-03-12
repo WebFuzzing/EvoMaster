@@ -1,12 +1,15 @@
 package org.evomaster.core.problem.graphql.service
 
-import GraphQlCallResult
 import org.evomaster.client.java.controller.api.EMTestUtils
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
+import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -15,13 +18,13 @@ import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.RuntimeException
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.NewCookie
-
 
 
 class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
@@ -108,6 +111,10 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val gqlcr = GraphQlCallResult()
         actionResults.add(gqlcr)
 
+        /*
+            TODO quite a lot of code here is the same as in Rest... need to refactor out into WsHttp
+         */
+
         val response = try {
             createInvocation(action, cookies).invoke()
         } catch (e: ProcessingException) {
@@ -166,9 +173,47 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         }
 
+        gqlcr.setStatusCode(response.status)
 
-        //TODO
-        return false
+        handlePossibleConnectionClose(response)
+
+        try {
+            if (response.hasEntity()) {
+                if (response.mediaType != null) {
+                    gqlcr.setBodyType(response.mediaType)
+                }
+                /*
+                  Note: here we are always assuming a JSON, so reading as string should be fine
+                 */
+                val body = response.readEntity(String::class.java)
+
+                if (body.length < configuration.maxResponseByteSize) {
+                    gqlcr.setBody(body)
+                } else {
+                    LoggingUtil.uniqueWarn(log,
+                            "A very large response body was retrieved from the action '${action.methodName}'." +
+                                    " If that was expected, increase the 'maxResponseByteSize' threshold" +
+                                    " in the configurations.")
+                    gqlcr.setTooLargeBody(true)
+                }
+            }
+        } catch (e: Exception) {
+
+            if(e is ProcessingException && TcpUtils.isTimeout(e)){
+                gqlcr.setTimedout(true)
+                statistics.reportTimeout()
+                return false
+            } else {
+               log.warn("Failed to parse HTTP response: ${e.message}")
+            }
+        }
+
+        if (response.status == 401 && action.auth !is NoAuth) {
+            //this would likely be a misconfiguration in the SUT controller
+            log.warn("Got 401 although having auth for '${action.auth.name}'")
+        }
+
+        return true
     }
 
 
@@ -192,7 +237,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 }
 
 
-        val builder = client.target(fullUri).request("*/*")
+        val builder = client.target(fullUri).request("application/json")
 
         a.auth.headers.forEach {
             builder.header(it.name, it.value)
@@ -213,98 +258,23 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         }
 
 
-        val body = a.parameters.find { p -> p is GQReturnParam }
+        val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
+        //in GraphQL, there is ALWAYS a return type
+                ?: throw RuntimeException("ERROR: not specified return type")
+        val selection = GeneUtils.getBooleanSelection(returnGene)
 
+        //this might be optional
+        val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
-        val bodyEntity = if (body != null && body is GQReturnParam) {
-            val mode = GeneUtils.EscapeMode.JSON
-               if (mode != GeneUtils.EscapeMode.JSON){
-                throw IllegalStateException("Cannot handle body type: ")
-            }
-            Entity.entity("{ \" ${a.methodType} \" : "+body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat)+",\"variables \":null,\"operationName \":null}", " ")
-        } else if (body != null && body is GQInputParam) {
-            val mode = GeneUtils.EscapeMode.JSON
-            Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), "")
-        } else {
-            null
-        }
+        //TODO inputGenes
+       val query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+
+        val bodyEntity = Entity.json("""
+            {"query" : "$query","variables":null}
+        """.trimIndent())
 
         val invocation = builder.buildPost(bodyEntity)
         return invocation
     }
-
-    /*******************************************************************************************************/
-/*
-    protected fun handleResponseTargets(
-            fv: FitnessValue,
-            actions: List<GraphQLAction>,
-            actionResults: List<ActionResult>,
-            additionalInfoList: List<AdditionalInfoDto>) {
-
-
-        (0 until actionResults.size)
-                .filter { actions[it] is GraphQLAction }
-                .filter { actionResults[it] is GraphQlCallResult }
-                .forEach {
-                    val result = actionResults[it] as GraphQlCallResult
-                    val status = result.getStatusCode() ?: -1
-                    val name = actions[it].getName()
-
-                    //objective for HTTP specific status code
-                    val statusId = idMapper.handleLocalTarget("$status:$name")
-                    fv.updateTarget(statusId, 1.0, it)
-
-                    /*
-                        Objectives for results on endpoints.
-                        Problem: we might get a 4xx/5xx, but then no gradient to keep sampling for
-                        that endpoint. If we get 2xx, and full coverage, then no gradient to try
-                        to keep sampling that endpoint to get a 5xx
-                     */
-                    val okId = idMapper.handleLocalTarget("HTTP_SUCCESS:$name")
-                    val faultId = idMapper.handleLocalTarget("HTTP_FAULT:$name")
-
-                    //OK -> 5xx being better than 4xx, as code executed
-                    //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
-                    if (status in 200..299) {
-                        fv.updateTarget(okId, 1.0, it)
-                        fv.updateTarget(faultId, 0.5, it)
-                    } else if (status in 400..499) {
-                        fv.updateTarget(okId, 0.1, it)
-                        fv.updateTarget(faultId, 0.1, it)
-                    } else if (status in 500..599) {
-                        fv.updateTarget(okId, 0.5, it)
-                        fv.updateTarget(faultId, 1.0, it)
-                    }
-
-                    /*
-                        500 codes "might" be bugs. To distinguish between different bugs
-                        that crash the same endpoint, we need to know what was the last
-                        executed statement in the SUT.
-                        So, we create new targets for it.
-                     */
-                    if (status == 500) {
-                        val statement = additionalInfoList[it].lastExecutedStatement
-                        val source = statement ?: "framework_code"
-                        val descriptiveId = idMapper.getFaultDescriptiveId("$source $name")
-                        val bugId = idMapper.handleLocalTarget(descriptiveId)
-                        fv.updateTarget(bugId, 1.0, it)
-                        result.setLastStatementWhen500(source)
-                    }
-                    /*
-                        Objectives for the two partial oracles implemented thus far.
-                    */
-                    val call = actions[it] as RestCallAction
-                    val oracles = writer.getPartialOracles().activeOracles(call, result)
-                    oracles.filter { it.value }.forEach { entry ->
-                        val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
-                        val bugId = idMapper.handleLocalTarget(oracleId)
-                        fv.updateTarget(bugId, 1.0, it)
-                    }
-                }
-    }
-
-
-*/
-
 
 }

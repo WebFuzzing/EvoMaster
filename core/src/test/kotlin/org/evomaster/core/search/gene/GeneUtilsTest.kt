@@ -102,4 +102,125 @@ internal class GeneUtilsTest {
     }
 
 
+    @Test
+    fun testBooleanSelectionSimple() {
+
+        val obj = ObjectGene("foo", listOf(StringGene("a", "hello"), IntegerGene("b", 42)))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        //without randomization, should be both on by default
+        assertEquals("foo{a,b}", rep)
+    }
+
+    @Test
+    fun testBooleanSectionSkip() {
+
+        val obj = ObjectGene("foo", listOf(StringGene("a", "hello"), IntegerGene("b", 42)))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+        val a = selection.fields.find { it.name == "a" } as BooleanGene
+        a.value = false
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("foo{b}", rep)
+    }
+
+
+    @Test
+    fun testBooleanSectionTwoNestedObjects() {
+
+        val obj = ObjectGene("Obj1", listOf(ObjectGene("Obj2", listOf(StringGene("a", "hello")))))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("Obj1{Obj2{a}}", rep)
+    }
+
+    @Test
+    fun testBooleanSectionThreeNestedObjects() {
+
+        val obj = ObjectGene("Obj1", listOf(ObjectGene("Obj2", listOf(ObjectGene("Obj3", listOf(StringGene("a", "hello")))))))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("Obj1{Obj2{Obj3{a}}}", rep)
+    }
+
+
+    @Test
+    fun testBooleanSectionArray() {
+
+        val array = ArrayGene("Array", ObjectGene("Obj1", listOf(StringGene("a", "hello"))))
+
+        val selection = GeneUtils.getBooleanSelection(array)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("Obj1{a}", rep)
+    }
+
+    @Test
+    fun testBooleanSectionString() {
+
+        val string = StringGene("a", "hello")
+
+        val selection = GeneUtils.getBooleanSelection(string)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("a", rep)
+    }
+
+    @Test
+    fun testBooleanSectionInteger() {
+
+        val integer = IntegerGene("a", 1)
+
+        val selection = GeneUtils.getBooleanSelection(integer)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("a", rep)
+    }
+
+    @Test
+    fun testBooleanSectionOptionalObject() {
+
+        val opt = OptionalGene("Opti", StringGene("Opti", "hello"))
+        val selection = GeneUtils.getBooleanSelection(opt)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("Opti", rep)
+    }
+
+    @Test
+    fun testBooleanSectionBoolean() {
+
+        val boolean = BooleanGene("a")
+
+        val selection = GeneUtils.getBooleanSelection(boolean)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("a", rep)
+    }
+
 }
