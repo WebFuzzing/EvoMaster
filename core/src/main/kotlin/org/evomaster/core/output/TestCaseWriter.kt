@@ -705,8 +705,10 @@ class TestCaseWriter {
         return handleBody(call, lines, true)
     }
 
+    //TODO: check again for C#, especially when not json
     private fun handleBody(call: RestCallAction, lines: Lines, readable: Boolean): Boolean {
 
+        var hasBody: Boolean = false
         val bodyParam = call.parameters.find { p -> p is BodyParam }
         val form = call.getBodyFormData()
         var bodyLines: List<String> = emptyList()
@@ -749,10 +751,14 @@ class TestCaseWriter {
                 }
 
                 if (bodyLines.size == 1) {
-                    if (!format.isCsharp())
+                    if (!format.isCsharp()) {
                         lines.add(".$send(${bodyLines.first()})")
-                    else
+                        hasBody = true
+                    } else {
                         lines.add("body = ${bodyLines.first()};")
+                        lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                        hasBody = true
+                    }
                 } else {
                     if (!format.isCsharp()) {
                         lines.add(".$send(${bodyLines.first()} + ")
@@ -770,17 +776,31 @@ class TestCaseWriter {
                             }
                             lines.add("${bodyLines.last()};")
                         }
-                        lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"application/json\");")
+                        lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
                     }
+                    hasBody = true
                 }
 
             } else if (bodyParam.isTextPlain()) {
                 val body =
                     bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
-                    lines.add(".$send($body)")
+                    if (!format.isCsharp())
+                        lines.add(".$send($body)")
+                    else {
+                        lines.add("body = \"$body\";")
+                        lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                    }
+
+                    hasBody = true
                 } else {
-                    lines.add(".$send(\"${"""\"\""""}\")")
+                    if (!format.isCsharp())
+                        lines.add(".$send(\"${"""\"\""""}\")")
+                    else {
+                        lines.add("body = \"${"""\"\""""}\";")
+                        lines.add("httpContent = new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                    }
+                    hasBody = true
                 }
 
                 //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
@@ -792,8 +812,14 @@ class TestCaseWriter {
                     mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED,
                     targetFormat = format
                 )
-                lines.add(".$send(\"$body\")")
+                if (!format.isCsharp())
+                    lines.add(".$send(\"$body\")")
+                else {
+                    lines.add("body = \"$body\";")
+                    lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                }
 
+                hasBody = true
             } else {
                 //TODO XML
 
@@ -805,11 +831,19 @@ class TestCaseWriter {
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"application/x-www-form-urlencoded\")")
                 format.isJavaScript() -> lines.add(".set('Content-Type','application/x-www-form-urlencoded')")
+                format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"application/x-www-form-urlencoded\"));")
             }
-            lines.add(".$send(\"$form\")")
+            if (!format.isCsharp())
+                lines.add(".$send(\"$form\")")
+            else {
+                lines.add("body = \"$form\";")
+                lines.add("httpContent = new StringContent(form, Encoding.UTF8, \"application/x-www-form-urlencoded\");")
+            }
+
+            hasBody = true
         }
 
-        return bodyLines.isNotEmpty()
+        return hasBody
     }
 
     private fun handleHeaders(call: RestCallAction, lines: Lines) {
