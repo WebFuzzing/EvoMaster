@@ -42,8 +42,9 @@ namespace RestApis.Tests.Animals
         
             Assert.Equal(200, (int) response.StatusCode);
             Assert.Contains("application/json", response.Content.Headers.ContentType.ToString());
-            Assert.True(JsonInspector.ContainsKeyValue(responseBody, "Name", "Giraffe"));
-            
+            //TODO
+            Assert.Contains("Giraffe", responseBody);
+
         }
         
         [Fact]
@@ -57,8 +58,9 @@ namespace RestApis.Tests.Animals
             
             var response = await Client.GetAsync($"{_fixture.BaseUrlOfSut}/birds");
             var responseBody = await response.Content.ReadAsStringAsync();
-        
-            Assert.False(JsonInspector.ContainsKeyValue(responseBody, "Name", "Eagle"));
+            
+            //TODO
+            Assert.DoesNotContain("Eagle", responseBody);
         
             var dto = new Bird {Name = "Eagle"};
         
