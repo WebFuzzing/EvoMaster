@@ -134,13 +134,14 @@ namespace EvoMaster.Controller.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError(msg));
             }
 
-            dto.UnitsInfoDto = _sutController.GetUnitsInfoDto ();
-            if (dto.UnitsInfoDto == null) {
-              string msg = "Failed to extract units info";
+            dto.UnitsInfoDto = _sutController.GetUnitsInfoDto();
+            if (dto.UnitsInfoDto == null)
+            {
+                string msg = "Failed to extract units info";
 
-              SimpleLogger.Error (msg);
+                SimpleLogger.Error(msg);
 
-              return StatusCode (StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError (msg));
+                return StatusCode(StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError(msg));
             }
 
             return Ok(WrappedResponseDto<SutInfoDto>.WithData(dto));
@@ -295,9 +296,16 @@ namespace EvoMaster.Controller.Controllers
         [HttpGet("controller/api/testResults")]
         public IActionResult GetTestResults([FromQuery] string ids)
         {
-            var dto = new TestResultsDto();
-            
-            return Ok(WrappedResponseDto<ControllerInfoDto>.WithData(dto));
+            //TODO
+            var dto = new TestResultsDto
+            {
+                AdditionalInfoList = new List<AdditionalInfoDto>
+                {
+                    new AdditionalInfoDto {LastExecutedStatement = "\"TODO\""}
+                }
+            };
+
+            return Ok(WrappedResponseDto<TestResultsDto>.WithData(dto));
         }
 
         //TODO: implement ExecuteDatabaseCommand method
