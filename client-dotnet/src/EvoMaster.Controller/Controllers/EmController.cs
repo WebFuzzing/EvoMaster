@@ -301,7 +301,10 @@ namespace EvoMaster.Controller.Controllers
             {
                 AdditionalInfoList = new List<AdditionalInfoDto>
                 {
-                    new AdditionalInfoDto {LastExecutedStatement = "\"TODO\""}
+                    new AdditionalInfoDto
+                    {
+                        LastExecutedStatement = "\"TODO: LastExecutedStatement\""
+                    }
                 }
             };
 
