@@ -297,16 +297,8 @@ namespace EvoMaster.Controller.Controllers
         public IActionResult GetTestResults([FromQuery] string ids)
         {
             //TODO
-            var dto = new TestResultsDto
-            {
-                AdditionalInfoList = new List<AdditionalInfoDto>
-                {
-                    new AdditionalInfoDto
-                    {
-                        LastExecutedStatement = "\"TODO: LastExecutedStatement\""
-                    }
-                }
-            };
+            var dto = new TestResultsDto();
+
 
             return Ok(WrappedResponseDto<TestResultsDto>.WithData(dto));
         }
