@@ -1,9 +1,7 @@
 package org.evomaster.e2etests.spring.graphql.cycle
 
-import com.foo.graphql.base.BaseController
 import com.foo.graphql.cycle.BaseCycleController
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll

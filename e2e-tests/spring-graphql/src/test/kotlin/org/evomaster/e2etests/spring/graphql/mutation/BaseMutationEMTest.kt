@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.graphql.mutation
 
-import com.foo.graphql.base.BaseController
 import com.foo.graphql.mutation.BaseMutationController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
