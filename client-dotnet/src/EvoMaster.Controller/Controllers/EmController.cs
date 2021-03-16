@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EvoMaster.Client.Util;
 using EvoMaster.Controller.Api;
 using EvoMaster.Controller.Problem;
+using EvoMaster.Instrumentation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -296,9 +297,18 @@ namespace EvoMaster.Controller.Controllers
         [HttpGet("controller/api/testResults")]
         public IActionResult GetTestResults([FromQuery] string ids)
         {
-            //TODO
-            var dto = new TestResultsDto();
 
+            //java version: List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
+            IList<AdditionalInfo> additionalInfos = _sutController.GetAdditionalInfoList();
+
+            //Fake data here
+            var dto = new TestResultsDto
+            {
+                AdditionalInfoList = Enumerable.Repeat(new AdditionalInfoDto
+                {
+                    LastExecutedStatement = "\"TODO: LastExecutedStatement\""
+                }, additionalInfos.Count).ToList()
+            };
 
             return Ok(WrappedResponseDto<TestResultsDto>.WithData(dto));
         }

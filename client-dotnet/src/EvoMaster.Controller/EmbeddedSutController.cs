@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using EvoMaster.Controller.Api;
+using EvoMaster.Instrumentation;
+using EvoMaster.Instrumentation.Staticstate;
 using Microsoft.Extensions.Configuration;
+using Action = EvoMaster.Instrumentation.Action;
 
 namespace EvoMaster.Controller
 {
@@ -19,17 +23,27 @@ namespace EvoMaster.Controller
 
         public sealed override void NewActionSpecificHandler(ActionDto dto)
         {
-            throw new System.NotImplementedException();
+            ExecutionTracer.SetAction(new Action(dto.Index, dto.InputVariables));
+        }
+
+        public override IList<TargetInfo> GetTargetInfos(IEnumerable<int> ids)
+        {
+            return InstrumentationController.GetTargetInfos(ids);
+        }
+
+        public override IList<AdditionalInfo> GetAdditionalInfoList()
+        {
+            return InstrumentationController.GetAdditionalInfoList();
         }
 
         public sealed override void NewSearch()
         {
-            //TODO: Implement this method
+            InstrumentationController.ResetForNewSearch();
         }
 
         public sealed override void NewTestSpecificHandler()
         {
-            throw new System.NotImplementedException();
+            InstrumentationController.ResetForNewTest();
         }
 
         /// <summary>

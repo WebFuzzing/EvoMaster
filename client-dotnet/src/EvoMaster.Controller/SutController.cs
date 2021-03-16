@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using EvoMaster.Client.Util;
 using EvoMaster.Controller.Api;
 using EvoMaster.Controller.Problem;
+using EvoMaster.Instrumentation;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,7 +36,7 @@ namespace EvoMaster.Controller {
         private readonly ICollection<ExtraHeuristicsDto> extras = new SynchronizedCollection<ExtraHeuristicsDto> ();
 
         //TODO: Commented this out just to prevent warning
-        //private int actionIndex = -1;
+        private int _actionIndex = -1;
 
         public abstract void ResetStateOfSut ();
 
@@ -159,10 +160,15 @@ namespace EvoMaster.Controller {
 
         /**
          * Re-initialize some internal data needed before running a new test
+         *
+         * Man: I modified this, please check Amid.
          */
-        //TODO: Complete this method
         public void NewTest () {
-            //throw new NotImplementedException (); //TODO:ZXC
+            //_actionIndex = -1;
+            
+            // resetExtraHeuristics();
+            // extras.clear();
+            NewTestSpecificHandler();
         }
 
         /**
@@ -172,9 +178,17 @@ namespace EvoMaster.Controller {
          *
          * @param dto the DTO with the information about the action (eg its index in the test)
          */
-        //TODO: Complete this method
+        //TODO: Complete this method. Man: modified, please check
         public void NewAction (ActionDto dto) {
-           
+            
+            // if (dto.index > extras.size()) {
+            //     extras.add(computeExtraHeuristics());
+            // }
+            // this.actionIndex = dto.index;
+            //
+            // resetExtraHeuristics();
+            
+            NewActionSpecificHandler(dto);
         }
 
         /**
@@ -295,14 +309,14 @@ namespace EvoMaster.Controller {
         public abstract string GetDatabaseDriverName ();
 
         //TODO: Complete this method
-        // public abstract IList<TargetkInfo> GetTargetInfos (IEnumerable<int> ids);
+        public abstract IList<TargetInfo> GetTargetInfos (IEnumerable<int> ids);
 
         /**
          * @return additional info for each action in the test.
          * The list is ordered based on the action index.
          */
         //TODO: Complete this method
-        // public abstract IList<AdditionalInfo> GetAdditionalInfoList ();
+        public abstract IList<AdditionalInfo> GetAdditionalInfoList ();
 
         /**
          * <p>

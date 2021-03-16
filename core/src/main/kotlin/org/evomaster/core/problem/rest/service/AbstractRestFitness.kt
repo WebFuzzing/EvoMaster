@@ -222,9 +222,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     open fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: RestCallResult, name: String) : String?{
         var location5xx : String? = null
         if (status == 500){
-            val additionalInfo = additionalInfoList.getOrNull(indexOfAction)
-            additionalInfo?: log.warn("additionalInfo at index {} is null", indexOfAction)
-            location5xx = additionalInfo?.lastExecutedStatement?: "framework_code"
+            val statement = additionalInfoList[indexOfAction].lastExecutedStatement
+            location5xx = statement ?: "framework_code"
             result.setLastStatementWhen500(location5xx)
         }
         return location5xx
