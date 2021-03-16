@@ -593,6 +593,7 @@ class ResourceManageService {
         return randomness.choose(getDataInDb(tableName)!!.filter { it.columnData.toSet().equals(set) })
     }
 
+    // SQL can be used to create a resource only if sqlInsertBuilder is not null and config.probOfApplySQLActionToCreateResources > 0.0
     private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null && (config.probOfApplySQLActionToCreateResources > 0.0)
 
     private fun snapshotDB(){
