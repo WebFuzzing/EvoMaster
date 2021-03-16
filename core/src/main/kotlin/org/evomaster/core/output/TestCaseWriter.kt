@@ -613,9 +613,9 @@ class TestCaseWriter {
                 lines.append(" // " + res.getLastStatementWhen500())
             }
 
-            /*if (configuration.enableBasicAssertions) {
-                handleResponseContents(lines, res)
-            }*/
+            if (configuration.enableBasicAssertions) {
+                handleGQLResponseContents(lines, res)
+            }
         }
     }
 
