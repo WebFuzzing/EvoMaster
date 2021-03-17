@@ -5,6 +5,7 @@ import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.joran.spi.JoranException
 import org.evomaster.client.java.controller.internal.db.StandardOutputTracker
 import org.evomaster.client.java.controller.internal.db.WrappedPrintStream
+import org.evomaster.client.java.databasespy.P6SpyFormatter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
@@ -117,7 +118,12 @@ class LoggingUtil {
 
             val logs = byteStream.toString()
 
-            return logs
+            //as done by a separated thread, their ordering in the logs is not guaranteed, so we skip them
+            val filtered = logs.split("\n")
+                    .filter { ! it.startsWith(P6SpyFormatter.PREFIX) }
+                    .joinToString("\n")
+
+            return filtered
         }
     }
 }

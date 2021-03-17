@@ -27,6 +27,22 @@ public class DeterminismTest extends AHypermuationTestBase {
         });
     }
 
+
+    /*
+        WARNING
+
+        giving up for now to try to get these tests to reliably pass.
+
+        The problem is Jersey that does repeat POST commands at times (major bug!), and in general idempotent
+        HTTP verbs. When command is repeated, if SUT is using a database, heuristics for SQL will be counted twice,
+        leading to different results.
+
+        So, for non-deterministic tests, should avoid using DBs.
+        For E2E tests using DBs that are flaky, we might have to just resolve to give it more repeatiions with different
+        seeds and/or larger budget
+     */
+
+
     @Disabled("non-determinism may due to SQL execution failure or multiple retries of cleaning H2 database")
     @Test
     public void testNotDeterminismAHyMIO() {

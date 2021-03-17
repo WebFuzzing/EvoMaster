@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestCallAction
@@ -114,6 +115,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         val dto = DbActionTransformer.transform(ind.dbInitialization)
+        dto.idCounter = StaticCounter.getAndIncrease()
 
         val ok = rc.executeDatabaseCommand(dto)
         if (!ok) {

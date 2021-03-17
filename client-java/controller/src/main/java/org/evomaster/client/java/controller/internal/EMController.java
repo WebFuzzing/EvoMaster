@@ -44,6 +44,12 @@ public class EMController {
      */
     private final SutController sutController;
 
+    /**
+     * Keep track of the ID of last executed SQL command.
+     * This is done to avoid repeating the same command (even if in a POST,
+     * it could happen due to bugs in Jersey)
+     */
+    private volatile Integer lastSqlCommandId = null;
 
     private String baseUrlOfSUT;
 
@@ -192,6 +198,8 @@ public class EMController {
     public Response newSearch(@Context HttpServletRequest httpServletRequest) {
 
         assert trackRequestSource(httpServletRequest);
+
+        lastSqlCommandId = null;
 
         noKillSwitch(() -> sutController.newSearch());
 
@@ -435,6 +443,22 @@ public class EMController {
     @Consumes(Formats.JSON_V1)
     @POST
     public Response executeDatabaseCommand(DatabaseCommandDto dto, @Context HttpServletRequest httpServletRequest) {
+
+        Integer id = dto.idCounter;
+        if(id != null){
+            if(lastSqlCommandId != null && id <= lastSqlCommandId){
+                SimpleLogger.warn("SQL command with id " + id + " has not arrived in order. Last received id : " + lastSqlCommandId);
+
+                /*
+                    if it had insertions, we silently skip doing it twice.
+                    but a problem here is that we would lose any info on the auto-generated keys :(
+                 */
+                if(dto.insertions != null && !dto.insertions.isEmpty()){
+                    return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+                }
+            }
+            lastSqlCommandId = id;
+        }
 
         assert trackRequestSource(httpServletRequest);
 
