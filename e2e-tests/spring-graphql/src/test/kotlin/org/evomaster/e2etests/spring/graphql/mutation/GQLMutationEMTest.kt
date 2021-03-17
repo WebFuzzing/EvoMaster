@@ -1,20 +1,20 @@
-package org.evomaster.e2etests.spring.graphql.input
+package org.evomaster.e2etests.spring.graphql.mutation
 
-
-import com.foo.graphql.input.BaseInputController
+import com.foo.graphql.mutation.MutationController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class BaseInputEMTest : SpringTestBase() {
+class GQLMutationEMTest: SpringTestBase() {
+
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(BaseInputController())
+            initClass(MutationController())
         }
     }
 
@@ -22,8 +22,8 @@ class BaseInputEMTest : SpringTestBase() {
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-                "GQL_BaseInputEM",
-                "org.foo.graphql.BaseInputEM",
+                "GQL_MutationEM",
+                "org.foo.graphql.MutationEM",
                 20
         ) { args: MutableList<String> ->
 

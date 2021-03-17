@@ -1,6 +1,7 @@
-package com.foo.graphql.cycle
+package com.foo.graphql.mutation
 
 
+import com.foo.graphql.cycle.GQLCycleApplication
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 
@@ -8,7 +9,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
  * Created by asmab on 12-Mars-20.
  */
 @SpringBootApplication
-open class BaseCycleGQLApplication
+open class GQLMutationApplication{
+    companion object{
+        const val SCHEMA_NAME = "mutation.graphqls"
+    }
+}
+
 
 
 /*
@@ -23,5 +29,6 @@ open class BaseCycleGQLApplication
     http://localhost:8080/voyager
  */
 fun main(args: Array<String>) {
-    SpringApplication.run(BaseCycleGQLApplication::class.java, *args)
+    SpringApplication.run(GQLMutationApplication::class.java,
+            "--graphql.tools.schema-location-pattern=**/${GQLMutationApplication.SCHEMA_NAME}")
 }

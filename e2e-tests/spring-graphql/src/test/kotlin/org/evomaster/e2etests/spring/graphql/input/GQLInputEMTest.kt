@@ -1,19 +1,20 @@
-package org.evomaster.e2etests.spring.graphql.cycle
+package org.evomaster.e2etests.spring.graphql.input
 
-import com.foo.graphql.cycle.BaseCycleController
+
+import com.foo.graphql.input.InputController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class BaseCycleEMTest : SpringTestBase() {
+class GQLInputEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(BaseCycleController())
+            initClass(InputController())
         }
     }
 
@@ -21,8 +22,8 @@ class BaseCycleEMTest : SpringTestBase() {
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-                "GQL_BaseCycleEM",
-                "org.foo.graphql.BaseCycleEM",
+                "GQL_InputEM",
+                "org.foo.graphql.InputEM",
                 20
         ) { args: MutableList<String> ->
 

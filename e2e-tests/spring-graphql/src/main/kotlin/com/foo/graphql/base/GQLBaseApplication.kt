@@ -1,14 +1,17 @@
-package com.foo.graphql.input
-
+package com.foo.graphql.base
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 
 /**
- * Created by asmab on 12-Mars-20.
+ * Created by arcuri82 on 18-Jul-17.
  */
 @SpringBootApplication
-open class BaseInputGQLApplication
+open class GQLBaseApplication{
+    companion object{
+        const val SCHEMA_NAME = "base.graphqls"
+    }
+}
 
 
 /*
@@ -23,5 +26,6 @@ open class BaseInputGQLApplication
     http://localhost:8080/voyager
  */
 fun main(args: Array<String>) {
-    SpringApplication.run(BaseInputGQLApplication::class.java, *args)
+    SpringApplication.run(GQLBaseApplication::class.java,
+            "--graphql.tools.schema-location-pattern=**/${GQLBaseApplication.SCHEMA_NAME}")
 }

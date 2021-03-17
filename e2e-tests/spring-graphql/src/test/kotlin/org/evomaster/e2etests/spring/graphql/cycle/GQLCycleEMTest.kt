@@ -1,20 +1,19 @@
-package org.evomaster.e2etests.spring.graphql.mutation
+package org.evomaster.e2etests.spring.graphql.cycle
 
-import com.foo.graphql.mutation.BaseMutationController
+import com.foo.graphql.cycle.CycleController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class BaseMutationEMTest: SpringTestBase() {
-
+class GQLCycleEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(BaseMutationController())
+            initClass(CycleController())
         }
     }
 
@@ -22,8 +21,8 @@ class BaseMutationEMTest: SpringTestBase() {
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-                "GQL_BaseMutationEM",
-                "org.foo.graphql.BaseMutationEM",
+                "GQL_CycleEM",
+                "org.foo.graphql.CycleEM",
                 20
         ) { args: MutableList<String> ->
 
