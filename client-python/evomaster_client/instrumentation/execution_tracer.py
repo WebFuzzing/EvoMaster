@@ -126,4 +126,7 @@ class ExecutionTracer(Singleton):
         self.completed_last_executed_statement(f"{file_name}_{line}_{statement}")
         # HeuristicsForBooleans.clearLastEvaluation()
 
-    # TODO: def update_branch(self, ...)
+    def update_branch(self, file_name: str, line: int, branch: int, truthness) -> None:
+        # TODO: complete update_branch
+        print(f"Branch: {file_name}:line:{line}:branch:{branch}:truthness:{truthness}")
+        pass

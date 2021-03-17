@@ -7,15 +7,17 @@ from evomaster_client.instrumentation.ast_transformer import AstTransformer
 
 # TODO: rewrite this as a test module after completing AST transformer with particular statements
 if __name__ == "__main__":
-    filename = 'client/controller.py'
+    filename = 'tests/dummymodule.py'
 
     with open(filename) as f:
         source = f.read()
 
     # Examples: multiple statements per line
-    my_tree = ast.parse('for i in range(2): print("foo"); print("bar")')
+    # my_tree = ast.parse('for i in range(2): print("foo"); print("bar")')
     # my_tree = ast.parse('print("foo") if 5 < 10 else print("bar")')
-    # my_tree = ast.parse(source, filename=filename)
+    # my_tree = ast.parse('1 == 2 > 3 not in 4 in 6 != 8')
+    # my_tree = ast.parse('True == True == False')
+    my_tree = ast.parse(source, filename=filename)
 
     t = AstTransformer(filename)
     new_tree = t.visit(my_tree)
