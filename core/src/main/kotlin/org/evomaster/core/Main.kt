@@ -16,6 +16,7 @@ import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.output.PartialOracles
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.service.GraphQLModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
@@ -23,12 +24,14 @@ import org.evomaster.core.problem.web.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.MosaAlgorithm
 import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.search.service.SearchAlgorithm
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
@@ -263,18 +266,48 @@ class Main {
         }
 
 
-        fun run(injector: Injector): Solution<*> {
+        //Unfortunately Guice does not like this solution... :( so, we end up with copy&paste
+//        private  fun <T : Individual> getAlgorithmKey(config: EMConfig) : Key<out SearchAlgorithm<T>>{
+//
+//            return  when {
+//                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+//                    Key.get(object : TypeLiteral<RandomAlgorithm<T>>() {})
+//
+//                config.algorithm == EMConfig.Algorithm.MIO ->
+//                    Key.get(object : TypeLiteral<MioAlgorithm<T>>() {})
+//
+//                config.algorithm == EMConfig.Algorithm.WTS ->
+//                    Key.get(object : TypeLiteral<WtsAlgorithm<T>>() {})
+//
+//                config.algorithm == EMConfig.Algorithm.MOSA ->
+//                    Key.get(object : TypeLiteral<MosaAlgorithm<T>>() {})
+//
+//                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
+//            }
+//        }
 
-            val config = injector.getInstance(EMConfig::class.java)
+        private  fun  getAlgorithmKeyGraphQL(config: EMConfig) : Key<out SearchAlgorithm<GraphQLIndividual>>{
 
-            //TODO check problem type
+            return  when {
+                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+                    Key.get(object : TypeLiteral<RandomAlgorithm<GraphQLIndividual>>() {})
 
-            if(! config.blackBox || config.bbExperiments) {
-                val rc = injector.getInstance(RemoteController::class.java)
-                rc.startANewSearch()
+                config.algorithm == EMConfig.Algorithm.MIO ->
+                    Key.get(object : TypeLiteral<MioAlgorithm<GraphQLIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.WTS ->
+                    Key.get(object : TypeLiteral<WtsAlgorithm<GraphQLIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.MOSA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<GraphQLIndividual>>() {})
+
+                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
+        }
 
-            val key = when {
+        private  fun  getAlgorithmKeyRest(config: EMConfig) : Key<out SearchAlgorithm<RestIndividual>>{
+
+            return  when {
                 config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
 
@@ -288,6 +321,22 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
+            }
+        }
+
+        fun run(injector: Injector): Solution<*> {
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if(! config.blackBox || config.bbExperiments) {
+                val rc = injector.getInstance(RemoteController::class.java)
+                rc.startANewSearch()
+            }
+
+            val key = when(config.problemType) {
+                EMConfig.ProblemType.REST -> getAlgorithmKeyRest(config)
+                EMConfig.ProblemType.GRAPHQL -> getAlgorithmKeyGraphQL(config)
+                else -> throw IllegalStateException("Unrecognized problem type ${config.problemType}")
             }
 
             val imp = injector.getInstance(key)
@@ -355,17 +404,28 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
-            val writer = setupPartialOracles(injector, config)
+            if(config.problemType == EMConfig.ProblemType.REST) {
 
-            val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
+                val writer = setupPartialOracles(injector, config)
 
-            solution.clusteringTime = splitResult.clusteringTime.toInt()
-            splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
+                val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
-            if(config.executiveSummary){
-                writeExecSummary(injector, controllerInfoDto, splitResult)
-                //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
+                solution.clusteringTime = splitResult.clusteringTime.toInt()
+                splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
+                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
+
+                if (config.executiveSummary) {
+                    writeExecSummary(injector, controllerInfoDto, splitResult)
+                    //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
+                }
+            } else {
+                /*
+                    TODO refactor all the PartialOracle stuff that is meant for only REST
+                 */
+
+                val writer = injector.getInstance(TestSuiteWriter::class.java)
+
+                writer.writeTests(solution, controllerInfoDto?.fullName)
             }
         }
 

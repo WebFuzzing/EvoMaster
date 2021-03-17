@@ -9,18 +9,12 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.core.Main;
 import org.evomaster.core.StaticCounter;
 import org.evomaster.core.logging.LoggingUtil;
 import org.evomaster.core.output.OutputFormat;
 import org.evomaster.core.output.compiler.CompilerForTestGenerated;
-import org.evomaster.core.problem.rest.*;
 import org.evomaster.core.remote.service.RemoteController;
-import org.evomaster.core.search.Action;
-import org.evomaster.core.search.EvaluatedIndividual;
-import org.evomaster.core.search.Individual;
-import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
@@ -31,13 +25,36 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class RestTestBase  extends WsTestBase{
+public abstract class WsTestBase {
+
+    protected static InstrumentedSutStarter embeddedStarter;
+    protected static String baseUrlOfSut;
+    protected static SutController controller;
+    protected static RemoteController remoteController;
+    protected static int controllerPort;
+
+
+    private final static int STARTING_SEED = 42;
+    protected int defaultSeed = STARTING_SEED;
+
+    public final static String TESTS_OUTPUT_ROOT_FOLDER = "target/em-tests/";
+
+
+    @AfterAll
+    public static void tearDown() {
+
+        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+            boolean stopped = remoteController.stopSUT();
+            stopped = embeddedStarter.stop() && stopped;
+
+            assertTrue(stopped);
+        });
+    }
 
 
     @BeforeEach
@@ -52,14 +69,8 @@ public abstract class RestTestBase  extends WsTestBase{
             boolean reset = remoteController.resetSUT();
             assertTrue(reset);
         });
-
-        SimpleLogger.setThreshold(SimpleLogger.Level.DEBUG);
     }
 
-
-    protected Solution<RestIndividual> initAndRun(List<String> args){
-        return (Solution<RestIndividual>) Main.initAndRun(args.toArray(new String[0]));
-    }
 
     protected Injector init(List<String> args) {
         return Main.init(args.toArray(new String[0]));
@@ -73,17 +84,8 @@ public abstract class RestTestBase  extends WsTestBase{
         return TESTS_OUTPUT_ROOT_FOLDER + outputFolderName;
     }
 
+
     protected void runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda){
-        runAndCheckDeterminism(iterations, lambda, 2, false);
-    }
-
-    protected String runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda, int times, boolean notDeterminism){
-
-        /*
-            As some HTTP verbs are idempotent, they could be repeated... and we have no control whatsoever on it :(
-            so, for these deterministic checks, we disable the loggers in the driver
-         */
-        SimpleLogger.setThreshold(SimpleLogger.Level.OFF);
 
         List<String> args =  new ArrayList<>(Arrays.asList(
                 "--createTests", "false",
@@ -96,35 +98,17 @@ public abstract class RestTestBase  extends WsTestBase{
                 "--useTimeInFeedbackSampling" , "false"
         ));
 
-        return isDeterminismConsumer(args, lambda, times, notDeterminism);
-    }
-    protected String isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda) {
-        return isDeterminismConsumer(args, lambda, 2, false);
-    }
-
-    protected String isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda, int times, boolean notEqual) {
-        assert(times >= 2);
-
-        String firstRun = consumerToString(args, lambda);
-
-        int c = 1;
-        while (c < times){
-            String secondRun = consumerToString(args, lambda);
-            if (notEqual)
-                assertNotEquals(firstRun, secondRun);
-            else
-                assertEquals(firstRun, secondRun);
-            firstRun = secondRun;
-            c++;
-        }
-        return firstRun;
-    }
-
-    protected String consumerToString(List<String> args, Consumer<List<String>> lambda){
         StaticCounter.Companion.reset();
-        return LoggingUtil.Companion.runWithDeterministicLogger(
+        String firstRun = LoggingUtil.Companion.runWithDeterministicLogger(
                 () -> {lambda.accept(args); return Unit.INSTANCE;}
         );
+
+        StaticCounter.Companion.reset();
+        String secondRun = LoggingUtil.Companion.runWithDeterministicLogger(
+                () -> {lambda.accept(args); return Unit.INSTANCE;}
+        );
+
+        assertEquals(firstRun, secondRun);
     }
 
     protected void runTestHandlingFlaky(
@@ -322,11 +306,11 @@ public abstract class RestTestBase  extends WsTestBase{
         );
     }
 
-        protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName){
-            return getArgsWithCompilation(iterations, outputFolderName, testClassName, true);
-        }
+    protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName){
+        return getArgsWithCompilation(iterations, outputFolderName, testClassName, true);
+    }
 
-        protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests){
+    protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests){
 
         return new ArrayList<>(Arrays.asList(
                 "--createTests", "" + createTests,
@@ -341,9 +325,43 @@ public abstract class RestTestBase  extends WsTestBase{
         ));
     }
 
+
+    /**
+     * Unfortunately JUnit 5 does not handle flaky tests, and Maven is not upgraded yet.
+     * See https://github.com/junit-team/junit5/issues/1558#issuecomment-414701182
+     *
+     * TODO: once that issue is fixed (if it will ever be fixed), then this method
+     * will no longer be needed.
+     * Actually no... as we change the seed at each re-execution... so we still need
+     * this code
+     *
+     * @param lambda
+     * @throws Throwable
+     */
+    protected void handleFlaky(Runnable lambda) throws Throwable{
+
+        int attempts = 3;
+        Throwable error = null;
+
+        for(int i=0; i<attempts; i++){
+
+            try{
+                lambda.run();
+                return;
+            }catch (OutOfMemoryError e){
+                throw e;
+            }catch (Throwable t){
+                error = t;
+            }
+        }
+
+        throw error;
+    }
+
+
     protected static void initClass(EmbeddedSutController controller) throws Exception {
 
-        RestTestBase.controller = controller;
+        WsTestBase.controller = controller;
 
         embeddedStarter = new InstrumentedSutStarter(controller);
         embeddedStarter.start();
@@ -363,174 +381,5 @@ public abstract class RestTestBase  extends WsTestBase{
         System.out.println("Remote controller running on port " + controllerPort);
         System.out.println("SUT listening on " + baseUrlOfSut);
     }
-
-
-
-    protected List<Integer> getIndexOfHttpCalls(Individual ind, HttpVerb verb) {
-
-        List<Integer> indices = new ArrayList<>();
-        List<Action> actions = ind.seeActions();
-
-        for (int i = 0; i < actions.size(); i++) {
-            if (actions.get(i) instanceof RestCallAction) {
-                RestCallAction action = (RestCallAction) actions.get(i);
-                if (action.getVerb() == verb) {
-                    indices.add(i);
-                }
-            }
-        }
-
-        return indices;
-    }
-
-
-    protected boolean hasAtLeastOne(EvaluatedIndividual<RestIndividual> ind,
-                                    HttpVerb verb,
-                                    int expectedStatusCode) {
-
-        List<Integer> index = getIndexOfHttpCalls(ind.getIndividual(), verb);
-        for (int i : index) {
-            String statusCode = ind.getResults().get(i).getResultValue(
-                    RestCallResult.STATUS_CODE);
-            if (statusCode.equals("" + expectedStatusCode)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected boolean hasAtLeastOne(EvaluatedIndividual<RestIndividual> ind,
-                                    HttpVerb verb,
-                                    int expectedStatusCode,
-                                    String path,
-                                    String inResponse) {
-
-        List<RestAction> actions = ind.getIndividual().seeActions();
-
-        boolean stopped = false;
-
-        for (int i = 0; i < actions.size() && !stopped; i++) {
-
-            RestCallResult res = (RestCallResult) ind.getResults().get(i);
-            stopped = res.getStopping();
-
-            if (!(actions.get(i) instanceof RestCallAction)) {
-                continue;
-            }
-
-            RestCallAction action = (RestCallAction) actions.get(i);
-
-            if (action.getVerb() != verb) {
-                continue;
-            }
-
-            if (path != null) {
-                RestPath target = new RestPath(path);
-                if (!action.getPath().isEquivalent(target)) {
-                    continue;
-                }
-            }
-
-
-
-            Integer statusCode = res.getStatusCode();
-
-            if (!statusCode.equals(expectedStatusCode)) {
-                continue;
-            }
-
-            String body = res.getBody();
-            if (inResponse != null && (body==null ||  !body.contains(inResponse))) {
-                continue;
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    protected int countExpected(Solution<RestIndividual> solution,
-                                       HttpVerb verb,
-                                       int expectedStatusCode,
-                                       String path,
-                                       String inResponse, int count, List<String> msg) {
-
-        boolean ok = solution.getIndividuals().stream().anyMatch(
-                ind -> hasAtLeastOne(ind, verb, expectedStatusCode, path, inResponse));
-        if (!ok){
-            msg.add("Seed " + (defaultSeed-1)+". ");
-            msg.add("Missing " + expectedStatusCode + " " + verb + " " + path + " " + inResponse + "\n");
-        }
-
-        return ok? count+1: count;
-    }
-
-    protected void assertHasAtLeastOne(Solution<RestIndividual> solution,
-                                       HttpVerb verb,
-                                       int expectedStatusCode,
-                                       String path,
-                                       String inResponse) {
-
-        boolean ok = solution.getIndividuals().stream().anyMatch(
-                ind -> hasAtLeastOne(ind, verb, expectedStatusCode, path, inResponse));
-
-        String errorMsg = "Seed " + (defaultSeed-1)+". ";
-        errorMsg += "Missing " + expectedStatusCode + " " + verb + " " + path + " " + inResponse + "\n";
-
-        assertTrue(ok, errorMsg + restActions(solution));
-    }
-
-    protected void assertInsertionIntoTable(Solution<RestIndividual> solution, String tableName) {
-
-        boolean ok = solution.getIndividuals().stream().anyMatch(
-                ind -> ind.getIndividual().getDbInitialization().stream().anyMatch(
-                        da -> da.getTable().getName().equalsIgnoreCase(tableName))
-        );
-
-        assertTrue(ok);
-    }
-
-    protected void assertHasAtLeastOne(Solution<RestIndividual> solution,
-                                       HttpVerb verb,
-                                       int expectedStatusCode) {
-        assertHasAtLeastOne(solution, verb, expectedStatusCode, null, null);
-    }
-
-    protected String restActions(Solution<RestIndividual> solution) {
-        StringBuffer msg = new StringBuffer("REST calls:\n");
-
-        solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
-                .filter(ea -> ea.getAction() instanceof RestCallAction)
-                .map(ea -> {
-                    String s = ((RestCallResult)ea.getResult()).getStatusCode() + " ";
-                    s += ea.getAction().toString() + "\n";
-                    return s;
-                })
-                .sorted()
-                .forEach(s -> msg.append(s));
-        ;
-
-        return msg.toString();
-    }
-
-    protected void assertNone(Solution<RestIndividual> solution,
-                              HttpVerb verb,
-                              int expectedStatusCode) {
-
-        boolean ok = solution.getIndividuals().stream().noneMatch(
-                ind -> hasAtLeastOne(ind, verb, expectedStatusCode));
-
-        StringBuffer msg = new StringBuffer("REST calls:\n");
-        if (!ok) {
-            solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
-                    .map(ea -> ea.getAction())
-                    .filter(a -> a instanceof RestCallAction)
-                    .forEach(a -> msg.append(a.toString() + "\n"));
-        }
-
-        assertTrue(ok, msg.toString());
-    }
-
 
 }
