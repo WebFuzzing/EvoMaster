@@ -411,10 +411,21 @@ public class EMController {
     @PUT
     public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
 
-        assert trackRequestSource(httpServletRequest);
+        /*
+            Note: as PUT is idempotent, it can be repeated...
+            so need to handle such possibility here
+         */
+        Integer index = dto.index;
+        Integer current = sutController.getActionIndex();
+        if(index == current){
+            SimpleLogger.warn("Repeated PUT on newAction for same index " + index);
+        } else {
 
-        //this MUST not be inside a noKillSwitch, as it sets to false
-        sutController.newAction(dto);
+            assert trackRequestSource(httpServletRequest);
+
+            //this MUST not be inside a noKillSwitch, as it sets to false
+            sutController.newAction(dto);
+        }
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
     }

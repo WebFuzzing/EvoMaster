@@ -103,6 +103,12 @@ public abstract class RestTestBase {
 
     protected String runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda, int times, boolean notDeterminism){
 
+        /*
+            As some HTTP verbs are idempotent, they could be repeated... and we have no control whatsoever on it :(
+            so, for these deterministic checks, we disable the loggers in the driver
+         */
+        SimpleLogger.setThreshold(SimpleLogger.Level.OFF);
+
         List<String> args =  new ArrayList<>(Arrays.asList(
                 "--createTests", "false",
                 "--seed", "42",

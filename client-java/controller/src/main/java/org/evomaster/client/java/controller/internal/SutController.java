@@ -154,6 +154,9 @@ public abstract class SutController implements SutHandler {
         }
     }
 
+    public int getActionIndex(){
+        return actionIndex;
+    }
 
     /**
      * Calculate heuristics based on intercepted SQL commands
