@@ -40,37 +40,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public abstract class RestTestBase  extends WsTestBase{
 
 
-    @BeforeEach
-    public void initTest() {
-
-        //in case it was modified in a previous test in the same class
-        defaultSeed = STARTING_SEED;
-
-        StaticCounter.Companion.reset();
-
-        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
-            boolean reset = remoteController.resetSUT();
-            assertTrue(reset);
-        });
-
-        SimpleLogger.setThreshold(SimpleLogger.Level.DEBUG);
-    }
-
-
     protected Solution<RestIndividual> initAndRun(List<String> args){
         return (Solution<RestIndividual>) Main.initAndRun(args.toArray(new String[0]));
-    }
-
-    protected Injector init(List<String> args) {
-        return Main.init(args.toArray(new String[0]));
-    }
-
-    protected void initPartialOracles(Injector injector) {
-        Main.initPartialOracles(injector);
-    }
-
-    protected String outputFolderPath(String outputFolderName){
-        return TESTS_OUTPUT_ROOT_FOLDER + outputFolderName;
     }
 
     protected void runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda){

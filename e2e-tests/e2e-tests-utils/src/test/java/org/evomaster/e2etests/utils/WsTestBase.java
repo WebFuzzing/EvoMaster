@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.core.Main;
 import org.evomaster.core.StaticCounter;
 import org.evomaster.core.logging.LoggingUtil;
@@ -54,6 +55,8 @@ public abstract class WsTestBase {
 
             assertTrue(stopped);
         });
+
+        SimpleLogger.setThreshold(SimpleLogger.Level.INFO);
     }
 
 
@@ -69,6 +72,8 @@ public abstract class WsTestBase {
             boolean reset = remoteController.resetSUT();
             assertTrue(reset);
         });
+
+        SimpleLogger.setThreshold(SimpleLogger.Level.DEBUG);
     }
 
 
