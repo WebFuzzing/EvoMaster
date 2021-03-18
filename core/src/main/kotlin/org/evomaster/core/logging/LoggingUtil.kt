@@ -3,14 +3,9 @@ package org.evomaster.core.logging
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.joran.spi.JoranException
-import org.evomaster.client.java.controller.internal.db.StandardOutputTracker
-import org.evomaster.client.java.controller.internal.db.WrappedPrintStream
-import org.evomaster.client.java.databasespy.P6SpyFormatter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.ByteArrayOutputStream
 import java.io.InputStream
-import java.io.PrintStream
 
 
 
