@@ -27,10 +27,10 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tablesToSkip) {
-        clearDatabase(3, connection, schemaName, tablesToSkip, DatabaseType.H2);
+        clearDatabase(getDefaultReties(DatabaseType.H2), connection, schemaName, tablesToSkip, DatabaseType.H2, false);
     }
 
-    private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type) {
+    private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type, boolean doDropTable) {
         /*
             Code based on
             https://stackoverflow.com/questions/8523423/reset-embedded-h2-database-periodically
@@ -45,9 +45,9 @@ public class DbCleaner {
              */
             disableReferentialIntegrity(s, type);
 
-            truncateTables(tablesToSkip, s, schemaName, isSingleCleanCommand(type));
+            truncateTables(tablesToSkip, s, schemaName, isSingleCleanCommand(type), doDropTable);
 
-            resetSequences(s, type);
+            resetSequences(s, type, schemaName);
 
             enableReferentialIntegrity(s, type);
             s.close();
@@ -66,7 +66,7 @@ public class DbCleaner {
                     } catch (InterruptedException interruptedException) {
                     }
                     retries--;
-                    clearDatabase(retries, connection, schemaName, tablesToSkip, type);
+                    clearDatabase(retries, connection, schemaName, tablesToSkip, type, doDropTable);
                 } else {
                     SimpleLogger.error("Giving up cleaning the DB. There are still timeouts.");
                 }
@@ -76,15 +76,21 @@ public class DbCleaner {
         }
     }
 
-    public static void clearDatabase_Postgres(Connection connection) {
-        clearDatabase_Postgres(connection, "public", null);
+
+    public static void clearDatabase(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type){
+        clearDatabase(getDefaultReties(type), connection, schemaName, tablesToSkip, type, false);
     }
 
-    public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tablesToSkip) {
-        clearDatabase(0, connection, schemaName, tablesToSkip, DatabaseType.POSTGRES);
+    public static void dropDatabaseTables_MySQL(Connection connection, String schemaName, List<String> tablesToSkip){
+        clearDatabase(getDefaultReties(DatabaseType.MYSQL), connection, schemaName, tablesToSkip, DatabaseType.MYSQL, true);
     }
 
-    private static void truncateTables(List<String> tablesToSkip, Statement s, String schema, boolean singleCommand) throws SQLException {
+
+    public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tablesToSkip ) {
+        clearDatabase(getDefaultReties(DatabaseType.POSTGRES), connection, schemaName, tablesToSkip, DatabaseType.POSTGRES, false);
+    }
+
+    private static void truncateTables(List<String> tablesToSkip, Statement s, String schema, boolean singleCommand, boolean doDropTable) throws SQLException {
 
         // Find all tables and truncate them
         Set<String> tables = new HashSet<>();
@@ -119,19 +125,25 @@ public class DbCleaner {
                     .sorted()
                     .collect(Collectors.joining(","));
 
-            s.executeUpdate("TRUNCATE TABLE " + ts);
+            if (doDropTable)
+                s.execute("DROP TABLE IF EXISTS " +ts);
+            else
+                s.executeUpdate("TRUNCATE TABLE " + ts);
         } else {
             //note: if one at a time, need to make sure to first disable FK checks
             for(String t : tablesToClear){
-                s.executeUpdate("TRUNCATE TABLE " + t);
+                if (doDropTable)
+                    s.execute("DROP TABLE IF EXISTS " +t);
+                else
+                    s.executeUpdate("TRUNCATE TABLE " + t);
             }
         }
     }
 
-    private static void resetSequences(Statement s, DatabaseType type) throws SQLException {
+    private static void resetSequences(Statement s, DatabaseType type, String schemaName) throws SQLException {
         ResultSet rs;// Idem for sequences
         Set<String> sequences = new HashSet<>();
-        rs = s.executeQuery(getAllSequenceCommand(type));
+        rs = s.executeQuery(getAllSequenceCommand(type, schemaName));
         while (rs.next()) {
             sequences.add(rs.getString(1));
         }
@@ -184,11 +196,19 @@ public class DbCleaner {
         }
     }
 
+    private static int getDefaultReties(DatabaseType type){
+        switch (type){
+            case POSTGRES: return 0;
+            case H2:
+            case MYSQL: return 3;
+        }
+        throw new DbUnsupportedException(type);
+    }
 
-    private static String getSchema(DatabaseType type){
+    private static String getDefaultSchema(DatabaseType type){
         switch (type){
             case H2: return "PUBLIC";
-            case MYSQL: return "db";
+            case MYSQL: throw new IllegalArgumentException("there is no default schema for MySQL");
             case POSTGRES: return "public";
         }
         throw new DbUnsupportedException(type);
@@ -198,21 +218,17 @@ public class DbCleaner {
         return type == DatabaseType.POSTGRES;
     }
 
-    private static String getAllTableCommand(DatabaseType type)
-    {
-        return getAllTableCommand(getSchema(type));
-    }
 
     private static String getAllTableCommand(String schema) {
-        return "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES  where TABLE_SCHEMA='" + schema + "' AND (TABLE_TYPE='TABLE' OR TABLE_TYPE='BASE TABLE')";
+        return "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA='" + schema + "' AND (TABLE_TYPE='TABLE' OR TABLE_TYPE='BASE TABLE')";
     }
 
-    private static String getAllSequenceCommand(DatabaseType type)
+    private static String getAllSequenceCommand(DatabaseType type, String schemaName)
     {
         switch (type){
-            case MYSQL: return getAllTableCommand(getSchema(type));
+            case MYSQL: return getAllTableCommand(schemaName);
             case H2:
-            case POSTGRES: return getAllSequenceCommand(getSchema(type));
+            case POSTGRES: return getAllSequenceCommand(getDefaultSchema(type));
         }
         throw new DbUnsupportedException(type);
     }

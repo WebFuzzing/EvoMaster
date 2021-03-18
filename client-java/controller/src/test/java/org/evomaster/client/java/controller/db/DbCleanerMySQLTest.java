@@ -1,0 +1,68 @@
+package org.evomaster.client.java.controller.db;
+
+
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.testcontainers.containers.MySQLContainer;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.List;
+
+public class DbCleanerMySQLTest extends DbCleanerTestBase{
+
+    private static final String DB_NAME = "test";
+
+//    private static final int PORT = 3306;
+
+    // there exist some problems to start mysql with generic container which needs a further check
+//    public static GenericContainer mysql = new GenericContainer("mysql:8.0.23")
+//            .withExposedPorts(PORT);
+
+    public static MySQLContainer mysql = new MySQLContainer("mysql:8.0.23")
+            .withDatabaseName("test")
+            .withUsername("test")
+            .withPassword("test");
+
+
+    private static Connection connection;
+
+    @BeforeAll
+    public static void initClass() throws Exception{
+        mysql.start();
+        String url = mysql.getJdbcUrl();
+
+        connection = DriverManager.getConnection(url, "test", "test");
+    }
+
+    @AfterAll
+    public static void afterClass() throws Exception {
+        connection.close();
+    }
+
+    @AfterEach
+    public void afterTest() throws SQLException {
+        // do not find a solution to drop tables without knowing table names, so add a drop method for MySQL
+        DbCleaner.dropDatabaseTables_MySQL(connection, DB_NAME, null);
+    }
+
+
+    @Override
+    protected Connection getConnection() {
+        return connection;
+    }
+
+    @Override
+    protected void clearDatabase(List<String> tablesToSkip) {
+        DbCleaner.clearDatabase(connection, DB_NAME, tablesToSkip, DatabaseType.MYSQL);
+    }
+
+
+    @Override
+    protected DatabaseType getDbType() {
+        return DatabaseType.MYSQL;
+    }
+}
