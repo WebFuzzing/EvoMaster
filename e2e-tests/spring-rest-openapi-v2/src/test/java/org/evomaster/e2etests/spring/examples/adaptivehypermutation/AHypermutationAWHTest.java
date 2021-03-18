@@ -38,12 +38,14 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     private final static int budget = 20_000;
     private static String statisticsFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/statistics.csv";
     private static String snapshotFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/snapshot.csv";
-
+    private final static int SEED = 0;
 
     @Test
     public void testRunMIO() {
 
         CIUtils.skipIfOnCircleCI();
+
+        defaultSeed = SEED;
 
         List<String> msg = new ArrayList<>();
         assertThrows(Throwable.class, () -> {
@@ -100,6 +102,8 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     public void testRunMIOAWH() throws Throwable {
 
         CIUtils.skipIfOnCircleCI();
+
+        defaultSeed = SEED;
 
         runTestHandlingFlakyAndCompilation(
                 "AWH/TestAHW",
