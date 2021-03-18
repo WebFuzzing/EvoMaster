@@ -158,7 +158,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
         RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, TraceableElement.DEFAULT_INDEX);
 
-        ei = ff.calculateCoverage(withSQL, Collections.emptySet());
+        ei = ff.calculateCoverage(withSQL, noDataFV.getViewOfData().keySet());
         assertNotNull(ei);
 
         //should have better heuristic
