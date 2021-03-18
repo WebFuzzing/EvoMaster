@@ -12,7 +12,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.core.Main;
 import org.evomaster.core.StaticCounter;
-import org.evomaster.core.logging.LoggingUtil;
+import org.evomaster.core.logging.TestLoggingUtil;
 import org.evomaster.core.output.OutputFormat;
 import org.evomaster.core.output.compiler.CompilerForTestGenerated;
 import org.evomaster.core.remote.service.RemoteController;
@@ -104,12 +104,12 @@ public abstract class WsTestBase {
         ));
 
         StaticCounter.Companion.reset();
-        String firstRun = LoggingUtil.Companion.runWithDeterministicLogger(
+        String firstRun = TestLoggingUtil.Companion.runWithDeterministicLogger(
                 () -> {lambda.accept(args); return Unit.INSTANCE;}
         );
 
         StaticCounter.Companion.reset();
-        String secondRun = LoggingUtil.Companion.runWithDeterministicLogger(
+        String secondRun = TestLoggingUtil.Companion.runWithDeterministicLogger(
                 () -> {lambda.accept(args); return Unit.INSTANCE;}
         );
 

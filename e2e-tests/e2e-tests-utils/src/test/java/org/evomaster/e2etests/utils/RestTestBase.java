@@ -1,37 +1,18 @@
 package org.evomaster.e2etests.utils;
 
-import com.google.inject.Injector;
 import kotlin.Unit;
-import org.apache.commons.io.FileUtils;
-import org.evomaster.client.java.controller.EmbeddedSutController;
-import org.evomaster.client.java.controller.InstrumentedSutStarter;
-import org.evomaster.client.java.controller.api.dto.SutInfoDto;
-import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.client.java.instrumentation.shared.ClassName;
-import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.core.Main;
 import org.evomaster.core.StaticCounter;
-import org.evomaster.core.logging.LoggingUtil;
-import org.evomaster.core.output.OutputFormat;
-import org.evomaster.core.output.compiler.CompilerForTestGenerated;
+import org.evomaster.core.logging.TestLoggingUtil;
 import org.evomaster.core.problem.rest.*;
-import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.Action;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.Solution;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -93,7 +74,7 @@ public abstract class RestTestBase  extends WsTestBase{
 
     protected String consumerToString(List<String> args, Consumer<List<String>> lambda){
         StaticCounter.Companion.reset();
-        return LoggingUtil.Companion.runWithDeterministicLogger(
+        return TestLoggingUtil.Companion.runWithDeterministicLogger(
                 () -> {lambda.accept(args); return Unit.INSTANCE;}
         );
     }
