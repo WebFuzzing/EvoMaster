@@ -5,7 +5,8 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.images.builder.ImageFromDockerfile;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -16,24 +17,29 @@ public class DbCleanerMySQLTest extends DbCleanerTestBase{
 
     private static final String DB_NAME = "test";
 
-//    private static final int PORT = 3306;
+    private static final int PORT = 3306;
 
-    // there exist some problems to start mysql with generic container which needs a further check
-//    public static GenericContainer mysql = new GenericContainer("mysql:8.0.23")
-//            .withExposedPorts(PORT);
-
-    public static MySQLContainer mysql = new MySQLContainer("mysql:8.0.23")
-            .withDatabaseName("test")
-            .withUsername("test")
-            .withPassword("test");
+    public static GenericContainer mysql = new GenericContainer(new ImageFromDockerfile("mysql-test")
+        .withDockerfileFromBuilder(dockerfileBuilder -> {
+            dockerfileBuilder.from("mysql:8.0.23")
+                    .env("MYSQL_ROOT_PASSWORD", "root_password")
+                    .env("MYSQL_DATABASE", "test")
+                    .env("MYSQL_USER", "test")
+                    .env("MYSQL_PASSWORD", "test");
+        }))
+        .withExposedPorts(PORT);
 
 
     private static Connection connection;
 
     @BeforeAll
     public static void initClass() throws Exception{
+
         mysql.start();
-        String url = mysql.getJdbcUrl();
+
+        String host = mysql.getContainerIpAddress();
+        int port = mysql.getMappedPort(PORT);
+        String url = "jdbc:mysql://"+host+":"+port+"/"+DB_NAME;
 
         connection = DriverManager.getConnection(url, "test", "test");
     }
