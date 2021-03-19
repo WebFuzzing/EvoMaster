@@ -6,12 +6,11 @@ public enum DatabaseType {
 
     DERBY,
 
-    /**
-     * there exist some problem in its dbcleaner
-     */
     MYSQL,
 
     POSTGRES,
+
+    MARIADB,
 
     /**
      * In case used database is not listed in this enum, can

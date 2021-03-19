@@ -25,7 +25,7 @@ public abstract class DbCleanerTestBase {
     @Test
     public void testSkipTableMisconfigured() throws Exception{
 
-        String command = getDbType() == DatabaseType.MYSQL? "CREATE TABLE Foo(id serial not null);": "CREATE TABLE Foo(id bigserial not null);";
+        String command = (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB) ? "CREATE TABLE Foo(id serial not null);": "CREATE TABLE Foo(id bigserial not null);";
         SqlScriptRunner.execCommand(getConnection(), command);
 
         assertThrows(Exception.class, () -> clearDatabase(Arrays.asList("Bar")));
@@ -61,7 +61,7 @@ public abstract class DbCleanerTestBase {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x int, primary key (x));");
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(y int, primary key (y));");
-        if (getDbType() == DatabaseType.MYSQL){
+        if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB){
             SqlScriptRunner.execCommand(getConnection(), "alter table Bar add foreign key (y) references Foo(x);");
         }else{
             SqlScriptRunner.execCommand(getConnection(), "alter table Bar add constraint FK foreign key (y) references Foo;");
@@ -88,7 +88,7 @@ public abstract class DbCleanerTestBase {
     @Test
     public void testResetIdentity() throws Exception {
 
-        if (getDbType() == DatabaseType.MYSQL)
+        if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB)
             SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id serial not null, x int, primary key (id));");
         else
             SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id bigserial not null, x int, primary key (id));");
@@ -102,7 +102,7 @@ public abstract class DbCleanerTestBase {
         assertEquals(value, res.seeRows().get(0).getValueByName("x"));
 
         long id;
-        if (getDbType() == DatabaseType.MYSQL){
+        if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB){
             id = ((BigInteger) res.seeRows().get(0).getValueByName("id")).longValue();
         }else{
             id = (Long) res.seeRows().get(0).getValueByName("id");
@@ -119,7 +119,7 @@ public abstract class DbCleanerTestBase {
         assertEquals(1, res.seeRows().size());
 
         long regeneratedId;
-        if (getDbType() == DatabaseType.MYSQL){
+        if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB){
             regeneratedId = ((BigInteger) res.seeRows().get(0).getValueByName("id")).longValue();
         }else{
             regeneratedId = (Long) res.seeRows().get(0).getValueByName("id");

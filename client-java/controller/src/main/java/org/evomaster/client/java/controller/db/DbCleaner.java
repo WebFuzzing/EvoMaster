@@ -81,8 +81,10 @@ public class DbCleaner {
         clearDatabase(getDefaultReties(type), connection, schemaName, tablesToSkip, type, false);
     }
 
-    public static void dropDatabaseTables_MySQL(Connection connection, String schemaName, List<String> tablesToSkip){
-        clearDatabase(getDefaultReties(DatabaseType.MYSQL), connection, schemaName, tablesToSkip, DatabaseType.MYSQL, true);
+    public static void dropDatabaseTables(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type){
+        if (type != DatabaseType.MYSQL && type != DatabaseType.MARIADB)
+            throw new IllegalArgumentException("Dropping tables are not supported by "+type);
+        clearDatabase(getDefaultReties(type), connection, schemaName, tablesToSkip, type, true);
     }
 
 
@@ -169,6 +171,7 @@ public class DbCleaner {
             case H2:
                 s.execute("SET REFERENTIAL_INTEGRITY FALSE");
                 break;
+            case MARIADB:
             case MYSQL:
                 s.execute("SET @@foreign_key_checks = 0;");
                 break;
@@ -188,6 +191,7 @@ public class DbCleaner {
                 */
                 s.execute( "SET REFERENTIAL_INTEGRITY TRUE");
                 break;
+            case MARIADB:
             case MYSQL:
                 s.execute("SET @@foreign_key_checks = 1;");
                 break;
@@ -200,6 +204,7 @@ public class DbCleaner {
         switch (type){
             case POSTGRES: return 0;
             case H2:
+            case MARIADB:
             case MYSQL: return 3;
         }
         throw new DbUnsupportedException(type);
@@ -208,6 +213,7 @@ public class DbCleaner {
     private static String getDefaultSchema(DatabaseType type){
         switch (type){
             case H2: return "PUBLIC";
+            case MARIADB:
             case MYSQL: throw new IllegalArgumentException("there is no default schema for MySQL");
             case POSTGRES: return "public";
         }
@@ -226,7 +232,8 @@ public class DbCleaner {
     private static String getAllSequenceCommand(DatabaseType type, String schemaName)
     {
         switch (type){
-            case MYSQL: return getAllTableCommand(schemaName);
+            case MYSQL:
+            case MARIADB: return getAllTableCommand(schemaName);
             case H2:
             case POSTGRES: return getAllSequenceCommand(getDefaultSchema(type));
         }
@@ -241,6 +248,7 @@ public class DbCleaner {
 
     private static String resetSequenceCommand(String sequence, DatabaseType type) {
         switch (type){
+            case MARIADB:
             case MYSQL: return "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;";
             case H2:
             case POSTGRES: return "ALTER SEQUENCE " + sequence + " RESTART WITH 1";

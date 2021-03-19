@@ -52,7 +52,7 @@ public class DbCleanerMySQLTest extends DbCleanerTestBase{
     @AfterEach
     public void afterTest() throws SQLException {
         // do not find a solution to drop tables without knowing table names, so add a drop method for MySQL
-        DbCleaner.dropDatabaseTables_MySQL(connection, DB_NAME, null);
+        DbCleaner.dropDatabaseTables(connection, DB_NAME, null, getDbType());
     }
 
 
