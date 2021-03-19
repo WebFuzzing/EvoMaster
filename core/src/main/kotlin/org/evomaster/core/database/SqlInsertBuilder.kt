@@ -283,6 +283,7 @@ class SqlInsertBuilder(
             DatabaseType.POSTGRES -> ConstraintDatabaseType.POSTGRES
             DatabaseType.DERBY -> ConstraintDatabaseType.DERBY
             DatabaseType.MYSQL -> ConstraintDatabaseType.MYSQL
+            DatabaseType.MARIADB -> ConstraintDatabaseType.MARIADB
             DatabaseType.OTHER -> ConstraintDatabaseType.OTHER
         }
     }
