@@ -9,7 +9,6 @@ import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.auth.NoAuth
-import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -23,7 +22,6 @@ import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
-import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.NewCookie
 
 
@@ -199,12 +197,12 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         } catch (e: Exception) {
 
-            if(e is ProcessingException && TcpUtils.isTimeout(e)){
+            if (e is ProcessingException && TcpUtils.isTimeout(e)) {
                 gqlcr.setTimedout(true)
                 statistics.reportTimeout()
                 return false
             } else {
-               log.warn("Failed to parse HTTP response: ${e.message}")
+                log.warn("Failed to parse HTTP response: ${e.message}")
             }
         }
 
@@ -261,20 +259,73 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
         //in GraphQL, there is ALWAYS a return type
                 ?: throw RuntimeException("ERROR: not specified return type")
-        val selection = GeneUtils.getBooleanSelection(returnGene)
-
-        //this might be optional
         val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
-        //TODO inputGenes
-       val query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+        if (a.methodType.toString() == "QUERY") {
 
-        val bodyEntity = Entity.json("""
+            if (inputGenes != null) {
+
+                val printableInputGene: MutableList<String> = mutableListOf()
+                for (gene in inputGenes) {
+                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                    printableInputGene.add("${gene.name} : $i")
+                }
+
+                var printableInputGenes = ""
+                for (elt in printableInputGene) {
+                    printableInputGenes = "$elt,$printableInputGenes"
+                }
+                printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)//removing the ","
+                val selection = GeneUtils.getBooleanSelection(returnGene)
+                var query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                query = query.replace("{${a.methodName}", "", true)//remove the first methode name
+                query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
+
+
+                val bodyEntity = Entity.json("""
+            {"query" : "  { ${a.methodName}  ($printableInputGenes)     $query        } ","variables":null}
+        """.trimIndent())
+                val invocation = builder.buildPost(bodyEntity)
+                return invocation
+            } else {
+                val selection = GeneUtils.getBooleanSelection(returnGene)
+                val query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+
+                val bodyEntity = Entity.json("""
             {"query" : "$query","variables":null}
         """.trimIndent())
+                val invocation = builder.buildPost(bodyEntity)
+                return invocation
+            }
 
-        val invocation = builder.buildPost(bodyEntity)
+        } else if (a.methodType.toString() == "MUTATION") {
+            val printableInputGene: MutableList<String> = mutableListOf()
+            for (gene in inputGenes) {
+                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                printableInputGene.add("${gene.name} : $i")
+            }
+
+            var printableInputGenes: String = ""
+            for (elt in printableInputGene) {
+                printableInputGenes = "$elt,$printableInputGenes"
+            }
+            printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
+
+            val selection = GeneUtils.getBooleanSelection(returnGene)
+            var mutation = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+            mutation = mutation.replace("{${a.methodName}", "", true)
+            mutation = mutation.substring(0, mutation.length - 1)
+
+
+
+            val bodyEntity = Entity.json("""
+            Mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    },"variables":null}
+        """.trimIndent())
+            val invocation = builder.buildPost(bodyEntity)
+            return invocation
+        }
+        val invocation = builder.buildPost(Entity.json("""
+          """.trimIndent()))
         return invocation
     }
-
 }
