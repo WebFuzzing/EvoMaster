@@ -516,9 +516,18 @@ object GraphQLActionBuilder {
 
                 if (element.tableType == methodName) {
 
-                    val gene = getGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(), element.tableType.toString(), history,
-                            element.isKindOfTableFieldTypeOptional, element.isKindOfTableFieldOptional, element.enumValues, element.tableField)
-                    params.add(GQInputParam(element.tableField, gene))
+                    if(element.kindOfTableFieldType == SCALAR){//array scalar type or scalar type, the gene is constructed from getInputGene to take the correct names
+                        val gene = getInputListOrScalarGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(), element.tableType.toString(), history,
+                                element.isKindOfTableFieldTypeOptional, element.isKindOfTableFieldOptional, element.enumValues, element.tableField)
+
+                        params.add(GQInputParam(element.tableField, gene))
+
+                    }else{
+
+                        val gene = getGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(), element.tableType.toString(), history,
+                                element.isKindOfTableFieldTypeOptional, element.isKindOfTableFieldOptional, element.enumValues, element.tableField)
+                        params.add(GQInputParam(element.tableField, gene))
+                    }
                 }
             }
 
@@ -641,6 +650,93 @@ object GraphQLActionBuilder {
                     return OptionalGene(tableType, StringGene(tableType))
                 else
                     return StringGene(tableType)
+
+        }
+    }
+
+    private fun getInputListOrScalarGene(
+            state: TempState,
+            tableFieldType: String,
+            kindOfTableField: String?,
+            kindOfTableFieldType: String,
+            tableType: String,
+            history: Deque<String> = ArrayDeque<String>(),
+            isKindOfTableFieldTypeOptional: Boolean,
+            isKindOfTableFieldOptional: Boolean,
+            enumValues: MutableList<String>,
+            methodName: String
+    ): Gene {
+
+        when (kindOfTableField?.toLowerCase()) {
+            "list" ->
+                if (isKindOfTableFieldOptional) {
+                    history.addLast(tableType)
+                    val template = getInputListOrScalarGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
+                            isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
+                    history.removeLast()
+                    return OptionalGene(methodName, ArrayGene(tableType, template))
+                } else {
+                    history.addLast(tableType)
+                    val template = getInputListOrScalarGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
+                            isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
+                    history.removeLast()
+                    return ArrayGene(methodName, template)
+                }
+            "int" ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(methodName, IntegerGene(methodName))
+                else
+                    return IntegerGene(methodName)
+            "string" ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(methodName, StringGene(methodName))
+                else
+                    return StringGene(methodName)
+            "float" ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(methodName, FloatGene(methodName))
+                else
+                    return FloatGene(methodName)
+            "boolean" ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(methodName, BooleanGene(methodName))
+                else
+                    return BooleanGene(methodName)
+            "long" ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(methodName, LongGene(methodName))
+                else
+                    return LongGene(methodName)
+            "null" ->
+                return getInputListOrScalarGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
+                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
+            "date" ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(methodName, BooleanGene(methodName))
+                else
+                    return DateGene(methodName)
+            "scalar" ->
+                return getInputListOrScalarGene(state, tableFieldType, tableType, kindOfTableFieldType, kindOfTableField, history,
+                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
+            "id" ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(methodName, StringGene(methodName))
+                else
+                    return StringGene(methodName)
+
+            "union" -> {
+                LoggingUtil.uniqueWarn(log, "Kind Of Table Field not supported yet: $kindOfTableField")
+                return StringGene("TODO")
+            }
+            "interface" -> {
+                LoggingUtil.uniqueWarn(log, "Kind Of Table Field not supported yet: $kindOfTableField")
+                return StringGene("TODO")
+            }
+            else ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(methodName, StringGene(methodName))
+                else
+                    return StringGene(methodName)
 
         }
     }
