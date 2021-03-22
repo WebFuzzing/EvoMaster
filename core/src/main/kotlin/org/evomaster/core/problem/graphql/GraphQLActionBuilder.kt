@@ -517,16 +517,15 @@ object GraphQLActionBuilder {
                 if (element.tableType == methodName) {
 
                     val gene = getGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(), element.tableType.toString(), history,
-                            element.isKindOfTableFieldTypeOptional, element.isKindOfTableFieldOptional, element.enumValues, methodName)
-
-                    params.add(GQInputParam(element.tableFieldType, gene))
+                            element.isKindOfTableFieldTypeOptional, element.isKindOfTableFieldOptional, element.enumValues, element.tableField)
+                    params.add(GQInputParam(element.tableField, gene))
                 }
             }
 
 
             val gene = getGene(state, tableFieldType, kindOfTableField, kindOfTableFieldType, tableType, history,
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
-            params.add(GQReturnParam(tableFieldType, gene))
+            params.add(GQReturnParam(methodName, gene))
         } else {
             val gene = getGene(state, tableFieldType, kindOfTableField, kindOfTableFieldType, tableType, history,
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
@@ -740,7 +739,7 @@ object GraphQLActionBuilder {
                     val field = element.tableField
                     val template = field?.let {
                         getGene(state, tableType, element.tableFieldType, kindOfTableFieldType, it, history,
-                                element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, tableType)
+                                element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues,methodName )
                     }
                     if (template != null)
                         fields.add(template)
@@ -750,7 +749,7 @@ object GraphQLActionBuilder {
                         val template = element.tableField?.let {
                             getGene(state, element.tableFieldType, element.kindOfTableField.toString(),
                                     element.kindOfTableFieldType.toString(),
-                                    element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it)
+                                    element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName)
                         }
 
                         if (template != null) {
@@ -760,7 +759,7 @@ object GraphQLActionBuilder {
                         if (element.kindOfTableFieldType.toString().equals("INPUT_OBJECT", ignoreCase = true)) {
                             val template = element.tableField?.let {
                                 getGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
-                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it)
+                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName)
                             }
                             if (template != null)
                                 fields.add(template)
@@ -769,7 +768,7 @@ object GraphQLActionBuilder {
                             val field = element.tableField
                             val template = field?.let {
                                 getGene(state, tableType, element.kindOfTableFieldType.toString(), kindOfTableFieldType, it, history,
-                                        element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, tableType)
+                                        element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName)
                             }
                             if (template != null)
                                 fields.add(template)
