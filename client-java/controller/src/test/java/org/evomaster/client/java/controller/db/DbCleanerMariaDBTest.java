@@ -17,7 +17,7 @@ public class DbCleanerMariaDBTest extends DbCleanerTestBase{
 
     private static final int PORT = 3306;
 
-    public static GenericContainer mariadb = new GenericContainer("mariadb:10.5.9")
+    public static final GenericContainer mariadb = new GenericContainer("mariadb:10.5.9")
             .withEnv(new HashMap<String, String>(){{
                 put("MYSQL_ROOT_PASSWORD", "root");
                 put("MYSQL_DATABASE", DB_NAME);

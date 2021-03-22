@@ -25,9 +25,13 @@ public abstract class DbCleanerTestBase {
     @Test
     public void testSkipTableMisconfigured() throws Exception{
 
-        String command = (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB) ? "CREATE TABLE Foo(id serial not null);": "CREATE TABLE Foo(id bigserial not null);";
-        SqlScriptRunner.execCommand(getConnection(), command);
+        String command = "CREATE TABLE Foo(id bigserial not null);";
+        if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB)
+            command = "CREATE TABLE Foo(id serial not null);";
+        else if (getDbType() == DatabaseType.MS_SQL_SERVER)
+            command = "CREATE TABLE Foo(id bigint not null IDENTITY);";
 
+        SqlScriptRunner.execCommand(getConnection(), command);
         assertThrows(Exception.class, () -> clearDatabase(Arrays.asList("Bar")));
     }
 
@@ -90,6 +94,8 @@ public abstract class DbCleanerTestBase {
 
         if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB)
             SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id serial not null, x int, primary key (id));");
+        else if(getDbType() == DatabaseType.MS_SQL_SERVER)
+            SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id bigint not null IDENTITY, x int, primary key (id));");
         else
             SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id bigserial not null, x int, primary key (id));");
 

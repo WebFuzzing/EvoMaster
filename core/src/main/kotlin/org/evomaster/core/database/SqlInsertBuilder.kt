@@ -284,6 +284,7 @@ class SqlInsertBuilder(
             DatabaseType.DERBY -> ConstraintDatabaseType.DERBY
             DatabaseType.MYSQL -> ConstraintDatabaseType.MYSQL
             DatabaseType.MARIADB -> ConstraintDatabaseType.MARIADB
+            DatabaseType.MS_SQL_SERVER -> ConstraintDatabaseType.MS_SQL_SERVER
             DatabaseType.OTHER -> ConstraintDatabaseType.OTHER
         }
     }
