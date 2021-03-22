@@ -1,6 +1,4 @@
 type Query {
-    # Return all flowers
-    flowers: [Flower!]!
     # Return a flower idenfified by its id
     flowersById(id: Int!): Flower
 }

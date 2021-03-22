@@ -21,9 +21,6 @@ open class DataRepository {
 
     }
 
-    fun allFlowers(): Collection<Flower> {
-        return flowers.values
-    }
 
     fun findById(id: Int?): Flower? {
         return flowers[id]

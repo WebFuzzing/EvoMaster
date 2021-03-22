@@ -12,9 +12,7 @@ open class QueryResolver(
 ) : GraphQLQueryResolver {
 
 
-    fun flowers(): List<Flower>{
-      return  dataRepo.allFlowers().toList()
-    }
+
     fun flowersById(id: Int?): Flower?{
         return dataRepo.findById(id)
     }
