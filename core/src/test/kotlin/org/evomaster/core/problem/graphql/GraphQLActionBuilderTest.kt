@@ -54,7 +54,7 @@ class GraphQLActionBuilderTest {
         val owners = actionCluster.get("owners") as GraphQLAction
         assertEquals(3, owners.parameters.size)
         assertTrue(owners.parameters[0] is GQInputParam)
-        assertTrue(owners.parameters[0].name == "OwnerFilter")
+        assertTrue(owners.parameters[0].name == "filter")
         assertTrue((owners.parameters[0].gene as OptionalGene).gene is ObjectGene)
         val objOwnerFilter = (owners.parameters[0].gene as OptionalGene).gene as ObjectGene
         assertTrue(objOwnerFilter.fields.any { it is OptionalGene && it.name == "firstName" })
@@ -63,7 +63,7 @@ class GraphQLActionBuilderTest {
         assertTrue(objOwnerFilter.fields.any { it is OptionalGene && it.name == "city" })
         assertTrue(objOwnerFilter.fields.any { it is OptionalGene && it.name == "telephone" })
         assertTrue(owners.parameters[1] is GQInputParam)
-        assertTrue(owners.parameters[1].name == "OwnerOrder")
+        assertTrue(owners.parameters[1].name == "orders")
         assertTrue(owners.parameters[2] is GQReturnParam)
         assertTrue(owners.parameters[2].gene is ArrayGene<*>)
         /**/
