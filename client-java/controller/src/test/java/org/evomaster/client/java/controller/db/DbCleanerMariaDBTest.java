@@ -43,6 +43,7 @@ public class DbCleanerMariaDBTest extends DbCleanerTestBase{
     @AfterAll
     public static void afterClass() throws Exception {
         connection.close();
+        mariadb.stop();
     }
 
     @AfterEach

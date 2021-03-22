@@ -45,6 +45,7 @@ public class DbCleanerMySQLTest extends DbCleanerTestBase{
     @AfterAll
     public static void afterClass() throws Exception {
         connection.close();
+        mysql.stop();
     }
 
     @AfterEach

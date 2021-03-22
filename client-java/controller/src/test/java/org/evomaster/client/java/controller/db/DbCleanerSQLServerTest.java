@@ -22,7 +22,6 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
     public static final GenericContainer mssqlserver = new GenericContainer(DockerImageName.parse("mcr.microsoft.com/mssql/server").withTag("2019-CU9-ubuntu-16.04"))
             .withEnv(new HashMap<String, String>(){{
                 put("ACCEPT_EULA", "Y");
-                put("SA_USERNAME", "SA");
                 put("SA_PASSWORD", PASSWORD);
             }})
             .withStartupTimeout(Duration.ofSeconds(240))
@@ -38,7 +37,7 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
 
         String host = mssqlserver.getContainerIpAddress();
         int port = mssqlserver.getMappedPort(PORT);
-        String url = "jdbc:sqlserver://"+host+":"+port;
+        String url = "jdbc:sqlserver://"+host+":"+port+";integratedSecurity=false;";
 
         connection = DriverManager.getConnection(url, "SA", PASSWORD);
     }
@@ -46,6 +45,7 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
     @AfterAll
     public static void afterClass() throws SQLException {
         connection.close();
+        mssqlserver.stop();
     }
 
     @AfterEach
