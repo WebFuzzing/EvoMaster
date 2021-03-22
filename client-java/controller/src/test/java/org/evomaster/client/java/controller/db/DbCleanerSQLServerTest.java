@@ -22,6 +22,7 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
     public static final GenericContainer mssqlserver = new GenericContainer(DockerImageName.parse("mcr.microsoft.com/mssql/server").withTag("2019-CU9-ubuntu-16.04"))
             .withEnv(new HashMap<String, String>(){{
                 put("ACCEPT_EULA", "Y");
+                put("SA_USERNAME", "SA");
                 put("SA_PASSWORD", PASSWORD);
             }})
             .withStartupTimeout(Duration.ofSeconds(240))
