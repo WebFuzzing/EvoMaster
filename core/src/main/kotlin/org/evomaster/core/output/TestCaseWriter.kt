@@ -9,8 +9,8 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQlCallResult
+import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
-import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -952,9 +952,11 @@ class TestCaseWriter {
 
     private fun handleGQLBody(call: GraphQLAction, lines: Lines, readable: Boolean) {
 
-        val bodyParam = call.parameters.find { p -> p is GQReturnParam }?.gene
+        val inputGenes = call.parameters.filterIsInstance<GQInputParam>().map { it.gene }
+
+        val returnGene = call.parameters.find { p -> p is GQReturnParam }?.gene
                 ?: throw RuntimeException("ERROR: Body param not specified ")
-        val selection = GeneUtils.getBooleanSelection(bodyParam)
+        val selection = GeneUtils.getBooleanSelection(returnGene)
 
         val send = when {
             format.isJavaOrKotlin() -> "body"
@@ -971,11 +973,61 @@ class TestCaseWriter {
             }
 
             val body = if (readable) {
-                OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\":\"{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}\",\"variables\":null }")
+
+                if (call.methodType.toString() == "QUERY") {
+                    if (inputGenes != null) {
+
+                        val printableInputGene: MutableList<String> = mutableListOf()
+                        for (gene in inputGenes) {
+                            val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                            printableInputGene.add("${gene.name} : $i")
+                        }
+
+                        var printableInputGenes = ""
+                        for (elt in printableInputGene) {
+                            printableInputGenes = "$elt,$printableInputGenes"
+                        }
+                        printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)//removing the ","
+                        val selection = GeneUtils.getBooleanSelection(returnGene)
+                        var query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                        query = query.replace("{${call.methodName}", "", true)//remove the first methode name
+                        query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
+
+                        OutputFormatter.JSON_FORMATTER.getFormatted(" { \"query\" : \"  { ${call.methodName}  ($printableInputGenes)     $query        } \",\"variables\":null}")
+
+                    } else {
+                        val selection = GeneUtils.getBooleanSelection(returnGene)
+                        val query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+
+                        OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"$query\",\"variables\":null} ")
+                    }
+
+                } else if (call.methodType.toString() == "MUTATION") {
+                    val printableInputGene: MutableList<String> = mutableListOf()
+                    for (gene in inputGenes) {
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        printableInputGene.add("${gene.name} : $i")
+                    }
+
+                    var printableInputGenes: String = ""
+                    for (elt in printableInputGene) {
+                        printableInputGenes = "$elt,$printableInputGenes"
+                    }
+                    printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
+
+                    val selection = GeneUtils.getBooleanSelection(returnGene)
+                    var mutation = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                    mutation = mutation.replace("{${call.methodName}", "", true)
+                    mutation = mutation.substring(0, mutation.length - 1)
+                    OutputFormatter.JSON_FORMATTER.getFormatted("Mutation{    ${call.methodName}  ($printableInputGenes)    $mutation    },\"variables\":null} ")
+
+                }else{
+                    LoggingUtil.uniqueWarn(TestCaseWriter.log, " method type not suported yet : ${call.methodType}").toString()
+                }
+
             } else {
                 selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
             }
-            //todo the input param
             //needed as JSON uses ""
             val bodyLines = body.split("\n").map { s ->
                 "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
