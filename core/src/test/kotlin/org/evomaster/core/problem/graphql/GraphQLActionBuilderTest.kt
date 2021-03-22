@@ -95,6 +95,7 @@ class GraphQLActionBuilderTest {
         assertEquals(2, pet.parameters.size)
         assertTrue(pet.parameters[0] is GQInputParam)
         assertTrue(pet.parameters[0].gene is IntegerGene)
+        assertTrue(pet.parameters[0].gene.name == "id")
         assertTrue(pet.parameters[1] is GQReturnParam)
         assertTrue(pet.parameters[1].gene is ObjectGene)
         val objPet2 = (pet.parameters[1].gene as ObjectGene)
