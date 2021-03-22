@@ -111,7 +111,7 @@
         <javax.el.version>2.2.5</javax.el.version>
         <jackson.version>2.11.0</jackson.version>
         <asm.version>8.0.1</asm.version>
-        <testcontainers.version>1.15.1</testcontainers.version>
+        <testcontainers.version>1.15.2</testcontainers.version>
         <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
         <antlr.version>4.7.2</antlr.version>
         <nlp.version>3.9.2</nlp.version>

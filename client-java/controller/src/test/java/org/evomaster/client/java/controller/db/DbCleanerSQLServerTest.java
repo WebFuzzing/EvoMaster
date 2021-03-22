@@ -37,7 +37,7 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
 
         String host = mssqlserver.getContainerIpAddress();
         int port = mssqlserver.getMappedPort(PORT);
-        String url = "jdbc:sqlserver://"+host+":"+port+";integratedSecurity=false;";
+        String url = "jdbc:sqlserver://"+host+":"+port;
 
         connection = DriverManager.getConnection(url, "SA", PASSWORD);
     }
