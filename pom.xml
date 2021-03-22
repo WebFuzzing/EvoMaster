@@ -107,7 +107,7 @@
         <!--  upgrading this one gives issue... might have to update Spring as well -->
         <springdoc.version>1.2.21</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
-        <jersey.version>2.29.1</jersey.version>
+        <jersey.version>2.33</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
         <jackson.version>2.11.0</jackson.version>
         <asm.version>8.0.1</asm.version>

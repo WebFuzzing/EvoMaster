@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.db;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -295,6 +296,9 @@ public class SqlScriptRunner {
      */
     public static Long execInsert(Connection conn, String command) throws SQLException {
 
+        SimpleLogger.debug("Executing DB insertion:");
+        SimpleLogger.debug(command);
+
         String insert = "INSERT ";
 
         command = command.trim();
@@ -337,6 +341,9 @@ public class SqlScriptRunner {
 
     public static QueryResult execCommand(Connection conn, String command) throws SQLException {
         Statement statement = conn.createStatement();
+
+        SimpleLogger.debug("Executing DB command:");
+        SimpleLogger.debug(command);
 
         try {
             statement.execute(command);

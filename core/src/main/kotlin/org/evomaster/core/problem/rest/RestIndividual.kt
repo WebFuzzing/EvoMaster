@@ -13,6 +13,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  *
@@ -29,6 +31,10 @@ class RestIndividual(
         trackOperator: TrackOperator? = null,
         index : Int = -1
 ): Individual (trackOperator, index) {
+
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
+    }
 
     constructor(
             actions: MutableList<out Action>,
@@ -137,12 +143,16 @@ class RestIndividual(
         /**
          * First repair SQL Genes (i.e. SQL Timestamps)
          */
+        if (log.isTraceEnabled)
+            log.trace("invoke GeneUtils.repairGenes")
         GeneUtils.repairGenes(this.seeGenes(GeneFilter.ONLY_SQL).flatMap { it.flatView() })
 
         /**
          * Now repair database constraints (primary keys, foreign keys, unique fields, etc.)
          */
         if (!verifyInitializationActions()) {
+            if (log.isTraceEnabled)
+                log.trace("invoke GeneUtils.repairBrokenDbActionsList")
             DbActionUtils.repairBrokenDbActionsList(seeDbActions().toMutableList(), randomness)
             Lazy.assert{verifyInitializationActions()}
         }

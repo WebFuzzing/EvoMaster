@@ -32,9 +32,6 @@ class RestSampler : AbstractRestSampler(){
         }
     }
 
-
-
-
     override fun sampleAtRandom(): RestIndividual {
 
         val actions = mutableListOf<RestAction>()

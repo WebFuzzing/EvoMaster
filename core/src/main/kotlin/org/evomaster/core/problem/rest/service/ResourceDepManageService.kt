@@ -1003,6 +1003,13 @@ class ResourceDepManageService {
 
         val list= (0 until num).flatMap { rm.getSqlBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
 
+        if (log.isTraceEnabled){
+            log.trace("at createDbActions, {} insertions are added, and they are {}", list.size,
+                list.joinToString(",") {
+                    if (it is DbAction) it.getResolvedName() else it.getName()
+                })
+        }
+
         DbActionUtils.randomizeDbActionGenes(list, randomness)
         DbActionUtils.repairBrokenDbActionsList(list, randomness)
 
