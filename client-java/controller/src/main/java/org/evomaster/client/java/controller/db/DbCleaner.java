@@ -92,11 +92,20 @@ public class DbCleaner {
         clearDatabase(getDefaultReties(DatabaseType.POSTGRES), connection, schemaName, tablesToSkip, DatabaseType.POSTGRES, false);
     }
 
-    private static void truncateTables(List<String> tablesToSkip, Statement s, String schema, boolean singleCommand, boolean doDropTable) throws SQLException {
+    /**
+     *
+     * @param tablesToSkip are tables to be skipped
+     * @param statement is to execute the SQL command
+     * @param schema is the table schema
+     * @param singleCommand specify whether to execute the SQL commands (e.g., truncate table/tables) by single command
+     * @param doDropTable specify whether to drop tables which is only for MySQL and MariaDB now.
+     * @throws SQLException are exceptions during sql execution
+     */
+    private static void truncateTables(List<String> tablesToSkip, Statement statement, String schema, boolean singleCommand, boolean doDropTable) throws SQLException {
 
         // Find all tables and truncate them
         Set<String> tables = new HashSet<>();
-        ResultSet rs = s.executeQuery(getAllTableCommand(schema));
+        ResultSet rs = statement.executeQuery(getAllTableCommand(schema));
         while (rs.next()) {
             tables.add(rs.getString(1));
         }
@@ -128,16 +137,16 @@ public class DbCleaner {
                     .collect(Collectors.joining(","));
 
             if (doDropTable)
-                s.execute("DROP TABLE IF EXISTS " +ts);
+                statement.execute("DROP TABLE IF EXISTS " +ts);
             else
-                s.executeUpdate("TRUNCATE TABLE " + ts);
+                statement.executeUpdate("TRUNCATE TABLE " + ts);
         } else {
             //note: if one at a time, need to make sure to first disable FK checks
             for(String t : tablesToClear){
                 if (doDropTable)
-                    s.execute("DROP TABLE IF EXISTS " +t);
+                    statement.execute("DROP TABLE IF EXISTS " +t);
                 else
-                    s.executeUpdate("TRUNCATE TABLE " + t);
+                    statement.executeUpdate("TRUNCATE TABLE " + t);
             }
         }
     }

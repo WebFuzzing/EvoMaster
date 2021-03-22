@@ -6,11 +6,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.images.builder.ImageFromDockerfile;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 
 public class DbCleanerMySQLTest extends DbCleanerTestBase{
@@ -19,16 +19,14 @@ public class DbCleanerMySQLTest extends DbCleanerTestBase{
 
     private static final int PORT = 3306;
 
-    public static GenericContainer mysql = new GenericContainer(new ImageFromDockerfile("mysql-test")
-        .withDockerfileFromBuilder(dockerfileBuilder -> {
-            dockerfileBuilder.from("mysql:8.0.23")
-                    .env("MYSQL_ROOT_PASSWORD", "root_password")
-                    .env("MYSQL_DATABASE", "test")
-                    .env("MYSQL_USER", "test")
-                    .env("MYSQL_PASSWORD", "test");
-        }))
-        .withExposedPorts(PORT);
-
+    public static GenericContainer mysql = new GenericContainer("mysql:8.0.23")
+            .withEnv(new HashMap<String, String>(){{
+                put("MYSQL_ROOT_PASSWORD", "root");
+                put("MYSQL_DATABASE", DB_NAME);
+                put("MYSQL_USER", "test");
+                put("MYSQL_PASSWORD", "test");
+            }})
+            .withExposedPorts(PORT);
 
     private static Connection connection;
 
