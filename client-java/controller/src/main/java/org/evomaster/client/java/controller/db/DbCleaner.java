@@ -317,13 +317,18 @@ public class DbCleaner {
     }
 
     private static String getAllSequenceCommand(DatabaseType type, String schemaName) {
+        String command = "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES";
         switch (type){
             case MYSQL:
             case MARIADB: return getAllTableCommand(type, schemaName);
             case H2:
-            case POSTGRES: return "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES WHERE SEQUENCE_SCHEMA='" + schemaName + "'";
+            case POSTGRES:
             //https://docs.microsoft.com/en-us/sql/relational-databases/system-information-schema-views/sequences-transact-sql?view=sql-server-ver15
-            case MS_SQL_SERVER: return "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES";
+            case MS_SQL_SERVER:
+                if (schemaName.isEmpty())
+                    return command;
+                else
+                    return command + " WHERE SEQUENCE_SCHEMA='" + schemaName + "'";
         }
         throw new DbUnsupportedException(type);
     }
@@ -335,6 +340,7 @@ public class DbCleaner {
         switch (type){
             case MARIADB:
             case MYSQL: return "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;";
+            case MS_SQL_SERVER:
             case H2:
             case POSTGRES: return "ALTER SEQUENCE " + sequence + " RESTART WITH 1";
         }

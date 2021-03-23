@@ -100,7 +100,7 @@ namespace Controller.Controllers.db
             TruncateTables(tablesToSkip, command, GetSchema(type), GetDefaultTrunctionSingleCommand(type), type);
         }
 
-        private static void TruncateTables(List<string> tablesToSkip, DbCommand command, String schema,
+        private static void TruncateTables(List<string> tablesToSkip, DbCommand command, string schema,
             bool singleCommand, DatabaseType databaseType)
         {
             // Retrieve all tables
