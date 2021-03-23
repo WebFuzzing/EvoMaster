@@ -89,7 +89,7 @@ class ResourceManageService {
         }
         resourceCluster.values.forEach{it.initAncestors(getResourceCluster().values.toList())}
 
-        resourceCluster.values.forEach{it.init(config.isEnabledResourceWithSQL() && notEmptyDb())}
+        resourceCluster.values.forEach{it.init()}
 
         if(config.extractSqlExecutionInfo && config.doesApplyNameMatching){
             dm.initRelatedTables(resourceCluster.values.toMutableList(), getTableInfo())
@@ -301,10 +301,10 @@ class ResourceManageService {
         if (forceInsert && !hasDBHandler())
             throw IllegalStateException("force to employ SQL for resource creation, but there is no db")
 
-        val withSql = hasDBHandler() && (!node.hasPostCreation() || randomness.nextBoolean(config.probOfApplySQLActionToCreateResources) || forceInsert)
+        val withSql = hasDBHandler() && node.getSqlCreationPoints().isNotEmpty() && (!node.hasPostCreation() || randomness.nextBoolean(config.probOfApplySQLActionToCreateResources) || forceInsert)
 
         //in case there is no related table, post is employed
-        val call = if (!withSql && node.hasPostCreation() && node.getSqlCreationPoints().isEmpty())
+        val call = if (!withSql && node.hasPostCreation())
             generateRestActionsForCalls(node, ats, template,callsTemplate, maxTestSize, createResource, additionalPatch)
         else{
             val verbs = if (ats.size > 1) ats.sliceArray(1 until ats.size) else ats
@@ -317,6 +317,9 @@ class ResourceManageService {
         val created = handleDbActionForCall( call, forceInsert, false)
         if(!created){
             LoggingUtil.uniqueWarn(log, "resource creation for ${node.path} fails")
+            //try rest
+            if (node.hasPostCreation())
+                return generateRestActionsForCalls(node, ats, template,callsTemplate, maxTestSize, createResource, additionalPatch)
         }else
             call.status = ResourceStatus.CREATED_SQL
 

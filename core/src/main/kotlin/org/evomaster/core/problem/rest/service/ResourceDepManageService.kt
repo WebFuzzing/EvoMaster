@@ -89,6 +89,13 @@ class ResourceDepManageService {
 
     }
 
+
+    fun updateResourceNodeTemplate(individual: RestIndividual){
+        individual.getResourceCalls().forEach {
+            it.getResourceNode().updateTemplate()
+        }
+    }
+
     private fun updateParamInfo(action: RestAction, tables: Map<String, Table>) {
         if (action is RestCallAction) {
             val r = rm.getResourceNodeFromCluster(action.path.toString())

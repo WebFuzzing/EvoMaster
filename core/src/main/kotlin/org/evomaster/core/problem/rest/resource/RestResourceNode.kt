@@ -100,8 +100,8 @@ class RestResourceNode(
     /**
      * this init occurs after actions and ancestors are set up
      */
-    fun init(withDB: Boolean){
-        initVerbs(withDB)
+    fun init(){
+        initVerbs()
         initCreationPoints()
 
         when(initMode){
@@ -167,7 +167,7 @@ class RestResourceNode(
 
 
 
-    private fun initVerbs(withDB: Boolean){
+    private fun initVerbs(){
         actions.forEach { a->
             if(a is RestCallAction){
                 RestResourceTemplateHandler.getIndexOfHttpVerb(a.verb).let {
@@ -184,7 +184,7 @@ class RestResourceNode(
                 verbs[verbs.size - 1] = ancestors.any { a -> a.actions.any { ia-> ia is RestCallAction && ia.verb == HttpVerb.POST } }
         }
 
-        RestResourceTemplateHandler.initSampleSpaceOnlyPOST(verbs, templates, withDB)
+        RestResourceTemplateHandler.initSampleSpaceOnlyPOST(verbs, templates)
 
         assert(templates.isNotEmpty())
 
@@ -192,7 +192,10 @@ class RestResourceNode(
 
     //if only get
     fun isIndependent() : Boolean{
-        return templates.all { it.value.independent } && (creations.none { c->c.isComplete() } || resourceToTable.paramToTable.isEmpty())
+        return templates.all { it.value.independent }
+                && (creations.none { c->c.isComplete() }
+                || getSqlCreationPoints().isEmpty() //resourceToTable.paramToTable.isEmpty()
+                )
         //resourceToTable.paramToTable.isEmpty() && verbs[RestResourceTemplateHandler.getIndexOfHttpVerb(HttpVerb.GET)] && verbs.filter {it}.size == 1
     }
 
@@ -428,6 +431,12 @@ class RestResourceNode(
     }
 
     /********************** utility *************************/
+    fun updateTemplate(){
+        if (RestResourceTemplateHandler.hasCreation(verbs) || getDerivedTables().isEmpty()) return
+        RestResourceTemplateHandler.appendPost(verbs, templates)
+    }
+
+
     fun isPartOfStaticTokens(text : String) : Boolean{
         return tokens.any { token ->
             token.equals(text)

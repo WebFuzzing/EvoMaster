@@ -66,19 +66,30 @@ class RestResourceTemplateHandler{
             return result
         }
 
-        fun initSampleSpaceOnlyPOST(actionVerbs : Array<Boolean>, maps : MutableMap<String , CallsTemplate>, withDB: Boolean) {
+        fun initSampleSpaceOnlyPOST(actionVerbs : Array<Boolean>, maps : MutableMap<String , CallsTemplate>) {
             val space = arrayHttpVerbs.filterIndexed{index, _ ->  actionVerbs[index]}
             (if(actionVerbs.first() && !actionVerbs.last()) space.subList(1, space.size) else space).forEach { v->
                 maps.getOrPut(v.toString()){ CallsTemplate(v.toString(), v != HttpVerb.POST, 1) }
             }
 
-            if(actionVerbs.first() || actionVerbs[2] || actionVerbs.last() || withDB){
-                val chosen = space.filter { v-> v!=HttpVerb.HEAD && v!=HttpVerb.OPTIONS }.toTypedArray()
-                chosen.forEach {
-                    val key = formatTemplate(arrayOf(HttpVerb.POST, it))
-                    maps.getOrPut(key){
-                        CallsTemplate(key, false, 2)
-                    }
+            if(hasCreation(actionVerbs)){
+                appendPost(actionVerbs, maps)
+            }
+        }
+
+        fun hasCreation(actionVerbs : Array<Boolean>) : Boolean{
+            return actionVerbs.first() || actionVerbs[2] || actionVerbs.last()
+        }
+
+
+        fun appendPost(actionVerbs : Array<Boolean>, maps : MutableMap<String , CallsTemplate>){
+            val space = arrayHttpVerbs.filterIndexed{index, _ ->  actionVerbs[index]}
+
+            val chosen = space.filter { v-> v!=HttpVerb.HEAD && v!=HttpVerb.OPTIONS }.toTypedArray()
+            chosen.forEach {
+                val key = formatTemplate(arrayOf(HttpVerb.POST, it))
+                maps.getOrPut(key){
+                    CallsTemplate(key, false, 2)
                 }
             }
         }

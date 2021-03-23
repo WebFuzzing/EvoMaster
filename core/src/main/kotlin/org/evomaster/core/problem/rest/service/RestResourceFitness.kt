@@ -103,8 +103,11 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         /*
          update dependency regarding executed dto
          */
-        if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
+        if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0){
             dm.updateResourceTables(individual, dto)
+            dm.updateResourceNodeTemplate(individual)
+        }
+
 
         /*
             TODO Man: shall we update SQL Insertion fails here for resource creation?
