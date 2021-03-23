@@ -14,12 +14,12 @@ using Controller.Controllers.db;
 
 namespace Controller.Tests.Controllers.db
 {
-    public class DbCleanerMySqlTestBase : DbCleanTestBase, IAsyncLifetime
+    public class DbCleanerMySqlTest : DbCleanTestBase, IAsyncLifetime
     {
         
         private static ITestcontainersBuilder<MySqlTestcontainer> mySqlBuilder =
             new TestcontainersBuilder<MySqlTestcontainer>()
-                .WithDatabase(new MySqlTestcontainerConfiguration
+                .WithDatabase(new MySqlTestcontainerConfiguration("mysql:8.0.18")
                 {
                     Database = "db",
                     Username = "mysql",

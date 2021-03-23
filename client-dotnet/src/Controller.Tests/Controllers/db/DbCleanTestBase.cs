@@ -83,7 +83,7 @@ namespace Controller.Tests.Controllers.db
                 
             switch (type)
             {
-                case DatabaseType.H2:
+                case DatabaseType.MS_SQL_SERVER:
                 case DatabaseType.POSTGRES:
                     SqlScriptRunner.ExecCommand(connection,  "alter table Bar add constraint FK foreign key (y) references Foo;");
                     break;

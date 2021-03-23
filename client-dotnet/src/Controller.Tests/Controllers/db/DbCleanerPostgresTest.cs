@@ -25,7 +25,7 @@ namespace Controller.Tests.Controllers.db
             //for the moment, use this testcontainer for dotnet https://github.com/HofmeisterAn/dotnet-testcontainers
             ITestcontainersBuilder<PostgreSqlTestcontainer> postgresBuilder =
                 new TestcontainersBuilder<PostgreSqlTestcontainer>()
-                    .WithDatabase(new PostgreSqlTestcontainerConfiguration
+                    .WithDatabase(new PostgreSqlTestcontainerConfiguration("postgres:11.5")
                     {
                         Database = "db",
                         Username = "postgres",
@@ -51,13 +51,13 @@ namespace Controller.Tests.Controllers.db
         }
     }
     
-    public class DbCleanerPostgresTestBase : DbCleanTestBase, IClassFixture<PostgresFixture>, IDisposable
+    public class DbCleanerPostgresTest : DbCleanTestBase, IClassFixture<PostgresFixture>, IDisposable
     {
         
         private readonly PostgresFixture _fixture;
         private readonly DbConnection _connection;
         
-        public DbCleanerPostgresTestBase(PostgresFixture fixture)
+        public DbCleanerPostgresTest(PostgresFixture fixture)
         {
             _fixture = fixture;
             _connection = _fixture.GetConnection();
