@@ -80,5 +80,10 @@ namespace Controller.Tests.Controllers.db
         {
             return DatabaseType.POSTGRES;
         }
+
+        protected override void CleanDb(List<string> tablesToSkip)
+        {
+            DbCleaner.ClearDatabase(_connection, tablesToSkip, GetDbType());
+        }
     }
 }

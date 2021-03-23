@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
 using Controller.Api;
@@ -48,7 +49,7 @@ namespace Controller.Tests.Controllers.db
 
         public async Task DisposeAsync()
         {
-            DbCleaner.ClearDatabase(_connection, null, DatabaseType.MYSQL);
+            DbCleaner.ClearDatabase(_connection, null, DatabaseType.MYSQL, "db");
             
             // TODO find a proper solution to clean all data in mysql db, instead of dropping db and closing connection
             // SqlScriptRunner.ExecCommand(_connection, "DROP DATABASE db;");
@@ -57,6 +58,12 @@ namespace Controller.Tests.Controllers.db
             
             await _connection.CloseAsync();
             await mySql.StopAsync();
+        }
+        
+        
+        protected override void CleanDb(List<string> tablesToSkip)
+        {
+            DbCleaner.ClearDatabase(_connection, tablesToSkip, GetDbType(), "db");
         }
     }
 }

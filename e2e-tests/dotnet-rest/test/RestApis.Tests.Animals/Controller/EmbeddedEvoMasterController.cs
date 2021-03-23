@@ -53,7 +53,7 @@ namespace RestApis.Tests.Animals.Controller
         public override void ResetStateOfSut()
         {
             DbCleaner.ClearDatabase_Postgres(new NpgsqlConnection(_connectionString),
-                new List<string> {"Mammals"});
+                null, new List<string> {"Mammals"});
         }
 
         public override string StartSut()
