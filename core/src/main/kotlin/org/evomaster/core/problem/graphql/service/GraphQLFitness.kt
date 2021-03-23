@@ -263,7 +263,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         if (a.methodType.toString() == "QUERY") {
 
-            if (inputGenes != null) {
+            if (inputGenes.isNotEmpty()) {
 
                 val printableInputGene: MutableList<String> = mutableListOf()
                 for (gene in inputGenes) {
@@ -273,9 +273,10 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                 var printableInputGenes = ""
                 for (elt in printableInputGene) {
-                    printableInputGenes = "$elt,$printableInputGenes"
+                    printableInputGenes = elt+","+ printableInputGenes
                 }
                 printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)//removing the ","
+                printableInputGenes = printableInputGenes.replace("\"", "\\\"")
                 val selection = GeneUtils.getBooleanSelection(returnGene)
                 var query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
                 query = query.replace("{${a.methodName}", "", true)//remove the first methode name
@@ -305,11 +306,12 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 printableInputGene.add("${gene.name} : $i")
             }
 
-            var printableInputGenes: String = ""
+            var printableInputGenes = ""
             for (elt in printableInputGene) {
                 printableInputGenes = "$elt,$printableInputGenes"
             }
             printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
+            printableInputGenes = printableInputGenes.replace("\"", "\\\"")
 
             val selection = GeneUtils.getBooleanSelection(returnGene)
             var mutation = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
@@ -319,7 +321,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
 
             val bodyEntity = Entity.json("""
-            Mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    },"variables":null}
+            { "query" : "mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    }","variables":null}
         """.trimIndent())
             val invocation = builder.buildPost(bodyEntity)
             return invocation
