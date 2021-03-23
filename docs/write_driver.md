@@ -246,7 +246,7 @@ Then, the URL to connect to the database can be something like:
 ```
 String host = postgres.getContainerIpAddress();
 int port = postgres.getMappedPort(5432);
-String url = "jdbc:p6spy:postgresql://"+host+":"+port+"/postgres
+String url = "jdbc:p6spy:postgresql://"+host+":"+port+"/postgres"
 ```
 
 You can then tell Spring to use such URL with the parameter `--spring.datasource.url`.
