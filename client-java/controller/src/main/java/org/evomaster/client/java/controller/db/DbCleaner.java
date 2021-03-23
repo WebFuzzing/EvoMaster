@@ -277,11 +277,11 @@ public class DbCleaner {
     private static String getDefaultSchema(DatabaseType type){
         switch (type){
             case H2: return "PUBLIC";
-            case MS_SQL_SERVER: return "";
+            //https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql/ownership-and-user-schema-separation-in-sql-server
+            case MS_SQL_SERVER: return "dbo";
             case MARIADB:
             case MYSQL: throw new IllegalArgumentException("there is no default schema for "+type+", and you must specify a db name here");
             case POSTGRES: return "public";
-//            case MS_SQL_SERVER_2000: return "U";
         }
         throw new DbUnsupportedException(type);
     }
@@ -297,22 +297,23 @@ public class DbCleaner {
     }
 
     private static String getAllTableCommand(DatabaseType type, String schema) {
+        String command = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES where (TABLE_TYPE='TABLE' OR TABLE_TYPE='BASE TABLE')";
+
         switch (type){
+            // https://stackoverflow.com/questions/175415/how-do-i-get-list-of-all-tables-in-a-database-using-tsql, TABLE_CATALOG='"+dbname+"'"
             case MS_SQL_SERVER:
-                // https://stackoverflow.com/questions/175415/how-do-i-get-list-of-all-tables-in-a-database-using-tsql
-                if (schema.isEmpty())
-                    return "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES where TABLE_TYPE='BASE TABLE'";
-                else
-                    return "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES where TABLE_TYPE='BASE TABLE' AND TABLE_CATALOG='"+schema+"'";//schema here should be dbname
+            // for MySQL, schema is dbname
             case MYSQL:
             case MARIADB:
             case H2:
             case POSTGRES:
-                return "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA='" + schema + "' AND (TABLE_TYPE='TABLE' OR TABLE_TYPE='BASE TABLE')";
+                if (schema.isEmpty())
+                    return command;
+                return command + " AND TABLE_SCHEMA='" + schema +"'";
         }
         throw new DbUnsupportedException(type);
 //            case MS_SQL_SERVER_2000:
-//                return "SELECT sobjects.name FROM sysobjects sobjects WHERE sobjects.xtype = '"+schema+"'";
+//                return "SELECT sobjects.name FROM sysobjects sobjects WHERE sobjects.xtype = '"+schema+"'"; // shcema can be 'U'
     }
 
     private static String getAllSequenceCommand(DatabaseType type, String schemaName) {
