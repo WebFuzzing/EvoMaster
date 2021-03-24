@@ -58,6 +58,9 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
 
     @AfterAll
     public static void afterClass() throws SQLException {
+        CIUtils.skipIfOnGA();
+        CIUtils.skipIfOnCircleCI();
+
         connection.close();
         mssqlserver.stop();
     }
