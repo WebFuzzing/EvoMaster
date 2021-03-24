@@ -104,7 +104,7 @@ public class DbCleaner {
      *
      * @param tablesToSkip are tables to be skipped
      * @param statement is to execute the SQL command
-     * @param schema is the table schema
+     * @param schema specify the schema of data to clean. if [schema] is empty, all data will be cleaned.
      * @param singleCommand specify whether to execute the SQL commands (e.g., truncate table/tables) by single command
      * @param doDropTable specify whether to drop tables which is only for MySQL and MariaDB now.
      * @throws SQLException are exceptions during sql execution
