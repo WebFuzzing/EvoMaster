@@ -179,12 +179,11 @@
             <scope>test</scope>
         </dependency>
 
-
         <dependency>
             <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-e2e-tests-utils</artifactId>
-            <type>test-jar</type>
+            <artifactId>evomaster-e2e-tests-ci-utils</artifactId>
             <version>${project.version}</version>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
 

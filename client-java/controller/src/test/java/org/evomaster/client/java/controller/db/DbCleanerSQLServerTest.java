@@ -39,6 +39,7 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
             but there exist a problem of creating db connection for MS_SQL_Server on CI and GA,
             i.e., com.microsoft.sqlserver.jdbc.SQLServerException: Login failed for user 'SA'"
          */
+
         CIUtils.skipIfOnGA();
         CIUtils.skipIfOnCircleCI();
 
