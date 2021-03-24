@@ -179,6 +179,15 @@
             <scope>test</scope>
         </dependency>
 
+
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-e2e-tests-utils</artifactId>
+            <type>test-jar</type>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

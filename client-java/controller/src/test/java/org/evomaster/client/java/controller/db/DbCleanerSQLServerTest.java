@@ -1,10 +1,10 @@
 package org.evomaster.client.java.controller.db;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.e2etests.utils.CIUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -15,7 +15,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 
-@Disabled("there exist a problem on creating db connection for MS_SQL_Server with CI and GA, i.e., com.microsoft.sqlserver.jdbc.SQLServerException: Login failed for user 'SA'")
 public class DbCleanerSQLServerTest extends DbCleanerTestBase{
 
     private static final int PORT = 1433;
@@ -35,6 +34,14 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
     //driver name "com.microsoft.sqlserver.jdbc.SQLServerDriver"
     @BeforeAll
     public static void initClass() throws SQLException {
+        /*
+            the tests pass locally on MacOS,
+            but there exist a problem of creating db connection for MS_SQL_Server on CI and GA,
+            i.e., com.microsoft.sqlserver.jdbc.SQLServerException: Login failed for user 'SA'"
+         */
+        CIUtils.skipIfOnGA();
+        CIUtils.skipIfOnCircleCI();
+
         mssqlserver.start();
 
         String host = mssqlserver.getContainerIpAddress();

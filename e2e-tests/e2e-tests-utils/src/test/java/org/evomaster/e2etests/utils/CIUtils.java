@@ -31,4 +31,17 @@ public class CIUtils {
     public static void skipIfOnTravis(){
         assumeTrue(!CIUtils.isRunningTravis());
     }
+
+
+    public static boolean isRunningGA(){
+        String ci = System.getenv("CI_env");
+        return ci != null && ci.trim().equalsIgnoreCase("githubaction");
+    }
+
+    /**
+     * some tests pass locally on Mac, but fail on GA
+     */
+    public static void skipIfOnGA(){
+        assumeTrue(!CIUtils.isRunningGA());
+    }
 }
