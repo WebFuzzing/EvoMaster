@@ -30,7 +30,11 @@ public class DbCleaner {
         clearDatabase(getDefaultReties(DatabaseType.H2), connection, schemaName, tablesToSkip, DatabaseType.H2, false);
     }
 
+    /*
+        [non-determinism-source] Man: retries might lead to non-determinate logs
+     */
     private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type, boolean doDropTable) {
+
         /*
             Code based on
             https://stackoverflow.com/questions/8523423/reset-embedded-h2-database-periodically

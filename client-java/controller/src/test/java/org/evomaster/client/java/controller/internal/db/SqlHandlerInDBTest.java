@@ -9,11 +9,14 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.sql.SQLException;
+
 import static io.restassured.RestAssured.given;
 import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
 import static org.evomaster.client.java.controller.api.ControllerConstants.TEST_RESULTS;
 import static org.junit.jupiter.api.Assertions.*;
-import java.sql.SQLException;
 
 /**
  * Created by arcuri82 on 24-Apr-19.
@@ -39,6 +42,8 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
+
+        System.setOut(new PrintStream(new ByteArrayOutputStream()));
 
         try {
             ExecutionDto dto = executeCommand(starter, "Delete FROM Foo");

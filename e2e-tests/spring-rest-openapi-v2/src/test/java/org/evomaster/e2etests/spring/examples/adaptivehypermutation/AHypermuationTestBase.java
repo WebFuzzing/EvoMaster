@@ -1,8 +1,13 @@
 package org.evomaster.e2etests.spring.examples.adaptivehypermutation;
 
 import com.foo.rest.examples.spring.adaptivehypermutation.AHypermutationRestController;
+import org.evomaster.core.problem.rest.HttpVerb;
+import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+
+import java.util.List;
 
 public class AHypermuationTestBase extends SpringTestBase {
 
@@ -12,4 +17,15 @@ public class AHypermuationTestBase extends SpringTestBase {
         SpringTestBase.initClass(new AHypermutationRestController());
     }
 
+
+    int countExpectedCoveredTargets(Solution<RestIndividual> solution , List<String> msg){
+        int count = 0;
+        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B0", count, msg);
+        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B1", count, msg);
+        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B2", count, msg);
+        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B3", count, msg);
+        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B4", count, msg);
+        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B5", count, msg);
+        return count;
+    }
 }

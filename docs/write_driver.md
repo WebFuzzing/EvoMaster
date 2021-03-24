@@ -229,7 +229,7 @@ the option `--spring.cache.type=NONE`.
 Whenever possible, it would be best to use an embedded database such as _H2_.
 However, if you need to rely on a specific database such as _Postgres_, we recommend starting
 it with _Docker_.  
-In Java, this can be done with libraries such as [TestContainers](https://github.com/testcontainers/testcontainers-java/).
+In Java, this can be done with libraries such as [TestContainers](https://github.com/testcontainers/testcontainers-java/) (which you will need to import in Maven/Gradle).
 In your driver, you can then have code like:
 
 ```
@@ -246,7 +246,7 @@ Then, the URL to connect to the database can be something like:
 ```
 String host = postgres.getContainerIpAddress();
 int port = postgres.getMappedPort(5432);
-String url = "jdbc:p6spy:postgresql://"+host+":"+port+"/postgres
+String url = "jdbc:p6spy:postgresql://"+host+":"+port+"/postgres"
 ```
 
 You can then tell Spring to use such URL with the parameter `--spring.datasource.url`.
@@ -255,7 +255,8 @@ Note: the `withTmpFs` configuration is very important, and it is database depend
 A database running in _Docker_ will still write on your hard-drive, which is an unnecessary,
 time-consuming overhead. 
 The idea then is to mount the folder, in which the database writes, directly in RAM.   
- 
+
+For an example, you can look at the E2E tests in EvoMaster, like the class [com.foo.spring.rest.postgres.SpringRestPostgresController](https://github.com/EMResearch/EvoMaster/blob/master/e2e-tests/spring-rest-postgres/src/test/kotlin/com/foo/spring/rest/postgres/SpringRestPostgresController.kt). 
 
 ## Code Coverage  
  
