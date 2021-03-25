@@ -53,7 +53,7 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
             TODO Man:there exist a problem on creating the connection with CI and GA,
              but the problem cannot be reproduced on MacOS.
          */
-        connection = DriverManager.getConnection(url, "SA", PASSWORD);
+        connection = DriverManager.getConnection(url, "sa", PASSWORD);
     }
 
     @AfterAll
