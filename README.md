@@ -56,7 +56,7 @@ __Key features__:
   as long as an OpenAPI schema is provided. However, results will be worse than whitebox testing (e.g., due
   to lack of bytecode analysis).
 
-* _Authentication_: we support auth based on authentication headers and cookies. 
+* _Authentication_: for white-box testing we support auth based on authentication headers and cookies. 
    However, at the moment we do not support OAuth, nor authentication in black-box testing.
 
 __Known limitations__:
