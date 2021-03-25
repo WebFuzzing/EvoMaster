@@ -23,7 +23,7 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
     public static final GenericContainer mssqlserver = new GenericContainer(DockerImageName.parse("mcr.microsoft.com/mssql/server").withTag("2019-CU9-ubuntu-16.04"))
             .withEnv(new HashMap<String, String>(){{
                 put("ACCEPT_EULA", "Y");
-                put("SA_PASSWORD", PASSWORD);
+                put("MSSQL_SA_PASSWORD", PASSWORD);
             }})
             .withStartupTimeout(Duration.ofSeconds(240))
             .withExposedPorts(PORT);
@@ -40,8 +40,8 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
             i.e., com.microsoft.sqlserver.jdbc.SQLServerException: Login failed for user 'SA'"
          */
 
-        CIUtils.skipIfOnGA();
-        CIUtils.skipIfOnCircleCI();
+    //    CIUtils.skipIfOnGA();
+      //  CIUtils.skipIfOnCircleCI();
 
         mssqlserver.start();
 
@@ -58,8 +58,8 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
 
     @AfterAll
     public static void afterClass() throws SQLException {
-        CIUtils.skipIfOnGA();
-        CIUtils.skipIfOnCircleCI();
+     //   CIUtils.skipIfOnGA();
+      //  CIUtils.skipIfOnCircleCI();
 
         connection.close();
         mssqlserver.stop();
