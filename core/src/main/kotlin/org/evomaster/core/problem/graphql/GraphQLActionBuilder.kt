@@ -498,9 +498,12 @@ object GraphQLActionBuilder {
         params.remove(params.find { p -> p is GQReturnParam }?: throw RuntimeException("ERROR: not specified return type"))
         params.add(GQReturnParam(selection.name, selection))
 
+        params.map { it.gene }.forEach { GeneUtils.preventCycles(it) }
+
         val action = GraphQLAction(actionId, methodName, type, params )
 
         actionCluster[action.getName()] = action
+
     }
 
     private fun extractParams(
