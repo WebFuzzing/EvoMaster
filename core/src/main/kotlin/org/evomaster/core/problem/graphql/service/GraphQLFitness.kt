@@ -2,6 +2,7 @@ package org.evomaster.core.problem.graphql.service
 
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.graphql.GQMethodType
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQlCallResult
@@ -261,7 +262,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 ?: throw RuntimeException("ERROR: not specified return type")
         val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
-        if (a.methodType.toString() == "QUERY") {
+        if (a.methodType == GQMethodType.QUERY) {
 
             if (inputGenes.isNotEmpty()) {
 

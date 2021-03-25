@@ -543,6 +543,8 @@ object GraphQLActionBuilder {
 
         }
 
+        params.map { it.gene }.forEach { GeneUtils.preventCycles(it) }
+
         return params
     }
 
