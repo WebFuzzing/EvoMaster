@@ -987,16 +987,14 @@ class TestCaseWriter {
                 }
                 printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)//removing the ","
                 printableInputGenes = printableInputGenes.replace("\"", "\\\"")
-                val selection = GeneUtils.getBooleanSelection(returnGene)
-                var query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
                 query = query.replace("{${call.methodName}", "", true)//remove the first methode name
                 query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
 
                 OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)$query} \",\"variables\":null}")
 
             } else {
-                val selection = GeneUtils.getBooleanSelection(returnGene)
-                val query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                val query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
 
                 OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"$query\",\"variables\":null} ")
             }
@@ -1014,8 +1012,7 @@ class TestCaseWriter {
             }
             printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
             printableInputGenes = printableInputGenes.replace("\"", "\\\"")
-            val selection = GeneUtils.getBooleanSelection(returnGene)
-            var mutation = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+            var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
             mutation = mutation.replace("{${call.methodName}", "", true)
             mutation = mutation.substring(0, mutation.length - 1)
 

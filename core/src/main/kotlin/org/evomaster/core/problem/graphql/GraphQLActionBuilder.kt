@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.RuntimeException
 
 object GraphQLActionBuilder {
 
@@ -488,6 +489,15 @@ object GraphQLActionBuilder {
                 tableType, isKindOfTableFieldTypeOptional,
                 isKindOfTableFieldOptional, tableFieldWithArgs, enumValues)
 
+        val returnGene = params.find { p -> p is GQReturnParam }?.gene
+        //in GraphQL, there is ALWAYS a return type
+                ?: throw RuntimeException("ERROR: not specified return type")
+
+        val selection = GeneUtils.getBooleanSelection(returnGene)
+
+        params.remove(params.find { p -> p is GQReturnParam }?: throw RuntimeException("ERROR: not specified return type"))
+        params.add(GQReturnParam(selection.name, selection))
+
         val action = GraphQLAction(actionId, methodName, type, params )
 
         actionCluster[action.getName()] = action
@@ -542,8 +552,6 @@ object GraphQLActionBuilder {
             params.add(GQReturnParam(methodName, gene))
 
         }
-
-        params.map { it.gene }.forEach { GeneUtils.preventCycles(it) }
 
         return params
     }
