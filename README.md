@@ -57,7 +57,7 @@ __Key features__:
   to lack of bytecode analysis).
 
 * _Authentication_: we support auth based on authentication headers and cookies. 
-   However, at the moment we do not support OAuth.
+   However, at the moment we do not support OAuth, nor authentication in black-box testing.
 
 __Known limitations__:
 
