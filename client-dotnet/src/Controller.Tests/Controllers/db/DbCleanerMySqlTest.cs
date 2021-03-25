@@ -51,11 +51,6 @@ namespace Controller.Tests.Controllers.db
         {
             DbCleaner.ClearDatabase(_connection, null, DatabaseType.MYSQL, "db");
             
-            // TODO find a proper solution to clean all data in mysql db, instead of dropping db and closing connection
-            // SqlScriptRunner.ExecCommand(_connection, "DROP DATABASE db;");
-            // SqlScriptRunner.ExecCommand(_connection, "CREATE DATABASE db;");
-            
-            
             await _connection.CloseAsync();
             await mySql.StopAsync();
         }

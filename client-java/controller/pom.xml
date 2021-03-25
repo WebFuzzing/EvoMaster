@@ -157,17 +157,14 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <!--Need to confirm with Andrea-->
-            <!-- check if this version configuration is needed to add to the root pom.xml-->
-            <version>8.0.23</version>
+            <version>${mysql.connector.java.version}</version>
             <scope>test</scope>
         </dependency>
-
 
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>2.7.2</version>
+            <version>${mariadb.java.client.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -175,7 +172,7 @@
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>9.2.1.jre8</version>
+            <version>${mssql.jdbc.version}</version>
             <scope>test</scope>
         </dependency>
 
