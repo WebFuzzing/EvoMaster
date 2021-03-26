@@ -2,11 +2,11 @@ name: CI
 
 on: [push]
 
-# This build is quite expensive (1ish hour), so we run it only on 1 JVM version, and 1 OS.
+# This build is quite expensive (1ish hour), so we run it whole only on 1 JVM version, and 1 OS.
 # Recall that we also build on CircleCI, with different configurations.
 # For the moment, we need to support JVM 8 and 11, with 17 when it comes out.
 # EM should run an all OSs. As our main development machines are Windows and Mac, just
-# testing on Linux should be fine.
+# testing whole build with all E2E only on Linux should be fine.
 
 jobs:
   build:
@@ -18,6 +18,26 @@ jobs:
 
       # Checkout code
       - uses: actions/checkout@v2
+
+      # Build/test for JavaScript
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - run: npm ci
+        working-directory: ./client-js/evomaster-client-js
+      - run: npm run build
+        working-directory: ./client-js/evomaster-client-js
+      - run: npm run test
+        working-directory: ./client-js/evomaster-client-js
+      - run: npm ci
+        working-directory: ./client-js/integration-tests
+      - run: npm run build
+        working-directory: ./client-js/integration-tests
+      - run: npm run test
+        working-directory: ./client-js/integration-tests
+
+
 
       # Build/test for JDK
       - name: Setup JDK 8
