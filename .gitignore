@@ -91,3 +91,6 @@ generated-test-cases/
 #EF Migrations
 Migrations/
 
+/client-js/e2e-tests/node_modules/
+/client-js/e2e-tests/coverage/
+/client-js/e2e-tests/generated/
