@@ -10,6 +10,10 @@ class Truthness:
     def invert(self):
         return Truthness(self.ofFalse, self.ofTrue)
 
+    def rescale_from_min(self, min_value: Number):
+        return Truthness(1 if self.ofTrue == 1 else min_value + (1 - min_value) * self.ofTrue,
+                         1 if self.ofFalse == 1 else min_value + (1 - min_value) * self.ofFalse)
+
     def __str__(self):
         return f"T(true:{self.ofTrue},false:{self.ofFalse})"
 
@@ -17,6 +21,8 @@ def normalize(value: Number) -> float:
     if value < 0:
         raise ValueError("Negative value: {value}")
     return value / (value + 1)
+
+
 
 def eq_truthness_number(a: Number, b: Number) -> Truthness:
     distance = abs(a - b)

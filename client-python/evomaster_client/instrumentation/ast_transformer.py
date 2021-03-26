@@ -1,5 +1,5 @@
 import ast
-from ast import UnaryOp, BoolOp, Compare, Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn, And, Or, Invert, Not
+from ast import Num, UnaryOp, BoolOp, Compare, Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn, And, Or, Invert, Not
 from typing import Any
 
 from evomaster_client.instrumentation.objective_naming import (file_objective_name, line_objective_name,
@@ -50,26 +50,45 @@ class AstTransformer(ast.NodeTransformer):
         ]
 
     def visit_UnaryOp(self, node: UnaryOp) -> Any:
-        # TODO: handle Not and Invert
+        node = self.generic_visit(node)  # visit child nodes
         if isinstance(node.op, Not):
             return ast.Call(func=ast.Name("not_statement", ast.Load()),
                             args=[node.operand], keywords=[])
         return node
 
     def visit_BoolOp(self, node: BoolOp) -> Any:
-        # TODO: handle And and Or
-        pass
-
-    def visit_Compare(self, node: Compare) -> Any:
-        node =self.generic_visit(node)  # visit child nodes
-        operator = self.operatorToString(node.ops[0])
-        # TODO: handle len(operators) > 1
-        if operator in VALID_OPS:
+        node = self.generic_visit(node)  # visit child nodes
+        if isinstance(node.op, And) or isinstance(node.op, Or):
+            if len(node.values) > 2:
+                # TODO: handle len(values) > 2
+                return node
             self.branch_counter += 1
             ObjectiveRecorder().register_target(branch_objective_name(self.module, node.lineno, self.branch_counter, True))
             ObjectiveRecorder().register_target(branch_objective_name(self.module, node.lineno, self.branch_counter, False))
+            injected_function = "and_statement" if isinstance(node.op, And) else "or_statement"
+            right_pure = self.is_pure(node.values[1])
+            empty_args = ast.arguments(args=[], vararg=None, kwarg=None, defaults=[], posonlyargs=[], kwonlyargs=[], kw_defaults=[])
+            return ast.Call(func=ast.Name(injected_function, ast.Load()),
+                            args=[ast.Lambda(empty_args, node.values[0]), ast.Lambda(empty_args, node.values[1]),
+                                  ast.Constant(right_pure), ast.Constant(self.module),
+                                  ast.Constant(node.lineno), ast.Constant(self.branch_counter)],
+                            keywords=[])
+        return node
+
+    def visit_Compare(self, node: Compare) -> Any:
+        node =self.generic_visit(node)  # visit child nodes
+        operator = self.operator_to_string(node.ops[0])
+        if len(node.comparators) > 1:
+            # TODO: handle len(comparators) > 1
+            return node
+        if operator in VALID_OPS:
+            self.branch_counter += 1
+            left_rec = self.generic_visit(node.left)
+            right_rec = self.generic_visit(node.comparators[0])
+            ObjectiveRecorder().register_target(branch_objective_name(self.module, node.lineno, self.branch_counter, True))
+            ObjectiveRecorder().register_target(branch_objective_name(self.module, node.lineno, self.branch_counter, False))
             return ast.Call(func=ast.Name("compare_statement", ast.Load()),
-                            args=[node.left, ast.Str(operator), node.comparators[0],
+                            args=[left_rec, ast.Str(operator), right_rec,
                                 ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.branch_counter)],
                             keywords=[])
         return node
@@ -82,7 +101,7 @@ class AstTransformer(ast.NodeTransformer):
         return super().visit(node)
 
     @staticmethod
-    def operatorToString(operator):
+    def operator_to_string(operator):
         if isinstance(operator, Eq):
             return "=="
         elif isinstance(operator, NotEq):
@@ -103,3 +122,8 @@ class AstTransformer(ast.NodeTransformer):
             return "in"
         elif isinstance(operator, NotIn):
             return "not in"
+
+    @staticmethod
+    def is_pure(value):
+        # TODO: complete implementation
+        return False
