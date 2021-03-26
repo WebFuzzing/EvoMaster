@@ -9,4 +9,4 @@ cd $SCRIPT_FOLDER_LOCATION || exit 1
 
 RUN=./e2e_runner.sh
 
-$RUN /client-js/integration-tests/build/src/books-api   em-main.js   app-driver.js
+$RUN /client-js/integration-tests/build/src/books-api   em-main.js   app-driver.js  50

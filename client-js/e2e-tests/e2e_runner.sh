@@ -3,6 +3,7 @@
 SUT_FOLDER=$1
 DRIVER_NAME=$2
 CONTROLLER_NAME=$3
+AT_LEAST_EXPECTED=$4
 
 echo Executing E2E for $SUT_FOLDER
 
@@ -49,7 +50,7 @@ PID=$!
 # give enough time to start
 sleep 10
 
-java -jar $JAR --seed 42 --maxTime 30s --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME --jsControllerPath $CONTROLLER_LOCATION
+java -jar $JAR --seed 42 --maxActionEvaluations 20000  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME --jsControllerPath $CONTROLLER_LOCATION
 
 # stop driver, which was run in background
 kill $PID
@@ -66,4 +67,11 @@ cd $SCRIPT_FOLDER_LOCATION || exit 1
 npm i
 npm run test
 
+COVERED=` cat $TEST_LOCATION | grep "Covered targets" | cut -c 20-`
 
+if [ $COVERED -ge $AT_LEAST_EXPECTED ]; then
+    echo "Target coverage: $COVERED"
+else
+    echo "ERROR. Achieved not enough target coverage: $COVERED"
+    exit 1
+fi
