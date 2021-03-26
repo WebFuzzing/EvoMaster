@@ -25,7 +25,7 @@ class GQLPrimitiveTypeEMTest: SpringTestBase() {
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
                 "GQL_PrimitiveTypeEM",
-                "org.foo.graphql.MutationEM",
+                "org.foo.graphql.PrimitiveTypeEM",
                 20
         ) { args: MutableList<String> ->
 
