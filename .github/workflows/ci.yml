@@ -74,4 +74,4 @@ jobs:
         with:
           java-version: 11
       - name: Compile with JDK 11
-        run: mvn clean compile
+        run: mvn clean verify -DskipTests
