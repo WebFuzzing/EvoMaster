@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # my_tree = ast.parse('for i in range(2): print("foo"); print("bar")')
     # my_tree = ast.parse('print("foo") if 5 < 10 else print("bar")')
     # my_tree = ast.parse('1 == 2 > 3 not in 4 in 6 != 8')
-    # my_tree = ast.parse('True == True == False')
+    # my_tree = ast.parse('if not x: return True')
     my_tree = ast.parse(source, filename=filename)
 
     t = AstTransformer(filename)

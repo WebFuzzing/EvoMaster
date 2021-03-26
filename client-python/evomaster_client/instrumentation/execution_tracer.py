@@ -3,6 +3,7 @@ from typing import Sequence, Set, Mapping
 from evomaster_client.instrumentation import objective_naming
 from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorder
 from evomaster_client.instrumentation.util import Singleton
+from evomaster_client.instrumentation.heuristic.truthness import Truthness
 
 
 class AdditionalInfo:
@@ -124,9 +125,12 @@ class ExecutionTracer(Singleton):
         statement_id = objective_naming.statement_objective_name(file_name, line, statement)
         self.update_objective(statement_id, 1)
         self.completed_last_executed_statement(f"{file_name}_{line}_{statement}")
-        # HeuristicsForBooleans.clearLastEvaluation()
+        from evomaster_client.instrumentation.heuristic.heuristics import clear_last_evaluation
+        clear_last_evaluation()
 
-    def update_branch(self, file_name: str, line: int, branch: int, truthness) -> None:
-        # TODO: complete update_branch
+    def update_branch(self, file_name: str, line: int, branch: int, truthness: Truthness) -> None:
         print(f"Branch: {file_name}:line:{line}:branch:{branch}:truthness:{truthness}")
-        pass
+        then_branch = objective_naming.branch_objective_name(file_name, line, branch, then_branch=True)
+        else_branch = objective_naming.branch_objective_name(file_name, line, branch, then_branch=False)
+        self.update_objective(then_branch, truthness.ofFalse)
+        self.update_objective(else_branch, truthness.ofTrue)

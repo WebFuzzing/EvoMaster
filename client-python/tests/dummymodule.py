@@ -5,25 +5,27 @@ def dummy_compare(x, y):
     print('start')
     if dummy_boolean():
         print('dummy boolean')
+    if not x:
+        print("not")
     if x == y:
         print("eq")
-    elif x != y:
+    if x != y:
         print("noteq")
-    elif x < y:
+    if x < y:
         print("lt")
-    elif x <= y:
+    if x <= y:
         print("lte")
-    elif x > y:
+    if x > y:
         print("gt")
-    elif x >= y:
+    if x >= y:
         print("gte")
-    elif x is y:
+    if x is y:
         print("is")
-    elif x is not y:
+    if x is not y:
         print("isnot")
-    elif x in y:
+    if x in y:
         print("in")
-    elif x not in y:
+    if x not in y:
         print("notin")
     print('end')
 

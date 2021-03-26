@@ -22,3 +22,15 @@ def completing_statement(value: Any, module: str, line: int, statement: int):
 
 def compare_statement(left, op, right, module: str, line: int, branch: int):
     return heuristics.evaluate(left, op, right, module, line, branch)
+
+
+def not_statement(value: Any) -> Any:
+    return heuristics.handle_not(value)
+
+
+def and_statement(left: Any, right: Any, right_pure: bool, module: str, line: int, branch: int) -> Any:
+    return heuristics.evaluate_and(left, right, right_pure, module, line, branch)
+
+
+def or_statement(left: Any, right: Any, right_pure: bool, module: str, line: int, branch: int) -> Any:
+    return heuristics.evaluate_or(left, right, right_pure, module, line, branch)

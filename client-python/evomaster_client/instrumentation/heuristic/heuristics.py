@@ -1,4 +1,5 @@
 from numbers import Number
+from typing import Any
 
 from evomaster_client.instrumentation.execution_tracer import ExecutionTracer
 from evomaster_client.instrumentation.heuristic.truthness import Truthness, eq_truthness_number, eq_truthness_str, \
@@ -6,7 +7,12 @@ from evomaster_client.instrumentation.heuristic.truthness import Truthness, eq_t
 
 VALID_OPS = ['==', '!=', '<', '<=', '>', '>=']
 
-last_evaluation = None  # to handle negations
+LAST_EVALUATION: Truthness = None  # to handle negations
+
+
+def clear_last_evaluation():
+    LAST_EVALUATION = None
+
 
 def evaluate(left, op, right, module, line, branch):
     if op == "==":
@@ -31,8 +37,9 @@ def evaluate(left, op, right, module, line, branch):
         res = left not in right
     truthness = compare(left, op, right)
     ExecutionTracer().update_branch(module, line, branch, truthness)
-    last_evaluation = truthness
+    LAST_EVALUATION = truthness
     return res
+
 
 def compare(left, op, right):
     if op not in VALID_OPS:
@@ -75,3 +82,17 @@ def compare(left, op, right):
     elif op == ">":
         h = compare(left, "<=", right).invert()
     return h
+
+
+def handle_not(value: Any) -> Any:
+    if LAST_EVALUATION is not None:
+        LAST_EVALUATION.invert()
+    return not value
+
+
+def evaluate_and(left, right, right_pure, module, line, branch):
+    pass
+
+
+def evaluate_or(left, right, right_pure, module, line, branch):
+    pass

@@ -1,5 +1,5 @@
 import ast
-from ast import UnaryOp, BoolOp, Compare, Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn
+from ast import UnaryOp, BoolOp, Compare, Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn, And, Or, Invert, Not
 from typing import Any
 
 from evomaster_client.instrumentation.objective_naming import (file_objective_name, line_objective_name,
@@ -51,7 +51,10 @@ class AstTransformer(ast.NodeTransformer):
 
     def visit_UnaryOp(self, node: UnaryOp) -> Any:
         # TODO: handle Not and Invert
-        pass
+        if isinstance(node.op, Not):
+            return ast.Call(func=ast.Name("not_statement", ast.Load()),
+                            args=[node.operand], keywords=[])
+        return node
 
     def visit_BoolOp(self, node: BoolOp) -> Any:
         # TODO: handle And and Or
@@ -69,8 +72,7 @@ class AstTransformer(ast.NodeTransformer):
                             args=[node.left, ast.Str(operator), node.comparators[0],
                                 ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.branch_counter)],
                             keywords=[])
-        else:
-            return node
+        return node
 
     def visit(self, node):
         if isinstance(node, ast.stmt):
