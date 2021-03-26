@@ -991,12 +991,34 @@ class TestCaseWriter {
                 query = query.replace("{${call.methodName}", "", true)//remove the first methode name
                 query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
 
-                OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)$query} \",\"variables\":null}")
+                if (returnGene.name.toLowerCase() == "scalar") {//return gene is primitive type: print out: nothing
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
 
-            } else {
-                val query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                }else {//return gene is a complex type:print out the return type
+                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                    query = query.replace("{${call.methodName}", "", true)//remove the first methode name
+                    query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
 
-                OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"$query\",\"variables\":null} ")
+
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)$query} \",\"variables\":null}")
+
+                }
+
+            } else {//empty input params
+
+                if (returnGene.name.toLowerCase() == "scalar") {
+
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
+                }else {//return gene is not scalar, but complex type
+
+                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                    query = query.replace("{${call.methodName}", "", true)//remove the first methode name
+                    query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
+
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \" { ${call.methodName}  $query     }   \",\"variables\":null} ")
+
+                }
+               // OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"$query\",\"variables\":null} ")
             }
 
         } else if (call.methodType.toString() == "MUTATION") {
