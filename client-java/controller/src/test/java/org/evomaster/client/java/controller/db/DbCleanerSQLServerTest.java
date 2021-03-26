@@ -40,8 +40,8 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
             i.e., com.microsoft.sqlserver.jdbc.SQLServerException: Login failed for user 'SA'"
          */
 
-    //    CIUtils.skipIfOnGA();
-      //  CIUtils.skipIfOnCircleCI();
+        CIUtils.skipIfOnGA();
+        CIUtils.skipIfOnCircleCI();
 
         mssqlserver.start();
 
@@ -52,14 +52,18 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
         /*
             TODO Man:there exist a problem on creating the connection with CI and GA,
              but the problem cannot be reproduced on MacOS.
+
+             It seems a quite common problem...
+             https://github.com/Microsoft/mssql-docker/issues/301
+             https://github.com/testcontainers/testcontainers-java/issues/3712
          */
         connection = DriverManager.getConnection(url, "sa", PASSWORD);
     }
 
     @AfterAll
     public static void afterClass() throws SQLException {
-     //   CIUtils.skipIfOnGA();
-      //  CIUtils.skipIfOnCircleCI();
+        CIUtils.skipIfOnGA();
+        CIUtils.skipIfOnCircleCI();
 
         connection.close();
         mssqlserver.stop();
