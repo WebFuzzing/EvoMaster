@@ -129,11 +129,7 @@ class GraphQLActionBuilderTest {
 
         val genreCollection = actionCluster.get("GenreCollection") as GraphQLAction
         assertTrue((genreCollection.parameters[0].gene is ObjectGene))
-        //todo handle the return param in basic types
-        // assertTrue((genreCollection.parameters[0].gene as OptionalGene).gene is ObjectGene)//todo
-        // val arrayGenreCollection = (genreCollection.parameters[0].gene as OptionalGene).gene as ArrayGene<*>//todo
-        // assertTrue(arrayGenreCollection.template is OptionalGene)//todo
-        //  assertTrue((arrayGenreCollection.template as OptionalGene).gene is StringGene)//todo
+        assertTrue((genreCollection.parameters[0].gene as ObjectGene).name == "SCALAR")
 
         val mediaTagCollection = actionCluster.get("MediaTagCollection") as GraphQLAction
         assertTrue(mediaTagCollection.parameters[1].gene is ObjectGene)
@@ -426,7 +422,6 @@ class GraphQLActionBuilderTest {
         assertTrue(coresUpcoming.parameters[5] is GQReturnParam)
         assertTrue((coresUpcoming.parameters[0].gene as OptionalGene).gene is ObjectGene)
         assertTrue(coresUpcoming.parameters[5].gene is ObjectGene)
-        //assertTrue((coresUpcoming.parameters[5].gene as OptionalGene).gene is ArrayGene<*>)
         val objCore = coresUpcoming.parameters[5].gene as ObjectGene
         assertTrue(objCore.fields.any { it is BooleanGene && it.name == "water_landing" })
 
