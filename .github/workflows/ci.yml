@@ -68,6 +68,7 @@ jobs:
 
       # E2E for JS. Must be run AFTER the JS and Core builds
       - name: E2E for JavaScript
+        run:  chmod +x ./client-js/e2e-tests/e2e.sh
         run: ./client-js/e2e-tests/e2e.sh
 
 
