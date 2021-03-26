@@ -274,32 +274,56 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                 var printableInputGenes = ""
                 for (elt in printableInputGene) {
-                    printableInputGenes = elt+","+ printableInputGenes
+                    printableInputGenes = elt + "," + printableInputGenes
                 }
                 printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)//removing the ","
                 printableInputGenes = printableInputGenes.replace("\"", "\\\"")
 
-                var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-                query = query.replace("{${a.methodName}", "", true)//remove the first methode name
-                query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
-
-
-                val bodyEntity = Entity.json("""
-            {"query" : "  { ${a.methodName}  ($printableInputGenes)     $query        } ","variables":null}
+                if (returnGene.name.toLowerCase() == "scalar") {//return gene is primitive type: print out: nothing
+                    val bodyEntity = Entity.json("""
+            {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
         """.trimIndent())
-                val invocation = builder.buildPost(bodyEntity)
-                return invocation
-            } else {
-                val query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                    val invocation = builder.buildPost(bodyEntity)
+                    return invocation
 
-                val bodyEntity = Entity.json("""
-            {"query" : "$query","variables":null}
+                } else {//return gene is a complex type:print out the return type
+                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                    query = query.replace("{${a.methodName}", "", true)//remove the first methode name
+                    query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
+
+                    val bodyEntity = Entity.json("""
+            {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
         """.trimIndent())
-                val invocation = builder.buildPost(bodyEntity)
-                return invocation
+                    val invocation = builder.buildPost(bodyEntity)
+                    return invocation
+
+                }
+            } else {//input genes are empty: print out the query only: two cases: scalar or not
+
+                if (returnGene.name.toLowerCase() == "scalar") {
+
+                    val bodyEntity = Entity.json("""
+            {"query" : "  { ${a.methodName}       } ","variables":null}
+        """.trimIndent())
+                    val invocation = builder.buildPost(bodyEntity)
+                    return invocation
+                } else {//return gene is not scalar, but complex type
+
+                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                    query = query.replace("{${a.methodName}", "", true)//remove the first methode name
+                    query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
+
+                    val bodyEntity = Entity.json("""
+            {"query" : "  { ${a.methodName}  $query     } ","variables":null}
+        """.trimIndent())
+                    val invocation = builder.buildPost(bodyEntity)
+                    return invocation
+
+                }
+
             }
 
-        } else if (a.methodType.toString() == "MUTATION") {
+        } else if (a.methodType == GQMethodType.MUTATION) {
             val printableInputGene: MutableList<String> = mutableListOf()
             for (gene in inputGenes) {
                 val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
@@ -316,7 +340,6 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
             mutation = mutation.replace("{${a.methodName}", "", true)
             mutation = mutation.substring(0, mutation.length - 1)
-
 
 
             val bodyEntity = Entity.json("""
