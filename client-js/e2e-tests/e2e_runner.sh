@@ -1,5 +1,11 @@
 #!/bin/bash
 
+SUT_FOLDER=$1
+DRIVER_NAME=$2
+CONTROLLER_NAME=$3
+
+echo Executing E2E for $SUT_FOLDER
+
 # Make sure to kill all sub-processes on exit
 trap 'kill $(jobs -p)' EXIT
 
@@ -17,9 +23,8 @@ else
     exit 1
 fi
 
-
-DRIVER=$PROJECT_ROOT/client-js/integration-tests/build/src/books-api/em-main.js
-CONTROLLER_LOCATION=$PROJECT_ROOT/client-js/integration-tests/build/src/books-api/app-driver.js
+DRIVER=$PROJECT_ROOT$SUT_FOLDER/$DRIVER_NAME
+CONTROLLER_LOCATION=$PROJECT_ROOT$SUT_FOLDER/$CONTROLLER_NAME
 
 
 if [ -f "$DRIVER" ]; then
@@ -44,7 +49,7 @@ PID=$!
 # give enough time to start
 sleep 10
 
-java -jar $JAR --maxTime 30s --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME --jsControllerPath $CONTROLLER_LOCATION
+java -jar $JAR --seed 42 --maxTime 30s --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME --jsControllerPath $CONTROLLER_LOCATION
 
 # stop driver, which was run in background
 kill $PID
