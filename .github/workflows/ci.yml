@@ -66,3 +66,12 @@ jobs:
       # Upload coverage results
       - name: Upload coverage to CodeCov
         run: curl -s https://codecov.io/bash | bash
+
+
+      #Only once coverage is uploaded, we try to build with other versions of Java, as "mvn clean" would delete those reports
+      - name: Setup JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Compile with JDK 11
+        run: mvn clean compile
