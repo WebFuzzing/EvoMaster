@@ -1,7 +1,9 @@
 package org.evomaster.client.java.controller.db;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
@@ -18,11 +20,18 @@ public abstract class DbCleanerTestBase {
 
     protected abstract void clearDatabase(List<String> tablesToSkip);
 
+    protected abstract DatabaseType getDbType();
+
     @Test
     public void testSkipTableMisconfigured() throws Exception{
 
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id bigserial not null);");
+        String command = "CREATE TABLE Foo(id bigserial not null);";
+        if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB)
+            command = "CREATE TABLE Foo(id serial not null);";
+        else if (getDbType() == DatabaseType.MS_SQL_SERVER)
+            command = "CREATE TABLE Foo(id bigint not null IDENTITY);";
 
+        SqlScriptRunner.execCommand(getConnection(), command);
         assertThrows(Exception.class, () -> clearDatabase(Arrays.asList("Bar")));
     }
 
@@ -56,7 +65,12 @@ public abstract class DbCleanerTestBase {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x int, primary key (x));");
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(y int, primary key (y));");
-        SqlScriptRunner.execCommand(getConnection(), "alter table Bar add constraint FK foreign key (y) references Foo;");
+        if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB){
+            SqlScriptRunner.execCommand(getConnection(), "alter table Bar add foreign key (y) references Foo(x);");
+        }else{
+            SqlScriptRunner.execCommand(getConnection(), "alter table Bar add constraint FK foreign key (y) references Foo;");
+        }
+
 
         //can't insert before Foo
         assertThrows(Exception.class, () ->
@@ -78,7 +92,12 @@ public abstract class DbCleanerTestBase {
     @Test
     public void testResetIdentity() throws Exception {
 
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id bigserial not null, x int, primary key (id));");
+        if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB)
+            SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id serial not null, x int, primary key (id));");
+        else if(getDbType() == DatabaseType.MS_SQL_SERVER)
+            SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id bigint not null IDENTITY, x int, primary key (id));");
+        else
+            SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id bigserial not null, x int, primary key (id));");
 
         int value = 42;
 
@@ -88,7 +107,12 @@ public abstract class DbCleanerTestBase {
         assertEquals(1, res.seeRows().size());
         assertEquals(value, res.seeRows().get(0).getValueByName("x"));
 
-        long id = (Long) res.seeRows().get(0).getValueByName("id");
+        long id;
+        if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB){
+            id = ((BigInteger) res.seeRows().get(0).getValueByName("id")).longValue();
+        }else{
+            id = (Long) res.seeRows().get(0).getValueByName("id");
+        }
 
         //everything should be cleared after this command
         clearDatabase(null);
@@ -100,7 +124,12 @@ public abstract class DbCleanerTestBase {
         res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;");
         assertEquals(1, res.seeRows().size());
 
-        long regeneratedId = (Long) res.seeRows().get(0).getValueByName("id");
+        long regeneratedId;
+        if (getDbType() == DatabaseType.MYSQL || getDbType() == DatabaseType.MARIADB){
+            regeneratedId = ((BigInteger) res.seeRows().get(0).getValueByName("id")).longValue();
+        }else{
+            regeneratedId = (Long) res.seeRows().get(0).getValueByName("id");
+        }
 
         /*
             If IDENTITY (eg, bigserial) id generation was reset, should get exactly the same id

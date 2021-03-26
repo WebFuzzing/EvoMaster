@@ -4,6 +4,19 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class CIUtils {
 
+    public static boolean isRunningGA(){
+        String ci = System.getenv("CI_env");
+        return ci != null && ci.trim().equalsIgnoreCase("githubaction");
+    }
+
+    /**
+     * some tests pass locally on Mac, but fail on GA
+     */
+    public static void skipIfOnGA(){
+        assumeTrue(!CIUtils.isRunningGA());
+    }
+
+
     public static boolean isRunningOnCircleCI(){
         String ci = System.getenv("CI_env");
         return ci != null && ci.trim().toLowerCase().equals("circleci");

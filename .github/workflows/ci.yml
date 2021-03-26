@@ -52,6 +52,8 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
         run: mvn clean verify --fae
+        env:
+          CI_env: GithubAction
 
       # Build/test for .Net
       - name: Setup .NET Core
