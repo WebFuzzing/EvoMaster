@@ -309,4 +309,16 @@ export default class HeuristicsForBooleans {
         return h;
     }
 
+
+    public static handleFunctionCall(fileName: string, line: number, branchId: number, f: Function, ...args: any[]) : any {
+
+        /*
+            TODO: TT will be hooked here
+         */
+
+        const res = f(...args);
+        HeuristicsForBooleans.lastEvaluation = null
+
+        return res;
+    }
 }

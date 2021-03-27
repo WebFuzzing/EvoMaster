@@ -66,4 +66,8 @@ export default class InjectedFunctions {
         return HeuristicsForBooleans.handleNot(value);
     }
 
+    public static call(fileName: string, line: number, branchId: number, f: Function, ...args: any[]) : any {
+        return HeuristicsForBooleans.handleFunctionCall(fileName, line, branchId, f, ...args);
+    }
+
 }

@@ -1,7 +1,7 @@
 import {NodePath, Visitor} from "@babel/traverse";
 import * as BabelTypes from "@babel/types";
 import {
-    BinaryExpression,
+    BinaryExpression, CallExpression,
     IfStatement,
     LogicalExpression, Program,
     ReturnStatement,
@@ -190,6 +190,34 @@ export default function evomasterPlugin(
         branchCounter++;
     }
 
+    function replaceCallExpression(path: NodePath){
+
+        //if(! t.isExpr) //TODO there is no available check for call expressions???
+
+        const call = path.node as CallExpression;
+
+        /*
+            TODO: need better, more explicit way to skip traversing
+            new nodes we are adding
+        */
+        if(! call.loc){
+            return;
+        }
+
+        const l = call.loc.start.line;
+
+
+        const replaced = t.callExpression(
+            t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.call.name)),
+            [t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter),
+                // @ts-ignore
+                call.callee, ...call.arguments]
+        );
+
+        path.replaceWith(replaced);
+        branchCounter++;
+    }
+
     function addLineProbeIfNeeded(path: NodePath){
 
         if(! t.isStatement(path.node)){
@@ -340,6 +368,11 @@ export default function evomasterPlugin(
                     }
 
                     addLineProbeIfNeeded(path);
+                }
+            },
+            CallExpression:{
+                enter(path: NodePath){
+                    replaceCallExpression(path);
                 }
             }
         }

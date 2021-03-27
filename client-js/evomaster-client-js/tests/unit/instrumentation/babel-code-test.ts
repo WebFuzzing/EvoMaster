@@ -177,7 +177,7 @@ test("simple multi lines", () => {
         
         __EM__.enteringStatement("test.ts", 9, 4);
         
-        const k = sum(x, y);
+        const k = __EM__.call("test.ts", 10, 0, sum, x, y);
         
         __EM__.completedStatement("test.ts", 9, 4);        
     `);
@@ -267,7 +267,7 @@ test("&& branch distance", () => {
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
-        const x = __EM__.and(() => 4, () => foo.bar(), false, "test.ts", 1, 0);
+        const x = __EM__.and(() => 4, () => __EM__.call("test.ts", 1, 1, foo.bar), false, "test.ts", 1, 0);
         
         __EM__.completedStatement("test.ts", 1, 0);        
     `);
@@ -296,6 +296,54 @@ test("for loop", () => {
           __EM__.completedStatement("test.ts", 1, 1);
         }        
     `);
+});
+
+
+test("function call simple", () => {
+
+    const code = dedent`
+        foo()
+    `;
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0"]);
+
+        __EM__.enteringStatement("test.ts", 1, 0);
+
+        __EM__.call("test.ts", 1, 0, foo);
+
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+
+});
+
+
+test("function call chain", () => {
+
+    const code = dedent`
+        a.b.c.foo().bar(x)(y,z)
+    `;
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0"]);
+
+        __EM__.enteringStatement("test.ts", 1, 0);
+
+        __EM__.call("test.ts", 1, 0, __EM__.call("test.ts", 1, 1, __EM__.call("test.ts", 1, 2, a.b.c.foo).bar, x), y, z);
+
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+
 });
 
 
