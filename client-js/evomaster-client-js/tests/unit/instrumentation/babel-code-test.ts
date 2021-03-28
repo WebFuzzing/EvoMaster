@@ -177,7 +177,7 @@ test("simple multi lines", () => {
         
         __EM__.enteringStatement("test.ts", 9, 4);
         
-        const k = __EM__.call("test.ts", 10, 0, sum, x, y);
+        const k = __EM__.callBase(() => sum(x, y));
         
         __EM__.completedStatement("test.ts", 9, 4);        
     `);
@@ -267,7 +267,7 @@ test("&& branch distance", () => {
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
-        const x = __EM__.and(() => 4, () => __EM__.call("test.ts", 1, 1, foo.bar), false, "test.ts", 1, 0);
+        const x = __EM__.and(() => 4, () => __EM__.callTracked("test.ts", 1, 1, foo, "bar"), false, "test.ts", 1, 0);
         
         __EM__.completedStatement("test.ts", 1, 0);        
     `);
@@ -315,7 +315,7 @@ test("function call simple", () => {
 
         __EM__.enteringStatement("test.ts", 1, 0);
 
-        __EM__.call("test.ts", 1, 0, foo);
+        __EM__.callBase(() => foo());
 
         __EM__.completedStatement("test.ts", 1, 0);
     `);
@@ -339,7 +339,7 @@ test("function call chain", () => {
 
         __EM__.enteringStatement("test.ts", 1, 0);
 
-        __EM__.call("test.ts", 1, 0, __EM__.call("test.ts", 1, 1, __EM__.call("test.ts", 1, 2, a.b.c.foo).bar, x), y, z);
+        __EM__.callBase(() => __EM__.callTracked("test.ts", 1, 0, __EM__.callTracked("test.ts", 1, 1, a.b.c, "foo"), "bar", x)(y, z));
 
         __EM__.completedStatement("test.ts", 1, 0);
     `);

@@ -200,22 +200,35 @@ export default function evomasterPlugin(
             TODO: need better, more explicit way to skip traversing
             new nodes we are adding
         */
-        if(! call.loc){
+        if(! call.loc ||
+            // @ts-ignore
+            call.evomaster
+        ){
             return;
         }
 
         const l = call.loc.start.line;
 
+        let replaced;
 
-        const replaced = t.callExpression(
-            t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.call.name)),
-            [t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter),
-                // @ts-ignore
-                call.callee, ...call.arguments]
-        );
+        if(t.isMemberExpression(call.callee)) {
+            replaced = t.callExpression(
+                t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.callTracked.name)),
+                [t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter),
+                    // @ts-ignore
+                    call.callee.object, t.stringLiteral(call.callee.property.name), ...call.arguments]
+            );
+            branchCounter++;
+        } else {
+            replaced = t.callExpression(
+                t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.callBase.name)),
+                [t.arrowFunctionExpression([], call, false) ]
+            );
+            // @ts-ignore
+            call.evomaster = true;
+        }
 
         path.replaceWith(replaced);
-        branchCounter++;
     }
 
     function addLineProbeIfNeeded(path: NodePath){
@@ -320,6 +333,7 @@ export default function evomasterPlugin(
                         "const "+ref+" = require(\"evomaster-client-js\").InjectedFunctions;"
                     );
 
+                    //@ts-ignore
                     path.unshiftContainer('body', emImport);
 
                     objectives.push(ObjectiveNaming.fileObjectiveName(fileName));
