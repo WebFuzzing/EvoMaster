@@ -146,10 +146,6 @@ class GraphQLActionBuilderTest {
 
         val objMedia = media.parameters[66].gene as ObjectGene
         assertTrue(objMedia.fields.any { it is BooleanGene && it.name == "type" })
-        //todo handle the enum in the return type
-        // val enumV = (objMedia.fields[3] as OptionalGene).gene as EnumGene<*>//todo
-        // assertTrue(enumV.values.any { it == "ANIME" })//todo
-        // assertTrue(enumV.values.any { it == "MANGA" })//todo
     }
 
 
