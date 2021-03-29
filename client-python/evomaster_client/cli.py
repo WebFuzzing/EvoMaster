@@ -3,6 +3,7 @@ from importlib import import_module
 import click
 
 from evomaster_client.instrumentation.import_hook import install_import_hook
+from evomaster_client.instrumentation.ast_transformer import FULL_INSTRUMENTATION
 from evomaster_client.controller.flask_handler import FlaskHandler
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -53,10 +54,12 @@ def run_em(package_prefix, flask_module, flask_app):
               help='overriden embedded handler class name')
 @click.option('--handler-class', '-c', required=True,
               help='overriden embedded handler module')
-def run_em_handler(handler_module, handler_class):
+@click.option('--instrumentation-level', '-i', required=True, default=FULL_INSTRUMENTATION, type=int,
+              help='0: only coverage, 1: branch distance for CMP ops, 2: branch distance for BOOL ops')
+def run_em_handler(handler_module, handler_class, instrumentation_level):
     from evomaster_client.controller.em_app import run_em
     cls = getattr(import_module(handler_module), handler_class)
-    run_em({}, sut_handler=cls())
+    run_em({}, sut_handler=cls(instrumentation_level))
 
 
 if __name__ == '__main__':

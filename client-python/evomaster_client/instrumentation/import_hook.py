@@ -14,6 +14,7 @@ from typing import List
 import astor
 
 from evomaster_client.instrumentation.ast_transformer import AstTransformer
+from evomaster_client.instrumentation.ast_transformer import FULL_INSTRUMENTATION
 
 
 class InstrumentationFinder(MetaPathFinder):
@@ -23,14 +24,16 @@ class InstrumentationFinder(MetaPathFinder):
     that should be instrumented.
     """
 
-    def __init__(self, original_pathfinder, package_prefixes):
+    def __init__(self, original_pathfinder, package_prefixes, instrumentation_level):
         """Wraps the given path finder.
         Args:
             original_pathfinder: the original pathfinder that is wrapped
             package_prefixes: package prefixes to be instrumented
+            instrumentation_level: level of instrumentation (coverage, branch distance)
         """
         self.package_prefixes = package_prefixes
         self._original_pathfinder = original_pathfinder
+        self.instrumentation_level = instrumentation_level
 
     def find_spec(self, fullname, path=None, target=None):
         """Try to find a spec for the given module.
@@ -48,7 +51,7 @@ class InstrumentationFinder(MetaPathFinder):
         if self.should_instrument(fullname):
             spec = self._original_pathfinder.find_spec(fullname, path, target)
             if spec is not None and isinstance(spec.loader, SourceFileLoader):
-                spec.loader = InstrumentationLoader(spec.loader.name, spec.loader.path)
+                spec.loader = InstrumentationLoader(spec.loader.name, spec.loader.path, self.instrumentation_level)
                 cached = Path(spec.cached)
                 if cached.exists():
                     cached.unlink()
@@ -71,8 +74,9 @@ class InstrumentationFinder(MetaPathFinder):
 class InstrumentationLoader(SourceFileLoader):
     """A loader that instruments the module after execution."""
 
-    def __init__(self, fullname, path):
+    def __init__(self, fullname, path, instrumentation_level):
         super().__init__(fullname, path)
+        self.instrumentation_level = instrumentation_level
 
     def exec_module(self, module):
         super().exec_module(module)
@@ -82,7 +86,7 @@ class InstrumentationLoader(SourceFileLoader):
         tree = ast.parse(source, filename=path)
         # tree = _call_with_frames_removed(compile, source, path, 'exec', ast.PyCF_ONLY_AST,
         #                                  dont_inherit=True, optimize=_optimize)
-        tree = AstTransformer(module=self.name).visit(tree)
+        tree = AstTransformer(self.name, self.instrumentation_level).visit(tree)
         ast.fix_missing_locations(tree)
         # return _call_with_frames_removed(compile, tree, path, 'exec',
         #                                  dont_inherit=True, optimize=_optimize)
@@ -111,7 +115,7 @@ class ImportHookContextManager:
             pass  # already removed
 
 
-def install_import_hook(package_prefixes: List[str]) -> ImportHookContextManager:
+def install_import_hook(package_prefixes: List[str], instrumentation_level: int = FULL_INSTRUMENTATION) -> ImportHookContextManager:
     """Install the InstrumentationFinder in the meta path.
     Args:
         module_to_instrument: The module that shall be instrumented.
@@ -136,6 +140,6 @@ def install_import_hook(package_prefixes: List[str]) -> ImportHookContextManager
     # Reload evomaster_client (used for development)
     reload(import_module('evomaster_client'))
 
-    hook = InstrumentationFinder(to_wrap, package_prefixes)
+    hook = InstrumentationFinder(to_wrap, package_prefixes, instrumentation_level)
     sys.meta_path.insert(0, hook)
     return ImportHookContextManager(hook)

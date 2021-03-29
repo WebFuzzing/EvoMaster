@@ -30,8 +30,9 @@ class FlaskHandlerError(Exception):
 
 
 class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
-    def __init__(self):
+    def __init__(self, instrumentation_level: int = None):
         self.server = None  # SUT is not running
+        self.instrumentation_level = instrumentation_level
 
     def app(self):
         print('Importing Flask application')
@@ -40,7 +41,7 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
         return app
 
     def instrumented_app(self):
-        with install_import_hook(self.package_prefixes_to_cover()):
+        with install_import_hook(self.package_prefixes_to_cover(), self.instrumentation_level):
             return self.app()
 
     @abc.abstractmethod

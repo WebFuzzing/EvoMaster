@@ -7,9 +7,17 @@ from evomaster_client.instrumentation.objective_naming import (file_objective_na
 from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorder
 from evomaster_client.instrumentation.heuristic.heuristics import VALID_OPS
 
+NO_INSTRUMENTATION = 0
+INSTRUMENTATION_LEVEL_COVERAGE = 1
+INSTRUMENTATION_LEVEL_BRANCH_DISTANCE_CMP = 2
+INSTRUMENTATION_LEVEL_BRANCH_DISTANCE_BOOLOPS = 3
+FULL_INSTRUMENTATION = INSTRUMENTATION_LEVEL_BRANCH_DISTANCE_BOOLOPS
+
+
 class AstTransformer(ast.NodeTransformer):
-    def __init__(self, module: str):
+    def __init__(self, module: str, instrumentation_level: int = FULL_INSTRUMENTATION):
         self.module = module
+        self.instrumentation_level = instrumentation_level
         self.statement_counter = 0
         self.branch_counter = 0
 
@@ -25,6 +33,8 @@ class AstTransformer(ast.NodeTransformer):
     def visit_Statement(self, node):
         node = self.generic_visit(node)  # visit child nodes
         print("Visited node of type: ", node.__class__.__name__, " - line no:", node.lineno)
+        if self.instrumentation_level < INSTRUMENTATION_LEVEL_COVERAGE:
+            return node
 
         if hasattr(node, 'body'):
             print("isBlockStatement. no point in instrumenting it. Recall, we still instrument its content anyway.")
@@ -51,6 +61,9 @@ class AstTransformer(ast.NodeTransformer):
 
     def visit_UnaryOp(self, node: UnaryOp) -> Any:
         node = self.generic_visit(node)  # visit child nodes
+        if self.instrumentation_level < INSTRUMENTATION_LEVEL_BRANCH_DISTANCE_BOOLOPS:
+            return node
+
         if isinstance(node.op, Not):
             return ast.Call(func=ast.Name("not_statement", ast.Load()),
                             args=[node.operand], keywords=[])
@@ -58,6 +71,9 @@ class AstTransformer(ast.NodeTransformer):
 
     def visit_BoolOp(self, node: BoolOp) -> Any:
         node = self.generic_visit(node)  # visit child nodes
+        if self.instrumentation_level < INSTRUMENTATION_LEVEL_BRANCH_DISTANCE_BOOLOPS:
+            return node
+
         if isinstance(node.op, And) or isinstance(node.op, Or):
             if len(node.values) > 2:
                 # TODO: handle len(values) > 2
@@ -77,6 +93,9 @@ class AstTransformer(ast.NodeTransformer):
 
     def visit_Compare(self, node: Compare) -> Any:
         node =self.generic_visit(node)  # visit child nodes
+        if self.instrumentation_level < INSTRUMENTATION_LEVEL_BRANCH_DISTANCE_CMP:
+            return node
+
         operator = self.operator_to_string(node.ops[0])
         if len(node.comparators) > 1:
             # TODO: handle len(comparators) > 1
