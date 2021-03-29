@@ -130,3 +130,6 @@ dmypy.json
 
 # Vscode
 .vscode/
+
+# Generated files from benchmark testing
+generated/
