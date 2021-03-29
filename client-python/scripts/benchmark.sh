@@ -6,7 +6,7 @@ EVOMASTER_TIME="10s"
 
 for APP in 'ncs' 'scs' 'news'
 do
-    for LEVEL in 1 3
+    for LEVEL in 0 1 2 3
     do
         # Prepare workdirs
         GENERATED_DIR="generated/$APP/$LEVEL"
