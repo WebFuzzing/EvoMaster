@@ -14,6 +14,7 @@ import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
@@ -268,16 +269,24 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                 val printableInputGene: MutableList<String> = mutableListOf()
                 for (gene in inputGenes) {
-                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                    printableInputGene.add("${gene.name} : $i")
+                    if (gene is EnumGene<*>) {
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE).replace(" \" ", "")
+                        printableInputGene.add("${gene.name} : $i")
+                    } else {
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        printableInputGene.add("${gene.name} : $i")
+                    }
                 }
 
                 var printableInputGenes = ""
                 for (elt in printableInputGene) {
-                    printableInputGenes = elt + "," + printableInputGenes
+
+                    printableInputGenes = "$elt,$printableInputGenes"
                 }
                 printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)//removing the ","
                 printableInputGenes = printableInputGenes.replace("\"", "\\\"")
+
+
 
                 if (returnGene.name.toLowerCase() == "scalar") {//return gene is primitive type: print out: nothing
                     val bodyEntity = Entity.json("""
@@ -326,8 +335,13 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         } else if (a.methodType == GQMethodType.MUTATION) {
             val printableInputGene: MutableList<String> = mutableListOf()
             for (gene in inputGenes) {
-                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                printableInputGene.add("${gene.name} : $i")
+                if (gene is EnumGene<*>) {
+                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE).replace(" \" ", "")
+                    printableInputGene.add("${gene.name} : $i")
+                } else {
+                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                    printableInputGene.add("${gene.name} : $i")
+                }
             }
 
             var printableInputGenes = ""
@@ -337,16 +351,25 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
             printableInputGenes = printableInputGenes.replace("\"", "\\\"")
 
-            var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-            mutation = mutation.replace("{${a.methodName}", "", true)
-            mutation = mutation.substring(0, mutation.length - 1)
+
+            if (returnGene.name.toLowerCase() == "scalar") {//return gene is primitive type: print out: nothing
+                val bodyEntity = Entity.json("""
+            {"query" : " mutation{ ${a.methodName}  ($printableInputGenes)         } ","variables":null}
+        """.trimIndent())
+                val invocation = builder.buildPost(bodyEntity)
+                return invocation
+
+            } else {
+                var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}".replace("{${a.methodName}", "", true)
+                mutation = mutation.substring(0, mutation.length - 1)
 
 
-            val bodyEntity = Entity.json("""
+                val bodyEntity = Entity.json("""
             { "query" : "mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    }","variables":null}
         """.trimIndent())
-            val invocation = builder.buildPost(bodyEntity)
-            return invocation
+                val invocation = builder.buildPost(bodyEntity)
+                return invocation
+            }
         }
         val invocation = builder.buildPost(Entity.json("""
           """.trimIndent()))
