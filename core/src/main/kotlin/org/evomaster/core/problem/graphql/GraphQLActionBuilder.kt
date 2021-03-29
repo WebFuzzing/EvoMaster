@@ -591,7 +591,7 @@ object GraphQLActionBuilder {
                 if (isKindOfTableFieldTypeOptional) {
                     val optObjGene = createObjectGene(state, tableType, kindOfTableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
-                    return OptionalGene(tableType, optObjGene)
+                    return OptionalGene(methodName, optObjGene)
                 } else
                     return createObjectGene(state, tableType, kindOfTableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
@@ -599,7 +599,7 @@ object GraphQLActionBuilder {
                 if (isKindOfTableFieldTypeOptional) {
                     val optInputObjGene = createInputObjectGene(state, tableType, kindOfTableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
-                    return OptionalGene(tableType, optInputObjGene)
+                    return OptionalGene(methodName, optInputObjGene)
                 } else
                     return createInputObjectGene(state, tableType, kindOfTableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
@@ -638,9 +638,9 @@ object GraphQLActionBuilder {
                     return DateGene(tableType)
             "enum" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(tableType, EnumGene(tableType, enumValues))
+                    return OptionalGene(methodName, EnumGene(tableType, enumValues))
                 else
-                    return EnumGene(tableType, enumValues)
+                    return EnumGene(methodName, enumValues)
             "scalar" ->
                 return getGene(state, tableFieldType, tableType, kindOfTableFieldType, kindOfTableField, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
@@ -858,7 +858,7 @@ object GraphQLActionBuilder {
                         val template = element.tableField?.let {
                             getGene(state, element.tableFieldType, element.kindOfTableField.toString(),
                                     element.kindOfTableFieldType.toString(),
-                                    element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName)
+                                    element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it)
                         }
 
                         if (template != null) {
@@ -868,7 +868,7 @@ object GraphQLActionBuilder {
                         if (element.kindOfTableFieldType.toString().equals("INPUT_OBJECT", ignoreCase = true)) {
                             val template = element.tableField?.let {
                                 getGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
-                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName)
+                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it)
                             }
                             if (template != null)
                                 fields.add(template)
