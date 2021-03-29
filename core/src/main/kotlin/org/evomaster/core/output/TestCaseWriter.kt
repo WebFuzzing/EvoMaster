@@ -18,6 +18,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
 import java.lang.RuntimeException
@@ -977,8 +978,16 @@ class TestCaseWriter {
 
                 val printableInputGene: MutableList<String> = mutableListOf()
                 for (gene in inputGenes) {
-                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                    printableInputGene.add("${gene.name} : $i")
+                    if (gene is EnumGene<*>) {
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        val a = i.replace(" \" ", " ")
+                        printableInputGene.add("${gene.name} : $a")
+
+                    } else {
+
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        printableInputGene.add("${gene.name} : $i")
+                    }
                 }
 
                 var printableInputGenes = ""
@@ -994,7 +1003,7 @@ class TestCaseWriter {
                 if (returnGene.name.toLowerCase() == "scalar") {//return gene is primitive type: print out: nothing
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
 
-                }else {//return gene is a complex type:print out the return type
+                } else {//return gene is a complex type:print out the return type
                     var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
                     query = query.replace("{${call.methodName}", "", true)//remove the first methode name
                     query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
@@ -1009,7 +1018,7 @@ class TestCaseWriter {
                 if (returnGene.name.toLowerCase() == "scalar") {
 
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
-                }else {//return gene is not scalar, but complex type
+                } else {//return gene is not scalar, but complex type
 
                     var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
                     query = query.replace("{${call.methodName}", "", true)//remove the first methode name
@@ -1018,28 +1027,44 @@ class TestCaseWriter {
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \" { ${call.methodName}  $query     }   \",\"variables\":null} ")
 
                 }
-               // OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"$query\",\"variables\":null} ")
+                // OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"$query\",\"variables\":null} ")
             }
 
         } else if (call.methodType.toString() == "MUTATION") {
             val printableInputGene: MutableList<String> = mutableListOf()
             for (gene in inputGenes) {
-                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                printableInputGene.add("${gene.name} : $i")
+                for (gene in inputGenes) {
+                    if (gene is EnumGene<*>) {
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        val a = i.replace(" \" ", " ")
+                        printableInputGene.add("${gene.name} : $a")
+
+                    } else {
+
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        printableInputGene.add("${gene.name} : $i")
+                    }
+                }
             }
 
-            var printableInputGenes: String = ""
+            var printableInputGenes = ""
             for (elt in printableInputGene) {
                 printableInputGenes = "$elt,$printableInputGenes"
             }
             printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
             printableInputGenes = printableInputGenes.replace("\"", "\\\"")
-            var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-            mutation = mutation.replace("{${call.methodName}", "", true)
-            mutation = mutation.substring(0, mutation.length - 1)
 
-            OutputFormatter.JSON_FORMATTER.getFormatted("{ \"query\" : \"mutation{${call.methodName}  ($printableInputGenes)    $mutation    } \",\"variables\":null} ")
+            if (returnGene.name.toLowerCase() == "scalar") {//return gene is primitive type: print out: nothing
+                OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \" mutation{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
 
+            } else {
+
+                var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}".replace("{${call.methodName}", "", true)
+                mutation = mutation.substring(0, mutation.length - 1)
+
+                OutputFormatter.JSON_FORMATTER.getFormatted("{ \"query\" : \"mutation{${call.methodName}  ($printableInputGenes)    $mutation    } \",\"variables\":null} ")
+
+            }
         } else {
             LoggingUtil.uniqueWarn(TestCaseWriter.log, " method type not supported yet : ${call.methodType}").toString()
         }
