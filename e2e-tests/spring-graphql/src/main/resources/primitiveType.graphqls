@@ -1,6 +1,6 @@
 type Query {
 
-    flowersById(id: Int!): String!
+    flowersById(id: Int!): String
 }
 
 
