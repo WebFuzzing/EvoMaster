@@ -106,7 +106,7 @@ class EnumGene<T : Comparable<T>>(
 
         val res = values[index]
         if(res is String){
-            return "\"$res\""
+            return " \" $res \" "
         } else {
             return res.toString()
         }
