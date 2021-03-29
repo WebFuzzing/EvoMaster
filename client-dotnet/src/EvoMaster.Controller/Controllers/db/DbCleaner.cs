@@ -190,6 +190,7 @@ namespace EvoMaster.Controller.Controllers.db
                 DatabaseType.H2 => "PUBLIC",
                 DatabaseType.MYSQL => "db",
                 DatabaseType.POSTGRES => "public",
+                DatabaseType.MSSQL => "dbo",
                 _ => throw new DbUnsupportedException(type)
             };
         }
@@ -254,6 +255,7 @@ namespace EvoMaster.Controller.Controllers.db
             switch (type)
             {
                 case DatabaseType.POSTGRES: break;
+                case DatabaseType.MSSQL: break; //TODO: check again
                 case DatabaseType.H2:
                     SqlScriptRunner.ExecCommand(command, "SET REFERENTIAL_INTEGRITY FALSE");
                     break;
@@ -272,6 +274,7 @@ namespace EvoMaster.Controller.Controllers.db
             switch (type)
             {
                 case DatabaseType.POSTGRES: break;
+                case DatabaseType.MSSQL: break; //TODO: check again
                 case DatabaseType.H2:
                     SqlScriptRunner.ExecCommand(command, "SET REFERENTIAL_INTEGRITY TRUE");
                     break;

@@ -11,6 +11,8 @@ namespace EvoMaster.Controller.Api {
     MYSQL,
 
     POSTGRES,
+    
+    MSSQL,
 
     /**
     * In case used database is not listed in this enum, can
