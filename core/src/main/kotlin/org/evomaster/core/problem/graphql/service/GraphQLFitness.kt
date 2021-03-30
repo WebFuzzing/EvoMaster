@@ -270,7 +270,10 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 val printableInputGene: MutableList<String> = mutableListOf()
                 for (gene in inputGenes) {
                     if (gene is EnumGene<*>) {
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE).replace(" \" ", "")
+                        //val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE).replace(" \" ", "")
+                        val i = gene.getValueAsRawString()
+
+
                         printableInputGene.add("${gene.name} : $i")
                     } else {
                         val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
