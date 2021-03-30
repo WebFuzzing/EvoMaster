@@ -72,9 +72,11 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
         if not self.is_sut_running():
             print('Server is already stopped')
             return
-        # Server will stop after the next request. TODO: is there a way to force it?
         self.server.shutdown()
         self.server = None
+
+    def is_sut_running(self):
+        return bool(self.server)
 
     @abc.abstractmethod
     def reset_state_of_sut(self):
@@ -86,20 +88,14 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def get_info_for_authentication(self):
-        # TODO: must be an argument
         return []
 
     @abc.abstractmethod
     def get_preferred_output_format(self):
-        # TODO: must be an argument
-        return 'JAVA_JUNIT_5'
-
-    def is_sut_running(self):
-        return bool(self.server)
+        return 'PYTHON_UNITTEST'
 
     @abc.abstractmethod
     def get_problem_info(self):
-        # TODO: must be an argument
         return {
             'swaggerJsonUrl': self.get_url() + '/swagger.json',
             'endpointsToSkip': []

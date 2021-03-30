@@ -32,7 +32,6 @@ def controller(sut_handler: SutHandler) -> Blueprint:
         if run:
             print("Request to START SUT")
             sut_handler.start_sut()
-            # TODO: handle errors on start_sut
             if reset_state:
                 print("Resetting SUT state")
                 sut_handler.reset_state_of_sut()
