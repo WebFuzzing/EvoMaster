@@ -17,7 +17,18 @@ if __name__ == "__main__":
     # my_tree = ast.parse('print("foo") if 5 < 10 else print("bar")')
     # my_tree = ast.parse('1 == 2 > 3 not in 4 in 6 != 8')
     # my_tree = ast.parse('if not x: return True')
-    my_tree = ast.parse(source, filename=filename)
+
+    CODE = """
+x = 1
+if x > 0:
+    x += 1
+    return x
+else:
+    x -=1
+    return
+"""
+    my_tree = ast.parse(CODE)
+    # my_tree = ast.parse(source, filename=filename)
 
     t = AstTransformer(filename)
     new_tree = t.visit(my_tree)

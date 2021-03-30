@@ -16,6 +16,11 @@ def completed_statement(module: str, line: int, statement: int):
     return
 
 
+def completion_statement(module: str, line: int, statement: int):
+    entering_statement(module, line, statement)
+    completed_statement(module, line, statement)
+
+
 def completing_statement(value: Any, module: str, line: int, statement: int):
     completed_statement(module, line, statement)
     return value

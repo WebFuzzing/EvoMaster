@@ -31,8 +31,11 @@ class AstTransformer(ast.NodeTransformer):
         return node
 
     def visit_Statement(self, node):
+        # For nodes that were part of a collection of statements (that applies to all statement nodes),
+        # the visitor may also return a list of nodes rather than just a single node.
         node = self.generic_visit(node)  # visit child nodes
         print("Visited node of type: ", node.__class__.__name__, " - line no:", node.lineno)
+
         if self.instrumentation_level < INSTRUMENTATION_LEVEL_COVERAGE:
             return node
 
@@ -44,16 +47,40 @@ class AstTransformer(ast.NodeTransformer):
         ObjectiveRecorder().register_target(line_objective_name(self.module, node.lineno))
         ObjectiveRecorder().register_target(statement_objective_name(self.module, node.lineno, self.statement_counter))
 
-        # For nodes that were part of a collection of statements (that applies to all statement nodes),
-        # the visitor may also return a list of nodes rather than just a single node.
+        if ((isinstance(node, ast.Return) and not node.value) or
+                isinstance(node, ast.Raise) or
+                isinstance(node, ast.Pass) or
+                isinstance(node, ast.If) or
+                isinstance(node, ast.For) or
+                isinstance(node, ast.While) or
+                isinstance(node, ast.Break) or
+                isinstance(node, ast.Continue) or
+                isinstance(node, ast.Try) or
+                isinstance(node, ast.With) or
+                isinstance(node, ast.Yield) or
+                isinstance(node, ast.YieldFrom)):
+            return [
+                ast.Expr(value=ast.Call(func=ast.Name("completion_statement", ast.Load()),
+                         args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
+                         keywords=[])),
+                node
+            ]
 
-        # TODO: Consider statements that do not need a completed_statement (return, continue, raise, etc.)
-        # TODO: Replace return(something) with a completing_statement(something, ...)
+        if isinstance(node, ast.Return):
+            return [
+                ast.Expr(value=ast.Call(func=ast.Name("entering_statement", ast.Load()),
+                         args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
+                         keywords=[])),
+                ast.Expr(value=ast.Call(func=ast.Name("completing_statement", ast.Load()),
+                         args=[node.value, ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
+                         keywords=[])),
+            ]
+
         return [
             ast.Expr(value=ast.Call(func=ast.Name("entering_statement", ast.Load()),
                      args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
-                     keywords=[]))
-        ] + [node] + [
+                     keywords=[])),
+            node,
             ast.Expr(value=ast.Call(func=ast.Name("completed_statement", ast.Load()),
                      args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
                      keywords=[])),
