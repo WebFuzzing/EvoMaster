@@ -1,6 +1,7 @@
 import Truthness from "./Truthness";
 import TruthnessUtils from "./TruthnessUtils";
 import ExecutionTracer from "../staticstate/ExecutionTracer";
+import Replacement from "../methodreplacement/Replacement";
 
 
 export default class HeuristicsForBooleans {
@@ -321,12 +322,13 @@ export default class HeuristicsForBooleans {
 
     public static handleFunctionCallTracked(fileName: string, line: number, branchId: number, obj: any, functionName: string, ...args: any[]) : any {
 
-        /*
-            TODO: TT will be hooked here
-         */
-
         HeuristicsForBooleans.lastEvaluation = null;
-        const res = obj[functionName](...args);
+
+        const idTemplate = "TODO";
+
+        //const res = obj[functionName](...args);
+        const res = Replacement.replaceCall(idTemplate, obj,obj[functionName], ...args);
+
         HeuristicsForBooleans.lastEvaluation = null;
 
         return res;

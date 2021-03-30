@@ -1,4 +1,5 @@
 import ReplacementFunction from "./ReplacementFunction";
+import StringClassReplacement from "./classes/StringClassReplacement";
 
 
 export default class ReplacementList{
@@ -12,12 +13,14 @@ export default class ReplacementList{
 
 
     public static getReplacement(target: Function) : ReplacementFunction{
-
         return ReplacementList.replacements.get(target);
     }
 
     public static init() {
 
+        new StringClassReplacement().getReplacements().forEach( f => {
+            ReplacementList.replacements.set(f.target, f);
+        });
     }
 }
 
