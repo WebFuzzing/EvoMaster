@@ -18,10 +18,7 @@ class EMHandler(FlaskHandler):
         return super().get_url()
 
     def reset_state_of_sut(self):
-        pass
-
-    # todo: review duplicated method
-    def reset_sut_state(self):
+        # TODO: clean database
         pass
 
     def setup_for_generated_test(self):

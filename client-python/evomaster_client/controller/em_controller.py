@@ -30,13 +30,17 @@ def controller(sut_handler: SutHandler) -> Blueprint:
         run = args.get('run', False)
         reset_state = 'resetState' in args and args.get('resetState', False)
         if run:
+            print("Request to START SUT")
             sut_handler.start_sut()
             # TODO: handle errors on start_sut
             if reset_state:
-                sut_handler.reset_sut_state()
+                print("Resetting SUT state")
+                sut_handler.reset_state_of_sut()
                 sut_handler.new_test()
         else:
+            print("Request to STOP SUT")
             if reset_state:
+                print("Resetting SUT state")
                 abort(400, {'error': 'Invalid JSON: cannot reset state and stop service at same time'})
             sut_handler.stop_sut()
         return jsonify({})

@@ -1,7 +1,7 @@
 import abc
 import threading
 from importlib import import_module
-from werkzeug.serving import make_server
+from gevent.pywsgi import WSGIServer
 
 from evomaster_client.controller.sut_handler import SutHandler
 from evomaster_client.instrumentation.import_hook import install_import_hook
@@ -16,13 +16,14 @@ class ServerThread(threading.Thread):
         self.app = app
 
     def run(self):
-        self.srv = make_server(host=HOST, port=PORT, app=self.app)
+        self.srv = WSGIServer(('', PORT), self.app)
         self.ctx = self.app.app_context()
         self.ctx.push()
         self.srv.serve_forever()
 
     def shutdown(self):
-        self.srv.shutdown()
+        self.srv.stop()
+        self.srv.close()
 
 
 class FlaskHandlerError(Exception):
@@ -62,14 +63,14 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
 
     def start_sut(self):
         if self.is_sut_running():
-            print('server is running')
+            print('Server is already running')
             return
         self.server = ServerThread(self.instrumented_app())
         self.server.start()
 
     def stop_sut(self):
         if not self.is_sut_running():
-            print('server is not running')
+            print('Server is already stopped')
             return
         # Server will stop after the next request. TODO: is there a way to force it?
         self.server.shutdown()
