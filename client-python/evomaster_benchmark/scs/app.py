@@ -5,6 +5,8 @@ from evomaster_benchmark.scs.views import calc, cookie, costfuns, date_parse, fi
                                           ordered4, pat, regex, text2txt, title
 
 app = Flask(__name__)
+app.config['RESTX_MASK_SWAGGER'] = False
+
 api = Api(app)
 ns = api.namespace('api', description='SCS api')
 

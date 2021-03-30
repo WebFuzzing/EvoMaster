@@ -4,6 +4,8 @@ from flask_restx import Resource, Api
 from evomaster_benchmark.ncs.views import triangle_classify, bessj, expint, fisher, GammqImpl, remainder
 
 app = Flask(__name__)
+app.config['RESTX_MASK_SWAGGER'] = False
+
 api = Api(app)
 ns = api.namespace('api', description='NCS api')
 
