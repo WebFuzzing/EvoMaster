@@ -1,5 +1,6 @@
 from evomaster_client.controller.flask_handler import FlaskHandler
 
+
 class EMHandler(FlaskHandler):
     def package_prefixes_to_cover(self):
         return ['evomaster_benchmark.ncs']

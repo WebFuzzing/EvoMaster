@@ -1,5 +1,5 @@
 import ast
-from ast import Num, UnaryOp, BoolOp, Compare, Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn, And, Or, Invert, Not
+from ast import UnaryOp, BoolOp, Compare, Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn, And, Or, Not
 from typing import Any
 
 from evomaster_client.instrumentation.objective_naming import (file_objective_name, line_objective_name,
@@ -53,7 +53,7 @@ class AstTransformer(ast.NodeTransformer):
             ast.Expr(value=ast.Call(func=ast.Name("entering_statement", ast.Load()),
                      args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
                      keywords=[]))
-        ] + [ node ] + [
+        ] + [node] + [
             ast.Expr(value=ast.Call(func=ast.Name("completed_statement", ast.Load()),
                      args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
                      keywords=[])),
@@ -92,7 +92,7 @@ class AstTransformer(ast.NodeTransformer):
         return node
 
     def visit_Compare(self, node: Compare) -> Any:
-        node =self.generic_visit(node)  # visit child nodes
+        node = self.generic_visit(node)  # visit child nodes
         if self.instrumentation_level < INSTRUMENTATION_LEVEL_BRANCH_DISTANCE_CMP:
             return node
 
@@ -108,7 +108,7 @@ class AstTransformer(ast.NodeTransformer):
             ObjectiveRecorder().register_target(branch_objective_name(self.module, node.lineno, self.branch_counter, False))
             return ast.Call(func=ast.Name("compare_statement", ast.Load()),
                             args=[left_rec, ast.Str(operator), right_rec,
-                                ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.branch_counter)],
+                                  ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.branch_counter)],
                             keywords=[])
         return node
 

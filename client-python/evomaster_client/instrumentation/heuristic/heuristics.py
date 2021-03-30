@@ -14,10 +14,12 @@ FLAG_EXCEPTION = FLAG_NO_EXCEPTION / 2
 
 
 def clear_last_evaluation():
+    global LAST_EVALUATION
     LAST_EVALUATION = None
 
 
 def evaluate(left, op, right, module, line, branch):
+    global LAST_EVALUATION
     if op == "==":
         res = left == right
     elif op == "!=":

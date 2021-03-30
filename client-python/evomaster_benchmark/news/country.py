@@ -9,8 +9,10 @@ abs_file_path = os.path.join(script_dir, rel_path)
 with open(abs_file_path) as f:
     COUNTRIES = [x.strip() for x in f.readlines()]
 
+
 def countries():
     return COUNTRIES
+
 
 def is_valid(c):
     return c in COUNTRIES

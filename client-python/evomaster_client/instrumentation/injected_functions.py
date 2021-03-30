@@ -3,6 +3,7 @@ from typing import Any
 from evomaster_client.instrumentation.execution_tracer import ExecutionTracer
 from evomaster_client.instrumentation.heuristic import heuristics
 
+
 def entering_statement(module: str, line: int, statement: int):
     ExecutionTracer().entering_statement(module, line, statement)
     print(f"entering statement: {module}-{line}-{statement}")

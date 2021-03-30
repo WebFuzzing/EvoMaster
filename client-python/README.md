@@ -31,9 +31,9 @@ java -jar ../core/target/evomaster.jar --maxTime 60s  --outputFolder tests/gener
 
 Running EvoMaster benchmark handlers
 ```python
-python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.ncs.em_handler' -c 'EMHandler'
-python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.scs.em_handler' -c 'EMHandler'
-python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.news.em_handler' -c 'EMHandler'
+python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.em_handlers.ncs' -c 'EMHandler'
+python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.em_handlers.scs' -c 'EMHandler'
+python -m evomaster_client.cli run-em-handler -m 'evomaster_benchmark.em_handlers.news' -c 'EMHandler'
 ```
 
 Generating white-box tests
