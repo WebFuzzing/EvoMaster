@@ -176,13 +176,18 @@ class ResourceManageService {
 
     /************************** sampling *********************************/
 
+    /**
+     * modify the template, but keep the same values
+     */
     fun generateAnother(node: RestResourceNode, calls : RestResourceCalls, maxTestSize: Int) : RestResourceCalls?{
         val current = calls.template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(calls.restActions.filterIsInstance<RestCallAction>())
         val rest = node.getTemplates().filter { it.value.template != current}
         if(rest.isEmpty()) return null
         val selected = randomness.choose(rest.keys)
-        return genCalls(node, selected, maxTestSize)
-
+        val call = genCalls(node, selected, maxTestSize)
+        call.bindRestActionsWith(calls)
+        call.repairGenesAfterMutation()
+        return call
     }
 
     fun randomRestResourceCalls(node: RestResourceNode, maxTestSize: Int): RestResourceCalls{
@@ -532,7 +537,7 @@ class ResourceManageService {
 
     private fun handleDbActionForCall(call: RestResourceCalls, forceInsert: Boolean, forceSelect: Boolean) : Boolean{
 
-        val paramToTables = RestActionHandlingUtil.inference.generateRelatedTables(call, mutableListOf())//dm.extractRelatedTablesForCall(call)
+        val paramToTables = RestActionHandlingUtil.inference.generateRelatedTables(call, mutableListOf())
         if(paramToTables.isEmpty()) return false
 
         //val relatedTables = removeDuplicatedTables(paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet())
@@ -558,7 +563,6 @@ class ResourceManageService {
         }
         return paramToTables.isNotEmpty() && !failToGenDb
     }
-
 
     private fun containTables(dbActions: MutableList<DbAction>, tables: Set<String>) : Boolean{
 

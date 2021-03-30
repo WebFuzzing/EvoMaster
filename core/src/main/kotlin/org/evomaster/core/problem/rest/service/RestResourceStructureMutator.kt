@@ -38,7 +38,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
     fun mutateRestResourceCalls(ind: RestIndividual, evaluated: EvaluatedIndividual<*>, specified : MutationType?=null, mutatedGenes: MutatedGeneSpecification? = null) {
 
         val executedStructureMutator = specified?:
-            randomness.choose(getAvailableMutator(ind) )
+            randomness.choose(getAvailableMutator(ind))
 
         when(executedStructureMutator){
             MutationType.ADD -> handleAdd(ind, mutatedGenes)
@@ -84,7 +84,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         DELETE(2),
         SWAP(2),
         ADD(1),
-        REPLACE(1),
+        REPLACE(2), //modify 2 to 1 since it would be similar with sampling if there exists only one resource
         MODIFY(1),
         SQL_REMOVE(1, 1),
         SQL_ADD(1, 1)
@@ -98,8 +98,6 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         val numOfResource = randomness.nextInt(1, config.maxSqlInitActionsPerResource)
         val added = if (doesApplyDependencyHeuristics()) dm.addRelatedSQL(ind, numOfResource)
                     else dm.createDbActions(randomness.choose(rm.getTableInfo().keys),numOfResource)
-
-//        DbActionUtils.repairFkForInsertions(added)
 
         mutatedGenes?.addedDbActions?.addAll(added)
         ind.dbInitialization.addAll(added)
@@ -164,7 +162,6 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
 
         val pos = if(removed != null) ind.getResourceCalls().indexOf(removed)
             else ind.getResourceCalls().indexOf(randomness.choose(ind.getResourceCalls().filter(RestResourceCalls::isDeletable)))
-        //randomness.nextInt(0, ind.getResourceCalls().size - 1)
 
         val removedActions = ind.getResourceCalls()[pos].seeActions()
         removedActions.forEach {
@@ -269,13 +266,6 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
             }
             if (addPos == null) addPos = randomness.nextInt(0, ind.getResourceCalls().size)
 
-            //if call is to create new resource, and the related resource is not related to any resource, it might need to put the call in the front of ind,
-            //else add last position if it has dependency with existing resources
-//            val pos = if(ind.getResourceCalls().filter { !it.template.independent }.isNotEmpty())
-//                ind.getResourceCalls().size
-//            else
-//                0
-
             maintainAuth(auth, pair.second)
             ind.addResourceCall( addPos, pair.second)
 
@@ -317,7 +307,6 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         }
         if(pos == null)
             pos = ind.getResourceCalls().indexOf(randomness.choose(ind.getResourceCalls().filter(RestResourceCalls::isDeletable)))
-            //randomness.nextInt(0, ind.getResourceCalls().size - 1)
 
         max += ind.getResourceCalls()[pos].restActions.size
 
@@ -325,12 +314,10 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
                         dm.handleAddDepResource(ind, max, if (pos == ind.getResourceCalls().size-1) mutableListOf() else ind.getResourceCalls().subList(pos+1, ind.getResourceCalls().size).toMutableList())
                     }else null
 
-
         var call = pair?.second
         if(pair == null){
             call =  rm.handleAddResource(ind, max)
         }else{
-            //rm.bindCallWithFront(call, ind.getResourceCalls().toMutableList())
             if(pair.first != null){
                 dm.bindCallWithFront(pair.first!!, mutableListOf(pair.second))
             }
@@ -348,7 +335,6 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         ind.removeResourceCall(pos)
 
         maintainAuth(auth, call!!)
-        //mutatedGenes?.addedGenes?.addAll(call!!.restActions.flatMap { it.seeGenes() })
         ind.addResourceCall(pos, call)
 
         call.seeActions().forEach {

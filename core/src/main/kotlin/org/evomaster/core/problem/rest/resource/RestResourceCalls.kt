@@ -99,6 +99,17 @@ class RestResourceCalls(
         }
     }
 
+    fun bindRestActionsWith(restResourceCalls: RestResourceCalls){
+        if (restResourceCalls.getResourceNode().path != getResourceNode().path)
+            throw IllegalArgumentException("target to bind refers to a different resource node, i.e., target (${restResourceCalls.getResourceNode().path}) vs. this (${getResourceNode().path})")
+        val params = restResourceCalls.resourceInstance?.params?:restResourceCalls.restActions.filterIsInstance<RestCallAction>().flatMap { it.parameters }
+        restActions.forEach { ac ->
+            if((ac as RestCallAction).parameters.isNotEmpty()){
+                ac.bindToSamePathResolution(ac.path, params)
+            }
+        }
+    }
+
 
     /**
      * employing the longest action to represent a group of calls on a resource

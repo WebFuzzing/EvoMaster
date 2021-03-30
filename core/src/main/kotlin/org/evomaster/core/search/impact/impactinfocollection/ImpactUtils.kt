@@ -68,7 +68,7 @@ class ImpactUtils {
                 is RxAtom -> RxAtomImpact(id)
                 is RxTerm -> RxTermImpact(id)
                 else ->{
-                    LoggingUtil.uniqueWarn(log, "impact for {} has not been implemented yet",gene::class.java.simpleName)
+                    log.info("general impact is employed for {}",gene::class.java.simpleName)
                     GeneImpact(id)
                 }
             }
