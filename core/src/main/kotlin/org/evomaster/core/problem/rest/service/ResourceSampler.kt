@@ -2,11 +2,14 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -125,6 +128,7 @@ open class ResourceSampler : AbstractRestSampler() {
             ResourceSamplingMethod.SMdR -> sampleManyResources(restCalls, withDependency)
         }
 
+
         //auth management
         if(authentications.isNotEmpty()){
             val auth = getRandomAuth(0.0)
@@ -146,6 +150,7 @@ open class ResourceSampler : AbstractRestSampler() {
             individual.repairDBActions(sqlInsertBuilder, randomness)
             if (withDependency)
                 dm.sampleResourceWithRelatedDbActions(individual, config.maxSqlInitActionsPerResource)
+
             return individual
         }
         return null

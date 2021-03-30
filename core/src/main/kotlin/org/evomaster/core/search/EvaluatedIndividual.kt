@@ -259,8 +259,15 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             tracking != null
         }
 
+        if(previous.getSizeOfImpact(false) != mutated.getSizeOfImpact(false)){
+            log.info("impacts should be same before updating")
+        }
 
         compareWithLatest(next = mutated, previous = previous, targetsInfo = targetsInfo, mutatedGenes = mutatedGenes)
+    }
+
+    fun verifyImpacts(){
+        impactInfo?.verifyActionGeneImpacts(individual.seeActions(ActionFilter.NO_INIT))
     }
 
     private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, targetsInfo: Map<Int, EvaluatedMutation>, mutatedGenes: MutatedGeneSpecification){
@@ -272,13 +279,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val didStructureMutation = mutatedGenes.didStructureMutation()
         if (didStructureMutation){ // structure mutated
             updateImpactsAfterStructureMutation(next, previous.individual, mutatedGenes, noImpactTargets, impactTargets, improvedTargets)
+            verifyImpacts()
+            return
         }
 
-        if ((!didStructureMutation)){
+        if (!didStructureMutation){
             impactInfo!!.syncBasedOnIndividual(individual, mutatedGenes)
         }
-
-        if (didStructureMutation) return
 
         if (mutatedGenes.addedInitializationGenes.isNotEmpty()) {
             //TODO there is no any impact with added initialization, we may record this case.
@@ -289,7 +296,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         syncImpact(previous.individual, mutatedGenes.mutatedIndividual!!)
 
         updateImpactsAfterStandardMutation(previous = previous.individual, mutatedGenes = mutatedGenes, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
-
     }
     private fun updateImpactsAfterStructureMutation(
             next: EvaluatedIndividual<T>,
@@ -319,36 +325,39 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                     mutatedGenes.mutatedIndividual!!.seeActions().find { a->a.seeGenes().contains(g.gene) }.run { mutatedGenes.mutatedIndividual!!.seeActions().indexOf(this) }
                 }
 
-                groupGeneByActionIndex.toSortedMap().forEach { (actionIndex, mgenes) ->
-                    val index = mgenes.mapNotNull { it.actionPosition }.toSet()
-                    if (index.size != 1 || index.first() != actionIndex)
-                        throw IllegalArgumentException("mismatched impact info: genes should be mutated at $index action, but actually the index is $actionIndex")
-                    impactInfo!!.addOrUpdateActionGeneImpacts(
-                            actionIndex = actionIndex,
-                            actionName = individual.seeActions()[actionIndex].getName(),
-                            impacts = mgenes.map {g->
-                                g.gene?:throw IllegalStateException("Added gene is not recorded")
-                                val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, g.gene)
-                                id to ImpactUtils.createGeneImpact(g.gene,id)
-                            }.toMap().toMutableMap(),
-                            newAction = true
-                    )
-                }
-
                 //handle added actions without genes
-                val actionIndex = addedGenes.filter { it.gene == null }.mapNotNull { it.actionPosition }.toSet()
-                actionIndex.forEach { i->
-                    impactInfo!!.addOrUpdateActionGeneImpacts(
-                        actionName = individual.seeActions()[i].getName(),
-                        actionIndex = i,
-                        newAction = true,
-                        impacts = mutableMapOf()
-                    )
+                val emptyActions = addedGenes.filter { it.gene == null }.mapNotNull { it.actionPosition }.toSet().sorted()
+
+                addedGenes.mapNotNull { it.actionPosition }.toSet().sorted().forEach { actionIndex->
+                      if (emptyActions.contains(actionIndex)){
+                          impactInfo!!.addOrUpdateActionGeneImpacts(
+                              actionName = individual.seeActions()[actionIndex].getName(),
+                              actionIndex = actionIndex,
+                              newAction = true,
+                              impacts = mutableMapOf()
+                          )
+                      }else{
+                          val mgenes = groupGeneByActionIndex.getValue(actionIndex)
+                          val index = mgenes.mapNotNull { it.actionPosition }.toSet()
+                          if (index.size != 1 || index.first() != actionIndex)
+                              throw IllegalArgumentException("mismatched impact info: genes should be mutated at $index action, but actually the index is $actionIndex")
+                          impactInfo!!.addOrUpdateActionGeneImpacts(
+                              actionIndex = actionIndex,
+                              actionName = individual.seeActions()[actionIndex].getName(),
+                              impacts = mgenes.map {g->
+                                  g.gene?:throw IllegalStateException("Added gene is not recorded")
+                                  val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, g.gene)
+                                  id to ImpactUtils.createGeneImpact(g.gene,id)
+                              }.toMap().toMutableMap(),
+                              newAction = true
+                          )
+                      }
                 }
             }
 
             //handle swap
             if (mutatedGenes.getSwap().isNotEmpty()){
+                log.info("swap")
                 if (mutatedGenes.getSwap().size > 1)
                     throw IllegalStateException("the swap mutator is applied more than one times, i.e., ${mutatedGenes.getSwap().size}")
 
@@ -357,10 +366,40 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 val to = swap.to?:throw IllegalStateException("the swapToResourcePosition is missing")
                 impactInfo!!.swapActionGeneImpact(from, to)
             }
+
+            /*
+                actions might be changed due to dependency handling or db repairing
+                e.g., ind A is (table_a, table_b, resource_b)
+                if added resource_b at the beginning, mutated ind A (table_a, resource_a, table_a, table_b, resource_b)
+                in this case, we might remove second table_a, thus the mutated ind A becomes
+                (table_a, resource_a, table_b, resource_b), and the table_b refers to the table_a in the front of resource_a
+             */
+
+            var fix = impactInfo!!.findFirstMismatchedIndex(individual.seeActions())
+            while (fix.first != -1){
+                if (fix.second!!){
+                    impactInfo.deleteActionGeneImpacts(setOf(fix.first))
+                }else{
+                    impactInfo.addOrUpdateActionGeneImpacts(
+                        actionName = individual.seeActions()[fix.first].getName(),
+                        actionIndex = fix.first,
+                        newAction = true,
+                        impacts = mutableMapOf()
+                    )
+                }
+                val nextFix = impactInfo.findFirstMismatchedIndex(individual.seeActions())
+                if (nextFix.first < fix.first){
+                    if (nextFix.first != -1)
+                        log.warn("the fix at {} with remove/add ({}) does not work, and the next fix is at {}", fix.first, fix.second, nextFix.first)
+                    break
+                }
+                fix = nextFix
+            }
         }
         impactInfo!!.impactsOfStructure.countImpact(next, sizeChanged, noImpactTargets= noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
 
     }
+
 
     private fun updateImpactsAfterStandardMutation(
             previous: Individual,

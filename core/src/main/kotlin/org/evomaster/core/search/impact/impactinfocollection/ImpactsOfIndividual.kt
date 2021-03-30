@@ -71,6 +71,37 @@ class ImpactsOfIndividual private constructor(
         )
     }
 
+    /**
+     * @return pair, key is the position at impacts, and value indicates false is to remove and true is to add
+     */
+    fun findFirstMismatchedIndex(actions: List<Action>) : Pair<Int, Boolean?>{
+        actions.forEachIndexed { index, action ->
+            if (index == actionGeneImpacts.size)
+                return index to false
+            if (action.getName() != actionGeneImpacts[index].actionName){
+                val remove = index + 1 < actionGeneImpacts.size && actionGeneImpacts.subList(index+1, actionGeneImpacts.size).any {
+                    it.actionName == action.getName()
+                }
+                return index to remove
+            }
+        }
+        if (actionGeneImpacts.size > actions.size){
+            return actions.size to true
+        }
+        return (-1 to null)
+    }
+
+
+
+    fun verifyActionGeneImpacts(actions : List<Action>){
+        if (actions.size != actionGeneImpacts.size)
+            throw IllegalStateException("mismatched size of impacts according to actions: ${actions.size} (actions) vs. ${actionGeneImpacts.size} (impacts)")
+        actions.forEachIndexed { index, action ->
+            if (action.getName() != actionGeneImpacts[index].actionName)
+                throw IllegalStateException("mismatched impact info at $index index: actual action is ${action.getName()}, but the impact info is ${actionGeneImpacts[index].actionName}")
+        }
+    }
+
     fun getSQLExistingData() = initializationGeneImpacts.getExistingData()
 
 

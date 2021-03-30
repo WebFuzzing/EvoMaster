@@ -7,7 +7,6 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.schema.Table
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.resource.*
@@ -115,7 +114,7 @@ class ResourceManageService {
                 call.restActions.forEach { a->
                     if(a is RestCallAction) a.auth = auth
                 }
-                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                adHocInitialIndividuals.add(createAdHocSmartResource(mutableListOf(call)))
             }
         }
 
@@ -124,7 +123,7 @@ class ResourceManageService {
             ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST}.forEach { a->
                 val call = sampleOneAction(ar, a.copy() as RestAction)
                 call.restActions.forEach { (it as RestCallAction).auth = auth }
-                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                adHocInitialIndividuals.add(createAdHocSmartResource(mutableListOf(call)))
             }
         }
 
@@ -133,7 +132,7 @@ class ResourceManageService {
                 .forEach { ar->
                     genPostChain(ar, config.maxTestSize)?.let {call->
                         call.restActions.forEach { (it as RestCallAction).auth = auth }
-                        adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                        adHocInitialIndividuals.add(createAdHocSmartResource(mutableListOf(call)))
                     }
                 }
 
@@ -142,7 +141,7 @@ class ResourceManageService {
             ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.PUT }.forEach {a->
                 val call = sampleOneAction(ar, a.copy() as RestAction)
                 call.restActions.forEach { (it as RestCallAction).auth = auth }
-                adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                adHocInitialIndividuals.add(createAdHocSmartResource(mutableListOf(call)))
             }
         }
 
@@ -152,10 +151,17 @@ class ResourceManageService {
                     .forEach {ct->
                         val call = sampleRestResourceCalls(ar, ct.template, config.maxTestSize)
                         call.restActions.forEach { if(it is RestCallAction) it.auth = auth }
-                        adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
+                        adHocInitialIndividuals.add(createAdHocSmartResource(mutableListOf(call)))
                     }
         }
+    }
 
+    private fun createAdHocSmartResource(calls : MutableList<RestResourceCalls>) : RestIndividual{
+        val ind = RestIndividual(calls, SampleType.SMART_RESOURCE)
+        if (!DbActionUtils.verifyActions(ind.seeDbAction())){
+            ind.repairDBActions(sqlInsertBuilder, randomness)
+        }
+        return ind
     }
 
     /**
@@ -316,7 +322,7 @@ class ResourceManageService {
 
         val created = handleDbActionForCall( call, forceInsert, false)
         if(!created){
-            LoggingUtil.uniqueWarn(log, "resource creation for ${node.path} fails")
+            log.info("resource creation for {} fails", node.path)
             //try rest
             if (node.hasPostCreation())
                 return generateRestActionsForCalls(node, ats, template,callsTemplate, maxTestSize, createResource, additionalPatch)
@@ -541,9 +547,7 @@ class ResourceManageService {
 
         if(dbActions.isNotEmpty()){
 
-            DbActionUtils.randomizeDbActionGenes(dbActions, randomness)
             val removed = repairDbActionsForResource(dbActions)
-            //shrinkDbActions(dbActions)
 
             /*
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
@@ -572,21 +576,6 @@ class ResourceManageService {
      */
     fun repairRestResourceCalls(call: RestResourceCalls) {
         call.repairGenesAfterMutation()
-
-//        if(hasDBHandler() && call.dbActions.isNotEmpty()){
-//
-//            val previous = call.dbActions.map { it.table.name }
-//            call.dbActions.clear()
-//            //handleCallWithDBAction(referResource, call, true, false)
-//            handleDbActionForCall(call, forceInsert = true, forceSelect = false)
-//
-//            if(call.dbActions.size != previous.size){
-//                //remove additions
-//                call.dbActions.removeIf {
-//                    !previous.contains(it.table.name)
-//                }
-//            }
-//        }
     }
     /*********************************** database ***********************************/
 
@@ -610,9 +599,7 @@ class ResourceManageService {
          * First repair SQL Genes (i.e. SQL Timestamps)
          */
         GeneUtils.repairGenes(dbActions.flatMap { it.seeGenes() })
-
         return DbActionUtils.repairBrokenDbActionsList(dbActions, randomness)
-        //DbActionUtils.repairFkForInsertions(dbActions)
     }
 
 
@@ -640,6 +627,8 @@ class ResourceManageService {
                 sqlInsertBuilder!!
                         .createSqlInsertionAction(tableName, forceAll = true)
 
+        DbActionUtils.randomizeDbActionGenes(insertDbAction, randomness)
+
         if(insertDbAction.isEmpty()) return false
 
         val pasted = mutableListOf<DbAction>()
@@ -660,6 +649,8 @@ class ResourceManageService {
             else
                 dbActions.addAll(0, pasted)
         }
+
+        DbActionUtils.repairFkForInsertions(dbActions)
         return true
     }
 

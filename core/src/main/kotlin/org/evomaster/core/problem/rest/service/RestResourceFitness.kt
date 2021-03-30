@@ -46,7 +46,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         val previousDbGenes = mutableListOf<Gene>()
 
         //whether there exist some SQL execution failure
-        var failureBefore = doDbCalls(individual.dbInitialization, sqlIdMap, false, previousDbGenes)
+        var allSuccessBefore = doDbCalls(individual.dbInitialization, sqlIdMap, false, previousDbGenes)
 
         val cookies = getCookies(individual)
 
@@ -62,9 +62,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            val result = doDbCalls(call.dbActions, sqlIdMap, failureBefore, previousDbGenes)
+            val result = doDbCalls(call.dbActions, sqlIdMap, allSuccessBefore, previousDbGenes)
 
-            failureBefore = failureBefore || result
+            allSuccessBefore = allSuccessBefore && result
 
             var terminated = false
 
