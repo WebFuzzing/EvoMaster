@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 
 @SpringBootApplication
-open class GQLNullableNonNullableApplication{
+open class GQLNullableNonNullableInReturnApplication{
     companion object{
         const val SCHEMA_NAME = "nullableNonNullableInReturn.graphqls"
     }
@@ -25,6 +25,6 @@ open class GQLNullableNonNullableApplication{
     http://localhost:8080/voyager
  */
 fun main(args: Array<String>) {
-    SpringApplication.run(GQLNullableNonNullableApplication::class.java,
-            "--graphql.tools.schema-location-pattern=**/${GQLNullableNonNullableApplication.SCHEMA_NAME}")
+    SpringApplication.run(GQLNullableNonNullableInReturnApplication::class.java,
+            "--graphql.tools.schema-location-pattern=**/${GQLNullableNonNullableInReturnApplication.SCHEMA_NAME}")
 }
