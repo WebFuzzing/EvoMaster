@@ -309,4 +309,27 @@ export default class HeuristicsForBooleans {
         return h;
     }
 
+
+    public static handleFunctionCallBase(f: () => any) : any {
+
+        HeuristicsForBooleans.lastEvaluation = null;
+        const res = f();
+        HeuristicsForBooleans.lastEvaluation = null;
+
+        return res;
+    }
+
+    public static handleFunctionCallTracked(fileName: string, line: number, branchId: number, obj: any, functionName: string, ...args: any[]) : any {
+
+        /*
+            TODO: TT will be hooked here
+         */
+
+        HeuristicsForBooleans.lastEvaluation = null;
+        const res = obj[functionName](...args);
+        HeuristicsForBooleans.lastEvaluation = null;
+
+        return res;
+    }
+
 }

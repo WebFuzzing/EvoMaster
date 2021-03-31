@@ -19,6 +19,7 @@
         <module>spring-rest-openapi-v2</module>
         <module>spring-rest-openapi-v3</module>
         <module>spring-graphql</module>
+        <module>ci-utils</module>
     </modules>
 
 

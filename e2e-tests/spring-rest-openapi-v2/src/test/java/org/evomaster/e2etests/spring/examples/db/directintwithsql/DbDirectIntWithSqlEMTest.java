@@ -6,7 +6,10 @@ import com.google.inject.TypeLiteral;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.Main;
 import org.evomaster.core.database.DbAction;
-import org.evomaster.core.problem.rest.*;
+import org.evomaster.core.problem.rest.HttpVerb;
+import org.evomaster.core.problem.rest.RestCallAction;
+import org.evomaster.core.problem.rest.RestCallResult;
+import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.RestSampler;
 import org.evomaster.core.search.EvaluatedAction;
 import org.evomaster.core.search.EvaluatedIndividual;
@@ -18,15 +21,11 @@ import org.evomaster.core.search.tracer.TraceableElement;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
-
 
     @Test
     public void testDeterminism(){
@@ -34,6 +33,19 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         runAndCheckDeterminism(100, (args) -> {
             initAndRun(args);
         });
+
+//        runAndCheckDeterminism(2_000, (args) -> {
+//            Solution<RestIndividual> solution = initAndRun(args);
+//
+//            assertTrue(solution.getIndividuals().size() >= 1);
+//
+//            //the POST is deactivated in the controller
+//            assertNone(solution, HttpVerb.POST, 200);
+//
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
+//            assertInsertionIntoTable(solution, "DB_DIRECT_INT_ENTITY");
+//        });
     }
 
     /*
@@ -146,7 +158,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
         RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, TraceableElement.DEFAULT_INDEX);
 
-        ei = ff.calculateCoverage(withSQL, Collections.emptySet());
+        ei = ff.calculateCoverage(withSQL, noDataFV.getViewOfData().keySet());
         assertNotNull(ei);
 
         //should have better heuristic

@@ -107,11 +107,11 @@
         <!--  upgrading this one gives issue... might have to update Spring as well -->
         <springdoc.version>1.2.21</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
-        <jersey.version>2.29.1</jersey.version>
+        <jersey.version>2.33</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
         <jackson.version>2.11.0</jackson.version>
         <asm.version>8.0.1</asm.version>
-        <testcontainers.version>1.15.1</testcontainers.version>
+        <testcontainers.version>1.15.2</testcontainers.version>
         <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
         <antlr.version>4.7.2</antlr.version>
         <nlp.version>3.9.2</nlp.version>
@@ -119,6 +119,9 @@
         <jgrapht.version>0.8.3</jgrapht.version>
         <version.graphql-spring>7.1.0</version.graphql-spring>
         <version.graphql-java-tools>6.2.0</version.graphql-java-tools>
+        <mysql.connector.java.version>8.0.23</mysql.connector.java.version>
+        <mariadb.java.client.version>2.7.2</mariadb.java.client.version>
+        <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
     </properties>
 
 
@@ -552,6 +555,24 @@
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-core</artifactId>
                 <version>6.4.4</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mariadb.jdbc</groupId>
+                <artifactId>mariadb-java-client</artifactId>
+                <version>${mariadb.java.client.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.microsoft.sqlserver</groupId>
+                <artifactId>mssql-jdbc</artifactId>
+                <version>${mssql.jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql.connector.java.version}</version>
             </dependency>
 
             <!--   XML  -->

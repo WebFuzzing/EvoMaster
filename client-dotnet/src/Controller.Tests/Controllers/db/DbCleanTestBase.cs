@@ -13,6 +13,8 @@ namespace Controller.Tests.Controllers.db
 
         protected abstract DbConnection GetConnection();
         protected abstract DatabaseType GetDbType();
+
+        protected abstract void CleanDb(List<string> tablesToSkip);
         
         [Fact]
         public void TestAllClean()
@@ -28,7 +30,7 @@ namespace Controller.Tests.Controllers.db
             reader.Close();
             
             //clean all
-            DbCleaner.ClearDatabase(GetConnection(), null, GetDbType());
+            CleanDb(null);
             reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Foo;");
             Assert.False(reader.HasRows);
             reader.Close();
@@ -53,7 +55,7 @@ namespace Controller.Tests.Controllers.db
             reader.Close();
                     
             //clean all except Foo
-            DbCleaner.ClearDatabase(GetConnection(), new List<string>() { "Foo"}, GetDbType());
+            CleanDb(new List<string>() { "Foo"});
             reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Foo;");
             Assert.True(reader.HasRows);
             reader.Close();
@@ -69,7 +71,7 @@ namespace Controller.Tests.Controllers.db
             seedFKData(GetConnection(), GetDbType());
             
             // throws exception with incorrect skip table
-            Assert.Throws<SystemException>(()=>DbCleaner.ClearDatabase(GetConnection(),  new List<string>() { "zoo"}, GetDbType()));
+            Assert.Throws<SystemException>(()=> CleanDb(new List<string>() { "zoo"}));
         }
         
         
@@ -81,7 +83,7 @@ namespace Controller.Tests.Controllers.db
                 
             switch (type)
             {
-                case DatabaseType.H2:
+                case DatabaseType.MS_SQL_SERVER:
                 case DatabaseType.POSTGRES:
                     SqlScriptRunner.ExecCommand(connection,  "alter table Bar add constraint FK foreign key (y) references Foo;");
                     break;

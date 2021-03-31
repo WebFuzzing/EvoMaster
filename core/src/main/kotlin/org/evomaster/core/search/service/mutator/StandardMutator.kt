@@ -17,6 +17,8 @@ import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.EvaluatedInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.math.max
 
 /**
@@ -25,6 +27,10 @@ import kotlin.math.max
  * e.g., in order to handle resource rest individual
  */
 open class StandardMutator<T> : Mutator<T>() where T : Individual {
+
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(StandardMutator::class.java)
+    }
 
     override fun doesStructureMutation(individual : T): Boolean {
         /**
@@ -106,6 +112,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
 
         if(doesStructureMutation(individual.individual)){
+            if (log.isTraceEnabled){
+                log.trace("structure mutator will be applied")
+            }
             structureMutator.mutateStructure(copy, mutatedGene)
             return copy
         }
