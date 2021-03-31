@@ -2,17 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
-using EvoMaster.Controller.Api;
+using Controller.Api;
 using Xunit;
 
 // for testcontainer
 using DotNet.Testcontainers.Containers.Builders;
 using DotNet.Testcontainers.Containers.Modules.Databases;
 using Npgsql;
-using EvoMaster.Controller.Controllers.db;
+using Controller.Controllers.db;
 using DotNet.Testcontainers.Containers.Configurations.Databases;
 
-namespace EvoMaster.Controller.Tests.Controllers.db
+namespace Controller.Tests.Controllers.db
 {
     public class PostgresFixture : IAsyncLifetime
     {
@@ -25,7 +25,7 @@ namespace EvoMaster.Controller.Tests.Controllers.db
             //for the moment, use this testcontainer for dotnet https://github.com/HofmeisterAn/dotnet-testcontainers
             ITestcontainersBuilder<PostgreSqlTestcontainer> postgresBuilder =
                 new TestcontainersBuilder<PostgreSqlTestcontainer>()
-                    .WithDatabase(new PostgreSqlTestcontainerConfiguration
+                    .WithDatabase(new PostgreSqlTestcontainerConfiguration("postgres:11.5")
                     {
                         Database = "db",
                         Username = "postgres",
@@ -51,13 +51,13 @@ namespace EvoMaster.Controller.Tests.Controllers.db
         }
     }
     
-    public class DbCleanerPostgresTestBase : DbCleanTestBase, IClassFixture<PostgresFixture>, IDisposable
+    public class DbCleanerPostgresTest : DbCleanTestBase, IClassFixture<PostgresFixture>, IDisposable
     {
         
         private readonly PostgresFixture _fixture;
         private readonly DbConnection _connection;
         
-        public DbCleanerPostgresTestBase(PostgresFixture fixture)
+        public DbCleanerPostgresTest(PostgresFixture fixture)
         {
             _fixture = fixture;
             _connection = _fixture.GetConnection();
@@ -79,6 +79,11 @@ namespace EvoMaster.Controller.Tests.Controllers.db
         protected override DatabaseType GetDbType()
         {
             return DatabaseType.POSTGRES;
+        }
+
+        protected override void CleanDb(List<string> tablesToSkip)
+        {
+            DbCleaner.ClearDatabase(_connection, tablesToSkip, GetDbType());
         }
     }
 }

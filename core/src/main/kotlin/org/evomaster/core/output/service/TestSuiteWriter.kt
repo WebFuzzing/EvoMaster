@@ -79,7 +79,10 @@ class TestSuiteWriter {
         partialOracles.setFormat(config.outputFormat)
         if (::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
         testCaseWriter.setPartialOracles(partialOracles)
-        active = partialOracles.activeOracles(solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>)
+
+        if(config.problemType == EMConfig.ProblemType.REST) {
+            active = partialOracles.activeOracles(solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>)
+        }
 
         header(solution, testSuiteFileName, lines, controllerName)
 

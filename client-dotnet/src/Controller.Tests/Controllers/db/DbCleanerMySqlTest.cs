@@ -1,24 +1,25 @@
 
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading.Tasks;
-using EvoMaster.Controller.Api;
+using Controller.Api;
 using Xunit;
 
 using DotNet.Testcontainers.Containers.Builders;
 using DotNet.Testcontainers.Containers.Modules.Databases;
 using DotNet.Testcontainers.Containers.Configurations.Databases;
 using MySql.Data.MySqlClient;
-using EvoMaster.Controller.Controllers.db;
+using Controller.Controllers.db;
 
-namespace EvoMaster.Controller.Tests.Controllers.db
+namespace Controller.Tests.Controllers.db
 {
-    public class DbCleanerMySqlTestBase : DbCleanTestBase, IAsyncLifetime
+    public class DbCleanerMySqlTest : DbCleanTestBase, IAsyncLifetime
     {
         
         private static ITestcontainersBuilder<MySqlTestcontainer> mySqlBuilder =
             new TestcontainersBuilder<MySqlTestcontainer>()
-                .WithDatabase(new MySqlTestcontainerConfiguration
+                .WithDatabase(new MySqlTestcontainerConfiguration("mysql:8.0.18")
                 {
                     Database = "db",
                     Username = "mysql",
@@ -48,15 +49,16 @@ namespace EvoMaster.Controller.Tests.Controllers.db
 
         public async Task DisposeAsync()
         {
-            DbCleaner.ClearDatabase(_connection, null, DatabaseType.MYSQL);
-            
-            // TODO find a proper solution to clean all data in mysql db, instead of dropping db and closing connection
-            // SqlScriptRunner.ExecCommand(_connection, "DROP DATABASE db;");
-            // SqlScriptRunner.ExecCommand(_connection, "CREATE DATABASE db;");
-            
+            DbCleaner.ClearDatabase(_connection, null, DatabaseType.MYSQL, "db");
             
             await _connection.CloseAsync();
             await mySql.StopAsync();
+        }
+        
+        
+        protected override void CleanDb(List<string> tablesToSkip)
+        {
+            DbCleaner.ClearDatabase(_connection, tablesToSkip, GetDbType(), "db");
         }
     }
 }

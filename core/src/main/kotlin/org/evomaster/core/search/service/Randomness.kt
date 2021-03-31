@@ -110,7 +110,7 @@ class Randomness {
         }
 
         val k = (min.toLong() + random.nextDouble() * (max.toLong() - min + 1)).toInt()
-        log.trace("nextInt(min,max): {}", k)
+        log.trace("nextInt(min {}, max {}): {}", min, max, k)
         return k
     }
 

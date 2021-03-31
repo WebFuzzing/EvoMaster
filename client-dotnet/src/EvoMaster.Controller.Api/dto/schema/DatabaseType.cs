@@ -1,4 +1,4 @@
-namespace EvoMaster.Controller.Api {
+namespace Controller.Api {
 
   //TODO: Review possible values for this enum
   public enum DatabaseType {
@@ -12,7 +12,9 @@ namespace EvoMaster.Controller.Api {
 
     POSTGRES,
     
-    MSSQL,
+    MARIADB,
+
+    MS_SQL_SERVER,
 
     /**
     * In case used database is not listed in this enum, can

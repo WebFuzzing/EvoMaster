@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestCallAction
@@ -28,7 +29,14 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
         val cookies = getCookies(individual)
 
+        if (log.isTraceEnabled){
+            log.trace("do evaluate the individual, which contains {} dbactions and {} rest actions",
+                individual.seeInitializingActions().size,
+                individual.seeActions().size)
+        }
+
         doInitializingActions(individual)
+
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -41,6 +49,22 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         for (i in 0 until individual.seeActions().size) {
 
             val a = individual.seeActions()[i]
+
+            if (log.isTraceEnabled){
+                log.trace("handle rest action at index {}, and the action is {}, and the genes are",
+                    i,
+                    if (a is RestCallAction)  "${a.verb}:${a.resolvedPath()}" else a.getName(),
+                    a.seeGenes().joinToString(","){
+                        "${it::class.java.simpleName}:${
+                            try {
+                                it.getValueAsRawString()
+                            }catch (e: Exception){
+                                "null"
+                            }
+                        }"
+                    }
+                )
+            }
 
             registerNewAction(a, i)
 
@@ -57,42 +81,28 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             }
         }
 
-        if(actionResults.any { it is RestCallResult && it.getTcpProblem() }){
-            /*
-                If there are socket issues, we avoid trying to compute any coverage.
-                The caller might restart the SUT and try again.
-                Hopefully, this should be just a glitch...
-                TODO if we see this happening often, we need to find a proper solution.
-                For example, we could re-run the test, and see if this one always fails,
-                while others in the archive do pass.
-                It could be handled specially in the archive.
-             */
-            return null
+        if (log.isTraceEnabled){
+            log.trace("evaluation ends")
         }
 
-        val dto = updateFitnessAfterEvaluation(targets, individual, fv)
-                ?: return null
+        restActionResultHandling(individual, targets, actionResults, fv)?:return null
 
-        handleExtra(dto, fv)
-
-        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
-
-        if (config.expandRestIndividuals) {
-            expandIndividual(individual, dto.additionalInfoList, actionResults)
-        }
-
-        if (config.baseTaintAnalysisProbability > 0) {
-            assert(actionResults.size == dto.additionalInfoList.size)
-            //TODO add taint analysis for resource-based solution
-            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
+        if (log.isTraceEnabled){
+            log.trace("restActionResult are handled")
         }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
 
-
     override fun doInitializingActions(ind: RestIndividual) {
+
+        if (log.isTraceEnabled){
+            log.trace("do {} InitializingActions: {}", ind.dbInitialization.size,
+                ind.dbInitialization.joinToString(","){
+                    it.getResolvedName()
+                })
+        }
 
         if (ind.dbInitialization.none { !it.representExistingData }) {
             /*
@@ -105,6 +115,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         val dto = DbActionTransformer.transform(ind.dbInitialization)
+        dto.idCounter = StaticCounter.getAndIncrease()
 
         val ok = rc.executeDatabaseCommand(dto)
         if (!ok) {

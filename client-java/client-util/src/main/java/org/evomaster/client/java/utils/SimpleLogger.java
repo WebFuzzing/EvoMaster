@@ -13,7 +13,7 @@ import java.util.Set;
  */
 public class SimpleLogger {
 
-    enum Level {DEBUG, INFO, WARN, ERROR, OFF}
+    public enum Level {DEBUG, INFO, WARN, ERROR, OFF}
 
     /**
      * Property used to control the logging level by system property

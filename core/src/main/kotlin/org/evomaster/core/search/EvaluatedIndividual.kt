@@ -9,9 +9,11 @@ import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.min
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -71,7 +73,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             this(fitness, individual, results,
                     trackOperator = trackOperator,
                     index = index,
-                    impactInfo = if ((config.collectImpact()))
+                    impactInfo = if ((config.isEnabledImpactCollection()))
                         ImpactsOfIndividual(individual, config.abstractInitializationGeneToMutate, config.maxSqlInitActionsPerMissingData, fitness)
                     else
                         null)
@@ -106,6 +108,32 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             list.add(EvaluatedAction(actions[i], results[i]))
         }
 
+        return list
+    }
+
+    /**
+     * @return grouped db and evaluated actions based on its resource structure
+     */
+    fun evaluatedResourceActions() : List<Pair<List<DbAction>, List<EvaluatedAction>>>{
+        if (individual !is RestIndividual)
+            throw IllegalStateException("the method do not support the individual with the type: ${individual::class.java.simpleName}");
+
+        val list = mutableListOf<Pair<List<DbAction>, List<EvaluatedAction>>>();
+
+        var index = 0;
+
+        individual.getResourceCalls().forEach { c->
+            if (index < results.size){
+                list.add(
+                    c.dbActions to c.actions.subList(0, min(c.actions.size, results.size-index)).map {
+                            a-> EvaluatedAction(a, results[index]).also { index++ }
+                    }.toList()
+                )
+            }
+        }
+        Lazy.assert {
+            index == results.size
+        }
         return list
     }
 
@@ -500,6 +528,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         )
     }
 
+    //TODO check this when integrating with SQL resource handling
     fun updateImpactGeneDueToAddedInitializationGenes(mutatedGenes: MutatedGeneSpecification, old : List<Action>, addedInsertions : List<List<Action>>?){
         impactInfo?:throw IllegalStateException("there is no any impact initialized")
 

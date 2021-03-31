@@ -17,6 +17,8 @@ import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.EvaluatedInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.math.max
 
 /**
@@ -25,6 +27,10 @@ import kotlin.math.max
  * e.g., in order to handle resource rest individual
  */
 open class StandardMutator<T> : Mutator<T>() where T : Individual {
+
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(StandardMutator::class.java)
+    }
 
     override fun doesStructureMutation(individual : T): Boolean {
         /**
@@ -40,7 +46,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
         val mutable = individual.seeGenes(filterMutate).filter { it.isMutable() }
-        if (!config.enableArchiveGeneMutation())
+        if (!config.isEnabledArchiveGeneMutation())
             return mutable
 
         return mutable
@@ -106,6 +112,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
 
         if(doesStructureMutation(individual.individual)){
+            if (log.isTraceEnabled){
+                log.trace("structure mutator will be applied")
+            }
             structureMutator.mutateStructure(copy, mutatedGene)
             return copy
         }
@@ -126,9 +135,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             // enable weight based mutation when mutating gene
             val enableWGS = config.weightBasedMutationRate && config.enableWeightBasedMutationRateSelectionForGene
             // enable gene selection when mutating gene, eg, ObjectGene
-            val enableAGS = enableWGS && adaptive && config.enableArchiveGeneSelection()
+            val enableAGS = enableWGS && adaptive && config.isEnabledArchiveGeneSelection()
             // enable gene mutation based on history
-            val enableAGM = adaptive && config.enableArchiveGeneMutation()
+            val enableAGM = adaptive && config.isEnabledArchiveGeneMutation()
 
             val selectionStrategy = when {
                 enableAGS -> SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT

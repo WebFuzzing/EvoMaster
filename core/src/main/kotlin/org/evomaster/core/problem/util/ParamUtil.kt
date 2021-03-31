@@ -6,6 +6,7 @@ import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -101,9 +102,9 @@ class ParamUtil {
         }
 
         private fun bindObjectGeneWithObjectGene(b : ObjectGene, g : ObjectGene){
-            if(b.refType.equals(g.refType)){
-                b.copyValueFrom(g)
-            }else{
+//            if(b.refType.equals(g.refType)){
+//                b.copyValueFrom(g)
+//            }else{
                 b.fields.forEach { f->
                     val bound = f !is OptionalGene || f.isActive || (Math.random() < 0.5)
                     if (bound){
@@ -120,7 +121,7 @@ class ParamUtil {
                                 mf.copyValueFrom(getValueGene(found))
                         }
                     }
-                }
+//                }
             }
         }
 
@@ -331,7 +332,11 @@ class ParamUtil {
                 is SqlPrimaryKeyGene ->{
                     b.value = g.uniqueId.toString()
                 }
-                else -> return false
+                else -> {
+                    //return false
+                    //Man: with taint analysis, g might be any other type.
+                    b.value = g.getValueAsRawString()
+                }
             }
             return true
         }
@@ -542,6 +547,8 @@ class ParamUtil {
                 if(gene.gene is SqlAutoIncrementGene)
                     return gene
                 else return getValueGene(gene.gene)
+            }else if(gene is SqlNullable){
+                return getValueGene(gene.gene)
             }
             return gene
         }

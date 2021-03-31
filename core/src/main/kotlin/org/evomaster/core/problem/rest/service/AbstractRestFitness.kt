@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
@@ -20,6 +21,7 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.ProcessingException
@@ -301,6 +303,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             createInvocation(a, chainState, cookies).invoke()
         } catch (e: ProcessingException) {
 
+            log.debug("There has been an issue in the evaluation of a test: {}", e)
+
             /*
                 this could have happened for example if call ends up in an infinite redirection loop.
                 However, as we no longer follow 3xx automatically, it should not happen anymore
@@ -558,5 +562,41 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
     private fun locationName(id: String): String {
         return "location_$id"
+    }
+
+    protected fun restActionResultHandling(
+        individual: RestIndividual, targets: Set<Int>, actionResults: MutableList<ActionResult>, fv: FitnessValue) : TestResultsDto?{
+
+        if(actionResults.any { it is RestCallResult && it.getTcpProblem() }){
+            /*
+                If there are socket issues, we avoid trying to compute any coverage.
+                The caller might restart the SUT and try again.
+                Hopefully, this should be just a glitch...
+                TODO if we see this happening often, we need to find a proper solution.
+                For example, we could re-run the test, and see if this one always fails,
+                while others in the archive do pass.
+                It could be handled specially in the archive.
+             */
+            return null
+        }
+
+        val dto = updateFitnessAfterEvaluation(targets, individual as T, fv)
+            ?: return null
+
+        handleExtra(dto, fv)
+
+        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
+
+        if (config.expandRestIndividuals) {
+            expandIndividual(individual, dto.additionalInfoList, actionResults)
+        }
+
+        if (config.baseTaintAnalysisProbability > 0) {
+            assert(actionResults.size == dto.additionalInfoList.size)
+            //TODO add taint analysis for resource-based solution
+            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
+        }
+
+        return dto
     }
 }

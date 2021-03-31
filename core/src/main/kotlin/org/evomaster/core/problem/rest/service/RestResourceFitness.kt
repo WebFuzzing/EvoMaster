@@ -2,16 +2,15 @@ package org.evomaster.core.problem.rest.service
 
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.ActionDto
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.ResourceStatus
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.service.IdMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -39,7 +38,14 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         rc.resetSUT()
 
-        //individual.enforceCoherence()
+        /*
+            there might some dbaction between rest actions.
+            This map is used to record the key mapping in SQL, e.g., PK, FK
+         */
+        val sqlIdMap = mutableMapOf<Long, Long>()
+
+        //whether there exist some SQL execution failure
+        var failureBefore = doDbCalls(individual.dbInitialization, sqlIdMap, false)
 
         val cookies = getCookies(individual)
 
@@ -50,21 +56,19 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
 
-        val sqlIdMap = mutableMapOf<Long, Long>()
-
         //run the test, one action at a time
         var indexOfAction = 0
 
         for (call in individual.getResourceCalls()) {
 
-            doInitializingCalls(call.dbActions, sqlIdMap)
+            failureBefore = failureBefore || doDbCalls(call.dbActions, sqlIdMap, failureBefore)
 
             var terminated = false
 
             for (a in call.actions){
 
                 //TODO handling of inputVariables
-                rc.registerNewAction(ActionDto().apply { index = indexOfAction})
+                registerNewAction(a, indexOfAction)
 
                 var ok = false
 
@@ -92,48 +96,32 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 break
         }
 
-        val dto = rc.getTestResults(targetsToEvaluate(targets, individual))
-        if (dto == null) {
-            log.warn("Cannot retrieve coverage")
-            return null
-        }
-
+        val dto = restActionResultHandling(individual, targets, actionResults, fv)?:return null
         /*
          update dependency regarding executed dto
          */
         if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
 
-        dto.targets.forEach { t ->
-
-            if (t.descriptiveId != null) {
-                idMapper.addMapping(t.id, t.descriptiveId)
-            }
-
-            fv.updateTarget(t.id, t.value, t.actionIndex)
-        }
-
-        handleExtra(dto, fv)
-
-        handleResponseTargets(fv, individual.seeActions().toMutableList(), actionResults, dto.additionalInfoList)
-
-        if (config.expandRestIndividuals) {
-            expandIndividual(individual, dto.additionalInfoList, actionResults)
-        }
+        /*
+            TODO Man: shall we update SQL Insertion fails here for resource creation?
+            then we prioritize to employ existing data if there exist
+            but there might be various reasons which lead to the failure.
+         */
 
         return EvaluatedIndividual(
                 fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)
 
-        /*
-            TODO when dealing with seeding, might want to extend EvaluatedIndividual
-            to keep track of AdditionalInfo
-         */
     }
 
-    private fun doInitializingCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>) {
+    /**
+     * @param allSuccessBefore indicates whether all SQL before this [allDbActions] are executed successfully
+     * @return whether [allDbActions] execute successfully
+     */
+    private fun doDbCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>, allSuccessBefore : Boolean) : Boolean {
 
         if (allDbActions.isEmpty()) {
-            return
+            return true
         }
 
         if (allDbActions.none { !it.representExistingData }) {
@@ -143,18 +131,27 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 Note that current data structure also keeps info on already
                 existing data (which of course should not be re-inserted...)
              */
-            return
+            return true
         }
 
-
-        val dto = DbActionTransformer.transform(allDbActions, sqlIdMap)
-
+        val dto = try {
+            DbActionTransformer.transform(allDbActions, sqlIdMap)
+        }catch (e : IllegalArgumentException){
+            // the failure might be due to previous failure
+            if (!allSuccessBefore)
+                return false
+            else
+                throw e
+        }
+        dto.idCounter = StaticCounter.getAndIncrease()
 
         val map = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
         if (map == null) {
-            log.warn("Failed in executing database command")
+            LoggingUtil.uniqueWarn(log, "Failed in executing database command")
+            return false
         }else
             sqlIdMap.putAll(map)
+        return true
     }
 
     override fun hasParameterChild(a: RestCallAction): Boolean {
