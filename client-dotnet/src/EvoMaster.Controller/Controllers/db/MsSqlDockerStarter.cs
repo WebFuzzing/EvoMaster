@@ -127,8 +127,8 @@ namespace EvoMaster.Controller.Controllers.db
             int maxWaitTimeSeconds)
         {
             var start = DateTime.UtcNow;
-            var connectionEstablised = false;
-            while (!connectionEstablised && start.AddSeconds(maxWaitTimeSeconds) > DateTime.UtcNow)
+            var connectionEstablished = false;
+            while (!connectionEstablished && start.AddSeconds(maxWaitTimeSeconds) > DateTime.UtcNow)
             {
                 try
                 {
@@ -136,7 +136,7 @@ namespace EvoMaster.Controller.Controllers.db
                         $"Data Source=localhost,{databasePort};Integrated Security=False;User ID=SA;Password={SqlserverSaPassword}";
                     using var sqlConnection = new SqlConnection(sqlConnectionString);
                     await sqlConnection.OpenAsync();
-                    connectionEstablised = true;
+                    connectionEstablished = true;
 
                     return sqlConnection;
                 }
@@ -147,7 +147,7 @@ namespace EvoMaster.Controller.Controllers.db
                 }
             }
 
-            if (!connectionEstablised)
+            if (!connectionEstablished)
             {
                 throw new Exception(
                     $"Connection to the SQL docker database could not be established within {maxWaitTimeSeconds} seconds.");
