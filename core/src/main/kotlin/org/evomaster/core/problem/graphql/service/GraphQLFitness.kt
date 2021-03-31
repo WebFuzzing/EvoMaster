@@ -15,6 +15,7 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.EnumGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
@@ -257,7 +258,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         }
 
-
+        //TOdo check empty return type
         val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
         //in GraphQL, there is ALWAYS a return type
                 ?: throw RuntimeException("ERROR: not specified return type")
@@ -267,95 +268,49 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             if (inputGenes.isNotEmpty()) {
 
-                val printableInputGene: MutableList<String> = mutableListOf()
-                for (gene in inputGenes) {
-                    if (gene is EnumGene<*>) {
-                        //val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE).replace(" \" ", "")
-                        val i = gene.getValueAsRawString()
+                val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+
+                var printableInputGenes = getPrintableInputGenes(printableInputGene)
 
 
-                        printableInputGene.add("${gene.name} : $i")
-                    } else {
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                        printableInputGene.add("${gene.name} : $i")
-                    }
-                }
-
-                var printableInputGenes = ""
-                for (elt in printableInputGene) {
-
-                    printableInputGenes = "$elt,$printableInputGenes"
-                }
-                printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)//removing the ","
-                printableInputGenes = printableInputGenes.replace("\"", "\\\"")
-
-
-
-                if (returnGene.name.toLowerCase() == "scalar") {//return gene is primitive type: print out: nothing
+                if (returnGene.name.toLowerCase() == "scalar") {
                     val bodyEntity = Entity.json("""
             {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
         """.trimIndent())
                     val invocation = builder.buildPost(bodyEntity)
                     return invocation
 
-                } else {//return gene is a complex type:print out the return type
-                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-                    query = query.replace("{${a.methodName}", "", true)//remove the first methode name
-                    query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
+                } else {
 
+                    var query = getQuery(returnGene, a)
                     val bodyEntity = Entity.json("""
             {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
         """.trimIndent())
                     val invocation = builder.buildPost(bodyEntity)
                     return invocation
-
                 }
-            } else {//input genes are empty: print out the query only: two cases: scalar or not
-
+            } else {
                 if (returnGene.name.toLowerCase() == "scalar") {
-
                     val bodyEntity = Entity.json("""
             {"query" : "  { ${a.methodName}       } ","variables":null}
         """.trimIndent())
                     val invocation = builder.buildPost(bodyEntity)
                     return invocation
-                } else {//return gene is not scalar, but complex type
-
-                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-                    query = query.replace("{${a.methodName}", "", true)//remove the first methode name
-                    query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
-
+                } else {
+                    var query = getQuery(returnGene, a)
                     val bodyEntity = Entity.json("""
             {"query" : "  { ${a.methodName}  $query     } ","variables":null}
         """.trimIndent())
                     val invocation = builder.buildPost(bodyEntity)
                     return invocation
-
                 }
-
             }
-
         } else if (a.methodType == GQMethodType.MUTATION) {
-            val printableInputGene: MutableList<String> = mutableListOf()
-            for (gene in inputGenes) {
-                if (gene is EnumGene<*>) {
-                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE).replace(" \" ", "")
-                    printableInputGene.add("${gene.name} : $i")
-                } else {
-                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                    printableInputGene.add("${gene.name} : $i")
-                }
-            }
+            val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
 
-            var printableInputGenes = ""
-            for (elt in printableInputGene) {
-                printableInputGenes = "$elt,$printableInputGenes"
-            }
-            printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
-            printableInputGenes = printableInputGenes.replace("\"", "\\\"")
+            var printableInputGenes = getPrintableInputGenes(printableInputGene)
 
-
-            if (returnGene.name.toLowerCase() == "scalar") {//return gene is primitive type: print out: nothing
+            if (returnGene.name.toLowerCase() == "scalar") {
                 val bodyEntity = Entity.json("""
             {"query" : " mutation{ ${a.methodName}  ($printableInputGenes)         } ","variables":null}
         """.trimIndent())
@@ -363,9 +318,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 return invocation
 
             } else {
-                var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}".replace("{${a.methodName}", "", true)
-                mutation = mutation.substring(0, mutation.length - 1)
-
+                var mutation = getMutation(returnGene, a)
 
                 val bodyEntity = Entity.json("""
             { "query" : "mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    }","variables":null}
@@ -377,5 +330,42 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val invocation = builder.buildPost(Entity.json("""
           """.trimIndent()))
         return invocation
+    }
+
+    fun getMutation(returnGene: Gene, a: GraphQLAction): String {
+        var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}".replace("{${a.methodName}", "")
+        mutation = mutation.substring(0, mutation.length - 1)
+        return mutation
+    }
+
+    fun getQuery(returnGene: Gene, a: GraphQLAction): String {
+        var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+        query = query.replace("{${a.methodName}", "", true)
+        query = query.substring(0, query.length - 1)
+        return query
+    }
+
+    fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
+        var printableInputGenes = ""
+        for (elt in printableInputGene) {
+            printableInputGenes = "$elt,$printableInputGenes"
+        }
+        printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
+        printableInputGenes = printableInputGenes.replace("\"", "\\\"")
+        return printableInputGenes
+    }
+
+    fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
+        val printableInputGene: MutableList<String> = mutableListOf()
+        for (gene in inputGenes) {
+            if (gene is EnumGene<*>) {
+                val i = gene.getValueAsRawString()
+                printableInputGene.add("${gene.name} : $i")
+            } else {
+                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                printableInputGene.add("${gene.name} : $i")
+            }
+        }
+        return printableInputGene
     }
 }

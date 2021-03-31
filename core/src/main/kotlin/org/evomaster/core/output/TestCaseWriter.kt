@@ -19,10 +19,10 @@ import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.EnumGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
 import java.lang.RuntimeException
-import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
 
@@ -972,98 +972,47 @@ class TestCaseWriter {
 
         }
 
-        //TODO need some extra tests here?
         val body = if (call.methodType.toString() == "QUERY") {
             if (inputGenes.isNotEmpty()) {
 
-                val printableInputGene: MutableList<String> = mutableListOf()
-                for (gene in inputGenes) {
-                    if (gene is EnumGene<*>) {
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                        val a = i.replace(" \" ", " ")
-                        printableInputGene.add("${gene.name} : $a")
+                val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
 
-                    } else {
+                var printableInputGenes = getPrintableInputGenes(printableInputGene)
 
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                        printableInputGene.add("${gene.name} : $i")
-                    }
-                }
-
-                var printableInputGenes = ""
-                for (elt in printableInputGene) {
-                    printableInputGenes = "$elt,$printableInputGenes"
-                }
-                printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)//removing the ","
-                printableInputGenes = printableInputGenes.replace("\"", "\\\"")
-                var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-                query = query.replace("{${call.methodName}", "", true)//remove the first methode name
-                query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
-
-                if (returnGene.name.toLowerCase() == "scalar") {//return gene is primitive type: print out: nothing
+                if (returnGene.name.toLowerCase() == "scalar") {
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
 
-                } else {//return gene is a complex type:print out the return type
-                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-                    query = query.replace("{${call.methodName}", "", true)//remove the first methode name
-                    query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
+                } else {
 
-
+                    var query = getQuery(returnGene, call)
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)$query} \",\"variables\":null}")
-
                 }
 
-            } else {//empty input params
+            } else {
 
                 if (returnGene.name.toLowerCase() == "scalar") {
 
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
-                } else {//return gene is not scalar, but complex type
+                } else {
 
-                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-                    query = query.replace("{${call.methodName}", "", true)//remove the first methode name
-                    query = query.substring(0, query.length - 1)//removing the "}" related to removing the methode name
-
+                    var query = getQuery(returnGene, call)
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \" { ${call.methodName}  $query     }   \",\"variables\":null} ")
 
                 }
-                // OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"$query\",\"variables\":null} ")
             }
 
         } else if (call.methodType.toString() == "MUTATION") {
-            val printableInputGene: MutableList<String> = mutableListOf()
-            for (gene in inputGenes) {
-                for (gene in inputGenes) {
-                    if (gene is EnumGene<*>) {
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                        val a = i.replace(" \" ", " ")
-                        printableInputGene.add("${gene.name} : $a")
+            val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
 
-                    } else {
+            var printableInputGenes = getPrintableInputGenes(printableInputGene)
 
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                        printableInputGene.add("${gene.name} : $i")
-                    }
-                }
-            }
-
-            var printableInputGenes = ""
-            for (elt in printableInputGene) {
-                printableInputGenes = "$elt,$printableInputGenes"
-            }
-            printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
-            printableInputGenes = printableInputGenes.replace("\"", "\\\"")
-
-            if (returnGene.name.toLowerCase() == "scalar") {//return gene is primitive type: print out: nothing
+            if (returnGene.name.toLowerCase() == "scalar") {
                 OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \" mutation{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
 
             } else {
-
-                var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}".replace("{${call.methodName}", "", true)
-                mutation = mutation.substring(0, mutation.length - 1)
+                var mutation = getMutation(returnGene, call)
 
                 OutputFormatter.JSON_FORMATTER.getFormatted("{ \"query\" : \"mutation{${call.methodName}  ($printableInputGenes)    $mutation    } \",\"variables\":null} ")
-
             }
         } else {
             LoggingUtil.uniqueWarn(TestCaseWriter.log, " method type not supported yet : ${call.methodType}").toString()
@@ -1243,4 +1192,43 @@ class TestCaseWriter {
                 && !printableContent.contains("logged")
                 && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
     }
+
+    fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
+        var printableInputGenes = ""
+        for (elt in printableInputGene) {
+            printableInputGenes = "$elt,$printableInputGenes"
+        }
+        printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
+        printableInputGenes = printableInputGenes.replace("\"", "\\\"")
+        return printableInputGenes
+    }
+
+    fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
+        val printableInputGene: MutableList<String> = mutableListOf()
+        for (gene in inputGenes) {
+            if (gene is EnumGene<*>) {
+                val i = gene.getValueAsRawString()
+                printableInputGene.add("${gene.name} : $i")
+            } else {
+                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                printableInputGene.add("${gene.name} : $i")
+            }
+        }
+        return printableInputGene
+    }
+
+    fun getMutation(returnGene: Gene, a: GraphQLAction): String {
+        var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}".replace("{${a.methodName}", "")
+        mutation = mutation.substring(0, mutation.length - 1)
+        return mutation
+    }
+
+    fun getQuery(returnGene: Gene, a: GraphQLAction): String {
+        var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+        query = query.replace("{${a.methodName}", "", true)
+        query = query.substring(0, query.length - 1)
+        return query
+    }
+
+
 }
