@@ -15,7 +15,7 @@
     </ItemGroup>
     <ItemGroup>
 <!--        <PackageReference Include="Docker.DotNet" Version="3.125.4" />-->
-        <PackageReference Include="DotNet.Testcontainers" Version="1.4.0" />
+        <PackageReference Include="DotNet.Testcontainers" Version="1.4.0" PrivateAssets="All" />
         <PackageReference Include="Microsoft.Data.SqlClient" Version="2.1.2" />
         <PackageReference Include="Npgsql" Version="5.0.0" />
         <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.0" />
