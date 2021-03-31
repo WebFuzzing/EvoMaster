@@ -12,15 +12,16 @@ namespace EvoMaster.Controller.Controllers.db
 {
     internal static class MsSqlDockerStarter
     {
-        public const string SqlserverSaPassword = "password123";
-        public const string SqlserverImage = "mcr.microsoft.com/mssql/server";
-        public const string SqlserverImageTag = "2017-CU14-ubuntu";
-        public const string SqlserverContainerNamePrefix = "EvoMasterTestsSql-";
+        private const string SqlserverSaPassword = "password123";
+        private const string SqlserverImage = "mcr.microsoft.com/mssql/server";
+        private const string SqlserverImageTag = "2017-CU14-ubuntu";
+        private const string SqlserverContainerNamePrefix = "EvoMasterTestsSql-";
 
         public static async Task<(string connectionString, SqlConnection connection)> StartDatabaseAsync(
             string databaseName, int timeout)
         {
-            await CleanupRunningContainers();
+            //TODO: this takes too much time
+            //await CleanupRunningContainers();
             var dockerClient = GetDockerClient();
             var freePort = GetFreePort();
 
