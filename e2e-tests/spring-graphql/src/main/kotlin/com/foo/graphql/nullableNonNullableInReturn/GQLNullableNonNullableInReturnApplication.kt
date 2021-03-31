@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 @SpringBootApplication
 open class GQLNullableNonNullableApplication{
     companion object{
-        const val SCHEMA_NAME = "nullableNonNullable.graphqls"
+        const val SCHEMA_NAME = "nullableNonNullableInReturn.graphqls"
     }
 }
 

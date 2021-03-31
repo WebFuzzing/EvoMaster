@@ -8,10 +8,9 @@ import org.springframework.stereotype.Component
 open class DataRepository {
 
 
-    fun flower(): Flower {
+    fun flowerN(): Flower? {
 
-       return Flower(0, null, "Roses", "Red", 50)
+       return Flower(null, "Darcey")
     }
-
 
 }

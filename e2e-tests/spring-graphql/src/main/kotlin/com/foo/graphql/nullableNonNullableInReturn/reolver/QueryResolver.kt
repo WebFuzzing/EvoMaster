@@ -14,7 +14,6 @@ open class QueryResolver(
     : GraphQLQueryResolver {
 
 
-    fun flower(): Flower = repository.flower()
-
+    fun flower(): Flower? = repository.flowerN()
 
 }
