@@ -1,7 +1,6 @@
-package com.foo.graphql.NullableNonNullableInReturn
+package com.foo.graphql.nullableNonNullableInReturn
 
 import com.foo.graphql.SpringController
-import com.foo.graphql.nullableNonNullableInReturn.GQLNullableNonNullableInReturnApplication
 
 class NullableNonNullableInReturnController : SpringController(GQLNullableNonNullableInReturnApplication::class.java) {
 

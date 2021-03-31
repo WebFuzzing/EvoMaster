@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.spring.graphql.NullableNonNullableInReturn
 
-import com.foo.graphql.NullableNonNullableInReturn.NullableNonNullableInReturnController
+import com.foo.graphql.nullableNonNullableInReturn.NullableNonNullableInReturnController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
