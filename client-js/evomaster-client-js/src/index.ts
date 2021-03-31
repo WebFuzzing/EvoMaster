@@ -4,6 +4,7 @@ import EMController from "./controller/EMController";
 import SutController from "./controller/SutController";
 
 import AuthenticationDto from "./controller/api/dto/AuthenticationDto";
+import HeaderDto from "./controller/api/dto/HeaderDto";
 import ProblemInfo from "./controller/api/dto/problem/ProblemInfo";
 import RestProblemDto from "./controller/api/dto/problem/RestProblemDto";
 import {OutputFormat} from "./controller/api/dto/SutInfoDto";
@@ -26,6 +27,7 @@ interface EM {
     EMController: typeof EMController;
     dto: {
         AuthenticationDto: typeof AuthenticationDto,
+        HeaderDto: typeof HeaderDto,
         ProblemInfo: typeof ProblemInfo,
         RestProblemDto: typeof RestProblemDto,
         OutputFormat: typeof OutputFormat,
@@ -46,6 +48,7 @@ f.SutController =  SutController;
 f.EMController = EMController;
 f.dto = {
     AuthenticationDto: AuthenticationDto,
+    HeaderDto: HeaderDto,
     ProblemInfo: ProblemInfo,
     RestProblemDto: RestProblemDto,
     OutputFormat: OutputFormat,
