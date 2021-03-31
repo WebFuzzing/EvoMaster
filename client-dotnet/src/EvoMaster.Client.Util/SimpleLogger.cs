@@ -4,7 +4,7 @@ namespace EvoMaster.Client.Util {
     //Implementation of this class is a bit different with its java counterpart
     public class SimpleLogger {
 
-        private static readonly object consoleLock = new object ();
+        private static readonly object ConsoleLock = new object ();
         public static void Debug (String message) {
             PrintMessage (Level.DEBUG, message);
         }
@@ -23,7 +23,7 @@ namespace EvoMaster.Client.Util {
 
         private static void PrintMessage (Level level, String message, Exception e = null) {
 
-            lock (consoleLock) {
+            lock (ConsoleLock) {
 
                 if (level.Equals (Level.ERROR)) {
                     Console.ForegroundColor = ConsoleColor.DarkRed;

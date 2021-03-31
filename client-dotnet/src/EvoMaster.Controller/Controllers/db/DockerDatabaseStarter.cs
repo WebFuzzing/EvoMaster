@@ -11,7 +11,7 @@ namespace EvoMaster.Controller.Controllers.db
         {
             return databaseType switch
             {
-                DatabaseType.MSSQL => await MsSqlDockerStarter.StartDatabaseAsync(databaseName, timeout),
+                DatabaseType.MS_SQL_SERVER => await MsSqlDockerStarter.StartDatabaseAsync(databaseName, timeout),
                 DatabaseType.POSTGRES => await NpgsqlDockerStarter.StartDatabaseAsync(databaseName),
                 _ => throw new DbUnsupportedException(databaseType)
             };

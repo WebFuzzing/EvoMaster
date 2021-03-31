@@ -1,7 +1,4 @@
-using System;
-using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using RestApis.Animals.Entities;
 
 namespace RestApis.Animals

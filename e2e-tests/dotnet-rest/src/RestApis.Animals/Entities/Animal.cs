@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace RestApis.Animals.Entities
 {
     public class Animal

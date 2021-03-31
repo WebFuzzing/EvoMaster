@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EvoMaster.Controller;
@@ -9,9 +8,7 @@ using DotNet.Testcontainers.Containers.Builders;
 using DotNet.Testcontainers.Containers.Configurations.Databases;
 using DotNet.Testcontainers.Containers.Modules.Abstractions;
 using DotNet.Testcontainers.Containers.Modules.Databases;
-using Microsoft.Extensions.Configuration;
 using Npgsql;
-using RestApis.Animals;
 
 namespace RestApis.Tests.Animals.Controller
 {
@@ -51,7 +48,7 @@ namespace RestApis.Tests.Animals.Controller
 
         public override void ResetStateOfSut()
         {
-            DbCleaner.ClearDatabase_Postgres(_connection,
+            DbCleaner.ClearDatabase_Postgres(_connection, null,
                 new List<string> {"Mammals"});
         }
 

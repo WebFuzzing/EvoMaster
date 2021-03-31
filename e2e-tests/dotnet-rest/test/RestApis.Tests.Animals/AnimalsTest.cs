@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using EvoMaster.Client.Util;
 using EvoMaster.Controller;
 using Newtonsoft.Json;
 using RestApis.Animals.Entities;
@@ -16,7 +15,7 @@ namespace RestApis.Tests.Animals
     public class AnimalsTest : IClassFixture<ControllerFixture>
     {
         private static readonly HttpClient Client = new HttpClient();
-        private ControllerFixture _fixture;
+        private readonly ControllerFixture _fixture;
 
         public AnimalsTest(ControllerFixture fixture)
         {

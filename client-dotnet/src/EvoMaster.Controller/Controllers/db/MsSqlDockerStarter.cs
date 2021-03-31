@@ -12,13 +12,10 @@ namespace EvoMaster.Controller.Controllers.db
 {
     internal static class MsSqlDockerStarter
     {
-        public const string SQLSERVER_SA_PASSWORD = "password123";
-        public const string SQLSERVER_IMAGE = "mcr.microsoft.com/mssql/server";
-
-        public const string SQLSERVER_IMAGE_TAG = "2017-CU14-ubuntu";
-
-        // public const string SQLSERVER_IMAGE_TAG = "2017-latest";
-        public const string SQLSERVER_CONTAINER_NAME_PREFIX = "EvoMasterTestsSql-";
+        public const string SqlserverSaPassword = "password123";
+        public const string SqlserverImage = "mcr.microsoft.com/mssql/server";
+        public const string SqlserverImageTag = "2017-CU14-ubuntu";
+        public const string SqlserverContainerNamePrefix = "EvoMasterTestsSql-";
 
         public static async Task<(string connectionString, SqlConnection connection)> StartDatabaseAsync(
             string databaseName, int timeout)
@@ -30,19 +27,19 @@ namespace EvoMaster.Controller.Controllers.db
             // This call ensures that the latest SQL Server Docker image is pulled
             await dockerClient.Images.CreateImageAsync(new ImagesCreateParameters
             {
-                FromImage = $"{SQLSERVER_IMAGE}:{SQLSERVER_IMAGE_TAG}"
+                FromImage = $"{SqlserverImage}:{SqlserverImageTag}"
             }, null, new Progress<JSONMessage>());
 
             var sqlContainer = await dockerClient
                 .Containers
                 .CreateContainerAsync(new CreateContainerParameters
                 {
-                    Name = SQLSERVER_CONTAINER_NAME_PREFIX + Guid.NewGuid(),
-                    Image = $"{SQLSERVER_IMAGE}:{SQLSERVER_IMAGE_TAG}",
+                    Name = SqlserverContainerNamePrefix + Guid.NewGuid(),
+                    Image = $"{SqlserverImage}:{SqlserverImageTag}",
                     Env = new List<string>
                     {
                         "ACCEPT_EULA=Y",
-                        $"SA_PASSWORD={SQLSERVER_SA_PASSWORD}"
+                        $"SA_PASSWORD={SqlserverSaPassword}"
                     },
                     HostConfig = new HostConfig
                     {
@@ -50,7 +47,7 @@ namespace EvoMaster.Controller.Controllers.db
                         {
                             {
                                 "1433/tcp",
-                                new PortBinding[]
+                                new[]
                                 {
                                     new PortBinding
                                     {
@@ -79,7 +76,7 @@ namespace EvoMaster.Controller.Controllers.db
                    $"Initial Catalog={databaseName};" +
                    "Integrated Security=False;" +
                    "User ID=SA;" +
-                   $"Password={SQLSERVER_SA_PASSWORD}";
+                   $"Password={SqlserverSaPassword}";
         }
 
         public static async Task EnsureDockerStoppedAndRemovedAsync(string dockerContainerId)
@@ -108,7 +105,7 @@ namespace EvoMaster.Controller.Controllers.db
                 .ListContainersAsync(new ContainersListParameters());
 
             foreach (var runningContainer in runningContainers.Where(cont =>
-                cont.Names.Any(n => n.Contains(SQLSERVER_CONTAINER_NAME_PREFIX))))
+                cont.Names.Any(n => n.Contains(SqlserverContainerNamePrefix))))
             {
                 // Stopping all test containers that are older than one hour, they likely failed to cleanup
                 if (runningContainer.Created < DateTime.UtcNow.AddHours(-1))
@@ -135,14 +132,14 @@ namespace EvoMaster.Controller.Controllers.db
                 try
                 {
                     var sqlConnectionString =
-                        $"Data Source=localhost,{databasePort};Integrated Security=False;User ID=SA;Password={SQLSERVER_SA_PASSWORD}";
+                        $"Data Source=localhost,{databasePort};Integrated Security=False;User ID=SA;Password={SqlserverSaPassword}";
                     using var sqlConnection = new SqlConnection(sqlConnectionString);
                     await sqlConnection.OpenAsync();
                     connectionEstablised = true;
 
                     return sqlConnection;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // If opening the SQL connection fails, SQL Server is not ready yet
                     await Task.Delay(500);
@@ -158,7 +155,7 @@ namespace EvoMaster.Controller.Controllers.db
             //TODO
             return null;
         }
-        
+
         //TODO: use the method in SutController instead
         private static string GetFreePort()
         {

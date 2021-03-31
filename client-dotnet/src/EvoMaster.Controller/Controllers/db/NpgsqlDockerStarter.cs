@@ -4,7 +4,6 @@ using DotNet.Testcontainers.Containers.Builders;
 using DotNet.Testcontainers.Containers.Configurations.Databases;
 using DotNet.Testcontainers.Containers.Modules.Abstractions;
 using DotNet.Testcontainers.Containers.Modules.Databases;
-using Microsoft.Data.SqlClient;
 using Npgsql;
 
 namespace EvoMaster.Controller.Controllers.db

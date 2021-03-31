@@ -1,4 +1,4 @@
-namespace Controller.Api {
+namespace EvoMaster.Controller.Api {
 
   //TODO: Review possible values for this enum
   public enum DatabaseType {

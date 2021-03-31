@@ -4,10 +4,10 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
-using Client.Util;
-using Controller.Api;
+using EvoMaster.Controller.Api;
+using EvoMaster.Client.Util;
 
-namespace Controller.Controllers.db
+namespace EvoMaster.Controller.Controllers.db
 {
     public static class DbCleaner
     {

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using EvoMaster.Client.Util;
 using EvoMaster.Controller.Api;
 using EvoMaster.Controller.Problem;
