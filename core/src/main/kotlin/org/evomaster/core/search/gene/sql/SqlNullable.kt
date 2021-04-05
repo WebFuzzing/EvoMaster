@@ -69,7 +69,7 @@ class SqlNullable(name: String,
 
             return if (inactive)  emptyList() else listOf(gene)
         }
-        throw IllegalArgumentException("impact is null or not OptionalGeneImpact")
+        throw IllegalArgumentException("impact is null ${additionalGeneMutationInfo?.impact == null} or not SqlNullableImpact ${additionalGeneMutationInfo?.impact.run { if (this == null) "" else this::class.java.simpleName}}")
     }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
