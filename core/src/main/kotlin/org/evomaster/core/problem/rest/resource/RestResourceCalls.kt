@@ -84,7 +84,8 @@ class RestResourceCalls(
         seeRestGenes().map {g->
             val target = restActions.find { it.seeGenes().contains(g) }
                 ?:throw IllegalArgumentException("${g.name} cannot be found in any rest actions, and the current actions are ${restActions.joinToString(","){ it.getName() }}")
-            val param = (target as? RestCallAction)?.parameters?.find { it.gene == g }?:throw IllegalStateException("${g.name} cannot be found in rest action ${target.getName()}")
+            val param = (target as? RestCallAction)?.parameters?.find { it.seeGenes().contains(g) }
+                ?:throw IllegalStateException("${g.name} cannot be found in rest action ${target.getName()}")
             restActions.filter { it != target }
                 .forEach{a-> (a as RestCallAction).bindToSamePathResolution(target.path, listOf(param))}
         }
