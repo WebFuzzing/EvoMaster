@@ -282,6 +282,15 @@ class RestIndividual(
             }
         }
 
+        // for dbactions in resource call, we might not check the unique column since it might be bound with rest actions
+        if (!DbActionUtils.verifyActions(getResourceCalls().flatMap { it.dbActions })){
+            DbActionUtils.repairBrokenDbActionsList(getResourceCalls().flatMap { it.dbActions }.toMutableList(), randomness)
+        }
+
+        if (!DbActionUtils.verifyActions(dbInitialization)){
+            DbActionUtils.repairBrokenDbActionsList(dbInitialization, randomness)
+        }
+
         if(!DbActionUtils.verifyForeignKeys(getResourceCalls().flatMap { it.dbActions })){
             throw IllegalStateException("after a FK repair, there still exist invalid FKs")
         }

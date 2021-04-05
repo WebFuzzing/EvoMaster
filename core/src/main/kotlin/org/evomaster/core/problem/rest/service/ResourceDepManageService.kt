@@ -1211,7 +1211,18 @@ class ResourceDepManageService {
      * @return whether all resources in SUT are independent
      */
     fun onlyIndependentResource(): Boolean {
-        return rm.getResourceCluster().values.filter { r -> !r.isIndependent() }.isEmpty()
+        return rm.getResourceCluster().values.none { r -> !r.isIndependent() }
+    }
+
+    fun canMutateResource(ind: RestIndividual) : Boolean{
+        return ind.getResourceCalls().size > 1 ||
+                getAllRelatedTables(ind).isNotEmpty() ||
+                (
+                rm.getResourceCluster().values.filter { r->
+                    !r.isIndependent() && ind.getResourceCalls().any { i->
+                        i.getResourceNode().getName().equals(r.getName(), ignoreCase = true)
+                    }
+                }.size > 1)
     }
 
     fun getRelatedResource(resource : String) : Set<String> = dependencies[resource]?.flatMap { it.targets }?.toSet()?: setOf()

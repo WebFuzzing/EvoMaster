@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
@@ -30,10 +31,9 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
 
     override fun doesStructureMutation(individual : RestIndividual): Boolean {
 
-        return individual.canMutateStructure() &&
-                (!dm.onlyIndependentResource()) && // if all resources are asserted independent, there is no point to do structure mutation
-                config.maxTestSize > 1 &&
-                randomness.nextBoolean(config.structureMutationProbability)
+        return super.doesStructureMutation(individual)  &&
+                (!dm.onlyIndependentResource())  // if all resources are asserted independent, there is no point to do structure mutation
+                && dm.canMutateResource(individual)
     }
 
 

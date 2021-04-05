@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
@@ -22,6 +23,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
 
     @Inject
     private lateinit var sampler : ResourceSampler
+
 
     override fun mutateStructure(
         individual: Individual,
@@ -51,6 +53,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         }
 
         ind.repairDBActions(rm.getSqlBuilder(), randomness)
+
     }
 
     private fun getAvailableMutator(ind: RestIndividual) : List<MutationType>{

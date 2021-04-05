@@ -58,9 +58,7 @@ open class ResourceSampler : AbstractRestSampler() {
         rm.initResourceNodes(actionCluster, sqlInsertBuilder)
     }
 
-    /**
-     * FIXME: why it is post handling of initAdHocInitialIndividuals?
-     */
+
     override fun postInits() {
         ssc.initialize()
     }

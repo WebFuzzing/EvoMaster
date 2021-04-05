@@ -395,7 +395,7 @@ object DbActionUtils {
             val pks = dbActions.subList(0, index).flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
             fks.filter { !it.nullable && !it.isBound() || pks.none { p->p.uniqueId == it.uniqueIdOfPrimaryKey }}.forEach {fk->
                 val found = pks.find { pk -> pk.tableName.equals(fk.targetTable, ignoreCase = true) }
-                    ?: throw IllegalStateException("fail to target table ${fk.targetTable} for the fk ${fk.name}")
+                    ?: throw IllegalStateException("fail to find target table ${fk.targetTable} for the fk ${fk.name}")
                 fk.uniqueIdOfPrimaryKey = found.uniqueId
             }
         }

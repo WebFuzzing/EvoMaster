@@ -635,24 +635,11 @@ class ResourceManageService {
 
         if(insertDbAction.isEmpty()) return false
 
-        val pasted = mutableListOf<DbAction>()
-        insertDbAction.reversed().forEach {ndb->
-            val index = dbActions.indexOfFirst { it.table.name == ndb.table.name && !it.representExistingData}
-            if(index == -1) pasted.add(0, ndb)
-            else{
-                if(pasted.isNotEmpty()){
-                    dbActions.addAll(index+1, pasted)
-                    pasted.clear()
-                }
-            }
+        insertDbAction.toMutableList().removeIf {
+            dbActions.any { d-> d.table.name.equals(it.table.name, ignoreCase = true) && !d.representExistingData && it.representExistingData}
         }
-
-        if(pasted.isNotEmpty()){
-            if(pasted.size == insertDbAction.size)
-                dbActions.addAll(pasted)
-            else
-                dbActions.addAll(0, pasted)
-        }
+        if (insertDbAction.isEmpty()) return false
+        dbActions.addAll(insertDbAction)
 
         DbActionUtils.repairFkForInsertions(dbActions)
         return true

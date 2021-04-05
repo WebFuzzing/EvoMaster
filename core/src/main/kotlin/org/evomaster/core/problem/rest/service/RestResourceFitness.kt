@@ -4,6 +4,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.ResourceStatus
@@ -11,6 +12,7 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -108,7 +110,6 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             dm.updateResourceNodeTemplate(individual)
         }
 
-
         /*
             TODO Man: shall we update SQL Insertion fails here for resource creation?
             then we prioritize to employ existing data if there exist
@@ -144,9 +145,10 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             DbActionTransformer.transform(allDbActions, sqlIdMap, previous)
         }catch (e : IllegalArgumentException){
             // the failure might be due to previous failure
-            if (!allSuccessBefore)
+            if (!allSuccessBefore){
+                LoggingUtil.uniqueWarn(log, "Failed in transforming db actions due to previous execution failure")
                 return false
-            else
+            } else
                 throw e
         }
 
@@ -154,8 +156,16 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         if (map == null) {
             LoggingUtil.uniqueWarn(log, "Failed in executing database command")
             return false
-        }else
+        }else{
+            val expected = allDbActions.filter { !it.representExistingData }
+                .flatMap { it.seeGenes() }.flatMap { it.flatView() }
+                .filterIsInstance<SqlPrimaryKeyGene>().size
+            if (expected != map.size){
+                LoggingUtil.uniqueWarn(log, "Failed in returning all sql ids")
+                return false
+            }
             sqlIdMap.putAll(map)
+        }
         return true
     }
 

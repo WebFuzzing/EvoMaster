@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
@@ -111,7 +112,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val mutatedInd = mutate(current, targets, mutatedGenes)
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
-            Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
+            Lazy.assert{DbActionUtils.verifyActions(
+                if (mutatedInd is RestIndividual) mutatedInd.seeDbAction()
+                else mutatedInd.seeInitializingActions().filterIsInstance<DbAction>()
+            )}
 
             //Shall we prioritize the targets based on mutation sampling strategy eg, feedbackDirectedSampling?
             val mutated = ff.calculateCoverage(mutatedInd, setOf())
