@@ -4,10 +4,10 @@ import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
-import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 
 class GraphQLActionBuilderTest {
