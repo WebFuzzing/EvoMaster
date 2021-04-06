@@ -1225,7 +1225,7 @@ class TestCaseWriter {
 
     fun getQuery(returnGene: Gene, a: GraphQLAction): String {
         var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-        query = query.replace("{${a.methodName}", "", true)
+       .replace("{${a.methodName}", "", true)
         query = query.substring(0, query.length - 1)
         return query
     }
