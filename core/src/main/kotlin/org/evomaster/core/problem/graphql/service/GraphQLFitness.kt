@@ -295,11 +295,10 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         """.trimIndent())
 
                 } else {
-                    var query = getQuery(returnGene, a)
+                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
                     bodyEntity = Entity.json("""
-            {"query" : "  { ${a.methodName}  $query     } ","variables":null}
+           {"query" : "    $query      ","variables":null}
         """.trimIndent())
-
                 }
             }
         } else if (a.methodType == GQMethodType.MUTATION) {
@@ -327,6 +326,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     }
 
     fun getMutation(returnGene: Gene, a: GraphQLAction): String {
+        //We need to remove the name of the return param gene since we need only the gene itself when input params are included
         var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
                 .replace("{${a.methodName}", "")
         mutation = mutation.substring(0, mutation.length - 1)//Removing the "}" related to removing the methode name
@@ -334,6 +334,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     }
 
     fun getQuery(returnGene: Gene, a: GraphQLAction): String {
+        //We need to remove the name of the return param gene since we need only the gene itself when input params are included
         var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
                 .replace("{${a.methodName}", "", true)
         query = query.substring(0, query.length - 1)//Removing the "}" related to removing the methode name

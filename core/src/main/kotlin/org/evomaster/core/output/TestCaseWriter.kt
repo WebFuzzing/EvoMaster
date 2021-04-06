@@ -995,8 +995,8 @@ class TestCaseWriter {
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
                 } else {
 
-                    var query = getQuery(returnGene, call)
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \" { ${call.methodName}  $query     }   \",\"variables\":null} ")
+                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"   $query      \",\"variables\":null} ")
 
                 }
             }
@@ -1214,12 +1214,14 @@ class TestCaseWriter {
     }
 
     fun getMutation(returnGene: Gene, a: GraphQLAction): String {
+        //We need to remove the name of the return param gene since we need only the gene itself when input params are included
         var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}".replace("{${a.methodName}", "")
         mutation = mutation.substring(0, mutation.length - 1)//Removing the "}" related to removing the methode name
         return mutation
     }
 
     fun getQuery(returnGene: Gene, a: GraphQLAction): String {
+        //We need to remove the name of the return param gene since we need only the gene itself when input params are included
         var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
                 .replace("{${a.methodName}", "", true)
         query = query.substring(0, query.length - 1)//Removing the "}" related to removing the methode name
