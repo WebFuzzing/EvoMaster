@@ -1194,9 +1194,9 @@ class TestCaseWriter {
     }
 
     fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
-        var printableInputGenes = printableInputGene.joinToString(",")
-        printableInputGenes = printableInputGenes.replace("\"", "\\\"")
-        return printableInputGenes
+
+        return printableInputGene.joinToString(",").replace("\"", "\\\"")
+
     }
 
     fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
