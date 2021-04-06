@@ -133,6 +133,40 @@ export default function evomasterPlugin(
             Look like is checking for some types, which in theory should always be pure, like literals.
             But very unclear on its features... eg, would it handle as pure "!false" ???
             TODO need to check... furthermore we do not care if throwing exception
+
+            TODO: Man
+            also check the source code of isPure() from ../@babel/traverse/lib/scope/index.js
+
+            isPureish() seems not fully applicable, we might need to modify it.
+
+            found the source code of isPureish() from ../@babel/types/lib/validators/generated/index.js
+
+                function isPureish(node, opts) {
+                  if (!node) return false;
+                  const nodeType = node.type;
+
+                  if (nodeType === "Pureish"
+                    || "FunctionDeclaration" === nodeType
+                    || "FunctionExpression" === nodeType
+                    || "StringLiteral" === nodeType
+                    || "NumericLiteral" === nodeType
+                    || "NullLiteral" === nodeType
+                    || "BooleanLiteral" === nodeType
+                    || "ArrowFunctionExpression" === nodeType
+                    || "ClassExpression" === nodeType
+                    || "ClassDeclaration" === nodeType
+                    || "BigIntLiteral" === nodeType
+                    || nodeType === "Placeholder" && "StringLiteral" === node.expectedNode) {
+
+                    if (typeof opts === "undefined") {
+                      return true;
+                    } else {
+                      return (0, _shallowEqual.default)(node, opts);
+                    }
+                  }
+
+                  return false;
+                }
          */
         //const pure = t.isPureish(exp.right);
         const pure = false; //TODO
@@ -209,20 +243,22 @@ export default function evomasterPlugin(
             consequent: Expression;
             alternate: Expression;
 
-            test? __EM__.ternary(ind_0, ()=>consequent) : __EM__.ternary(ind_0, ()=>alternate)
+            transformed code:
+                test? __EM__.ternary(()=>consequent, ... ) : __EM__.ternary(()=>alternate, ...)
 
-            where ternary needs to create 2 objectives:
-                - 1 for for when it is executed/called  (h=1)
-                - 1 for when no exception (h=0.5 and then h=1 if and onyl if () => B did not throw exception)
+            here, we create additional two statements targets for 'consequent' and 'alternate'
+            for the statement targets,
+                if consequent(/alternate) is executed without exception, h is 1
+                otherwise h is 0.5
+
+            Note that we do not further replace 'test' here.
+            if it is related to condition, it will be replaced by other existing replacement and
+            additional branch will be added there.
          */
 
         const consequent = t.arrowFunctionExpression([], exp.consequent, false);
         const alternate = t.arrowFunctionExpression([], exp.alternate, false);
 
-        /*
-            Man: consequent and alternate are considered as statement here
-                because if 'test' is a condition, two branches for 'test' will be added.
-         */
         objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
         exp.consequent = t.callExpression(
             t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.ternary.name)),

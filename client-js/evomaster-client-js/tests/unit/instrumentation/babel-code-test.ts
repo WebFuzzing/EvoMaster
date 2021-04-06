@@ -349,7 +349,6 @@ test("function call chain", () => {
 
 test("ternary", () => {
 
-    // two statements for
     const code = dedent`
         (x==42) ? foo():b.bar()
     `;
@@ -370,6 +369,7 @@ test("ternary", () => {
     `);
 
 });
+
 
 
 
