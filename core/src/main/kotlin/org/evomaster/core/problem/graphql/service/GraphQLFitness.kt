@@ -329,14 +329,14 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     fun getMutation(returnGene: Gene, a: GraphQLAction): String {
         var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
                 .replace("{${a.methodName}", "")
-        mutation = mutation.substring(0, mutation.length - 1)
+        mutation = mutation.substring(0, mutation.length - 1)//Removing the "}" related to removing the methode name
         return mutation
     }
 
     fun getQuery(returnGene: Gene, a: GraphQLAction): String {
         var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
                 .replace("{${a.methodName}", "", true)
-        query = query.substring(0, query.length - 1)
+        query = query.substring(0, query.length - 1)//Removing the "}" related to removing the methode name
         return query
     }
 
