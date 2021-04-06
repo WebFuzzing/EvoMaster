@@ -995,7 +995,7 @@ class TestCaseWriter {
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
                 } else {
 
-                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE)}}"
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"   $query      \",\"variables\":null} ")
 
                 }

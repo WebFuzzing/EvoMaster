@@ -33,6 +33,8 @@ class GQLBaseEMTest : SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOneResponseWithData(solution)
+            assertValueInDataAtLeastOnce(solution, "Foo")
+            assertNoneWithErrors(solution)
         }
     }
 }
