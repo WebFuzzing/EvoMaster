@@ -332,4 +332,17 @@ export default class HeuristicsForBooleans {
         return res;
     }
 
+    static handleTernary(f: any, fileName: string, line: number, index: number) {
+
+        HeuristicsForBooleans.lastEvaluation = null;
+        const res = f();
+        /*
+            TODO Man: unclear here, how to know whether f is complete?
+         */
+        ExecutionTracer.executingMethod(fileName, line, index, true);
+        HeuristicsForBooleans.lastEvaluation = null;
+
+        return res;
+
+    }
 }

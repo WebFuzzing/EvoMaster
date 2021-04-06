@@ -6,7 +6,8 @@ import {
     LogicalExpression, Program,
     ReturnStatement,
     Statement,
-    UnaryExpression
+    UnaryExpression,
+    ConditionalExpression
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
@@ -190,6 +191,55 @@ export default function evomasterPlugin(
         branchCounter++;
     }
 
+    function replaceConditionalExpression(path: NodePath){
+
+        if(!t.isConditionalExpression(path.node)){
+            throw Error("Node is not a ConditionalExpression: " + path.node);
+        }
+        const exp = path.node as ConditionalExpression;
+
+        if(! exp.loc){
+            return;
+        }
+
+        const l = exp.loc.start.line;
+        /*
+            test ? consequent : alternate
+            test: Expression;
+            consequent: Expression;
+            alternate: Expression;
+
+            test? __EM__.ternary(ind_0, ()=>consequent) : __EM__.ternary(ind_0, ()=>alternate)
+
+            where ternary needs to create 2 objectives:
+                - 1 for for when it is executed/called  (h=1)
+                - 1 for when no exception (h=0.5 and then h=1 if and onyl if () => B did not throw exception)
+         */
+
+        const consequent = t.arrowFunctionExpression([], exp.consequent, false);
+        const alternate = t.arrowFunctionExpression([], exp.alternate, false);
+
+        /*
+            Man: consequent and alternate are considered as statement here
+                because if 'test' is a condition, two branches for 'test' will be added.
+         */
+        objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
+        exp.consequent = t.callExpression(
+            t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.ternary.name)),
+            [consequent,
+                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
+        );
+        statementCounter++;
+
+        objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
+        exp.alternate = t.callExpression(
+            t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.ternary.name)),
+            [alternate,
+                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
+        );
+        statementCounter++;
+    }
+
     function replaceCallExpression(path: NodePath){
 
         //if(! t.isExpr) //TODO there is no available check for call expressions???
@@ -368,6 +418,11 @@ export default function evomasterPlugin(
             UnaryExpression:{
                 enter(path: NodePath){
                     replaceUnaryExpression(path);
+                }
+            },
+            ConditionalExpression:{
+                enter(path: NodePath){
+                    replaceConditionalExpression(path);
                 }
             },
             Statement: {
