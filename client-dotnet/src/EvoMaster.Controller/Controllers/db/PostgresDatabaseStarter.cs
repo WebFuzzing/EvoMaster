@@ -8,12 +8,12 @@ using Npgsql;
 
 namespace EvoMaster.Controller.Controllers.db
 {
-    internal static class NpgsqlDockerStarter
+    internal static class PostgresDatabaseStarter
     {
         private static TestcontainerDatabase _database;
         private static NpgsqlConnection _connection;
 
-        public static async Task<(string, DbConnection)> StartDatabaseAsync(string databaseName)
+        public static async Task<(string, DbConnection)> StartAsync(string databaseName, int port)
         {
             var postgresBuilder = new TestcontainersBuilder<PostgreSqlTestcontainer>()
                 .WithDatabase(new PostgreSqlTestcontainerConfiguration
@@ -22,7 +22,7 @@ namespace EvoMaster.Controller.Controllers.db
                     Username = "user",
                     Password = "password123"
                 })
-                .WithExposedPort(5432);
+                .WithExposedPort(port);
 
             _database = postgresBuilder.Build();
             await _database.StartAsync();
