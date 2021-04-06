@@ -1204,7 +1204,7 @@ class TestCaseWriter {
     }
 
     fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
-        val printableInputGene: MutableList<String> = mutableListOf()
+        val printableInputGene = mutableListOf<String>()
         for (gene in inputGenes) {
             if (gene is EnumGene<*>) {
                 val i = gene.getValueAsRawString()
