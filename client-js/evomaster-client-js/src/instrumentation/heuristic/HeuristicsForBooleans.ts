@@ -1,6 +1,7 @@
 import Truthness from "./Truthness";
 import TruthnessUtils from "./TruthnessUtils";
 import ExecutionTracer from "../staticstate/ExecutionTracer";
+import ObjectiveNaming from "../ObjectiveNaming";
 
 
 export default class HeuristicsForBooleans {
@@ -337,17 +338,15 @@ export default class HeuristicsForBooleans {
         // TODO: Man what is this for? do I need this?
         HeuristicsForBooleans.lastEvaluation = null;
 
-        let complete;
+        const id = ObjectiveNaming.statementObjectiveName(fileName, line, index);
         let res;
         try{
             res = f();
-            complete = true;
+            ExecutionTracer.updateObjective(id, 1);
         }catch (e) {
-            complete = false;
+            ExecutionTracer.updateObjective(id, 0.5);
             res = e;
         }
-
-        ExecutionTracer.executingMethod(fileName, line, index, complete);
 
         HeuristicsForBooleans.lastEvaluation = null;
 

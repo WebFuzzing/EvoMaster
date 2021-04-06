@@ -145,3 +145,33 @@ test("side-effects function calls", () => {
 
     expect(k).toBe(2);
 });
+
+test("ternary simple", () => {
+
+    expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(0);
+
+    let foo;
+    // two statements for
+    const code = dedent`
+        foo = function(x){ 
+            return (x==42)? x: y;      
+        };
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let res = foo(42);
+
+    expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(3);
+    const cons = ET.getValue("Statement_test.ts_00002_2")
+    expect(res).toBe(42);
+    expect(cons).toBe(1);
+
+    foo(1);
+    expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(4);
+    const alt = ET.getValue("Statement_test.ts_00002_3")
+    expect(alt).toBe(0.5);
+
+
+});

@@ -355,7 +355,6 @@ test("ternary", () => {
     `;
 
     const res = runPlugin(code);
-    console.log(res.code);
     expect(res.code).toEqual(dedent`
         //File instrumented with EvoMaster
     
