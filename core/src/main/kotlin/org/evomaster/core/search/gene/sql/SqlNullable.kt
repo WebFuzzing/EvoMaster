@@ -54,10 +54,10 @@ class SqlNullable(name: String,
 
         if (!isPresent) return emptyList()
 
-        if (!enableAdaptiveGeneMutation){
+        if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
             return if (randomness.nextBoolean(ABSENT)) emptyList() else listOf(gene)
         }
-        if (additionalGeneMutationInfo?.impact != null && additionalGeneMutationInfo.impact is SqlNullableImpact){
+        if (additionalGeneMutationInfo.impact is SqlNullableImpact){
             //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
             val inactive = additionalGeneMutationInfo.impact.presentImpact.determinateSelect(
                     minManipulatedTimes = 5,
@@ -69,7 +69,7 @@ class SqlNullable(name: String,
 
             return if (inactive)  emptyList() else listOf(gene)
         }
-        throw IllegalArgumentException("impact is null ${additionalGeneMutationInfo?.impact == null} or not SqlNullableImpact ${additionalGeneMutationInfo?.impact.run { if (this == null) "" else this::class.java.simpleName}}")
+        throw IllegalArgumentException("impact is not SqlNullableImpact ${additionalGeneMutationInfo.impact::class.java.simpleName}")
     }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
@@ -82,17 +82,6 @@ class SqlNullable(name: String,
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         isPresent = !isPresent
-        if (enableAdaptiveGeneMutation){
-            //TODO MAN further check
-            //if preferPresent is false, it is not necessary to mutate the gene
-//            presentMutationInfo.reached = additionalGeneMutationInfo.archiveMutator.withinNormal()
-//            if (presentMutationInfo.reached){
-//                presentMutationInfo.preferMin = 0
-//                presentMutationInfo.preferMax = 0
-//            }
-
-        }
-
         return true
     }
 
