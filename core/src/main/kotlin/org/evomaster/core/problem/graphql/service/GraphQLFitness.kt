@@ -264,6 +264,8 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 ?: throw RuntimeException("ERROR: not specified return type")
         val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
+        var bodyEntity: Entity<String> = Entity.json(" ")
+
         if (a.methodType == GQMethodType.QUERY) {
 
             if (inputGenes.isNotEmpty()) {
@@ -274,35 +276,30 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
 
                 if (returnGene.name.toLowerCase() == "scalar") {
-                    val bodyEntity = Entity.json("""
+                    bodyEntity = Entity.json("""
             {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
         """.trimIndent())
-                    val invocation = builder.buildPost(bodyEntity)
-                    return invocation
 
                 } else {
 
                     var query = getQuery(returnGene, a)
-                    val bodyEntity = Entity.json("""
+                    bodyEntity = Entity.json("""
             {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
         """.trimIndent())
-                    val invocation = builder.buildPost(bodyEntity)
-                    return invocation
+
                 }
             } else {
                 if (returnGene.name.toLowerCase() == "scalar") {
-                    val bodyEntity = Entity.json("""
+                    bodyEntity = Entity.json("""
             {"query" : "  { ${a.methodName}       } ","variables":null}
         """.trimIndent())
-                    val invocation = builder.buildPost(bodyEntity)
-                    return invocation
+
                 } else {
                     var query = getQuery(returnGene, a)
-                    val bodyEntity = Entity.json("""
+                    bodyEntity = Entity.json("""
             {"query" : "  { ${a.methodName}  $query     } ","variables":null}
         """.trimIndent())
-                    val invocation = builder.buildPost(bodyEntity)
-                    return invocation
+
                 }
             }
         } else if (a.methodType == GQMethodType.MUTATION) {
@@ -311,24 +308,21 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             var printableInputGenes = getPrintableInputGenes(printableInputGene)
 
             if (returnGene.name.toLowerCase() == "scalar") {
-                val bodyEntity = Entity.json("""
+                bodyEntity = Entity.json("""
             {"query" : " mutation{ ${a.methodName}  ($printableInputGenes)         } ","variables":null}
         """.trimIndent())
-                val invocation = builder.buildPost(bodyEntity)
-                return invocation
+
 
             } else {
                 var mutation = getMutation(returnGene, a)
 
-                val bodyEntity = Entity.json("""
+                bodyEntity = Entity.json("""
             { "query" : "mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    }","variables":null}
         """.trimIndent())
-                val invocation = builder.buildPost(bodyEntity)
-                return invocation
+
             }
         }
-        val invocation = builder.buildPost(Entity.json("""
-          """.trimIndent()))
+        val invocation = builder.buildPost(bodyEntity)
         return invocation
     }
 
