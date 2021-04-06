@@ -154,6 +154,18 @@ class FitnessValue(
                 .map { idMapper.getDescriptiveId(it) }
     }
 
+    fun potential500Faults(idMapper: IdMapper): List<String>{
+        return targets.keys
+                .filter{ idMapper.isFault500(it)}
+                .map{idMapper.getDescriptiveId(it)}
+    }
+
+    fun potentialPartialOracleFaults(idMapper: IdMapper): List<String>{
+        return targets.keys
+                .filter{idMapper.isFaultExpectation(it)}
+                .map{idMapper.getDescriptiveId(it)}
+    }
+
     /**
      * Set the heuristic [value] for the given target [id].
      * If already existing, replace it only if better.

@@ -189,7 +189,8 @@ class Statistics : SearchListener {
             add(Pair("errors5xx", "" + errors5xx(solution)))
             //this count the number of 500 (and NOT the other in 5xx), per endpoint, and distinct based on the last
             //executed line
-            add(Pair("distinct500Faults", "" )) //TODO
+            //add(Pair("distinct500Faults", "" + distinct5xx(solution) )) //TODO
+            add(Pair("distinct500Faults", "" + solution.overall.potential500Faults(idMapper).size )) //TODO
             // this is per endpoint (so, the same type of failed expectation in 2 different endpoints gets counted twice).
             // However, 5xx are not counted here. FIXME
             add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
@@ -257,6 +258,7 @@ class Statistics : SearchListener {
 
         val oracles = writer.getPartialOracles()
         //count the distinct number of API paths for which we have a failed oracle
+        // NOTE: calls with an error code (5xx) are excluded from this count.
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {

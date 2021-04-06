@@ -75,4 +75,9 @@ class IdMapper {
     }
 
     fun isFault(id: Int) : Boolean = mapping[id]?.let{ isFault(it)} ?: false
+
+    fun isFault500(id: Int): Boolean = mapping[id]?.let {isFault500(it)} ?: false
+
+    fun isFaultExpectation(id: Int): Boolean = mapping[id]?.let{ isFaultPartialOracle(it) } ?:false
+
 }
