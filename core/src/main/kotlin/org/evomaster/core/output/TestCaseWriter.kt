@@ -1214,18 +1214,11 @@ class TestCaseWriter {
     }
 
     fun getMutation(returnGene: Gene, a: GraphQLAction): String {
-        //We need to remove the name of the return param gene since we need only the gene itself when input params are included
-        var mutation = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}".replace("{${a.methodName}", "")
-        mutation = mutation.substring(0, mutation.length - 1)//Removing the "}" related to removing the methode name
-        return mutation
+        return "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
     }
 
     fun getQuery(returnGene: Gene, a: GraphQLAction): String {
-        //We need to remove the name of the return param gene since we need only the gene itself when input params are included
-        var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-                .replace("{${a.methodName}", "", true)
-        query = query.substring(0, query.length - 1)//Removing the "}" related to removing the methode name
-        return query
+        return "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
     }
 
 

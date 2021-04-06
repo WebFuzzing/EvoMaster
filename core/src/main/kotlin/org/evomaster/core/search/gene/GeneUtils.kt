@@ -43,6 +43,7 @@ object GeneUtils {
         NONE,
         X_WWW_FORM_URLENCODED,
         BOOLEAN_SELECTION_MODE,
+        BOOLEAN_SELECTION_NESTED_MODE,
         GQL_INPUT_MODE
     }
 
@@ -190,7 +191,11 @@ object GeneUtils {
             EscapeMode.EXPECTATION -> applyExpectationEscapes(string, format)
             EscapeMode.JSON -> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
-            EscapeMode.NONE, EscapeMode.X_WWW_FORM_URLENCODED, EscapeMode.BOOLEAN_SELECTION_MODE, EscapeMode.GQL_INPUT_MODE -> string
+            EscapeMode.NONE,
+            EscapeMode.X_WWW_FORM_URLENCODED,
+            EscapeMode.BOOLEAN_SELECTION_MODE,
+            EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
+            EscapeMode.GQL_INPUT_MODE -> string
             EscapeMode.BODY -> applyBodyEscapes(string, format)
             EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
         }
