@@ -151,7 +151,7 @@ test("ternary simple", () => {
     expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(0);
 
     let foo;
-    // two statements for
+    // two additional statements for ternary
     const code = dedent`
         foo = function(x){ 
             return (x==42)? x: y;      
