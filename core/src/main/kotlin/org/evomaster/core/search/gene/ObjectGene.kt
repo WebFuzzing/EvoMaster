@@ -142,24 +142,23 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 }.joinToString(","))
                 buffer.append("}")
             }
-        }
-        else if (mode == GeneUtils.EscapeMode.GQL_INPUT_MODE) {
+        } else
+            //GQL arguments need a special object printing mode form that differ from Json and Boolean selection:
+            //ObjName:{FieldNName: instance }
+            if (mode == GeneUtils.EscapeMode.GQL_INPUT_MODE) {
 
                 buffer.append("$name")
                 buffer.append(":{")
 
+                includedFields.map {
+                    "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
+                }.joinTo(buffer, ", ")
 
+                buffer.append("}")
 
-            includedFields.map {
-                "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
-            }.joinTo(buffer, ", ")
-
-            buffer.append("}")
-        }
-
-        else {
-            throw IllegalArgumentException("Unrecognized mode: $mode")
-        }
+            } else {
+                throw IllegalArgumentException("Unrecognized mode: $mode")
+            }
 
         return buffer.toString()
     }
