@@ -1194,11 +1194,7 @@ class TestCaseWriter {
     }
 
     fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
-        var printableInputGenes = ""
-        for (elt in printableInputGene) {
-            printableInputGenes = "$elt,$printableInputGenes"
-        }
-        printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
+        var printableInputGenes = printableInputGene.joinToString(",")
         printableInputGenes = printableInputGenes.replace("\"", "\\\"")
         return printableInputGenes
     }
@@ -1225,7 +1221,7 @@ class TestCaseWriter {
 
     fun getQuery(returnGene: Gene, a: GraphQLAction): String {
         var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-       .replace("{${a.methodName}", "", true)
+                .replace("{${a.methodName}", "", true)
         query = query.substring(0, query.length - 1)
         return query
     }

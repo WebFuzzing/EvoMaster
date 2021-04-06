@@ -341,11 +341,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     }
 
     fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
-        var printableInputGenes = ""
-        for (elt in printableInputGene) {
-            printableInputGenes = "$elt,$printableInputGenes"
-        }
-        printableInputGenes = printableInputGenes.substring(0, printableInputGenes.length - 1)
+        var printableInputGenes = printableInputGene.joinToString(",")
         printableInputGenes = printableInputGenes.replace("\"", "\\\"")
         return printableInputGenes
     }
