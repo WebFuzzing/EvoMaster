@@ -254,6 +254,16 @@ export default function evomasterPlugin(
             Note that we do not further replace 'test' here.
             if it is related to condition, it will be replaced by other existing replacement and
             additional branch will be added there.
+
+            From trello
+            where ternary needs to create 2 objectives:
+                - 1 for for when it is executed/called  (h=1)
+                - 1 for when no exception (h=0.5 and then h=1 if and onyl if () => B did not throw exception)
+            TODO: check with Andrea, I am not clear about the second point,
+                do we need to handle 'consequent' and 'alternate' differently?
+                in addition, do we need to handle 'throw exception' with different h?
+                how about itself is a throw exception expression, e.g., A? B: (throw e)
+                if needed, we might need to add a variable for a check with 't.isThrowStatement()'
          */
 
         const consequent = t.arrowFunctionExpression([], exp.consequent, false);

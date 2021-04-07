@@ -340,16 +340,23 @@ export default class HeuristicsForBooleans {
 
         const id = ObjectiveNaming.statementObjectiveName(fileName, line, index);
         let res;
+
+        /*
+            TODO: Man I am not sure if we need to distinguish exception here
+            How about the f() itself is an throw exception expression
+         */
         try{
             res = f();
             ExecutionTracer.updateObjective(id, 1);
         }catch (e) {
             ExecutionTracer.updateObjective(id, 0.5);
-            res = e;
+            //Man: might throw exception again
+            throw e;
+            //res = e;
+        }finally
+        {
+            HeuristicsForBooleans.lastEvaluation = null;
         }
-
-        HeuristicsForBooleans.lastEvaluation = null;
-
         return res;
 
     }

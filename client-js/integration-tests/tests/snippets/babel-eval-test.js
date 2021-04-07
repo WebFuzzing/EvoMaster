@@ -168,10 +168,14 @@ test("ternary simple", () => {
     expect(res).toBe(42);
     expect(cons).toBe(1);
 
-    foo(1);
+    let throws = false;
+    try {
+        foo(1);
+    }catch (e){
+        throws = true;
+    }
+    expect(throws);
     expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(4);
     const alt = ET.getValue("Statement_test.ts_00002_3")
     expect(alt).toBe(0.5);
-
-
 });
