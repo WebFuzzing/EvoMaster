@@ -36,7 +36,7 @@ namespace Controller
         /// </summary>
         /// <param name="port">The port number on the localhost</param>
         /// <param name="timeout">The amount of time in seconds the driver should give up if the SUT did not start </param>
-        protected static void WaitUntilSutIsRunning(int port, int timeout = 20)
+        protected static void WaitUntilSutIsRunning(int port, int timeout = 60)
         {
             var task = Task.Run(() =>
             {

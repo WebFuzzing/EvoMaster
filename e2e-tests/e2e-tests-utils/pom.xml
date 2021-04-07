@@ -65,6 +65,13 @@
             <artifactId>junit-platform-launcher</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-e2e-tests-ci-utils</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+        </dependency>
+
     </dependencies>
 
     <build>

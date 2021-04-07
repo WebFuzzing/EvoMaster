@@ -11,6 +11,10 @@ namespace Controller.Api {
     MYSQL,
 
     POSTGRES,
+    
+    MARIADB,
+
+    MS_SQL_SERVER,
 
     /**
     * In case used database is not listed in this enum, can

@@ -29,16 +29,23 @@ public class NumberParsingUtils {
             for (int i = 0; i < input.length(); i++) {
 
                 int digitsDist = distanceToDigit(input.charAt(i));
+                int minusDist = distanceToChar(input.charAt(i), '-');
+                int dotDist = distanceToChar(input.charAt(i), '.');
+
                 if (i == 0) {
-                    //first symbol could be a '-'
-                    distance += Math.min(digitsDist, distanceToChar(input.charAt(i), '-'));
+                    /*
+                        first symbol could be a '-'.
+                        note that '.' could be in any position, including first and last, with the only
+                        exception of 2nd when first is '-'
+                     */
+                    distance += Math.min(Math.min(digitsDist, minusDist), dotDist);
 
                 } else {
-                    int firstIndexOfDot = input.substring(1).indexOf('.');
-                    if (firstIndexOfDot != -1) {
-                        // optimize for a '.'
-                        distance += Math.min(digitsDist, distanceToChar(input.charAt(i), '.'));
-                    } else if (i == firstIndexOfDot) {
+                    int firstIndexOfDot = input.indexOf('.');
+                    if (firstIndexOfDot < 0) {
+                        // no dots, so can optimize for a '.'
+                        distance += Math.min(digitsDist, dotDist);
+                    } else if (i == firstIndexOfDot && (firstIndexOfDot != 1 || input.charAt(0)!='-' || input.length() > 2)) {
                         distance += 0;
                     } else {
                         distance += digitsDist;

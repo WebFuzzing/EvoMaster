@@ -32,17 +32,23 @@ public class StandardOutputTracker extends ByteArrayOutputStream{
 
     private volatile SutController sutController;
 
+    private final PrintStream printStream;
 
     public static void setTracker(boolean on, SutController sutController){
         if(on){
-            System.setOut(new PrintStream(new StandardOutputTracker(sutController), true));
+            System.setOut(new WrappedPrintStream(new StandardOutputTracker(sutController), true));
         } else {
             System.setOut(DEFAULT_OUT);
         }
     }
 
     private StandardOutputTracker(SutController sutController) {
+        this(sutController, null);
+    }
+
+    protected StandardOutputTracker(SutController sutController, PrintStream printStream) {
         super(2048);
+        this.printStream = printStream;
         this.sutController = sutController;
     }
 
@@ -63,7 +69,8 @@ public class StandardOutputTracker extends ByteArrayOutputStream{
             data = toString(); //get content of the buffer
             reset();
 
-            DEFAULT_OUT.print(data);
+            getOut().print(data);
+            getOut().flush();
         }
 
         if (data != null) {
@@ -92,4 +99,12 @@ public class StandardOutputTracker extends ByteArrayOutputStream{
         }
     }
 
+    private PrintStream getOut(){
+        if (printStream == null) return DEFAULT_OUT;
+        return printStream;
+    }
+
+    public StandardOutputTracker copyWithPrintStream(PrintStream printStream){
+        return new StandardOutputTracker(sutController, printStream);
+    }
 }

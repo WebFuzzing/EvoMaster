@@ -13,8 +13,15 @@ import java.sql.SQLException;
 
 public class SpringWithDbController extends SpringController {
 
-    protected Connection connection;
+    static {
+        /**
+         * To avoid issues with non-determinism checks (in particular in the handling of taint-analysis),
+         * we must disable the cache in H2
+         */
+        System.setProperty("h2.objectCache", "false");
+    }
 
+    protected Connection connection;
 
     protected SpringWithDbController(Class<?> applicationClass) {
         super(applicationClass);

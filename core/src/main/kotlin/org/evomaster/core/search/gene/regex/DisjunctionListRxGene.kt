@@ -9,6 +9,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class DisjunctionListRxGene(
@@ -25,6 +27,7 @@ class DisjunctionListRxGene(
 
     companion object{
         private const val PROB_NEXT = 0.1
+        private val log: Logger = LoggerFactory.getLogger(DisjunctionListRxGene::class.java)
     }
 
 
@@ -50,6 +53,7 @@ class DisjunctionListRxGene(
          * randomly choose a new disjunction term
          */
         if (disjunctions.size > 1) {
+            log.trace("random disjunctions of DisjunctionListRxGene")
             activeDisjunction = randomness.nextInt(0, disjunctions.size-1)
         }
     }
