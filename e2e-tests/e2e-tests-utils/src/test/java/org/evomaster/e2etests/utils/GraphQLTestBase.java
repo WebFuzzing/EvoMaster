@@ -64,8 +64,93 @@ public abstract class GraphQLTestBase extends WsTestBase{
         return false;
     }
 
+    protected boolean noneWithErrors(EvaluatedIndividual<GraphQLIndividual> ind){
+
+        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+
+        boolean stopped = false;
+
+        for (int i = 0; i < actions.size() && !stopped; i++) {
+
+            GraphQlCallResult res = (GraphQlCallResult) ind.getResults().get(i);
+            stopped = res.getStopping();
+
+            Integer statusCode = res.getStatusCode();
+            if (!statusCode.equals(200)) {
+                return false;
+            }
+
+            String body = res.getBody();
+            ObjectMapper jackson = new ObjectMapper();
+
+            JsonNode node;
+            try {
+                node = jackson.readTree(body);
+            } catch (JsonProcessingException e) {
+                continue;
+            }
+
+            JsonNode data = node.findPath("data");
+            JsonNode errors = node.findPath("errors");
+
+            if(!errors.isNull() || !errors.isMissingNode()){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
     protected void assertHasAtLeastOneResponseWithData(Solution<GraphQLIndividual> solution) {
         boolean ok = solution.getIndividuals().stream().anyMatch(ind -> atLeastOneResponseWithData(ind));;
+        assertTrue(ok);
+    }
+
+    protected void assertNoneWithErrors(Solution<GraphQLIndividual> solution){
+        boolean ok = solution.getIndividuals().stream().allMatch(ind -> noneWithErrors(ind));
+        assertTrue(ok);
+    }
+
+
+    protected boolean hasValueInData(EvaluatedIndividual<GraphQLIndividual> ind, String value){
+        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+
+        boolean stopped = false;
+
+        for (int i = 0; i < actions.size() && !stopped; i++) {
+
+            GraphQlCallResult res = (GraphQlCallResult) ind.getResults().get(i);
+            stopped = res.getStopping();
+
+            Integer statusCode = res.getStatusCode();
+            if (!statusCode.equals(200)) {
+                continue;
+            }
+
+            String body = res.getBody();
+            ObjectMapper jackson = new ObjectMapper();
+
+            JsonNode node;
+            try {
+                node = jackson.readTree(body);
+            } catch (JsonProcessingException e) {
+                continue;
+            }
+
+            JsonNode data = node.findPath("data");
+
+            if(!data.isNull() && !data.isMissingNode() && data.asText().contains(value)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    protected void assertValueInDataAtLeastOnce(Solution<GraphQLIndividual> solution, String value){
+        boolean ok = solution.getIndividuals().stream().anyMatch(ind -> hasValueInData(ind, value));
         assertTrue(ok);
     }
 }

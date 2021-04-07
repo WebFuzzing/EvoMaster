@@ -36,6 +36,7 @@ class GQLPrimitiveTypeEMTest: SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOneResponseWithData(solution)
+            assertNoneWithErrors(solution)
         }
     }
 }

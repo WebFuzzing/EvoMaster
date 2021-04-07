@@ -111,11 +111,14 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 "$name=$value"
             }.joinToString("&"))
 
-        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE) {
+        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE || mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
             if (includedFields.isEmpty()) {
                 buffer.append("$name")
             } else {
-                buffer.append("$name")
+                if(mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
+                    //we do not do it for the first object, but we must do it for all the nested ones
+                    buffer.append("$name")
+                }
                 buffer.append("{")
 
                 val selection = includedFields.filter {
@@ -129,7 +132,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 buffer.append(selection.map {
                     val s: String = when (it) {
                         is OptionalGene -> {
-                            it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
+                            assert(it.gene is ObjectGene)
+                            it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
                         }
                         is BooleanGene -> {
                             it.name

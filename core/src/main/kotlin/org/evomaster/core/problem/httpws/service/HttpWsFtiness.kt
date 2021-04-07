@@ -1,18 +1,12 @@
 package org.evomaster.core.problem.httpws.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.ActionDto
-import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.rest.BlackBoxUtils
-import org.evomaster.core.problem.rest.ContentType
-import org.evomaster.core.problem.rest.RestAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.remote.SutProblemException
@@ -150,6 +144,16 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
                 fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
             }
         }
+    }
+
+    open fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: HttpWsCallResult, name: String) : String?{
+        var location5xx : String? = null
+        if (status == 500){
+            val statement = additionalInfoList[indexOfAction].lastExecutedStatement
+            location5xx = statement ?: "framework_code"
+            result.setLastStatementWhen500(location5xx)
+        }
+        return location5xx
     }
 
     protected fun getBaseUrl(): String {
