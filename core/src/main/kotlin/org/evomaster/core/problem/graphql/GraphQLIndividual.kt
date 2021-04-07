@@ -20,7 +20,7 @@ class GraphQLIndividual(
     override fun copy(): Individual {
 
         return GraphQLIndividual(
-                actions.map { it.copy() }.toMutableList(),
+                actions.map { it.copy() as GraphQLAction}.toMutableList(),
                 sampleType,
                 dbInitialization.map { it.copy() as DbAction } as MutableList<DbAction>
         )

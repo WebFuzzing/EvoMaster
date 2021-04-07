@@ -36,6 +36,7 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
         val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
 
         val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, getSampler())
+        log.trace("{} insertions are added at structure mutator", addedInsertions?.flatten()?.size?:0)
 
         ind.repairInitializationActions(randomness)
 

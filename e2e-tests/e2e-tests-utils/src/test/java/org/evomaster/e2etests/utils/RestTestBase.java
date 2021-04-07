@@ -6,10 +6,7 @@ import org.evomaster.core.Main;
 import org.evomaster.core.StaticCounter;
 import org.evomaster.core.logging.TestLoggingUtil;
 import org.evomaster.core.problem.rest.*;
-import org.evomaster.core.search.Action;
-import org.evomaster.core.search.EvaluatedIndividual;
-import org.evomaster.core.search.Individual;
-import org.evomaster.core.search.Solution;
+import org.evomaster.core.search.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,7 +79,7 @@ public abstract class RestTestBase  extends WsTestBase{
     protected List<Integer> getIndexOfHttpCalls(Individual ind, HttpVerb verb) {
 
         List<Integer> indices = new ArrayList<>();
-        List<Action> actions = ind.seeActions();
+        List<Action> actions = ind.seeActions(ActionFilter.NO_INIT);
 
         for (int i = 0; i < actions.size(); i++) {
             if (actions.get(i) instanceof RestCallAction) {
@@ -118,7 +115,7 @@ public abstract class RestTestBase  extends WsTestBase{
                                     String path,
                                     String inResponse) {
 
-        List<RestAction> actions = ind.getIndividual().seeActions();
+        List<RestAction> actions = ind.getIndividual().seeRestAction();
 
         boolean stopped = false;
 

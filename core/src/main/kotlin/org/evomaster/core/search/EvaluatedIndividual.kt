@@ -266,7 +266,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         compareWithLatest(next = mutated, previous = previous, targetsInfo = targetsInfo, mutatedGenes = mutatedGenes)
     }
 
-    fun verifyImpacts(){
+    private fun verifyImpacts(){
         impactInfo?.verifyActionGeneImpacts(individual.seeActions(ActionFilter.NO_INIT))
     }
 
@@ -357,7 +357,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
             //handle swap
             if (mutatedGenes.getSwap().isNotEmpty()){
-                log.info("swap")
                 if (mutatedGenes.getSwap().size > 1)
                     throw IllegalStateException("the swap mutator is applied more than one times, i.e., ${mutatedGenes.getSwap().size}")
 
