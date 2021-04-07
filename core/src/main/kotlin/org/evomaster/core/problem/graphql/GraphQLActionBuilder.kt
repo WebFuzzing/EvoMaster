@@ -638,9 +638,9 @@ object GraphQLActionBuilder {
                     return DateGene(tableType)
             "enum" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(methodName, EnumGene(tableType, enumValues))
+                    return OptionalGene(tableType, EnumGene(tableType, enumValues))
                 else
-                    return EnumGene(methodName, enumValues)
+                    return EnumGene(tableType, enumValues)
             "scalar" ->
                 return getGene(state, tableFieldType, tableType, kindOfTableFieldType, kindOfTableField, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
@@ -826,7 +826,7 @@ object GraphQLActionBuilder {
             }
             return ObjectGene(methodName, fields, tableType)
         } else {
-            fields.add(CycleObjectGene(tableType))
+            fields.add(CycleObjectGene(methodName))
             return ObjectGene(methodName, fields, tableType)
         }
     }
