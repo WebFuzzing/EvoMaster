@@ -62,7 +62,8 @@ class BlackBoxRestFitness : RestFitness() {
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
-    override fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: RestCallResult, name:String): String? {
-        return "$status:$name"
+    //override fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: RestCallResult, name:String): String? {
+    fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: RestCallResult, name:String): String? {
+            return "$status:$name"
     }
 }

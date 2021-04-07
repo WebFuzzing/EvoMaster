@@ -995,8 +995,8 @@ class TestCaseWriter {
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
                 } else {
 
-                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE)}}"
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"   $query      \",\"variables\":null} ")
+                    var query = getQuery(returnGene, call)
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \" {${call.methodName}  $query  }    \",\"variables\":null} ")
 
                 }
             }
@@ -1214,11 +1214,11 @@ class TestCaseWriter {
     }
 
     fun getMutation(returnGene: Gene, a: GraphQLAction): String {
-        return "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
     }
 
     fun getQuery(returnGene: Gene, a: GraphQLAction): String {
-        return "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
     }
 
 

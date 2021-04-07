@@ -104,7 +104,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     private fun handleResponseTargets(fv: FitnessValue, actions: List<GraphQLAction>, actionResults: List<ActionResult>, additionalInfoList: List<AdditionalInfoDto>) {
 
         (0 until actionResults.size)
-                .filter { actions[it] is RestCallAction }
+                .filter { actions[it] is GraphQLAction }
                 .filter { actionResults[it] is RestCallResult }
                 .forEach {
                     val result = actionResults[it] as GraphQlCallResult
@@ -115,7 +115,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                     val statusId = idMapper.handleLocalTarget("$status:$name")
                     fv.updateTarget(statusId, 1.0, it)
 
-                    val location5xx : String? = getlocation5xx(status, additionalInfoList, it, result, name)
+                    val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
 
                     handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
@@ -157,12 +157,12 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         if (status in 200..299) {
             fv.updateTarget(okId, 1.0, indexOfAction)
             fv.updateTarget(faultId, 0.5, indexOfAction)
-        } else  {
+        } else {
             fv.updateTarget(okId, 0.5, indexOfAction)
             fv.updateTarget(faultId, 1.0, indexOfAction)
         }
 
-        if (status == 500){
+        if (status == 500) {
             Lazy.assert {
                 location5xx != null
             }
@@ -366,7 +366,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                 } else {
 
-                    var query = getQuery(returnGene, a)
+                    val query = getQuery(returnGene, a)
                     bodyEntity = Entity.json("""
             {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
         """.trimIndent())
@@ -379,16 +379,16 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         """.trimIndent())
 
                 } else {
-                    var query = "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+                    var query = getQuery(returnGene, a)
                     bodyEntity = Entity.json("""
-           {"query" : "    $query      ","variables":null}
+           {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
         """.trimIndent())
                 }
             }
         } else if (a.methodType == GQMethodType.MUTATION) {
             val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
 
-            var printableInputGenes = getPrintableInputGenes(printableInputGene)
+            val printableInputGenes = getPrintableInputGenes(printableInputGene)
 
             if (returnGene.name.toLowerCase() == "scalar") {
                 bodyEntity = Entity.json("""
@@ -397,7 +397,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
 
             } else {
-                var mutation = getMutation(returnGene, a)
+                val mutation = getMutation(returnGene, a)
 
                 bodyEntity = Entity.json("""
             { "query" : "mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    }","variables":null}
@@ -410,11 +410,11 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     }
 
     fun getMutation(returnGene: Gene, a: GraphQLAction): String {
-        return "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
     }
 
     fun getQuery(returnGene: Gene, a: GraphQLAction): String {
-        return "{${returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
     }
 
     fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
