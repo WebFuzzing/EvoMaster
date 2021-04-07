@@ -26,7 +26,7 @@ class GraphQLStructureMutator : StructureMutator() {
     private lateinit var sampler: GraphQLSampler
 
 
-    override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
+    override fun mutateStructure(individual: Individual,evaluated: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
 
         if (individual !is GraphQLIndividual) {
             throw IllegalArgumentException("Invalid individual type")
@@ -61,8 +61,7 @@ class GraphQLStructureMutator : StructureMutator() {
             val sampledAction = sampler.sampleRandomAction(0.05) as GraphQLAction
 
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(ind.seeActions().size)
+            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, ind.seeActions().size, false, ind.seeActions().size)
 
             ind.actions.add(sampledAction)
 
@@ -77,8 +76,7 @@ class GraphQLStructureMutator : StructureMutator() {
 
             //save mutated genes
             val removedActions = ind.actions[chosen]
-            mutatedGenes?.removedGene?.addAll(removedActions.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(removedActions, chosen, true, chosen)
 
             ind.actions.removeAt(chosen)
 
@@ -92,9 +90,7 @@ class GraphQLStructureMutator : StructureMutator() {
             ind.actions.add(chosen, sampledAction)
 
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, chosen, false, chosen)
         }
-
     }
 }
