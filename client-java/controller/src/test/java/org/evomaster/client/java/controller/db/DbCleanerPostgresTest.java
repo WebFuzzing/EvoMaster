@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.db;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,5 +60,8 @@ public class DbCleanerPostgresTest extends DbCleanerTestBase{
         DbCleaner.clearDatabase_Postgres(connection, "public", tablesToSkip);
     }
 
-
+    @Override
+    protected DatabaseType getDbType() {
+        return DatabaseType.POSTGRES;
+    }
 }

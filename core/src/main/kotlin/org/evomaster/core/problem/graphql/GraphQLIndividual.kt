@@ -7,9 +7,10 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 
 class GraphQLIndividual(
-        val actions: MutableList<out Action>,
+        val actions: MutableList<GraphQLAction>,
         val sampleType: SampleType,
         val dbInitialization: MutableList<DbAction> = mutableListOf()
 ) : Individual() {
@@ -17,7 +18,7 @@ class GraphQLIndividual(
     override fun copy(): Individual {
 
         return GraphQLIndividual(
-                actions.map { it.copy() }.toMutableList(),
+                actions.map { it.copy() as GraphQLAction}.toMutableList(),
                 sampleType,
                 dbInitialization.map { it.copy() as DbAction } as MutableList<DbAction>
         )
@@ -37,18 +38,28 @@ class GraphQLIndividual(
         return seeActions().size
     }
 
-    override fun seeActions(): List<out Action> {
+    override fun seeActions(): List<GraphQLAction> {
         return actions
 
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
+        return DbActionUtils.verifyActions(dbInitialization)
     }
 
     override fun repairInitializationActions(randomness: Randomness) {
-        TODO("Not yet implemented")
+        //TODO("Not yet implemented")
     }
 
+    override fun copy(copyFilter: TraceableElementCopyFilter): GraphQLIndividual {
+        val copy = copy() as GraphQLIndividual
+        when(copyFilter){
+            TraceableElementCopyFilter.NONE-> {}
+            TraceableElementCopyFilter.WITH_TRACK, TraceableElementCopyFilter.DEEP_TRACK  ->{
+                copy.wrapWithTracking(null, tracking!!.copy())
+            }else -> throw IllegalStateException("${copyFilter.name} is not implemented!")
+        }
+        return copy
+    }
 
 }

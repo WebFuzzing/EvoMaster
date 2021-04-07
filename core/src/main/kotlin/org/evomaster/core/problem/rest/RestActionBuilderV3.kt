@@ -681,6 +681,12 @@ object RestActionBuilderV3 {
                              modelCluster: MutableMap<String, ObjectGene>) {
         modelCluster.clear()
 
+        /*
+            needs to check whether there exist some side-effects
+            if do not clean those, some testDeterminism might fail due to inconsistent warning log.
+         */
+        refCache.clear()
+        dtoCache.clear()
 
         if (swagger.components.schemas != null) {
             swagger.components.schemas

@@ -65,7 +65,7 @@ abstract class MutationBoundaryUpdate<T> (
 
     fun updateOrRestBoundary(history : List<Pair<T, Int>>){
 
-        (0 until history.size).forEach {i->
+        (history.indices).forEach { i->
             updateOrRestBoundary(
                     index = i,
                     current = history[i].first,

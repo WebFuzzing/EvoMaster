@@ -5,12 +5,14 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestFitness
+import org.evomaster.core.problem.rest.service.RestStructureMutator
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StandardMutator
+import org.evomaster.core.search.service.mutator.StructureMutator
 
 class GraphQLModule : AbstractModule() {
 
@@ -45,6 +47,8 @@ class GraphQLModule : AbstractModule() {
                 .to(object : TypeLiteral<StandardMutator<GraphQLIndividual>>(){})
                 .asEagerSingleton()
 
-        //TODO StructureMutator
+        bind(StructureMutator::class.java)
+                .to(GraphQLStructureMutator::class.java)
+                .asEagerSingleton()
     }
 }

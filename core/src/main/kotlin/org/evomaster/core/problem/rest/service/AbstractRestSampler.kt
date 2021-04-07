@@ -107,6 +107,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         DbActionUtils.randomizeDbActionGenes(actions, randomness)
 
+        if (log.isTraceEnabled){
+            log.trace("at sampleSqlInsertion, {} insertions are added, and they are {}", actions.size,
+                actions.joinToString(",") {
+                    if (it is DbAction) it.getResolvedName() else it.getName()
+                })
+        }
+
         return actions
     }
 

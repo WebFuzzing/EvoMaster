@@ -128,3 +128,20 @@ test("issue in IF handling", () => {
     //should not crash
     eval(instrumented);
 });
+
+test("side-effects function calls", () => {
+
+    let k;
+
+    const code = dedent`
+        const a = function(x){return b(x+1);}
+        const b = function(x){return x+1;}
+        k = a(0);
+    `;
+
+    const instrumented = runPlugin(code).code;
+
+    eval(instrumented);
+
+    expect(k).toBe(2);
+});

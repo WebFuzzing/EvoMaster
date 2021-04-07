@@ -5,6 +5,8 @@ import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -31,6 +33,8 @@ class FitnessValue(
         const val MAX_VALUE = 1.0
 
         fun isMaxValue(value: Double) = value == MAX_VALUE
+
+        private val log: Logger = LoggerFactory.getLogger(FitnessValue::class.java)
     }
 
     /**
@@ -226,6 +230,9 @@ class FitnessValue(
             val z = other.targets[k]?.distance ?: 0.0
             if (v < z) {
                 //  if it is worse on any target, then it cannot be subsuming
+                if (log.isTraceEnabled){
+                    log.trace("for target {}, subsume is false with v ({}) < z ({})", k, v, z)
+                }
                 return false
             }
 
@@ -233,6 +240,9 @@ class FitnessValue(
         }
 
         if(atLeastOneBetter){
+            if (log.isTraceEnabled){
+                log.trace("subsume is true with atLeastOneBetter")
+            }
             return true
         }
 
@@ -245,9 +255,14 @@ class FitnessValue(
                 other heuristics, then we say one subsumes the other if twice
                 as fast to compute
              */
+            if (log.isTraceEnabled){
+                log.trace("subsume is true with useTimestamps, and current is {}, other is {}", executionTimeMs, other.executionTimeMs)
+            }
             return true
         }
-
+        if (log.isTraceEnabled){
+            log.trace("subsume is false at the end")
+        }
         return false
     }
 
@@ -271,7 +286,12 @@ class FitnessValue(
     fun betterThan(target: Int, other: FitnessValue, strategy: EMConfig.SecondaryObjectiveStrategy, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
         val z = other.getHeuristic(target)
         val v = getHeuristic(target)
-        if (v < z) return false
+        if (v < z) {
+            if (log.isTraceEnabled){
+                log.trace("for target {}, betterThan is false with v ({}) < z ({})", target, v, z)
+            }
+            return false
+        }
 
         val extra = compareExtraToMinimize(target, other, strategy)
 
@@ -306,12 +326,24 @@ class FitnessValue(
     }
 
     private fun betterThan(target: Int, heuristics: Double, size: Double, extra: Int, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
+
+        if (log.isTraceEnabled){
+            log.trace("for target{}, checking betterThan with extras and extra is {}", target, extra)
+        }
+
         val v = getHeuristic(target)
-        if (v < heuristics) return false
+        if (v < heuristics) {
 
-        return if(bloatControlForSecondaryObjective
+            if (log.isTraceEnabled){
+                log.trace("for target{}, betterThan with extras is false with v ({}) < heuristics ({})", target, v, heuristics)
+            }
+            return false
 
-                && min(this.size, size) >= minimumSize){
+        }
+
+        return (if(bloatControlForSecondaryObjective
+
+            && min(this.size, size) >= minimumSize){
             v > heuristics ||
                     (v == heuristics && this.size <  size) ||
                     (v == heuristics &&  this.size ==  size && extra > 0)
@@ -319,6 +351,10 @@ class FitnessValue(
             v > heuristics ||
                     (v == heuristics && extra > 0) ||
                     (v == heuristics && extra == 0 && this.size <  size)
+        }).also {
+            if (log.isTraceEnabled){
+                log.trace("for target{}, betterThan with extras is {} ", target, it)
+            }
         }
     }
 
@@ -391,8 +427,16 @@ class FitnessValue(
         val thisAction = targets[target]?.actionIndex
         val otherAction = other.targets[target]?.actionIndex
 
+        /*
+            [non-determinism-source] Man: a SQL command might be invoked multiple times, see [makeHttpCall] in RemoteController
+            this might cause non-determinism results for [thisN] and [otherN]
+        */
         val thisN = databaseExecutions[thisAction]?.numberOfSqlCommands ?: 0
         val otherN = other.databaseExecutions[otherAction]?.numberOfSqlCommands ?: 0
+
+        if (log.isTraceEnabled){
+            log.trace("compareAverageSameNActions with thisN {} and otherN {}", thisN, otherN)
+        }
 
         return when {
             thisN > otherN -> 1
@@ -408,6 +452,15 @@ class FitnessValue(
 
         val thisDistances = this.extraToMinimize[thisAction]
         val otherDistances = other.extraToMinimize[otherAction]
+
+
+        if (log.isTraceEnabled){
+            log.trace("compareAverage with thisAction {} and otherAction {}", thisAction, otherAction)
+        }
+
+        if (log.isTraceEnabled){
+            log.trace("compareAverage with thisDistances {} and otherDistances {}", thisDistances, otherDistances)
+        }
 
         if(isEmptyList(thisDistances) && isEmptyList(otherDistances)){
             return 0
