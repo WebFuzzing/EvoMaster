@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 public class AdditionalInfoDto {
 
@@ -32,7 +31,7 @@ public class AdditionalInfoDto {
      * The associated list is its possible specializations (which usually
      * will be at most 1).
      */
-    public Map<String, List<StringSpecializationInfoDto>> stringSpecializations = new HashMap<>();
+    public Map<String, List<StringSpecializationInfoDto>> stringSpecializations = new LinkedHashMap<>();
 
 
     /**

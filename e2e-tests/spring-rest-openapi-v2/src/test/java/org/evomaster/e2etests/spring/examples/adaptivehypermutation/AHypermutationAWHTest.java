@@ -1,13 +1,13 @@
 package org.evomaster.e2etests.spring.examples.adaptivehypermutation;
 
 import com.foo.rest.examples.spring.adaptivehypermutation.AHypermutationRestController;
-import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.evomaster.e2etests.utils.CIUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,13 +35,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * 4) target/em-tests/AWH/snapshot.csv records more detailed performance i.e., every 5% of the used budget, throughout search,
  */
 public class AHypermutationAWHTest extends AHypermuationTestBase {
-    private static int budget = 20_000;
+    private final static int budget = 20_000;
     private static String statisticsFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/statistics.csv";
     private static String snapshotFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/snapshot.csv";
+    private final static int SEED = 0;
+
     @Test
     public void testRunMIO() {
 
         CIUtils.skipIfOnCircleCI();
+
+        defaultSeed = SEED;
 
         List<String> msg = new ArrayList<>();
         assertThrows(Throwable.class, () -> {
@@ -87,19 +91,19 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
 
                         Solution<RestIndividual> solution = initAndRun(args);
 
-
                         int count = countExpectedCoveredTargets(solution, msg);
 
                         assertTrue(count >= 2);
                     }, 10);
         }, String.join("\n", msg));
-
     }
 
     @Test
     public void testRunMIOAWH() throws Throwable {
 
         CIUtils.skipIfOnCircleCI();
+
+        defaultSeed = SEED;
 
         runTestHandlingFlakyAndCompilation(
                 "AWH/TestAHW",
@@ -150,16 +154,7 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
                 }, 10);
     }
 
-    private int countExpectedCoveredTargets(Solution<RestIndividual> solution , List<String> msg){
-        int count = 0;
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B0", count, msg);
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B1", count, msg);
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B2", count, msg);
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B3", count, msg);
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B4", count, msg);
-        count = countExpected(solution, HttpVerb.POST, 200, "/api/foos/{x}", "B5", count, msg);
-        return count;
-    }
+
 
     @BeforeAll
     public static void initClass() throws Exception {

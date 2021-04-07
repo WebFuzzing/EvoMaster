@@ -15,6 +15,8 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.dbconstraint.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class SqlInsertBuilder(
@@ -36,6 +38,10 @@ class SqlInsertBuilder(
     private val databaseType: DatabaseType
 
     private val name: String
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(SqlInsertBuilder::class.java)
+    }
 
 
     init {
@@ -283,6 +289,8 @@ class SqlInsertBuilder(
             DatabaseType.POSTGRES -> ConstraintDatabaseType.POSTGRES
             DatabaseType.DERBY -> ConstraintDatabaseType.DERBY
             DatabaseType.MYSQL -> ConstraintDatabaseType.MYSQL
+            DatabaseType.MARIADB -> ConstraintDatabaseType.MARIADB
+            DatabaseType.MS_SQL_SERVER -> ConstraintDatabaseType.MS_SQL_SERVER
             DatabaseType.OTHER -> ConstraintDatabaseType.OTHER
         }
     }
@@ -379,6 +387,10 @@ class SqlInsertBuilder(
         }
 
         val insertion = DbAction(table, selectedColumns, counter++)
+        if (log.isTraceEnabled){
+            log.trace("create an insertion which is {} and the counter is ", insertion.getResolvedName(), counter)
+        }
+
         val actions = mutableListOf(insertion)
 
         for (fk in table.foreignKeys) {
@@ -397,7 +409,9 @@ class SqlInsertBuilder(
             }
             actions.addAll(0, pre)
         }
-
+        if (log.isTraceEnabled){
+            log.trace("create insertions and current size is", actions.size)
+        }
         return actions
     }
 

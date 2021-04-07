@@ -44,6 +44,12 @@ public class EMController {
      */
     private final SutController sutController;
 
+    /**
+     * Keep track of the ID of last executed SQL command.
+     * This is done to avoid repeating the same command (even if in a POST,
+     * it could happen due to bugs in Jersey)
+     */
+    private volatile Integer lastSqlCommandId = null;
 
     private String baseUrlOfSUT;
 
@@ -192,6 +198,8 @@ public class EMController {
     public Response newSearch(@Context HttpServletRequest httpServletRequest) {
 
         assert trackRequestSource(httpServletRequest);
+
+        lastSqlCommandId = null;
 
         noKillSwitch(() -> sutController.newSearch());
 
@@ -362,7 +370,7 @@ public class EMController {
                     info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
                     info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
 
-                    info.stringSpecializations = new HashMap<>();
+                    info.stringSpecializations = new LinkedHashMap<>();
                     for(Map.Entry<String, Set<StringSpecializationInfo>> entry :
                             a.getStringSpecializationsView().entrySet()){
 
@@ -411,10 +419,21 @@ public class EMController {
     @PUT
     public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
 
-        assert trackRequestSource(httpServletRequest);
+        /*
+            Note: as PUT is idempotent, it can be repeated...
+            so need to handle such possibility here
+         */
+        Integer index = dto.index;
+        Integer current = sutController.getActionIndex();
+        if(index == current){
+            SimpleLogger.warn("Repeated PUT on newAction for same index " + index);
+        } else {
 
-        //this MUST not be inside a noKillSwitch, as it sets to false
-        sutController.newAction(dto);
+            assert trackRequestSource(httpServletRequest);
+
+            //this MUST not be inside a noKillSwitch, as it sets to false
+            sutController.newAction(dto);
+        }
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
     }
@@ -425,9 +444,28 @@ public class EMController {
     @POST
     public Response executeDatabaseCommand(DatabaseCommandDto dto, @Context HttpServletRequest httpServletRequest) {
 
+        Integer id = dto.idCounter;
+        if(id != null){
+            if(lastSqlCommandId != null && id <= lastSqlCommandId){
+                SimpleLogger.warn("SQL command with id " + id + " has not arrived in order. Last received id : " + lastSqlCommandId);
+
+                /*
+                    if it had insertions, we silently skip doing it twice.
+                    but a problem here is that we would lose any info on the auto-generated keys :(
+                 */
+                if(dto.insertions != null && !dto.insertions.isEmpty()){
+                    return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+                }
+            }
+            lastSqlCommandId = id;
+        }
+
         assert trackRequestSource(httpServletRequest);
 
         try {
+
+            SimpleLogger.debug("Received database command");
+
             Connection connection = noKillSwitch(() -> sutController.getConnection());
             if (connection == null) {
                 String msg = "No active database connection";

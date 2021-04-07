@@ -5,9 +5,14 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 abstract class AbstractRestStructureMutator : StructureMutator(){
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(AbstractRestStructureMutator::class.java)
+    }
     abstract fun getSampler() : AbstractRestSampler
 
 
@@ -61,6 +66,9 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
 
             //record newly added existing sql data
             mutatedGenes?.addedExistingDataInitialization?.addAll(0, sampler.existingSqlData)
+
+            if (log.isTraceEnabled)
+                log.trace("{} existingSqlData are added", sampler.existingSqlData)
         }
 
         val max = config.maxSqlInitActionsPerMissingData
@@ -84,6 +92,9 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
 //                val position = sampler.existingSqlData.size
                 val position = ind.dbInitialization.indexOfLast { it.representExistingData } + 1
                 ind.dbInitialization.addAll(position, insertions)
+
+                if (log.isTraceEnabled)
+                    log.trace("{} insertions are added", insertions.size)
 
                 //record newly added insertions
                 addedInsertions?.add(0, insertions)

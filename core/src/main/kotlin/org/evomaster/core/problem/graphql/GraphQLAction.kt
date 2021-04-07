@@ -19,7 +19,6 @@ class GraphQLAction(
         val methodName: String,
         val methodType: GQMethodType,
         val parameters: MutableList<Param>,
-        //val verb: HttpVerb,
         auth: AuthenticationInfo = NoAuth()
         ) : HttpWsAction(auth) {
 
@@ -40,6 +39,6 @@ class GraphQLAction(
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 }

@@ -6,6 +6,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -13,6 +15,10 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
  * The terms "gene" comes from the evolutionary algorithm literature
  */
 abstract class Gene(var name: String) {
+
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
+    }
 
     init{
         if(name.isBlank()){
@@ -125,6 +131,8 @@ abstract class Gene(var name: String) {
                     mutateCounter +=1
                 }while (!mutationCheck() && mutateCounter <=3)
                 if (!mutationCheck()){
+                    if (log.isTraceEnabled)
+                        log.trace("invoke GeneUtils.repairGenes")
                     GeneUtils.repairGenes(listOf(this))
                 }
             }

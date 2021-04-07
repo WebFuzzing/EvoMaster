@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 
 import com.google.inject.Inject
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.DbActionUtils
@@ -151,6 +152,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             } else
                 throw e
         }
+        dto.idCounter = StaticCounter.getAndIncrease()
 
         val map = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
         if (map == null) {

@@ -27,13 +27,25 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
-
     @Test
     public void testDeterminism(){
 
         runAndCheckDeterminism(100, (args) -> {
             initAndRun(args);
         });
+
+//        runAndCheckDeterminism(2_000, (args) -> {
+//            Solution<RestIndividual> solution = initAndRun(args);
+//
+//            assertTrue(solution.getIndividuals().size() >= 1);
+//
+//            //the POST is deactivated in the controller
+//            assertNone(solution, HttpVerb.POST, 200);
+//
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
+//            assertInsertionIntoTable(solution, "DB_DIRECT_INT_ENTITY");
+//        });
     }
 
     /*
@@ -146,7 +158,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
         RestIndividual withSQL = new RestIndividual(ind.seeRestAction(), ind.getSampleType(), insertions, null, TraceableElement.DEFAULT_INDEX);
 
-        ei = ff.calculateCoverage(withSQL, Collections.emptySet());
+        ei = ff.calculateCoverage(withSQL, noDataFV.getViewOfData().keySet());
         assertNotNull(ei);
 
         //should have better heuristic

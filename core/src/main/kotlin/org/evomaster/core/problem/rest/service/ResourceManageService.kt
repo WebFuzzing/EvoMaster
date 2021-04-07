@@ -631,6 +631,13 @@ class ResourceManageService {
                 sqlInsertBuilder!!
                         .createSqlInsertionAction(tableName, forceAll = true)
 
+        if (log.isTraceEnabled){
+            log.trace("at generateInserSql, {} insertions are added, and they are {}", insertDbAction.size,
+                insertDbAction.joinToString(",") {
+                    if (it is DbAction) it.getResolvedName() else it.getName()
+                })
+        }
+
         DbActionUtils.randomizeDbActionGenes(insertDbAction, randomness)
 
         if(insertDbAction.isEmpty()) return false

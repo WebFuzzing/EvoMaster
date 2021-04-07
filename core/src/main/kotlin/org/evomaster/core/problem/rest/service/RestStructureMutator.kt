@@ -22,6 +22,27 @@ class RestStructureMutator : AbstractRestStructureMutator() {
     private lateinit var sampler: RestSampler
 
 
+    override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
+
+        if (!config.shouldGenerateSqlData()) {
+            return
+        }
+
+        val ind = individual.individual as? RestIndividual
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
+            //TODO likely to remove/change once we ll support VIEWs
+            .filter { sampler.canInsertInto(it.key) }
+
+        if (fw.isEmpty()) {
+            return
+        }
+
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
+
+        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
+        log.trace("{} insertions are added at structure mutator", addedInsertions?.flatten()?.size?:0)
 
     override fun mutateStructure(
         individual: Individual,
@@ -37,6 +58,9 @@ class RestStructureMutator : AbstractRestStructureMutator() {
             Or should that be better to handle with DSE?
          */
 
+        if (log.isTraceEnabled){
+            log.trace("Structure will be mutated, yes? {} and the type is {}", individual.canMutateStructure(), individual.sampleType)
+        }
 
         if (!individual.canMutateStructure()) {
             return // nothing to do

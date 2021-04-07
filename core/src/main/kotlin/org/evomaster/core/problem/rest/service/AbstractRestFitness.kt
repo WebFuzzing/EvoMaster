@@ -304,6 +304,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             createInvocation(a, chainState, cookies).invoke()
         } catch (e: ProcessingException) {
 
+            log.debug("There has been an issue in the evaluation of a test: {}", e)
+
             /*
                 this could have happened for example if call ends up in an infinite redirection loop.
                 However, as we no longer follow 3xx automatically, it should not happen anymore
