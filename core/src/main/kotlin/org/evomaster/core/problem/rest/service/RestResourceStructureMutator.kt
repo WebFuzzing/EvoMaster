@@ -98,7 +98,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
      * a number of resources to be added is related to EMConfig.maxSqlInitActionsPerResource
      */
     private fun handleAddSQL(ind: RestIndividual, evaluated: EvaluatedIndividual<*>,mutatedGenes: MutatedGeneSpecification?){
-        val numOfResource = randomness.nextInt(1, config.maxSqlInitActionsPerResource)
+        val numOfResource = randomness.nextInt(1, rm.getNumSQLResource())
         val added = if (doesApplyDependencyHeuristics()) dm.addRelatedSQL(ind, numOfResource)
                     else dm.createDbActions(randomness.choose(rm.getTableInfo().keys),numOfResource)
 

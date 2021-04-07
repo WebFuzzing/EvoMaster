@@ -18,6 +18,7 @@ import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -31,6 +32,9 @@ class ResourceManageService {
         val log: Logger = LoggerFactory.getLogger(ResourceManageService::class.java)
         private const val PROB_EXTRA_PATCH = 0.8
     }
+
+    @Inject
+    private lateinit var apc: AdaptiveParameterControl
 
     @Inject
     private lateinit var randomness: Randomness
@@ -700,5 +704,9 @@ class ResourceManageService {
             sorted.any { s-> s!= t && s.foreignKeys.any { fk-> fk.targetTable.equals(t.name, ignoreCase = true) } }
         }
         return sorted.map { it.name }
+    }
+
+    fun getNumSQLResource() : Int{
+        return apc.getExploratoryValue(config.maxSqlInitActionsPerResource, 1)
     }
 }

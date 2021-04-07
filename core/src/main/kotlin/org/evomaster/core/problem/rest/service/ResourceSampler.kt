@@ -147,7 +147,7 @@ open class ResourceSampler : AbstractRestSampler() {
                     trackOperator = if(config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1)
             individual.repairDBActions(sqlInsertBuilder, randomness)
             if (withDependency)
-                dm.sampleResourceWithRelatedDbActions(individual, config.maxSqlInitActionsPerResource)
+                dm.sampleResourceWithRelatedDbActions(individual, rm.getNumSQLResource())
 
             return individual
         }
