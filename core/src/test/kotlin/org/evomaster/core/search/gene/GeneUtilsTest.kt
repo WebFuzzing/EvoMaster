@@ -113,7 +113,7 @@ internal class GeneUtilsTest {
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
         //without randomization, should be both on by default
-        assertEquals("foo{a,b}", rep)
+        assertEquals("{a,b}", rep)
     }
 
     @Test
@@ -128,7 +128,7 @@ internal class GeneUtilsTest {
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("foo{b}", rep)
+        assertEquals("{b}", rep)
     }
 
 
@@ -142,7 +142,7 @@ internal class GeneUtilsTest {
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("Obj1{Obj2{a}}", rep)
+        assertEquals("{Obj2{a}}", rep)
     }
 
     @Test
@@ -155,7 +155,7 @@ internal class GeneUtilsTest {
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("Obj1{Obj2{Obj3{a}}}", rep)
+        assertEquals("{Obj2{Obj3{a}}}", rep)
     }
 
 
@@ -169,7 +169,7 @@ internal class GeneUtilsTest {
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("Obj1{a}", rep)
+        assertEquals("{a}", rep)
     }
 
     @Test
