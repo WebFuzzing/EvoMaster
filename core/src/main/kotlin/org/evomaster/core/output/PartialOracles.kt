@@ -153,7 +153,7 @@ class PartialOracles {
         oracles.forEach { oracle ->
             active.put(oracle.getName(), individuals.any { individual ->
                 individual.evaluatedActions().any {
-                    oracle.generatesExpectation(
+                    it.action is RestCallAction && oracle.generatesExpectation(
                             (it.action as RestCallAction),
                             (it.result as RestCallResult)
                     )

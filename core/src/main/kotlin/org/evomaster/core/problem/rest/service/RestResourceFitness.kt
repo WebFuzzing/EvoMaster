@@ -139,6 +139,10 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 Note that current data structure also keeps info on already
                 existing data (which of course should not be re-inserted...)
              */
+            // other dbactions might bind with the representExistingData, so we still need to record sqlId here.
+            allDbActions.filter { it.representExistingData }.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().forEach {
+                sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
+            }
             return true
         }
 
