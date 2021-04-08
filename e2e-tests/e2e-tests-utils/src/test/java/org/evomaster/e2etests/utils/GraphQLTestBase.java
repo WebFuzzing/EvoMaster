@@ -141,6 +141,10 @@ public abstract class GraphQLTestBase extends WsTestBase {
             }
 
             JsonNode data = node.findPath("data");
+            /*
+            if (!data.isNull() && !data.isMissingNode() && data.asText().contains(value)) {
+                return true;
+            }*/
 
             if (!data.isNull() && !data.isMissingNode() && data.toString().contains(value)) {
                 return true;
