@@ -313,7 +313,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun graphQLJobsSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/graphQLJobs.json").readText()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/GraphQLJobs.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(15, actionCluster.size)
@@ -332,7 +332,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun melodyRepoSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/melodyRepo.json").readText()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/MelodyRepo.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(2, actionCluster.size)
