@@ -115,7 +115,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             if (includedFields.isEmpty()) {
                 buffer.append("$name")
             } else {
-                if(mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
+                if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
                     //we do not do it for the first object, but we must do it for all the nested ones
                     buffer.append("$name")
                 }
@@ -124,7 +124,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 val selection = includedFields.filter {
                     when (it) {
                         is OptionalGene -> it.isActive
-                        is BooleanGene -> it.value
+                       // is BooleanGene -> it.value
+                        is DisruptiveGene<*> -> it.probability ==0.0
                         else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
                     }
                 }
@@ -135,7 +136,11 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                             assert(it.gene is ObjectGene)
                             it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
                         }
+                        /*
                         is BooleanGene -> {
+                            it.name
+                        }*/
+                        is DisruptiveGene<*> -> {
                             it.name
                         }
                         else -> {
@@ -147,8 +152,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 buffer.append("}")
             }
         } else
-            //GQL arguments need a special object printing mode form that differ from Json and Boolean selection:
-            //ObjName:{FieldNName: instance }
+        //GQL arguments need a special object printing mode form that differ from Json and Boolean selection:
+        //ObjName:{FieldNName: instance }
             if (mode == GeneUtils.EscapeMode.GQL_INPUT_MODE) {
 
                 buffer.append("$name")

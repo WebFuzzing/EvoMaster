@@ -416,7 +416,7 @@ object GeneUtils {
             is ObjectGene -> ObjectGene(gene.name, gene.fields.map {
                 val k = getBooleanSelection(it)
                 if (k.fields.isEmpty()) {
-                    BooleanGene(it.name)
+                    DisruptiveGene(it.name, BooleanGene(it.name),0.0 )
                 } else {
                     OptionalGene(k.name, k)
                 }
@@ -426,6 +426,10 @@ object GeneUtils {
             is OptionalGene -> getBooleanSelection(gene.gene)
             else -> ObjectGene(gene.name, listOf())
         }
+
     }
+
+
+
 }
 
