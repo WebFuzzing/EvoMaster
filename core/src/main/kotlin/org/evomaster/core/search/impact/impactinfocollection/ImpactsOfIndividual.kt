@@ -205,7 +205,12 @@ class ImpactsOfIndividual private constructor(
     }
 
     fun appendInitializationImpacts(groupedActions: List<List<Action>>) {
-        initializationGeneImpacts.appenedInitialization(groupedActions)
+        initializationGeneImpacts.appendInitialization(groupedActions)
+    }
+
+    fun removeInitializationImpacts(removed : List<Pair<DbAction, Int>>, existingDataSize: Int){
+        initializationGeneImpacts.updateSizeOfExistingData(existingDataSize)
+        initializationGeneImpacts.removeInitialization(removed)
     }
 
     fun updateInitializationGeneImpacts(other: ImpactsOfIndividual) {
@@ -240,6 +245,7 @@ class ImpactsOfIndividual private constructor(
     fun getInitializationGeneImpact(): List<MutableMap<String, GeneImpact>> {
         return initializationGeneImpacts.getAll().map { it.geneImpacts }
     }
+
 
     fun exportImpactInfo(areInitializationGeneImpact: Boolean, content : MutableList<String>, targets : Set<Int>? = null){
         val impacts = if (areInitializationGeneImpact) getInitializationGeneImpact() else getActionGeneImpact()
@@ -448,10 +454,38 @@ class ImpactsOfIndividual private constructor(
             }
         }
 
-        fun appenedInitialization(addedInsertions: List<List<Action>>){
+        fun appendInitialization(addedInsertions: List<List<Action>>){
             addedInsertions.forEach { t->
                 addedInitialization(t, completeSequence, indexMap)
             }
+        }
+
+        fun removeInitialization(removed: List<Pair<DbAction, Int>>){
+            val removedIndex = removed.map { it.second }.sorted()
+            val removedImpacts = removedIndex.map { completeSequence[it] }
+
+            val keep = mutableListOf<Int>()
+            var anyRemove = false
+            (removedIndex.first() until indexMap.size).forEach { i->
+                val last = (i == indexMap.size -1 ) || indexMap[i+1].second == 0
+                if (removedIndex.contains(i)){
+                    anyRemove = true
+                }else{
+                    keep.add(i)
+                }
+                if (last){
+                    if (anyRemove && keep.isNotEmpty()){
+                        val template = generateTemplateKey(keep.map { completeSequence[it].actionName?:""})
+                        keep.forEachIndexed { index, i ->
+                            indexMap[i] = template to index
+                        }
+                    }
+                    anyRemove = false
+                    keep.clear()
+                }
+            }
+            completeSequence.removeAll(removedImpacts)
+
         }
 
         private fun addedInitialization(

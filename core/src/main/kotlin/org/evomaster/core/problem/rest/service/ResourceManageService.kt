@@ -679,7 +679,7 @@ class ResourceManageService {
         return dataInDB.getValue(found.first())
     }
 
-    private fun getTableByName(name : String) = tables.keys.find { it.equals(name, ignoreCase = true) }?.run { tables[this] }
+    fun getTableByName(name : String) = tables.keys.find { it.equals(name, ignoreCase = true) }?.run { tables[this] }
 
 
     /**

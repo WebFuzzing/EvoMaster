@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
@@ -102,17 +103,9 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         val added = if (doesApplyDependencyHeuristics()) dm.addRelatedSQL(ind, numOfResource)
                     else dm.createDbActions(randomness.choose(rm.getTableInfo().keys),numOfResource)
 
+        ind.dbInitialization.addAll(added.flatten())
         mutatedGenes?.addedDbActions?.addAll(added)
-        ind.dbInitialization.addAll(added)
 
-        if (config.isEnabledArchiveSolution()){
-            if (numOfResource == 1)
-                evaluated.appendAddedInitializationGenes(listOf(added))
-            else{
-                val grouped = added.groupBy { added.indexOf(it)/(added.size/numOfResource) }.values.toList()
-                evaluated.appendAddedInitializationGenes(grouped)
-            }
-        }
     }
 
     /**
@@ -129,22 +122,25 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
             candidates = ind.dbInitialization
 
         val remove = randomness.choose(candidates)
+        val relatedRemove = mutableListOf(remove)
+        getRelatedRemoveDbActions(ind, remove, relatedRemove)
 
+        mutatedGenes?.removedDbActions?.addAll(relatedRemove.map { it to ind.dbInitialization.indexOf(it) })
+        ind.dbInitialization.removeAll(relatedRemove)
+    }
+
+    private fun getRelatedRemoveDbActions(ind: RestIndividual, remove : DbAction, relatedRemove: MutableList<DbAction>){
         val pks = remove.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
-        if (pks.isNotEmpty()){
-            val removeDbFKs = ind.dbInitialization.subList(ind.dbInitialization.indexOf(remove)+1, ind.dbInitialization.size).filter {
+        val index = ind.dbInitialization.indexOf(remove)
+        if (index < ind.dbInitialization.size - 1 && pks.isNotEmpty()){
+            val removeDbFKs = ind.dbInitialization.subList(index + 1, ind.dbInitialization.size).filter {
                 it.seeGenes().flatMap { g-> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
                     .any {fk-> pks.any {pk->fk.uniqueIdOfPrimaryKey == pk.uniqueId} } }
-
-            ind.dbInitialization.remove(remove)
-            ind.dbInitialization.removeAll(removeDbFKs)
-            mutatedGenes?.removedDbActions?.add(remove)
-            mutatedGenes?.removedDbActions?.addAll(removeDbFKs)
-        }else{
-            ind.dbInitialization.remove(remove)
-            mutatedGenes?.removedDbActions?.add(remove)
+            relatedRemove.addAll(removeDbFKs)
+            removeDbFKs.forEach {
+                getRelatedRemoveDbActions(ind, it, relatedRemove)
+            }
         }
-
     }
 
     private fun doesApplyDependencyHeuristics() : Boolean{

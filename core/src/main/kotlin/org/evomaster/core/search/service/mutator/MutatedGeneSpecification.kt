@@ -27,8 +27,8 @@ data class MutatedGeneSpecification (
         val addedInitializationGroup: MutableList<List<Action>> = mutableListOf(),
 
         //SQL resource handling
-        val addedDbActions : MutableList<DbAction> = mutableListOf(),
-        val removedDbActions : MutableList<DbAction> = mutableListOf()
+        val addedDbActions : MutableList<List<DbAction>> = mutableListOf(),
+        val removedDbActions : MutableList<Pair<DbAction, Int>> = mutableListOf()
 ){
 
     var mutatedIndividual: Individual? = null
@@ -105,8 +105,6 @@ data class MutatedGeneSpecification (
         SWAP
     }
 
-
-
     // add, remove, swap, add_sql, remove_sql
     fun didStructureMutation() =  mutatedGenes.any { it.type != MutatedType.MODIFY }
             || mutatedDbGenes.any { it.type != MutatedType.MODIFY }
@@ -114,8 +112,8 @@ data class MutatedGeneSpecification (
 
     fun isMutated(gene: Gene) = mutatedDbGenes.any { it.gene == gene }
             || mutatedGenes.any { it.gene == gene }
-            || addedDbActions.any { it.seeGenes().contains(gene) }
-            || removedDbActions.any { it.seeGenes().contains(gene) }
+            || addedDbActions.flatten().any { it.seeGenes().contains(gene) }
+            || removedDbActions.map { it.first }.any { it.seeGenes().contains(gene) }
 
     fun mutatedActionOrDb() = setOf(mutatedGenes.isEmpty(), mutatedDbGenes.isNotEmpty())
 }

@@ -964,6 +964,7 @@ class ResourceDepManageService {
      */
     fun unRelatedSQL(ind: RestIndividual) : List<DbAction>{
         val allrelated = getAllRelatedTables(ind)
+        resolveAllRelatedTables(allrelated)
         return ind.dbInitialization.filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
@@ -975,7 +976,7 @@ class ResourceDepManageService {
      * Man: shall we set probability 1.0? because the related tables for the resource might be determinate based on
      * tracking of SQL execution.
      */
-    fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 1.0) : List<DbAction>{
+    fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 1.0) : List<List<DbAction>>{
         val allrelated = getAllRelatedTables(ind)
 
         val other = if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
@@ -996,22 +997,22 @@ class ResourceDepManageService {
         return createDbActions(other, num)
     }
 
-    fun createDbActions(name : String, num : Int) : List<DbAction>{
+    fun createDbActions(name : String, num : Int) : List<List<DbAction>>{
         rm.getSqlBuilder() ?:throw IllegalStateException("attempt to create resource with SQL but the sqlBuilder is null")
         if (num <= 0)
             throw IllegalArgumentException("invalid num (i.e.,$num) for creating resource")
 
-        val list= (0 until num).flatMap { rm.getSqlBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
+        val list= (0 until num).map { rm.getSqlBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
 
         if (log.isTraceEnabled){
             log.trace("at createDbActions, {} insertions are added, and they are {}", list.size,
-                list.joinToString(",") {
+                list.flatten().joinToString(",") {
                     if (it is DbAction) it.getResolvedName() else it.getName()
                 })
         }
 
-        DbActionUtils.randomizeDbActionGenes(list, randomness)
-        DbActionUtils.repairBrokenDbActionsList(list.toMutableList(), randomness)
+        DbActionUtils.randomizeDbActionGenes(list.flatten(), randomness)
+        DbActionUtils.repairBrokenDbActionsList(list.flatten().toMutableList(), randomness)
         return list
     }
 
@@ -1071,12 +1072,26 @@ class ResourceDepManageService {
         ind.dbInitialization.addAll(added)
     }
 
-    private fun getAllRelatedTables(ind: RestIndividual) : Set<String>{
+    private fun getAllRelatedTables(ind: RestIndividual) : MutableSet<String>{
         return ind.getResourceCalls().flatMap { c->
             RestActionHandlingUtil.inference.generateRelatedTables(c, mutableListOf()).values.flatMap { it.map { g->g.tableName } }.toSet()
-        }.toSet()
+        }.toMutableSet()
     }
 
+    private fun resolveAllRelatedTables(tables: MutableSet<String>){
+
+        val others = tables.mapNotNull {
+            rm.getTableByName(it)
+        }.flatMap {
+            it.foreignKeys.map { f-> f.targetTable }
+        }.filter {
+            tables.any { t-> t.equals(it, ignoreCase = true) }
+        }
+        if (others.isNotEmpty()){
+            tables.addAll(others)
+            resolveAllRelatedTables(tables)
+        }
+    }
 
 
     /**************************************** apply parser to derive ************************************************************************/

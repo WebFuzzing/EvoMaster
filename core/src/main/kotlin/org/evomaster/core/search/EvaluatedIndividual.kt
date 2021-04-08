@@ -311,6 +311,15 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         //we update genes impact regarding structure only if structure mutated individual is 'next'
         if(this.index == next.index){
 
+            //remove a number of resource with sql
+            if (mutatedGenes.removedDbActions.isNotEmpty()){
+                impactInfo!!.removeInitializationImpacts(mutatedGenes.removedDbActions, individual.seeInitializingActions().count { it is DbAction && it.representExistingData })
+            }
+
+            if (mutatedGenes.addedDbActions.isNotEmpty()){
+                impactInfo!!.appendInitializationImpacts(mutatedGenes.addedDbActions)
+            }
+
             //handle removed
             if (mutatedGenes.getRemoved(true).isNotEmpty()){ //delete an action
                 impactInfo!!.deleteActionGeneImpacts(actionIndex = mutatedGenes.getRemoved(true)
@@ -632,9 +641,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         Lazy.assert {
             individual.seeInitializingActions().filter { it is DbAction && !it.representExistingData }.size == impactInfo.getSizeOfActionImpacts(true)
         }
-    }
-    fun appendAddedInitializationGenes(group: List<List<Action>>){
-        impactInfo!!.appendInitializationImpacts(group)
     }
 
     fun initAddedInitializationGenes(group: List<List<Action>>, existingSize : Int){
