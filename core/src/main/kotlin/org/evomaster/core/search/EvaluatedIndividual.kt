@@ -252,11 +252,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      */
     fun updateImpactOfGenes(previous : EvaluatedIndividual<T>, mutated : EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification, targetsInfo: Map<Int, EvaluatedMutation>){
 
-        Lazy.assert{mutatedGenes.mutatedIndividual != null}
-
         Lazy.assert {
-            mutatedGenes.mutatedIndividual != null
-            tracking != null
+            mutatedGenes.mutatedIndividual != null && tracking != null
         }
 
         if(previous.getSizeOfImpact(false) != mutated.getSizeOfImpact(false)){

@@ -475,27 +475,29 @@ class ImpactsOfIndividual private constructor(
                 }
                 if (last){
                     if (anyRemove && keep.isNotEmpty()){
-                        val template = generateTemplateKey(keep.map { completeSequence[it].actionName?:""})
+                        val newTemplate = generateTemplateKey(keep.map { completeSequence[it].actionName?:""})
                         keep.forEachIndexed { index, i ->
-                            indexMap[i] = template to index
+                            indexMap[i] = newTemplate to index
                         }
+                        template.putIfAbsent(newTemplate, keep.map { k-> ImpactsOfAction(removed.find { it.second == i }?.first?: throw IllegalStateException("cannot find removed dbactions at $i")) })
                     }
                     anyRemove = false
                     keep.clear()
                 }
             }
+
             completeSequence.removeAll(removedImpacts)
-            if (enableImpactOnDuplicatedTimes){
-                val removeTemplates = templateDuplicateTimes.filter {
-                    indexMap.none { i-> i.first == it.key }
-                }.keys
-                removeTemplates.forEach { templateDuplicateTimes.remove(it) }
-                val newTemplates = indexMap.filter { templateDuplicateTimes.none { t-> t.key == it.first } }
-                newTemplates.forEach {
-                    templateDuplicateTimes.putIfAbsent(it.first, Impact(it.first))
+
+            //handle template
+            val removeTemplates = template.filter {
+                indexMap.none { i-> i.first == it.key }
+            }.keys
+            removeTemplates.forEach {
+                template.remove(it)
+                if(enableImpactOnDuplicatedTimes){
+                    templateDuplicateTimes.remove(it)
                 }
             }
-
         }
 
         private fun addedInitialization(

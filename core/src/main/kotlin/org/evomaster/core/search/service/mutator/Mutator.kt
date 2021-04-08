@@ -271,7 +271,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         return EvaluatedMutation.EQUAL_WITH
     }
 
-    private fun preHandlingTrackedIndividual(current: EvaluatedIndividual<T>){
+    fun preHandlingTrackedIndividual(current: EvaluatedIndividual<T>){
         if (config.trackingEnabled()){
             if (config.enableTrackEvaluatedIndividual && current.tracking == null){
                 current.wrapWithTracking(null, config.maxLengthOfTraces, mutableListOf())
