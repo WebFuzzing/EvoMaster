@@ -1050,7 +1050,6 @@ class ResourceDepManageService {
      * [maxPerResource] is a maximum resources to be added per resource
      */
     fun sampleResourceWithRelatedDbActions(ind: RestIndividual, maxPerResource : Int) {
-        if (maxPerResource == 0) return
         rm.getSqlBuilder()?:return
 
         val added = mutableListOf<DbAction>()
