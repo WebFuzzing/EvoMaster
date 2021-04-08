@@ -485,6 +485,16 @@ class ImpactsOfIndividual private constructor(
                 }
             }
             completeSequence.removeAll(removedImpacts)
+            if (enableImpactOnDuplicatedTimes){
+                val removeTemplates = templateDuplicateTimes.filter {
+                    indexMap.none { i-> i.first == it.key }
+                }.keys
+                removeTemplates.forEach { templateDuplicateTimes.remove(it) }
+                val newTemplates = indexMap.filter { templateDuplicateTimes.none { t-> t.key == it.first } }
+                newTemplates.forEach {
+                    templateDuplicateTimes.putIfAbsent(it.first, Impact(it.first))
+                }
+            }
 
         }
 
