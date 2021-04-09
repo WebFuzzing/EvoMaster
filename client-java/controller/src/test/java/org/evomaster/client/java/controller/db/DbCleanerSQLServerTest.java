@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.db;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 //TODO
 //import org.evomaster.e2etests.utils.CIUtils;
+import org.evomaster.e2etests.utils.CIUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,9 +41,9 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
             but there exist a problem of creating db connection for MS_SQL_Server on CI and GA,
             i.e., com.microsoft.sqlserver.jdbc.SQLServerException: Login failed for user 'SA'"
          */
-        //TODO
-        //CIUtils.skipIfOnGA();
-        //CIUtils.skipIfOnCircleCI();
+        
+        CIUtils.skipIfOnGA();
+        CIUtils.skipIfOnCircleCI();
 
         mssqlserver.start();
 
