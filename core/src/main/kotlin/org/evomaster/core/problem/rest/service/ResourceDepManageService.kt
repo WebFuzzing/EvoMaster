@@ -1085,7 +1085,7 @@ class ResourceDepManageService {
         }.flatMap {
             it.foreignKeys.map { f-> f.targetTable }
         }.filter {
-            tables.any { t-> t.equals(it, ignoreCase = true) }
+            tables.none { t-> t.equals(it, ignoreCase = true) }
         }
         if (others.isNotEmpty()){
             tables.addAll(others)
