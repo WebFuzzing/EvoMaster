@@ -6,6 +6,11 @@ using Docker.DotNet.Models;
 
 namespace EvoMaster.Controller.Controllers.db
 {
+    /* This class is a base for running containers in our solution
+      To run database in a docker container we first tried DotNet.Testcontainers library
+      It worked fine for starting postgres database, but we coudln't use it for sql server as it was incompletely implemented to start sql server
+      So we decided to implement it by the aid of Docker.Dotnet library */
+
     // credits to https://www.meziantou.net/2018/10/08/integration-testing-using-a-docker-container
     internal abstract class DockerContainerBase
     {

@@ -7,6 +7,7 @@ using Microsoft.Data.SqlClient;
 
 namespace EvoMaster.Controller.Controllers.db
 {
+    //This class receives the request for starting a db container and passes it based on the db type to the proper class
     public static class DatabaseStarter
     {
         public static async Task<(string, DbConnection)> RunAsync(DatabaseType databaseType, string databaseName,
