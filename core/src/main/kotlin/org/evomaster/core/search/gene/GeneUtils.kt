@@ -414,6 +414,9 @@ object GeneUtils {
      * Also, we need to deal for when elements are non-nullable vs. nullable.
      */
     fun getBooleanSelection(gene: Gene): ObjectGene {
+
+        ///TODO deal when return is Optional
+
         if(shouldApplyBooleanSelection(gene)){
             return handleBooleanSelection(gene) as ObjectGene
         }
@@ -421,7 +424,9 @@ object GeneUtils {
     }
 
     fun shouldApplyBooleanSelection(gene: Gene) =
-            gene is ObjectGene || (gene is ArrayGene<*> && gene.template is ObjectGene)
+            (gene is OptionalGene && gene.gene is ObjectGene)
+                    ||gene is ObjectGene
+                    || (gene is ArrayGene<*> && gene.template is ObjectGene)
 
     private fun handleBooleanSelection(gene: Gene) : Gene{
 
