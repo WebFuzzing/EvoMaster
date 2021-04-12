@@ -1167,6 +1167,12 @@ class TestCaseWriter {
                 format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(cookieLogin)})")
             }
         }
+
+        //TODO make sure header was not already set
+        val tokenLogin = call.auth.jsonTokenPostLogin
+        if(tokenLogin != null){
+            lines.add(".$set(\"Authorization\", \"${TokenWriter.tokenName(tokenLogin)}\") // ${call.auth.name}")
+        }
     }
 
     private fun handleGQLHeaders(call: GraphQLAction, lines: Lines) {
