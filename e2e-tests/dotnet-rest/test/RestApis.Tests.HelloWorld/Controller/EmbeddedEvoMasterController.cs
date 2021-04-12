@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
-using Controller;
-using Controller.Api;
-using Controller.Problem;
+using EvoMaster.Controller;
+using EvoMaster.Controller.Api;
+using EvoMaster.Controller.Problem;
 
 namespace RestApis.Tests.HelloWorld.Controller {
 

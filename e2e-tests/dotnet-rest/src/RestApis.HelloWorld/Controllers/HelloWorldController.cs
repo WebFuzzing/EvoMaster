@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace RestApis.HelloWorld.Controllers {
 
@@ -12,6 +7,6 @@ namespace RestApis.HelloWorld.Controllers {
     public class HelloWorldController : ControllerBase {
 
         [HttpGet]
-        public IActionResult Get () => Ok ("Hello World");
+        public IActionResult Get () => Ok("Hello World");
     }
 }
