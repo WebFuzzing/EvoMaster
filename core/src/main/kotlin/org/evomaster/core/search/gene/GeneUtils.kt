@@ -434,7 +434,7 @@ object GeneUtils {
                  */
                 if(gene.gene is ObjectGene){
                     OptionalGene(gene.name, handleBooleanSelection(gene.gene))
-                } else {
+                } else {  //TODO deal with Array here
                     // on by default, but can be deselected during the search
                     BooleanGene(gene.name, true)
                 }
