@@ -346,7 +346,7 @@ class Main {
             return imp.search()
         }
 
-        private fun checkExperimentalSettings(injector: Injector) {
+        fun checkExperimentalSettings(injector: Injector) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -364,7 +364,7 @@ class Main {
                     " Used experimental settings: $options")
         }
 
-        private fun checkState(injector: Injector): ControllerInfoDto? {
+        fun checkState(injector: Injector): ControllerInfoDto? {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -391,7 +391,7 @@ class Main {
         }
 
 
-        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
+        fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -435,7 +435,7 @@ class Main {
             val writer = setupPartialOracles(injector, config)
         }
 
-        private fun setupPartialOracles(injector: Injector, config: EMConfig): TestSuiteWriter{
+        fun setupPartialOracles(injector: Injector, config: EMConfig): TestSuiteWriter{
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             if(config.problemType == EMConfig.ProblemType.REST){
                 // Some initialization to handle test suite splitting and relevant partial oracles
