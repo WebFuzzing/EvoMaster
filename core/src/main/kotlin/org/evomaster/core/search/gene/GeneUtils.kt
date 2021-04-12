@@ -427,6 +427,7 @@ object GeneUtils {
             (gene is OptionalGene && gene.gene is ObjectGene)
                     ||gene is ObjectGene
                     || (gene is ArrayGene<*> && gene.template is ObjectGene)
+                    || (gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is ObjectGene)
 
     private fun handleBooleanSelection(gene: Gene) : Gene{
 
