@@ -6,6 +6,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.IllegalArgumentException
 import kotlin.math.pow
 
 object GeneUtils {
@@ -408,27 +409,47 @@ object GeneUtils {
      * objects inside, and so on recursively.
      *
      * However, to be able to print such selection for GraphQL, we need then to have a special mode
-     * for its string representation
+     * for its string representation.
+     *
+     * Also, we need to deal for when elements are non-nullable vs. nullable.
      */
     fun getBooleanSelection(gene: Gene): ObjectGene {
-
-        return when (gene) {
-            is ObjectGene -> ObjectGene(gene.name, gene.fields.map {
-                val k = getBooleanSelection(it)
-                if (k.fields.isEmpty()) {
-                    DisruptiveGene(it.name, BooleanGene(it.name),0.0 )
-                } else {
-                    OptionalGene(k.name, k)
-                }
-            }
-            )
-            is ArrayGene<*> -> getBooleanSelection(gene.template)
-            is OptionalGene -> getBooleanSelection(gene.gene)
-            else -> ObjectGene(gene.name, listOf())
+        if(shouldApplyBooleanSelection(gene)){
+            return handleBooleanSelection(gene) as ObjectGene
         }
-
+        throw IllegalArgumentException("Invalid input type: ${gene.javaClass}")
     }
 
+    fun shouldApplyBooleanSelection(gene: Gene) =
+            gene is ObjectGene || (gene is ArrayGene<*> && gene.template is ObjectGene)
+
+    private fun handleBooleanSelection(gene: Gene) : Gene{
+
+        return when(gene){
+            is OptionalGene -> {
+                /*
+                    this is nullable.
+                    Any basic field will be represented with a BooleanGene (selected/unselected).
+                    But for objects we need to use an Optional
+                 */
+                if(gene.gene is ObjectGene){
+                    OptionalGene(gene.name, handleBooleanSelection(gene.gene))
+                } else {
+                    // on by default, but can be deselected during the search
+                    BooleanGene(gene.name, true)
+                }
+            }
+            is ObjectGene -> {
+                //need to look at each field
+                ObjectGene(gene.name, gene.fields.map { handleBooleanSelection(it) })
+            }
+            is ArrayGene<*> -> handleBooleanSelection(gene.template)
+            else -> {
+                //as this was not marked as optional, must always be selected
+                DisruptiveGene(gene.name, BooleanGene(gene.name, true),0.0 )
+            }
+        }
+    }
 
 
 }

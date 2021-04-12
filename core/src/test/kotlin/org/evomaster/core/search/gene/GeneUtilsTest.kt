@@ -119,9 +119,10 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSectionSkip() {
 
-        val obj = ObjectGene("foo", listOf(StringGene("a", "hello"), IntegerGene("b", 42)))
+        val obj = ObjectGene("foo", listOf(OptionalGene("a", StringGene("a", "hello")), IntegerGene("b", 42)))
 
         val selection = GeneUtils.getBooleanSelection(obj)
+
         val a = selection.fields.find { it.name == "a" } as BooleanGene
         a.value = false
 

@@ -958,7 +958,6 @@ class TestCaseWriter {
 
         val returnGene = call.parameters.find { p -> p is GQReturnParam }?.gene
                 ?: throw RuntimeException("ERROR: Body param not specified ")
-        val selection = GeneUtils.getBooleanSelection(returnGene)
 
         val send = when {
             format.isJavaOrKotlin() -> "body"
