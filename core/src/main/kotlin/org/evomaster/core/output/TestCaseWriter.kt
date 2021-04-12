@@ -163,6 +163,7 @@ class TestCaseWriter {
             }
 
             CookieWriter.handleGettingCookies(format, test.test, lines, baseUrlOfSut)
+            TokenWriter.handleGettingTokens(format, test.test, lines, baseUrlOfSut)
 
             //SQL actions are generated in between
             if (test.test.individual is RestIndividual && config.isEnabledSQLInBetween()) {
