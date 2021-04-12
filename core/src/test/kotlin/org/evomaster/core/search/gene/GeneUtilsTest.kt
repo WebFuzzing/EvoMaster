@@ -177,13 +177,14 @@ internal class GeneUtilsTest {
     fun testBooleanSectionString() {
 
         val string = StringGene("a", "hello")
+        val obj = ObjectGene("obj", listOf(string))
 
-        val selection = GeneUtils.getBooleanSelection(string)
+        val selection = GeneUtils.getBooleanSelection(obj)
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("a", rep)
+        assertEquals("{a}", rep)
     }
 
     @Test
