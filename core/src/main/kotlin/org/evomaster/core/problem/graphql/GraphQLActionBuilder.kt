@@ -529,7 +529,7 @@ object GraphQLActionBuilder {
 
                 if (element.tableType == methodName) {
 
-                    if(element.kindOfTableFieldType == SCALAR){//array scalar type or scalar type, the gene is constructed from getInputGene to take the correct names
+                    if(element.kindOfTableFieldType == SCALAR || element.kindOfTableFieldType == ENUM){//array scalar type or scalar type, the gene is constructed from getInputGene to take the correct names
                         val gene = getInputListOrScalarGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(), element.tableType.toString(), history,
                                 element.isKindOfTableFieldTypeOptional, element.isKindOfTableFieldOptional, element.enumValues, element.tableField)
 
@@ -736,6 +736,11 @@ object GraphQLActionBuilder {
                     return OptionalGene(methodName, StringGene(methodName))
                 else
                     return StringGene(methodName)
+            "enum" ->
+                if (isKindOfTableFieldTypeOptional)
+                    return OptionalGene(methodName, EnumGene(methodName, enumValues))
+                else
+                    return EnumGene(methodName, enumValues)
 
             "union" -> {
                 LoggingUtil.uniqueWarn(log, "Kind Of Table Field not supported yet: $kindOfTableField")
