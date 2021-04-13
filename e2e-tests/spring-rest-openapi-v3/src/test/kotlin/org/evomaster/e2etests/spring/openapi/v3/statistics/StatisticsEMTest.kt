@@ -30,29 +30,6 @@ class StatisticsEMTest :SpringTestBase() {
     }
 
     @Test
-    fun testRunManual(){
-        RestAssured.given().accept("*/*")
-                .get(baseUrlOfSut + "/api/statistics/getExpectations/" + true)
-                .then()
-                .statusCode(200)
-
-        RestAssured.given().accept("*/*")
-                .get(baseUrlOfSut + "/api/statistics/getExpectations/" + false)
-                .then()
-                .statusCode(500)
-
-        RestAssured.given().accept("*/*")
-                .get(baseUrlOfSut + "/api/statistics/basicResponsesString/" + true)
-                .then()
-                .statusCode(200)
-
-        RestAssured.given().accept("*/*")
-                .get(baseUrlOfSut + "/api/statistics/basicNumbersString/" + true)
-                .then()
-                .statusCode(200)
-    }
-
-    @Test
     fun testRunEM(){
         runTestHandlingFlakyAndCompilation(
                 "StatisticsEM",
