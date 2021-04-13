@@ -29,8 +29,8 @@ class GraphQLActionBuilderTest {
         assertTrue(pettypes.parameters[0].gene is ObjectGene)
         val objPetType = pettypes.parameters[0].gene as ObjectGene
         assertEquals(2, objPetType.fields.size)
-        assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "name" })
+        assertTrue(objPetType.fields.any { it is DisruptiveGene<*> && it.name == "id" })
+        assertTrue(objPetType.fields.any { it is DisruptiveGene<*> && it.name == "name" })
         val gQlReturn = GQReturnParam(pettypes.parameters[0].name, pettypes.parameters[0].gene)
         val gQlInputcopy = gQlReturn.copy()
         assertEquals(gQlReturn.name, gQlInputcopy.name)
@@ -42,15 +42,15 @@ class GraphQLActionBuilderTest {
         assertTrue(vets.parameters[0].gene is ObjectGene)
         val objVets = vets.parameters[0].gene as ObjectGene
         assertEquals(4, objVets.fields.size)
-        assertTrue(objVets.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(objVets.fields.any { it is BooleanGene && it.name == "firstName" })
-        assertTrue(objVets.fields.any { it is BooleanGene && it.name == "lastName" })
-        assertTrue(objVets.fields.any { it is OptionalGene && it.name == "specialties" })
+        assertTrue(objVets.fields.any { it is DisruptiveGene<*> && it.name == "id" })
+        assertTrue(objVets.fields.any { it is DisruptiveGene<*> && it.name == "firstName" })
+        assertTrue(objVets.fields.any { it is DisruptiveGene<*> && it.name == "lastName" })
+        assertTrue(objVets.fields.any { it is ObjectGene && it.name == "specialties" })
 
-        val objSpecialty = (objVets.fields.first { it.name == "specialties" } as OptionalGene).gene as ObjectGene
+        val objSpecialty = objVets.fields.first { it.name == "specialties" } as ObjectGene
         assertEquals(2, objSpecialty.fields.size)
-        assertTrue(objSpecialty.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(objSpecialty.fields.any { it is BooleanGene && it.name == "name" })
+        assertTrue(objSpecialty.fields.any { it is DisruptiveGene<*>  && it.name == "id" })
+        assertTrue(objSpecialty.fields.any { it is DisruptiveGene<*> && it.name == "name" })
         /**/
         val owners = actionCluster.get("owners") as GraphQLAction
         assertEquals(3, owners.parameters.size)
@@ -70,26 +70,26 @@ class GraphQLActionBuilderTest {
         /**/
         val owner = owners.parameters[2].gene as ObjectGene
         assertEquals(7, owner.fields.size)
-        assertTrue(owner.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(owner.fields.any { it is BooleanGene && it.name == "firstName" })
-        assertTrue(owner.fields.any { it is BooleanGene && it.name == "lastName" })
-        assertTrue(owner.fields.any { it is BooleanGene && it.name == "address" })
-        assertTrue(owner.fields.any { it is BooleanGene && it.name == "city" })
-        assertTrue(owner.fields.any { it is BooleanGene && it.name == "telephone" })
-        assertTrue(owner.fields.any { it is OptionalGene && it.name == "pets" })
-        val objPet = (owner.fields.first { it.name == "pets" } as OptionalGene).gene as ObjectGene
+        assertTrue(owner.fields.any { it is DisruptiveGene<*> && it.name == "id" })
+        assertTrue(owner.fields.any { it is DisruptiveGene<*> && it.name == "firstName" })
+        assertTrue(owner.fields.any { it is DisruptiveGene<*> && it.name == "lastName" })
+        assertTrue(owner.fields.any { it is DisruptiveGene<*> && it.name == "address" })
+        assertTrue(owner.fields.any { it is DisruptiveGene<*> && it.name == "city" })
+        assertTrue(owner.fields.any { it is DisruptiveGene<*> && it.name == "telephone" })
+        assertTrue(owner.fields.any { it is ObjectGene && it.name == "pets" })
+        val objPet = (owner.fields.first { it.name == "pets" } ) as ObjectGene
         assertEquals(6, objPet.fields.size)
-        assertTrue(objPet.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(objPet.fields.any { it is BooleanGene && it.name == "name" })
-        assertTrue(objPet.fields.any { it is BooleanGene && it.name == "birthDate" })
-        assertTrue(objPet.fields.any { it is OptionalGene && it.name == "type" })
-        assertTrue(objPet.fields.any { it is OptionalGene && it.name == "visits" })
-        assertTrue(objPet.fields[5] is OptionalGene)
-        val objVisitConnection = (objPet.fields[5] as OptionalGene).gene as ObjectGene
+        assertTrue(objPet.fields.any { it is DisruptiveGene<*> && it.name == "id" })
+        assertTrue(objPet.fields.any { it is DisruptiveGene<*> && it.name == "name" })
+        assertTrue(objPet.fields.any { it is DisruptiveGene<*> && it.name == "birthDate" })
+        assertTrue(objPet.fields.any { it is ObjectGene && it.name == "type" })
+        assertTrue(objPet.fields.any { it is ObjectGene && it.name == "visits" })
+        assertTrue(objPet.fields[5] is ObjectGene)
+        val objVisitConnection = objPet.fields[5]  as ObjectGene
         assertEquals(2, objVisitConnection.fields.size)
-        assertTrue(objVisitConnection.fields[0] is BooleanGene)
-        assertTrue(objVisitConnection.fields.any { it is BooleanGene && it.name == "totalCount" })
-        assertTrue(objVisitConnection.fields.any { it is OptionalGene && it.name == "visits" })
+        assertTrue(objVisitConnection.fields[0] is DisruptiveGene<*>)
+        assertTrue(objVisitConnection.fields.any { it is DisruptiveGene<*> && it.name == "totalCount" })
+        assertTrue(objVisitConnection.fields.any { it is ObjectGene && it.name == "visits" })
         /**/
         val pet = actionCluster.get("pet") as GraphQLAction
         assertEquals(2, pet.parameters.size)
@@ -100,7 +100,7 @@ class GraphQLActionBuilderTest {
         assertTrue(pet.parameters[1].gene is ObjectGene)
         val objPet2 = (pet.parameters[1].gene as ObjectGene)
         assertEquals(6, objPet2.fields.size)
-        assertTrue(objPet2.fields.any { it is OptionalGene && it.name == "visits" })
+        assertTrue(objPet2.fields.any { it is ObjectGene && it.name == "visits" })
         /**/
         val specialties = actionCluster.get("specialties") as GraphQLAction
         assertEquals(1, specialties.parameters.size)
@@ -127,9 +127,8 @@ class GraphQLActionBuilderTest {
         assertTrue(page.parameters[1] is GQInputParam)
         assertTrue(page.parameters[2] is GQReturnParam)
 
+        //primitive type that is not part of the search
         val genreCollection = actionCluster.get("GenreCollection") as GraphQLAction
-        assertTrue((genreCollection.parameters[0].gene is ObjectGene))
-        assertTrue((genreCollection.parameters[0].gene as ObjectGene).name == "SCALAR")
 
         val mediaTagCollection = actionCluster.get("MediaTagCollection") as GraphQLAction
         assertTrue(mediaTagCollection.parameters[1].gene is ObjectGene)
@@ -225,9 +224,9 @@ class GraphQLActionBuilderTest {
         assertTrue(continents.parameters[1] is GQReturnParam)
         assertTrue(continents.parameters[1].gene is ObjectGene)
         val objContinents = continents.parameters[1].gene as ObjectGene
-        assertTrue(objContinents.fields[2] is OptionalGene)
-        val objCountry = (objContinents.fields[2] as OptionalGene).gene as ObjectGene
-        assertTrue(objCountry.fields[7] is OptionalGene)
+        assertTrue(objContinents.fields[2] is ObjectGene)
+        val objCountry = (objContinents.fields[2] as ObjectGene)
+        assertTrue(objCountry.fields[7] is ObjectGene)
 
     }
 
@@ -342,7 +341,7 @@ class GraphQLActionBuilderTest {
         assertTrue(ppackage.parameters[0] is GQInputParam)
         assertTrue(ppackage.parameters[0].gene is StringGene)
         val objPackage = ppackage.parameters[1].gene as ObjectGene
-        assertTrue(objPackage.fields.any { it is BooleanGene && it.name == "isMain" })
+        assertTrue(objPackage.fields.any { it is DisruptiveGene<*> && it.name == "isMain" })
         assertTrue(objPackage.fields[2] is OptionalGene)
         val objVersion = (objPackage.fields[2] as OptionalGene).gene as ObjectGene
         objVersion.fields.any { it is BooleanGene && it.name == "name" }
