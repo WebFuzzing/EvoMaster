@@ -48,10 +48,12 @@ class StatisticsEMTest :SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
                 "StatisticsEM",
                 "org.foo.StatisticsEM",
-                100
+                1000
         ){args: MutableList<String> ->
             args.add("--expectationsActive")
             args.add("" + true)
+            args.add("--testSuiteSplitType")
+            args.add("NONE")
 
             val injector = init(args)
             checkExperimentalSettings(injector)
@@ -64,7 +66,7 @@ class StatisticsEMTest :SpringTestBase() {
 
             val solution = Main.run(injector) as Solution<RestIndividual>
 
-            Main.writeTests(injector, solution, controllerInfo)
+            writeTests(injector, solution, controllerInfo)
 
             val stc = injector.getInstance(SearchTimeController::class.java)
             val statistics = injector.getInstance(Statistics::class.java)
