@@ -5,6 +5,7 @@ import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.auth.JsonTokenPostLogin
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.GeneUtils
 
 object TokenWriter {
 
@@ -41,10 +42,15 @@ object TokenWriter {
 
             //TODO JS / C#
 
+            if(k.headerPrefix.isNotEmpty()) {
+                lines.append("\"${k.headerPrefix}\"  + ")
+            }
+
             lines.append("given()")
             lines.indented {
 
-                lines.add(".body(\"${k.jsonPayload}\")")
+                lines.add(".contentType(\"application/json\")")
+                lines.add(".body(\"${GeneUtils.applyJsonEscapes(k.jsonPayload, format)}\")")
 
                 lines.add(".post(")
                 if (format.isJava()) {

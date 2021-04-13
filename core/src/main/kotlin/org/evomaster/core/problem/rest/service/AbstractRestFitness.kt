@@ -462,7 +462,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
          */
 
         a.parameters.filterIsInstance<HeaderParam>()
+                //TODO those should be skipped directly in the search, ie, right now they are useless genes
                 .filter { !prechosenAuthHeaders.contains(it.name) }
+                .filter { !(a.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
                 .forEach {
                     builder.header(it.name, it.gene.getValueAsRawString())
                 }

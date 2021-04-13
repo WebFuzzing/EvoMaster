@@ -1156,6 +1156,7 @@ class TestCaseWriter {
 
         call.parameters.filterIsInstance<HeaderParam>()
             .filter { !prechosenAuthHeaders.contains(it.name) }
+            .filter { !(call.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
             .forEach {
                 lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
             }
@@ -1171,7 +1172,7 @@ class TestCaseWriter {
         //TODO make sure header was not already set
         val tokenLogin = call.auth.jsonTokenPostLogin
         if(tokenLogin != null){
-            lines.add(".$set(\"Authorization\", \"${TokenWriter.tokenName(tokenLogin)}\") // ${call.auth.name}")
+            lines.add(".$set(\"Authorization\", ${TokenWriter.tokenName(tokenLogin)}) // ${call.auth.name}")
         }
     }
 
