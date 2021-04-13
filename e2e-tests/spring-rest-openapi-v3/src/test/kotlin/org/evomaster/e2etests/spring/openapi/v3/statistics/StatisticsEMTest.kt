@@ -41,6 +41,15 @@ class StatisticsEMTest :SpringTestBase() {
                 .then()
                 .statusCode(500)
 
+        RestAssured.given().accept("*/*")
+                .get(baseUrlOfSut + "/api/statistics/basicResponsesString/" + true)
+                .then()
+                .statusCode(200)
+
+        RestAssured.given().accept("*/*")
+                .get(baseUrlOfSut + "/api/statistics/basicNumbersString/" + true)
+                .then()
+                .statusCode(200)
     }
 
     @Test
