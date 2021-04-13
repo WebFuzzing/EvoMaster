@@ -28,6 +28,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         rc.resetSUT()
 
         val cookies = getCookies(individual)
+        val tokens = getTokens(individual)
 
         if (log.isTraceEnabled){
             log.trace("do evaluate the individual, which contains {} dbactions and {} rest actions",
@@ -71,7 +72,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             var ok = false
 
             if (a is RestCallAction) {
-                ok = handleRestCall(a, actionResults, chainState, cookies)
+                ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
