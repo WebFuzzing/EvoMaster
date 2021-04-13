@@ -102,7 +102,7 @@ object GeneUtils {
      */
     fun repairGenes(genes: Collection<Gene>) {
 
-        if (log.isTraceEnabled){
+        if (log.isTraceEnabled) {
             log.trace("repair genes {}", genes.joinToString(",") {
                 //note that check whether the gene is printable is not enough here
                 try {
@@ -417,32 +417,45 @@ object GeneUtils {
 
         ///TODO deal when return is Optional
 
-        if(shouldApplyBooleanSelection(gene)){
-            return handleBooleanSelection(gene) as ObjectGene
+        if (shouldApplyBooleanSelection(gene)) {
+            val selectedGene = handleBooleanSelection(gene)
+            if (selectedGene is OptionalGene) {
+                return selectedGene.gene as ObjectGene
+            } else {
+                return selectedGene as ObjectGene
+            }
+            //  return handleBooleanSelection(gene) as ObjectGene
         }
         throw IllegalArgumentException("Invalid input type: ${gene.javaClass}")
     }
 
     fun shouldApplyBooleanSelection(gene: Gene) =
             (gene is OptionalGene && gene.gene is ObjectGene)
-                    ||gene is ObjectGene
+                    || gene is ObjectGene
                     || (gene is ArrayGene<*> && gene.template is ObjectGene)
                     || (gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is ObjectGene)
+                    || (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is ObjectGene)
+                    || (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is ObjectGene)
 
-    private fun handleBooleanSelection(gene: Gene) : Gene{
+    private fun handleBooleanSelection(gene: Gene): Gene {
 
-        return when(gene){
+        return when (gene) {
             is OptionalGene -> {
                 /*
                     this is nullable.
                     Any basic field will be represented with a BooleanGene (selected/unselected).
                     But for objects we need to use an Optional
                  */
-                if(gene.gene is ObjectGene){
+                if (gene.gene is ObjectGene) {
                     OptionalGene(gene.name, handleBooleanSelection(gene.gene))
-                } else {  //TODO deal with Array here
-                    // on by default, but can be deselected during the search
-                    BooleanGene(gene.name, true)
+                } else {
+                    if (gene.gene is ArrayGene<*>) {
+                        handleBooleanSelection(gene.gene.template)
+                    } else {
+                        //TODO deal with Array here
+                        // on by default, but can be deselected during the search
+                        BooleanGene(gene.name, true)
+                    }
                 }
             }
             is ObjectGene -> {
@@ -452,7 +465,7 @@ object GeneUtils {
             is ArrayGene<*> -> handleBooleanSelection(gene.template)
             else -> {
                 //as this was not marked as optional, must always be selected
-                DisruptiveGene(gene.name, BooleanGene(gene.name, true),0.0 )
+                DisruptiveGene(gene.name, BooleanGene(gene.name, true), 0.0)
             }
         }
     }
