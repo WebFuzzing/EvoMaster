@@ -17,7 +17,7 @@ open class ExpectationsApplication {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(BaseApplication::class.java, *args)
+            SpringApplication.run(ExpectationsApplication::class.java, *args)
         }
     }
 
