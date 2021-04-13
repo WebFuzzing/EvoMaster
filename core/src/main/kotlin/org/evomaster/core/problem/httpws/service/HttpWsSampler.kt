@@ -3,10 +3,7 @@ package org.evomaster.core.problem.httpws.service
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.auth.AuthenticationHeader
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.auth.CookieLogin
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.rest.auth.*
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
@@ -94,7 +91,14 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
                 null
             }
 
-            val auth = AuthenticationInfo(i.name.trim(), headers, cookieLogin)
+            val jsonTokenPostLogin = if(i.jsonTokenPostLogin != null){
+                JsonTokenPostLogin.fromDto(i.jsonTokenPostLogin)
+            } else {
+                null
+            }
+
+
+            val auth = AuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
 
             authentications.add(auth)
         }

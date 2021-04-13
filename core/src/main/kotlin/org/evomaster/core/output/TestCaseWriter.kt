@@ -181,6 +181,7 @@ class TestCaseWriter {
             }
 
             CookieWriter.handleGettingCookies(format, test.test, lines, baseUrlOfSut)
+            TokenWriter.handleGettingTokens(format, test.test, lines, baseUrlOfSut)
 
             //SQL actions are generated in between
             if (test.test.individual is RestIndividual && config.isEnabledSQLInBetween()) {
@@ -1155,6 +1156,7 @@ class TestCaseWriter {
 
         call.parameters.filterIsInstance<HeaderParam>()
             .filter { !prechosenAuthHeaders.contains(it.name) }
+            .filter { !(call.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
             .forEach {
                 lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
             }
@@ -1165,6 +1167,12 @@ class TestCaseWriter {
                 format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(cookieLogin)})")
                 format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(cookieLogin)})")
             }
+        }
+
+        //TODO make sure header was not already set
+        val tokenLogin = call.auth.jsonTokenPostLogin
+        if(tokenLogin != null){
+            lines.add(".$set(\"Authorization\", ${TokenWriter.tokenName(tokenLogin)}) // ${call.auth.name}")
         }
     }
 
