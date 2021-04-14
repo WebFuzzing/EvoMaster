@@ -99,11 +99,12 @@ case studies in [EMB](https://github.com/EMResearch/EMB).
   shows how to write a white-box driver for EvoMaster, for the
   [rest-api-example](https://github.com/EMResearch/rest-api-example). 
  
+<!---
 ### Hiring
 
 Each year we usually have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
 For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
-
+--->
 
 
 
