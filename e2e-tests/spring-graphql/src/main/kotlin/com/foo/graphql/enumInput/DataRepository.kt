@@ -15,7 +15,7 @@ open class DataRepository {
                 Flower(1, "Candy Prince", FlowerType.LIMONIUM, "Pink", 18),
                 Flower(2, "Lily", FlowerType.ROSES, "White", 30),
                 Flower(3, "Lavender", FlowerType.TULIPS, "Purple", 25)
-        )
+        ).forEach { flowers[it.type] = it }
 
     }
 
