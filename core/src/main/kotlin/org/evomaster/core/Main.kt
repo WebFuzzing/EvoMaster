@@ -168,11 +168,11 @@ class Main {
 
             writeStatistics(injector, solution)
 
-            LoggingUtil.getInfoLogger().apply {
-                val stc = injector.getInstance(SearchTimeController::class.java)
-                val statistics = injector.getInstance(Statistics::class.java)
-                val data = statistics.getData(solution)
+            val stc = injector.getInstance(SearchTimeController::class.java)
+            val statistics = injector.getInstance(Statistics::class.java)
+            val data = statistics.getData(solution)
 
+            LoggingUtil.getInfoLogger().apply {
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
                 info("Evaluated actions: ${stc.evaluatedActions}")
                 info("Needed budget: ${stc.neededBudget()}")
@@ -211,7 +211,7 @@ class Main {
                             " to run the search for longer"))
                 }
             }
-
+            solution.statistics = data.toMutableList()
             return solution
         }
 
@@ -543,88 +543,6 @@ class Main {
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
             writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName)
         }
-
-        @JvmStatic
-        fun initAndRunwithStatistics(args: Array<String>): Pair<Solution<*>, List<Statistics.Pair>> {
-
-            val injector = init(args)
-
-            checkExperimentalSettings(injector)
-
-            val controllerInfo = checkState(injector)
-
-            val config = injector.getInstance(EMConfig::class.java)
-            val idMapper = injector.getInstance(IdMapper::class.java)
-
-            val writer = setupPartialOracles(injector, config)
-
-            val solution = run(injector)
-            val faults = solution.overall.potentialFoundFaults(idMapper)
-
-            writeOverallProcessData(injector)
-
-            writeDependencies(injector)
-
-            writeImpacts(injector, solution)
-
-            //writeStatistics(injector, solution)
-
-            writeCoveredTargets(injector, solution)
-
-            writeTests(injector, solution, controllerInfo)
-
-            writeStatistics(injector, solution)
-
-            LoggingUtil.getInfoLogger().apply {
-                val stc = injector.getInstance(SearchTimeController::class.java)
-                val statistics = injector.getInstance(Statistics::class.java)
-                val data = statistics.getData(solution)
-
-                info("Evaluated tests: ${stc.evaluatedIndividuals}")
-                info("Evaluated actions: ${stc.evaluatedActions}")
-                info("Needed budget: ${stc.neededBudget()}")
-
-                if(!config.avoidNonDeterministicLogs) {
-                    info("Passed time (seconds): ${stc.getElapsedSeconds()}")
-                    info("Execution time per test (ms): ${stc.averageTestTimeMs}")
-                    info("Computation overhead between tests (ms): ${stc.averageOverheadMsBetweenTests}")
-                    val timeouts = data.find { p -> p.header == Statistics.TEST_TIMEOUTS }!!.element.toInt()
-                    if(timeouts > 0){
-                        info("TCP timeouts: $timeouts")
-                    }
-                }
-
-                if(!config.blackBox || config.bbExperiments) {
-                    val rc = injector.getInstance(RemoteController::class.java)
-                    val unitsInfo = rc.getSutInfo()?.unitsInfoDto
-
-                    if(unitsInfo != null) {
-                        val units = unitsInfo.unitNames.size
-                        val totalLines = unitsInfo.numberOfLines
-                        val coveredLines = solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)
-                        val percentage = String.format("%.0f", (coveredLines / totalLines.toDouble()) * 100)
-
-                        info("Covered targets (lines, branches, faults, etc.): ${solution.overall.coveredTargets()}")
-                        info("Potential faults: ${faults.size}")
-                        info("Bytecode line coverage: $percentage% ($coveredLines out of $totalLines in $units units/classes)")
-                    } else {
-                        warn("Failed to retrieve SUT info")
-                    }
-                }
-
-                if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
-                        config.maxTime == config.defaultMaxTime) {
-                    info(inGreen("To obtain better results, use the '--maxTime' option" +
-                            " to run the search for longer"))
-                }
-            }
-            val stc = injector.getInstance(SearchTimeController::class.java)
-            val statistics = injector.getInstance(Statistics::class.java)
-
-            return Pair(solution, statistics.getData(solution))
-        }
-
-
     }
 }
 
