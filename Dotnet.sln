@@ -23,6 +23,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.Controller.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.Instrumentation", "client-dotnet\src\EvoMaster.Instrumentation\EvoMaster.Instrumentation.csproj", "{9CAFB6D6-A4F9-4152-B377-97CF56168083}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.DatabaseStarter.Abstractions", "client-dotnet\src\EvoMaster.DatabaseStarter.Abstractions\EvoMaster.DatabaseStarter.Abstractions.csproj", "{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.DatabaseStarter", "client-dotnet\src\EvoMaster.DatabaseStarter\EvoMaster.DatabaseStarter.csproj", "{22D68CD5-5713-4E08-895C-2CD7A87F8666}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -144,6 +148,30 @@ Global
 		{9CAFB6D6-A4F9-4152-B377-97CF56168083}.Release|x64.Build.0 = Release|Any CPU
 		{9CAFB6D6-A4F9-4152-B377-97CF56168083}.Release|x86.ActiveCfg = Release|Any CPU
 		{9CAFB6D6-A4F9-4152-B377-97CF56168083}.Release|x86.Build.0 = Release|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Debug|x64.Build.0 = Debug|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Debug|x86.Build.0 = Debug|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Release|x64.ActiveCfg = Release|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Release|x64.Build.0 = Release|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Release|x86.ActiveCfg = Release|Any CPU
+		{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}.Release|x86.Build.0 = Release|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Debug|x64.Build.0 = Debug|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Debug|x86.Build.0 = Debug|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Release|x64.ActiveCfg = Release|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Release|x64.Build.0 = Release|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Release|x86.ActiveCfg = Release|Any CPU
+		{22D68CD5-5713-4E08-895C-2CD7A87F8666}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A4DD5E57-91EE-44F4-87F7-69F4B9053DDF} = {C7482DD5-AD81-49FE-9395-80C952893534}

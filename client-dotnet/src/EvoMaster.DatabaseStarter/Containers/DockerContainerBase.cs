@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 
-namespace EvoMaster.Controller.Controllers.db
+namespace EvoMaster.DatabaseStarter.Containers
 {
     /* This class is a base for running containers in our solution
       To run database in a docker container we first tried DotNet.Testcontainers library

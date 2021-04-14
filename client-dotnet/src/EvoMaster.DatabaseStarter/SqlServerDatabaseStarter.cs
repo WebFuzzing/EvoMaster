@@ -2,29 +2,29 @@ using System;
 using System.Data.Common;
 using System.Threading.Tasks;
 using Docker.DotNet;
+using EvoMaster.DatabaseStarter.Abstractions;
+using EvoMaster.DatabaseStarter.Containers;
 using Microsoft.Data.SqlClient;
 
-namespace EvoMaster.Controller.Controllers.db
+namespace EvoMaster.DatabaseStarter
 {
-    internal static class SqlServerDatabaseStarter
+    public class SqlServerDatabaseStarter : IDatabaseStarter
     {
+        private const string SaPassword = "password123";
         private static SqlServerContainer _sqlServerContainer;
         private static DockerClient _dockerClient;
-        
-        public static async Task<(string, DbConnection)> StartAsync(string databaseName, int port, int timeout)
+
+        public async Task<(string, DbConnection)> StartAsync(string databaseName, int port, int timeout)
         {
-            var dockerUri = IsRunningOnWindows()
-                ? "npipe://./pipe/docker_engine"
-                : "unix:///var/run/docker.sock";
+            var dockerUri = IDatabaseStarter.GetDockerUri();
 
             _dockerClient = new DockerClientConfiguration(
-                    // TODO: This needs to be configurable in order to execute tests in CI
                     new Uri(dockerUri))
                 .CreateClient();
 
             DockerContainerBase.CleanupOrphanedContainersAsync(_dockerClient).Wait(timeout * 500);
 
-            _sqlServerContainer = new SqlServerContainer(port);
+            _sqlServerContainer = new SqlServerContainer(port, SaPassword);
 
             await _sqlServerContainer.StartAsync(_dockerClient, timeout);
 
@@ -36,11 +36,6 @@ namespace EvoMaster.Controller.Controllers.db
             var connection = new SqlConnection(connectionString);
 
             return (connectionString, connection);
-        }
-        
-        private static bool IsRunningOnWindows()
-        {
-            return Environment.OSVersion.Platform == PlatformID.Win32NT;
         }
     }
 }
