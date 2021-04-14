@@ -957,7 +957,6 @@ class TestCaseWriter {
         val inputGenes = call.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
         val returnGene = call.parameters.find { p -> p is GQReturnParam }?.gene
-                ?: throw RuntimeException("ERROR: Body param not specified ")
 
         val send = when {
             format.isJavaOrKotlin() -> "body"
@@ -978,7 +977,7 @@ class TestCaseWriter {
 
                 var printableInputGenes = getPrintableInputGenes(printableInputGene)
 
-                if (returnGene.name.toLowerCase() == "scalar") {
+                if (returnGene == null) {
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
 
                 } else {
@@ -989,7 +988,7 @@ class TestCaseWriter {
 
             } else {
 
-                if (returnGene.name.toLowerCase() == "scalar") {
+                if (returnGene == null) {
 
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
                 } else {
@@ -1005,7 +1004,7 @@ class TestCaseWriter {
 
             var printableInputGenes = getPrintableInputGenes(printableInputGene)
 
-            if (returnGene.name.toLowerCase() == "scalar") {
+            if (returnGene == null) {//primitive type means without a return gene
                 OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \" mutation{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
 
             } else {

@@ -344,8 +344,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         //TOdo check empty return type
         val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
-        //in GraphQL, there is ALWAYS a return type
-                ?: throw RuntimeException("ERROR: not specified return type")
+
         val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
         var bodyEntity: Entity<String> = Entity.json(" ")
@@ -358,31 +357,30 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                 var printableInputGenes = getPrintableInputGenes(printableInputGene)
 
-
-                if (returnGene.name.toLowerCase() == "scalar") {
-                    bodyEntity = Entity.json("""
-            {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
-        """.trimIndent())
+                //primitive type
+                bodyEntity = if (returnGene == null) {
+                    Entity.json("""
+                    {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
+                """.trimIndent())
 
                 } else {
-
                     val query = getQuery(returnGene, a)
-                    bodyEntity = Entity.json("""
-            {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
-        """.trimIndent())
+                    Entity.json("""
+                    {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
+                """.trimIndent())
 
                 }
-            } else {
-                if (returnGene.name.toLowerCase() == "scalar") {
-                    bodyEntity = Entity.json("""
-            {"query" : "  { ${a.methodName}       } ","variables":null}
-        """.trimIndent())
+            } else {//request without arguments and primitive type
+                bodyEntity = if (returnGene == null) {
+                    Entity.json("""
+                    {"query" : "  { ${a.methodName}       } ","variables":null}
+                """.trimIndent())
 
                 } else {
                     var query = getQuery(returnGene, a)
-                    bodyEntity = Entity.json("""
-           {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
-        """.trimIndent())
+                    Entity.json("""
+                   {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
+                """.trimIndent())
                 }
             }
         } else if (a.methodType == GQMethodType.MUTATION) {
@@ -390,18 +388,17 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             val printableInputGenes = getPrintableInputGenes(printableInputGene)
 
-            if (returnGene.name.toLowerCase() == "scalar") {
-                bodyEntity = Entity.json("""
-            {"query" : " mutation{ ${a.methodName}  ($printableInputGenes)         } ","variables":null}
-        """.trimIndent())
-
+            bodyEntity = if (returnGene == null) {//primitive type
+                Entity.json("""
+                {"query" : " mutation{ ${a.methodName}  ($printableInputGenes)         } ","variables":null}
+            """.trimIndent())
 
             } else {
                 val mutation = getMutation(returnGene, a)
 
-                bodyEntity = Entity.json("""
-            { "query" : "mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    }","variables":null}
-        """.trimIndent())
+                Entity.json("""
+                { "query" : "mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    }","variables":null}
+            """.trimIndent())
 
             }
         }
