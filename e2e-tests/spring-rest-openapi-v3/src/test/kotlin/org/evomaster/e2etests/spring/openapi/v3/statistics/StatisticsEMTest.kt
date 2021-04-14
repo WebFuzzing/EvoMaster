@@ -4,10 +4,7 @@ import com.foo.rest.examples.spring.openapi.v3.statistics.StatisticsController
 import io.restassured.RestAssured
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Main
-import org.evomaster.core.Main.Companion.checkExperimentalSettings
-import org.evomaster.core.Main.Companion.checkState
-import org.evomaster.core.Main.Companion.setupPartialOracles
-import org.evomaster.core.Main.Companion.writeTests
+import org.evomaster.core.Main.Companion.initAndRunwithStatistics
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Solution
@@ -41,6 +38,7 @@ class StatisticsEMTest :SpringTestBase() {
             args.add("--testSuiteSplitType")
             args.add("NONE")
 
+            /*
             val injector = init(args)
             checkExperimentalSettings(injector)
             val controllerInfo = checkState(injector)
@@ -57,6 +55,13 @@ class StatisticsEMTest :SpringTestBase() {
             val stc = injector.getInstance(SearchTimeController::class.java)
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
+            */
+
+            //val answer = initAndRun(args)
+            val answer = initAndRunwithStatistics(args.toTypedArray())
+
+            val solution = answer.first as Solution<RestIndividual>
+            val data = answer.second
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200)
