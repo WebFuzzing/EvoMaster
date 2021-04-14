@@ -124,7 +124,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 val selection = includedFields.filter {
                     when (it) {
                         is OptionalGene -> it.isActive
-                       // is BooleanGene -> it.value
+                        is BooleanGene -> it.value
                         is DisruptiveGene<*> -> it.probability ==0.0
                         else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
                     }
@@ -136,10 +136,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                             assert(it.gene is ObjectGene)
                             it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
                         }
-                        /*
+
                         is BooleanGene -> {
                             it.name
-                        }*/
+                        }
                         is DisruptiveGene<*> -> {
                             it.name
                         }
