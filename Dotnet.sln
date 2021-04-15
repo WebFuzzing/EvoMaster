@@ -23,9 +23,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.Controller.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.Instrumentation", "client-dotnet\src\EvoMaster.Instrumentation\EvoMaster.Instrumentation.csproj", "{9CAFB6D6-A4F9-4152-B377-97CF56168083}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.DatabaseStarter.Abstractions", "client-dotnet\src\EvoMaster.DatabaseStarter.Abstractions\EvoMaster.DatabaseStarter.Abstractions.csproj", "{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.DatabaseController.Abstractions", "client-dotnet\src\EvoMaster.DatabaseController.Abstractions\EvoMaster.DatabaseController.Abstractions.csproj", "{527A9F4D-2899-4955-9D51-9D8FD31AF1E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.DatabaseStarter", "client-dotnet\src\EvoMaster.DatabaseStarter\EvoMaster.DatabaseStarter.csproj", "{22D68CD5-5713-4E08-895C-2CD7A87F8666}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.DatabaseController", "client-dotnet\src\EvoMaster.DatabaseController\EvoMaster.DatabaseController.csproj", "{22D68CD5-5713-4E08-895C-2CD7A87F8666}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

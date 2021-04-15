@@ -4,26 +4,38 @@ using DotNet.Testcontainers.Containers.Builders;
 using DotNet.Testcontainers.Containers.Configurations.Databases;
 using DotNet.Testcontainers.Containers.Modules.Abstractions;
 using DotNet.Testcontainers.Containers.Modules.Databases;
-using EvoMaster.DatabaseStarter.Abstractions;
+using EvoMaster.DatabaseController.Abstractions;
 using Npgsql;
 
-namespace EvoMaster.DatabaseStarter
+namespace EvoMaster.DatabaseController
 {
-    public class PostgresDatabaseStarter : IDatabaseStarter
+    public class PostgresDatabaseController : IDatabaseController
     {
         private static TestcontainerDatabase _database;
         private static NpgsqlConnection _connection;
 
-        public async Task<(string, DbConnection)> StartAsync(string databaseName, int port, int timeout = 60)
+        public PostgresDatabaseController(string databaseName, int port, string password, int timeout = 60)
+        {
+            DatabaseName = databaseName;
+            Port = port;
+            Timeout = timeout;
+            Password = password;
+        }
+        public string DatabaseName { get; }
+        public int Port { get; }
+        public int Timeout { get; }
+        public string Password { get; }
+
+        public async Task<(string, DbConnection)> StartAsync()
         {
             var postgresBuilder = new TestcontainersBuilder<PostgreSqlTestcontainer>()
                 .WithDatabase(new PostgreSqlTestcontainerConfiguration
                 {
-                    Database = databaseName,
+                    Database = DatabaseName,
                     Username = "user",
-                    Password = "password123"
+                    Password = Password
                 })
-                .WithExposedPort(port);
+                .WithExposedPort(Port);
 
             _database = postgresBuilder.Build();
             await _database.StartAsync();
@@ -35,6 +47,18 @@ namespace EvoMaster.DatabaseStarter
             var connectionString = $"{_connection.ConnectionString};Password={_database.Password}";
 
             return (connectionString, _connection);
+        }
+
+        public async Task StopAsync()
+        {
+            await _connection.CloseAsync();
+            await _database.StopAsync();
+        }
+
+        public void Stop()
+        {
+            _connection.Close();
+            _database.StopAsync().GetAwaiter().GetResult();
         }
     }
 }

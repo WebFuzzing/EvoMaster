@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Docker.DotNet.Models;
 using Microsoft.Data.SqlClient;
 
-namespace EvoMaster.DatabaseStarter.Containers
+namespace EvoMaster.DatabaseController.Containers
 {
     internal class SqlServerContainer : DockerContainerBase
     {
