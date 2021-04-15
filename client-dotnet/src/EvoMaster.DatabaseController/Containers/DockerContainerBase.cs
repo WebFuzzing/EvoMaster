@@ -14,7 +14,7 @@ namespace EvoMaster.DatabaseController.Containers
     // credits to https://www.meziantou.net/2018/10/08/integration-testing-using-a-docker-container
     internal abstract class DockerContainerBase
     {
-        protected const string ContainerPrefix = "EvoMaster-DbContainer-";
+        protected const string ContainerPrefix = "EvoMaster-DB-";
 
         protected DockerContainerBase(string imageName, string containerName)
         {

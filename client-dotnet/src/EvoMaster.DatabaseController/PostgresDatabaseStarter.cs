@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System;
+using System.Data.Common;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Containers.Builders;
 using DotNet.Testcontainers.Containers.Configurations.Databases;
@@ -21,6 +22,7 @@ namespace EvoMaster.DatabaseController
             Timeout = timeout;
             Password = password;
         }
+
         public string DatabaseName { get; }
         public int Port { get; }
         public int Timeout { get; }
@@ -29,13 +31,14 @@ namespace EvoMaster.DatabaseController
         public async Task<(string, DbConnection)> StartAsync()
         {
             var postgresBuilder = new TestcontainersBuilder<PostgreSqlTestcontainer>()
+                .WithName($"EvoMaster-DB-Postgres-{Guid.NewGuid()}")
                 .WithDatabase(new PostgreSqlTestcontainerConfiguration
                 {
                     Database = DatabaseName,
                     Username = "user",
                     Password = Password
                 })
-                .WithExposedPort(Port);
+                .WithExposedPort(Port).WithCleanUp(true);
 
             _database = postgresBuilder.Build();
             await _database.StartAsync();
