@@ -190,39 +190,48 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSectionInteger() {
 
-        val integer = IntegerGene("a", 1)
+        val objInteger = ObjectGene("foo", listOf(IntegerGene("a", 1)))
 
-        val selection = GeneUtils.getBooleanSelection(integer)
+        val selection = GeneUtils.getBooleanSelection(objInteger)
+
+        val a = selection.fields.find { it.name == "a" } as DisruptiveGene<*>
+
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("a", rep)
+        assertEquals("{a}", rep)
     }
 
     @Test
     fun testBooleanSectionOptionalObject() {
 
-        val opt = OptionalGene("Opti", StringGene("Opti", "hello"))
-        val selection = GeneUtils.getBooleanSelection(opt)
+        val objOpt = ObjectGene("foo",  listOf( OptionalGene("Opti", StringGene("Opti", "hello"))))
+        val selection = GeneUtils.getBooleanSelection(objOpt)
+
+        val a = selection.fields.find { it.name == "Opti" } as BooleanGene
+        //todo extra check
+        a.value = true
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("Opti", rep)
+        assertEquals("{Opti}", rep)
     }
 
     @Test
     fun testBooleanSectionBoolean() {
 
-        val boolean = BooleanGene("a")
+        val objBoolean = ObjectGene("foo", listOf(BooleanGene("a")))
 
-        val selection = GeneUtils.getBooleanSelection(boolean)
+        val selection = GeneUtils.getBooleanSelection(objBoolean)
+
+        val a = selection.fields.find { it.name == "a" } as DisruptiveGene<*>
+
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("a", rep)
+        assertEquals("{a}", rep)
     }
-
 }
