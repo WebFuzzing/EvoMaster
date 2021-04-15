@@ -19,6 +19,16 @@ jobs:
       # Checkout code
       - uses: actions/checkout@v2
 
+      # Build/test for .Net
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.x
+      - name: Build with .Net
+        run: dotnet build --configuration Release
+      - name: Tests for .Net
+        run: dotnet test
+
       # Build/test for JavaScript
       - name: Use Node.js
         uses: actions/setup-node@v1
@@ -37,8 +47,6 @@ jobs:
       - run: npm run test
         working-directory: ./client-js/integration-tests
 
-
-
       # Build/test for JDK
       - name: Setup JDK 8
         uses: actions/setup-java@v1
@@ -54,16 +62,6 @@ jobs:
         run: mvn clean verify --fae
         env:
           CI_env: GithubAction
-
-      # Build/test for .Net
-      - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 3.1.x
-      - name: Build with .Net
-        run: dotnet build --configuration Release
-      - name: Tests for .Net
-        run: dotnet test
 
 
       # E2E for JS. Must be run AFTER the JS and Core builds
