@@ -185,19 +185,19 @@ class Statistics : SearchListener {
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
             add(Pair("endpoints", "" + numberOfEndpoints()))
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
-            // this counting only the number of endpoints with 5xx, and NOT last executed line
+
+            // Statistics on faults found
+            // errors5xx - counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))
-            //this count the number of 500 (and NOT the other in 5xx), per endpoint, and distinct based on the last
+            //distinct500Faults - counts the number of 500 (and NOT the other in 5xx), per endpoint, and distinct based on the last
             //executed line
-            //add(Pair("distinct500Faults", "" + distinct5xx(solution) )) //TODO
-            add(Pair("distinct500Faults", "" + solution.overall.potential500Faults(idMapper).size )) //TODO
-            // this is per endpoint (so, the same type of failed expectation in 2 different endpoints gets counted twice).
-            // However, 5xx are not counted here. FIXME
+            add(Pair("distinct500Faults", "" + solution.overall.potential500Faults(idMapper).size ))
+            // failedOracleExpectations - the number of calls in the individual that fail one active partial oracle.
+            // However, 5xx are not counted here.
             add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
             //this is the total of all potential faults, eg distinct500Faults + failedOracleExpectations + any other
             //potential oracle we are going to introduce.
             //Note: that 500 (and 5xx in general) MUST not be counted in failedOracles
-            //FIXME
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
 
             add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
