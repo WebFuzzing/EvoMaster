@@ -287,11 +287,17 @@ public abstract class WsTestBase {
         clearGeneratedFiles(outputFolderName, classNames);
     }
 
+    /**
+     *  As E2E generates test cases, we need delete the previous ones from previous runs, to make sure
+     *  we are running the latest generated.
+     *
+     *  However, if you run everything from "org.", those existing tests from previous run will be loaded into
+     *  the JVM, and so checks for their presence after this is executed will pass... and so the E2E will fail
+     */
     protected void clearCompiledFiles(ClassName testClassName){
         String byteCodePath = "target/test-classes/" + testClassName.getAsResourcePath();
         File compiledFile = new File(byteCodePath);
         boolean result = compiledFile.delete();
-
     }
 
     protected Class<?> loadClass(ClassName className){
