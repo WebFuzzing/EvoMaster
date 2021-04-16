@@ -342,9 +342,10 @@ public class ExecutionTracer {
     public static void executedLine(String className, String methodName, String descriptor, int line) {
 
         if(isKillSwitch()){
-            String name = Thread.currentThread().getName();
+            //String name = Thread.currentThread().getName();
+
             //TODO this is now hardcoded for languagetool... but should be rather configurable from Driver
-            if(name.startsWith("remote-rule-pool-") || name.startsWith("lt-textchecker-thread-")) {
+            //if(name.startsWith("remote-rule-pool-") || name.startsWith("lt-textchecker-thread-")) {
 
                 /*
                     if we are in the middle of a class initialization, we should NOT throw an exception, otherwise
@@ -356,7 +357,7 @@ public class ExecutionTracer {
                 if(!initClass) {
                     throw new KillSwitchException();
                 }
-            }
+            //}
         }
 
         //for targets to cover
