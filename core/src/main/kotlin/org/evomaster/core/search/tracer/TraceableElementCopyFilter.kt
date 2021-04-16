@@ -1,9 +1,5 @@
 package org.evomaster.core.search.tracer
 
-import org.evomaster.core.problem.rest.util.ParamUtil
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
 /**
  * created by manzh on 2019-09-06
  *

@@ -14,8 +14,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.date.DateTime
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.*
 import org.evomaster.core.Lazy
-import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.impact.impactinfocollection.regex.*
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification

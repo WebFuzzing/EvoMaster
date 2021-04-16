@@ -10,7 +10,7 @@ import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.rest.service.RestActionHandlingUtil
-import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
 import org.evomaster.core.search.gene.Gene
@@ -96,6 +96,13 @@ class RestResourceNode(
      * value is template info
      */
     private val templates : MutableMap<String, CallsTemplate> = mutableMapOf()
+
+    /**
+     * In REST, params of the action might be modified, e.g., for WebRequest
+     * In this case, we modify the [actions] with updated action with new params if there exist,
+     * and backup its original form with [originalActions]
+     */
+    private val originalActions : MutableList<RestAction> = mutableListOf()
 
     /**
      * this init occurs after actions and ancestors are set up
@@ -192,12 +199,14 @@ class RestResourceNode(
 
     //if only get
     fun isIndependent() : Boolean{
-        return templates.all { it.value.independent }
+        return allTemplatesAreIndependent()
                 && (creations.none { c->c.isComplete() }
                 || getSqlCreationPoints().isEmpty() //resourceToTable.paramToTable.isEmpty()
                 )
         //resourceToTable.paramToTable.isEmpty() && verbs[RestResourceTemplateHandler.getIndexOfHttpVerb(HttpVerb.GET)] && verbs.filter {it}.size == 1
     }
+
+    fun allTemplatesAreIndependent() = templates.all { it.value.independent }
 
     // if only post, the resource does not contain any independent action
     fun hasIndependentAction() : Boolean{
@@ -431,11 +440,24 @@ class RestResourceNode(
     }
 
     /********************** utility *************************/
-    fun updateTemplate(){
-        if (RestResourceTemplateHandler.hasCreation(verbs) || getDerivedTables().isEmpty()) return
-        RestResourceTemplateHandler.appendPost(verbs, templates)
+
+    fun updateActionsWithAdditionalParams(action: RestCallAction){
+        val org = actions.find { it is RestCallAction && it.verb == action.verb }
+        org?:throw IllegalStateException("cannot find the action (${action.getName()}) in the node $path")
+        if (action.parameters.size > (org as RestCallAction).parameters.size){
+            originalActions.add(org)
+            actions.remove(org)
+            actions.add(action)
+        }
     }
 
+    fun updateTemplate(){
+        if (RestResourceTemplateHandler.hasCreation(verbs)
+            || getDerivedTables().isEmpty()
+            || templates.none { it.key.contains("POST") }
+        ) return
+        RestResourceTemplateHandler.appendPost(verbs, templates)
+    }
 
     fun isPartOfStaticTokens(text : String) : Boolean{
         return tokens.any { token ->

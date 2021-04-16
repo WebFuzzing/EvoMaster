@@ -52,7 +52,7 @@ public class ResourceMIOWithAWHAndNumSQLTest extends ResourceMIOHWTest{
         String raIdKey = "/api/rA/{rAId}";
         String raIdPostTemplate = "POST-GET";
         RestResourceNode raIdNode = rmanger.getResourceNodeFromCluster(raIdKey);
-        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, raIdPostTemplate, 10, false, true, false);
+        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, raIdPostTemplate, 10, false, true, false, false);
 
         List<RestResourceCalls> calls = Arrays.asList(rAIdcall);
         RestIndividual raIdInd = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);

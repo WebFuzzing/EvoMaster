@@ -148,7 +148,7 @@ object DbActionUtils {
             actions.addAll(truncatedListOfActions)
 
             if (log.isTraceEnabled){
-                log.trace("genes are repaired ,and after repairBrokenDbActionsList, the actions are {}", actions.joinToString(",") { it.getResolvedName() })
+                log.trace("DbGenes are repaired, and after repairBrokenDbActionsList, the actions are {}", actions.joinToString(",") { it.getResolvedName() })
             }
 
             return false
@@ -377,6 +377,12 @@ object DbActionUtils {
      * In resource-based individual, SQL actions might be distributed to different set of REST actions regarding resources.
      * In this context, a FK of an insertion may refer to a PK that are in front of this insertion and belongs to other resource (referred resource).
      * During mutation, if the referred resource is modified (e.g., removed), the FK will be broken.
+     *
+     * @param dbAction is the dbaction to be fixed
+     * @param previous are dbactions in the front of [dbAction]
+     * @param createdDbActions are the newly created dbactions for repairing [dbAction]
+     * @param sqlInsertBuilder is the sql builder
+     * @param randomness is the randomness
      */
     fun repairFK(dbAction: DbAction, previous : MutableList<DbAction>, createdDbActions : MutableList<DbAction>,sqlInsertBuilder: SqlInsertBuilder?, randomness: Randomness) : MutableList<SqlPrimaryKeyGene>{
         val repaired = mutableListOf<SqlPrimaryKeyGene>()
@@ -384,26 +390,50 @@ object DbActionUtils {
             return repaired
 
         val pks = previous.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
-        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().filter { fk-> pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey } }.forEach { fk->
-            var found = pks.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
-            if (found == null){
-                val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf())?.toMutableList()
-                created?:throw IllegalStateException("fail to create insert db action for table (${fk.targetTable})")
-                if (log.isTraceEnabled){
-                    log.trace("insertion which is created at repairFK is {}",
-                        created.joinToString(",") { it.getResolvedName() })
-                }
-                randomizeDbActionGenes(created, randomness)
-                found = created.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
-                    ?:throw IllegalStateException("fail to create target table (${fk.targetTable}) for ${fk.name}")
 
-                repairFkForInsertions(created)
-                createdDbActions.addAll(created)
-                previous.addAll(created)
-                repaired.addAll(created.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>())
-            }
-            fk.uniqueIdOfPrimaryKey = found.uniqueId
-            repaired.add(found)
+        val pkRefer = dbAction.seeGenes().filter { it is SqlPrimaryKeyGene && it.gene is SqlForeignKeyGene }.filterIsInstance<SqlPrimaryKeyGene>()
+        dbAction.seeGenes().flatMap { it.flatView() }
+            .filterIsInstance<SqlForeignKeyGene>()
+            .filter { fk-> pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey } }
+            .forEach { fk->
+                val candidate = pks.filter { pk -> pk.tableName == fk.targetTable &&
+                        pk.uniqueId != fk.uniqueIdOfPrimaryKey }
+                val isInPK = pkRefer.any { it.gene == fk }
+                val previousFKs = previous.filter { it.table.name.equals(fk.targetTable, ignoreCase = true)}
+                    .flatMap { it.seeGenes() }.flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>()
+
+                var found = if (candidate.isEmpty()) null
+                            else if (!isInPK || previousFKs.isEmpty()) candidate.first()
+                            else {
+                                //find a pk which is not referred by other fk
+                                candidate.find { p->
+                                    previousFKs.none { pf->
+                                        pf.uniqueIdOfPrimaryKey == p.uniqueId
+                                    }
+                                }
+                            }
+
+                if (found == null){
+                    val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf())?.toMutableList()
+                    created
+                        ?:throw IllegalStateException("fail to create insert db action for table (${fk.targetTable})")
+                    if (log.isTraceEnabled){
+                        log.trace("insertion which is created at repairFK is {}",
+                            created.joinToString(",") { it.getResolvedName() })
+                    }
+                    randomizeDbActionGenes(created, randomness)
+                    found = created.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
+                        ?:throw IllegalStateException("fail to create target table (${fk.targetTable}) for ${fk.name}")
+
+                    repairFkForInsertions(created)
+                    createdDbActions.addAll(created)
+                    previous.addAll(created)
+                    repaired.addAll(created.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>())
+                }
+
+                fk.uniqueIdOfPrimaryKey = found.uniqueId
+                repaired.add(found)
+
         }
 
         return repaired

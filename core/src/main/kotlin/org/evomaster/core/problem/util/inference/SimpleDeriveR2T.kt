@@ -10,7 +10,7 @@ import org.evomaster.core.problem.rest.resource.ParamInfo
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.resource.dependency.*
-import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
 import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator

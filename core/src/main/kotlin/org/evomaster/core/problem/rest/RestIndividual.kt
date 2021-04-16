@@ -275,8 +275,14 @@ class RestIndividual(
     }
 
     fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?, randomness: Randomness){
+        if (!DbActionUtils.verifyActions(dbInitialization)){
+            val removed = DbActionUtils.repairBrokenDbActionsList(dbInitialization, randomness)
+            if (removed) log.info("dbaction in Initialization are removed")
+        }
+
         val previousDbActions = mutableListOf<DbAction>()
 
+        //fix dbaction in calls
         getResourceCalls().filter { it.dbActions.isNotEmpty() }.forEach {
             val result = DbActionUtils.verifyForeignKeys( previousDbActions.plus(it.dbActions))
             if(!result){
@@ -293,15 +299,15 @@ class RestIndividual(
         }
 
         // for dbactions in resource call, we might not check the unique column since it might be bound with rest actions
-        if (!DbActionUtils.verifyActions(getResourceCalls().flatMap { it.dbActions })){
-            DbActionUtils.repairBrokenDbActionsList(getResourceCalls().flatMap { it.dbActions }.toMutableList(), randomness)
+        val dbActionsInCalls = getResourceCalls().flatMap { it.dbActions }
+        if (!DbActionUtils.verifyActions(dbActionsInCalls)){
+            val removed = DbActionUtils.repairBrokenDbActionsList(getResourceCalls().flatMap { it.dbActions }.toMutableList(), randomness)
+            if (removed){
+                log.warn("dbaction in calls should not be removed")
+            }
         }
 
-        if (!DbActionUtils.verifyActions(dbInitialization)){
-            DbActionUtils.repairBrokenDbActionsList(dbInitialization, randomness)
-        }
-
-        if(!DbActionUtils.verifyForeignKeys(getResourceCalls().flatMap { it.dbActions })){
+        if(!DbActionUtils.verifyForeignKeys(dbActionsInCalls)){
             throw IllegalStateException("after a FK repair, there still exist invalid FKs")
         }
 

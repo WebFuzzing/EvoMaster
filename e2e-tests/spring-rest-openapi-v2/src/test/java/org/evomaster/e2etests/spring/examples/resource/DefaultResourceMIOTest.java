@@ -44,14 +44,14 @@ public class DefaultResourceMIOTest extends ResourceMIOHWTest{
         String raKey = "/api/rA";
         String raPostTemplate = "POST-POST";
         RestResourceNode node = rmanger.getResourceNodeFromCluster(raKey);
-        RestResourceCalls rAcall = rmanger.genCalls(node, raPostTemplate, 10, false, true, false);
+        RestResourceCalls rAcall = rmanger.genCalls(node, raPostTemplate, 10, false, true, false, false);
         assertEquals(2, rAcall.seeActions().size());
         assertEquals(1, rAcall.seeGenes(GeneFilter.ALL).size());
 
         String raIdKey = "/api/rA/{rAId}";
         String raIdPostTemplate = "POST-GET";
         RestResourceNode idNode = rmanger.getResourceNodeFromCluster(raIdKey);
-        RestResourceCalls rAIdcall = rmanger.genCalls(idNode, raIdPostTemplate, 10, false, true, false);
+        RestResourceCalls rAIdcall = rmanger.genCalls(idNode, raIdPostTemplate, 10, false, true, false, false);
         assertEquals(2, rAIdcall.seeActions().size());
         // {rAId} should not be included because it can be bound with ObjectGene of POST
         assertEquals(1, rAIdcall.seeGenes(GeneFilter.ALL).size());

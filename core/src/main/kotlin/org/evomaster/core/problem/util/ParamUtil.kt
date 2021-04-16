@@ -1,8 +1,7 @@
-package org.evomaster.core.problem.rest.util
+package org.evomaster.core.problem.util
 
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
-import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -91,7 +90,8 @@ class ParamUtil {
                 }
                 if (pValueGene !is ObjectGene){
                     val field = valueGene.fields.find {
-                        it::class.java.simpleName == pValueGene::class.java.simpleName && (it.name.equals(pValueGene.name, ignoreCase = true) || StringSimilarityComparator.isSimilar(modifyFieldName(valueGene, it), pValueGene.name))
+                        it::class.java.simpleName == pValueGene::class.java.simpleName && (it.name.equals(pValueGene.name, ignoreCase = true) || StringSimilarityComparator.isSimilar(
+                            modifyFieldName(valueGene, it), pValueGene.name))
                     }?: return
                     field.copyValueFrom(pValueGene)
                     return
@@ -344,7 +344,12 @@ class ParamUtil {
                 else -> {
                     //return false
                     //Man: with taint analysis, g might be any other type.
-                    b.value = g.getValueAsRawString()
+                    if (g is SqlForeignKeyGene){
+                        log.warn("attempt to bind {} with a SqlForeignKeyGene {} whose target table is {}", b.name, g.name, g.targetTable)
+                        b.value = "${g.uniqueIdOfPrimaryKey}"
+                    } else{
+                        b.value = g.getValueAsRawString()
+                    }
                 }
             }
             return true
@@ -451,10 +456,10 @@ class ParamUtil {
                     if gene of dbaction is PK, FK or AutoIncrementGene,
                         bind gene of Param according to the gene from dbaction
                  */
-                copyGene(b=getValueGene(dbgene), g=getValueGene(paramGene), b2g=false)
+                copyGene(b= getValueGene(dbgene), g= getValueGene(paramGene), b2g=false)
             }else{
-                val db2Action = !existingData && (!enableFlexibleBind || checkBindSequence(getValueGene(dbgene), getValueGene(paramGene))?:true)
-                copyGene(b=getValueGene(dbgene), g=getValueGene(paramGene), b2g=db2Action)
+                val db2Action = !existingData && (!enableFlexibleBind || checkBindSequence(getValueGene(dbgene), getValueGene(paramGene)) ?:true)
+                copyGene(b= getValueGene(dbgene), g= getValueGene(paramGene), b2g=db2Action)
             }
 
         }

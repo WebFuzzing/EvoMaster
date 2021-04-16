@@ -13,6 +13,7 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -29,6 +30,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
     @Inject
     private lateinit var dm: ResourceDepManageService
+
+    @Inject
+    private lateinit var rm: ResourceManageService
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestResourceFitness::class.java)
@@ -103,12 +107,20 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         val dto = restActionResultHandling(individual, targets, actionResults, fv)?:return null
+
+        /*
+            TODO: Man shall we update the action cluster based on expanded action?
+         */
+        individual.seeRestAction().filterIsInstance<RestCallAction>().forEach {
+            val node = rm.getResourceNodeFromCluster(it.path.toString())
+            node.updateActionsWithAdditionalParams(it)
+        }
+
         /*
          update dependency regarding executed dto
          */
         if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0){
             dm.updateResourceTables(individual, dto)
-            dm.updateResourceNodeTemplate(individual)
         }
 
         /*
@@ -165,12 +177,16 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         }else{
             val expected = allDbActions.filter { !it.representExistingData }
                 .flatMap { it.seeGenes() }.flatMap { it.flatView() }
-                .filterIsInstance<SqlPrimaryKeyGene>().size
-            if (expected != map.size){
-                LoggingUtil.uniqueWarn(log, "Failed in returning all sql ids")
-                return false
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .filterNot { it.gene is SqlForeignKeyGene }
+            val missing = expected.filterNot {
+                map.containsKey(it.uniqueId)
             }
             sqlIdMap.putAll(map)
+            if (missing.isNotEmpty()){
+                log.warn("can not get sql ids for {} from sut", missing.map { "${it.uniqueId} of ${it.tableName}" }.toSet().joinToString(","))
+                return false
+            }
         }
         return true
     }

@@ -47,9 +47,9 @@ public class ResourceWithSQLAndHWTest extends ResourceMIOHWTest{
         String rdkey = "/api/rd";
 
         RestResourceNode raIdNode = rmanger.getResourceNodeFromCluster(raIdkey);
-        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, "POST-GET", 10, false, true, false);
+        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, "POST-GET", 10, false, true, false, false);
         RestResourceNode rdNode = rmanger.getResourceNodeFromCluster(rdkey);
-        RestResourceCalls rdcall = rmanger.genCalls(rdNode, "POST-POST", 8, false, true, false);
+        RestResourceCalls rdcall = rmanger.genCalls(rdNode, "POST-POST", 8, false, true, false, false);
 
         List<RestResourceCalls> calls = Arrays.asList(rAIdcall, rdcall);
         RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);

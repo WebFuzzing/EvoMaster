@@ -78,7 +78,7 @@ class RestResourceTemplateHandler{
         }
 
         fun hasCreation(actionVerbs : Array<Boolean>) : Boolean{
-            return actionVerbs.first() || actionVerbs[2] || actionVerbs.last()
+            return actionVerbs.first() || actionVerbs.last()
         }
 
 

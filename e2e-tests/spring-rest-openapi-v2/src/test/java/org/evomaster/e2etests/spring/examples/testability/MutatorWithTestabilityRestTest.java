@@ -7,7 +7,7 @@ import com.google.inject.TypeLiteral;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.RestFitness;
 import org.evomaster.core.problem.rest.service.RestSampler;
-import org.evomaster.core.problem.rest.util.ParamUtil;
+import org.evomaster.core.problem.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.GeneFilter;
 import org.evomaster.core.search.gene.Gene;

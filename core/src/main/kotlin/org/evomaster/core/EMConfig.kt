@@ -1358,6 +1358,6 @@ class EMConfig {
     /**
      * @return whether to enable SQL to create resource
      */
-    fun isEnabledResourceWithSQL() = probOfApplySQLActionToCreateResources > 0.0
+    fun isEnabledResourceWithSQL() = isEnabledResourceDependency() && probOfApplySQLActionToCreateResources > 0.0
 
 }

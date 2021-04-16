@@ -9,7 +9,7 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
-import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.Action
@@ -39,12 +39,13 @@ object RestActionHandlingUtil {
         maxTestSize: Int,
         target: RestCallAction,
         test: MutableList<RestAction>,
+        resourceCluster : MutableMap<String, RestResourceNode>? = null,
         resourceNode: RestResourceNode? = null
     ): ResourceStatus {
 
         Lazy.assert {
             // one of resourceNode and actionCluster should be null
-            (resourceNode!=null).xor(actionCluster!=null)
+            (resourceNode!=null).xor(resourceCluster!=null && resourceNode!=null)
         }
 
         if (test.size >= maxTestSize) {
@@ -52,7 +53,10 @@ object RestActionHandlingUtil {
         }
 
         val template = chooseClosestAncestor(actionCluster, randomness, target, listOf(HttpVerb.POST), resourceNode)
-            ?: return (if(target.verb == HttpVerb.POST) ResourceStatus.CREATED_REST else ResourceStatus.NOT_FOUND)
+            ?: return (if(target.verb == HttpVerb.POST) {
+                if (doesDependsOnOthers(target)) ResourceStatus.NOT_FOUND_DEPENDENT
+                else ResourceStatus.CREATED_REST
+            } else ResourceStatus.NOT_FOUND)
 
         val post = createActionFor(randomness, template, target, resourceNode!=null)
 
@@ -62,11 +66,9 @@ object RestActionHandlingUtil {
             Check if POST depends itself on the creation of
             some intermediate resource
          */
-        if (post.path.hasVariablePathParameters() &&
-            (!post.path.isLastElementAParameter()) ||
-            post.path.getVariableNames().size >= 2) {
-
-            val dependencyCreated = createResourcesFor(randomness, actionCluster, maxTestSize, post, test, resourceNode)
+        if (doesDependsOnOthers(post)) {
+            val resNode = resourceCluster?.getValue(template.path.toString())
+            val dependencyCreated = createResourcesFor(randomness, actionCluster, maxTestSize, post, test, resourceCluster, resNode)
             if (ResourceStatus.CREATED_REST != dependencyCreated) {
                 return ResourceStatus.NOT_FOUND_DEPENDENT
             }
@@ -103,6 +105,12 @@ object RestActionHandlingUtil {
         return ResourceStatus.CREATED_REST
     }
 
+    private fun doesDependsOnOthers(post : RestCallAction) : Boolean{
+        return post.path.hasVariablePathParameters() &&
+                (!post.path.isLastElementAParameter()) ||
+                post.path.getVariableNames().size >= 2
+    }
+
     fun preventPathParamMutation(action: RestCallAction) {
         action.parameters.forEach { p -> if (p is PathParam) p.preventMutation() }
     }
@@ -119,7 +127,7 @@ object RestActionHandlingUtil {
         target: RestCallAction,
         verbs: List<HttpVerb>,
         resourceNode: RestResourceNode? = null
-    ): RestCallAction? {
+    ): RestCallAction?{
 
         var others = resourceNode?.sameOrAncestorEndpoints(target) ?:sameOrAncestorEndpoints(actionCluster!!, target.path)
         others = hasWithVerbs(others, verbs).filter { t -> t.getName() != target.getName() }

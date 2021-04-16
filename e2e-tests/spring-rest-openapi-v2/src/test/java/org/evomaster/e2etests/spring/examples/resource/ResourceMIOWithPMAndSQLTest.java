@@ -62,7 +62,7 @@ public class ResourceMIOWithPMAndSQLTest extends ResourceMIOHWTest{
         String raKey = "/api/rA";
         String raPostTemplate = "POST-POST";
         RestResourceNode node = rmanger.getResourceNodeFromCluster(raKey);
-        RestResourceCalls rAcall = rmanger.genCalls(node, raPostTemplate, 10, false, true, false);
+        RestResourceCalls rAcall = rmanger.genCalls(node, raPostTemplate, 10, false, true, false, false);
         assertEquals("POST",rAcall.getRestTemplate());
         assertEquals(raPostTemplate, rAcall.getSampledTemplate());
         assertEquals(2, rAcall.seeActions().size());
@@ -75,7 +75,7 @@ public class ResourceMIOWithPMAndSQLTest extends ResourceMIOHWTest{
         String raIdKey = "/api/rA/{rAId}";
         String raIdPostTemplate = "POST-GET";
         RestResourceNode raIdNode = rmanger.getResourceNodeFromCluster(raIdKey);
-        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, raIdPostTemplate, 10, false, true, false);
+        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, raIdPostTemplate, 10, false, true, false, false);
         assertEquals("GET",rAIdcall.getRestTemplate());
         assertEquals(raIdPostTemplate, rAIdcall.getSampledTemplate());
         assertEquals(2, rAIdcall.seeActions().size());
@@ -102,7 +102,7 @@ public class ResourceMIOWithPMAndSQLTest extends ResourceMIOHWTest{
         checkingBinding(rAIdcall, "POST-GET", raIdKey,true);
 
         //test stucturemutator and binding, rA/{rAId}, GET->POST-GET
-        RestResourceCalls raGetIdCall = rmanger.genCalls(raIdNode, "GET", 10, false, true, false);
+        RestResourceCalls raGetIdCall = rmanger.genCalls(raIdNode, "GET", 10, false, true, false, false);
         calls.clear();
         calls.add(raGetIdCall);
         RestIndividual raGetIdInd = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 3);

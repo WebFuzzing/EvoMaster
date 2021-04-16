@@ -82,7 +82,8 @@ class ResourceManageService {
                     RestResourceNode(
                             u.path.copy(),
                             initMode =
-                                if(config.probOfEnablingResourceDependencyHeuristics > 0.0 && config.doesApplyNameMatching) InitMode.WITH_DERIVED_DEPENDENCY
+                                if(config.probOfEnablingResourceDependencyHeuristics > 0.0 && config.doesApplyNameMatching)
+                                    InitMode.WITH_DERIVED_DEPENDENCY
                                 else if(config.doesApplyNameMatching) InitMode.WITH_TOKEN
                                 else if (config.probOfEnablingResourceDependencyHeuristics > 0.0) InitMode.WITH_DEPENDENCY
                                 else InitMode.NONE)
@@ -153,10 +154,25 @@ class ResourceManageService {
         sortedResources.forEach { ar->
             ar.getTemplates().values.filter { t-> RestResourceTemplateHandler.isNotSingleAction(t.template) }
                     .forEach {ct->
-                        val call = sampleRestResourceCalls(ar, ct.template, config.maxTestSize)
+                        val call = genCalls(ar, ct.template, config.maxTestSize, isAdHocInit = true)
                         call.restActions.forEach { if(it is RestCallAction) it.auth = auth }
                         adHocInitialIndividuals.add(createAdHocSmartResource(mutableListOf(call)))
                     }
+        }
+
+        if (config.isEnabledResourceWithSQL()){
+            //SQL-action
+            sortedResources.forEach { ar->
+                if (ar.getSqlCreationPoints().isNotEmpty()){
+                    ar.actions.forEach { action->
+                        if (action is RestCallAction){
+                            val call = genCalls(ar, action.verb.toString(), config.maxTestSize, forceInsert = true, createResource = true)
+                            call.restActions.forEach { if(it is RestCallAction) it.auth = auth }
+                            adHocInitialIndividuals.add(createAdHocSmartResource(mutableListOf(call)))
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -297,48 +313,38 @@ class ResourceManageService {
         maxTestSize : Int = 1,
         createResource : Boolean = true,
         additionalPatch : Boolean = true,
-        forceInsert : Boolean = false
+        forceInsert : Boolean = false,
+        isAdHocInit : Boolean = false
     ) : RestResourceCalls{
+
         if(!node.getTemplates().containsKey(template))
             throw IllegalArgumentException("$template does not exist in ${node.path}")
 
         val ats = RestResourceTemplateHandler.parseTemplate(template)
         val callsTemplate = node.getTemplates().getValue(template)
 
-        val creationNeeded = createResource || ats[0] == HttpVerb.POST
+        val call = generateRestActionsForCalls(node, ats, template,callsTemplate, maxTestSize, createResource, additionalPatch)
 
-        if (!creationNeeded)
-            return generateRestActionsForCalls(node, ats, template, callsTemplate, maxTestSize, createResource, additionalPatch)
+        val withSql = config.isEnabledResourceWithSQL() && ((createResource && ats[0] != HttpVerb.POST) || forceInsert ||
+                (doApplySQLForFailurePost(node, call)))
 
-        if (node.getSqlCreationPoints().isEmpty() && !node.hasPostCreation())
-            log.info("for resource ${node.path}, there does not exist any POST/PUT to create actions and the SQL creation is alo disabled")
+        if (isAdHocInit || !withSql)
+            return call
+
 
         if (forceInsert && !hasDBHandler())
             throw IllegalStateException("force to employ SQL for resource creation, but there is no db")
 
-        val withSql = hasDBHandler() && node.getSqlCreationPoints().isNotEmpty() && (!node.hasPostCreation() || randomness.nextBoolean(config.probOfApplySQLActionToCreateResources) || forceInsert)
-
-        //in case there is no related table, post is employed
-        val call = if (!withSql && node.hasPostCreation())
-            generateRestActionsForCalls(node, ats, template,callsTemplate, maxTestSize, createResource, additionalPatch)
-        else{
-            val verbs = if (ats.size > 1) ats.sliceArray(1 until ats.size) else ats
-            val cTemplate = if (ats.size > 1)  node.getTemplate(RestResourceTemplateHandler.formatTemplate(verbs)) else callsTemplate
-            generateRestActionsForCalls(node, verbs, template, cTemplate, maxTestSize, additionalPatch, false)  //remove post from verbs
-        }
-
-        if (!config.isEnabledResourceWithSQL() || !withSql && (call.status == ResourceStatus.CREATED_REST || node.getSqlCreationPoints().isEmpty())) return call
-
-        val created = handleDbActionForCall( call, forceInsert, false)
-        if(!created){
-            log.info("resource creation for {} fails", node.path)
-            //try rest
-            if (node.hasPostCreation())
-                return generateRestActionsForCalls(node, ats, template,callsTemplate, maxTestSize, createResource, additionalPatch)
-        }else
+        val created = handleDbActionForCall(call, forceInsert, false)
+        if(created)
             call.status = ResourceStatus.CREATED_SQL
 
         return call
+    }
+
+    private fun doApplySQLForFailurePost(node : RestResourceNode,call: RestResourceCalls) : Boolean{
+        return config.isEnabledResourceWithSQL() && hasDBHandler() && call.status != ResourceStatus.CREATED_REST
+                && node.getSqlCreationPoints().isNotEmpty() && randomness.nextBoolean(0.8)
     }
 
     private fun generateRestActionsForCalls(
@@ -367,7 +373,7 @@ class ResourceManageService {
             result.add(ac)
 
             isCreated = RestActionHandlingUtil.
-                createResourcesFor(randomness, null, maxTestSize, ac, result , node)
+                createResourcesFor(randomness, null, maxTestSize, ac, result , resourceCluster, node)
 
             if(checkPostChain && !callsTemplate.sizeAssured){
                 node.getPostChain()?:throw IllegalStateException("fail to init post creation")
@@ -452,31 +458,33 @@ class ResourceManageService {
      * @param forceInsert force to use insertion to prepare the resource, otherwise prior to use POST
      * @param bindWith the sampled resource call requires to bind values according to [bindWith]
      */
-    fun sampleCall(resourceKey: String, doesCreateResource: Boolean, calls : MutableList<RestResourceCalls>, size : Int, forceInsert: Boolean = false, bindWith : MutableList<RestResourceCalls>? = null){
+    fun sampleCall(resourceKey: String,
+                   doesCreateResource: Boolean,
+                   calls : MutableList<RestResourceCalls>,
+                   size : Int, forceInsert: Boolean = false, bindWith : MutableList<RestResourceCalls>? = null){
         val ar = resourceCluster[resourceKey]
                 ?: throw IllegalArgumentException("resource path $resourceKey does not exist!")
 
-        if(!doesCreateResource){
+        val candidateTemplate = if(!doesCreateResource || ar.allTemplatesAreIndependent()) randomness.choose(ar.getTemplates().keys)
+                                else if (hasDBHandler() && ar.getSqlCreationPoints().isNotEmpty() && !config.isEnabledResourceWithSQL() && randomness.nextBoolean(config.probOfApplySQLActionToCreateResources)){
+                                    randomness.choose(ar.getTemplates().filter { it.value.isSingleAction() }.keys)
+                                }else{
+                                    randomness.choose(ar.getTemplates().filterNot { it.value.independent }.keys)
+                                }
+
+        if(!doesCreateResource && ar.getTemplate(candidateTemplate).independent){
             val call = sampleIndResourceCall(ar,size)
             calls.add(call)
-            //TODO shall we control the probability to sample GET with an existing resource.
-            if(hasDBHandler() && call.template?.template == HttpVerb.GET.toString() && randomness.nextBoolean(0.5)){
-                val created = handleDbActionForCall( call, false, true)
+            /*
+                bind GET with existing data
+             */
+            if(hasDBHandler() && call.template?.template == HttpVerb.GET.toString() && randomness.nextBoolean(config.probOfApplySQLActionToCreateResources)){
+                handleDbActionForCall( call, false, true)
             }
             return
         }
 
-        val candidate =
-            //prior to select the template with POST
-            ar.getTemplates().filter { !it.value.independent }.run {
-                if(isNotEmpty())
-                    randomness.choose(this.keys)
-                else
-                    randomness.choose(ar.getTemplates().keys)
-            }
-
-
-        val call = genCalls(ar, candidate, size,true, true, forceInsert = forceInsert)
+        val call = genCalls(ar, candidateTemplate, size,true, true, forceInsert = forceInsert)
         calls.add(call)
 
         if(bindWith != null){
@@ -544,20 +552,29 @@ class ResourceManageService {
         val paramToTables = RestActionHandlingUtil.inference.generateRelatedTables(call, mutableListOf())
         if(paramToTables.isEmpty()) return false
 
-        //val relatedTables = removeDuplicatedTables(paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet())
         val relatedTables = paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet()
+        val reducedRelatedTables = removeDuplicatedTables(relatedTables)
 
         val dbActions = mutableListOf<DbAction>()
-        val failToGenDb = generateDbActionForCall( forceInsert = forceInsert, forceSelect = forceSelect, dbActions = dbActions, relatedTables = relatedTables.toList())
+        var failToGenDb = generateDbActionForCall( forceInsert = forceInsert, forceSelect = forceSelect, dbActions = dbActions, relatedTables = reducedRelatedTables.toList())
+
+        if (!verifyRelatedDbActions(dbActions, relatedTables)){
+            log.debug("here")
+            dbActions.clear()
+            failToGenDb = generateDbActionForCall( forceInsert = forceInsert, forceSelect = forceSelect, dbActions = dbActions, relatedTables = relatedTables.toList())
+        }
 
         if(failToGenDb) return false
 
-        containTables(dbActions, relatedTables)
+        //temporal
+        val db = dbActions.map { it }.toMutableList()
 
         if(dbActions.isNotEmpty()){
-
             val removed = repairDbActionsForResource(dbActions)
-
+            if(!verifyRelatedDbActions(dbActions, relatedTables)){
+                log.debug("here")
+                repairDbActionsForResource(db)
+            }
             /*
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
              */
@@ -568,7 +585,7 @@ class ResourceManageService {
         return paramToTables.isNotEmpty() && !failToGenDb
     }
 
-    private fun containTables(dbActions: MutableList<DbAction>, tables: Set<String>) : Boolean{
+    private fun verifyRelatedDbActions(dbActions: MutableList<DbAction>, tables: Set<String>) : Boolean{
 
         val missing = tables.filter { t-> dbActions.none { d-> d.table.name.equals(t, ignoreCase = true) } }
         if (missing.isNotEmpty())
@@ -590,7 +607,7 @@ class ResourceManageService {
     private fun selectToDataRowDto(dbAction : DbAction, tableName : String) : DataRowDto{
         dbAction.seeGenes().forEach { assert((it is SqlPrimaryKeyGene || it is ImmutableDataHolderGene || it is SqlForeignKeyGene)) }
         val set = dbAction.seeGenes().filterIsInstance<SqlPrimaryKeyGene>().map { ((it as SqlPrimaryKeyGene).gene as ImmutableDataHolderGene).value }.toSet()
-        return randomness.choose(getDataInDb(tableName)!!.filter { it.columnData.toSet().equals(set) })
+        return randomness.choose(getDataInDb(tableName)!!.filter { it.columnData.toSet() == set })
     }
 
     // SQL can be used to create a resource only if sqlInsertBuilder is not null and config.probOfApplySQLActionToCreateResources > 0.0
@@ -644,15 +661,11 @@ class ResourceManageService {
 
         DbActionUtils.randomizeDbActionGenes(insertDbAction, randomness)
 
-        if(insertDbAction.isEmpty()) return false
+        DbActionUtils.repairFkForInsertions(insertDbAction)
 
-        insertDbAction.toMutableList().removeIf {
-            dbActions.any { d-> d.table.name.equals(it.table.name, ignoreCase = true) && !d.representExistingData && it.representExistingData}
-        }
         if (insertDbAction.isEmpty()) return false
         dbActions.addAll(insertDbAction)
 
-        DbActionUtils.repairFkForInsertions(dbActions)
         return true
     }
 
@@ -665,7 +678,7 @@ class ResourceManageService {
     fun getTableInfo() = tables.toMap()
 
     fun getSqlBuilder() : SqlInsertBuilder?{
-        if(!hasDBHandler()) return null
+        //if(!hasDBHandler()) return null
         return sqlInsertBuilder
     }
 
@@ -698,12 +711,16 @@ class ResourceManageService {
         )
     }
 
-    fun removeDuplicatedTables(tables: Set<String>) : List<String>{
-        val sorted = sortTableBasedOnFK(tables)
-        sorted.toMutableList().removeIf { t->
-            sorted.any { s-> s!= t && s.foreignKeys.any { fk-> fk.targetTable.equals(t.name, ignoreCase = true) } }
+    private fun removeDuplicatedTables(tables: Set<String>) : List<String>{
+        val tableInfo = tables.map { getTableByName(it) }
+        val removed = tables.filter {table->
+            tableInfo.any {t->
+                t?.foreignKeys?.any { f-> f.targetTable.equals(table, ignoreCase = true) } == true
+            }
         }
-        return sorted.map { it.name }
+        val modified = tables.toMutableSet()
+        modified.removeAll(removed)
+        return modified.toList()
     }
 
     fun getNumSQLResource() : Int{
