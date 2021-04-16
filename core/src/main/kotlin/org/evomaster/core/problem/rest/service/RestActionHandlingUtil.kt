@@ -45,7 +45,7 @@ object RestActionHandlingUtil {
 
         Lazy.assert {
             // one of resourceNode and actionCluster should be null
-            (resourceNode!=null).xor(resourceCluster!=null && resourceNode!=null)
+            (actionCluster!=null).xor(resourceCluster!=null && resourceNode!=null)
         }
 
         if (test.size >= maxTestSize) {
