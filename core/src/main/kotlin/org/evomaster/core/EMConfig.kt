@@ -68,7 +68,7 @@ class EMConfig {
 
             val defaultInstance = EMConfig()
 
-            var parser = OptionParser()
+            val parser = OptionParser()
 
             parser.accepts("help", "Print this help documentation")
                     .forHelp()
