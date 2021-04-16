@@ -60,10 +60,11 @@ public class ResourceMIOWithPMAndSQLTest extends ResourceMIOHWTest{
 
         //checking representing mutable genes including SQL genes when resource-mio is enabled
         String raKey = "/api/rA";
-        String raPostTemplate = "POST-POST";
+        String raPostTemplate = "POST";
         RestResourceNode node = rmanger.getResourceNodeFromCluster(raKey);
-        RestResourceCalls rAcall = rmanger.genCalls(node, raPostTemplate, 10, false, true, false, false);
+        RestResourceCalls rAcall = rmanger.genCalls(node, raPostTemplate, 10, true, true, true, false);
         assertEquals("POST",rAcall.getRestTemplate());
+        assertEquals("POST-POST",rAcall.extractTemplate());
         assertEquals(raPostTemplate, rAcall.getSampledTemplate());
         assertEquals(2, rAcall.seeActions().size());
         assertEquals(1, rAcall.getDbActions().size());
@@ -73,10 +74,12 @@ public class ResourceMIOWithPMAndSQLTest extends ResourceMIOHWTest{
         assertEquals(1, rAcall.seeGenes(GeneFilter.ALL).size());
 
         String raIdKey = "/api/rA/{rAId}";
-        String raIdPostTemplate = "POST-GET";
+        String raIdPostTemplate = "GET";
         RestResourceNode raIdNode = rmanger.getResourceNodeFromCluster(raIdKey);
-        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, raIdPostTemplate, 10, false, true, false, false);
+        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, raIdPostTemplate, 10, true, true, false, false);
         assertEquals("GET",rAIdcall.getRestTemplate());
+        assertEquals("POST-GET", rAIdcall.extractTemplate());
+
         assertEquals(raIdPostTemplate, rAIdcall.getSampledTemplate());
         assertEquals(2, rAIdcall.seeActions().size());
         assertEquals(1, rAIdcall.getDbActions().size());
@@ -99,7 +102,7 @@ public class ResourceMIOWithPMAndSQLTest extends ResourceMIOHWTest{
         RestIndividual mutatedInd = mutator.mutate(rdIdEval, Collections.emptySet(), mutatedSpec);
         assertFalse(mutatedSpec.didStructureMutation());
         rAIdcall = mutatedInd.getResourceCalls().get(0);
-        checkingBinding(rAIdcall, "POST-GET", raIdKey,true);
+        checkingBinding(rAIdcall, "GET", raIdKey,true);
 
         //test stucturemutator and binding, rA/{rAId}, GET->POST-GET
         RestResourceCalls raGetIdCall = rmanger.genCalls(raIdNode, "GET", 10, false, true, false, false);
@@ -109,10 +112,11 @@ public class ResourceMIOWithPMAndSQLTest extends ResourceMIOHWTest{
         EvaluatedIndividual<RestIndividual> rdGetIdEval = ff.calculateCoverage(raGetIdInd, Collections.emptySet());
         RestIndividual raGetIdMutatedInd = (RestIndividual)raGetIdInd.copy();
         MutatedGeneSpecification mutatedSpecModify = new MutatedGeneSpecification();
-        structureMutator.mutateRestResourceCalls(raGetIdMutatedInd, rdGetIdEval, RestResourceStructureMutator.MutationType.MODIFY, mutatedSpecModify);
+        structureMutator.mutateRestResourceCalls(raGetIdMutatedInd, rdGetIdEval, RestResourceStructureMutator.MutationType.SQL_ADD, mutatedSpecModify);
         assertEquals(1, raGetIdMutatedInd.getResourceCalls().size());
         RestResourceCalls mutatedCall = raGetIdMutatedInd.getResourceCalls().get(0);
-        assertEquals("POST-GET", mutatedCall.getSampledTemplate());
+        assertEquals("GET", mutatedCall.getSampledTemplate());
+        assertEquals("POST-GET", mutatedCall.extractTemplate());
         checkingBinding(mutatedCall, "POST-GET", raIdKey,true);
     }
 }

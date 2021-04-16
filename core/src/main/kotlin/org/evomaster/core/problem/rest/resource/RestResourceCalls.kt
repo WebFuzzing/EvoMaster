@@ -11,6 +11,7 @@ import org.evomaster.core.search.gene.Gene
 
 /**
  * the class is used to structure actions regarding resources.
+ * @property sampledTemplate is the template which initializes the call, but it might differ from [template] due to sql resource db handling
  * @property template is a resource template, e.g., POST-GET
  * @property resourceInstance presents a resource that [restActions] perform on. [resourceInstance] is an instance of [RestResourceNode]
  * @property restActions is a sequence of actions in the [RestResourceCalls] that follows [template]
@@ -130,8 +131,8 @@ class RestResourceCalls(
             }
     }
 
-    fun getTemplate() : String{
-        return sampledTemplate?:RestResourceTemplateHandler.getStringTemplateByCalls(this)
+    fun extractTemplate() : String{
+        return RestResourceTemplateHandler.getStringTemplateByCalls(this)
     }
 
 

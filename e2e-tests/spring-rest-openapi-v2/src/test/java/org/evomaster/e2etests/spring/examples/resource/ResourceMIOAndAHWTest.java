@@ -26,7 +26,7 @@ public class ResourceMIOAndAHWTest extends ResourceMIOHWTest{
 
     @Test
     public void testResourceWithSQLAndAHW(){
-        List<String> args = generalArgs(3, 42);
+        List<String> args = generalArgs(6, 42);
         hypmutation(args, true);
         adaptiveMutation(args, 0.5);
         defaultResourceConfig(args);

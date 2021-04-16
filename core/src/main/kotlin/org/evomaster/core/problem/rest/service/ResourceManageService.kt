@@ -325,8 +325,8 @@ class ResourceManageService {
 
         val call = generateRestActionsForCalls(node, ats, template,callsTemplate, maxTestSize, createResource, additionalPatch)
 
-        val withSql = config.isEnabledResourceWithSQL() && ((createResource && ats[0] != HttpVerb.POST) || forceInsert ||
-                (doApplySQLForFailurePost(node, call)))
+        val sqlDueToPostFailure = doApplySQLForFailurePost(node, call)
+        val withSql = config.isEnabledResourceWithSQL() && ((createResource && ats[0] != HttpVerb.POST) || forceInsert || sqlDueToPostFailure)
 
         if (isAdHocInit || !withSql)
             return call
@@ -336,8 +336,9 @@ class ResourceManageService {
             throw IllegalStateException("force to employ SQL for resource creation, but there is no db")
 
         val created = handleDbActionForCall(call, forceInsert, false)
-        if(created)
+        if(created){
             call.status = ResourceStatus.CREATED_SQL
+        }
 
         return call
     }
@@ -465,9 +466,12 @@ class ResourceManageService {
         val ar = resourceCluster[resourceKey]
                 ?: throw IllegalArgumentException("resource path $resourceKey does not exist!")
 
+        var insertSql = forceInsert
         val candidateTemplate = if(!doesCreateResource || ar.allTemplatesAreIndependent()) randomness.choose(ar.getTemplates().keys)
-                                else if (hasDBHandler() && ar.getSqlCreationPoints().isNotEmpty() && !config.isEnabledResourceWithSQL() && randomness.nextBoolean(config.probOfApplySQLActionToCreateResources)){
-                                    randomness.choose(ar.getTemplates().filter { it.value.isSingleAction() }.keys)
+                                else if (hasDBHandler() && ar.getSqlCreationPoints().isNotEmpty() && config.isEnabledResourceWithSQL() && randomness.nextBoolean(config.probOfApplySQLActionToCreateResources)){
+                                    randomness.choose(ar.getTemplates().filter { it.value.isSingleAction() }.keys).also {
+                                        insertSql = insertSql || true
+                                    }
                                 }else{
                                     randomness.choose(ar.getTemplates().filterNot { it.value.independent }.keys)
                                 }
@@ -484,7 +488,7 @@ class ResourceManageService {
             return
         }
 
-        val call = genCalls(ar, candidateTemplate, size,true, true, forceInsert = forceInsert)
+        val call = genCalls(ar, candidateTemplate, size,true, true, forceInsert = insertSql)
         calls.add(call)
 
         if(bindWith != null){

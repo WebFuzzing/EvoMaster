@@ -37,11 +37,10 @@ class RestResourceTemplateHandler{
         }
 
         fun getStringTemplateByCalls(calls: RestResourceCalls) : String{
-            val verbs = (if (calls.dbActions.isNotEmpty()) listOf(HttpVerb.POST) else listOf()).plus(
-                (calls.restActions as List<RestCallAction>).map { it.verb }
-            ).toTypedArray()
-            return  formatTemplate(verbs)
-
+            val verbs = mutableListOf((calls.restActions.last() as RestCallAction).verb)
+            if (calls.dbActions.isNotEmpty() || calls.restActions.size > 1)
+                verbs.add(0, HttpVerb.POST)
+            return  formatTemplate(verbs.toTypedArray())
         }
 
         private fun combination(space : Array<HttpVerb>, len : Int = 5, excluding: Array<HttpVerb>? = null) : Array<String>{

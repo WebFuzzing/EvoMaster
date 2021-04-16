@@ -31,26 +31,29 @@ abstract class ResourceMIOHWTest extends ResourceTestBase {
 
     protected void checkingBinding(RestResourceCalls call, String template, String nodeKey, Boolean withSQL){
         if (nodeKey.endsWith("Id}")){
+
             if (template.equals("POST-GET")){
                 if (withSQL){
                     Gene rdIdInRest = call.getRestActions().get(0).seeGenes().stream().findFirst().orElse(null);
                     Gene rdIdInDB = getGeneByName(Objects.requireNonNull(call.getDbActions().stream().findFirst().orElse(null)),"ID");
                     // test binding between DB and RestAction
                     assertEquals(rdIdInRest.getValueAsRawString(), rdIdInDB.getValueAsRawString());
-                }else {
+                }else{
                     Gene bodyInPOST = getGeneByName(call.getRestActions().get(0), "id");
                     Gene rdIdInGet = call.getRestActions().get(1).seeGenes().stream().findFirst().orElse(null);
                     assertEquals(bodyInPOST.getValueAsRawString(), rdIdInGet.getValueAsRawString());
                 }
+
             }
         }else{
+
             if (template.equals("POST-POST")){
                 if (withSQL){
                     Gene rdIdInRest = getGeneByName(call.getRestActions().get(0), "id");
                     Gene rdIdInDB = getGeneByName(Objects.requireNonNull(call.getDbActions().stream().findFirst().orElse(null)),"ID");
                     // test binding between DB and RestAction
                     assertEquals(rdIdInRest.getValueAsRawString(), rdIdInDB.getValueAsRawString());
-                }else {
+                }else{
                     Gene bodyInPOST = getGeneByName(call.getRestActions().get(0), "id");
                     Gene rdIdInGet = getGeneByName(call.getRestActions().get(0), "id");
                     assertEquals(bodyInPOST.getValueAsRawString(), rdIdInGet.getValueAsRawString());

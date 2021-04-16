@@ -24,7 +24,7 @@ public class ResourceWithSQLAndHWTest extends ResourceMIOHWTest{
     @Test
     public void testResourceWithSQLAndHypermutation(){
 
-        List<String> args = generalArgs(3, 42);
+        List<String> args = generalArgs(3, 0);
         hypmutation(args, true);
         adaptiveMutation(args, 0.0);
         defaultResourceConfig(args);
@@ -47,9 +47,9 @@ public class ResourceWithSQLAndHWTest extends ResourceMIOHWTest{
         String rdkey = "/api/rd";
 
         RestResourceNode raIdNode = rmanger.getResourceNodeFromCluster(raIdkey);
-        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, "POST-GET", 10, false, true, false, false);
+        RestResourceCalls rAIdcall = rmanger.genCalls(raIdNode, "GET", 10, true, true, false, false);
         RestResourceNode rdNode = rmanger.getResourceNodeFromCluster(rdkey);
-        RestResourceCalls rdcall = rmanger.genCalls(rdNode, "POST-POST", 8, false, true, false, false);
+        RestResourceCalls rdcall = rmanger.genCalls(rdNode, "POST", 8, true, true, true, false);
 
         List<RestResourceCalls> calls = Arrays.asList(rAIdcall, rdcall);
         RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
