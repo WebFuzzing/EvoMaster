@@ -415,8 +415,6 @@ object GeneUtils {
      */
     fun getBooleanSelection(gene: Gene): ObjectGene {
 
-        ///TODO deal when return is Optional
-
         if (shouldApplyBooleanSelection(gene)) {
             val selectedGene = handleBooleanSelection(gene)
             if (selectedGene is OptionalGene) {
