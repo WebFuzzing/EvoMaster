@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 
 @SpringBootApplication
-open class DbBaseApplication
+open class ExistingDataApplication
 
 fun main(args: Array<String>) {
-    SpringApplication.run(DbBaseApplication::class.java,
+    SpringApplication.run(ExistingDataApplication::class.java,
         "--graphql.tools.schema-location-pattern=**/dbexisting.graphqls")
 }

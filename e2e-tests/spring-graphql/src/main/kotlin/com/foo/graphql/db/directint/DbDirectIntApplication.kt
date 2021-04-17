@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 
 @SpringBootApplication
-open class DbBaseApplication
+open class DbDirectIntApplication
 
 fun main(args: Array<String>) {
-    SpringApplication.run(DbBaseApplication::class.java,
+    SpringApplication.run(DbDirectIntApplication::class.java,
         "--graphql.tools.schema-location-pattern=**/dbdirectInt.graphqls")
 }
