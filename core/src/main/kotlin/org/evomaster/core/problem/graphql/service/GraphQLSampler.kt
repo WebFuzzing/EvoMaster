@@ -48,8 +48,12 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         val infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
-        val gqlEndpoint = infoDto.graphQLProblem?.endpoint
+        var gqlEndpoint = infoDto.graphQLProblem?.endpoint
                 ?: throw IllegalStateException("Missing information about the GraphQL ednpoint URL")
+
+        if(! gqlEndpoint.startsWith("http", true)){
+            gqlEndpoint = infoDto.baseUrlOfSUT + gqlEndpoint
+        }
 
         val iq = IntrospectiveQuery()
         val schema = iq.fetchSchema(gqlEndpoint)
