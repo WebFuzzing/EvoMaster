@@ -12,8 +12,10 @@ class BouquetResolver (private val dataRepo: DataRepository): GraphQLResolver<Bo
     fun getId(bouquet: Bouquet) = bouquet.id
     fun getName(bouquet: Bouquet) = bouquet.name
     fun getPot(bouquet: Bouquet) = bouquet.pot
-    fun getStore(bouquet: Bouquet): Store? {
+    fun getStore(bouquet: Bouquet): Store {
         return dataRepo.findStoreById(bouquet.storeId)
+        // FIXME: not really realistic, but it is just a test
+                ?: Store(bouquet.id, "foo", bouquet.id)
     }
 
 
