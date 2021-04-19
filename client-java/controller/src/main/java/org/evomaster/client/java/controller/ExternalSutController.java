@@ -358,6 +358,7 @@ public abstract class ExternalSutController extends SutController {
         checkInstrumentation();
 
         serverController.setKillSwitch(b);
+        ExecutionTracer.setKillSwitch(b);// store info locally as well, to avoid needing to do call to fetch current value
     }
 
 
