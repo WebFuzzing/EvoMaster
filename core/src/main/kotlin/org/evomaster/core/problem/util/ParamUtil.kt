@@ -1,7 +1,14 @@
 package org.evomaster.core.problem.rest.util
 
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.problem.rest.RestAction
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.problem.rest.resource.RestResourceNode
+import org.evomaster.core.problem.rest.service.ResourceDepManageService
+import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
@@ -29,6 +36,64 @@ class ParamUtil {
         private val GENERAL_NAMES = mutableListOf("id", "name", "value")
 
         private val log: Logger = LoggerFactory.getLogger(ParamUtil::class.java)
+
+
+        /**
+         * bind values between [call] and [dbActions]
+         * [candidates] presents how to map [call] and [dbActions] at Gene-level
+         * [forceBindParamBasedOnDB] is an option to bind params of [call] based on [dbActions]
+         */
+        fun bindCallWithDBAction(
+            call: RestResourceCalls,
+            dbActions: MutableList<DbAction>,
+            candidates: MutableMap<RestAction, MutableList<ParamGeneBindMap>>,
+            resourceCluster : Map<String, RestResourceNode>,
+            forceBindParamBasedOnDB: Boolean = false,
+            dbRemovedDueToRepair : Boolean) {
+
+            assert(call.actions.isNotEmpty())
+
+            for (a in call.actions) {
+                if (a is RestCallAction) {
+                    var list = candidates[a]
+                    if (list == null) list = candidates.filter { a.getName() == it.key.getName() }.values.run {
+                        if (this.isEmpty()) null else this.first()
+                    }
+                    if (list != null && list.isNotEmpty()) {
+                        list.forEach { pToGene ->
+                            val dbAction = dbActions.find { it.table.name.equals(pToGene.tableName, ignoreCase = true) }
+                            //there might due to a repair for dbactions
+                            if (dbAction == null && !dbRemovedDueToRepair)
+                                ResourceDepManageService.log.warn("cannot find ${pToGene.tableName} in db actions ${
+                                    dbActions.joinToString(
+                                        ";"
+                                    ) { it.table.name }
+                                }")
+
+                            if(dbAction != null){
+                                // columngene might be null if the column is nullable
+                                val columngene = dbAction.seeGenes().firstOrNull { g -> g.name.equals(pToGene.column, ignoreCase = true) }
+                                if (columngene != null){
+                                    val param = a.parameters.find { p -> resourceCluster[a.path.toString()]!!.getParamId(a.parameters, p)
+                                        .equals(pToGene.paramId, ignoreCase = true) }
+                                    param?.let {
+                                        if (pToGene.isElementOfParam) {
+                                            if (param is BodyParam && param.gene is ObjectGene) {
+                                                param.gene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
+                                                    bindParamWithDbAction(columngene, paramGene, forceBindParamBasedOnDB || dbAction.representExistingData)
+                                                }
+                                            }
+                                        } else {
+                                            bindParamWithDbAction(columngene, param.gene, forceBindParamBasedOnDB || dbAction.representExistingData)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         fun appendParam(paramsText : String, paramToAppend: String) : String = if(paramsText.isBlank()) paramToAppend else "$paramsText$separator$paramToAppend"
 
@@ -142,12 +207,21 @@ class ParamUtil {
             }
         }
 
+        private fun findField(fieldName : String, refType : String?, name : String) :Boolean{
+            if (!isGeneralName(fieldName) || refType == null) return fieldName.equals(name, ignoreCase = true)
+            val prefix = "$refType$fieldName".equals(name, ignoreCase = true)
+            if (prefix) return true
+            return "$fieldName$refType".equals(name, ignoreCase = true)
+        }
+
         private fun bindBodyAndOther(body : BodyParam, bodyPath:RestPath, other : Param, otherPath : RestPath, b2g: Boolean, inner : Boolean){
             val otherGene = getValueGene(other.gene)
             if (!isGeneralName(otherGene.name)){
                 val f = getValueGene(body.gene).run {
                     if (this is ObjectGene){
-                        fields.find { it.name == otherGene.name}
+                        fields.find { f->
+                            findField(f.name, refType, otherGene.name)
+                        }
                     }else
                         null
                 }
@@ -335,7 +409,12 @@ class ParamUtil {
                 else -> {
                     //return false
                     //Man: with taint analysis, g might be any other type.
-                    b.value = g.getValueAsRawString()
+                    if (g is SqlForeignKeyGene){
+                        log.warn("attempt to bind {} with a SqlForeignKeyGene {} whose target table is {}", b.name, g.name, g.targetTable)
+                        b.value = "${g.uniqueIdOfPrimaryKey}"
+                    } else{
+                        b.value = g.getValueAsRawString()
+                    }
                 }
             }
             return true

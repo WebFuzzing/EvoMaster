@@ -197,6 +197,9 @@ class TestCaseWriter {
                 }
             } else {if (test.test.individual is RestIndividual) {
                 test.test.evaluatedActions().forEach { a ->
+                    if (a.action !is RestCallAction){
+                        throw IllegalStateException("a.action should be RestCallAction, but it is ${a.action::class.java}")
+                    }
                     handleEvaluatedAction(a, lines, baseUrlOfSut)
                 }
             }

@@ -2,7 +2,9 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -28,21 +30,24 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
 
     override fun doesStructureMutation(individual : RestIndividual): Boolean {
 
-        return individual.canMutateStructure() &&
-                (!dm.onlyIndependentResource()) && // if all resources are asserted independent, there is no point to do structure mutation
-                config.maxTestSize > 1 &&
-                randomness.nextBoolean(config.structureMutationProbability)
+        return super.doesStructureMutation(individual)  &&
+                (!dm.onlyIndependentResource())  // if all resources are asserted independent, there is no point to do structure mutation
+                && dm.canMutateResource(individual)
     }
 
-    /**
-     * TODO : support with SQL-related strategy
-     */
+
     override fun genesToMutation(individual: RestIndividual, evi: EvaluatedIndividual<RestIndividual>, targets: Set<Int>): List<Gene> {
-        //if data of resource call is existing from db, select other row
-        val selectAction = individual.getResourceCalls().filter { it.dbActions.isNotEmpty() && it.dbActions.last().representExistingData }
-        if(selectAction.isNotEmpty())
-            return randomness.choose(selectAction).seeGenes()
-        return individual.getResourceCalls().flatMap { it.seeGenes() }.filter(Gene::isMutable)
+        val restGenes = individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(
+            GeneFilter.NO_SQL
+        ) }
+        if (!config.generateSqlDataWithSearch)
+            return restGenes
+
+        // 1) SQL genes in initialization plus 2) SQL genes in resource handling plus 3) rest actions in resource handling
+        return individual.dbInitialization.flatMap { it.seeGenes() }.filter(Gene::isMutable).plus(
+            individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(GeneFilter.ONLY_SQL) }
+        ).plus(restGenes)
+
     }
 
     override fun update(previous: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation) {

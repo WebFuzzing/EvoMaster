@@ -36,6 +36,12 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      */
     abstract fun size(): Int
 
+    enum class ActionFilter { ALL, INIT, NO_INIT, ONLY_SQL, NO_SQL }
+
+    open fun seeActions(filter: ActionFilter) : List<out Action>{
+        TODO("seeActions(filter: ActionFilter) is NOT IMPLEMENT for the current individual")
+    }
+
     /**
      * Return a view of all the "actions" defined in this individual.
      * Note: each action could be composed by 0 or more genes
@@ -58,13 +64,6 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      * would be same with [seeInitializingActions]
      */
     open fun seeDbActions() : List<Action> = seeInitializingActions()
-
-    /**
-     *  TODO MAN
-     *  when integrating resource-based solutions with impact-based solutions,
-     *  this method needs to be refactored.
-     */
-    open fun seeActions(isInitialization : Boolean) = if (isInitialization) seeInitializingActions() else seeActions()
 
     /**
      * Determine if the structure (ie the actions) of this individual

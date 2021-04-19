@@ -19,7 +19,7 @@ import org.evomaster.core.search.gene.ObjectGene
 /**
  * process inference related to resource
  */
-class SimpleDeriveResourceBinding : DeriveResourceBinding{
+object SimpleDeriveResourceBinding : DeriveResourceBinding{
 
     /*************************** resource to table and param to table *****************************/
 

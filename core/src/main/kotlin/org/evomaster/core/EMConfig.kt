@@ -1029,6 +1029,15 @@ class EMConfig {
     var maxSqlInitActionsPerResource = 0
 
     @Experimental
+    @Cfg("When generating resource using SQL (e.g., sampler or mutator), how many new rows (max) to generate for the specific resource each time")
+    var employSqlNumResourceStrategy = SqlInitResourceStrategy.NONE
+
+    enum class SqlInitResourceStrategy{
+        NONE,
+        RANDOM,
+        DPC
+    }
+    @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
             "In other word, if the number is less than the specified, insertion is always applied.")
     @Min(0.0)

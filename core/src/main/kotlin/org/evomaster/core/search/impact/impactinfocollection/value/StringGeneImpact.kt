@@ -124,8 +124,10 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
             if ((current as StringGene).specializationGenes.size > currentImpact){
                 val added = current.specializationGenes.subList(currentImpact, current.specializationGenes.size)
                 hierarchySpecializationImpactInfo = hierarchySpecializationImpactInfo!!.next(added.toMutableList())
-            }else if (current.specializationGenes.size < (previous as StringGene).specializationGenes.size){
-                log.warn("some specializations of StringGene are removed {},{}", current.specializationGenes.size, previous.specializationGenes.size)
+            }else if (previous != null && current.specializationGenes.size < (previous as StringGene).specializationGenes.size){
+                log.info("some specializations of StringGene are removed {},{}", current.specializationGenes.size, previous.specializationGenes.size)
+            }else{
+                log.info("the previous gene is null")
             }
         }
     }

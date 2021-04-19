@@ -11,6 +11,8 @@ import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -26,6 +28,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
     @Inject
     private lateinit var dm: ResourceDepManageService
+
+    @Inject
+    private lateinit var rm: ResourceManageService
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestResourceFitness::class.java)
@@ -78,7 +83,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     /*
                     update creation of resources regarding response status
                      */
-                    if (a.verb.run { this == HttpVerb.POST || this == HttpVerb.PUT} && call.status == ResourceStatus.CREATED && (actionResults[indexOfAction] as RestCallResult).getStatusCode().run { this != 201 || this != 200 }){
+                    if (a.verb.run { this == HttpVerb.POST || this == HttpVerb.PUT} && call.status == ResourceStatus.CREATED_REST && (actionResults[indexOfAction] as RestCallResult).getStatusCode().run { this != 201 || this != 200 }){
                         call.getResourceNode().confirmFailureCreationByPost(call)
                     }
 
@@ -98,6 +103,15 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         val dto = restActionResultHandling(individual, targets, actionResults, fv)?:return null
+
+        /*
+            TODO: Man shall we update the action cluster based on expanded action?
+         */
+        individual.seeActions().filterIsInstance<RestCallAction>().forEach {
+            val node = rm.getResourceNodeFromCluster(it.path.toString())
+            node.updateActionsWithAdditionalParams(it)
+        }
+
         /*
          update dependency regarding executed dto
          */
@@ -132,6 +146,10 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 Note that current data structure also keeps info on already
                 existing data (which of course should not be re-inserted...)
              */
+            // other dbactions might bind with the representExistingData, so we still need to record sqlId here.
+            allDbActions.filter { it.representExistingData }.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().forEach {
+                sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
+            }
             return true
         }
 
@@ -150,8 +168,21 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         if (map == null) {
             LoggingUtil.uniqueWarn(log, "Failed in executing database command")
             return false
-        }else
+        }else{
+            val expected = allDbActions.filter { !it.representExistingData }
+                .flatMap { it.seeGenes() }.flatMap { it.flatView() }
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .filterNot { it.gene is SqlForeignKeyGene }
+            val missing = expected.filterNot {
+                map.containsKey(it.uniqueId)
+            }
             sqlIdMap.putAll(map)
+            if (missing.isNotEmpty()){
+                //for rest news, it is quite frequent that sql ids are not returned.
+                log.debug("can not get sql ids for {} from sut", missing.map { "${it.uniqueId} of ${it.tableName}" }.toSet().joinToString(","))
+                return false
+            }
+        }
         return true
     }
 

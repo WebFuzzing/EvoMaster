@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.EMConfig.SqlInitResourceStrategy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
@@ -14,12 +15,14 @@ import org.evomaster.core.problem.rest.resource.InitMode
 import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
+import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -41,6 +44,9 @@ class ResourceManageService {
 
     @Inject
     private lateinit var dm : ResourceDepManageService
+
+    @Inject
+    private lateinit var apc: AdaptiveParameterControl
 
     /**
      * key is resource path
@@ -212,7 +218,7 @@ class ResourceManageService {
         calls.add(call)
 
         if(hasDBHandler()){
-            if(call.status != ResourceStatus.CREATED
+            if(call.status != ResourceStatus.CREATED_REST
                     || dm.checkIfDeriveTable(call)
                     || candidateForInsertion != null
             ){
@@ -342,7 +348,7 @@ class ResourceManageService {
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
 
              */
-            dm.bindCallWithDBAction(call,dbActions, paramToTables, dbRemovedDueToRepair = removed)
+            ParamUtil.bindCallWithDBAction(call,dbActions, paramToTables, resourceCluster = resourceCluster, dbRemovedDueToRepair = removed)
 
             call.dbActions.addAll(dbActions)
         }
@@ -506,6 +512,14 @@ class ResourceManageService {
         }
 
         return sorted.map { it.name }
+    }
 
+    fun getResourceNum() : Int {
+        if (config.maxSqlInitActionsPerResource == 0) return 0
+        return when(config.employSqlNumResourceStrategy){
+            SqlInitResourceStrategy.NONE -> 0
+            SqlInitResourceStrategy.RANDOM -> config.maxSqlInitActionsPerResource
+            SqlInitResourceStrategy.DPC -> apc.getExploratoryValue(config.maxSqlInitActionsPerResource, 1)
+        }
     }
 }
