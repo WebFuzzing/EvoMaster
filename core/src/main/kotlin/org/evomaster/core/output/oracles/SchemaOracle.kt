@@ -177,11 +177,13 @@ class SchemaOracle : ImplementedOracle() {
     }
 
     fun supportedObject(obj: LinkedTreeMap<*,*>, call: RestCallAction): Boolean{
+
+        // The obj is (presumably) obtained from the result. So little to no information is available
+        // about
         val supportedObjects = getSupportedResponse(call)
         return supportedObjects.any { o ->
             val refObject = objectGenerator.getNamedReference(o.value)
             val refKeys = refObject.fields
-                .filterNot { it is OptionalGene }
                 .map { it.name }
                 .toMutableSet()
             val actualKeys = obj.keys

@@ -412,7 +412,9 @@ class Main {
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
                 splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
+                        .forEach {
+                            writer.writeTests(it, controllerInfoDto?.fullName)
+                        }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult)

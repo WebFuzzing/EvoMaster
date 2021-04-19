@@ -104,7 +104,8 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
                 "--heuristicsForSQL", "true",
                 "--generateSqlDataWithSearch", "true",
-                "--maxTestSize", "1"
+                "--maxTestSize", "1",
+                "--testSuiteSplitType", "NONE"
         };
 
         Injector injector = Main.init(args);

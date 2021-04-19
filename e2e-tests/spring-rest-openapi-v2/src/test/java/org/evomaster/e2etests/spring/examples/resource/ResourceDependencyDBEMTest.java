@@ -79,6 +79,10 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     args.add("--probOfApplySQLActionToCreateResources");
                     args.add("0.8");
 
+                    // Disable test suite splitting
+                    args.add("--testSuiteSplitType");
+                    args.add("NONE");
+
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
