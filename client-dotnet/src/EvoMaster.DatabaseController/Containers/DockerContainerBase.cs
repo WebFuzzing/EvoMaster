@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 
-namespace EvoMaster.Controller.Controllers.db
+namespace EvoMaster.DatabaseController.Containers
 {
     /* This class is a base for running containers in our solution
       To run database in a docker container we first tried DotNet.Testcontainers library
@@ -14,7 +14,7 @@ namespace EvoMaster.Controller.Controllers.db
     // credits to https://www.meziantou.net/2018/10/08/integration-testing-using-a-docker-container
     internal abstract class DockerContainerBase
     {
-        protected const string ContainerPrefix = "EvoMaster-DbContainer-";
+        protected const string ContainerPrefix = "EvoMaster-DB-";
 
         protected DockerContainerBase(string imageName, string containerName)
         {

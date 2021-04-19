@@ -4,23 +4,24 @@ using System.Threading.Tasks;
 using Docker.DotNet.Models;
 using Microsoft.Data.SqlClient;
 
-namespace EvoMaster.Controller.Controllers.db
+namespace EvoMaster.DatabaseController.Containers
 {
     internal class SqlServerContainer : DockerContainerBase
     {
-        private const string SaPassword = "password123";
+        private readonly string _saPassword;
         private readonly int _port;
 
-        public SqlServerContainer(int port)
+        public SqlServerContainer(int port, string saPassword)
             : base("mcr.microsoft.com/mssql/server:2017-latest",
                 $"{ContainerPrefix}{Guid.NewGuid().ToString()}")
         {
             this._port = port;
+            _saPassword = saPassword;
         }
 
         public string GetConnectionString(string database = "master")
         {
-            return $"Server=127.0.0.1,{_port};Database={database};User Id=sa;Password={SaPassword};Timeout=5";
+            return $"Server=127.0.0.1,{_port};Database={database};User Id=sa;Password={_saPassword};Timeout=5";
         }
 
         protected override async Task<bool> IsReadyAsync()
@@ -63,7 +64,7 @@ namespace EvoMaster.Controller.Controllers.db
         {
             return new Config
             {
-                Env = new List<string> {"ACCEPT_EULA=Y", $"SA_PASSWORD={SaPassword}", "MSSQL_PID=Developer"}
+                Env = new List<string> {"ACCEPT_EULA=Y", $"SA_PASSWORD={_saPassword}", "MSSQL_PID=Developer"}
             };
         }
     }
