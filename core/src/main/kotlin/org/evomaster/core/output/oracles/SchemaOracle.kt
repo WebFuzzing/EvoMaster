@@ -280,9 +280,15 @@ class SchemaOracle : ImplementedOracle() {
         if(!::objectGenerator.isInitialized) return false
         val supportedObjs = getSupportedResponse(call)
         val expectedObject = supportedObjs.get("${res.getStatusCode()}") ?: return false
+        val basicTypes = arrayOf("string", "number", "integer", "boolean", "array", "object")
 
-        if(!objectGenerator.containsKey(expectedObject)) return true
-        val referenceObject = objectGenerator.getNamedReference(expectedObject)
+        // Assess if the expected object is defined by the OpenAPI or if it's a basic type
+        if(!objectGenerator.containsKey(expectedObject)
+                &&
+                !basicTypes.contains(expectedObject)) {
+            return true
+        }
+        //val referenceObject = objectGenerator.getNamedReference(expectedObject)
 
         val actualObject = Gson().fromJson(res.getBody(), Object::class.java)
 

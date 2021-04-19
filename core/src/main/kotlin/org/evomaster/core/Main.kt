@@ -432,9 +432,9 @@ class Main {
         }
 
         @JvmStatic
-        fun initPartialOracles(injector: Injector){
+        fun initPartialOracles(injector: Injector) : TestSuiteWriter{
             val config = injector.getInstance(EMConfig::class.java)
-            val writer = setupPartialOracles(injector, config)
+            return setupPartialOracles(injector, config)
         }
 
         private fun setupPartialOracles(injector: Injector, config: EMConfig): TestSuiteWriter{
