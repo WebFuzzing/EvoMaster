@@ -159,6 +159,18 @@ object GraphQLActionBuilder {
          * merging argsTables with tempArgsTables: extracting argsTables: 2/2
          */
         state.argsTables.addAll(state.tempArgsTables)
+        println("I am the args table: ")
+        for (element in state.tables) {
+            println("{Table Name: ${element?.tableType}, " +
+                    "Field: ${element?.tableField}, " +
+                    "KindOfTableField: ${element?.kindOfTableField}, " +
+                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfTableFieldOptional}, " +
+                    "Type: ${element?.tableFieldType}, " +
+                    "KindOfTableType: ${element?.kindOfTableFieldType} " +
+                    "IsKindOfKindOfTableTypeOptional?: ${element?.isKindOfTableFieldTypeOptional}}")
+        }
+        println(state.tables.size)
+
     }
 
     /*
@@ -552,19 +564,19 @@ object GraphQLActionBuilder {
 
             //Remove primitive type from return params
             //Remove primitive types (scalar and enum) from return params
-            if (    gene.name.toLowerCase() != "scalar"
-                    && !(gene is OptionalGene && gene.gene.name == "scalar"  )
+            if (gene.name.toLowerCase() != "scalar"
+                    && !(gene is OptionalGene && gene.gene.name == "scalar")
                     && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.name.toLowerCase() == "scalar")
                     && !(gene is ArrayGene<*> && gene.template.name.toLowerCase() == "scalar")
                     && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.name.toLowerCase() == "scalar")
-                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template.name.toLowerCase() == "scalar" )
+                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template.name.toLowerCase() == "scalar")
                     //enum cases
-                    &&!(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>)
-                    && !(gene is ArrayGene<*> && gene.template is  EnumGene<*>)
+                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>)
+                    && !(gene is ArrayGene<*> && gene.template is EnumGene<*>)
                     && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is EnumGene<*>)
-                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is  EnumGene<*>)
-                    && !(gene is EnumGene<*> )
-                    && !(gene is OptionalGene && gene.gene is EnumGene<*> )
+                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is EnumGene<*>)
+                    && !(gene is EnumGene<*>)
+                    && !(gene is OptionalGene && gene.gene is EnumGene<*>)
 
             ) {
                 params.add(GQReturnParam(methodName, gene))
@@ -575,19 +587,19 @@ object GraphQLActionBuilder {
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
 
             //Remove primitive types (scalar and enum) from return params
-            if (    gene.name.toLowerCase() != "scalar"
-                    && !(gene is OptionalGene && gene.gene.name == "scalar"  )
+            if (gene.name.toLowerCase() != "scalar"
+                    && !(gene is OptionalGene && gene.gene.name == "scalar")
                     && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.name.toLowerCase() == "scalar")
                     && !(gene is ArrayGene<*> && gene.template.name.toLowerCase() == "scalar")
                     && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.name.toLowerCase() == "scalar")
-                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template.name.toLowerCase() == "scalar" )
+                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template.name.toLowerCase() == "scalar")
                     //enum cases
-                    &&!(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>)
-                    && !(gene is ArrayGene<*> && gene.template is  EnumGene<*>)
+                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>)
+                    && !(gene is ArrayGene<*> && gene.template is EnumGene<*>)
                     && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is EnumGene<*>)
-                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is  EnumGene<*>)
-                    && !(gene is EnumGene<*> )
-                    && !(gene is OptionalGene && gene.gene is EnumGene<*> )
+                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is EnumGene<*>)
+                    && !(gene is EnumGene<*>)
+                    && !(gene is OptionalGene && gene.gene is EnumGene<*>)
 
             ) {
                 params.add(GQReturnParam(methodName, gene))
@@ -850,9 +862,15 @@ object GraphQLActionBuilder {
                                         fields.add(template)
                                     }
                                 } else {
-                                    fields.add(CycleObjectGene(element.tableFieldType))
-                                    history.removeLast()
+                                    if (element.isKindOfTableFieldTypeOptional) {
+                                        //add optional to the cycle gene
+                                        fields.add(OptionalGene(element.tableFieldType, CycleObjectGene(element.tableFieldType)))
+                                        history.removeLast()
+                                    } else {
+                                        fields.add(CycleObjectGene(element.tableFieldType))
+                                        history.removeLast()
 
+                                    }
                                 }
                             } else if (element.kindOfTableFieldType.toString().equals("ENUM", ignoreCase = true)) {
                                 val field = element.tableField
@@ -870,8 +888,15 @@ object GraphQLActionBuilder {
             }
             return ObjectGene(methodName, fields, tableType)
         } else {
-            fields.add(CycleObjectGene(methodName))
-            return ObjectGene(methodName, fields, tableType)
+            if (isKindOfTableFieldTypeOptional) {
+                fields.add(OptionalGene(methodName,CycleObjectGene(methodName)))
+                return ObjectGene(methodName, fields, tableType)
+            } else {
+                fields.add(CycleObjectGene(methodName))
+                return ObjectGene(methodName, fields, tableType)
+
+
+            }
         }
     }
 
