@@ -168,11 +168,11 @@ class Main {
 
             writeStatistics(injector, solution)
 
-            LoggingUtil.getInfoLogger().apply {
-                val stc = injector.getInstance(SearchTimeController::class.java)
-                val statistics = injector.getInstance(Statistics::class.java)
-                val data = statistics.getData(solution)
+            val stc = injector.getInstance(SearchTimeController::class.java)
+            val statistics = injector.getInstance(Statistics::class.java)
+            val data = statistics.getData(solution)
 
+            LoggingUtil.getInfoLogger().apply {
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
                 info("Evaluated actions: ${stc.evaluatedActions}")
                 info("Needed budget: ${stc.neededBudget()}")
@@ -211,7 +211,7 @@ class Main {
                             " to run the search for longer"))
                 }
             }
-
+            solution.statistics = data.toMutableList()
             return solution
         }
 
@@ -545,7 +545,6 @@ class Main {
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
             writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName)
         }
-
     }
 }
 

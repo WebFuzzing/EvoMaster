@@ -45,6 +45,9 @@ class ExpectationsEMTest : SpringTestBase() {
 
             args.add("--expectationsActive")
             args.add("" + true)
+            args.add("--testSuiteSplitType")
+            args.add("NONE")
+
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
