@@ -34,7 +34,6 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
         ctx = SpringApplication.run(applicationClass,
             "--server.port=0",
             "--graphql.tools.schema-location-pattern=**/${schemaName()}",
-            "--server.port=0",
             "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;",
             "--spring.datasource.driver-class-name=" + P6SpyDriver::class.java.name,
             "--spring.jpa.database-platform=" + H2Dialect::class.java.name,

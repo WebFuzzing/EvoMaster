@@ -1,21 +1,16 @@
 package org.evomaster.e2etests.utils;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.core.Main;
+import org.evomaster.core.problem.graphql.GQMethodType;
 import org.evomaster.core.problem.graphql.GraphQLAction;
 import org.evomaster.core.problem.graphql.GraphQLIndividual;
 import org.evomaster.core.problem.graphql.GraphQlCallResult;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestCallAction;
-import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.problem.rest.RestPath;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Solution;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -159,4 +154,65 @@ public abstract class GraphQLTestBase extends WsTestBase {
         boolean ok = solution.getIndividuals().stream().anyMatch(ind -> hasValueInData(ind, value));
         assertTrue(ok);
     }
+
+    protected void assertHasAtLeastOne(Solution<GraphQLIndividual> solution, String methodName, GQMethodType type, int expectedStatusCode, String inResponse){
+
+        boolean ok = solution.getIndividuals().stream().anyMatch(
+                ind -> hasAtLeastOne(ind, methodName, type, expectedStatusCode, inResponse));
+
+        String errorMsg = "Seed " + (defaultSeed-1)+". ";
+        errorMsg += "Missing " + expectedStatusCode + " " + type + " " + methodName + " " + inResponse + "\n";
+
+        assertTrue(ok, errorMsg + graphActions(solution));
+    }
+
+    private boolean hasAtLeastOne(EvaluatedIndividual<GraphQLIndividual> ind, String methodName, GQMethodType type, int expectedStatusCode, String inResponse){
+
+        if (ind.getIndividual().seeActions().size() != ind.getResults().size()){
+            throw new IllegalStateException(String.format("mismatched size of results (%d) with calls (%d) for GraphQLIndividual",
+                    ind.getResults().size(), ind.getIndividual().seeActions().size()));
+        }
+        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+
+        boolean stopped = false;
+
+        for (int i = 0; i < actions.size() && !stopped; i++) {
+
+            GraphQlCallResult res = (GraphQlCallResult) ind.getResults().get(i);
+            stopped = res.getStopping();
+
+            boolean matched = actions.get(i).getMethodName().equals(methodName) &&
+                    actions.get(i).getMethodType().equals(type) && res.getStatusCode() == expectedStatusCode;
+
+            if(!matched) continue;
+
+            String body = res.getBody();
+            if (inResponse != null && (body==null ||  !body.contains(inResponse))) {
+                continue;
+            }
+            return true;
+        }
+
+        return false;
+
+    }
+
+    protected String graphActions(Solution<GraphQLIndividual> solution) {
+        StringBuffer msg = new StringBuffer("Graph calls:\n");
+
+        solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
+                .filter(ea -> ea.getAction() instanceof GraphQLAction)
+                .map(ea -> {
+                    String s = ((GraphQlCallResult)ea.getResult()).getStatusCode() + " ";
+                    s += ea.getAction().toString() + "\n";
+                    return s;
+                })
+                .sorted()
+                .forEach(s -> msg.append(s));
+        ;
+
+        return msg.toString();
+    }
+
+
 }
