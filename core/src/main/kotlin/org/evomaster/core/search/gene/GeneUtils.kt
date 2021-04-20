@@ -422,7 +422,6 @@ object GeneUtils {
             } else {
                 return selectedGene as ObjectGene
             }
-            //  return handleBooleanSelection(gene) as ObjectGene
         }
         throw IllegalArgumentException("Invalid input type: ${gene.javaClass}")
     }

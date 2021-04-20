@@ -159,18 +159,6 @@ object GraphQLActionBuilder {
          * merging argsTables with tempArgsTables: extracting argsTables: 2/2
          */
         state.argsTables.addAll(state.tempArgsTables)
-        println("I am the args table: ")
-        for (element in state.tables) {
-            println("{Table Name: ${element?.tableType}, " +
-                    "Field: ${element?.tableField}, " +
-                    "KindOfTableField: ${element?.kindOfTableField}, " +
-                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfTableFieldOptional}, " +
-                    "Type: ${element?.tableFieldType}, " +
-                    "KindOfTableType: ${element?.kindOfTableFieldType} " +
-                    "IsKindOfKindOfTableTypeOptional?: ${element?.isKindOfTableFieldTypeOptional}}")
-        }
-        println(state.tables.size)
-
     }
 
     /*
@@ -562,7 +550,6 @@ object GraphQLActionBuilder {
             val gene = getGene(state, tableFieldType, kindOfTableField, kindOfTableFieldType, tableType, history,
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
 
-            //Remove primitive type from return params
             //Remove primitive types (scalar and enum) from return params
             if (gene.name.toLowerCase() != "scalar"
                     && !(gene is OptionalGene && gene.gene.name == "scalar")
@@ -863,7 +850,6 @@ object GraphQLActionBuilder {
                                     }
                                 } else {
                                     if (element.isKindOfTableFieldTypeOptional) {
-                                        //add optional to the cycle gene
                                         fields.add(OptionalGene(element.tableFieldType, CycleObjectGene(element.tableFieldType)))
                                         history.removeLast()
                                     } else {
