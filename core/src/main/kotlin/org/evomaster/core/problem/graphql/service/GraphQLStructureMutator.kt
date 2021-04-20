@@ -50,11 +50,12 @@ class GraphQLStructureMutator : HttpWsStructureMutator() {
         if (config.trackingEnabled()) tag(individual, time.evaluatedIndividuals)
     }
 
+    /*
+        TODO
+        Man: this might be put into [HttpWsStructureMutator] as it is same with [RestStructureMutator],
+            but there exist some problems to return sampler when handing generic type
+     */
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
-        /*
-            TODO: this will be the same code as in REST.
-            But as we are refactoring the handling of DBs, we can wait before doing it here
-         */
 
         if (!config.shouldGenerateSqlData()) {
             return

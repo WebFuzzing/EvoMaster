@@ -389,6 +389,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             val printableInputGenes = getPrintableInputGenes(printableInputGene)
 
             /*
+                Need a check with Asma
                 for mutation which does not have any param, there is no need for ()
                 e.g., createX:X!
                       mutation{
