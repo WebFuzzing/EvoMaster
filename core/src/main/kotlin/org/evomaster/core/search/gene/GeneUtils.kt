@@ -7,6 +7,7 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
+import java.lang.RuntimeException
 import kotlin.math.pow
 
 object GeneUtils {
@@ -314,8 +315,10 @@ object GeneUtils {
      * However, it is not necessarily trivial. An [CycleObjectGene] might be required,
      * and so we would need to scan to its first ancestor in the tree which is an optional
      * or an array.
+     *
+     * [force] if true, throw exception if cannot prevent the cyclces
      */
-    fun preventCycles(gene: Gene) {
+    fun preventCycles(gene: Gene, force: Boolean = false) {
 
         val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
         if (cycles.isEmpty()) {
@@ -339,7 +342,11 @@ object GeneUtils {
             }
 
             if (p == null) {
-                log.warn("Could not prevent cycle in ${gene.name} gene")
+                val msg = "Could not prevent cycle in ${gene.name} gene"
+                if(force){
+                    throw RuntimeException(msg)
+                }
+                log.warn(msg)
             }
         }
     }

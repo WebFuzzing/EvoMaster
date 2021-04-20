@@ -500,7 +500,11 @@ object GraphQLActionBuilder {
 
         selection?.name?.let { GQReturnParam(it, selection) }?.let { params.add(it) }
 
-        params.map { it.gene }.forEach { GeneUtils.preventCycles(it) }
+        /*
+            all fields are optional in GraphQL, so should always be possible to prevent cycles,
+            unless the schema is wrong (eg, must still satisfy that at least one field is selected)
+         */
+        params.map { it.gene }.forEach { GeneUtils.preventCycles(it, true) }
 
         //Create the action
         val action = GraphQLAction(actionId, methodName, type, params)
