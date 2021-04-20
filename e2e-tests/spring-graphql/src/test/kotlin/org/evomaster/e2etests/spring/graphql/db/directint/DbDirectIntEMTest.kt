@@ -20,25 +20,47 @@ class DbDirectIntEMTest : SpringTestBase() {
     }
 
     @Test
-    fun testRunEM() {
+    fun testAvg(){
+        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE)
+    }
+
+    @Test
+    fun testAvg_SAME_N(){
+        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE_SAME_N_ACTIONS)
+    }
+
+    @Test
+    fun testBest_MIO(){
+        testRunEM(EMConfig.SecondaryObjectiveStrategy.BEST_MIN)
+    }
+    private fun testRunEM(strategy : EMConfig.SecondaryObjectiveStrategy) {
         runTestHandlingFlakyAndCompilation(
             "GQL_DirectIntEM",
             "org.foo.graphql.DirectIntEM",
-            10000
+            7000
         ) { args: MutableList<String> ->
 
             args.add("--problemType")
             args.add(EMConfig.ProblemType.GRAPHQL.toString())
+            args.add("--enableBasicAssertions")
+            args.add("false")
 
+            args.add("--secondaryObjectiveStrategy")
+            args.add("" + strategy)
             args.add("--heuristicsForSQL")
             args.add("true")
             args.add("--generateSqlDataWithSearch")
             args.add("false")
+            args.add("--probOfSmartSampling")
+            args.add("0.0") // on this example, it has huge negative impact
+
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, "dbBaseByName", GQMethodType.QUERY, 200, null)
+            assertHasAtLeastOne(solution, "addDbDirectInt", GQMethodType.MUTATION, 200, "\"x\":42,\"y\":77")
+            assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"x\":42,\"y\":77")
+            assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"get\":[]")
             assertNoneWithErrors(solution)
         }
     }

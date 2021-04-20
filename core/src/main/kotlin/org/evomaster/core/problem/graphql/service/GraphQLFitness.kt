@@ -388,16 +388,25 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             val printableInputGenes = getPrintableInputGenes(printableInputGene)
 
+            /*
+                for mutation which does not have any param, there is no need for ()
+                e.g., createX:X!
+                      mutation{
+                        createX{
+                            ...
+                        }
+                      }
+             */
+            val inputParams = if (printableInputGene.isEmpty()) "" else "($printableInputGenes)"
             bodyEntity = if (returnGene == null) {//primitive type
                 Entity.json("""
-                {"query" : " mutation{ ${a.methodName}  ($printableInputGenes)         } ","variables":null}
+                {"query" : " mutation{ ${a.methodName}  $inputParams         } ","variables":null}
             """.trimIndent())
 
             } else {
                 val mutation = getMutation(returnGene, a)
-
                 Entity.json("""
-                { "query" : "mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    }","variables":null}
+                { "query" : "mutation{    ${a.methodName}  $inputParams    $mutation    }","variables":null}
             """.trimIndent())
 
             }
