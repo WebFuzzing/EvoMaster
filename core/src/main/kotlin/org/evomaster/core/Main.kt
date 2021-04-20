@@ -412,9 +412,7 @@ class Main {
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
                 splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                        .forEach {
-                            writer.writeTests(it, controllerInfoDto?.fullName)
-                        }
+                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult)
@@ -432,9 +430,9 @@ class Main {
         }
 
         @JvmStatic
-        fun initPartialOracles(injector: Injector) : TestSuiteWriter{
+        fun initPartialOracles(injector: Injector){
             val config = injector.getInstance(EMConfig::class.java)
-            return setupPartialOracles(injector, config)
+            val writer = setupPartialOracles(injector, config)
         }
 
         private fun setupPartialOracles(injector: Injector, config: EMConfig): TestSuiteWriter{

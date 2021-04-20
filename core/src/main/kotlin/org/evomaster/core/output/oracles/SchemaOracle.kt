@@ -18,6 +18,7 @@ import org.evomaster.core.search.gene.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.LinkedTransferQueue
+import javax.ws.rs.core.MediaType
 
 
 /**
@@ -182,16 +183,27 @@ class SchemaOracle : ImplementedOracle() {
         // about
         val supportedObjects = getSupportedResponse(call)
         return supportedObjects.any { o ->
-            val refObject = objectGenerator.getNamedReference(o.value)
+            val refObject = when {
+                objectGenerator.containsKey(o.value) -> {
+                    objectGenerator.getNamedReference(o.value)
+                }
+                // One might find objects that are not supported.
+                // an example: EscapeRest method trickyJson returns a HashMap that is neither explicitly nor implicitly supported.
+                else -> ObjectGene("default", listOf())
+            }
             val refKeys = refObject.fields
                 .map { it.name }
                 .toMutableSet()
+            val refCompulsoryKeys = refObject.fields
+                    .filterNot { it is OptionalGene }
+                    .map { it.name }
+                    .toMutableSet()
             val actualKeys = obj.keys
                 .filterNot { it is OptionalGene }
                 .map { it }
                 .toMutableSet()
 
-            val compulsoryMatch = refKeys.containsAll(actualKeys) && actualKeys.containsAll(refKeys)
+            val compulsoryMatch = refKeys.containsAll(actualKeys) && actualKeys.containsAll(refCompulsoryKeys)
 
             val refOptionalKeys = refObject.fields
                 .filter { it is OptionalGene }
@@ -290,22 +302,24 @@ class SchemaOracle : ImplementedOracle() {
         }
         //val referenceObject = objectGenerator.getNamedReference(expectedObject)
 
-        val actualObject = Gson().fromJson(res.getBody(), Object::class.java)
+        var supported = true
 
-        var supported = true;
-        if  (actualObject is LinkedTreeMap<*,*>)
-            supported = supportedObject(actualObject, call)
-        else if (actualObject is ArrayList<*>
-                && (actualObject as ArrayList<*>).isNotEmpty()
-                && (actualObject as ArrayList<*>).first() is LinkedTreeMap<*,*>){
-            supported = supportedObject((actualObject as ArrayList<*>).first() as LinkedTreeMap<*, *>, call)
+        if (res.getBodyType()?.isCompatible(MediaType.APPLICATION_JSON_TYPE) == true){
+            val actualObject = Gson().fromJson(res.getBody(), Object::class.java)
+            if  (actualObject is LinkedTreeMap<*,*>)
+                supported = supportedObject(actualObject, call)
+            else if (actualObject is ArrayList<*>
+                    && (actualObject as ArrayList<*>).isNotEmpty()
+                    && (actualObject as ArrayList<*>).first() is LinkedTreeMap<*,*>){
+                supported = supportedObject((actualObject as ArrayList<*>).first() as LinkedTreeMap<*, *>, call)
+            }
+
+            // A call should generate an expectation if:
+
+            // The return object differs in structure from the expected (i.e. swagger object).
+
+            // The return type is different than the actual type (i.e. return type is not supported)
         }
-
-        // A call should generate an expectation if:
-
-        // The return object differs in structure from the expected (i.e. swagger object).
-
-        // The return type is different than the actual type (i.e. return type is not supported)
 
         return !supported
     }
