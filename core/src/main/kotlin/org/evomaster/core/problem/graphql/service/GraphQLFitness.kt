@@ -172,7 +172,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 executed statement in the SUT.
                 So, we create new targets for it.
             */
-            val descriptiveId = idMapper.getFaultDescriptiveId("${location5xx!!} $name")
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }
