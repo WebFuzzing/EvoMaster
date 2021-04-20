@@ -47,7 +47,7 @@ class DbTreeEMTest : SpringTestBase() {
             /*
                 with enabled taint analysis, there might exist errors while executing query
              */
-            assertNoneWithErrors(solution)
+            //assertNoneWithErrors(solution)
         }
 
     }
