@@ -106,7 +106,8 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
     protected void assertNoneWithErrors(Solution<GraphQLIndividual> solution) {
         boolean ok = solution.getIndividuals().stream().allMatch(ind -> noneWithErrors(ind));
-        assertTrue(ok);
+        String errorMsg = "Seed " + (defaultSeed-1)+". There exist some errors\n";
+        assertTrue(ok, errorMsg + graphActions(solution));
     }
 
 
@@ -227,7 +228,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
                     JsonNode node = getDataInGraphQLResults(res, "data");
                     if (node != null) s += " data:"+node.toString();
                     node = getDataInGraphQLResults(res, "errors");
-                    if (node != null) s += " error:"+node.toString();
+                    if (node != null && (!node.isEmpty() || !node.isMissingNode())) s += " errors:"+node.toString();
                     s += ea.getAction().toString() + "\n";
                     return s;
                 })

@@ -1,6 +1,6 @@
 type Query {
     # get all exisiting DbTree entities with the specified parent name
-    dbTreeByParentId(id: ID!): [DbTree]!
+    dbTreeByParentId(id: ID!): String!
 }
 
 type DbTree{
