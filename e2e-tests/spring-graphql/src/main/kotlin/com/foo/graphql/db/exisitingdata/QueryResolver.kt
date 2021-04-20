@@ -10,7 +10,7 @@ class QueryResolver(
     @Autowired private val manager: EntityManager) : GraphQLQueryResolver {
 
     fun getY() : List<ExistingDataY>{
-        return manager.createQuery("select y from DbTree y where y.x.id=42", ExistingDataY::class.java).resultList
+        return manager.createQuery("select y from ExistingDataY y where y.x.id=42", ExistingDataY::class.java).resultList
     }
 
 }

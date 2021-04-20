@@ -74,7 +74,7 @@ abstract class HttpWsStructureMutator : StructureMutator(){
                 imply generating an action for B as well.
                 So, we need to recompute "missing" each time
              */
-            missing = findMissing(fw, ind.seeInitializingActions().filterIsInstance<DbAction>())
+            missing = findMissing(fw, ind.seeInitializingActions())
         }
 
         if (config.generateSqlDataWithDSE) {
