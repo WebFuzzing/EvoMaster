@@ -2,9 +2,9 @@ package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.tracer.TrackOperator
@@ -42,5 +42,6 @@ abstract class StructureMutator : TrackOperator {
      * might change.
      */
     abstract fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?)
+
 
 }

@@ -3,6 +3,7 @@ package org.evomaster.core.problem.graphql.service
 import com.google.inject.Inject
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
@@ -16,7 +17,7 @@ import org.slf4j.LoggerFactory
     TODO: here there is quite bit of code that is similar to REST.
     Once this is stable, should refactoring to avoid duplication
  */
-class GraphQLStructureMutator : StructureMutator() {
+class GraphQLStructureMutator : HttpWsStructureMutator() {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(GraphQLStructureMutator::class.java)
@@ -53,6 +54,24 @@ class GraphQLStructureMutator : StructureMutator() {
             TODO: this will be the same code as in REST.
             But as we are refactoring the handling of DBs, we can wait before doing it here
          */
+
+        if (!config.shouldGenerateSqlData()) {
+            return
+        }
+
+        val ind = individual.individual as? GraphQLIndividual
+            ?: throw IllegalArgumentException("Invalid individual type")
+
+        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
+            //TODO likely to remove/change once we ll support VIEWs
+            .filter { sampler.canInsertInto(it.key) }
+
+        if (fw.isEmpty()) {
+            return
+        }
+
+        handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
+        ind.repairInitializationActions(randomness)
     }
 
     private fun mutateForRandomType(ind: GraphQLIndividual, mutatedGenes: MutatedGeneSpecification?) {

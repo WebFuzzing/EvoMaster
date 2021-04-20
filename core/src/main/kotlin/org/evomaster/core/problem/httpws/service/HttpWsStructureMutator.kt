@@ -1,30 +1,35 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.core.problem.httpws.service
 
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-abstract class AbstractRestStructureMutator : StructureMutator(){
+abstract class HttpWsStructureMutator : StructureMutator(){
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(AbstractRestStructureMutator::class.java)
+        private val log: Logger = LoggerFactory.getLogger(HttpWsStructureMutator::class.java)
     }
 
-    fun handleFailedWhereSQL(
-        ind: RestIndividual, fw: Map<String, Set<String>>,
-        mutatedGenes: MutatedGeneSpecification?, sampler: AbstractRestSampler): MutableList<List<Action>>?{
+
+    fun<T : HttpWsIndividual> handleFailedWhereSQL(
+        ind: T, fw: Map<String, Set<String>>,
+        mutatedGenes: MutatedGeneSpecification?, sampler: HttpWsSampler<T>
+    ): MutableList<List<Action>>?{
 
         /*
             because there might exist representExistingData in db actions which are in between rest actions,
             we use seeDbActions() instead of seeInitializingActions() here
-
-            Man: shall we add all existing data here?
          */
         if(ind.seeDbActions().isEmpty()
-            || ! ind.seeDbActions().any { it.representExistingData }) {
+            || ! ind.seeDbActions().any { it is DbAction && it.representExistingData }) {
+
             //add existing data only once
             ind.dbInitialization.addAll(0, sampler.existingSqlData)
 
@@ -35,9 +40,11 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
                 log.trace("{} existingSqlData are added", sampler.existingSqlData)
         }
 
+        // add fw into dbInitialization
         val max = config.maxSqlInitActionsPerMissingData
+        val initializingActions = ind.seeInitializingActions().filterIsInstance<DbAction>()
 
-        var missing = findMissing(fw, ind)
+        var missing = findMissing(fw, initializingActions)
 
         val addedInsertions = if (mutatedGenes != null) mutableListOf<List<Action>>() else null
 
@@ -47,14 +54,14 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
 
             val k = randomness.nextInt(1, max)
 
-            (0 until k).forEach {
+            (0 until k).forEach { _ ->
                 val insertions = sampler.sampleSqlInsertion(first.key, first.value)
                 /*
                     New action should be before existing one, but still after the
                     initializing ones
                  */
 //                val position = sampler.existingSqlData.size
-                val position = ind.dbInitialization.indexOfLast { it.representExistingData } + 1
+                val position = ind.seeInitializingActions().indexOfLast { it is DbAction && it.representExistingData } + 1
                 ind.dbInitialization.addAll(position, insertions)
 
                 if (log.isTraceEnabled)
@@ -71,7 +78,7 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
                 imply generating an action for B as well.
                 So, we need to recompute "missing" each time
              */
-            missing = findMissing(fw, ind)
+            missing = findMissing(fw, ind.seeInitializingActions().filterIsInstance<DbAction>())
         }
 
         if (config.generateSqlDataWithDSE) {
@@ -81,11 +88,11 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
         return addedInsertions
     }
 
-    fun findMissing(fw: Map<String, Set<String>>, ind: RestIndividual): Map<String, Set<String>> {
+    private fun findMissing(fw: Map<String, Set<String>>, dbactions: List<DbAction>): Map<String, Set<String>> {
 
         return fw.filter { e ->
             //shouldn't have already an action adding such SQL data
-            ind.seeInitializingActions()
+            dbactions
                 .filter { ! it.representExistingData }
                 .none { a ->
                     a.table.name.equals(e.key, ignoreCase = true) && e.value.all { c ->
@@ -99,5 +106,4 @@ abstract class AbstractRestStructureMutator : StructureMutator(){
                 }
         }
     }
-
 }

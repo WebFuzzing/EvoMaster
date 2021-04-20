@@ -35,14 +35,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     @Inject
     protected lateinit var configuration: EMConfig
 
-
-
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
-
-    protected var sqlInsertBuilder: SqlInsertBuilder? = null
-
-    var existingSqlData : List<DbAction> = listOf()
-        protected set
 
     //private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
 
@@ -94,30 +87,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
-    fun canInsertInto(tableName: String) : Boolean {
-        //TODO might need to refactor/remove once we deal with VIEWs
-
-        return sqlInsertBuilder?.isTable(tableName) ?: false
-    }
-
-    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
-
-        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
-            ?: throw IllegalStateException("No DB schema is available")
-
-        DbActionUtils.randomizeDbActionGenes(actions, randomness)
-
-        if (log.isTraceEnabled){
-            log.trace("at sampleSqlInsertion, {} insertions are added, and they are {}", actions.size,
-                actions.joinToString(",") {
-                    if (it is DbAction) it.getResolvedName() else it.getName()
-                })
-        }
-
-        return actions
-    }
-
-    abstract fun initSqlInfo(infoDto: SutInfoDto)
 
     abstract fun initAdHocInitialIndividuals()
 
