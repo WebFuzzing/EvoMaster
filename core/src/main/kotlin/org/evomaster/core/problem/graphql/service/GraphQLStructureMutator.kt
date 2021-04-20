@@ -5,6 +5,7 @@ import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -70,8 +71,19 @@ class GraphQLStructureMutator : HttpWsStructureMutator() {
             return
         }
 
-        handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
+
+        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
         ind.repairInitializationActions(randomness)
+
+        // update impact based on added genes
+        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                old,
+                addedInsertions
+            )
+        }
     }
 
     private fun mutateForRandomType(ind: GraphQLIndividual, mutatedGenes: MutatedGeneSpecification?) {

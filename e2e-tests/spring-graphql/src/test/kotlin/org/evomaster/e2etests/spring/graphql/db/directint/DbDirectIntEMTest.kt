@@ -35,8 +35,8 @@ class DbDirectIntEMTest : SpringTestBase() {
     }
     private fun testRunEM(strategy : EMConfig.SecondaryObjectiveStrategy) {
         runTestHandlingFlakyAndCompilation(
-            "GQL_DirectIntEM",
-            "org.foo.graphql.DirectIntEM",
+            "GQL_DirectIntEM_$strategy",
+            "org.foo.graphql.DirectIntEM_$strategy",
             7000
         ) { args: MutableList<String> ->
 

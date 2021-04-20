@@ -1,11 +1,7 @@
 package org.evomaster.core.problem.httpws.service
 
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger

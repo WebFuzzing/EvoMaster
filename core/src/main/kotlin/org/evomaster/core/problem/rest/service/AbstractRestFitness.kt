@@ -185,12 +185,6 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     /**
-     * Initializing Actions before evaluating its fitness if need
-     */
-    open fun doInitializingActions(ind: T) {
-    }
-
-    /**
      * Create local targets for each HTTP status code in each
      * API entry point
      */
