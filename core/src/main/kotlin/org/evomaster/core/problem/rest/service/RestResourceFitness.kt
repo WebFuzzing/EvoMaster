@@ -48,6 +48,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         var failureBefore = doDbCalls(individual.dbInitialization, sqlIdMap, false)
 
         val cookies = getCookies(individual)
+        val tokens = getTokens(individual)
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -73,7 +74,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 var ok = false
 
                 if (a is RestCallAction) {
-                    ok = handleRestCall(a, actionResults, chainState, cookies)
+                    ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
                     /*
                     update creation of resources regarding response status
                      */

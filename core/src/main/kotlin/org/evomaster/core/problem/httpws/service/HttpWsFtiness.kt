@@ -1,10 +1,12 @@
 package org.evomaster.core.problem.httpws.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.output.CookieWriter
+import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.service.AbstractRestFitness
@@ -195,6 +197,61 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
         }
     }
 
+
+    /**
+     * If any action needs auth based on tokens via JSON, do a "login" before
+     * running the actions, and store the tokens
+     */
+    protected fun getTokens(ind: T): Map<String, String>{
+
+        val tokensLogin = TokenWriter.getTokenLoginAuth(ind)
+
+        //from userId to Token
+        val map = mutableMapOf<String, String>()
+
+        val baseUrl = getBaseUrl()
+
+        for(tl in tokensLogin){
+
+            val response = try {
+                client.target(baseUrl + tl.endpoint)
+                        .request()
+                        .buildPost(Entity.entity(tl.jsonPayload, MediaType.APPLICATION_JSON_TYPE))
+                        .invoke()
+            } catch (e: Exception) {
+                log.warn("Failed to login for ${tl.userId}: $e")
+                continue
+            }
+
+            if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
+                log.warn("Login request failed with status ${response.status}")
+                continue
+            }
+
+            if(! response.hasEntity()){
+                log.warn("Login request failed, with no body response from which to extract the auth token")
+                continue
+            }
+
+            val body = response.readEntity(String::class.java)
+            val jackson = ObjectMapper()
+            val tree = jackson.readTree(body)
+            var token = tree.at(tl.extractTokenField).asText()
+            if(token == null || token.isEmpty()){
+                log.warn("Failed login. Cannot extract token '${tl.extractTokenField}' from response: $body")
+                continue
+            }
+
+            if(tl.headerPrefix.isNotEmpty()){
+                token = tl.headerPrefix + token
+            }
+
+            map[tl.userId] = token
+        }
+
+        return map
+    }
+
     /**
      * If any action needs auth based on cookies, do a "login" before
      * running the actions, and collect the cookies from the server.
@@ -205,7 +262,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
 
         val cookieLogins = CookieWriter.getCookieLoginAuth(ind)
 
-        val map: MutableMap<String, List<NewCookie>> = HashMap()
+        val map: MutableMap<String, List<NewCookie>> = mutableMapOf()
 
         val baseUrl = getBaseUrl()
 

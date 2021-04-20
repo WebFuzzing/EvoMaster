@@ -229,7 +229,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         val call = actions[indexOfAction] as RestCallAction
         val oracles = writer.getPartialOracles().activeOracles(call, result)
         oracles.filter { it.value }.forEach { entry ->
-            val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
+            val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
             val bugId = idMapper.handleLocalTarget(oracleId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }
@@ -269,7 +269,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 executed statement in the SUT.
                 So, we create new targets for it.
             */
-            val descriptiveId = idMapper.getFaultDescriptiveId("${location5xx!!} $name")
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }
@@ -284,14 +284,15 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     protected fun handleRestCall(a: RestCallAction,
                                  actionResults: MutableList<ActionResult>,
                                  chainState: MutableMap<String, String>,
-                                 cookies: Map<String, List<NewCookie>>)
+                                 cookies: Map<String, List<NewCookie>>,
+                                tokens: Map<String,String>)
             : Boolean {
 
         val rcr = RestCallResult()
         actionResults.add(rcr)
 
         val response = try {
-            createInvocation(a, chainState, cookies).invoke()
+            createInvocation(a, chainState, cookies, tokens).invoke()
         } catch (e: ProcessingException) {
 
             log.debug("There has been an issue in the evaluation of a test: {}", e)
@@ -336,7 +337,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
                     TcpUtils.handleEphemeralPortIssue()
 
-                    createInvocation(a, chainState, cookies).invoke()
+                    createInvocation(a, chainState, cookies, tokens).invoke()
                 }
                 TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
                     /*
@@ -397,7 +398,12 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
 
-    private fun createInvocation(a: RestCallAction, chainState: MutableMap<String, String>, cookies: Map<String, List<NewCookie>>): Invocation {
+    private fun createInvocation(a: RestCallAction,
+                                 chainState: MutableMap<String, String>,
+                                 cookies: Map<String, List<NewCookie>>,
+                                 tokens: Map<String,String>
+    ): Invocation {
+
         val baseUrl = getBaseUrl()
 
         val path = a.resolvedPath()
@@ -447,7 +453,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
          */
 
         a.parameters.filterIsInstance<HeaderParam>()
+                //TODO those should be skipped directly in the search, ie, right now they are useless genes
                 .filter { !prechosenAuthHeaders.contains(it.name) }
+                .filter { !(a.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
                 .forEach {
                     builder.header(it.name, it.gene.getValueAsRawString())
                 }
@@ -460,6 +468,15 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 list.forEach {
                     builder.cookie(it.toCookie())
                 }
+            }
+        }
+
+        if(a.auth.jsonTokenPostLogin != null){
+            val token = tokens[a.auth.jsonTokenPostLogin!!.userId]
+            if(token == null || token.isEmpty()){
+                log.warn("No auth token for ${a.auth.jsonTokenPostLogin!!.userId}")
+            } else {
+                builder.header("Authorization", token)
             }
         }
 
