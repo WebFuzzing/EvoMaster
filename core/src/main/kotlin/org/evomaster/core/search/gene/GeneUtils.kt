@@ -433,6 +433,40 @@ object GeneUtils {
         throw IllegalArgumentException("Invalid input type: ${gene.javaClass}")
     }
 
+    /**
+     * force at least one boolean to be selected
+     */
+    fun repairBooleanSelection(obj: ObjectGene){
+
+        if(obj.fields.isEmpty() || obj.fields.count { it !is OptionalGene } > 0){
+            throw IllegalArgumentException("There should be at least 1 field, and they must be all optional")
+        }
+
+        val selected = obj.fields.filterIsInstance<OptionalGene>().filter { it.isActive }
+        if(selected.isNotEmpty()){
+           //it is fine, but we still need to make sure selected objects are fine
+           selected.forEach {
+               if(it.gene is ObjectGene &&  it.gene !is CycleObjectGene){
+                   repairBooleanSelection(it.gene)
+               }
+           }
+        } else {
+            //must select at least one
+
+            val candidates = obj.fields.filterIsInstance<OptionalGene>().filter { it.selectable }
+            assert(candidates.isNotEmpty())
+
+            // maybe do at random?
+            val selected = candidates[0]
+            selected.isActive = true
+            if(selected.gene is ObjectGene){
+                assert(selected.gene !is CycleObjectGene)
+                repairBooleanSelection(selected.gene)
+            }
+        }
+    }
+
+
     fun shouldApplyBooleanSelection(gene: Gene) =
             (gene is OptionalGene && gene.gene is ObjectGene)
                     || gene is ObjectGene
