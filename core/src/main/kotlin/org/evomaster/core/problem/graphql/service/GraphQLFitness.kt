@@ -1,19 +1,25 @@
 package org.evomaster.core.problem.graphql.service
 
 import org.evomaster.client.java.controller.api.EMTestUtils
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.graphql.GQMethodType
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.auth.NoAuth
-import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.gene.EnumGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
@@ -23,7 +29,6 @@ import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
-import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.NewCookie
 
 
@@ -85,12 +90,92 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         handleExtra(dto, fv)
 
+        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
+
+
         if (config.baseTaintAnalysisProbability > 0) {
             assert(actionResults.size == dto.additionalInfoList.size)
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }
 
         return EvaluatedIndividual(fv, individual.copy() as GraphQLIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
+    }
+
+    private fun handleResponseTargets(fv: FitnessValue, actions: List<GraphQLAction>, actionResults: List<ActionResult>, additionalInfoList: List<AdditionalInfoDto>) {
+
+        (0 until actionResults.size)
+                .filter { actions[it] is GraphQLAction }
+                .filter { actionResults[it] is RestCallResult }
+                .forEach {
+                    val result = actionResults[it] as GraphQlCallResult
+                    val status = result.getStatusCode() ?: -1
+                    val name = actions[it].getName()
+
+                    //objective for HTTP specific status code
+                    val statusId = idMapper.handleLocalTarget("$status:$name")
+                    fv.updateTarget(statusId, 1.0, it)
+
+                    val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
+
+                    handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
+
+                    /*
+                          we also have to check the actual response body...
+                          but, unfortunately, currently there is no way to distinguish between user and server errors
+                          https://github.com/graphql/graphql-spec/issues/698
+                     */
+                    handleGraphQLErrors(fv, name, it, result)
+
+
+                    //handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+                }
+    }
+
+    private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult) {
+
+        //TODO
+    }
+
+    private fun handleAdditionalStatusTargetDescription(fv: FitnessValue, status: Int, name: String, indexOfAction: Int, location5xx: String?) {
+
+        val okId = idMapper.handleLocalTarget("HTTP_SUCCESS:$name")
+        val faultId = idMapper.handleLocalTarget("HTTP_FAULT:$name")
+
+        /*
+            GraphQL is not linked to HTTP.
+            So, no point to create specific testing targets for all HTTP status codes.
+            Most GraphQL implementations will actually return 200 even in the case of errors, including
+            crashed from thrown exceptions...
+            However, if in case there is a 500, we still to report it.
+
+            Still, the server could return other codes like 503 when out of resources...
+            or 401/403 when wrong auth...
+         */
+
+        //OK -> 5xx being better than 4xx, as code executed
+        //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
+        if (status in 200..299) {
+            fv.updateTarget(okId, 1.0, indexOfAction)
+            fv.updateTarget(faultId, 0.5, indexOfAction)
+        } else {
+            fv.updateTarget(okId, 0.5, indexOfAction)
+            fv.updateTarget(faultId, 1.0, indexOfAction)
+        }
+
+        if (status == 500) {
+            Lazy.assert {
+                location5xx != null
+            }
+            /*
+                500 codes "might" be bugs. To distinguish between different bugs
+                that crash the same endpoint, we need to know what was the last
+                executed statement in the SUT.
+                So, we create new targets for it.
+            */
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
+            val bugId = idMapper.handleLocalTarget(descriptiveId)
+            fv.updateTarget(bugId, 1.0, indexOfAction)
+        }
     }
 
     private fun handleGraphQLCall(
@@ -199,12 +284,12 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         } catch (e: Exception) {
 
-            if(e is ProcessingException && TcpUtils.isTimeout(e)){
+            if (e is ProcessingException && TcpUtils.isTimeout(e)) {
                 gqlcr.setTimedout(true)
                 statistics.reportTimeout()
                 return false
             } else {
-               log.warn("Failed to parse HTTP response: ${e.message}")
+                log.warn("Failed to parse HTTP response: ${e.message}")
             }
         }
 
@@ -257,24 +342,95 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         }
 
-
+        //TOdo check empty return type
         val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
-        //in GraphQL, there is ALWAYS a return type
-                ?: throw RuntimeException("ERROR: not specified return type")
-        val selection = GeneUtils.getBooleanSelection(returnGene)
 
-        //this might be optional
         val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
-        //TODO inputGenes
-       val query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
+        var bodyEntity: Entity<String> = Entity.json(" ")
 
-        val bodyEntity = Entity.json("""
-            {"query" : "$query","variables":null}
-        """.trimIndent())
+        if (a.methodType == GQMethodType.QUERY) {
 
+            if (inputGenes.isNotEmpty()) {
+
+                val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+
+                var printableInputGenes = getPrintableInputGenes(printableInputGene)
+
+                //primitive type
+                bodyEntity = if (returnGene == null) {
+                    Entity.json("""
+                    {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
+                """.trimIndent())
+
+                } else {
+                    val query = getQuery(returnGene, a)
+                    Entity.json("""
+                    {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
+                """.trimIndent())
+
+                }
+            } else {//request without arguments and primitive type
+                bodyEntity = if (returnGene == null) {
+                    Entity.json("""
+                    {"query" : "  { ${a.methodName}       } ","variables":null}
+                """.trimIndent())
+
+                } else {
+                    var query = getQuery(returnGene, a)
+                    Entity.json("""
+                   {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
+                """.trimIndent())
+                }
+            }
+        } else if (a.methodType == GQMethodType.MUTATION) {
+            val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+
+            val printableInputGenes = getPrintableInputGenes(printableInputGene)
+
+            bodyEntity = if (returnGene == null) {//primitive type
+                Entity.json("""
+                {"query" : " mutation{ ${a.methodName}  ($printableInputGenes)         } ","variables":null}
+            """.trimIndent())
+
+            } else {
+                val mutation = getMutation(returnGene, a)
+
+                Entity.json("""
+                { "query" : "mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    }","variables":null}
+            """.trimIndent())
+
+            }
+        }
         val invocation = builder.buildPost(bodyEntity)
         return invocation
     }
 
+    fun getMutation(returnGene: Gene, a: GraphQLAction): String {
+        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+    }
+
+    fun getQuery(returnGene: Gene, a: GraphQLAction): String {
+        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+    }
+
+    fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
+
+        return printableInputGene.joinToString(",").replace("\"", "\\\"")
+
+    }
+
+    fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
+        val printableInputGene = mutableListOf<String>()
+        for (gene in inputGenes) {
+            if (gene is EnumGene<*>) {
+                val i = gene.getValueAsRawString()
+                printableInputGene.add("${gene.name} : $i")
+            } else {
+                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                printableInputGene.add("${gene.name} : $i")
+            }
+        }
+        return printableInputGene
+    }
 }

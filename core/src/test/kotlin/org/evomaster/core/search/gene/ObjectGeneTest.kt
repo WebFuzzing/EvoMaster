@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 internal class ObjectGeneTest {
@@ -64,8 +65,37 @@ internal class ObjectGeneTest {
         val child1 = ObjectGene("child", listOf())
         val gene = ObjectGene("parent", listOf(child0, child1))
         val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
-        Assertions.assertEquals("<parent><child></child><child></child></parent>", actual)
+        assertEquals("<parent><child></child><child></child></parent>", actual)
     }
 
 
+    @Test
+    fun testBooleanSelectionBase(){
+
+        val foo = StringGene("foo")
+        val bar = IntegerGene("bar")
+        val gene = ObjectGene("parent", listOf(foo, bar))
+
+        val selection = GeneUtils.getBooleanSelection(gene)
+
+        val actual = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+
+        assertEquals("{foo,bar}", actual)
+    }
+
+    @Test
+    fun testBooleanSelectionNested(){
+
+        val foo = StringGene("foo")
+        val bar = IntegerGene("bar")
+        val hello = StringGene("hello")
+        val nested = ObjectGene("nested", listOf(hello))
+        val gene = ObjectGene("parent", listOf(foo, bar, nested))
+
+        val selection = GeneUtils.getBooleanSelection(gene)
+
+        val actual = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+
+        assertEquals("{foo,bar,nested{hello}}", actual)
+    }
 }

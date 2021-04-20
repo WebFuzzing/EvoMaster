@@ -7,7 +7,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
  * Created by arcuri82 on 18-Jul-17.
  */
 @SpringBootApplication
-open class BaseGraphQLApplication
+open class GQLBaseApplication{
+    companion object{
+        const val SCHEMA_NAME = "base.graphqls"
+    }
+}
 
 
 /*
@@ -22,5 +26,6 @@ open class BaseGraphQLApplication
     http://localhost:8080/voyager
  */
 fun main(args: Array<String>) {
-    SpringApplication.run(BaseGraphQLApplication::class.java, *args)
+    SpringApplication.run(GQLBaseApplication::class.java,
+            "--graphql.tools.schema-location-pattern=**/${GQLBaseApplication.SCHEMA_NAME}")
 }

@@ -1,20 +1,20 @@
-package org.evomaster.e2etests.spring.graphql.base
+package org.evomaster.e2etests.spring.graphql.input
 
-import com.foo.graphql.base.BaseController
+
+import com.foo.graphql.input.InputController
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class BaseEMTest : SpringTestBase() {
+class GQLInputEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(BaseController())
+            initClass(InputController())
         }
     }
 
@@ -22,8 +22,8 @@ class BaseEMTest : SpringTestBase() {
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-                "GQL_BaseEM",
-                "org.foo.graphql.BaseEM",
+                "GQL_InputEM",
+                "org.foo.graphql.InputEM",
                 20
         ) { args: MutableList<String> ->
 
@@ -34,6 +34,7 @@ class BaseEMTest : SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOneResponseWithData(solution)
+            assertNoneWithErrors(solution)
         }
     }
 }
