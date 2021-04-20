@@ -13,7 +13,7 @@ class Table(
         /**
          * Describing the name of the table field
          */
-        var tableField: String? = null,
+        var tableField: String="",
         /**
          * Describing the kind of the tableField, eg: LIST
          */

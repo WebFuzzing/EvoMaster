@@ -185,9 +185,20 @@ class Statistics : SearchListener {
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
             add(Pair("endpoints", "" + numberOfEndpoints()))
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
+
+            // Statistics on faults found
+            // errors5xx - counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))
+            //distinct500Faults - counts the number of 500 (and NOT the other in 5xx), per endpoint, and distinct based on the last
+            //executed line
+            add(Pair("distinct500Faults", "" + solution.overall.potential500Faults(idMapper).size ))
+            // failedOracleExpectations - the number of calls in the individual that fail one active partial oracle.
+            // However, 5xx are not counted here.
+            add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
+            //this is the total of all potential faults, eg distinct500Faults + failedOracleExpectations + any other
+            //potential oracle we are going to introduce.
+            //Note: that 500 (and 5xx in general) MUST not be counted in failedOracles
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
-            add(Pair("FailedOracleExpectations", "" + failedOracle(solution)))
 
             add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
             add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))
@@ -206,9 +217,7 @@ class Statistics : SearchListener {
 
             add(Pair(TEST_TIMEOUTS, "$timeouts"))
             add(Pair("coverageFailures", "$coverageFailures"))
-
-            add(Pair("ClusteringTime", "${solution.clusteringTime}"))
-
+            add(Pair("clusteringTime", "${solution.clusteringTime}"))
             add(Pair("id", config.statisticsColumnId))
         }
         addConfig(list)
@@ -249,6 +258,7 @@ class Statistics : SearchListener {
 
         val oracles = writer.getPartialOracles()
         //count the distinct number of API paths for which we have a failed oracle
+        // NOTE: calls with an error code (5xx) are excluded from this count.
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {

@@ -221,15 +221,6 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 }
     }
 
-    open fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: RestCallResult, name: String) : String?{
-        var location5xx : String? = null
-        if (status == 500){
-            val statement = additionalInfoList[indexOfAction].lastExecutedStatement
-            location5xx = statement ?: "framework_code"
-            result.setLastStatementWhen500(location5xx)
-        }
-        return location5xx
-    }
 
     fun handleAdditionalOracleTargetDescription(fv: FitnessValue, actions: List<RestAction>, result : RestCallResult, name: String, indexOfAction : Int){
         /*
@@ -238,7 +229,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         val call = actions[indexOfAction] as RestCallAction
         val oracles = writer.getPartialOracles().activeOracles(call, result)
         oracles.filter { it.value }.forEach { entry ->
-            val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
+            val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
             val bugId = idMapper.handleLocalTarget(oracleId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }
@@ -278,7 +269,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 executed statement in the SUT.
                 So, we create new targets for it.
             */
-            val descriptiveId = idMapper.getFaultDescriptiveId("${location5xx!!} $name")
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }

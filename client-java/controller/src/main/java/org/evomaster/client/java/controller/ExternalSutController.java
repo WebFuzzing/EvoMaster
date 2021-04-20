@@ -48,6 +48,13 @@ public abstract class ExternalSutController extends SutController {
      */
     private volatile StringBuffer errorBuffer;
 
+    /**
+     * Command used to run java, when starting the SUT.
+     * This might need to be overridden whea dealing with experiments
+     * using different versions of Java (eg, 8 vs 11)
+     */
+    private volatile String javaCommand = "java";
+
     @Override
     public final void setupForGeneratedTest(){
         //TODO how to handle P6Spy here??? We don't want the spy.log files
@@ -124,6 +131,13 @@ public abstract class ExternalSutController extends SutController {
 
     //-------------------------------------------------------------
 
+    public final void setJavaCommand(String command){
+        if(command==null || command.isEmpty()){
+            throw new IllegalArgumentException("Empty java command");
+        }
+        javaCommand = command;
+    }
+
     @Override
     public String startSut() {
 
@@ -147,7 +161,7 @@ public abstract class ExternalSutController extends SutController {
 
 
         List<String> command = new ArrayList<>();
-        command.add("java");
+        command.add(javaCommand);
 
 
         if (instrumentation) {

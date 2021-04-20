@@ -26,7 +26,6 @@
         <module>client-java</module>
         <module>e2e-tests</module>
         <module>report</module>
-        <module>resource-rest-experiments</module>
     </modules>
 
     <issueManagement>

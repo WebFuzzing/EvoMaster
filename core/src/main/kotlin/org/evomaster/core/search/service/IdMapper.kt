@@ -18,7 +18,15 @@ class IdMapper {
 
         private const val FAULT_DESCRIPTIVE_ID_PREFIX = "PotentialFault_"
 
+        private const val FAULT_500 = "500_"
+
+        private const val FAULT_PARTIAL_ORACLE = "PartialOracle_"
+
         fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX)
+
+        fun isFault500(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_500)
+
+        fun isFaultPartialOracle(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_PARTIAL_ORACLE)
 
         fun faultInfo(descriptiveId: String) : String{
             if(! isFault(descriptiveId)){
@@ -58,9 +66,18 @@ class IdMapper {
         })
     }
 
-    fun getFaultDescriptiveId(postfix: String): String {
-        return FAULT_DESCRIPTIVE_ID_PREFIX + postfix
+    fun getFaultDescriptiveIdFor500(postfix: String): String {
+        return FAULT_DESCRIPTIVE_ID_PREFIX + FAULT_500 + postfix
+    }
+
+    fun getFaultDescriptiveIdForPartialOracle(postfix: String): String {
+        return FAULT_DESCRIPTIVE_ID_PREFIX + FAULT_PARTIAL_ORACLE + postfix
     }
 
     fun isFault(id: Int) : Boolean = mapping[id]?.let{ isFault(it)} ?: false
+
+    fun isFault500(id: Int): Boolean = mapping[id]?.let {isFault500(it)} ?: false
+
+    fun isFaultExpectation(id: Int): Boolean = mapping[id]?.let{ isFaultPartialOracle(it) } ?:false
+
 }
