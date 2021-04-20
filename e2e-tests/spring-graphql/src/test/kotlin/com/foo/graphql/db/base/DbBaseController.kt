@@ -1,9 +1,9 @@
 package com.foo.graphql.db.base
 
-import com.foo.graphql.SpringController
+import com.foo.graphql.db.SpringWithDbController
 
 
-class DbBaseController : SpringController(DbBaseApplication::class.java) {
+class DbBaseController : SpringWithDbController(DbBaseApplication::class.java) {
 
     override fun schemaName() = "dbbase.graphqls"
 
