@@ -43,6 +43,6 @@ class GraphQLAction(
     }
 
     override fun toString(): String {
-        return "$methodType $methodName , auth=${auth.name}"
+        return "$methodType $methodName, auth=${auth.name}"
     }
 }

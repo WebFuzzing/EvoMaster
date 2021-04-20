@@ -120,32 +120,53 @@ public abstract class GraphQLTestBase extends WsTestBase {
             GraphQlCallResult res = (GraphQlCallResult) ind.getResults().get(i);
             stopped = res.getStopping();
 
-            Integer statusCode = res.getStatusCode();
-            if (!statusCode.equals(200)) {
-                continue;
-            }
-
-            String body = res.getBody();
-            ObjectMapper jackson = new ObjectMapper();
-
-            JsonNode node;
-            try {
-                node = jackson.readTree(body);
-            } catch (JsonProcessingException e) {
-                continue;
-            }
-
-            JsonNode data = node.findPath("data");
-            /*
-            if (!data.isNull() && !data.isMissingNode() && data.asText().contains(value)) {
-                return true;
-            }*/
-
-            if (!data.isNull() && !data.isMissingNode() && data.toString().contains(value)) {
+            if (hasValueInData(res, value)){
                 return true;
             }
         }
 
+        return false;
+    }
+
+    /**
+     *
+     * @param result is the GraphQL action result to be checked
+     * @param propertyName is a property of the results to be extracted
+     * @return extracted content based on propertyName
+     */
+    private JsonNode getDataInGraphQLResults(GraphQlCallResult result, String propertyName){
+        Integer statusCode = result.getStatusCode();
+
+        if (!statusCode.equals(200)) {
+            return null;
+        }
+
+        String body = result.getBody();
+        ObjectMapper jackson = new ObjectMapper();
+
+        JsonNode node;
+        try {
+            node = jackson.readTree(body);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+
+        return node.findPath(propertyName);
+    }
+
+    private boolean hasValueInData(GraphQlCallResult result, String value){
+
+        JsonNode data = getDataInGraphQLResults(result, "data");
+        if (data == null) return false;
+
+        /*
+        if (!data.isNull() && !data.isMissingNode() && data.asText().contains(value)) {
+            return true;
+        }*/
+
+        if (!data.isNull() && !data.isMissingNode() && data.toString().contains(value)) {
+            return true;
+        }
         return false;
     }
 
@@ -186,11 +207,9 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
             if(!matched) continue;
 
-            String body = res.getBody();
-            if (inResponse != null && (body==null ||  !body.contains(inResponse))) {
-                continue;
-            }
-            return true;
+            if (inResponse == null) continue;
+
+            if (hasValueInData(res, inResponse)) return true;
         }
 
         return false;
@@ -203,7 +222,12 @@ public abstract class GraphQLTestBase extends WsTestBase {
         solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
                 .filter(ea -> ea.getAction() instanceof GraphQLAction)
                 .map(ea -> {
-                    String s = ((GraphQlCallResult)ea.getResult()).getStatusCode() + " ";
+                    GraphQlCallResult res = (GraphQlCallResult)ea.getResult();
+                    String s = res.getStatusCode() + " ";
+                    JsonNode node = getDataInGraphQLResults(res, "data");
+                    if (node != null) s += " data:"+node.toString();
+                    node = getDataInGraphQLResults(res, "errors");
+                    if (node != null) s += " error:"+node.toString();
                     s += ea.getAction().toString() + "\n";
                     return s;
                 })

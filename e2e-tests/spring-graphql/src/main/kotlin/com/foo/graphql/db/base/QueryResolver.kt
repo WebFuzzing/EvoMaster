@@ -11,7 +11,12 @@ class QueryResolver(private val repository : DbBaseRepository) : GraphQLQueryRes
     }
 
     fun dbBaseByName(name : String) : List<DbBase>{
-        return repository.findByName(name).toList()
+        val results = repository.findByName(name).toList()
+        if (results.isNotEmpty()){
+            //add an object only for test
+            return results.plus(DbBase(42, "foo"))
+        }
+        return listOf()
     }
 }
 
