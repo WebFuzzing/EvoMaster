@@ -1,5 +1,8 @@
 package org.evomaster.core.problem.graphql.service
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
@@ -36,6 +39,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GraphQLFitness::class.java)
+        private val mapper: ObjectMapper = ObjectMapper()
     }
 
     override fun doCalculateCoverage(individual: GraphQLIndividual, targets: Set<Int>): EvaluatedIndividual<GraphQLIndividual>? {
@@ -131,9 +135,35 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 }
     }
 
+    /**
+     *  handle targets with whether there exist errors in a gql action
+     */
     private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult) {
+        val errorId = idMapper.handleLocalTarget("GQL_ERRORS:$name")
+        val okId = idMapper.handleLocalTarget("GQL_SUCCESS:$name")
 
-        //TODO
+        val ok = hasErrors(result)
+
+        if (ok){
+            fv.updateTarget(okId, 1.0, actionIndex)
+        }else{
+            fv.updateTarget(errorId, 1.0, actionIndex)
+        }
+    }
+
+    private fun hasErrors(result: GraphQlCallResult) : Boolean{
+
+        val errors = extractBodyInGraphQlResponse(result)?.findPath("errors")?:return false
+
+        return !errors.isEmpty || !errors.isMissingNode
+    }
+
+    private fun extractBodyInGraphQlResponse(result: GraphQlCallResult) : JsonNode? {
+        return try {
+            mapper.readTree(result.getBody())
+        }catch (e: JsonProcessingException){
+            null
+        }
     }
 
     private fun handleAdditionalStatusTargetDescription(fv: FitnessValue, status: Int, name: String, indexOfAction: Int, location5xx: String?) {
