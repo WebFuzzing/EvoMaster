@@ -43,7 +43,6 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val cookies = getCookies(individual)
 
-        //TODO
         doInitializingActions(individual)
 
         val fv = FitnessValue(individual.size().toDouble())
