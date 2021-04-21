@@ -185,7 +185,7 @@ test("ternary throw", () => {
     expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(0);
 
     let foo;
-    // two additional statements for ternary
+    // 'throw' is not expression in js
     const code = dedent`
        foo = function(x){
            return (x==42)? x: ()=>{throw new Error(x)};

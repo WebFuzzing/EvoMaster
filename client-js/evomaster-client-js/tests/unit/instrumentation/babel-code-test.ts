@@ -371,5 +371,34 @@ test("ternary", () => {
 });
 
 
+test("ternary throw", () => {
+
+    const code = dedent`
+        (x==42) ? foo():()=>{throw new Error(42)}
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+    
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0", "Statement_test.ts_00001_1", "Statement_test.ts_00001_2", "Statement_test.ts_00001_3"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        __EM__.cmp(x, "==", 42, "test.ts", 1, 0) ? __EM__.ternary(() => __EM__.callBase(() => foo()), "test.ts", 1, 1) : __EM__.ternary(() => () => {
+          __EM__.markStatementForCompletion("test.ts", 1, 3);
+        
+          throw new Error(42);
+        }, "test.ts", 1, 2);
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+
+});
+
+
 
 

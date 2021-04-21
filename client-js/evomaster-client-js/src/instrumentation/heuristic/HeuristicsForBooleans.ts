@@ -323,7 +323,7 @@ export default class HeuristicsForBooleans {
         return res;
     }
 
-    public static handleTernary(f: () => any, fileName: string, line: number, index: number, isthrow: boolean) {
+    public static handleTernary(f: () => any, fileName: string, line: number, index: number) {
 
         /*
             Man: what is this for?
@@ -333,14 +333,12 @@ export default class HeuristicsForBooleans {
 
         const id = ObjectiveNaming.statementObjectiveName(fileName, line, index);
         let res;
-        let throwH = 0.5;
-        if (isthrow) { throwH = 1.0; }
 
         try {
             res = f();
             ExecutionTracer.updateObjective(id, 1);
         } catch (e) {
-            ExecutionTracer.updateObjective(id, throwH);
+            ExecutionTracer.updateObjective(id, 0.5);
             // Man: might throw exception again
             throw e;
             // res = e;

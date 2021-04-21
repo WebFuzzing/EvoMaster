@@ -273,7 +273,7 @@ export default function evomasterPlugin(
         exp.consequent = t.callExpression(
             t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.ternary.name)),
             [consequent,
-                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter), t.booleanLiteral(t.isThrowStatement(consequent)) ]
+                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
         );
         statementCounter++;
 
@@ -281,7 +281,7 @@ export default function evomasterPlugin(
         exp.alternate = t.callExpression(
             t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.ternary.name)),
             [alternate,
-                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter), t.booleanLiteral(t.isThrowStatement(alternate))]
+                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
         );
         statementCounter++;
     }
