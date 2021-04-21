@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.graphql.errors
 import com.foo.graphql.errors.ErrorsController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -36,13 +37,19 @@ class ErrorsEMTest : SpringTestBase() {
             args.add("--coveredTargetFile")
             args.add(targetFile)
 
+            val statFile = "target/statistics/errors_statistics.csv"
+            args.add("--writeStatistics")
+            args.add("true")
+            args.add("--statisticsFile")
+            args.add(statFile)
+
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
             assertAnyWithErrors(solution)
 
             existErrorAndSuccessTarget(targetFile)
-
+            checkErrorsInStatistics(statFile, 1)
         }
     }
 
@@ -54,5 +61,15 @@ class ErrorsEMTest : SpringTestBase() {
         assertTrue(targets.contains("GQL_ERRORS:") && targets.contains("GQL_NO_ERRORS:"), targets)
     }
 
+    private fun checkErrorsInStatistics(path: String, num: Int){
+        val file = File(path)
+        assertTrue(file.exists())
+
+        val stats = file.readLines()
+        assertEquals(2, stats.size)
+        val index = stats.first().split(",").indexOf("gqlerrors")
+        val actual = stats[1].split(",")[index].toInt()
+        assertEquals(num, actual)
+    }
 
 }

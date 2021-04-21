@@ -14,8 +14,6 @@ import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
@@ -27,7 +25,6 @@ import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.RuntimeException
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -138,7 +135,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
      *  handle targets with whether there exist errors in a gql action
      */
     private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult) {
-        val errorId = idMapper.handleLocalTarget("GQL_ERRORS:$name")
+        val errorId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodName(name))
         val okId = idMapper.handleLocalTarget("GQL_NO_ERRORS:$name")
 
         val anyError = hasErrors(result)
