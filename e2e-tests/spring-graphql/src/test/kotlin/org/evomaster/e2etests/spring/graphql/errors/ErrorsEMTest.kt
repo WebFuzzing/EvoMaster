@@ -49,7 +49,7 @@ class ErrorsEMTest : SpringTestBase() {
             assertAnyWithErrors(solution)
 
             existErrorAndSuccessTarget(targetFile)
-            checkErrorsInStatistics(statFile, 1, 1)
+            checkErrorsInStatistics(statFile, 1, 1, 1)
         }
     }
 
@@ -61,19 +61,22 @@ class ErrorsEMTest : SpringTestBase() {
         assertTrue(targets.contains("GQL_ERRORS_ACTION:") && targets.contains("GQL_NO_ERRORS:") && targets.contains("GQL_ERRORS_LINE"), targets)
     }
 
-    private fun checkErrorsInStatistics(path: String, num: Int, numLine: Int){
+    private fun checkErrorsInStatistics(path: String, num: Int, numLine: Int, numFaults: Int){
         val file = File(path)
         assertTrue(file.exists())
-
         val stats = file.readLines()
+        val header = stats.first().split(",")
+        val results = stats[1].split(",")
+
         assertEquals(2, stats.size)
-        val index = stats.first().split(",").indexOf("gqlerrors")
-        val actual = stats[1].split(",")[index].toInt()
+        val actual = results[header.indexOf("gqlerrors")].toInt()
         assertEquals(num, actual)
 
-        val indexline = stats.first().split(",").indexOf("gqlerrorsPerLines")
-        val actualLine = stats[1].split(",")[indexline].toInt()
+        val actualLine = results[header.indexOf("gqlerrorsPerLines")].toInt()
         assertEquals(numLine, actualLine)
+
+        val actualfaults = results[header.indexOf("potentialFaults")].toInt()
+        assertEquals(numFaults, actualfaults)
     }
 
 }

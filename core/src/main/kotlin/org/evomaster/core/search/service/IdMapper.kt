@@ -26,7 +26,7 @@ class IdMapper {
 
         private const val GQL_ERRORS_LINE_PREFIX = "GQL_ERRORS_LINE"
 
-        fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX)
+        fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX) || isGQLErrors(descriptiveId, true)
 
         fun isFault500(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_500)
 
