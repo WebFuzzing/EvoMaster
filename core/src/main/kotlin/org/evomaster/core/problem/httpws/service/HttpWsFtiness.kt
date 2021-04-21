@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.DatabaseExecution
+import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -384,6 +387,35 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
         }
 
         return dto
+    }
+
+    open fun doInitializingActions(ind: HttpWsIndividual) {
+
+        if (log.isTraceEnabled){
+            log.trace("do {} InitializingActions: {}", ind.dbInitialization.size,
+                ind.dbInitialization.joinToString(","){
+                    it.getResolvedName()
+                })
+        }
+
+        if (ind.dbInitialization.none { !it.representExistingData }) {
+            /*
+                We are going to do an initialization of database only if there
+                is data to add.
+                Note that current data structure also keeps info on already
+                existing data (which of course should not be re-inserted...)
+             */
+            return
+        }
+
+        val dto = DbActionTransformer.transform(ind.dbInitialization)
+        dto.idCounter = StaticCounter.getAndIncrease()
+
+        val ok = rc.executeDatabaseCommand(dto)
+        if (!ok) {
+            //this can happen if we do not handle all constraints
+            LoggingUtil.uniqueWarn(log, "Failed in executing database command")
+        }
     }
 
 }

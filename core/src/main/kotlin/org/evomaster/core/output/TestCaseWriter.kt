@@ -147,7 +147,7 @@ class TestCaseWriter {
                 if (ind.individual is GraphQLIndividual) {
                     //TODO refactor
                     if (ind.individual.dbInitialization.isNotEmpty()) {
-                        SqlWriter.handleDbInitialization(format, ind.individual.dbInitialization, lines)
+                        SqlWriter.handleDbInitialization(format, ind.individual.seeInitializingActions(), lines)
                     }
                 }
             }
