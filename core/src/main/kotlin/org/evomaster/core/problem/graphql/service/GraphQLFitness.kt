@@ -166,7 +166,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
     private fun extractBodyInGraphQlResponse(result: GraphQlCallResult) : JsonNode? {
         return try {
-            mapper.readTree(result.getBody())
+            result.getBody()?.run { mapper.readTree(result.getBody()) }
         }catch (e: JsonProcessingException){
             null
         }
