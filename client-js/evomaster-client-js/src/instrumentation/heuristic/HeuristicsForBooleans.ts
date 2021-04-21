@@ -325,7 +325,10 @@ export default class HeuristicsForBooleans {
 
     public static handleTernary(f: () => any, fileName: string, line: number, index: number, isthrow: boolean) {
 
-        // TODO: Man what is this for? do I need this?
+        /*
+            Man: what is this for?
+            Make sure that nested evaluations of && and || do not use unrelated previous computation.
+         */
         HeuristicsForBooleans.lastEvaluation = null;
 
         const id = ObjectiveNaming.statementObjectiveName(fileName, line, index);
@@ -333,10 +336,6 @@ export default class HeuristicsForBooleans {
         let throwH = 0.5;
         if (isthrow) { throwH = 1.0; }
 
-        /*
-            TODO: Man I am not sure if we need to distinguish exception here
-            How about the f() itself is an throw exception expression
-         */
         try {
             res = f();
             ExecutionTracer.updateObjective(id, 1);
@@ -356,10 +355,4 @@ export default class HeuristicsForBooleans {
 
     private static lastEvaluation: Truthness = null;
 
-    /*
-        Make sure that nested evaluations of && and || do not use unrelated previous computation.
-     */
-    private static resetLastEvaluation() {
-        HeuristicsForBooleans.lastEvaluation = null;
-    }
 }
