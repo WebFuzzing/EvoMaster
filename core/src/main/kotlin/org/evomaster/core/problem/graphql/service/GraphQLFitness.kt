@@ -142,6 +142,9 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         if (anyError){
             fv.updateTarget(errorId, 1.0, actionIndex)
+            fv.updateTarget(okId, 0.5, actionIndex)
+
+
             // handle with last statement
             val last = additionalInfoList[actionIndex].lastExecutedStatement?: DEFAULT_FAULT_CODE
             result.setLastStatementWhenGQLErrors(last)
@@ -152,6 +155,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         }else{
             fv.updateTarget(okId, 1.0, actionIndex)
+            fv.updateTarget(errorId, 0.5, actionIndex)
         }
 
 
