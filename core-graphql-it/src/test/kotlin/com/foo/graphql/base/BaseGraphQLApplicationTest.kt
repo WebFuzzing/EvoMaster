@@ -36,14 +36,12 @@ class BaseGraphQLApplicationTest{
             val all = actionCluster.get("all")  as GraphQLAction
             assertEquals(1, all.parameters.size)
             //
-
-           val arrayUser= (all.parameters[0].gene as OptionalGene).gene as ArrayGene<*>
-           val objUser=arrayUser.template as ObjectGene
+           val objUser=all.parameters[0].gene as ObjectGene
            assertEquals(4, objUser.fields.size)
-           assertFalse(objUser.fields.first { it.name == "id" } is OptionalGene)
-           assertTrue(objUser.fields.first { it.name == "id" } is StringGene)
-           assertTrue((objUser.fields.first { it.name == "age" } as OptionalGene).gene is IntegerGene)
-           assertTrue(objUser.fields.any{ it is StringGene && it.name == "id"})
+           assertTrue(objUser.fields.first { it.name == "id" } is DisruptiveGene<*>)
+           assertTrue(objUser.fields.first { it.name == "name" } is BooleanGene)
+           assertTrue(objUser.fields.first { it.name == "surname" } is BooleanGene)
+           assertTrue(objUser.fields.any{ it is BooleanGene && it.name == "age"})
 
 
 

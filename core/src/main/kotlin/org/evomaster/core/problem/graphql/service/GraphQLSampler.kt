@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.graphql.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.GraphQLIndividual
@@ -48,8 +50,12 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         val infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
-        val gqlEndpoint = infoDto.graphQLProblem?.endpoint
+        var gqlEndpoint = infoDto.graphQLProblem?.endpoint
                 ?: throw IllegalStateException("Missing information about the GraphQL ednpoint URL")
+
+        if(! gqlEndpoint.startsWith("http", true)){
+            gqlEndpoint = infoDto.baseUrlOfSUT + gqlEndpoint
+        }
 
         val iq = IntrospectiveQuery()
         val schema = iq.fetchSchema(gqlEndpoint)
@@ -62,7 +68,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         setupAuthentication(infoDto)
 
         //TODO this will require refactoring
-        //initSqlInfo(infoDto)
+        initSqlInfo(infoDto)
         //initAdHocInitialIndividuals()
         //postInits()
 
@@ -87,4 +93,12 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         TODO smart sampling, in which we have only a single Query at the end, and variable
         number of Mutation before
      */
+
+    override fun initSqlInfo(infoDto: SutInfoDto) {
+        if (infoDto.sqlSchemaDto != null && config.shouldGenerateSqlData()) {
+
+            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
+            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
+        }
+    }
 }

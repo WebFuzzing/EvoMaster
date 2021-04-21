@@ -15,9 +15,8 @@ class PetClinicCheckMain {
         @JvmStatic
         fun main(args: Array<String>) {
 
-            //reading the gsonfile
+            //reading the gson file
             val json = PetClinicCheckMain::class.java.getResource("/graphql/QueryTypeGlobalPetsClinic.json").readText()
-            //println(json)
 
             //converting json to object
             val gson = Gson()
@@ -27,10 +26,10 @@ class PetClinicCheckMain {
 
             val actionCluster = mutableMapOf<String, Action>()
 
-          GraphQLActionBuilder.addActionsFromSchema(json,actionCluster)
-          for (element in actionCluster) {
-              println(element)
-          }
+            GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+            for (element in actionCluster) {
+                println(element)
+            }
 
 
         }

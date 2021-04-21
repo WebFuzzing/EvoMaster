@@ -111,17 +111,22 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 "$name=$value"
             }.joinToString("&"))
 
-        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE) {
+        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE || mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
             if (includedFields.isEmpty()) {
                 buffer.append("$name")
             } else {
-                buffer.append("$name")
+                if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
+                    //we do not do it for the first object, but we must do it for all the nested ones
+                    buffer.append("$name")
+                }
                 buffer.append("{")
 
                 val selection = includedFields.filter {
                     when (it) {
                         is OptionalGene -> it.isActive
+                        is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
                         is BooleanGene -> it.value
+                        is DisruptiveGene<*> -> it.probability ==0.0
                         else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
                     }
                 }
@@ -129,9 +134,16 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 buffer.append(selection.map {
                     val s: String = when (it) {
                         is OptionalGene -> {
-                            it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
+                            assert(it.gene is ObjectGene)
+                            it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
+                        }
+                        is ObjectGene ->{
+                            it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
                         }
                         is BooleanGene -> {
+                            it.name
+                        }
+                        is DisruptiveGene<*> -> {
                             it.name
                         }
                         else -> {
@@ -142,9 +154,23 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 }.joinToString(","))
                 buffer.append("}")
             }
-        } else {
-            throw IllegalArgumentException("Unrecognized mode: $mode")
-        }
+        } else
+        //GQL arguments need a special object printing mode form that differ from Json and Boolean selection:
+        //ObjName:{FieldNName: instance }
+            if (mode == GeneUtils.EscapeMode.GQL_INPUT_MODE) {
+
+                buffer.append("$name")
+                buffer.append(":{")
+
+                includedFields.map {
+                    "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
+                }.joinTo(buffer, ", ")
+
+                buffer.append("}")
+
+            } else {
+                throw IllegalArgumentException("Unrecognized mode: $mode")
+            }
 
         return buffer.toString()
     }

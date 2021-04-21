@@ -15,7 +15,9 @@ import org.evomaster.core.StaticCounter;
 import org.evomaster.core.logging.TestLoggingUtil;
 import org.evomaster.core.output.OutputFormat;
 import org.evomaster.core.output.compiler.CompilerForTestGenerated;
+import org.evomaster.core.problem.httpws.service.HttpWsIndividual;
 import org.evomaster.core.remote.service.RemoteController;
+import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
@@ -287,11 +289,17 @@ public abstract class WsTestBase {
         clearGeneratedFiles(outputFolderName, classNames);
     }
 
+    /**
+     *  As E2E generates test cases, we need delete the previous ones from previous runs, to make sure
+     *  we are running the latest generated.
+     *
+     *  However, if you run everything from "org.", those existing tests from previous run will be loaded into
+     *  the JVM, and so checks for their presence after this is executed will pass... and so the E2E will fail
+     */
     protected void clearCompiledFiles(ClassName testClassName){
         String byteCodePath = "target/test-classes/" + testClassName.getAsResourcePath();
         File compiledFile = new File(byteCodePath);
         boolean result = compiledFile.delete();
-
     }
 
     protected Class<?> loadClass(ClassName className){
@@ -387,4 +395,14 @@ public abstract class WsTestBase {
         System.out.println("SUT listening on " + baseUrlOfSut);
     }
 
+
+    protected void assertInsertionIntoTable(Solution<? extends HttpWsIndividual> solution, String tableName) {
+
+        boolean ok = solution.getIndividuals().stream().anyMatch(
+                ind -> ind.getIndividual().getDbInitialization().stream().anyMatch(
+                        da -> da.getTable().getName().equalsIgnoreCase(tableName))
+        );
+
+        assertTrue(ok);
+    }
 }

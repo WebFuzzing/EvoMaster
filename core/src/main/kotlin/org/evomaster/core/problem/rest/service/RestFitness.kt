@@ -96,34 +96,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
     }
 
 
-    override fun doInitializingActions(ind: RestIndividual) {
 
-        if (log.isTraceEnabled){
-            log.trace("do {} InitializingActions: {}", ind.dbInitialization.size,
-                ind.dbInitialization.joinToString(","){
-                    it.getResolvedName()
-                })
-        }
-
-        if (ind.dbInitialization.none { !it.representExistingData }) {
-            /*
-                We are going to do an initialization of database only if there
-                is data to add.
-                Note that current data structure also keeps info on already
-                existing data (which of course should not be re-inserted...)
-             */
-            return
-        }
-
-        val dto = DbActionTransformer.transform(ind.dbInitialization)
-        dto.idCounter = StaticCounter.getAndIncrease()
-
-        val ok = rc.executeDatabaseCommand(dto)
-        if (!ok) {
-            //this can happen if we do not handle all constraints
-            LoggingUtil.uniqueWarn(log, "Failed in executing database command")
-        }
-    }
 
     override fun hasParameterChild(a: RestCallAction): Boolean {
         return sampler.seeAvailableActions()

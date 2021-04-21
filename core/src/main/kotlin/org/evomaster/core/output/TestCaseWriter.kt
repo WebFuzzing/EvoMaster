@@ -12,6 +12,7 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQlCallResult
+import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.RestCallAction
@@ -22,6 +23,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ObjectGene
@@ -82,7 +84,7 @@ class TestCaseWriter {
         expectationsWriter.setFormat(this.format)
 
         if (config.expectationsActive
-            && ::swagger.isInitialized) {
+                && ::swagger.isInitialized) {
             objGenerator.setSwagger(swagger)
             partialOracles.setGenerator(objGenerator)
             partialOracles.setFormat(format)
@@ -92,10 +94,10 @@ class TestCaseWriter {
     }
 
     fun convertToCompilableTestCode(
-        config: EMConfig,
-        test: TestCase,
-        baseUrlOfSut: String,
-        objectGenerator: ObjectGenerator = ObjectGenerator())
+            config: EMConfig,
+            test: TestCase,
+            baseUrlOfSut: String,
+            objectGenerator: ObjectGenerator = ObjectGenerator())
             : Lines {
 
         //TODO: refactor remove once changes merged
@@ -110,7 +112,7 @@ class TestCaseWriter {
         val lines = Lines()
 
         if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
-            && test.test.getClusters().size != 0) {
+                && test.test.getClusters().size != 0) {
             clusterComment(lines, test)
         }
         if (format.isJUnit()) {
@@ -138,7 +140,6 @@ class TestCaseWriter {
                     expectationsWriter.addDeclarations(lines, ind as EvaluatedIndividual<RestIndividual>)
                     //TODO: -> also check expectation generation before adding declarations
                 }
-
                 if (ind.individual.seeInitializingActions().isNotEmpty()) {
                     SqlWriter.handleDbInitialization(format, ind.individual.seeInitializingActions(), lines)
                 }
@@ -146,11 +147,10 @@ class TestCaseWriter {
                 if (ind.individual is GraphQLIndividual) {
                     //TODO refactor
                     if (ind.individual.dbInitialization.isNotEmpty()) {
-                        SqlWriter.handleDbInitialization(format, ind.individual.dbInitialization, lines)
+                        SqlWriter.handleDbInitialization(format, ind.individual.seeInitializingActions(), lines)
                     }
                 }
             }
-
             if (test.hasChainedLocations()) {
                 assert(ind.individual is RestIndividual)
                 /*
@@ -231,9 +231,9 @@ class TestCaseWriter {
 
 
     private fun handleRestCall(
-        evaluatedAction: EvaluatedAction,
-        lines: Lines,
-        baseUrlOfSut: String
+            evaluatedAction: EvaluatedAction,
+            lines: Lines,
+            baseUrlOfSut: String
     ) {
         lines.addEmpty()
 
@@ -241,7 +241,7 @@ class TestCaseWriter {
         val res = evaluatedAction.result as RestCallResult
 
         if (res.failedCall()
-            || format.isJavaScript() //looks like even 400 throws exception with SuperAgent... :(
+                || format.isJavaScript() //looks like even 400 throws exception with SuperAgent... :(
         ) {
             addRestCallInTryCatch(call, lines, res, baseUrlOfSut)
         } else {
@@ -250,22 +250,23 @@ class TestCaseWriter {
     }
 
     private fun handleGraphQlCall(
-        evaluatedAction: EvaluatedAction,
-        lines: Lines,
-        baseUrlOfSut: String
+            evaluatedAction: EvaluatedAction,
+            lines: Lines,
+            baseUrlOfSut: String
     ) {
         lines.addEmpty()
         val call = evaluatedAction.action as GraphQLAction
         val res = evaluatedAction.result as GraphQlCallResult
 
         if (res.failedCall()
-            || format.isJavaScript() //looks like even 400 throws exception with SuperAgent... :(
+                || format.isJavaScript() //looks like even 400 throws exception with SuperAgent... :(
         ) {
             addGraphQlCallInTryCatch(call, lines, res, baseUrlOfSut)
         } else {
             addGraphQlCallLines(call, lines, res, baseUrlOfSut)
         }
     }
+
 
     private fun addRestCallInTryCatch(call: RestCallAction,
                                       lines: Lines,
@@ -313,6 +314,7 @@ class TestCaseWriter {
         lines.add("}")
     }
 
+
     private fun addGraphQlCallInTryCatch(call: GraphQLAction,
                                          lines: Lines,
                                          res: GraphQlCallResult,
@@ -356,6 +358,7 @@ class TestCaseWriter {
         }
         lines.add("}")
     }
+
 
     private fun createUniqueResponseVariableName(): String {
         val name = "res_$counter"
@@ -403,6 +406,7 @@ class TestCaseWriter {
             expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
         }
     }
+
     private fun addGraphQlCallLines(call: GraphQLAction,
                                     lines: Lines,
                                     res: GraphQlCallResult,
@@ -477,6 +481,8 @@ class TestCaseWriter {
             lines.append(getAcceptGQLHeader(call, res))
         }
     }
+
+
     private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, resVarName: String) {
 
         lines.appendSemicolon(format)
@@ -526,8 +532,7 @@ class TestCaseWriter {
                     call.path.resolveOnlyPath(call.parameters)
                 }
 
-                val extract =
-                    "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                val extract = "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
 
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + $extract")
                 lines.appendSemicolon(format)
@@ -536,6 +541,7 @@ class TestCaseWriter {
     }
 
     private fun handleGQLLastLine(lines: Lines) {
+
         lines.appendSemicolon(format)
         lines.deindent(2)
         //todo check if correct and check the semicolon
@@ -647,8 +653,8 @@ class TestCaseWriter {
             if (configuration.enableBasicAssertions) {
                 handleResponseContents(lines, res)
             }
-        } else if (partialOracles.generatesExpectation(call, res) && format.isJavaOrKotlin())
-                lines.add(".then()")
+        } else if (partialOracles.generatesExpectation(call, res)
+                && format.isJavaOrKotlin()) lines.add(".then()")
     }
 
     private fun handleGQLResponse(call: GraphQLAction, res: GraphQlCallResult, lines: Lines) {
@@ -669,9 +675,9 @@ class TestCaseWriter {
                 lines.append(" // " + res.getLastStatementWhen500())
             }
 
-            /*if (configuration.enableBasicAssertions) {
-                handleResponseContents(lines, res)
-            }*/
+            if (configuration.enableBasicAssertions) {
+                handleGQLResponseContents(lines, res)
+            }
         }
     }
 
@@ -733,10 +739,12 @@ class TestCaseWriter {
             //TODO
             return
         }
+
         if (format.isCsharp()) {
             //TODO
             return
         }
+
 
         lines.add(".assertThat()")
 
@@ -830,6 +838,7 @@ class TestCaseWriter {
     }
 
     private fun handleGQLResponseContents(lines: Lines, res: GraphQlCallResult) {
+
         if (format.isJavaScript()) {
             //TODO
             return
@@ -842,8 +851,8 @@ class TestCaseWriter {
             if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
 
         } else lines.add(".contentType(\"${res.getBodyType()
-            .toString()
-            .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
+                .toString()
+                .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
         }\")")
 
         val bodyString = res.getBody()
@@ -898,7 +907,7 @@ class TestCaseWriter {
                             bodyString.isNullOrBlank() -> lines.add(".body(isEmptyOrNullString())")
 
                             else -> lines.add(".body(containsString(\"${
-                                GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
+                            GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
                             }\"))")
                         }
                     }
@@ -916,22 +925,22 @@ class TestCaseWriter {
         val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
         // Removed size checks for objects.
         flatContent.keys
-            .filter { !it.contains("timestamp") } //needed since timestamps will change between runs
-            .filter { !it.contains("self") } //TODO: temporary hack. Needed since ports might change between runs.
-            .forEach {
-                val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
-                val actualValue = flatContent[it]
-                if (actualValue != null) {
-                    val printableFieldValue = handleFieldValues(actualValue)
-                    if (printSuitable(printableFieldValue)) {
-                        /*
-                            There are some fields like "id" which are often non-deterministic,
-                            which unfortunately would lead to flaky tests
-                         */
-                        if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableFieldValue})")
+                .filter { !it.contains("timestamp") } //needed since timestamps will change between runs
+                .filter { !it.contains("self") } //TODO: temporary hack. Needed since ports might change between runs.
+                .forEach {
+                    val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
+                    val actualValue = flatContent[it]
+                    if (actualValue != null) {
+                        val printableFieldValue = handleFieldValues(actualValue)
+                        if (printSuitable(printableFieldValue)) {
+                            /*
+                                There are some fields like "id" which are often non-deterministic,
+                                which unfortunately would lead to flaky tests
+                             */
+                            if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableFieldValue})")
+                        }
                     }
                 }
-            }
 
 
         /* TODO: BMR - We want to avoid time-based fields (timestamps and the like) as they could lead to flaky tests.
@@ -944,59 +953,12 @@ class TestCaseWriter {
         */
     }
 
-    private fun handleGQLBody(call: GraphQLAction, lines: Lines) {
-        handleGQLBody(call, lines, true)
-    }
-
-    private fun handleGQLBody(call: GraphQLAction, lines: Lines, readable: Boolean) {
-
-        val bodyParam = call.parameters.find { p -> p is GQReturnParam }?.gene
-            ?: throw RuntimeException("ERROR: Body param not specified ")
-        val selection = GeneUtils.getBooleanSelection(bodyParam)
-
-        val send = when {
-            format.isJavaOrKotlin() -> "body"
-            format.isJavaScript() -> "send"
-            else -> throw IllegalArgumentException("Format not supported $format")
-        }
-
-        if (selection != null) {
-
-            when {
-                format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
-                format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
-
-            }
-
-            val body = if (readable) {
-                OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\":\"{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}\",\"variables\":null }")
-            } else {
-                selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
-            }
-            //todo the input param
-            //needed as JSON uses ""
-            val bodyLines = body.split("\n").map { s ->
-                "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
-            }
-
-            if (bodyLines.size == 1) {
-                lines.add(".$send(${bodyLines.first()})")
-            } else {
-                lines.add(".$send(${bodyLines.first()} + ")
-                lines.indented {
-                    (1 until bodyLines.lastIndex).forEach { i ->
-                        lines.add("${bodyLines[i]} + ")
-                    }
-                    lines.add("${bodyLines.last()})")
-                }
-            }
-
-        }
-
-    }
-
     private fun handleBody(call: RestCallAction, lines: Lines): Boolean {
         return handleBody(call, lines, true)
+    }
+
+    private fun handleGQLBody(call: GraphQLAction, lines: Lines) {
+        handleGQLBody(call, lines, true)
     }
 
     //TODO: check again for C#, especially when not json
@@ -1006,6 +968,7 @@ class TestCaseWriter {
         val bodyParam = call.parameters.find { p -> p is BodyParam }
         val form = call.getBodyFormData()
         var bodyLines: List<String> = emptyList()
+
 
         if (bodyParam != null && form != null) {
             throw IllegalStateException("Issue: both Body and FormData present")
@@ -1028,15 +991,12 @@ class TestCaseWriter {
 
             if (bodyParam.isJson()) {
 
-                val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted(
-                        bodyParam.gene.getValueAsPrintableString(
-                            mode = GeneUtils.EscapeMode.JSON,
-                            targetFormat = format
-                        )
-                    )
+                val json = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+
+                val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
+                    OutputFormatter.JSON_FORMATTER.getFormatted(json)
                 } else {
-                    bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+                    json
                 }
 
                 //needed as JSON uses ""
@@ -1136,9 +1096,99 @@ class TestCaseWriter {
 
             hasBody = true
         }
-
         return hasBody
     }
+
+    private fun handleGQLBody(call: GraphQLAction, lines: Lines, readable: Boolean) {
+
+        val inputGenes = call.parameters.filterIsInstance<GQInputParam>().map { it.gene }
+
+        val returnGene = call.parameters.find { p -> p is GQReturnParam }?.gene
+
+        val send = when {
+            format.isJavaOrKotlin() -> "body"
+            format.isJavaScript() -> "send"
+            else -> throw IllegalArgumentException("Format not supported $format")
+        }
+
+        when {
+            format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
+            format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
+
+        }
+
+        val body = if (call.methodType.toString() == "QUERY") {
+            if (inputGenes.isNotEmpty()) {
+
+                val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+
+                var printableInputGenes = getPrintableInputGenes(printableInputGene)
+
+                if (returnGene == null) {
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
+
+                } else {
+
+                    var query = getQuery(returnGene, call)
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)$query} \",\"variables\":null}")
+                }
+
+            } else {
+
+                if (returnGene == null) {
+
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
+                } else {
+
+                    var query = getQuery(returnGene, call)
+                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \" {${call.methodName}  $query  }    \",\"variables\":null} ")
+
+                }
+            }
+
+        } else if (call.methodType.toString() == "MUTATION") {
+            val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+
+            var printableInputGenes = getPrintableInputGenes(printableInputGene)
+
+            if (returnGene == null) {//primitive type means without a return gene
+                OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \" mutation{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
+
+            } else {
+                var mutation = getMutation(returnGene, call)
+
+                OutputFormatter.JSON_FORMATTER.getFormatted("{ \"query\" : \"mutation{${call.methodName}  ($printableInputGenes)    $mutation    } \",\"variables\":null} ")
+            }
+        } else {
+            LoggingUtil.uniqueWarn(TestCaseWriter.log, " method type not supported yet : ${call.methodType}").toString()
+        }
+
+
+        //needed as JSON uses ""
+        val bodyLines = body.split("\n").map { s ->
+            "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
+        }
+
+        if (bodyLines.size == 1) {
+            lines.add(".$send(${bodyLines.first()})")
+        } else {
+            lines.add(".$send(${bodyLines.first()} + ")
+            lines.indented {
+                (1 until bodyLines.lastIndex).forEach { i ->
+                    lines.add("${bodyLines[i]} + ")
+                }
+                lines.add("${bodyLines.last()})")
+            }
+        }
+
+
+    }
+
+
+
+
+
+
 
     private fun handleHeaders(call: RestCallAction, lines: Lines) {
 
@@ -1177,6 +1227,7 @@ class TestCaseWriter {
     }
 
     private fun handleGQLHeaders(call: GraphQLAction, lines: Lines) {
+
         val prechosenAuthHeaders = call.auth.headers.map { it.name }
 
         val set = when {
@@ -1190,10 +1241,10 @@ class TestCaseWriter {
         }
 
         call.parameters.filterIsInstance<HeaderParam>()
-            .filter { !prechosenAuthHeaders.contains(it.name) }
-            .forEach {
-                lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
-            }
+                .filter { !prechosenAuthHeaders.contains(it.name) }
+                .forEach {
+                    lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
+                }
 
         val cookieLogin = call.auth.cookieLogin
         if (cookieLogin != null) {
@@ -1202,24 +1253,6 @@ class TestCaseWriter {
                 format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(cookieLogin)})")
             }
         }
-    }
-
-    private fun getAcceptGQLHeader(call: GraphQLAction, res: GraphQlCallResult): String {
-
-        val accept = when {
-            format.isJavaOrKotlin() -> ".accept("
-            format.isJavaScript() -> ".set('Accept', "
-            else -> throw IllegalArgumentException("Invalid format: $format")
-        }
-
-        /**
-         * GQL services typically respond using JSON
-         */
-        if (res.getBodyType() == null) {
-            return "$accept\"application/json\")"
-        } else
-
-            return "$accept\"application/json\")"
     }
 
     private fun getAcceptHeader(call: RestCallAction, res: RestCallResult): String {
@@ -1252,10 +1285,27 @@ class TestCaseWriter {
             //FIXME: there seems to have been something or a problem
             "$accept\"*/*\")"
         }
-
         if (format.isCsharp()) result = "$result;"
 
         return result
+    }
+
+    private fun getAcceptGQLHeader(call: GraphQLAction, res: GraphQlCallResult): String {
+
+        val accept = when {
+            format.isJavaOrKotlin() -> ".accept("
+            format.isJavaScript() -> ".set('Accept', "
+            else -> throw IllegalArgumentException("Invalid format: $format")
+        }
+
+        /**
+         * GQL services typically respond using JSON
+         */
+        if (res.getBodyType() == null) {
+            return "$accept\"application/json\")"
+        } else
+
+            return "$accept\"application/json\")"
     }
 
     /**
@@ -1315,4 +1365,34 @@ class TestCaseWriter {
             return true;
         return false;
     }
+
+    fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
+
+        return printableInputGene.joinToString(",").replace("\"", "\\\"")
+
+    }
+
+    fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
+        val printableInputGene = mutableListOf<String>()
+        for (gene in inputGenes) {
+            if (gene is EnumGene<*>) {
+                val i = gene.getValueAsRawString()
+                printableInputGene.add("${gene.name} : $i")
+            } else {
+                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                printableInputGene.add("${gene.name} : $i")
+            }
+        }
+        return printableInputGene
+    }
+
+    fun getMutation(returnGene: Gene, a: GraphQLAction): String {
+        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+    }
+
+    fun getQuery(returnGene: Gene, a: GraphQLAction): String {
+        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+    }
+
+
 }

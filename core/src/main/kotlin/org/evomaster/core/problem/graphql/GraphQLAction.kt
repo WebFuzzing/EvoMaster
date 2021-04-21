@@ -41,4 +41,8 @@ class GraphQLAction(
     override fun shouldCountForFitnessEvaluations(): Boolean {
         return true
     }
+
+    override fun toString(): String {
+        return "$methodType $methodName, auth=${auth.name}"
+    }
 }

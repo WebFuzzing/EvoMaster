@@ -6,6 +6,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.IllegalArgumentException
 import kotlin.math.pow
 
 object GeneUtils {
@@ -42,7 +43,9 @@ object GeneUtils {
         BODY,
         NONE,
         X_WWW_FORM_URLENCODED,
-        BOOLEAN_SELECTION_MODE
+        BOOLEAN_SELECTION_MODE,
+        BOOLEAN_SELECTION_NESTED_MODE,
+        GQL_INPUT_MODE
     }
 
     fun getDelta(
@@ -99,7 +102,7 @@ object GeneUtils {
      */
     fun repairGenes(genes: Collection<Gene>) {
 
-        if (log.isTraceEnabled){
+        if (log.isTraceEnabled) {
             log.trace("repair genes {}", genes.joinToString(",") {
                 //note that check whether the gene is printable is not enough here
                 try {
@@ -189,7 +192,11 @@ object GeneUtils {
             EscapeMode.EXPECTATION -> applyExpectationEscapes(string, format)
             EscapeMode.JSON -> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
-            EscapeMode.NONE, EscapeMode.X_WWW_FORM_URLENCODED, EscapeMode.BOOLEAN_SELECTION_MODE -> string
+            EscapeMode.NONE,
+            EscapeMode.X_WWW_FORM_URLENCODED,
+            EscapeMode.BOOLEAN_SELECTION_MODE,
+            EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
+            EscapeMode.GQL_INPUT_MODE -> string
             EscapeMode.BODY -> applyBodyEscapes(string, format)
             EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
         }
@@ -402,24 +409,66 @@ object GeneUtils {
      * objects inside, and so on recursively.
      *
      * However, to be able to print such selection for GraphQL, we need then to have a special mode
-     * for its string representation
+     * for its string representation.
+     *
+     * Also, we need to deal for when elements are non-nullable vs. nullable.
      */
     fun getBooleanSelection(gene: Gene): ObjectGene {
 
+        if (shouldApplyBooleanSelection(gene)) {
+            val selectedGene = handleBooleanSelection(gene)
+            if (selectedGene is OptionalGene) {
+                return selectedGene.gene as ObjectGene
+            } else {
+                return selectedGene as ObjectGene
+            }
+        }
+        throw IllegalArgumentException("Invalid input type: ${gene.javaClass}")
+    }
+
+    fun shouldApplyBooleanSelection(gene: Gene) =
+            (gene is OptionalGene && gene.gene is ObjectGene)
+                    || gene is ObjectGene
+                    || (gene is ArrayGene<*> && gene.template is ObjectGene)
+                    || (gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is ObjectGene)
+                    || (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is ObjectGene)
+                    || (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is ObjectGene)
+
+    private fun handleBooleanSelection(gene: Gene): Gene {
+
         return when (gene) {
-            is ObjectGene -> ObjectGene(gene.name, gene.fields.map {
-                val k = getBooleanSelection(it)
-                if (k.fields.isEmpty()) {
-                    BooleanGene(it.name)
+            is OptionalGene -> {
+                /*
+                    this is nullable.
+                    Any basic field will be represented with a BooleanGene (selected/unselected).
+                    But for objects we need to use an Optional
+                 */
+                if (gene.gene is ObjectGene) {
+                    OptionalGene(gene.name, handleBooleanSelection(gene.gene))
                 } else {
-                    OptionalGene(k.name, k)
+                    if (gene.gene is ArrayGene<*>) {
+                        handleBooleanSelection(gene.gene.template)
+                    } else {
+                        // on by default, but can be deselected during the search
+                        BooleanGene(gene.name, true)
+                    }
                 }
             }
-            )
-            is ArrayGene<*> -> getBooleanSelection(gene.template)
-            is OptionalGene -> getBooleanSelection(gene.gene)
-            else -> ObjectGene(gene.name, listOf())
+            is CycleObjectGene -> {
+                gene
+            }
+            is ObjectGene -> {
+                //need to look at each field
+                ObjectGene(gene.name, gene.fields.map { handleBooleanSelection(it) })
+            }
+            is ArrayGene<*> -> handleBooleanSelection(gene.template)
+            else -> {
+                //as this was not marked as optional, must always be selected
+                DisruptiveGene(gene.name, BooleanGene(gene.name, true), 0.0)
+            }
         }
     }
+
+
 }
 
