@@ -109,7 +109,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         (0 until actionResults.size)
                 .filter { actions[it] is GraphQLAction }
-                .filter { actionResults[it] is RestCallResult }
+                .filter { actionResults[it] is GraphQlCallResult }
                 .forEach {
                     val result = actionResults[it] as GraphQlCallResult
                     val status = result.getStatusCode() ?: -1
@@ -140,11 +140,11 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
      */
     private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult) {
         val errorId = idMapper.handleLocalTarget("GQL_ERRORS:$name")
-        val okId = idMapper.handleLocalTarget("GQL_SUCCESS:$name")
+        val okId = idMapper.handleLocalTarget("GQL_NO_ERRORS:$name")
 
-        val ok = hasErrors(result)
+        val anyError = hasErrors(result)
 
-        if (ok){
+        if (!anyError){
             fv.updateTarget(okId, 1.0, actionIndex)
         }else{
             fv.updateTarget(errorId, 1.0, actionIndex)

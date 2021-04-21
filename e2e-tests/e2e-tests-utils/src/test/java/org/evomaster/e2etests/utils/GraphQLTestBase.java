@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.utils;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,14 +7,9 @@ import org.evomaster.core.Main;
 import org.evomaster.core.problem.graphql.GraphQLAction;
 import org.evomaster.core.problem.graphql.GraphQLIndividual;
 import org.evomaster.core.problem.graphql.GraphQlCallResult;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestCallAction;
-import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.problem.rest.RestPath;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Solution;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -114,6 +108,10 @@ public abstract class GraphQLTestBase extends WsTestBase {
         assertTrue(ok);
     }
 
+    protected void assertAnyWithErrors(Solution<GraphQLIndividual> solution) {
+        boolean ok = solution.getIndividuals().stream().anyMatch(ind -> !noneWithErrors(ind));
+        assertTrue(ok);
+    }
 
     protected boolean hasValueInData(EvaluatedIndividual<GraphQLIndividual> ind, String value) {
         List<GraphQLAction> actions = ind.getIndividual().seeActions();
