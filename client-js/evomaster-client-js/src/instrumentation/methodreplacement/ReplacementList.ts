@@ -2,6 +2,12 @@ import ReplacementFunction from "./ReplacementFunction";
 import StringClassReplacement from "./classes/StringClassReplacement";
 
 
+/*
+    For list of global objects, see:
+
+    https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects
+ */
+
 export default class ReplacementList{
 
     /**

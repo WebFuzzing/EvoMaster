@@ -23,6 +23,13 @@ export default class HeuristicsForBooleans {
         return !value;
     }
 
+    /**
+     * This is mainly needed in MethodReplacement
+     */
+    public static updateLastEvaluation(t: Truthness) {
+        HeuristicsForBooleans.lastEvaluation = t;
+    }
+
     public static getLastEvaluation() : Truthness{
         return HeuristicsForBooleans.lastEvaluation;
     }

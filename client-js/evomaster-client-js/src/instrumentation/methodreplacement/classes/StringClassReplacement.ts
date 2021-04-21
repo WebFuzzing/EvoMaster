@@ -3,16 +3,22 @@ import ReplacementFunction from "../ReplacementFunction";
 import Truthness from "../../heuristic/Truthness";
 import ExecutionTracer from "../../staticstate/ExecutionTracer";
 import DistanceHelper from "../../heuristic/DistanceHelper";
+import ReplacementType from "../ReplacementType";
+import TruthnessUtils from "../../heuristic/TruthnessUtils";
+import HeuristicsForBooleans from "../../heuristic/HeuristicsForBooleans";
 
 
 export default class StringClassReplacement extends MethodReplacementClass{
 
      getReplacements(): Array<ReplacementFunction> {
         return [
-            new ReplacementFunction("".startsWith, StringClassReplacement.startsWith)
+            new ReplacementFunction("".startsWith, StringClassReplacement.startsWith),
+            new ReplacementFunction("".endsWith, StringClassReplacement.endsWith)
         ];
     }
 
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/startsWith
 
     static startsWith = (idTemplate: string, caller: string, searchString: any, position? : any) : boolean => {
 
@@ -54,10 +60,95 @@ export default class StringClassReplacement extends MethodReplacementClass{
         } else {
             const len = Math.min(prefix.length, caller.length);
             const sub = caller.substring(toffset, Math.min(toffset + len, caller.length));
-            return equals(sub, prefix, idTemplate);
+            t = TruthnessUtils.getEqualityTruthnessString(sub, prefix)
         }
 
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        HeuristicsForBooleans.updateLastEvaluation(t);
         return result;
     }
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/endsWith
+
+    static endsWith = (idTemplate: string, caller: string, searchString: any, length? : any) : boolean => {
+
+        if(!caller || typeof searchString !== "string" || (length && typeof length !== "number")){
+            //can't compute distance, so just fallback on standard behavior
+            return caller.endsWith(searchString, length);
+        }
+
+        const n = length ? length : caller.length;
+        const startingPoint = n - searchString.length;
+        if(n < 0){
+            return caller.endsWith(searchString, length);
+        }
+
+        return StringClassReplacement.startsWith(idTemplate, caller, searchString, startingPoint);
+    }
+
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/includes
+
+    static includes = (idTemplate: string, caller: string, searchString: any, position? : any) : boolean => {
+
+        if(!caller || typeof searchString !== "string" || (position && typeof position !== "number")){
+            //can't compute distance, so just fallback on standard behavior
+            return caller.includes(searchString, position);
+        }
+
+        const result = caller.includes(searchString, position);
+
+        if (idTemplate == null) {
+            return result;
+        }
+
+        const n = position ? position : 0;
+        const source = caller.substring(n);
+
+        let t: Truthness;
+
+        if (result) {
+            t = new Truthness(1, HeuristicsForBooleans.FLAG_NO_EXCEPTION);
+        } else if (source.length <= searchString.length) {
+            t = TruthnessUtils.getEqualityTruthnessString(source, searchString)
+        } else {
+            let best = Number.MAX_VALUE;
+
+            for (let i = 0; i < (source.length - searchString.length) + 1; i++) {
+                const sub = source.substring(i, i + searchString.length);
+                const h = DistanceHelper.getLeftAlignmentDistance(sub, searchString);
+                if (h < best) {
+                    best = h;
+                }
+            }
+            t = new Truthness(1.0 / (1.0 + best), 1);
+        }
+
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        HeuristicsForBooleans.updateLastEvaluation(t);
+        return result;
+    }
+
+
+    //TODO
+
+
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/indexOf
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/lastIndexOf
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/search
+
+
+
+    //TODO Input Tracking
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/match
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/matchAll
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/exec
 }
