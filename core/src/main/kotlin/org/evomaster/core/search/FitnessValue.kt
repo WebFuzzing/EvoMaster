@@ -152,9 +152,9 @@ class FitnessValue(
         updateTarget(id, MAX_VALUE)
     }
 
-    fun gqlErrors(idMapper: IdMapper): List<String>{
+    fun gqlErrors(idMapper: IdMapper, withLine : Boolean): List<String>{
         return targets.keys
-            .filter { idMapper.isGQLErrors(it) }
+            .filter { idMapper.isGQLErrors(it, withLine) }
             .map { idMapper.getDescriptiveId(it) }
     }
 

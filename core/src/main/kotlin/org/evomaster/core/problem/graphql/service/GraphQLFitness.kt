@@ -124,7 +124,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                           but, unfortunately, currently there is no way to distinguish between user and server errors
                           https://github.com/graphql/graphql-spec/issues/698
                      */
-                    handleGraphQLErrors(fv, name, it, result)
+                    handleGraphQLErrors(fv, name, it, result, additionalInfoList)
 
 
                     //handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
@@ -134,17 +134,27 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     /**
      *  handle targets with whether there exist errors in a gql action
      */
-    private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult) {
+    private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult, additionalInfoList: List<AdditionalInfoDto>) {
         val errorId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodName(name))
         val okId = idMapper.handleLocalTarget("GQL_NO_ERRORS:$name")
 
         val anyError = hasErrors(result)
 
-        if (!anyError){
-            fv.updateTarget(okId, 1.0, actionIndex)
-        }else{
+        if (anyError){
             fv.updateTarget(errorId, 1.0, actionIndex)
+            // handle with last statement
+            val last = additionalInfoList[actionIndex].lastExecutedStatement?: DEFAULT_FAULT_CODE
+            result.setLastStatementWhenGQLErrors(last)
+
+            // shall we add additional target with last?
+            val errorlineId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodNameAndLine(line = last, method = name))
+            fv.updateTarget(errorlineId, 1.0, actionIndex)
+
+        }else{
+            fv.updateTarget(okId, 1.0, actionIndex)
         }
+
+
     }
 
     private fun hasErrors(result: GraphQlCallResult) : Boolean{

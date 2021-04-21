@@ -22,7 +22,9 @@ class IdMapper {
 
         private const val FAULT_PARTIAL_ORACLE = "PartialOracle_"
 
-        private const val GQL_ERRORS_PREFIX = "GQL_ERRORS"
+        private const val GQL_ERRORS_PREFIX = "GQL_ERRORS_ACTION"
+
+        private const val GQL_ERRORS_LINE_PREFIX = "GQL_ERRORS_LINE"
 
         fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX)
 
@@ -30,7 +32,8 @@ class IdMapper {
 
         fun isFaultPartialOracle(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_PARTIAL_ORACLE)
 
-        fun isGQLErrors(descriptiveId: String) = descriptiveId.startsWith(GQL_ERRORS_PREFIX)
+        fun isGQLErrors(descriptiveId: String, withLine: Boolean = false) = if (!withLine) descriptiveId.startsWith(GQL_ERRORS_PREFIX) else descriptiveId.startsWith(
+            GQL_ERRORS_LINE_PREFIX)
 
         fun faultInfo(descriptiveId: String) : String{
             if(! isFault(descriptiveId)){
@@ -80,11 +83,13 @@ class IdMapper {
 
     fun getGQLErrorsDescriptiveWithMethodName(method: String) = "$GQL_ERRORS_PREFIX:$method"
 
+    fun getGQLErrorsDescriptiveWithMethodNameAndLine(line : String, method: String) = "${GQL_ERRORS_LINE_PREFIX}:${method}_$line"
+
     fun isFault(id: Int) : Boolean = mapping[id]?.let{ isFault(it)} ?: false
 
     fun isFault500(id: Int): Boolean = mapping[id]?.let {isFault500(it)} ?: false
 
     fun isFaultExpectation(id: Int): Boolean = mapping[id]?.let{ isFaultPartialOracle(it) } ?:false
 
-    fun isGQLErrors(id : Int) : Boolean = mapping[id]?.let { isGQLErrors(it) } == true
+    fun isGQLErrors(id : Int, withLine: Boolean) : Boolean = mapping[id]?.let { isGQLErrors(it, withLine) } == true
 }
