@@ -1,33 +1,27 @@
+import ObjectiveNaming from "../ObjectiveNaming";
+import ExecutionTracer from "../staticstate/ExecutionTracer";
 import Truthness from "./Truthness";
 import TruthnessUtils from "./TruthnessUtils";
-import ExecutionTracer from "../staticstate/ExecutionTracer";
-import ObjectiveNaming from "../ObjectiveNaming";
-
 
 export default class HeuristicsForBooleans {
-
-    private static readonly validOps = ["==", "===", "!=", "!==", "<", "<=", ">", ">="];
-
-    private static lastEvaluation: Truthness = null;
 
     public static readonly FLAG_NO_EXCEPTION = 0.01;
     public static readonly EXCEPTION = HeuristicsForBooleans.FLAG_NO_EXCEPTION / 2;
 
+    public static handleNot(value: any): any {
 
-    public static handleNot(value: any) : any{
-
-        if(HeuristicsForBooleans.lastEvaluation){
+        if (HeuristicsForBooleans.lastEvaluation) {
             HeuristicsForBooleans.lastEvaluation = HeuristicsForBooleans.lastEvaluation.invert();
         }
 
         return !value;
     }
 
-    public static getLastEvaluation() : Truthness{
+    public static getLastEvaluation(): Truthness {
         return HeuristicsForBooleans.lastEvaluation;
     }
 
-    public static clearLastEvaluation(){
+    public static clearLastEvaluation() {
         HeuristicsForBooleans.lastEvaluation = null;
     }
 
@@ -91,7 +85,7 @@ export default class HeuristicsForBooleans {
 
             h = new Truthness(
                 (xT.getOfTrue() / 2) + (yT.getOfTrue() / 2),
-                Math.max(xT.getOfFalse(), xE ? yT.getOfFalse()/2 : yT.getOfFalse())
+                Math.max(xT.getOfFalse(), xE ? yT.getOfFalse() / 2 : yT.getOfFalse())
             );
         } else {
 
@@ -106,17 +100,16 @@ export default class HeuristicsForBooleans {
 
         HeuristicsForBooleans.lastEvaluation = h;
 
-        if(xE){
+        if (xE) {
             throw xE;
         }
 
-        if(leftIsTrue && yE){
+        if (leftIsTrue && yE) {
             throw yE;
         }
 
         return x && y;
     }
-
 
     public static evaluateOr(left: () => any,
                              right: () => any,
@@ -180,7 +173,7 @@ export default class HeuristicsForBooleans {
             }
 
             h = new Truthness(
-                Math.max(xT.getOfTrue(), xE ? yT.getOfTrue()/2 : yT.getOfTrue()),
+                Math.max(xT.getOfTrue(), xE ? yT.getOfTrue() / 2 : yT.getOfTrue()),
                 (xT.getOfFalse() / 2) + (yT.getOfFalse() / 2)
             );
         } else {
@@ -196,17 +189,16 @@ export default class HeuristicsForBooleans {
 
         HeuristicsForBooleans.lastEvaluation = h;
 
-        if(xE){
+        if (xE) {
             throw xE;
         }
 
-        if(leftIsFalse && yE){
+        if (leftIsFalse && yE) {
             throw yE;
         }
 
         return x || y;
     }
-
 
     public static evaluate(left: any, op: string, right: any, fileName: string, line: number, branchId: number): any {
 
@@ -240,7 +232,6 @@ export default class HeuristicsForBooleans {
 
         return res;
     }
-
 
     public static compare(left: any, op: string, right: any): Truthness {
 
@@ -310,8 +301,7 @@ export default class HeuristicsForBooleans {
         return h;
     }
 
-
-    public static handleFunctionCallBase(f: () => any) : any {
+    public static handleFunctionCallBase(f: () => any): any {
 
         HeuristicsForBooleans.lastEvaluation = null;
         const res = f();
@@ -320,7 +310,7 @@ export default class HeuristicsForBooleans {
         return res;
     }
 
-    public static handleFunctionCallTracked(fileName: string, line: number, branchId: number, obj: any, functionName: string, ...args: any[]) : any {
+    public static handleFunctionCallTracked(fileName: string, line: number, branchId: number, obj: any, functionName: string, ...args: any[]): any {
 
         /*
             TODO: TT will be hooked here
@@ -333,31 +323,43 @@ export default class HeuristicsForBooleans {
         return res;
     }
 
-    public static handleTernary(f: () => any, fileName: string, line: number, index: number) {
+    public static handleTernary(f: () => any, fileName: string, line: number, index: number, isthrow: boolean) {
 
         // TODO: Man what is this for? do I need this?
         HeuristicsForBooleans.lastEvaluation = null;
 
         const id = ObjectiveNaming.statementObjectiveName(fileName, line, index);
         let res;
+        let throwH = 0.5;
+        if (isthrow) { throwH = 1.0; }
 
         /*
             TODO: Man I am not sure if we need to distinguish exception here
             How about the f() itself is an throw exception expression
          */
-        try{
+        try {
             res = f();
             ExecutionTracer.updateObjective(id, 1);
-        }catch (e) {
-            ExecutionTracer.updateObjective(id, 0.5);
-            //Man: might throw exception again
+        } catch (e) {
+            ExecutionTracer.updateObjective(id, throwH);
+            // Man: might throw exception again
             throw e;
-            //res = e;
-        }finally
-        {
+            // res = e;
+        } finally {
             HeuristicsForBooleans.lastEvaluation = null;
         }
         return res;
 
+    }
+
+    private static readonly validOps = ["==", "===", "!=", "!==", "<", "<=", ">", ">="];
+
+    private static lastEvaluation: Truthness = null;
+
+    /*
+        Make sure that nested evaluations of && and || do not use unrelated previous computation.
+     */
+    private static resetLastEvaluation() {
+        HeuristicsForBooleans.lastEvaluation = null;
     }
 }

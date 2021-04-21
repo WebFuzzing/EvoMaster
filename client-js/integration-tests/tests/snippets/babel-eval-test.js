@@ -179,3 +179,37 @@ test("ternary simple", () => {
     const alt = ET.getValue("Statement_test.ts_00002_3")
     expect(alt).toBe(0.5);
 });
+
+test("ternary throw", () => {
+
+    expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(0);
+
+    let foo;
+    // two additional statements for ternary
+    const code = dedent`
+       foo = function(x){
+           return (x==42)? x: ()=>{throw new Error(x)};
+       };
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let res = foo(42);
+
+    expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(3);
+    const cons = ET.getValue("Statement_test.ts_00002_2")
+    expect(res).toBe(42);
+    expect(cons).toBe(1);
+
+    let throws = false;
+    try {
+        foo(1);
+    }catch (e){
+        throws = true;
+    }
+    expect(throws);
+    expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(4);
+    const alt = ET.getValue("Statement_test.ts_00002_3")
+    expect(alt).toBe(1);
+});

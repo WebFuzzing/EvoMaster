@@ -259,21 +259,21 @@ export default function evomasterPlugin(
             where ternary needs to create 2 objectives:
                 - 1 for for when it is executed/called  (h=1)
                 - 1 for when no exception (h=0.5 and then h=1 if and onyl if () => B did not throw exception)
-            TODO: check with Andrea, I am not clear about the second point,
+             Man: check with Andrea, I am not clear about the second point,
                 do we need to handle 'consequent' and 'alternate' differently?
-                in addition, do we need to handle 'throw exception' with different h?
-                how about itself is a throw exception expression, e.g., A? B: (throw e)
-                if needed, we might need to add a variable for a check with 't.isThrowStatement()'
+             Andrea: no, they should be treated the same.
+
          */
 
         const consequent = t.arrowFunctionExpression([], exp.consequent, false);
         const alternate = t.arrowFunctionExpression([], exp.alternate, false);
 
+
         objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
         exp.consequent = t.callExpression(
             t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.ternary.name)),
             [consequent,
-                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
+                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter), t.booleanLiteral(t.isThrowStatement(consequent)) ]
         );
         statementCounter++;
 
@@ -281,7 +281,7 @@ export default function evomasterPlugin(
         exp.alternate = t.callExpression(
             t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.ternary.name)),
             [alternate,
-                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
+                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter), t.booleanLiteral(t.isThrowStatement(alternate))]
         );
         statementCounter++;
     }

@@ -73,7 +73,7 @@ export default class InjectedFunctions {
         return HeuristicsForBooleans.handleFunctionCallTracked(fileName, line, branchId, obj, functionName, ...args);
     }
 
-    public static ternary(f: () => any, fileName: string, line: number, index: number) : any{
-       return HeuristicsForBooleans.handleTernary(f, fileName, line, index)
+    public static ternary(f: () => any, fileName: string, line: number, index: number, isthrow : boolean) : any{
+       return HeuristicsForBooleans.handleTernary(f, fileName, line, index, isthrow)
     }
 }
