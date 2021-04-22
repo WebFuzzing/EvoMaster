@@ -6,8 +6,6 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.IllegalArgumentException
-import java.lang.RuntimeException
 import kotlin.math.pow
 
 object GeneUtils {
@@ -343,7 +341,7 @@ object GeneUtils {
 
             if (p == null) {
                 val msg = "Could not prevent cycle in ${gene.name} gene"
-                if(force){
+                if (force) {
                     throw RuntimeException(msg)
                 }
                 log.warn(msg)
@@ -436,48 +434,41 @@ object GeneUtils {
     /**
      * force at least one boolean to be selected
      */
-    fun repairBooleanSelection(obj: ObjectGene){
+    fun repairBooleanSelection(obj: ObjectGene) {
 
-        if (obj !is CycleObjectGene) {
-            //a field can be Optional or Boolean
-            if (obj.fields.isEmpty()) {
-                //  || obj.fields.count { it !is OptionalGene } > 0){
-                throw IllegalArgumentException("There should be at least 1 field, and they must be all optional")
+        if (obj.fields.isEmpty()
+                || obj.fields.count { it !is OptionalGene && it !is BooleanGene } > 0) {
+            throw IllegalArgumentException("There should be at least 1 field, and they must be all optional or boolean")
+        }
+
+        val selected = obj.fields.filter { (it is OptionalGene && it.isActive) || (it is BooleanGene && it.value) }
+
+        if (selected.isNotEmpty()) {
+            //it is fine, but we still need to make sure selected objects are fine
+            selected.forEach {
+                if (it is OptionalGene && it.gene is ObjectGene && it.gene !is CycleObjectGene) {
+                    repairBooleanSelection(it.gene)
+                }
             }
-
-            //filter instance of Boolean
-            val candidates = obj.fields.filterIsInstance<BooleanGene>().filter { it.value }
-            assert(candidates.isNotEmpty())
-            // maybe do at random?
-            val booSelected = candidates[0]
-            booSelected.value = true
-
-/*
-        val selected = obj.fields.filterIsInstance<OptionalGene>().filter { it.isActive }
-        if(selected.isNotEmpty()){
-           //it is fine, but we still need to make sure selected objects are fine
-           selected.forEach {
-               if(it.gene is ObjectGene &&  it.gene !is CycleObjectGene){
-                   repairBooleanSelection(it.gene)
-               }
-           }
         } else {
             //must select at least one
 
-            val candidates = obj.fields.filterIsInstance<OptionalGene>().filter { it.selectable }
+            val candidates = obj.fields.filter { (it is OptionalGene && it.selectable) || it is BooleanGene }
             assert(candidates.isNotEmpty())
 
             // maybe do at random?
             val selected = candidates[0]
-            selected.isActive = true
-            if(selected.gene is ObjectGene){
-                assert(selected.gene !is CycleObjectGene)
-                repairBooleanSelection(selected.gene)
+            if(selected is OptionalGene) {
+                selected.isActive = true
+                if (selected.gene is ObjectGene) {
+                    assert(selected.gene !is CycleObjectGene)
+                    repairBooleanSelection(selected.gene)
+                }
+            } else {
+                (selected as BooleanGene).value = true
             }
-        }*/
         }
     }
-
 
     fun shouldApplyBooleanSelection(gene: Gene) =
             (gene is OptionalGene && gene.gene is ObjectGene)
@@ -516,8 +507,7 @@ object GeneUtils {
             }
             is ArrayGene<*> -> handleBooleanSelection(gene.template)
             else -> {
-                //as this was not marked as optional, must always be selected
-                DisruptiveGene(gene.name, BooleanGene(gene.name, true), 0.0)
+                BooleanGene(gene.name, true)
             }
         }
     }
