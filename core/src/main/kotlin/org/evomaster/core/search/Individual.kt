@@ -39,7 +39,7 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
     enum class ActionFilter { ALL, INIT, NO_INIT, ONLY_SQL, NO_SQL }
 
     open fun seeActions(filter: ActionFilter) : List<out Action>{
-        TODO("seeActions(filter: ActionFilter) is NOT IMPLEMENT for the current individual")
+        return seeActions()
     }
 
     /**
