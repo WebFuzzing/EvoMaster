@@ -3,7 +3,7 @@ import ReplacementFunction from "../ReplacementFunction";
 import Truthness from "../../heuristic/Truthness";
 import ExecutionTracer from "../../staticstate/ExecutionTracer";
 import DistanceHelper from "../../heuristic/DistanceHelper";
-import ReplacementType from "../ReplacementType";
+import {ReplacementType} from "../ReplacementType";
 import TruthnessUtils from "../../heuristic/TruthnessUtils";
 import HeuristicsForBooleans from "../../heuristic/HeuristicsForBooleans";
 
@@ -13,7 +13,10 @@ export default class StringClassReplacement extends MethodReplacementClass{
      getReplacements(): Array<ReplacementFunction> {
         return [
             new ReplacementFunction("".startsWith, StringClassReplacement.startsWith),
-            new ReplacementFunction("".endsWith, StringClassReplacement.endsWith)
+            new ReplacementFunction("".endsWith, StringClassReplacement.endsWith),
+            new ReplacementFunction("".includes, StringClassReplacement.includes),
+            new ReplacementFunction("".indexOf, StringClassReplacement.indexOf),
+            new ReplacementFunction("".lastIndexOf, StringClassReplacement.lastIndexOf)
         ];
     }
 
@@ -130,19 +133,37 @@ export default class StringClassReplacement extends MethodReplacementClass{
     }
 
 
-    //TODO
-
-
-
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/indexOf
+
+    static indexOf = (idTemplate: string, caller: string, searchString: any, fromIndex ? : any) : Number => {
+
+         let position = fromIndex
+         if(fromIndex >= caller.length){
+             position = 0; // damn you JS!!! what an inconsistent behavior compared to "includes"...
+         }
+
+         StringClassReplacement.includes(idTemplate, caller, searchString, position);
+         return caller.indexOf(searchString, fromIndex);
+    }
+
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/lastIndexOf
 
-    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/search
+    static lastIndexOf = (idTemplate: string, caller: string, searchString: any, fromIndex ? : any) : Number => {
 
+        let position = fromIndex
+        if(fromIndex >= caller.length){
+            position = 0;
+        }
+
+        StringClassReplacement.includes(idTemplate, caller, searchString, position);
+        return caller.lastIndexOf(searchString, fromIndex);
+    }
 
 
     //TODO Input Tracking
+
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/search
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/match
 
