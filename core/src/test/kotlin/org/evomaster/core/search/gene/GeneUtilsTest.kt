@@ -194,7 +194,7 @@ internal class GeneUtilsTest {
 
         val selection = GeneUtils.getBooleanSelection(objInteger)
 
-        val a = selection.fields.find { it.name == "a" } as DisruptiveGene<*>
+        val a = selection.fields.find { it.name == "a" } as BooleanGene
 
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
@@ -226,7 +226,7 @@ internal class GeneUtilsTest {
 
         val selection = GeneUtils.getBooleanSelection(objBoolean)
 
-        val a = selection.fields.find { it.name == "a" } as DisruptiveGene<*>
+        val a = selection.fields.find { it.name == "a" } as BooleanGene
 
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
