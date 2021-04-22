@@ -217,7 +217,7 @@ class ResourceManageService {
         val call = ar.genCalls(candidate, randomness, size,true, true)
         calls.add(call)
 
-        if(hasDBHandler()){
+        if(hasDBHandler() && config.probOfApplySQLActionToCreateResources > 0){
             if(call.status != ResourceStatus.CREATED_REST
                     || dm.checkIfDeriveTable(call)
                     || candidateForInsertion != null
