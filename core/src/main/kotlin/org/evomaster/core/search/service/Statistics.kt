@@ -186,6 +186,12 @@ class Statistics : SearchListener {
             add(Pair("endpoints", "" + numberOfEndpoints()))
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
 
+            // Statistics on errors in gql
+            add(Pair("gqlerrors", "" + solution.overall.gqlErrors(idMapper, withLine = false).size))
+
+            // Statistics on errors in gql
+            add(Pair("gqlerrorsPerLines", "" + solution.overall.gqlErrors(idMapper, withLine = true).size))
+
             // Statistics on faults found
             // errors5xx - counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))

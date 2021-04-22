@@ -110,6 +110,10 @@ public abstract class GraphQLTestBase extends WsTestBase {
         assertTrue(ok, errorMsg + graphActions(solution));
     }
 
+    protected void assertAnyWithErrors(Solution<GraphQLIndividual> solution) {
+        boolean ok = solution.getIndividuals().stream().anyMatch(ind -> !noneWithErrors(ind));
+        assertTrue(ok);
+    }
 
     protected boolean hasValueInData(EvaluatedIndividual<GraphQLIndividual> ind, String value) {
         List<GraphQLAction> actions = ind.getIndividual().seeActions();
