@@ -90,6 +90,7 @@ class GraphQLActionBuilderTest {
         assertTrue(objVisitConnection.fields[0] is BooleanGene)
         assertTrue(objVisitConnection.fields.any { it is BooleanGene && it.name == "totalCount" })
         assertTrue(objVisitConnection.fields.any { it is OptionalGene && it.name == "visits" })
+        GeneUtils.repairBooleanSelection(owner); // this should not fail
         /**/
         val pet = actionCluster.get("pet") as GraphQLAction
         assertEquals(2, pet.parameters.size)
@@ -101,6 +102,7 @@ class GraphQLActionBuilderTest {
         val objPet2 = (pet.parameters[1].gene as ObjectGene)
         assertEquals(6, objPet2.fields.size)
         assertTrue(objPet2.fields.any { it is OptionalGene && it.name == "visits" })
+        GeneUtils.repairBooleanSelection(objPet2); // this should not fail
         /**/
         val specialties = actionCluster.get("specialties") as GraphQLAction
         assertEquals(1, specialties.parameters.size)
