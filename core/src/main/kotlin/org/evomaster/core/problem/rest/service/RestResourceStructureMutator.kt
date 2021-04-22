@@ -376,6 +376,16 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         }
 
         ind.replaceResourceCall(pos, new)
+
+        //record replaced
+        new.seeActions().forEach {
+            mutatedGenes?.addRemovedOrAddedByAction(
+                it,
+                ind.seeActions().indexOf(it),
+                false,
+                resourcePosition = pos
+            )
+        }
     }
 
     /**
