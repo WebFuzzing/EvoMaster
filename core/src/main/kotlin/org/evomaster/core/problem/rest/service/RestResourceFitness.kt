@@ -11,6 +11,7 @@ import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.slf4j.Logger
@@ -48,9 +49,10 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             This map is used to record the key mapping in SQL, e.g., PK, FK
          */
         val sqlIdMap = mutableMapOf<Long, Long>()
+        val executedDbActions = mutableListOf<DbAction>()
 
         //whether there exist some SQL execution failure
-        var failureBefore = doDbCalls(individual.dbInitialization, sqlIdMap, false)
+        var failureBefore = doDbCalls(individual.dbInitialization, sqlIdMap, false, executedDbActions)
 
         val cookies = getCookies(individual)
         val tokens = getTokens(individual)
@@ -67,7 +69,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            failureBefore = failureBefore || doDbCalls(call.dbActions, sqlIdMap, failureBefore)
+            val result = doDbCalls(call.dbActions, sqlIdMap, failureBefore, executedDbActions)
+            failureBefore = failureBefore || result
 
             var terminated = false
 
@@ -133,7 +136,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
      * @param allSuccessBefore indicates whether all SQL before this [allDbActions] are executed successfully
      * @return whether [allDbActions] execute successfully
      */
-    private fun doDbCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>, allSuccessBefore : Boolean) : Boolean {
+    private fun doDbCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>, allSuccessBefore : Boolean, previous: MutableList<DbAction>) : Boolean {
 
         if (allDbActions.isEmpty()) {
             return true
@@ -150,11 +153,12 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             allDbActions.filter { it.representExistingData }.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().forEach {
                 sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
             }
+            previous.addAll(allDbActions)
             return true
         }
 
         val dto = try {
-            DbActionTransformer.transform(allDbActions, sqlIdMap)
+            DbActionTransformer.transform(allDbActions, sqlIdMap, previous)
         }catch (e : IllegalArgumentException){
             // the failure might be due to previous failure
             if (!allSuccessBefore)
@@ -165,6 +169,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         dto.idCounter = StaticCounter.getAndIncrease()
 
         val map = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
+        previous.addAll(allDbActions)
+
         if (map == null) {
             LoggingUtil.uniqueWarn(log, "Failed in executing database command")
             return false
@@ -172,14 +178,14 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             val expected = allDbActions.filter { !it.representExistingData }
                 .flatMap { it.seeGenes() }.flatMap { it.flatView() }
                 .filterIsInstance<SqlPrimaryKeyGene>()
+                .filter { it.gene is SqlAutoIncrementGene }
                 .filterNot { it.gene is SqlForeignKeyGene }
             val missing = expected.filterNot {
                 map.containsKey(it.uniqueId)
             }
             sqlIdMap.putAll(map)
             if (missing.isNotEmpty()){
-                //for rest news, it is quite frequent that sql ids are not returned.
-                log.debug("can not get sql ids for {} from sut", missing.map { "${it.uniqueId} of ${it.tableName}" }.toSet().joinToString(","))
+                log.warn("can not get sql ids for {} from sut", missing.map { "${it.uniqueId} of ${it.tableName}" }.toSet().joinToString(","))
                 return false
             }
         }
