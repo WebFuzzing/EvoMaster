@@ -438,10 +438,21 @@ object GeneUtils {
      */
     fun repairBooleanSelection(obj: ObjectGene){
 
-        if(obj.fields.isEmpty() || obj.fields.count { it !is OptionalGene } > 0){
-            throw IllegalArgumentException("There should be at least 1 field, and they must be all optional")
-        }
+        if (obj !is CycleObjectGene) {
+            //a field can be Optional or Boolean
+            if (obj.fields.isEmpty()) {
+                //  || obj.fields.count { it !is OptionalGene } > 0){
+                throw IllegalArgumentException("There should be at least 1 field, and they must be all optional")
+            }
 
+            //filter instance of Boolean
+            val candidates = obj.fields.filterIsInstance<BooleanGene>().filter { it.value }
+            assert(candidates.isNotEmpty())
+            // maybe do at random?
+            val booSelected = candidates[0]
+            booSelected.value = true
+
+/*
         val selected = obj.fields.filterIsInstance<OptionalGene>().filter { it.isActive }
         if(selected.isNotEmpty()){
            //it is fine, but we still need to make sure selected objects are fine
@@ -463,6 +474,7 @@ object GeneUtils {
                 assert(selected.gene !is CycleObjectGene)
                 repairBooleanSelection(selected.gene)
             }
+        }*/
         }
     }
 
