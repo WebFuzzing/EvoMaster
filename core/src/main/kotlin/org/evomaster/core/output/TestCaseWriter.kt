@@ -533,8 +533,6 @@ class TestCaseWriter {
 
         lines.appendSemicolon(format)
         lines.deindent(2)
-        //todo check if correct and check the semicolon
-        lines.appendSemicolon(format)
     }
     private fun handleVerb(baseUrlOfSut: String, call: RestCallAction, lines: Lines, hasBody: Boolean = true) {
 
