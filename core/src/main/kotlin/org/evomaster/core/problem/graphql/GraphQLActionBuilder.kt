@@ -947,7 +947,7 @@ object GraphQLActionBuilder {
             return ObjectGene(methodName, fields, tableType)
         } else {
             fields.add(OptionalGene(methodName, CycleObjectGene(methodName)))
-            return ObjectGene(methodName, fields, tableType)
+            return CycleObjectGene(methodName)
 
         }
     }
