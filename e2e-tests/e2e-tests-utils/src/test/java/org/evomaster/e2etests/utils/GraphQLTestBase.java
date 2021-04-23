@@ -192,6 +192,26 @@ public abstract class GraphQLTestBase extends WsTestBase {
         assertTrue(ok, errorMsg + graphActions(solution));
     }
 
+    protected void assertHasAtLeastOne(Solution<GraphQLIndividual> solution,
+                                       String methodName, GQMethodType type, int expectedStatusCode,
+                                       List<String> inResponse, boolean and){
+        boolean ok;
+        if (and){
+            ok = inResponse.stream().allMatch(s-> solution.getIndividuals().stream().anyMatch(ind ->
+                    hasAtLeastOne(ind, methodName, type, expectedStatusCode, s)));
+        }else{
+            ok = inResponse.stream().anyMatch(s-> solution.getIndividuals().stream().anyMatch(ind ->
+                    hasAtLeastOne(ind, methodName, type, expectedStatusCode, s)));
+        }
+
+        String errorMsg = "Seed " + (defaultSeed-1)+". ";
+        errorMsg += "Missing " + expectedStatusCode + " " + type + " " + methodName + " " + (and?" all of " : " any of ") +String.join(",", inResponse) + "\n";
+
+        assertTrue(ok, errorMsg + graphActions(solution));
+    }
+
+
+
     private boolean hasAtLeastOne(EvaluatedIndividual<GraphQLIndividual> ind, String methodName, GQMethodType type, int expectedStatusCode, String inResponse){
 
         if (ind.getIndividual().seeActions().size() != ind.getResults().size()){

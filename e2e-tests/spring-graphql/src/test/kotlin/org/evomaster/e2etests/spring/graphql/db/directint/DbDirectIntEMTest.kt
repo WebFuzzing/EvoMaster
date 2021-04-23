@@ -7,6 +7,7 @@ import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.util.*
 
 class DbDirectIntEMTest : SpringTestBase() {
 
@@ -59,7 +60,7 @@ class DbDirectIntEMTest : SpringTestBase() {
 
             assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, "addDbDirectInt", GQMethodType.MUTATION, 200, "\"x\":42,\"y\":77")
-            assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"x\":42,\"y\":77")
+            assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, Arrays.asList("\"x\":42,\"y\":77"), false)
             assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"get\":[]")
             assertNoneWithErrors(solution)
         }
