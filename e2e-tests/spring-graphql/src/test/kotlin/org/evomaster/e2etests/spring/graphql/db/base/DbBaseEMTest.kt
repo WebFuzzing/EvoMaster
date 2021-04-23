@@ -40,7 +40,10 @@ class DbBaseEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, "dbBaseByName", GQMethodType.QUERY, 200, "{\"id\":\"42\",\"name\":\"foo\"}")
+//            assertHasAtLeastOne(solution, "dbBaseByName", GQMethodType.QUERY, 200, "{\"id\":\"42\",\"name\":\"foo\"}")
+            //FIXME: need check in any of the methods, not necessarely dbBaseByName, or have an "OR"
+            assertHasAtLeastOne(solution, "dbBaseByName", GQMethodType.QUERY, 200, "\"id\":\"42\"")
+            assertHasAtLeastOne(solution, "dbBaseByName", GQMethodType.QUERY, 200, "\"name\":\"foo\"")
             // there exists some problems on addDbBase, e.g., 500 MUTATION addDbBase, auth=NoAuth
             // assertNoneWithErrors(solution)
         }
