@@ -2,10 +2,7 @@ package org.evomaster.core.output
 
 import com.google.gson.Gson
 import io.swagger.v3.oas.models.OpenAPI
-import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
-import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -14,11 +11,9 @@ import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
-import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.auth.CookieLogin
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
@@ -26,13 +21,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import org.slf4j.LoggerFactory
-import java.lang.RuntimeException
-import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
 
@@ -688,6 +677,35 @@ class TestCaseWriter {
         }
     }
 
+    private fun handleAdditionalFieldValues(stringKey: String, resContentsItem: Any?): List<Pair<String, String>>?{
+        resContentsItem?: return null
+        val list = mutableListOf<Pair<String, String>>()
+        when (resContentsItem::class) {
+            ArrayList::class -> {
+                list.add("$stringKey.size()" to "equalTo(${(resContentsItem as ArrayList<*>).size})")
+                resContentsItem.forEachIndexed { index, v ->
+                    if (v is Map<*, *>){
+                        val flatContent = flattenForAssert(mutableListOf<String>(), v)
+                        flatContent.keys
+                            .filter { !it.contains("timestamp")  && !it.contains("self")}
+                            .forEach {key->
+                                val fstringKey = key.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
+                                val factualValue = flatContent[key]
+
+                                if (factualValue != null){
+                                    val key = "$stringKey.get($index).$fstringKey"
+                                    list.add(key to handleFieldValues(factualValue))
+                                    handleAdditionalFieldValues(key, factualValue)?.let { list.addAll(it) }
+                                }
+                        }
+                    }
+                }
+            }
+        }
+
+        return list
+    }
+
     private fun handleFieldValues(resContentsItem: Any?): String {
         if (resContentsItem == null) {
             return "nullValue()"
@@ -702,7 +720,7 @@ class TestCaseWriter {
                     )
                 }\")"
                 Map::class -> return NOT_COVERED_YET
-                ArrayList::class -> if ((resContentsItem as ArrayList<*>).all { it is String }) {
+                ArrayList::class -> if ((resContentsItem as ArrayList<*>).all { it is String } && resContentsItem.isNotEmpty()) {
                     return "hasItems(${
                         (resContentsItem as ArrayList<String>).joinToString {
                             "\"${
@@ -844,6 +862,9 @@ class TestCaseWriter {
         }
     }
 
+    /**
+     * response are handled with 'data'
+     */
     private fun handleGQLResponseContents(lines: Lines, res: GraphQlCallResult) {
 
         if (format.isJavaScript()) {
@@ -862,15 +883,18 @@ class TestCaseWriter {
                 .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
         }\")")
 
-        val bodyString = res.getBody()
 
         if (res.getBodyType() != null) {
+            val bodyString = res.getBody()
+
             val type = res.getBodyType()!!
-            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
+            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json"))
+            {
                 when (bodyString?.trim()?.first()) {
+                    //TODO, Man: need a check with Asma or Anrea, it seems never be true in GraphQL, shall we delete this option?
                     '[' -> {
                         // This would be run if the JSON contains an array of objects.
-                        val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
+                        val resContents = Gson().fromJson(bodyString, ArrayList::class.java)
                         lines.add(".body(\"size()\", equalTo(${resContents.size}))")
                         //assertions on contents
                         if (resContents.size > 0) {
@@ -901,7 +925,7 @@ class TestCaseWriter {
                     }
                     '{' -> {
                         // JSON contains an object
-                        val resContents = Gson().fromJson(res.getBody(), Map::class.java)
+                        val resContents = Gson().fromJson(bodyString, Map::class.java)
                         addObjectAssertions(resContents, lines)
 
                     }
@@ -945,6 +969,11 @@ class TestCaseWriter {
                                 which unfortunately would lead to flaky tests
                              */
                             if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableFieldValue})")
+                        }
+                        //handle additional properties for array
+                        handleAdditionalFieldValues(stringKey, actualValue)?.forEach {
+                            if (printSuitable(it.second) && it.first != "\'id\'")
+                                lines.add(".body(\"${it.first}\", ${it.second})")
                         }
                     }
                 }
