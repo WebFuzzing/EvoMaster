@@ -690,11 +690,9 @@ class TestCaseWriter {
                                 val fstringKey = key.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
                                 val factualValue = flatContent[key]
 
-                                if (factualValue != null){
-                                    val key = "$stringKey.get($index).$fstringKey"
-                                    list.add(key to handleFieldValues(factualValue))
-                                    handleAdditionalFieldValues(key, factualValue)?.let { list.addAll(it) }
-                                }
+                                val key = "$stringKey.get($index).$fstringKey"
+                                list.add(key to handleFieldValues(factualValue))
+                                handleAdditionalFieldValues(key, factualValue)?.let { list.addAll(it) }
                         }
                     }
                 }
@@ -959,20 +957,18 @@ class TestCaseWriter {
                 .forEach {
                     val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
                     val actualValue = flatContent[it]
-                    if (actualValue != null) {
-                        val printableFieldValue = handleFieldValues(actualValue)
-                        if (printSuitable(printableFieldValue)) {
-                            /*
-                                There are some fields like "id" which are often non-deterministic,
-                                which unfortunately would lead to flaky tests
-                             */
-                            if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableFieldValue})")
-                        }
-                        //handle additional properties for array
-                        handleAdditionalFieldValues(stringKey, actualValue)?.forEach {
-                            if (printSuitable(it.second) && it.first != "\'id\'")
-                                lines.add(".body(\"${it.first}\", ${it.second})")
-                        }
+                    val printableFieldValue = handleFieldValues(actualValue)
+                    if (printSuitable(printableFieldValue)) {
+                        /*
+                            There are some fields like "id" which are often non-deterministic,
+                            which unfortunately would lead to flaky tests
+                         */
+                        if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableFieldValue})")
+                    }
+                    //handle additional properties for array
+                    handleAdditionalFieldValues(stringKey, actualValue)?.forEach {
+                        if (printSuitable(it.second) && it.first != "\'id\'")
+                            lines.add(".body(\"${it.first}\", ${it.second})")
                     }
                 }
 
@@ -1214,15 +1210,7 @@ class TestCaseWriter {
                 lines.add("${bodyLines.last()})")
             }
         }
-
-
     }
-
-
-
-
-
-
 
     private fun handleHeaders(call: RestCallAction, lines: Lines) {
 
@@ -1350,11 +1338,13 @@ class TestCaseWriter {
      * For example, .body("page.size", numberMatches(20.0)) -> in the payload, access the page field, the size field,
      * and assert that the value there is 20.
      */
-    private fun flattenForAssert(k: MutableList<*>, v: Any): Map<MutableList<*>, Any> {
-        val returnMap = mutableMapOf<MutableList<*>, Any>()
+    private fun flattenForAssert(k: MutableList<*>, v: Any): Map<MutableList<*>, Any?> {
+        val returnMap = mutableMapOf<MutableList<*>, Any?>()
         if (v is Map<*, *>) {
             v.forEach { key, value ->
                 if (value == null) {
+                    //Man: we might also add key with null here
+                    returnMap.putIfAbsent(k.plus(key) as MutableList<*>, null)
                     return@forEach
                 } else {
                     val innerkey = k.plus(key) as MutableList
