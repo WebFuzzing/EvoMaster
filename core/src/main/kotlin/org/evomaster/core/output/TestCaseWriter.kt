@@ -147,7 +147,7 @@ class TestCaseWriter {
                 if (ind.individual is GraphQLIndividual) {
                     //TODO refactor
                     if (ind.individual.dbInitialization.isNotEmpty()) {
-                        SqlWriter.handleDbInitialization(format, ind.individual.dbInitialization, lines)
+                        SqlWriter.handleDbInitialization(format, ind.individual.seeInitializingActions(), lines)
                     }
                 }
             }
@@ -671,8 +671,15 @@ class TestCaseWriter {
                 //format.isJavaScript() -> lines.add(".expect($code)")
             }
 
+            var commented = false
             if (code == 500) {
+                commented = true
                 lines.append(" // " + res.getLastStatementWhen500())
+            }
+
+            //TODO Man: shall we add lastStatement with errors here?
+            if (res.getLastStatementWhenGQLErrors()!=null){
+                lines.append("${if (!commented) "//" else ","} errors:${res.getLastStatementWhenGQLErrors()}")
             }
 
             if (configuration.enableBasicAssertions) {

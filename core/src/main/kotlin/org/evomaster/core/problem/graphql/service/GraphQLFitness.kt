@@ -1,5 +1,8 @@
 package org.evomaster.core.problem.graphql.service
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
@@ -11,8 +14,6 @@ import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
@@ -24,7 +25,6 @@ import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.RuntimeException
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -36,6 +36,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GraphQLFitness::class.java)
+        private val mapper: ObjectMapper = ObjectMapper()
     }
 
     override fun doCalculateCoverage(individual: GraphQLIndividual, targets: Set<Int>): EvaluatedIndividual<GraphQLIndividual>? {
@@ -43,8 +44,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val cookies = getCookies(individual)
 
-        //TODO
-        //doInitializingActions(individual)
+        doInitializingActions(individual)
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -105,7 +105,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         (0 until actionResults.size)
                 .filter { actions[it] is GraphQLAction }
-                .filter { actionResults[it] is RestCallResult }
+                .filter { actionResults[it] is GraphQlCallResult }
                 .forEach {
                     val result = actionResults[it] as GraphQlCallResult
                     val status = result.getStatusCode() ?: -1
@@ -124,16 +124,56 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                           but, unfortunately, currently there is no way to distinguish between user and server errors
                           https://github.com/graphql/graphql-spec/issues/698
                      */
-                    handleGraphQLErrors(fv, name, it, result)
+                    handleGraphQLErrors(fv, name, it, result, additionalInfoList)
 
 
                     //handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
                 }
     }
 
-    private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult) {
+    /**
+     *  handle targets with whether there exist errors in a gql action
+     */
+    private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult, additionalInfoList: List<AdditionalInfoDto>) {
+        val errorId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodName(name))
+        val okId = idMapper.handleLocalTarget("GQL_NO_ERRORS:$name")
 
-        //TODO
+        val anyError = hasErrors(result)
+
+        if (anyError){
+            fv.updateTarget(errorId, 1.0, actionIndex)
+            fv.updateTarget(okId, 0.5, actionIndex)
+
+
+            // handle with last statement
+            val last = additionalInfoList[actionIndex].lastExecutedStatement?: DEFAULT_FAULT_CODE
+            result.setLastStatementWhenGQLErrors(last)
+
+            // shall we add additional target with last?
+            val errorlineId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodNameAndLine(line = last, method = name))
+            fv.updateTarget(errorlineId, 1.0, actionIndex)
+
+        }else{
+            fv.updateTarget(okId, 1.0, actionIndex)
+            fv.updateTarget(errorId, 0.5, actionIndex)
+        }
+
+
+    }
+
+    private fun hasErrors(result: GraphQlCallResult) : Boolean{
+
+        val errors = extractBodyInGraphQlResponse(result)?.findPath("errors")?:return false
+
+        return !errors.isEmpty || !errors.isMissingNode
+    }
+
+    private fun extractBodyInGraphQlResponse(result: GraphQlCallResult) : JsonNode? {
+        return try {
+            result.getBody()?.run { mapper.readTree(result.getBody()) }
+        }catch (e: JsonProcessingException){
+            null
+        }
     }
 
     private fun handleAdditionalStatusTargetDescription(fv: FitnessValue, status: Int, name: String, indexOfAction: Int, location5xx: String?) {
@@ -388,16 +428,26 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             val printableInputGenes = getPrintableInputGenes(printableInputGene)
 
+            /*
+                Need a check with Asma
+                for mutation which does not have any param, there is no need for ()
+                e.g., createX:X!
+                      mutation{
+                        createX{
+                            ...
+                        }
+                      }
+             */
+            val inputParams = if (printableInputGene.isEmpty()) "" else "($printableInputGenes)"
             bodyEntity = if (returnGene == null) {//primitive type
                 Entity.json("""
-                {"query" : " mutation{ ${a.methodName}  ($printableInputGenes)         } ","variables":null}
+                {"query" : " mutation{ ${a.methodName}  $inputParams         } ","variables":null}
             """.trimIndent())
 
             } else {
                 val mutation = getMutation(returnGene, a)
-
                 Entity.json("""
-                { "query" : "mutation{    ${a.methodName}  ($printableInputGenes)    $mutation    }","variables":null}
+                { "query" : "mutation{    ${a.methodName}  $inputParams    $mutation    }","variables":null}
             """.trimIndent())
 
             }

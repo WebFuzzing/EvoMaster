@@ -1,0 +1,6 @@
+# A GraphQL API to check a type of numeric
+type Query {
+    # Get whether x is integer
+    isInt(x: String!): Boolean
+}
+
