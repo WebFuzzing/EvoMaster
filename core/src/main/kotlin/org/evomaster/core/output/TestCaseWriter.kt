@@ -675,6 +675,10 @@ class TestCaseWriter {
         }
     }
 
+    /**
+     * handle field which is array<Map> with additional assertions, e.g., size
+     * @return a list of key of the field and value of the field to be asserted
+     */
     private fun handleAdditionalFieldValues(stringKey: String, resContentsItem: Any?): List<Pair<String, String>>?{
         resContentsItem?: return null
         val list = mutableListOf<Pair<String, String>>()
