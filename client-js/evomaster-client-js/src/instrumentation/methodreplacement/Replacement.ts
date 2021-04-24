@@ -9,7 +9,7 @@ export default class Replacement{
         const r = ReplacementList.getReplacement(targetFunction);
 
         if(r){
-            return r.replacement.call(idTemplate, caller, ...inputs);
+            return r.replacement.call(null, idTemplate, caller, ...inputs);
         } else {
             return targetFunction.call(caller, ...inputs);
         }
