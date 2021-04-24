@@ -63,7 +63,7 @@ class DbActionGeneBuilder {
                 /**
                  * INT4/INTEGER(10) is a int/Integer field
                  */
-                ColumnDataType.INT4, ColumnDataType.INTEGER ->
+                ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL ->
                     handleIntegerColumn(column)
 
                 /**

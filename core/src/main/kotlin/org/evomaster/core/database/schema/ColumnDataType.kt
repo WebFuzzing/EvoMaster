@@ -116,7 +116,9 @@ enum class ColumnDataType(dataTypeName: String) {
      * The data types serial and bigserial are not true types, but merely a notational convenience for creating unique
      * identifier columns (similar to the AUTO_INCREMENT property supported by some other databases).
      */
-    BIGSERIAL("BIGSERIAL");
+    BIGSERIAL("BIGSERIAL"),
+
+    SERIAL("SERIAL");
 
 
     fun shouldBePrintedInQuotes(): Boolean {
