@@ -38,7 +38,7 @@ class DbDirectIntEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GQL_DirectIntEM_$strategy",
             "org.foo.graphql.DirectIntEM_$strategy",
-            7000
+            10000
         ) { args: MutableList<String> ->
 
             args.add("--problemType")
