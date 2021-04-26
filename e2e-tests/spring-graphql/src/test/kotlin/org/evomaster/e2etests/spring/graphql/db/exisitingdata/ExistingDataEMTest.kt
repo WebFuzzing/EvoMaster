@@ -41,7 +41,7 @@ class ExistingDataEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, "getY", GQMethodType.QUERY, 200, Arrays.asList(
+            assertHasAtLeastOne(solution, "getY", GQMethodType.QUERY, 200, listOf(
                 "\"x\":{\"id\":\"42\",\"name\":\"Foo\"}",
                 "\"x\":{\"name\":\"Foo\"}",
                 "\"x\":{\"id\":\"42\"}"

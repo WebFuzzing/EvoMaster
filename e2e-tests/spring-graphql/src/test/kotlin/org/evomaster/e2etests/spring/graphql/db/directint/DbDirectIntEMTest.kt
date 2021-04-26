@@ -59,8 +59,11 @@ class DbDirectIntEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, "addDbDirectInt", GQMethodType.MUTATION, 200, "\"x\":42,\"y\":77")
-            assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, Arrays.asList("\"x\":42,\"y\":77"), false)
+
+            val nonEmptyReturn = listOf("\"x\":42","\"y\":77", "\"id\":")
+
+            assertHasAtLeastOne(solution, "addDbDirectInt", GQMethodType.MUTATION, 200, nonEmptyReturn, false)
+            assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, nonEmptyReturn, false)
             assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"get\":[]")
             assertNoneWithErrors(solution)
         }
