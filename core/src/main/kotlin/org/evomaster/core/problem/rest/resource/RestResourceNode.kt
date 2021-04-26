@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.resource
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestAction
@@ -136,7 +137,7 @@ class RestResourceNode(
      */
     fun getMutableSQLGenes(dbactions: MutableList<DbAction>, template: String) : List<out Gene>{
 
-        val related = getMissingParams(template).map {
+        val related = getMissingParams(template, true).map {
             resourceToTable.paramToTable[it.key]
         }
 
@@ -150,17 +151,19 @@ class RestResourceNode(
      * @return mutable genes in [actions] which perform action on current [this] resource node
      *          with [callsTemplate] template, e.g., POST-GET
      */
-    fun getMutableRestGenes(actions: List<RestAction>, template: String) : List<out Gene>{
+    private fun getMutableRestGenes(actions: List<RestAction>, template: String) : List<out Gene>{
 
         if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestAction::seeGenes).filter(Gene::isMutable)
 
-        val missing = getMissingParams(template)
+        val missing = getMissingParams(template, false)
         val params = mutableListOf<Param>()
         (actions.indices).forEach { i ->
             val a = actions[i]
             if (a is RestCallAction){
-                if (i != actions.size-1 && (i == 0 || a.verb == HttpVerb.POST)) params.addAll(a.parameters)
-                else{
+                if (i != actions.size-1 && (i == 0 || a.verb == HttpVerb.POST)) {
+                    params.addAll(a.parameters)
+                } else{
+                    //add the parameters which does not bind with POST if exist
                     params.addAll(a.parameters.filter { p->
                         missing.none { m->
                             m.key == getParamId(a.parameters, p)
@@ -173,8 +176,6 @@ class RestResourceNode(
         }
         return params.flatMap(Param::seeGenes).filter(Gene::isMutable)
     }
-
-
 
     private fun initVerbs(){
         actions.forEach { a->
@@ -579,8 +580,7 @@ class RestResourceNode(
             throw IllegalArgumentException("Cannot choose from an empty collection")
         }
 
-        val max = actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }.max()!!
-        val candidates = actions.filter { a -> a is RestCallAction && a.path.levels() == max }
+        val candidates = ParamUtil.selectLongestPathAction(actions)
 
         if(randomness == null){
             return candidates.first() as RestCallAction
@@ -876,12 +876,19 @@ class RestResourceNode(
         return paramInfo
     }
 
-    fun getMissingParams(actionTemplate: String) : List<ParamInfo>{
+    /**
+     * @return params in a [RestResourceCalls] that are not bounded with POST actions if there exist based on the template [actionTemplate]
+     *
+     */
+    fun getMissingParams(actionTemplate: String, withSql : Boolean) : List<ParamInfo>{
         val actions = RestResourceTemplateHandler.parseTemplate(actionTemplate)
-        assert(actions.isNotEmpty())
+        Lazy.assert {
+            actions.isNotEmpty()
+        }
 
         when(actions[0]){
             HttpVerb.POST->{
+                if (withSql) return paramsInfo.values.toList()
                 return paramsInfo.values.filter { it.missing }
             }
             HttpVerb.PATCH, HttpVerb.PUT->{

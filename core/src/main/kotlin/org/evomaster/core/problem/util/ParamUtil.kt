@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.util
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
@@ -51,7 +52,7 @@ class ParamUtil {
             forceBindParamBasedOnDB: Boolean = false,
             dbRemovedDueToRepair : Boolean) {
 
-            assert(call.actions.isNotEmpty())
+            Lazy.assert { call.actions.isNotEmpty() }
 
             for (a in call.actions) {
                 if (a is RestCallAction) {
@@ -64,7 +65,7 @@ class ParamUtil {
                             val dbAction = dbActions.find { it.table.name.equals(pToGene.tableName, ignoreCase = true) }
                             //there might due to a repair for dbactions
                             if (dbAction == null && !dbRemovedDueToRepair)
-                                ResourceDepManageService.log.warn("cannot find ${pToGene.tableName} in db actions ${
+                                log.warn("cannot find ${pToGene.tableName} in db actions ${
                                     dbActions.joinToString(
                                         ";"
                                     ) { it.table.name }
@@ -93,6 +94,11 @@ class ParamUtil {
                     }
                 }
             }
+        }
+
+        fun selectLongestPathAction(actions : List<RestAction>) : List<RestAction>{
+            val max = actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }.max()!!
+            return actions.filter { a -> a is RestCallAction && a.path.levels() == max }
         }
 
         fun appendParam(paramsText : String, paramToAppend: String) : String = if(paramsText.isBlank()) paramToAppend else "$paramsText$separator$paramToAppend"

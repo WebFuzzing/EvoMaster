@@ -543,11 +543,15 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *  this is to handle unclassified, eg, a gene might be empty gson or a gene constrained with some class
      */
     fun addGeneImpact(individual: Individual, gene: Gene) : GeneImpact?{
-        val action = individual.seeActions().find {
+        val actions = if (individual is RestIndividual)  individual.seeActions(Individual.ActionFilter.NO_INIT) else individual.seeActions()
+
+        val action = actions.find {
             it.seeGenes().contains(gene)
         }
         if (action == null && !individual.seeGenes().contains(gene)) return null
-        val index = individual.seeActions().indexOf(action)
+
+        val index = actions.indexOf(action)
+
         val geneId = ImpactUtils.generateGeneId(individual, gene)
         val impact = ImpactUtils.createGeneImpact(gene,geneId)
         impactInfo?.addOrUpdateActionGeneImpacts(
@@ -555,7 +559,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 actionIndex = index,
                 newAction = false,
                 impacts = mutableMapOf(geneId to ImpactUtils.createGeneImpact(gene,geneId))
-
         )
         return impact
     }

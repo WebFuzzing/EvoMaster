@@ -22,10 +22,12 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     @Inject
     private lateinit var dm : ResourceDepManageService
 
-    override fun postActionAfterMutation(mutatedIndividual: RestIndividual) {
-        super.postActionAfterMutation(mutatedIndividual)
-        mutatedIndividual.getResourceCalls().forEach { rm.repairRestResourceCalls(it) }
+    override fun postActionAfterMutation(mutatedIndividual: RestIndividual, mutated: MutatedGeneSpecification?) {
+        //repair genes within a call
+        mutatedIndividual.getResourceCalls().forEach { it.repairGenesAfterMutation(mutated, rm.getResourceCluster())}
+        // repair db among dbactions
         mutatedIndividual.repairDBActions(rm.getSqlBuilder(), randomness)
+        super.postActionAfterMutation(mutatedIndividual, null)
     }
 
     override fun doesStructureMutation(individual : RestIndividual): Boolean {
@@ -39,7 +41,8 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     override fun genesToMutation(individual: RestIndividual, evi: EvaluatedIndividual<RestIndividual>, targets: Set<Int>): List<Gene> {
         val restGenes = individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(
             GeneFilter.NO_SQL
-        ) }
+        ) }.filter(Gene::isMutable)
+
         if (!config.generateSqlDataWithSearch)
             return restGenes
 

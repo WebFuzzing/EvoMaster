@@ -240,6 +240,9 @@ class ResourceDepManageService {
 
     /************************  derive dependency using parser ***********************************/
 
+    /**
+     * init dependencies between [resourceCluster] and [tables]
+     */
     fun initDependencyBasedOnDerivedTables(resourceCluster: List<RestResourceNode>, tables: Map<String, Table>) {
         tables.keys.forEach { table ->
             val mutualResources = resourceCluster.filter { r -> r.getDerivedTables().any { e -> e.equals(table, ignoreCase = true) } }.map { it.getName() }.toList()
@@ -963,7 +966,7 @@ class ResourceDepManageService {
      * @return a list of db actions of [ind] which are possibly not related to rest actions of [ind]
      */
     fun unRelatedSQL(ind: RestIndividual) : List<DbAction>{
-        val allrelated = getAllRelatedTables(ind)
+        val allrelated = getAllRelatedTables(ind, true)
         return ind.dbInitialization.filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
@@ -976,7 +979,7 @@ class ResourceDepManageService {
      * tracking of SQL execution.
      */
     fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 1.0) : List<List<DbAction>>{
-        val allrelated = getAllRelatedTables(ind)
+        val allrelated = getAllRelatedTables(ind, true)
 
         val other = if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
             val notincluded = allrelated.filterNot {
@@ -1055,7 +1058,7 @@ class ResourceDepManageService {
 
         val added = mutableListOf<DbAction>()
 
-        val relatedTables = getAllRelatedTables(ind)
+        val relatedTables = getAllRelatedTables(ind, true)
 
         rm.sortTableBasedOnFK(relatedTables).forEach { t->
             val num = randomness.nextInt(1, maxPerResource) - added.filter { it.table.name.equals(t.name, ignoreCase = true) }.size
@@ -1072,9 +1075,9 @@ class ResourceDepManageService {
         ind.dbInitialization.addAll(added)
     }
 
-    private fun getAllRelatedTables(ind: RestIndividual) : Set<String>{
+    private fun getAllRelatedTables(ind: RestIndividual, withSql: Boolean) : Set<String>{
         return ind.getResourceCalls().flatMap { c->
-            extractRelatedTablesForCall(c).values.flatMap { it.map { g->g.tableName } }.toSet()
+            extractRelatedTablesForCall(c, withSql = withSql).values.flatMap { it.map { g->g.tableName } }.toSet()
         }.toSet()
     }
 
@@ -1098,7 +1101,7 @@ class ResourceDepManageService {
 
 
     /**
-     * init related tables for all resources
+     * init related tables for all [RestResourceNode] in [resourceCluster] based on [tables]
      */
     fun initRelatedTables(resourceCluster: MutableList<RestResourceNode>, tables: Map<String, Table>) {
         resourceCluster.forEach {
@@ -1110,9 +1113,10 @@ class ResourceDepManageService {
      * if [dbActions] is not empty, return related table from tables in [dbActions]
      * if [dbActions] is empty, return all derived related table
      */
-    fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf()) = SimpleDeriveResourceBinding.generateRelatedTables(call, dbActions)
-
-
+    fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf(), withSql : Boolean): MutableMap<RestAction, MutableList<ParamGeneBindMap>> {
+        val paramsInfo = call.getResourceNode().getMissingParams(call.template!!.template, withSql)
+        return SimpleDeriveResourceBinding.generateRelatedTables(paramsInfo, call, dbActions)
+    }
 
     private fun bindCallWithOtherDBAction(call: RestResourceCalls, dbActions: MutableList<DbAction>) {
         val dbRelatedToTables = dbActions.map { it.table.name }.toMutableList()
@@ -1142,7 +1146,7 @@ class ResourceDepManageService {
         }
 
         val dbActions = dbActions.plus(call.dbActions).toMutableList()
-        SimpleDeriveResourceBinding.generateRelatedTables(call, dbActions).let {
+        extractRelatedTablesForCall(call, dbActions, true).let {
             ParamUtil.bindCallWithDBAction(call, dbActions, it, forceBindParamBasedOnDB = true, resourceCluster = rm.getResourceCluster(), dbRemovedDueToRepair = remove)
         }
     }
@@ -1225,7 +1229,7 @@ class ResourceDepManageService {
 
     fun canMutateResource(ind: RestIndividual) : Boolean{
         return ind.getResourceCalls().size > 1 ||
-                getAllRelatedTables(ind).isNotEmpty() ||
+                getAllRelatedTables(ind, withSql = true).isNotEmpty() ||
                 (
                 rm.getResourceCluster().values.filter { r->
                     !r.isIndependent() && ind.getResourceCalls().any { i->

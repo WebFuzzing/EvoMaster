@@ -179,10 +179,18 @@ class ResourceManageService {
      * @param resourceKey a key refers to an resource node
      * @param doesCreateResource whether to prepare an resource for the call
      * @param calls existing calls
-     * @param forceInsert force to use insertion to prepare the resource, otherwise prior to use POST
+     * @param forceSQLInsert force to use insertion to prepare the resource, otherwise prior to use POST
      * @param bindWith the sampled resource call requires to bind values according to [bindWith]
+     * @param template is to specify a template to be employed for sampling a call which is nullable
      */
-    fun sampleCall(resourceKey: String, doesCreateResource: Boolean, calls : MutableList<RestResourceCalls>, size : Int, forceInsert: Boolean = false, bindWith : MutableList<RestResourceCalls>? = null){
+    fun sampleCall(resourceKey: String,
+                   doesCreateResource: Boolean,
+                   calls : MutableList<RestResourceCalls>,
+                   size : Int,
+                   forceSQLInsert: Boolean = false,
+                   bindWith : MutableList<RestResourceCalls>? = null,
+                   template: String? = null
+    ){
         val ar = resourceCluster[resourceKey]
                 ?: throw IllegalArgumentException("resource path $resourceKey does not exist!")
 
@@ -196,23 +204,31 @@ class ResourceManageService {
             return
         }
 
-        var candidateForInsertion : String? = null
+        var employSQL = hasDBHandler() && ar.getDerivedTables().isNotEmpty()
+                && (forceSQLInsert || randomness.nextBoolean(config.probOfApplySQLActionToCreateResources))
 
-        if(hasDBHandler() && ar.getDerivedTables().isNotEmpty() && (if(forceInsert) forceInsert else randomness.nextBoolean(config.probOfApplySQLActionToCreateResources))){
-            //Insert - GET/PUT/PATCH
-            val candidates = ar.getTemplates().filter { setOf("GET", "PUT", "PATCH").contains(it.value.template) && it.value.independent}
-            candidateForInsertion = if(candidates.isNotEmpty()) randomness.choose(candidates.keys) else null
+        var candidate = template
+
+        if (candidate == null){
+            var candidateForInsertion : String? = null
+            if(employSQL){
+                //Insert - GET/PUT/PATCH
+                val candidates = ar.getTemplates().filter { it.value.isSingleAction() }//ar.getTemplates().filter { setOf("GET", "PUT", "PATCH").contains(it.value.template) && it.value.independent}
+                candidateForInsertion = if(candidates.isNotEmpty()) randomness.choose(candidates.keys) else null
+                employSQL = candidateForInsertion != null
+            }
+
+            candidate = if(candidateForInsertion.isNullOrBlank()) {
+                //prior to select the template with POST
+                ar.getTemplates().filter { !it.value.independent }.run {
+                    if(isNotEmpty())
+                        randomness.choose(this.keys)
+                    else
+                        randomness.choose(ar.getTemplates().keys)
+                }
+            } else candidateForInsertion
         }
 
-        val candidate = if(candidateForInsertion.isNullOrBlank()) {
-            //prior to select the template with POST
-            ar.getTemplates().filter { !it.value.independent }.run {
-                if(isNotEmpty())
-                    randomness.choose(this.keys)
-                else
-                    randomness.choose(ar.getTemplates().keys)
-            }
-        } else candidateForInsertion
 
         val call = ar.genCalls(candidate, randomness, size,true, true)
         calls.add(call)
@@ -220,16 +236,16 @@ class ResourceManageService {
         if(hasDBHandler() && config.probOfApplySQLActionToCreateResources > 0){
             if(call.status != ResourceStatus.CREATED_REST
                     || dm.checkIfDeriveTable(call)
-                    || candidateForInsertion != null
+                    || employSQL
             ){
-
                 /*
                     derive possible db, and bind value according to db
                 */
-                val created = handleDbActionForCall( call, forceInsert, false)
+                val created = handleDbActionForCall( call, forceSQLInsert, false)
                 if(!created){
-                    //shall we only print the error msg only once?
                     LoggingUtil.uniqueWarn(log, "resource creation for $resourceKey fails")
+                }else{
+                    call.status = ResourceStatus.CREATED_SQL
                 }
             }
         }
@@ -311,7 +327,7 @@ class ResourceManageService {
 
     private fun handleDbActionForCall(call: RestResourceCalls, forceInsert: Boolean, forceSelect: Boolean) : Boolean{
 
-        val paramToTables = dm.extractRelatedTablesForCall(call)
+        val paramToTables = dm.extractRelatedTablesForCall(call, withSql = true)
         if(paramToTables.isEmpty()) return false
 
         //val relatedTables = removeDuplicatedTables(paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet())
@@ -370,24 +386,24 @@ class ResourceManageService {
      *  Since standard mutation does not change structure of a test, the involved tables
      *  should be same with previous.
      */
-    fun repairRestResourceCalls(call: RestResourceCalls) {
-        call.repairGenesAfterMutation()
-
-        if(hasDBHandler() && call.dbActions.isNotEmpty()){
-
-            val previous = call.dbActions.map { it.table.name }
-            call.dbActions.clear()
-            //handleCallWithDBAction(referResource, call, true, false)
-            handleDbActionForCall(call, forceInsert = true, forceSelect = false)
-
-            if(call.dbActions.size != previous.size){
-                //remove additions
-                call.dbActions.removeIf {
-                    !previous.contains(it.table.name)
-                }
-            }
-        }
-    }
+//    fun repairRestResourceCalls(call: RestResourceCalls) {
+//        call.repairGenesAfterMutation(resourceCluster)
+//
+//        if(hasDBHandler() && call.dbActions.isNotEmpty()){
+//
+//            val previous = call.dbActions.map { it.table.name }
+//            call.dbActions.clear()
+//            //handleCallWithDBAction(referResource, call, true, false)
+//            handleDbActionForCall(call, forceInsert = true, forceSelect = false)
+//
+//            if(call.dbActions.size != previous.size){
+//                //remove additions
+//                call.dbActions.removeIf {
+//                    !previous.contains(it.table.name)
+//                }
+//            }
+//        }
+//    }
     /*********************************** database ***********************************/
 
     private fun selectToDataRowDto(dbAction : DbAction, tableName : String) : DataRowDto{
@@ -396,7 +412,7 @@ class ResourceManageService {
         return randomness.choose(getDataInDb(tableName)!!.filter { it.columnData.toSet().equals(set) })
     }
 
-    private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null && (config.probOfApplySQLActionToCreateResources > 0.0)
+    private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null
 
     private fun snapshotDB(){
         if(hasDBHandler()){

@@ -163,13 +163,13 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         //  mutate the individual
         val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)
 
-        postActionAfterMutation(mutatedIndividual)
+        postActionAfterMutation(mutatedIndividual, mutatedGenes)
 
         if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
         return mutatedIndividual
     }
 
-    override fun postActionAfterMutation(mutatedIndividual: T) {
+    override fun postActionAfterMutation(mutatedIndividual: T, mutated: MutatedGeneSpecification?) {
 
         Lazy.assert {
             DbActionUtils.verifyForeignKeys(

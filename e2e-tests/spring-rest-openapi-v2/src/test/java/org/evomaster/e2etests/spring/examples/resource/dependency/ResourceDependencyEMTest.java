@@ -1,30 +1,27 @@
-package org.evomaster.e2etests.spring.examples.resource;
+package org.evomaster.e2etests.spring.examples.resource.dependency;
 
-import com.foo.rest.examples.spring.resource.ResourceRestController;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
-import org.evomaster.e2etests.spring.examples.SpringTestBase;
-import org.junit.jupiter.api.BeforeAll;
+import org.evomaster.e2etests.spring.examples.resource.ResourceTestBase;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * created by manzh on 2019-08-12
  */
-public class ResourceDependencyDBEMTest extends ResourceTestBase {
+public class ResourceDependencyEMTest extends ResourceTestBase {
 
     @Test
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "ResourceEM",
-                "org.db.resource.ResourceEM",
+                "org.resource.ResourceEM",
                 1_000,
                 true,
                 (args) -> {
@@ -46,9 +43,9 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
 
                     //disable SQL
                     args.add("--heuristicsForSQL");
-                    args.add("true");
+                    args.add("false");
                     args.add("--generateSqlDataWithSearch");
-                    args.add("true");
+                    args.add("false");
                     args.add("--extractSqlExecutionInfo");
                     args.add("true");
 
@@ -76,9 +73,6 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     args.add("--structureMutationProbability");
                     args.add("1.0");
 
-                    args.add("--probOfApplySQLActionToCreateResources");
-                    args.add("0.8");
-
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
@@ -92,7 +86,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     assertTrue(anyDBExecution);
 
                     boolean ok = solution.getIndividuals().stream().anyMatch(
-                            s -> hasAtLeastOneSequence(s, new HttpVerb[]{HttpVerb.POST}, new int[]{201}, new String[]{"/api/rpR"}) ||
+                            s -> hasAtLeastOneSequence(s, new HttpVerb[]{HttpVerb.POST, HttpVerb.POST}, new int[]{201, 201}, new String[]{"/api/rd","/api/rpR"}) ||
                                     hasAtLeastOneSequence(s, new HttpVerb[]{HttpVerb.GET, HttpVerb.POST}, new int[]{200, 201}, new String[]{"/api/rd/{rdId}","/api/rpR"})
 
                     );
@@ -100,10 +94,4 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     assertTrue(ok);
                 }, 3);
     }
-
-    @BeforeAll
-    public static void initClass() throws Exception {
-        SpringTestBase.initClass(new ResourceRestController(Arrays.asList("/api/rd")));
-    }
-
 }
