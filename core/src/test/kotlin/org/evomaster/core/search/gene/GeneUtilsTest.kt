@@ -1,8 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.database.DbActionGeneBuilder
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.*
 
@@ -206,7 +205,7 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSectionOptionalObject() {
 
-        val objOpt = ObjectGene("foo",  listOf( OptionalGene("Opti", StringGene("Opti", "hello"))))
+        val objOpt = ObjectGene("foo", listOf(OptionalGene("Opti", StringGene("Opti", "hello"))))
         val selection = GeneUtils.getBooleanSelection(objOpt)
 
         val a = selection.fields.find { it.name == "Opti" } as BooleanGene
@@ -234,4 +233,15 @@ internal class GeneUtilsTest {
 
         assertEquals("{a}", rep)
     }
+
+    @Test
+    fun testRepaireBooleanSectionFF() {
+
+        val objBoolean = ObjectGene("foo", listOf(BooleanGene("a", false), (BooleanGene("b", false))))
+
+        GeneUtils.repairBooleanSelection(objBoolean)
+
+        assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
+    }
+
 }
