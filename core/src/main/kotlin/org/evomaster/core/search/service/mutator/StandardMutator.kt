@@ -6,6 +6,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -199,13 +200,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             In GraphQL, each boolean selection in Objects MUST have at least one filed selected
          */
         if(mutatedIndividual is GraphQLIndividual) {
-            mutatedIndividual.seeActions().forEach { a ->
-                a.parameters.filterIsInstance<GQReturnParam>().forEach { p ->
-                    if(p.gene is ObjectGene){
-                        GeneUtils.repairBooleanSelection(p.gene)
-                    }
-                }
-            }
+            GraphQLUtils.repairIndividual(mutatedIndividual)
         }
     }
 
