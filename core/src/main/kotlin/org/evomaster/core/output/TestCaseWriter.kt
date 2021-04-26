@@ -1386,8 +1386,12 @@ class TestCaseWriter {
                 val i = gene.getValueAsRawString()
                 printableInputGene.add("${gene.name} : $i")
             } else {
-                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                printableInputGene.add("${gene.name} : $i")
+                if(gene is ObjectGene){
+                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                    printableInputGene.add(" $i")}else {
+                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                    printableInputGene.add("${gene.name} : $i")
+                }
             }
         }
         return printableInputGene
