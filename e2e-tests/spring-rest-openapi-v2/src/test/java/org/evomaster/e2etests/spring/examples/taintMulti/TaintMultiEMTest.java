@@ -43,9 +43,6 @@ public class TaintMultiEMTest extends SpringTestBase {
                 "org.bar.TaintMultiEM",
                 10_000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
 

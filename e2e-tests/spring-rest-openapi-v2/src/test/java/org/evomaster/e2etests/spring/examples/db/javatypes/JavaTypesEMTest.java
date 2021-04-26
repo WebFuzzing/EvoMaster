@@ -19,9 +19,6 @@ public class JavaTypesEMTest extends JavaTypesTestBase {
                 "org.bar.db.JavaTypesEM",
                 3_000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
                     args.add("--heuristicsForSQL");
                     args.add("true");
                     args.add("--generateSqlDataWithSearch");

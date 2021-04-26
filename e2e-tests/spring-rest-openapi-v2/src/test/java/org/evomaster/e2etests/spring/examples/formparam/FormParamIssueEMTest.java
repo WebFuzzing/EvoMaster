@@ -27,8 +27,6 @@ public class FormParamIssueEMTest extends SpringTestBase {
                 "org.FormParamIssueEM",
                 100,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/formparam", "OK");

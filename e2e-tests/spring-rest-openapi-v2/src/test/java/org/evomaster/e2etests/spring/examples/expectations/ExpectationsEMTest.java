@@ -27,13 +27,6 @@ public class ExpectationsEMTest extends SpringTestBase {
                 "org.bar.ExpectationsEM",
                 10_000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
-                    args.add("--expectationsActive");
-                    args.add("TRUE");
-
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

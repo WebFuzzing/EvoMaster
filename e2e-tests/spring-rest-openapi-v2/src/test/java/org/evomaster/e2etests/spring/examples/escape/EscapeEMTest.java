@@ -17,8 +17,6 @@ public class EscapeEMTest extends EscapeTestBase {
                 "org.bar.EscapeEM",
                 10_000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

@@ -30,9 +30,6 @@ public class TaintIgnoreCaseEMTest extends SpringTestBase {
                 "org.bar.TaintIgnoreCaseEM",
                 5000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
 

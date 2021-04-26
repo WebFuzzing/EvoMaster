@@ -35,8 +35,6 @@ public class BranchesEMTest extends SpringTestBase {
                 "org.foo.BranchesEM",
                 5000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

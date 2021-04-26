@@ -27,8 +27,6 @@ public class PCEMTest extends SpringTestBase {
                 "org.bar.PcEM",
                 1_000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

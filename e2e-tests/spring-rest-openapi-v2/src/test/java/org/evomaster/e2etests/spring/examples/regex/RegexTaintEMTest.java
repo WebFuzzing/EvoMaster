@@ -31,9 +31,6 @@ public class RegexTaintEMTest extends SpringTestBase {
                 500,
                 (args) -> {
 
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
 

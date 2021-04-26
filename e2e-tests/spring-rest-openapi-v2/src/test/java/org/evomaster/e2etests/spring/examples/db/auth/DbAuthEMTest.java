@@ -19,8 +19,6 @@ public class DbAuthEMTest extends DbAuthTestBase {
                 "org.bar.db.AuthEM",
                 500,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
                     args.add("--heuristicsForSQL");
                     args.add("true");
                     args.add("--generateSqlDataWithSearch");

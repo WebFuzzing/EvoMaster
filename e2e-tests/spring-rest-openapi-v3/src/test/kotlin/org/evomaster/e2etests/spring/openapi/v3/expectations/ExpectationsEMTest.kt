@@ -40,12 +40,6 @@ class ExpectationsEMTest : SpringTestBase() {
                 "org.foo.ExpectationsEM",
                 100
         ){args: MutableList<String> ->
-            args.add("--testSuiteSplitType")
-            args.add("NONE")
-
-            args.add("--expectationsActive")
-            args.add("" + true)
-
 
             val solution = initAndRun(args)
 

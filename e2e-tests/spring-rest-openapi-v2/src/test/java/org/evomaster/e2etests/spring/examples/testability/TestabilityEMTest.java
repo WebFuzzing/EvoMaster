@@ -36,9 +36,6 @@ public class TestabilityEMTest extends SpringTestBase {
                 15_000,
                 true,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
 

@@ -27,9 +27,6 @@ public class FormLoginEMTest extends SpringTestBase {
                 100,
                 (args) -> {
 
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

@@ -266,16 +266,15 @@ class SchemaOracle : ImplementedOracle() {
                         when(cva.schema.additionalProperties) {
                             is StringSchema -> (cva.schema.additionalProperties as StringSchema).type
                             is ObjectSchema -> (cva.schema.additionalProperties as ObjectSchema).type
-                            else -> (cva.schema.additionalProperties as Schema<*>).`$ref`
+                            else -> (cva.schema.additionalProperties as Schema<*>).`$ref` ?: ""
                         }
                     }
-                    is StringSchema -> valueSchema.type
-                    is IntegerSchema -> valueSchema.format
+                    is StringSchema -> valueSchema.type ?: ""
+                    is IntegerSchema -> valueSchema.format ?: ""
                     is ObjectSchema -> ""
-                    is Schema -> valueSchema.`$ref`
-                    else -> ""
+                    else -> valueSchema.`$ref` ?: ""
                 }
-                mapResponses.put(key, rez.split("/").last())
+                mapResponses.put(key, rez!!.split("/").last())
             }
         }
 

@@ -27,9 +27,6 @@ public class FormParamEMTest extends SpringTestBase {
                 "org.FormParamEM",
                 100,
                 (args) -> {
-                    // Disable test suite splitting
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

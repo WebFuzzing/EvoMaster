@@ -72,8 +72,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                 "org.bar.db.DirectWithSqlEM",
                 2_000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
+
                     args.add("--heuristicsForSQL");
                     args.add("true");
                     args.add("--generateSqlDataWithSearch");
@@ -104,8 +103,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
                 "--heuristicsForSQL", "true",
                 "--generateSqlDataWithSearch", "true",
-                "--maxTestSize", "1",
-                "--testSuiteSplitType", "NONE"
+                "--maxTestSize", "1"
         };
 
         Injector injector = Main.init(args);

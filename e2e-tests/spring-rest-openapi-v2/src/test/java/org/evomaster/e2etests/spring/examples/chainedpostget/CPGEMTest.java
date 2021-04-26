@@ -18,8 +18,6 @@ public class CPGEMTest extends CPGTestBase {
                 "org.foo.CpgEM",
                 1000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

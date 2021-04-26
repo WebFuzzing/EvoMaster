@@ -63,10 +63,7 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
                 terminations,
                 10_000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("" + splitType);
-                    args.add("--expectationsActive");
-                    args.add("" + true);
+
                     Solution<RestIndividual> solution = initAndRun(args);
                     assertTrue(solution.getIndividuals().size() >= 1);
                     SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);

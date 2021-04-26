@@ -33,8 +33,6 @@ public class DbTreeEMTest  extends SpringTestBase  {
 //                    args.add("true");
 //                    args.add("--generateSqlDataWithSearch");
 //                    args.add("true");
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

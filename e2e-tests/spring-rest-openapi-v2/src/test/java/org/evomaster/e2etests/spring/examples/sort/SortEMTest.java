@@ -34,9 +34,6 @@ public class SortEMTest extends NRTestBase {
                 "org.bar.SortEM",
                 3_000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

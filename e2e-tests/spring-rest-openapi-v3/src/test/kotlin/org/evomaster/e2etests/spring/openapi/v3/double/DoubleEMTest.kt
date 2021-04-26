@@ -36,8 +36,6 @@ class DoubleEMTest : SpringTestBase() {
                 "org.foo.DoubleEM",
                 1_000
         ) { args: MutableList<String> ->
-            args.add("--testSuiteSplitType")
-            args.add("NONE")
 
             val solution = initAndRun(args)
 

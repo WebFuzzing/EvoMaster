@@ -43,9 +43,6 @@ public class TriangleEMTest extends SpringTestBase {
                 "org.bar.TriangleEM",
                 7_000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

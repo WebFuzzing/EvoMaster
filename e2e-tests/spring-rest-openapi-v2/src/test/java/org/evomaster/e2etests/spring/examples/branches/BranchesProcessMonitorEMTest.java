@@ -48,10 +48,6 @@ public class BranchesProcessMonitorEMTest extends SpringTestBase {
                     args.add("--processFiles");
                     args.add(outputDir);
 
-                    // Disable test suite splitting
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

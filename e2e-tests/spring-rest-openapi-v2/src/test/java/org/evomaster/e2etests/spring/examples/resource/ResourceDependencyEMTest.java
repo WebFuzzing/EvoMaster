@@ -72,10 +72,6 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     args.add("--structureMutationProbability");
                     args.add("1.0");
 
-                    // Disable test suite splitting
-                    args.add("--testSuiteSplitType");
-                    args.add("NONE");
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
