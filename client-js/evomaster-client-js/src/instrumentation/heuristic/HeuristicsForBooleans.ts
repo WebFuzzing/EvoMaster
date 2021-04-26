@@ -2,6 +2,7 @@ import Truthness from "./Truthness";
 import TruthnessUtils from "./TruthnessUtils";
 import ExecutionTracer from "../staticstate/ExecutionTracer";
 import Replacement from "../methodreplacement/Replacement";
+import ObjectiveNaming from "../ObjectiveNaming";
 
 
 export default class HeuristicsForBooleans {
@@ -331,7 +332,7 @@ export default class HeuristicsForBooleans {
 
         HeuristicsForBooleans.lastEvaluation = null;
 
-        const idTemplate = "TODO";
+        const idTemplate = ObjectiveNaming.methodReplacementObjectiveNameTemplate(fileName, line, branchId);
 
         //const res = obj[functionName](...args);
         const res = Replacement.replaceCall(idTemplate, obj,obj[functionName], ...args);

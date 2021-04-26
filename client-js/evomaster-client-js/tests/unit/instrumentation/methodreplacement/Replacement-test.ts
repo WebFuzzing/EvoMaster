@@ -25,7 +25,7 @@ test("Test string replacement", () => {
     expect(n).toBe(0);
 
 
-    const id = "ID";
+    const id = ObjectiveNaming.methodReplacementObjectiveNameTemplate("bar", 0, 1);
     const obj = "foo";
     const fun = obj.startsWith;
     const input = "f";
