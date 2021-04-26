@@ -47,6 +47,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
+        const val DEFAULT_FAULT_CODE = "framework_code"
     }
 
     @Inject(optional = true)
@@ -155,7 +156,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
         var location5xx : String? = null
         if (status == 500){
             val statement = additionalInfoList[indexOfAction].lastExecutedStatement
-            location5xx = statement ?: "framework_code"
+            location5xx = statement ?: DEFAULT_FAULT_CODE
             result.setLastStatementWhen500(location5xx)
         }
         return location5xx
