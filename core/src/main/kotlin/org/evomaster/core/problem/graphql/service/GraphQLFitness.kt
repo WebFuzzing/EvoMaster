@@ -22,6 +22,7 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -397,7 +398,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                 var printableInputGenes = getPrintableInputGenes(printableInputGene)
 
-                //primitive type
+                //primitive type in Return
                 bodyEntity = if (returnGene == null) {
                     Entity.json("""
                     {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
@@ -477,8 +478,12 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 val i = gene.getValueAsRawString()
                 printableInputGene.add("${gene.name} : $i")
             } else {
+                if(gene is ObjectGene){
                 val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                printableInputGene.add("${gene.name} : $i")
+                printableInputGene.add(" $i")}else {
+                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                    printableInputGene.add("${gene.name} : $i")
+                }
             }
         }
         return printableInputGene
