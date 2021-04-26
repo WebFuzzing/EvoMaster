@@ -161,20 +161,20 @@ class TestCaseWriter {
 
 
                 test.test.evaluatedActions().asSequence()
-                    .map { it.action }
-                    .filterIsInstance(RestCallAction::class.java)
-                    .filter { it.locationId != null }
-                    .map { it.locationId }
-                    .distinct()
-                    .forEach { id ->
-                        val name = locationVar(id!!)
-                        when {
-                            format.isJava() -> lines.add("String $name = \"\";")
-                            format.isKotlin() -> lines.add("var $name : String? = \"\"")
-                            format.isJavaScript() -> lines.add("let $name = \"\";")
-                            format.isCsharp() -> lines.add("var $name = \"\";")
+                        .map { it.action }
+                        .filterIsInstance(RestCallAction::class.java)
+                        .filter { it.locationId != null }
+                        .map { it.locationId }
+                        .distinct()
+                        .forEach { id ->
+                            val name = locationVar(id!!)
+                            when {
+                                format.isJava() -> lines.add("String $name = \"\";")
+                                format.isKotlin() -> lines.add("var $name : String? = \"\"")
+                                format.isJavaScript() -> lines.add("let $name = \"\";")
+                                format.isCsharp() -> lines.add("var $name = \"\";")
+                            }
                         }
-                    }
             }
 
             CookieWriter.handleGettingCookies(format, test.test, lines, baseUrlOfSut)
@@ -192,11 +192,12 @@ class TestCaseWriter {
                         handleEvaluatedAction(a, lines, baseUrlOfSut)
                     }
                 }
-            } else {if (test.test.individual is RestIndividual) {
-                test.test.evaluatedActions().forEach { a ->
-                    handleEvaluatedAction(a, lines, baseUrlOfSut)
+            } else {
+                if (test.test.individual is RestIndividual) {
+                    test.test.evaluatedActions().forEach { a ->
+                        handleEvaluatedAction(a, lines, baseUrlOfSut)
+                    }
                 }
-            }
             }
             if (test.test.individual is GraphQLIndividual) {
                 test.test.evaluatedActions().forEach { a ->
@@ -544,6 +545,7 @@ class TestCaseWriter {
         //todo check if correct and check the semicolon
         lines.appendSemicolon(format)
     }
+
     private fun handleVerb(baseUrlOfSut: String, call: RestCallAction, lines: Lines, hasBody: Boolean = true) {
 
         var verb = call.verb.name.toLowerCase()
@@ -584,8 +586,9 @@ class TestCaseWriter {
 
                 lines.indented {
                     (0 until elements.lastIndex).forEach { i ->
-                        lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = GeneUtils.EscapeMode.SQL, format = format)}&\" + ") }
-                        lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = GeneUtils.EscapeMode.SQL, format = format)}\"")
+                        lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = GeneUtils.EscapeMode.SQL, format = format)}&\" + ")
+                    }
+                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = GeneUtils.EscapeMode.SQL, format = format)}\"")
                 }
             }
         }
@@ -675,7 +678,7 @@ class TestCaseWriter {
             }
 
             //TODO Man: shall we add lastStatement with errors here?
-            if (res.getLastStatementWhenGQLErrors()!=null){
+            if (res.getLastStatementWhenGQLErrors() != null) {
                 lines.append("${if (!commented) "//" else ","} errors:${res.getLastStatementWhenGQLErrors()}")
             }
 
@@ -692,24 +695,24 @@ class TestCaseWriter {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
                 String::class -> return "containsString(\"${
-                    GeneUtils.applyEscapes(
+                GeneUtils.applyEscapes(
                         resContentsItem as String,
                         mode = GeneUtils.EscapeMode.ASSERTION,
                         format = format
-                    )
+                )
                 }\")"
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> if ((resContentsItem as ArrayList<*>).all { it is String }) {
                     return "hasItems(${
-                        (resContentsItem as ArrayList<String>).joinToString {
-                            "\"${
-                                GeneUtils.applyEscapes(
-                                    it,
-                                    mode = GeneUtils.EscapeMode.ASSERTION,
-                                    format = format
-                                )
-                            }\""
-                        }
+                    (resContentsItem as ArrayList<String>).joinToString {
+                        "\"${
+                        GeneUtils.applyEscapes(
+                                it,
+                                mode = GeneUtils.EscapeMode.ASSERTION,
+                                format = format
+                        )
+                        }\""
+                    }
                     })"
                 } else {
                     return NOT_COVERED_YET
@@ -729,8 +732,8 @@ class TestCaseWriter {
         map.keys.forEach {
             val printableTh = handleFieldValues(map[it])
             if (printableTh != "null"
-                && printableTh != NOT_COVERED_YET
-                && !printableTh.contains("logged")
+                    && printableTh != NOT_COVERED_YET
+                    && !printableTh.contains("logged")
             ) {
                 lines.add(".body(\"\'$it\'\", hasItem($printableTh))")
             }
@@ -757,11 +760,11 @@ class TestCaseWriter {
             if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
 
         } else lines.add(
-            ".contentType(\"${
+                ".contentType(\"${
                 res.getBodyType()
-                    .toString()
-                    .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
-            }\")"
+                        .toString()
+                        .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
+                }\")"
         )
 
         val bodyString = res.getBody()
@@ -816,13 +819,13 @@ class TestCaseWriter {
                             bodyString.isNullOrBlank() -> lines.add(".body(isEmptyOrNullString())")
 
                             else -> lines.add(
-                                ".body(containsString(\"${
+                                    ".body(containsString(\"${
                                     GeneUtils.applyEscapes(
-                                        bodyString,
-                                        mode = GeneUtils.EscapeMode.BODY,
-                                        format = format
+                                            bodyString,
+                                            mode = GeneUtils.EscapeMode.BODY,
+                                            format = format
                                     )
-                                }\"))"
+                                    }\"))"
                             )
                         }
                     }
@@ -832,9 +835,9 @@ class TestCaseWriter {
                     lines.add(".body(isEmptyOrNullString())")
                 } else {
                     lines.add(
-                        ".body(containsString(\"${
+                            ".body(containsString(\"${
                             GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
-                        }\"))"
+                            }\"))"
                     )
                 }
             }
@@ -1041,7 +1044,7 @@ class TestCaseWriter {
 
             } else if (bodyParam.isTextPlain()) {
                 val body =
-                    bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
+                        bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     if (!format.isCsharp())
                         lines.add(".$send($body)")
@@ -1067,8 +1070,8 @@ class TestCaseWriter {
 
             } else if (bodyParam.isForm()) {
                 val body = bodyParam.gene.getValueAsPrintableString(
-                    mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED,
-                    targetFormat = format
+                        mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED,
+                        targetFormat = format
                 )
                 if (!format.isCsharp())
                     lines.add(".$send(\"$body\")")
@@ -1189,11 +1192,6 @@ class TestCaseWriter {
     }
 
 
-
-
-
-
-
     private fun handleHeaders(call: RestCallAction, lines: Lines) {
 
         val prechosenAuthHeaders = call.auth.headers.map { it.name }
@@ -1209,11 +1207,11 @@ class TestCaseWriter {
         }
 
         call.parameters.filterIsInstance<HeaderParam>()
-            .filter { !prechosenAuthHeaders.contains(it.name) }
-            .filter { !(call.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
-            .forEach {
-                lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
-            }
+                .filter { !prechosenAuthHeaders.contains(it.name) }
+                .filter { !(call.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
+                .forEach {
+                    lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
+                }
 
         val cookieLogin = call.auth.cookieLogin
         if (cookieLogin != null) {
@@ -1225,7 +1223,7 @@ class TestCaseWriter {
 
         //TODO make sure header was not already set
         val tokenLogin = call.auth.jsonTokenPostLogin
-        if(tokenLogin != null){
+        if (tokenLogin != null) {
             lines.add(".$set(\"Authorization\", ${TokenWriter.tokenName(tokenLogin)}) // ${call.auth.name}")
         }
     }
@@ -1383,11 +1381,17 @@ class TestCaseWriter {
                 val i = gene.getValueAsRawString()
                 printableInputGene.add("${gene.name} : $i")
             } else {
-                if(gene is ObjectGene|| (gene is OptionalGene && gene.gene is ObjectGene)){
+                if (gene is ObjectGene || (gene is OptionalGene && gene.gene is ObjectGene)) {
                     val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                    printableInputGene.add(" $i")}else {
-                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                    printableInputGene.add("${gene.name} : $i")
+                    printableInputGene.add(" $i")
+                } else {
+                    if (gene is ArrayGene<*> || (gene is OptionalGene && gene.gene is ArrayGene<*>)) {
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        printableInputGene.add(" $i")
+                    } else {
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        printableInputGene.add("${gene.name} : $i")
+                    }
                 }
             }
         }

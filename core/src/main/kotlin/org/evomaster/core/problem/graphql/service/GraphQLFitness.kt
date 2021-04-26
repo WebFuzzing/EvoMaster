@@ -475,12 +475,17 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 val i = gene.getValueAsRawString()
                 printableInputGene.add("${gene.name} : $i")
             } else {
-                if (gene is ObjectGene || (gene is OptionalGene && gene.gene is ObjectGene)) {//with optional
+                if (gene is ObjectGene || (gene is OptionalGene && gene.gene is ObjectGene)) {
                     val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
                     printableInputGene.add(" $i")
                 } else {
-                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                    printableInputGene.add("${gene.name} : $i")
+                    if (gene is ArrayGene<*> || (gene is OptionalGene && gene.gene is ArrayGene<*>)) {
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        printableInputGene.add(" $i")
+                    } else {
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        printableInputGene.add("${gene.name} : $i")
+                    }
                 }
             }
         }
