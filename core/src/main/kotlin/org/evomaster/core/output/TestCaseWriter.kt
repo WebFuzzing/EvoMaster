@@ -23,10 +23,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.EnumGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlWrapperGene
@@ -1382,11 +1379,11 @@ class TestCaseWriter {
     fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
         val printableInputGene = mutableListOf<String>()
         for (gene in inputGenes) {
-            if (gene is EnumGene<*>) {
+            if (gene is EnumGene<*> || (gene is OptionalGene && gene.gene is EnumGene<*>)) {
                 val i = gene.getValueAsRawString()
                 printableInputGene.add("${gene.name} : $i")
             } else {
-                if(gene is ObjectGene){
+                if(gene is ObjectGene|| (gene is OptionalGene && gene.gene is ObjectGene)){
                     val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
                     printableInputGene.add(" $i")}else {
                     val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)

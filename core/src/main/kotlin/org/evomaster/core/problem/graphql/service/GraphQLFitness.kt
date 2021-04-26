@@ -19,10 +19,7 @@ import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.EnumGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -141,20 +138,20 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val anyError = hasErrors(result)
 
-        if (anyError){
+        if (anyError) {
             fv.updateTarget(errorId, 1.0, actionIndex)
             fv.updateTarget(okId, 0.5, actionIndex)
 
 
             // handle with last statement
-            val last = additionalInfoList[actionIndex].lastExecutedStatement?: DEFAULT_FAULT_CODE
+            val last = additionalInfoList[actionIndex].lastExecutedStatement ?: DEFAULT_FAULT_CODE
             result.setLastStatementWhenGQLErrors(last)
 
             // shall we add additional target with last?
             val errorlineId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodNameAndLine(line = last, method = name))
             fv.updateTarget(errorlineId, 1.0, actionIndex)
 
-        }else{
+        } else {
             fv.updateTarget(okId, 1.0, actionIndex)
             fv.updateTarget(errorId, 0.5, actionIndex)
         }
@@ -162,17 +159,17 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
     }
 
-    private fun hasErrors(result: GraphQlCallResult) : Boolean{
+    private fun hasErrors(result: GraphQlCallResult): Boolean {
 
-        val errors = extractBodyInGraphQlResponse(result)?.findPath("errors")?:return false
+        val errors = extractBodyInGraphQlResponse(result)?.findPath("errors") ?: return false
 
         return !errors.isEmpty || !errors.isMissingNode
     }
 
-    private fun extractBodyInGraphQlResponse(result: GraphQlCallResult) : JsonNode? {
+    private fun extractBodyInGraphQlResponse(result: GraphQlCallResult): JsonNode? {
         return try {
             result.getBody()?.run { mapper.readTree(result.getBody()) }
-        }catch (e: JsonProcessingException){
+        } catch (e: JsonProcessingException) {
             null
         }
     }
@@ -474,13 +471,14 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
         val printableInputGene = mutableListOf<String>()
         for (gene in inputGenes) {
-            if (gene is EnumGene<*>) {
+            if (gene is EnumGene<*> || (gene is OptionalGene && gene.gene is EnumGene<*>)) {
                 val i = gene.getValueAsRawString()
                 printableInputGene.add("${gene.name} : $i")
             } else {
-                if(gene is ObjectGene){
-                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                printableInputGene.add(" $i")}else {
+                if (gene is ObjectGene || (gene is OptionalGene && gene.gene is ObjectGene)) {//with optional
+                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                    printableInputGene.add(" $i")
+                } else {
                     val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
                     printableInputGene.add("${gene.name} : $i")
                 }
