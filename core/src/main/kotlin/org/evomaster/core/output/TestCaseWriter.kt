@@ -12,6 +12,7 @@ import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
+import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -413,7 +414,7 @@ class TestCaseWriter {
 
         when {
             format.isJavaOrKotlin() -> {
-                handleGQLHeaders(call, lines)
+                handleHeaders(call, lines)
                 handleGQLBody(call, lines)
                 handleGQLVerb(baseUrlOfSut, call, lines)
             }
@@ -421,7 +422,7 @@ class TestCaseWriter {
                 //in SuperAgent, verb must be first
                 handleGQLVerb(baseUrlOfSut, call, lines)
                 lines.append(getAcceptGQLHeader(call, res))
-                handleGQLHeaders(call, lines)
+                handleHeaders(call, lines)
                 handleGQLBody(call, lines)
             }
         }
@@ -1224,7 +1225,7 @@ class TestCaseWriter {
         }
     }
 
-    private fun handleHeaders(call: RestCallAction, lines: Lines) {
+    private fun handleHeaders(call: HttpWsAction, lines: Lines) {
 
         val prechosenAuthHeaders = call.auth.headers.map { it.name }
 
@@ -1260,34 +1261,6 @@ class TestCaseWriter {
         }
     }
 
-    private fun handleGQLHeaders(call: GraphQLAction, lines: Lines) {
-
-        val prechosenAuthHeaders = call.auth.headers.map { it.name }
-
-        val set = when {
-            format.isJavaOrKotlin() -> "header"
-            format.isJavaScript() -> "set"
-            else -> throw IllegalArgumentException("Not supported format: $format")
-        }
-
-        call.auth.headers.forEach {
-            lines.add(".$set(\"${it.name}\", \"${it.value}\") // ${call.auth.name}")
-        }
-
-        call.parameters.filterIsInstance<HeaderParam>()
-                .filter { !prechosenAuthHeaders.contains(it.name) }
-                .forEach {
-                    lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
-                }
-
-        val cookieLogin = call.auth.cookieLogin
-        if (cookieLogin != null) {
-            when {
-                format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(cookieLogin)})")
-                format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(cookieLogin)})")
-            }
-        }
-    }
 
     private fun getAcceptHeader(call: RestCallAction, res: RestCallResult): String {
         /*

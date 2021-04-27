@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.auth
+package org.evomaster.core.problem.httpws.service.auth
 
 import org.evomaster.client.java.controller.api.dto.CookieLoginDto
 import org.evomaster.core.problem.rest.ContentType
