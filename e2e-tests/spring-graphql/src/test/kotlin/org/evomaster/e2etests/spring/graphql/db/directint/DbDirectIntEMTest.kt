@@ -38,13 +38,11 @@ class DbDirectIntEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GQL_DirectIntEM_$strategy",
             "org.foo.graphql.DirectIntEM_$strategy",
-            10000
+            7000
         ) { args: MutableList<String> ->
 
             args.add("--problemType")
             args.add(EMConfig.ProblemType.GRAPHQL.toString())
-            args.add("--enableBasicAssertions")
-            args.add("false")
 
             args.add("--secondaryObjectiveStrategy")
             args.add("" + strategy)

@@ -61,6 +61,10 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
 
+            if (hasErrors(actionResults[i] as GraphQlCallResult)){
+                log.warn("")
+            }
+
             if (!ok) {
                 break
             }
@@ -377,76 +381,8 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         }
 
-        //TOdo check empty return type
-        val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
 
-        val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
-
-        var bodyEntity: Entity<String> = Entity.json(" ")
-
-        if (a.methodType == GQMethodType.QUERY) {
-
-            if (inputGenes.isNotEmpty()) {
-
-                val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
-
-                var printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
-
-                //primitive type in Return
-                bodyEntity = if (returnGene == null) {
-                    Entity.json("""
-                    {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
-                """.trimIndent())
-
-                } else {
-                    val query = GraphQLUtils.getQuery(returnGene, a)
-                    Entity.json("""
-                    {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
-                """.trimIndent())
-
-                }
-            } else {//request without arguments and primitive type
-                bodyEntity = if (returnGene == null) {
-                    Entity.json("""
-                    {"query" : "  { ${a.methodName}       } ","variables":null}
-                """.trimIndent())
-
-                } else {
-                    var query = GraphQLUtils.getQuery(returnGene, a)
-                    Entity.json("""
-                   {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
-                """.trimIndent())
-                }
-            }
-        } else if (a.methodType == GQMethodType.MUTATION) {
-            val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
-
-            val printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
-
-            /*
-                Need a check with Asma
-                for mutation which does not have any param, there is no need for ()
-                e.g., createX:X!
-                      mutation{
-                        createX{
-                            ...
-                        }
-                      }
-             */
-            val inputParams = if (printableInputGene.isEmpty()) "" else "($printableInputGenes)"
-            bodyEntity = if (returnGene == null) {//primitive type
-                Entity.json("""
-                {"query" : " mutation{ ${a.methodName}  $inputParams         } ","variables":null}
-            """.trimIndent())
-
-            } else {
-                val mutation = GraphQLUtils.getMutation(returnGene, a)
-                Entity.json("""
-                { "query" : "mutation{    ${a.methodName}  $inputParams    $mutation    }","variables":null}
-            """.trimIndent())
-
-            }
-        }
+        val bodyEntity = GraphQLUtils.generateGQLBodyEntity(a, config.outputFormat)?:Entity.json(" ")
         val invocation = builder.buildPost(bodyEntity)
         return invocation
     }

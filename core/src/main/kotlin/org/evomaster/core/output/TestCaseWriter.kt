@@ -1159,50 +1159,10 @@ class TestCaseWriter {
 
         }
 
-        val body = if (call.methodType.toString() == "QUERY") {
-            if (inputGenes.isNotEmpty()) {
+        val bodyEntity = GraphQLUtils.generateGQLBodyEntity(call, configuration.outputFormat)
 
-                val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
-
-                var printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
-
-                if (returnGene == null) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
-
-                } else {
-
-                    var query = GraphQLUtils.getQuery(returnGene, call)
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)$query} \",\"variables\":null}")
-                }
-
-            } else {
-
-                if (returnGene == null) {
-
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
-                } else {
-
-                    var query = GraphQLUtils.getQuery(returnGene, call)
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \" {${call.methodName}  $query  }    \",\"variables\":null} ")
-
-                }
-            }
-
-        } else if (call.methodType.toString() == "MUTATION") {
-            val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
-
-            var printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
-
-            if (returnGene == null) {//primitive type means without a return gene
-                OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \" mutation{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
-
-            } else {
-                var mutation = GraphQLUtils.getMutation(returnGene, call)
-
-                OutputFormatter.JSON_FORMATTER.getFormatted("{ \"query\" : \"mutation{${call.methodName}  ($printableInputGenes)    $mutation    } \",\"variables\":null} ")
-            }
-        } else {
-            LoggingUtil.uniqueWarn(TestCaseWriter.log, " method type not supported yet : ${call.methodType}").toString()
+        val body = if (bodyEntity!=null) OutputFormatter.JSON_FORMATTER.getFormatted(bodyEntity.entity) else {
+            LoggingUtil.uniqueWarn(log, " method type not supported yet : ${call.methodType}").toString()
         }
 
 
