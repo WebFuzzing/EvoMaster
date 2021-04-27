@@ -113,22 +113,23 @@ internal class GeneUtilsTest {
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
         //without randomization, should be both on by default
-        assertEquals("foo{a,b}", rep)
+        assertEquals("{a,b}", rep)
     }
 
     @Test
     fun testBooleanSectionSkip() {
 
-        val obj = ObjectGene("foo", listOf(StringGene("a", "hello"), IntegerGene("b", 42)))
+        val obj = ObjectGene("foo", listOf(OptionalGene("a", StringGene("a", "hello")), IntegerGene("b", 42)))
 
         val selection = GeneUtils.getBooleanSelection(obj)
+
         val a = selection.fields.find { it.name == "a" } as BooleanGene
         a.value = false
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("foo{b}", rep)
+        assertEquals("{b}", rep)
     }
 
 
@@ -142,7 +143,7 @@ internal class GeneUtilsTest {
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("Obj1{Obj2{a}}", rep)
+        assertEquals("{Obj2{a}}", rep)
     }
 
     @Test
@@ -155,7 +156,7 @@ internal class GeneUtilsTest {
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("Obj1{Obj2{Obj3{a}}}", rep)
+        assertEquals("{Obj2{Obj3{a}}}", rep)
     }
 
 
@@ -169,58 +170,68 @@ internal class GeneUtilsTest {
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("Obj1{a}", rep)
+        assertEquals("{a}", rep)
     }
 
     @Test
     fun testBooleanSectionString() {
 
         val string = StringGene("a", "hello")
+        val obj = ObjectGene("obj", listOf(string))
 
-        val selection = GeneUtils.getBooleanSelection(string)
+        val selection = GeneUtils.getBooleanSelection(obj)
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("a", rep)
+        assertEquals("{a}", rep)
     }
 
     @Test
     fun testBooleanSectionInteger() {
 
-        val integer = IntegerGene("a", 1)
+        val objInteger = ObjectGene("foo", listOf(IntegerGene("a", 1)))
 
-        val selection = GeneUtils.getBooleanSelection(integer)
+        val selection = GeneUtils.getBooleanSelection(objInteger)
+
+        val a = selection.fields.find { it.name == "a" } as DisruptiveGene<*>
+
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("a", rep)
+        assertEquals("{a}", rep)
     }
 
     @Test
     fun testBooleanSectionOptionalObject() {
 
-        val opt = OptionalGene("Opti", StringGene("Opti", "hello"))
-        val selection = GeneUtils.getBooleanSelection(opt)
+        val objOpt = ObjectGene("foo",  listOf( OptionalGene("Opti", StringGene("Opti", "hello"))))
+        val selection = GeneUtils.getBooleanSelection(objOpt)
+
+        val a = selection.fields.find { it.name == "Opti" } as BooleanGene
+        //todo extra check
+        a.value = true
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("Opti", rep)
+        assertEquals("{Opti}", rep)
     }
 
     @Test
     fun testBooleanSectionBoolean() {
 
-        val boolean = BooleanGene("a")
+        val objBoolean = ObjectGene("foo", listOf(BooleanGene("a")))
 
-        val selection = GeneUtils.getBooleanSelection(boolean)
+        val selection = GeneUtils.getBooleanSelection(objBoolean)
+
+        val a = selection.fields.find { it.name == "a" } as DisruptiveGene<*>
+
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
-        assertEquals("a", rep)
+        assertEquals("{a}", rep)
     }
-
 }

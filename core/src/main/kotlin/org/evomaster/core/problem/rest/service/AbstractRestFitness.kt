@@ -185,12 +185,6 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     /**
-     * Initializing Actions before evaluating its fitness if need
-     */
-    open fun doInitializingActions(ind: T) {
-    }
-
-    /**
      * Create local targets for each HTTP status code in each
      * API entry point
      */
@@ -221,15 +215,6 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 }
     }
 
-    open fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: RestCallResult, name: String) : String?{
-        var location5xx : String? = null
-        if (status == 500){
-            val statement = additionalInfoList[indexOfAction].lastExecutedStatement
-            location5xx = statement ?: "framework_code"
-            result.setLastStatementWhen500(location5xx)
-        }
-        return location5xx
-    }
 
     fun handleAdditionalOracleTargetDescription(fv: FitnessValue, actions: List<RestAction>, result : RestCallResult, name: String, indexOfAction : Int){
         /*
