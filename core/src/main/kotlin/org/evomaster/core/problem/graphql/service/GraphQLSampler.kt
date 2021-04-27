@@ -3,10 +3,7 @@ package org.evomaster.core.problem.graphql.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.graphql.GraphQLAction
-import org.evomaster.core.problem.graphql.GraphQLActionBuilder
-import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.graphql.IntrospectiveQuery
+import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
@@ -79,6 +76,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
 
 
+
     override fun sampleAtRandom(): GraphQLIndividual {
         val actions = mutableListOf<GraphQLAction>()
         val n = randomness.nextInt(1, config.maxTestSize)
@@ -86,7 +84,9 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05) as GraphQLAction)
         }
-        return GraphQLIndividual(actions, SampleType.RANDOM, mutableListOf())
+        val ind =  GraphQLIndividual(actions, SampleType.RANDOM, mutableListOf())
+        GraphQLUtils.repairIndividual(ind)
+        return ind
     }
 
     /*

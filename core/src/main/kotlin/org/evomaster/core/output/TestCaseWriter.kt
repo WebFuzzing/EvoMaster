@@ -8,6 +8,7 @@ import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
@@ -21,6 +22,10 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
 
@@ -153,20 +158,20 @@ class TestCaseWriter {
 
 
                 test.test.evaluatedActions().asSequence()
-                    .map { it.action }
-                    .filterIsInstance(RestCallAction::class.java)
-                    .filter { it.locationId != null }
-                    .map { it.locationId }
-                    .distinct()
-                    .forEach { id ->
-                        val name = locationVar(id!!)
-                        when {
-                            format.isJava() -> lines.add("String $name = \"\";")
-                            format.isKotlin() -> lines.add("var $name : String? = \"\"")
-                            format.isJavaScript() -> lines.add("let $name = \"\";")
-                            format.isCsharp() -> lines.add("var $name = \"\";")
+                        .map { it.action }
+                        .filterIsInstance(RestCallAction::class.java)
+                        .filter { it.locationId != null }
+                        .map { it.locationId }
+                        .distinct()
+                        .forEach { id ->
+                            val name = locationVar(id!!)
+                            when {
+                                format.isJava() -> lines.add("String $name = \"\";")
+                                format.isKotlin() -> lines.add("var $name : String? = \"\"")
+                                format.isJavaScript() -> lines.add("let $name = \"\";")
+                                format.isCsharp() -> lines.add("var $name = \"\";")
+                            }
                         }
-                    }
             }
 
             CookieWriter.handleGettingCookies(format, test.test, lines, baseUrlOfSut)
@@ -184,11 +189,12 @@ class TestCaseWriter {
                         handleEvaluatedAction(a, lines, baseUrlOfSut)
                     }
                 }
-            } else {if (test.test.individual is RestIndividual) {
-                test.test.evaluatedActions().forEach { a ->
-                    handleEvaluatedAction(a, lines, baseUrlOfSut)
+            } else {
+                if (test.test.individual is RestIndividual) {
+                    test.test.evaluatedActions().forEach { a ->
+                        handleEvaluatedAction(a, lines, baseUrlOfSut)
+                    }
                 }
-            }
             }
             if (test.test.individual is GraphQLIndividual) {
                 test.test.evaluatedActions().forEach { a ->
@@ -534,6 +540,7 @@ class TestCaseWriter {
         lines.appendSemicolon(format)
         lines.deindent(2)
     }
+
     private fun handleVerb(baseUrlOfSut: String, call: RestCallAction, lines: Lines, hasBody: Boolean = true) {
 
         var verb = call.verb.name.toLowerCase()
@@ -574,8 +581,9 @@ class TestCaseWriter {
 
                 lines.indented {
                     (0 until elements.lastIndex).forEach { i ->
-                        lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = GeneUtils.EscapeMode.SQL, format = format)}&\" + ") }
-                        lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = GeneUtils.EscapeMode.SQL, format = format)}\"")
+                        lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = GeneUtils.EscapeMode.SQL, format = format)}&\" + ")
+                    }
+                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = GeneUtils.EscapeMode.SQL, format = format)}\"")
                 }
             }
         }
@@ -665,7 +673,7 @@ class TestCaseWriter {
             }
 
             //TODO Man: shall we add lastStatement with errors here?
-            if (res.getLastStatementWhenGQLErrors()!=null){
+            if (res.getLastStatementWhenGQLErrors() != null) {
                 lines.append("${if (!commented) "//" else ","} errors:${res.getLastStatementWhenGQLErrors()}")
             }
 
@@ -713,24 +721,24 @@ class TestCaseWriter {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
                 String::class -> return "containsString(\"${
-                    GeneUtils.applyEscapes(
+                GeneUtils.applyEscapes(
                         resContentsItem as String,
                         mode = GeneUtils.EscapeMode.ASSERTION,
                         format = format
-                    )
+                )
                 }\")"
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> if ((resContentsItem as ArrayList<*>).all { it is String } && resContentsItem.isNotEmpty()) {
                     return "hasItems(${
-                        (resContentsItem as ArrayList<String>).joinToString {
-                            "\"${
-                                GeneUtils.applyEscapes(
-                                    it,
-                                    mode = GeneUtils.EscapeMode.ASSERTION,
-                                    format = format
-                                )
-                            }\""
-                        }
+                    (resContentsItem as ArrayList<String>).joinToString {
+                        "\"${
+                        GeneUtils.applyEscapes(
+                                it,
+                                mode = GeneUtils.EscapeMode.ASSERTION,
+                                format = format
+                        )
+                        }\""
+                    }
                     })"
                 } else {
                     return NOT_COVERED_YET
@@ -750,8 +758,8 @@ class TestCaseWriter {
         map.keys.forEach {
             val printableTh = handleFieldValues(map[it])
             if (printableTh != "null"
-                && printableTh != NOT_COVERED_YET
-                && !printableTh.contains("logged")
+                    && printableTh != NOT_COVERED_YET
+                    && !printableTh.contains("logged")
             ) {
                 lines.add(".body(\"\'$it\'\", hasItem($printableTh))")
             }
@@ -778,11 +786,11 @@ class TestCaseWriter {
             if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
 
         } else lines.add(
-            ".contentType(\"${
+                ".contentType(\"${
                 res.getBodyType()
-                    .toString()
-                    .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
-            }\")"
+                        .toString()
+                        .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
+                }\")"
         )
 
         val bodyString = res.getBody()
@@ -837,13 +845,13 @@ class TestCaseWriter {
                             bodyString.isNullOrBlank() -> lines.add(".body(isEmptyOrNullString())")
 
                             else -> lines.add(
-                                ".body(containsString(\"${
+                                    ".body(containsString(\"${
                                     GeneUtils.applyEscapes(
-                                        bodyString,
-                                        mode = GeneUtils.EscapeMode.BODY,
-                                        format = format
+                                            bodyString,
+                                            mode = GeneUtils.EscapeMode.BODY,
+                                            format = format
                                     )
-                                }\"))"
+                                    }\"))"
                             )
                         }
                     }
@@ -853,9 +861,9 @@ class TestCaseWriter {
                     lines.add(".body(isEmptyOrNullString())")
                 } else {
                     lines.add(
-                        ".body(containsString(\"${
+                            ".body(containsString(\"${
                             GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
-                        }\"))"
+                            }\"))"
                     )
                 }
             }
@@ -1071,7 +1079,7 @@ class TestCaseWriter {
 
             } else if (bodyParam.isTextPlain()) {
                 val body =
-                    bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
+                        bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     if (!format.isCsharp())
                         lines.add(".$send($body)")
@@ -1097,8 +1105,8 @@ class TestCaseWriter {
 
             } else if (bodyParam.isForm()) {
                 val body = bodyParam.gene.getValueAsPrintableString(
-                    mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED,
-                    targetFormat = format
+                        mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED,
+                        targetFormat = format
                 )
                 if (!format.isCsharp())
                     lines.add(".$send(\"$body\")")
@@ -1154,16 +1162,16 @@ class TestCaseWriter {
         val body = if (call.methodType.toString() == "QUERY") {
             if (inputGenes.isNotEmpty()) {
 
-                val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+                val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
 
-                var printableInputGenes = getPrintableInputGenes(printableInputGene)
+                var printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
 
                 if (returnGene == null) {
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
 
                 } else {
 
-                    var query = getQuery(returnGene, call)
+                    var query = GraphQLUtils.getQuery(returnGene, call)
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)$query} \",\"variables\":null}")
                 }
 
@@ -1174,22 +1182,22 @@ class TestCaseWriter {
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
                 } else {
 
-                    var query = getQuery(returnGene, call)
+                    var query = GraphQLUtils.getQuery(returnGene, call)
                     OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \" {${call.methodName}  $query  }    \",\"variables\":null} ")
 
                 }
             }
 
         } else if (call.methodType.toString() == "MUTATION") {
-            val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+            val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
 
-            var printableInputGenes = getPrintableInputGenes(printableInputGene)
+            var printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
 
             if (returnGene == null) {//primitive type means without a return gene
                 OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \" mutation{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
 
             } else {
-                var mutation = getMutation(returnGene, call)
+                var mutation = GraphQLUtils.getMutation(returnGene, call)
 
                 OutputFormatter.JSON_FORMATTER.getFormatted("{ \"query\" : \"mutation{${call.methodName}  ($printableInputGenes)    $mutation    } \",\"variables\":null} ")
             }
@@ -1231,11 +1239,11 @@ class TestCaseWriter {
         }
 
         call.parameters.filterIsInstance<HeaderParam>()
-            .filter { !prechosenAuthHeaders.contains(it.name) }
-            .filter { !(call.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
-            .forEach {
-                lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
-            }
+                .filter { !prechosenAuthHeaders.contains(it.name) }
+                .filter { !(call.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
+                .forEach {
+                    lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
+                }
 
         val cookieLogin = call.auth.cookieLogin
         if (cookieLogin != null) {
@@ -1247,7 +1255,7 @@ class TestCaseWriter {
 
         //TODO make sure header was not already set
         val tokenLogin = call.auth.jsonTokenPostLogin
-        if(tokenLogin != null){
+        if (tokenLogin != null) {
             lines.add(".$set(\"Authorization\", ${TokenWriter.tokenName(tokenLogin)}) // ${call.auth.name}")
         }
     }
@@ -1393,34 +1401,5 @@ class TestCaseWriter {
             return true;
         return false;
     }
-
-    fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
-
-        return printableInputGene.joinToString(",").replace("\"", "\\\"")
-
-    }
-
-    fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
-        val printableInputGene = mutableListOf<String>()
-        for (gene in inputGenes) {
-            if (gene is EnumGene<*>) {
-                val i = gene.getValueAsRawString()
-                printableInputGene.add("${gene.name} : $i")
-            } else {
-                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                printableInputGene.add("${gene.name} : $i")
-            }
-        }
-        return printableInputGene
-    }
-
-    fun getMutation(returnGene: Gene, a: GraphQLAction): String {
-        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
-    }
-
-    fun getQuery(returnGene: Gene, a: GraphQLAction): String {
-        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
-    }
-
 
 }

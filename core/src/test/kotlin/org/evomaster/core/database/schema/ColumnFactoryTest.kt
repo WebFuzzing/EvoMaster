@@ -25,6 +25,20 @@ internal class ColumnFactoryTest {
         assertEquals(ColumnDataType.BIGSERIAL, column.type)
     }
 
+    @Test
+    fun givenASerialColumnDtoWhenCreatingAColumnThenItHasTheCorrectType() {
+        val columnDto = ColumnDto();
+        columnDto.name = "product_id"
+        columnDto.type = "serial"
+        val databaseType = DatabaseType.POSTGRES
+
+        val column = ColumnFactory.createColumnFromDto(columnDto = columnDto, lowerBoundForColumn = null, upperBoundForColumn = null,
+            enumValuesForColumn = null, similarToPatternsForColumn = null, likePatternsForColumn = null,
+            databaseType = databaseType)
+
+        assertEquals(ColumnDataType.SERIAL, column.type)
+    }
+
 
     @Test
     fun givenAnInvalidColumnDtoWhenCreatingAColumnThenItThrowsIllegalArgumentException() {

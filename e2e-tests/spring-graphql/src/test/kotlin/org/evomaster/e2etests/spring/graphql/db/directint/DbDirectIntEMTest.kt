@@ -7,6 +7,7 @@ import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.util.*
 
 class DbDirectIntEMTest : SpringTestBase() {
 
@@ -37,7 +38,7 @@ class DbDirectIntEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GQL_DirectIntEM_$strategy",
             "org.foo.graphql.DirectIntEM_$strategy",
-            7000
+            10000
         ) { args: MutableList<String> ->
 
             args.add("--problemType")
@@ -58,8 +59,11 @@ class DbDirectIntEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, "addDbDirectInt", GQMethodType.MUTATION, 200, "\"x\":42,\"y\":77")
-            assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"x\":42,\"y\":77")
+
+            val nonEmptyReturn = listOf("\"x\":42","\"y\":77", "\"id\":")
+
+            assertHasAtLeastOne(solution, "addDbDirectInt", GQMethodType.MUTATION, 200, nonEmptyReturn, false)
+            assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, nonEmptyReturn, false)
             assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"get\":[]")
             assertNoneWithErrors(solution)
         }

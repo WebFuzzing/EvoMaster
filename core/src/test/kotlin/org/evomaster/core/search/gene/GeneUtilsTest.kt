@@ -1,8 +1,12 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.database.DbActionGeneBuilder
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
+import org.evomaster.core.problem.graphql.GraphQLAction
+import org.evomaster.core.problem.graphql.GraphQLActionBuilder
+import org.evomaster.core.problem.graphql.PetClinicCheckMain
+import org.evomaster.core.problem.graphql.param.GQReturnParam
+import org.evomaster.core.search.Action
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.*
 
@@ -194,7 +198,7 @@ internal class GeneUtilsTest {
 
         val selection = GeneUtils.getBooleanSelection(objInteger)
 
-        val a = selection.fields.find { it.name == "a" } as DisruptiveGene<*>
+        val a = selection.fields.find { it.name == "a" } as BooleanGene
 
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
@@ -206,7 +210,7 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSectionOptionalObject() {
 
-        val objOpt = ObjectGene("foo",  listOf( OptionalGene("Opti", StringGene("Opti", "hello"))))
+        val objOpt = ObjectGene("foo", listOf(OptionalGene("Opti", StringGene("Opti", "hello"))))
         val selection = GeneUtils.getBooleanSelection(objOpt)
 
         val a = selection.fields.find { it.name == "Opti" } as BooleanGene
@@ -226,7 +230,7 @@ internal class GeneUtilsTest {
 
         val selection = GeneUtils.getBooleanSelection(objBoolean)
 
-        val a = selection.fields.find { it.name == "a" } as DisruptiveGene<*>
+        val a = selection.fields.find { it.name == "a" } as BooleanGene
 
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
@@ -234,4 +238,38 @@ internal class GeneUtilsTest {
 
         assertEquals("{a}", rep)
     }
+
+    @Test
+    fun testRepaireBooleanSectionFF() {
+
+        val objBoolean = ObjectGene("foo", listOf(BooleanGene("a", false), (BooleanGene("b", false))))
+
+        GeneUtils.repairBooleanSelection(objBoolean)
+
+        assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
+    }
+
+    @Test
+    fun testRepairInPetclinic() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/QueryTypeGlobalPetsClinic.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val pettypes = actionCluster.get("pettypes") as GraphQLAction
+        assertTrue(pettypes.parameters[0] is GQReturnParam)
+        assertTrue(pettypes.parameters[0].gene is ObjectGene)
+        val objPetType = pettypes.parameters[0].gene as ObjectGene
+        assertEquals(2, objPetType.fields.size)
+        assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "name" })
+
+        (objPetType.fields[0] as BooleanGene).value = false
+        (objPetType.fields[1] as BooleanGene).value = false
+
+        assertFalse(objPetType.fields.any{ it is BooleanGene && it.value})
+        GeneUtils.repairBooleanSelection(objPetType)
+        assertTrue(objPetType.fields.any{ it is BooleanGene && it.value})
+    }
+
 }

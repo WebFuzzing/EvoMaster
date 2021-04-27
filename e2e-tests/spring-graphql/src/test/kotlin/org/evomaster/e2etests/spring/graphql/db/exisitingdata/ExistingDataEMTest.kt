@@ -7,6 +7,7 @@ import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.util.*
 
 class ExistingDataEMTest : SpringTestBase() {
 
@@ -40,7 +41,11 @@ class ExistingDataEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, "getY", GQMethodType.QUERY, 200, "\"x\":{\"id\":\"42\",\"name\":\"Foo\"}")
+            assertHasAtLeastOne(solution, "getY", GQMethodType.QUERY, 200, listOf(
+                "\"x\":{\"id\":\"42\",\"name\":\"Foo\"}",
+                "\"x\":{\"name\":\"Foo\"}",
+                "\"x\":{\"id\":\"42\"}"
+            ), false)
             assertHasAtLeastOne(solution, "getY", GQMethodType.QUERY, 200, "\"getY\":[]")
             assertNoneWithErrors(solution)
         }
