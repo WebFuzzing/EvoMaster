@@ -29,7 +29,8 @@ object ColumnFactory {
     private fun parseColumnDataType(columnDto: ColumnDto): ColumnDataType {
         val typeAsString = columnDto.type
         try {
-            return ColumnDataType.valueOf(typeAsString.toUpperCase())
+            val t = if(typeAsString.startsWith("_")) "ARRAY${typeAsString.toUpperCase()}" else typeAsString.toUpperCase()
+            return ColumnDataType.valueOf(t)
         } catch (e: Exception) {
             throw IllegalArgumentException(String.format("Column data type %s is not supported in Evomaster Data types", typeAsString))
         }
