@@ -61,10 +61,6 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
 
-            if (hasErrors(actionResults[i] as GraphQlCallResult)){
-                log.warn("")
-            }
-
             if (!ok) {
                 break
             }
