@@ -143,9 +143,9 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                         is BooleanGene -> {
                             it.name
                         }
-                        is DisruptiveGene<*> -> {
-                            it.name
-                        }
+                        //is DisruptiveGene<*> -> {
+                          //  it.name
+                        //}
                         else -> {
                             throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
                         }
