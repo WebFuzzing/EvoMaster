@@ -9,7 +9,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -56,7 +56,7 @@ class SchemaOracle : ImplementedOracle() {
         }
     }
 
-    override fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
+    override fun addExpectations(call: RestCallAction, lines: Lines, res: HttpWsCallResult, name: String, format: OutputFormat) {
         if (res.failedCall()
                 || res.getStatusCode() == 500
                 || !generatesExpectation(call, res)) {
@@ -225,7 +225,7 @@ class SchemaOracle : ImplementedOracle() {
         }
     }
 
-    fun matchesStructure(call: RestCallAction, res: RestCallResult): Boolean{
+    fun matchesStructure(call: RestCallAction, res: HttpWsCallResult): Boolean{
         val supportedTypes = getSupportedResponse(call)
         val actualType = res.getBody()
         return false
@@ -289,7 +289,7 @@ class SchemaOracle : ImplementedOracle() {
         objectGenerator = gen
     }
 
-    override fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean {
+    override fun generatesExpectation(call: RestCallAction, res: HttpWsCallResult): Boolean {
         // A check should be made if this should be the case (i.e. if (any of) the object(s) contained break the schema.
         //return !(res.failedCall() || res.getStatusCode() == 500)
         if(!::objectGenerator.isInitialized) return false
@@ -335,7 +335,7 @@ class SchemaOracle : ImplementedOracle() {
 
         return individual.evaluatedActions().any {
             val call = it.action as RestCallAction
-            val res = it.result as RestCallResult
+            val res = it.result as HttpWsCallResult
             val supportedObjs = getSupportedResponse(call)
             val expectedObject = supportedObjs.get("${res.getStatusCode()}") ?: return false
             if(!objectGenerator.containsKey(expectedObject)) return false
@@ -345,7 +345,7 @@ class SchemaOracle : ImplementedOracle() {
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
-        if (action.action is RestCallAction && action.result is RestCallResult){
+        if (action.action is RestCallAction && action.result is HttpWsCallResult){
             return generatesExpectation(action.action, action.result)
         }
         else return false

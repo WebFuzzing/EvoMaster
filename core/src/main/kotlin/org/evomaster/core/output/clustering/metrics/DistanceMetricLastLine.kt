@@ -1,6 +1,6 @@
 package org.evomaster.core.output.clustering.metrics
 
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 
 /**
  * Distance metric implementation for clustering Rest Call Results.
@@ -15,11 +15,11 @@ import org.evomaster.core.problem.rest.RestCallResult
 
 class DistanceMetricLastLine(
         epsilon: Double = 0.8
-) : DistanceMetric<RestCallResult>() {
+) : DistanceMetric<HttpWsCallResult>() {
     private val name = "LastLine"
     private var recommendedEpsilon = if(epsilon in 0.0..1.0)  epsilon
                                         else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
-    override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
+    override fun calculateDistance(first: HttpWsCallResult, second: HttpWsCallResult): Double {
         val lastLine1 = first.getLastStatementWhen500() ?: ""
         val lastLine2 = second.getLastStatementWhen500() ?: ""
         return LevenshteinDistance.distance(lastLine1, lastLine2)

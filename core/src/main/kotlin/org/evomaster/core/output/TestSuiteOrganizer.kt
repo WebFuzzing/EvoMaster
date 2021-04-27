@@ -3,6 +3,7 @@ package org.evomaster.core.output
 import com.sun.istack.Pool
 import org.evomaster.core.Lazy
 import org.evomaster.core.output.oracles.ImplementedOracle
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -47,7 +48,7 @@ class NamingHelper {
      * The presence of a call with a 500 status code will be added to the test name.
      */
     private fun criterion1_500 (individual: EvaluatedIndividual<*>): String{
-        if (individual.results.filterIsInstance<RestCallResult>().any{ it.getStatusCode() == 500 }){
+        if (individual.results.filterIsInstance<HttpWsCallResult>().any{ it.getStatusCode() == 500 }){
             return "_with500"
         }
         return ""
@@ -140,8 +141,8 @@ class SortingHelper {
      *
      * **/
     private val maxStatusCode: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>>{ ind ->
-        val max = ind.results.filterIsInstance<RestCallResult>().maxBy { it.getStatusCode()?:0 }
-            (max as RestCallResult).getStatusCode() ?: 0
+        val max = ind.results.filterIsInstance<HttpWsCallResult>().maxBy { it.getStatusCode()?:0 }
+            (max as HttpWsCallResult).getStatusCode() ?: 0
     }.reversed()
 
     /**
@@ -153,10 +154,10 @@ class SortingHelper {
 
 
     private val statusCode: Comparator<EvaluatedIndividual<*>> = compareBy { ind ->
-        val min = ind.results.filterIsInstance<RestCallResult>().minBy {
+        val min = ind.results.filterIsInstance<HttpWsCallResult>().minBy {
             it.getStatusCode()?.rem(500) ?: 0
         }
-        ((min as RestCallResult).getStatusCode())?.rem(500) ?: 0
+        ((min as HttpWsCallResult).getStatusCode())?.rem(500) ?: 0
     }
 
     /** [maxActions] sorts Evaluated individuals based on the number of actions (most actions first).

@@ -5,7 +5,7 @@ import org.evomaster.core.output.oracles.ImplementedOracle
 import org.evomaster.core.output.oracles.SchemaOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -59,7 +59,7 @@ class PartialOracles {
         }
     }
 
-    fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
+    fun addExpectations(call: RestCallAction, lines: Lines, res: HttpWsCallResult, name: String, format: OutputFormat) {
         val generates = oracles.any {
             it.generatesExpectation(call, res)
         }
@@ -103,13 +103,13 @@ class PartialOracles {
             individual.evaluatedActions().any {
                 oracle.generatesExpectation(
                         (it.action as RestCallAction),
-                        (it.result as RestCallResult)
+                        (it.result as HttpWsCallResult)
                 )
             }
         }
     }
 
-    fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean{
+    fun generatesExpectation(call: RestCallAction, res: HttpWsCallResult): Boolean{
         return oracles.any { oracle ->
             oracle.generatesExpectation( call, res)
         }
@@ -155,14 +155,14 @@ class PartialOracles {
                 individual.evaluatedActions().any {
                     oracle.generatesExpectation(
                             (it.action as RestCallAction),
-                            (it.result as RestCallResult)
+                            (it.result as HttpWsCallResult)
                     )
                 } })
         }
         return active
     }
 
-    fun activeOracles(call: RestCallAction, res: RestCallResult): MutableMap<String, Boolean>{
+    fun activeOracles(call: RestCallAction, res: HttpWsCallResult): MutableMap<String, Boolean>{
         val active = mutableMapOf<String, Boolean>()
         oracles.forEach { oracle ->
             active.put(oracle.getName(), oracle.generatesExpectation(call, res))
