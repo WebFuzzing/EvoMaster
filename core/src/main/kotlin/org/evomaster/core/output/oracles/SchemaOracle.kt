@@ -122,8 +122,8 @@ class SchemaOracle : ImplementedOracle() {
 
         //this differs between kotlin and java
         when{
-            format.isJava() ->lines.add(".that($variableName, ($json_ref as LinkedHashMap<*,*>).keys.containsAll(Arrays.asList($referenceKeys)))")
-            format.isKotlin() -> lines.add(".that($variableName, ($json_ref as LinkedHashMap<*,*>).keys.containsAll(Arrays.asList($referenceKeys)))")
+            format.isJava() ->lines.add(".that($variableName, ($json_ref as Map<*,*>).keys.containsAll(Arrays.asList($referenceKeys)))")
+            format.isKotlin() -> lines.add(".that($variableName, ($json_ref as Map<*,*>).keys.containsAll(Arrays.asList($referenceKeys)))")
         }
         val referenceOptionalKeys = referenceObject.fields
                 .filter { it is OptionalGene }
@@ -134,13 +134,13 @@ class SchemaOracle : ImplementedOracle() {
             format.isJava() -> {
                 lines.add(".that($variableName, Arrays.asList($referenceOptionalKeys)")
                 lines.indented {
-                    lines.add(".containsAll(($json_ref as LinkedHashMap<*,*>).keys))")
+                    lines.add(".containsAll(($json_ref as Map<*,*>).keys))")
                 }
             }
             format.isKotlin() -> {
                 lines.add(".that($variableName, listOf<Any>($referenceOptionalKeys)")
                 lines.indented {
-                    lines.add(".containsAll(($json_ref as LinkedHashMap<*,*>).keys))")
+                    lines.add(".containsAll(($json_ref as Map<*,*>).keys))")
                 }
             }
         }
@@ -176,6 +176,10 @@ class SchemaOracle : ImplementedOracle() {
             return compulsoryMatch && optionalMatch
         }
     }
+
+    /**
+     *
+     */
 
     fun supportedObject(obj: LinkedTreeMap<*,*>, call: RestCallAction): Boolean{
 
@@ -307,10 +311,10 @@ class SchemaOracle : ImplementedOracle() {
             val actualObject = Gson().fromJson(res.getBody(), Object::class.java)
             if  (actualObject is LinkedTreeMap<*,*>)
                 supported = supportedObject(actualObject, call)
-            else if (actualObject is ArrayList<*>
-                    && (actualObject as ArrayList<*>).isNotEmpty()
-                    && (actualObject as ArrayList<*>).first() is LinkedTreeMap<*,*>){
-                supported = supportedObject((actualObject as ArrayList<*>).first() as LinkedTreeMap<*, *>, call)
+            else if (actualObject is List<*>
+                    && (actualObject as List<*>).isNotEmpty()
+                    && (actualObject as List<*>).first() is LinkedTreeMap<*,*>){
+                supported = supportedObject((actualObject as List<*>).first() as LinkedTreeMap<*, *>, call)
             }
 
             // A call should generate an expectation if:

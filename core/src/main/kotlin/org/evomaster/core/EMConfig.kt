@@ -950,7 +950,6 @@ class EMConfig {
     @Cfg("QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==")
     var e_u1f984 = false
 
-    @Experimental
     @Cfg("Enable Expectation Generation. If enabled, expectations will be generated. " +
             "A variable called expectationsMasterSwitch is added to the test suite, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail.")
     var expectationsActive = true

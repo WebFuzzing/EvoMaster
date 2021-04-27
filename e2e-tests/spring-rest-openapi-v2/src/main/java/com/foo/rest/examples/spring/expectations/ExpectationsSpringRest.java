@@ -20,14 +20,17 @@ public class ExpectationsSpringRest extends SwaggerConfiguration {
     public class ExampleObject {
         private int id;
         private String name;
+        private String description;
 
-        public ExampleObject(int id, String name){
+        public ExampleObject(int id, String name, String description){
             this.id = id;
             this.name = name;
+            this.description = description;
         }
 
         public ExampleObject(){
             this.name = "Unnamed";
+            this.description = "Indescribable";
         }
 
         public int getId() {
@@ -37,19 +40,21 @@ public class ExpectationsSpringRest extends SwaggerConfiguration {
         public String getName() {
             return name;
         }
+        public String getDescription() {return description;}
     }
     public class OtherExampleObject {
         private int id;
-        private String name;
+        private String namn;
         private String category;
 
-        public OtherExampleObject(int id, String name){
+        public OtherExampleObject(int id, String name, String category){
             this.id = id;
-            this.name = name;
+            this.namn = name;
+            this.category = category;
         }
 
         public OtherExampleObject(){
-            this.name = "Unnamed";
+            this.namn = "Unnamed";
             this.category = "None";
         }
 
@@ -58,7 +63,7 @@ public class ExpectationsSpringRest extends SwaggerConfiguration {
         }
 
         public String getName() {
-            return name;
+            return namn;
         }
     }
 
@@ -94,7 +99,7 @@ public class ExpectationsSpringRest extends SwaggerConfiguration {
             @PathVariable("s") int succeeded
     ){
         if(succeeded >= 0) {
-            return new OtherExampleObject(succeeded, "object_" + succeeded);
+            return new OtherExampleObject(succeeded, "object_" + succeeded, "successes");
         }
         else{
             return new OtherExampleObject();
@@ -108,7 +113,7 @@ public class ExpectationsSpringRest extends SwaggerConfiguration {
             @PathVariable("s") int succeeded
     ){
         if( succeeded >= 0 ) {
-            return new ExampleObject(succeeded, "validObject_" + succeeded);
+            return new ExampleObject(succeeded, "validObject_" + succeeded, "successful");
         }
         else {
             return new ExampleObject();
@@ -123,8 +128,8 @@ public class ExpectationsSpringRest extends SwaggerConfiguration {
     ){
         if( succeeded >= 0 ) {
             ExampleObject [] res = {
-                    new ExampleObject(succeeded, "validObject_" + succeeded),
-                    new ExampleObject(succeeded+1, "validObject_" + (succeeded+1))
+                    new ExampleObject(succeeded, "validObject_" + succeeded, "successful"),
+                    new ExampleObject(succeeded+1, "validObject_" + (succeeded+1), "successful")
             };
             return res;
         }

@@ -193,7 +193,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/ExampleObject"
+              "$ref": "#/definitions/OtherExampleObject"
             }
           },
           "401": {
@@ -267,7 +267,7 @@
           "type": "string"
         }
       },
-      "required": ["id"]
+      "required": ["id", "name"]
     },
     "OtherExampleObject": {
       "type": "object",
@@ -276,12 +276,13 @@
           "type": "integer",
           "format": "int64"
         },
-        "name": {
+        "namn": {
           "type": "string"
         },
         "category": {
           "type": "string"
-        }
+        },
+        "required": ["id", "namn"]
       }
     }
   }

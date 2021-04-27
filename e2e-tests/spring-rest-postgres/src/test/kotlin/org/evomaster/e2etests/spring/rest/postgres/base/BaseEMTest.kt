@@ -28,8 +28,6 @@ class BasicEMTest : SpringRestPostgresTestBase(){
                 "org.bar.BaseEM",
                 100
         ) { args ->
-            args.add("--testSuiteSplitType")
-            args.add("NONE")
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
