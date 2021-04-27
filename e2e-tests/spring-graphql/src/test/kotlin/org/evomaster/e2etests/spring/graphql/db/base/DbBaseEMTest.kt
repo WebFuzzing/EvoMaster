@@ -35,8 +35,7 @@ class DbBaseEMTest : SpringTestBase() {
             args.add("true")
             args.add("--generateSqlDataWithSearch")
             args.add("false")
-            args.add("--enableBasicAssertions")
-            args.add("false")
+
 
             val solution = initAndRun(args)
 
