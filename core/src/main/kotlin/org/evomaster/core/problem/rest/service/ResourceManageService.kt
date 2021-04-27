@@ -87,7 +87,7 @@ class ResourceManageService {
                                 if(config.probOfEnablingResourceDependencyHeuristics > 0.0 && config.doesApplyNameMatching) InitMode.WITH_DERIVED_DEPENDENCY
                                 else if(config.doesApplyNameMatching) InitMode.WITH_TOKEN
                                 else if (config.probOfEnablingResourceDependencyHeuristics > 0.0) InitMode.WITH_DEPENDENCY
-                                else InitMode.NONE)
+                                else InitMode.NONE, employNLP = config.enableNLPParser)
                 }
                 resource.actions.add(u)
             }

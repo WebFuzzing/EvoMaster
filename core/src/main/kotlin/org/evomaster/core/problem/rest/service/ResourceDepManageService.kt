@@ -23,7 +23,6 @@ import org.evomaster.core.problem.rest.util.inference.SimpleDeriveResourceBindin
 import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
@@ -966,7 +965,7 @@ class ResourceDepManageService {
      * @return a list of db actions of [ind] which are possibly not related to rest actions of [ind]
      */
     fun unRelatedSQL(ind: RestIndividual) : List<DbAction>{
-        val allrelated = getAllRelatedTables(ind, false)
+        val allrelated = getAllRelatedTables(ind)
         return ind.dbInitialization.filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
@@ -979,7 +978,7 @@ class ResourceDepManageService {
      * tracking of SQL execution.
      */
     fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 1.0) : List<List<DbAction>>{
-        val allrelated = getAllRelatedTables(ind, false)
+        val allrelated = getAllRelatedTables(ind)
 
         val other = if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
             val notincluded = allrelated.filterNot {
@@ -1058,7 +1057,7 @@ class ResourceDepManageService {
 
         val added = mutableListOf<DbAction>()
 
-        val relatedTables = getAllRelatedTables(ind, false)
+        val relatedTables = getAllRelatedTables(ind)
 
         rm.sortTableBasedOnFK(relatedTables).forEach { t->
             val num = randomness.nextInt(1, maxPerResource) - added.filter { it.table.name.equals(t.name, ignoreCase = true) }.size
@@ -1075,14 +1074,12 @@ class ResourceDepManageService {
         ind.dbInitialization.addAll(added)
     }
 
-    private fun getAllRelatedTables(ind: RestIndividual, withSql: Boolean) : Set<String>{
+    private fun getAllRelatedTables(ind: RestIndividual) : Set<String>{
         return ind.getResourceCalls().flatMap { c->
-            extractRelatedTablesForCall(c, withSql = withSql).values.flatMap { it.map { g->g.tableName } }.toSet()
+            extractRelatedTablesForCall(c, withSql = c.is2POST).values.flatMap { it.map { g->g.tableName } }.toSet()
         }.toSet()
     }
-
-
-
+    
     /**************************************** apply parser to derive ************************************************************************/
 
     /**
@@ -1229,7 +1226,7 @@ class ResourceDepManageService {
 
     fun canMutateResource(ind: RestIndividual) : Boolean{
         return ind.getResourceCalls().size > 1 ||
-                getAllRelatedTables(ind, withSql = false).isNotEmpty() ||
+                getAllRelatedTables(ind).isNotEmpty() ||
                 (
                 rm.getResourceCluster().values.filter { r->
                     !r.isIndependent() && ind.getResourceCalls().any { i->

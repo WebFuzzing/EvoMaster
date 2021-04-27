@@ -1053,6 +1053,10 @@ class EMConfig {
     var doesApplyNameMatching = false
 
     @Experimental
+    @Cfg("Whether to employ nlp parser to process text")
+    var enableNLPParser = false
+
+    @Experimental
     @Cfg("Whether to save mutated gene info, which is typically used for debugging mutation")
     var saveMutationInfo = false
 

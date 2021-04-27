@@ -28,7 +28,8 @@ import org.slf4j.LoggerFactory
 class RestResourceNode(
         val path : RestPath,
         val actions: MutableList<RestAction> = mutableListOf(),
-        val initMode : InitMode
+        val initMode : InitMode,
+        val employNLP : Boolean
 ) {
 
     companion object {
@@ -54,7 +55,7 @@ class RestResourceNode(
             InitMode.WITH_TOKEN, InitMode.WITH_DERIVED_DEPENDENCY, InitMode.WITH_DEPENDENCY ->{
                 if(path.getNonParameterTokens().isNotEmpty()){
                     tokens.clear()
-                    ParserUtil.parsePathTokens(this.path, tokens, initMode != InitMode.WITH_DEPENDENCY)
+                    ParserUtil.parsePathTokens(this.path, tokens, employNLP && initMode != InitMode.WITH_DEPENDENCY)
                 }
                 initSegments()
             }
