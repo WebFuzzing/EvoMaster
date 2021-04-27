@@ -480,8 +480,8 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                     printableInputGene.add(" $i")
                 } else {
                     if (gene is ArrayGene<*> || (gene is OptionalGene && gene.gene is ArrayGene<*>)) {
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                        printableInputGene.add(" $i")
+                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
+                        printableInputGene.add(" ${gene.name} : $i")
                     } else {
                         val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
                         printableInputGene.add("${gene.name} : $i")
