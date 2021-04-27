@@ -1,8 +1,8 @@
 package org.evomaster.core.problem.graphql
 
 import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
