@@ -126,7 +126,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                         is OptionalGene -> it.isActive
                         is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
                         is BooleanGene -> it.value
-                        is DisruptiveGene<*> -> it.probability ==0.0
+                        is DisruptiveGene<*> -> it.probability == 0.0
                         else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
                     }
                 }
@@ -137,14 +137,14 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                             assert(it.gene is ObjectGene)
                             it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
                         }
-                        is ObjectGene ->{
+                        is ObjectGene -> {
                             it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
                         }
                         is BooleanGene -> {
                             it.name
                         }
                         //is DisruptiveGene<*> -> {
-                          //  it.name
+                        //  it.name
                         //}
                         else -> {
                             throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
@@ -168,9 +168,22 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
                 buffer.append("}")
 
-            } else {
-                throw IllegalArgumentException("Unrecognized mode: $mode")
+            } else {//GQL array in arguments need a special object printing mode form that differ from Json, Boolean selection and gql input modes:
+                //without the obj name:  {FieldNName: instance }
+                if (mode == GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE) {
+                    buffer.append("{")
+                    includedFields.map {
+                        "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
+                    }.joinTo(buffer, ", ")
+
+                    buffer.append("}")
+
+                } else {
+                    throw IllegalArgumentException("Unrecognized mode: $mode")
+                }
             }
+
+
 
         return buffer.toString()
     }
