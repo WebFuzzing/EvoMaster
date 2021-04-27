@@ -782,9 +782,9 @@ class TestCaseWriter {
         lines.add(".assertThat()")
 
         if (res.getBodyType() == null) {
-            lines.add(".contentType(\"\")")
-            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
-
+//            lines.add(".contentType(\"\")")
+//            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
+            lines.add(".body(isEmptyOrNullString())")
         } else lines.add(
                 ".contentType(\"${
                 res.getBodyType()
@@ -883,9 +883,9 @@ class TestCaseWriter {
         lines.add(".assertThat()")
 
         if (res.getBodyType() == null) {
-            lines.add(".contentType(\"\")")
-            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
-
+//            lines.add(".contentType(\"\")")
+//            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
+            lines.add(".body(isEmptyOrNullString())")
         } else lines.add(".contentType(\"${res.getBodyType()
                 .toString()
                 .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
