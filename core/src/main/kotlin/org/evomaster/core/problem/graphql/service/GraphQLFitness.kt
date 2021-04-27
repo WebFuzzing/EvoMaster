@@ -38,6 +38,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         rc.resetSUT()
 
         val cookies = getCookies(individual)
+        val tokens = getTokens(individual)
 
         doInitializingActions(individual)
 
@@ -56,7 +57,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             var ok = false
 
             if (a is GraphQLAction) {
-                ok = handleGraphQLCall(a, actionResults, cookies)
+                ok = handleGraphQLCall(a, actionResults, cookies, tokens)
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
@@ -216,7 +217,8 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     private fun handleGraphQLCall(
             action: GraphQLAction,
             actionResults: MutableList<ActionResult>,
-            cookies: Map<String, List<NewCookie>>
+            cookies: Map<String, List<NewCookie>>,
+            tokens: Map<String,String>
     ): Boolean {
 
         /*
@@ -236,7 +238,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
          */
 
         val response = try {
-            createInvocation(action, cookies).invoke()
+            createInvocation(action, cookies, tokens).invoke()
         } catch (e: ProcessingException) {
 
             /*
@@ -279,7 +281,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                     TcpUtils.handleEphemeralPortIssue()
 
-                    createInvocation(action, cookies).invoke()
+                    createInvocation(action, cookies, tokens).invoke()
                 }
                 TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
                     /*
@@ -337,7 +339,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     }
 
 
-    fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>): Invocation {
+    fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>, tokens: Map<String,String>): Invocation {
         val baseUrl = getBaseUrl()
 
         val path = "/graphql"
@@ -359,23 +361,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val builder = client.target(fullUri).request("application/json")
 
-        a.auth.headers.forEach {
-            builder.header(it.name, it.value)
-        }
-
-        val prechosenAuthHeaders = a.auth.headers.map { it.name }
-
-
-        if (a.auth.cookieLogin != null) {
-            val list = cookies[a.auth.cookieLogin!!.username]
-            if (list == null || list.isEmpty()) {
-                log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
-            } else {
-                list.forEach {
-                    builder.cookie(it.toCookie())
-                }
-            }
-        }
+        handleAuth(a, builder, cookies, tokens)
 
         //TOdo check empty return type
         val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
@@ -390,7 +376,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                 val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
 
-                var printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
+                val printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
 
                 //primitive type in Return
                 bodyEntity = if (returnGene == null) {

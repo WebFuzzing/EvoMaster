@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
@@ -431,44 +432,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             client.target(fullUri).request(a.produces.first())
         }
 
-        a.auth.headers.forEach {
-            builder.header(it.name, it.value)
-        }
-
-        val prechosenAuthHeaders = a.auth.headers.map { it.name }
-
-        /*
-            TODO: optimization, avoid mutating header gene if anyway
-            using pre-chosen one
-         */
-
-        a.parameters.filterIsInstance<HeaderParam>()
-                //TODO those should be skipped directly in the search, ie, right now they are useless genes
-                .filter { !prechosenAuthHeaders.contains(it.name) }
-                .filter { !(a.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
-                .forEach {
-                    builder.header(it.name, it.gene.getValueAsRawString())
-                }
-
-        if (a.auth.cookieLogin != null) {
-            val list = cookies[a.auth.cookieLogin!!.username]
-            if (list == null || list.isEmpty()) {
-                log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
-            } else {
-                list.forEach {
-                    builder.cookie(it.toCookie())
-                }
-            }
-        }
-
-        if(a.auth.jsonTokenPostLogin != null){
-            val token = tokens[a.auth.jsonTokenPostLogin!!.userId]
-            if(token == null || token.isEmpty()){
-                log.warn("No auth token for ${a.auth.jsonTokenPostLogin!!.userId}")
-            } else {
-                builder.header("Authorization", token)
-            }
-        }
+        handleAuth(a, builder, cookies, tokens)
 
         /*
             TODO: need to handle "accept" of returned resource
@@ -515,6 +479,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         }
         return invocation
     }
+
+
 
     private fun handleSaveLocation(a: RestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
         if (a.saveLocation) {
