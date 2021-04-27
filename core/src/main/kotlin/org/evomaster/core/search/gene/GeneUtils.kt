@@ -44,7 +44,8 @@ object GeneUtils {
         X_WWW_FORM_URLENCODED,
         BOOLEAN_SELECTION_MODE,
         BOOLEAN_SELECTION_NESTED_MODE,
-        GQL_INPUT_MODE
+        GQL_INPUT_MODE,
+        GQL_INPUT_ARRAY_MODE
     }
 
     fun getDelta(
@@ -195,6 +196,7 @@ object GeneUtils {
             EscapeMode.X_WWW_FORM_URLENCODED,
             EscapeMode.BOOLEAN_SELECTION_MODE,
             EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
+            EscapeMode.GQL_INPUT_ARRAY_MODE,
             EscapeMode.GQL_INPUT_MODE -> string
             EscapeMode.BODY -> applyBodyEscapes(string, format)
             EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
@@ -458,7 +460,7 @@ object GeneUtils {
 
             // maybe do at random?
             val selected = candidates[0]
-            if(selected is OptionalGene) {
+            if (selected is OptionalGene) {
                 selected.isActive = true
                 if (selected.gene is ObjectGene) {
                     assert(selected.gene !is CycleObjectGene)
