@@ -7,10 +7,7 @@ import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.graphql.GQMethodType
-import org.evomaster.core.problem.graphql.GraphQLAction
-import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.graphql.GraphQlCallResult
+import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
@@ -391,9 +388,9 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             if (inputGenes.isNotEmpty()) {
 
-                val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+                val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
 
-                var printableInputGenes = getPrintableInputGenes(printableInputGene)
+                var printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
 
                 //primitive type in Return
                 bodyEntity = if (returnGene == null) {
@@ -402,7 +399,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 """.trimIndent())
 
                 } else {
-                    val query = getQuery(returnGene, a)
+                    val query = GraphQLUtils.getQuery(returnGene, a)
                     Entity.json("""
                     {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
                 """.trimIndent())
@@ -415,16 +412,16 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 """.trimIndent())
 
                 } else {
-                    var query = getQuery(returnGene, a)
+                    var query = GraphQLUtils.getQuery(returnGene, a)
                     Entity.json("""
                    {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
                 """.trimIndent())
                 }
             }
         } else if (a.methodType == GQMethodType.MUTATION) {
-            val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+            val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
 
-            val printableInputGenes = getPrintableInputGenes(printableInputGene)
+            val printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
 
             /*
                 Need a check with Asma
@@ -443,7 +440,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             """.trimIndent())
 
             } else {
-                val mutation = getMutation(returnGene, a)
+                val mutation = GraphQLUtils.getMutation(returnGene, a)
                 Entity.json("""
                 { "query" : "mutation{    ${a.methodName}  $inputParams    $mutation    }","variables":null}
             """.trimIndent())
@@ -454,41 +451,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         return invocation
     }
 
-    fun getMutation(returnGene: Gene, a: GraphQLAction): String {
-        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
-    }
 
-    fun getQuery(returnGene: Gene, a: GraphQLAction): String {
-        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
-    }
 
-    fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
 
-        return printableInputGene.joinToString(",").replace("\"", "\\\"")
-
-    }
-
-    fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
-        val printableInputGene = mutableListOf<String>()
-        for (gene in inputGenes) {
-            if (gene is EnumGene<*> || (gene is OptionalGene && gene.gene is EnumGene<*>)) {
-                val i = gene.getValueAsRawString()
-                printableInputGene.add("${gene.name} : $i")
-            } else {
-                if (gene is ObjectGene || (gene is OptionalGene && gene.gene is ObjectGene)) {
-                    val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                    printableInputGene.add(" $i")
-                } else {
-                    if (gene is ArrayGene<*> || (gene is OptionalGene && gene.gene is ArrayGene<*>)) {
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
-                        printableInputGene.add(" ${gene.name} : $i")
-                    } else {
-                        val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                        printableInputGene.add("${gene.name} : $i")
-                    }
-                }
-            }
-        }
-        return printableInputGene
-    }
 }
