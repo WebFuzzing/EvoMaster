@@ -199,7 +199,7 @@ class ResourceManageService {
             calls.add(call)
             //TODO shall we control the probability to sample GET with an existing resource.
             if(hasDBHandler() && call.template?.template == HttpVerb.GET.toString() && randomness.nextBoolean(0.5)){
-                val created = handleDbActionForCall( call, false, true)
+                val created = handleDbActionForCall(call, false, true, false)
             }
             return
         }
@@ -241,11 +241,13 @@ class ResourceManageService {
                 /*
                     derive possible db, and bind value according to db
                 */
-                val created = handleDbActionForCall( call, forceSQLInsert, false)
+                val is2Post = candidate == "POST" && employSQL && (randomness.nextBoolean(0.1) || forceSQLInsert)
+                call.is2POST = is2Post
+                val created = handleDbActionForCall(call, forceSQLInsert, false, is2Post)
                 if(!created){
                     LoggingUtil.uniqueWarn(log, "resource creation for $resourceKey fails")
                 }else{
-                    call.status = ResourceStatus.CREATED_SQL
+                    call.status =  ResourceStatus.CREATED_SQL
                 }
             }
         }
@@ -325,9 +327,14 @@ class ResourceManageService {
     }
 
 
-    private fun handleDbActionForCall(call: RestResourceCalls, forceInsert: Boolean, forceSelect: Boolean) : Boolean{
+    private fun handleDbActionForCall(
+        call: RestResourceCalls,
+        forceInsert: Boolean,
+        forceSelect: Boolean,
+        employSQL: Boolean
+    ) : Boolean{
 
-        val paramToTables = dm.extractRelatedTablesForCall(call, withSql = true)
+        val paramToTables = dm.extractRelatedTablesForCall(call, withSql = employSQL)
         if(paramToTables.isEmpty()) return false
 
         //val relatedTables = removeDuplicatedTables(paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet())
@@ -342,17 +349,6 @@ class ResourceManageService {
 
         if(dbActions.isNotEmpty()){
 
-//            (0 until (dbActions.size - 1)).forEach { i ->
-//                (i+1 until dbActions.size).forEach { j ->
-//                    dbActions[i].table.foreignKeys.any { f->f.targetTable == dbActions[j].table.name}.let {
-//                        if(it){
-//                            val idb = dbActions[i]
-//                            dbActions[i] = dbActions[j]
-//                            dbActions[j] = idb
-//                        }
-//                    }
-//                }
-//            }
             DbActionUtils.randomizeDbActionGenes(dbActions, randomness)
             val removed = repairDbActionsForResource(dbActions)
 

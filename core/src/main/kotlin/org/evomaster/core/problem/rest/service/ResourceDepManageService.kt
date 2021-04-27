@@ -966,7 +966,7 @@ class ResourceDepManageService {
      * @return a list of db actions of [ind] which are possibly not related to rest actions of [ind]
      */
     fun unRelatedSQL(ind: RestIndividual) : List<DbAction>{
-        val allrelated = getAllRelatedTables(ind, true)
+        val allrelated = getAllRelatedTables(ind, false)
         return ind.dbInitialization.filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
@@ -979,7 +979,7 @@ class ResourceDepManageService {
      * tracking of SQL execution.
      */
     fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 1.0) : List<List<DbAction>>{
-        val allrelated = getAllRelatedTables(ind, true)
+        val allrelated = getAllRelatedTables(ind, false)
 
         val other = if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
             val notincluded = allrelated.filterNot {
@@ -1058,7 +1058,7 @@ class ResourceDepManageService {
 
         val added = mutableListOf<DbAction>()
 
-        val relatedTables = getAllRelatedTables(ind, true)
+        val relatedTables = getAllRelatedTables(ind, false)
 
         rm.sortTableBasedOnFK(relatedTables).forEach { t->
             val num = randomness.nextInt(1, maxPerResource) - added.filter { it.table.name.equals(t.name, ignoreCase = true) }.size
@@ -1146,7 +1146,7 @@ class ResourceDepManageService {
         }
 
         val dbActions = dbActions.plus(call.dbActions).toMutableList()
-        extractRelatedTablesForCall(call, dbActions, true).let {
+        extractRelatedTablesForCall(call, dbActions, false).let {
             ParamUtil.bindCallWithDBAction(call, dbActions, it, forceBindParamBasedOnDB = true, resourceCluster = rm.getResourceCluster(), dbRemovedDueToRepair = remove)
         }
     }
@@ -1229,7 +1229,7 @@ class ResourceDepManageService {
 
     fun canMutateResource(ind: RestIndividual) : Boolean{
         return ind.getResourceCalls().size > 1 ||
-                getAllRelatedTables(ind, withSql = true).isNotEmpty() ||
+                getAllRelatedTables(ind, withSql = false).isNotEmpty() ||
                 (
                 rm.getResourceCluster().values.filter { r->
                     !r.isIndependent() && ind.getResourceCalls().any { i->

@@ -32,6 +32,13 @@ class RestResourceCalls(
         private val  log : Logger = LoggerFactory.getLogger(RestResourceCalls::class.java)
     }
 
+    /**
+     * presents whether the SQL is
+     *      1) for creating missing resources for POST or
+     *      2) POST-POST
+     */
+    var is2POST = false
+
     var status = ResourceStatus.NOT_FOUND
 
     /**
@@ -54,6 +61,7 @@ class RestResourceCalls(
 
         copy.isDeletable = isDeletable
         copy.shouldBefore.addAll(shouldBefore)
+        copy.is2POST = is2POST
 
         return copy
     }
@@ -76,7 +84,7 @@ class RestResourceCalls(
      * @return the mutable SQL genes and they do not bind with any of Rest Actions
      *
      * */
-    private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getRestTemplate())
+    private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
 
     fun repairGenesAfterMutation(mutatedGene: MutatedGeneSpecification?, cluster: Map<String, RestResourceNode>){
 
@@ -98,7 +106,7 @@ class RestResourceCalls(
             }
         }
         if (anyMutated && dbActions.isNotEmpty()){
-            val paramInfo = getResourceNode().getMissingParams(template!!.template, true)
+            val paramInfo = getResourceNode().getMissingParams(template!!.template, false)
             val paramToTables = SimpleDeriveResourceBinding.generateRelatedTables(paramInfo, this, dbActions)
             ParamUtil.bindCallWithDBAction(this, dbActions, paramToTables, cluster, false, false)
         }

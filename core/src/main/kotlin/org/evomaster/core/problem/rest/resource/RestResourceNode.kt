@@ -135,9 +135,9 @@ class RestResourceNode(
     /**
      * @return mutable genes in [dbactions] and they do not bind with rest actions.
      */
-    fun getMutableSQLGenes(dbactions: MutableList<DbAction>, template: String) : List<out Gene>{
+    fun getMutableSQLGenes(dbactions: MutableList<DbAction>, template: String, is2POST : Boolean) : List<out Gene>{
 
-        val related = getMissingParams(template, true).map {
+        val related = getMissingParams(template, is2POST).map {
             resourceToTable.paramToTable[it.key]
         }
 

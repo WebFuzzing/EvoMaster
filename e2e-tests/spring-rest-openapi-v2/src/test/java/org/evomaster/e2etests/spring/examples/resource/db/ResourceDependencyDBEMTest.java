@@ -70,7 +70,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     args.add("--probOfSmartSampling");
                     args.add("1.0");
                     args.add("--doesApplyNameMatching");
-                    args.add("false");
+                    args.add("true");
 
                     args.add("--probOfEnablingResourceDependencyHeuristics");
                     args.add("1.0");
@@ -95,7 +95,6 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     boolean ok = solution.getIndividuals().stream().anyMatch(
                             s -> hasAtLeastOneSequence(s, new HttpVerb[]{HttpVerb.POST}, new int[]{201}, new String[]{"/api/rpR"}) ||
                                     hasAtLeastOneSequence(s, new HttpVerb[]{HttpVerb.GET, HttpVerb.POST}, new int[]{200, 201}, new String[]{"/api/rd/{rdId}","/api/rpR"})
-
                     );
 
                     assertTrue(ok);
