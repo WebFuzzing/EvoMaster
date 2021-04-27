@@ -48,7 +48,7 @@ import javax.ws.rs.core.Response
 abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
+        private val log: Logger = LoggerFactory.getLogger(HttpWsFitness::class.java)
         const val DEFAULT_FAULT_CODE = "framework_code"
     }
 

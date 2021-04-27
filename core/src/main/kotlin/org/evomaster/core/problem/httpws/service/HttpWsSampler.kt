@@ -50,11 +50,7 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
     fun sampleRandomAction(noAuthP: Double): HttpWsAction {
         val action = randomness.choose(actionCluster).copy() as HttpWsAction
         randomizeActionGenes(action)
-
-        if (action is RestCallAction) {
-            action.auth = getRandomAuth(noAuthP)
-        }
-
+        action.auth = getRandomAuth(noAuthP)
         return action
     }
 
