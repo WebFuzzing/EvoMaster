@@ -6,7 +6,6 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.IllegalArgumentException
 import kotlin.math.pow
 
 object GeneUtils {
@@ -45,7 +44,8 @@ object GeneUtils {
         X_WWW_FORM_URLENCODED,
         BOOLEAN_SELECTION_MODE,
         BOOLEAN_SELECTION_NESTED_MODE,
-        GQL_INPUT_MODE
+        GQL_INPUT_MODE,
+        GQL_INPUT_ARRAY_MODE
     }
 
     fun getDelta(
@@ -196,6 +196,7 @@ object GeneUtils {
             EscapeMode.X_WWW_FORM_URLENCODED,
             EscapeMode.BOOLEAN_SELECTION_MODE,
             EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
+            EscapeMode.GQL_INPUT_ARRAY_MODE,
             EscapeMode.GQL_INPUT_MODE -> string
             EscapeMode.BODY -> applyBodyEscapes(string, format)
             EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
@@ -314,8 +315,10 @@ object GeneUtils {
      * However, it is not necessarily trivial. An [CycleObjectGene] might be required,
      * and so we would need to scan to its first ancestor in the tree which is an optional
      * or an array.
+     *
+     * [force] if true, throw exception if cannot prevent the cyclces
      */
-    fun preventCycles(gene: Gene) {
+    fun preventCycles(gene: Gene, force: Boolean = false) {
 
         val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
         if (cycles.isEmpty()) {
@@ -339,7 +342,11 @@ object GeneUtils {
             }
 
             if (p == null) {
-                log.warn("Could not prevent cycle in ${gene.name} gene")
+                val msg = "Could not prevent cycle in ${gene.name} gene"
+                if (force) {
+                    throw RuntimeException(msg)
+                }
+                log.warn(msg)
             }
         }
     }
@@ -426,6 +433,45 @@ object GeneUtils {
         throw IllegalArgumentException("Invalid input type: ${gene.javaClass}")
     }
 
+    /**
+     * force at least one boolean to be selected
+     */
+    fun repairBooleanSelection(obj: ObjectGene) {
+
+        if (obj.fields.isEmpty()
+                || obj.fields.count { it !is OptionalGene && it !is BooleanGene } > 0) {
+            throw IllegalArgumentException("There should be at least 1 field, and they must be all optional or boolean")
+        }
+
+        val selected = obj.fields.filter { (it is OptionalGene && it.isActive) || (it is BooleanGene && it.value) }
+
+        if (selected.isNotEmpty()) {
+            //it is fine, but we still need to make sure selected objects are fine
+            selected.forEach {
+                if (it is OptionalGene && it.gene is ObjectGene && it.gene !is CycleObjectGene) {
+                    repairBooleanSelection(it.gene)
+                }
+            }
+        } else {
+            //must select at least one
+
+            val candidates = obj.fields.filter { (it is OptionalGene && it.selectable) || it is BooleanGene }
+            assert(candidates.isNotEmpty())
+
+            // maybe do at random?
+            val selected = candidates[0]
+            if (selected is OptionalGene) {
+                selected.isActive = true
+                if (selected.gene is ObjectGene) {
+                    assert(selected.gene !is CycleObjectGene)
+                    repairBooleanSelection(selected.gene)
+                }
+            } else {
+                (selected as BooleanGene).value = true
+            }
+        }
+    }
+
     fun shouldApplyBooleanSelection(gene: Gene) =
             (gene is OptionalGene && gene.gene is ObjectGene)
                     || gene is ObjectGene
@@ -463,8 +509,7 @@ object GeneUtils {
             }
             is ArrayGene<*> -> handleBooleanSelection(gene.template)
             else -> {
-                //as this was not marked as optional, must always be selected
-                DisruptiveGene(gene.name, BooleanGene(gene.name, true), 0.0)
+                BooleanGene(gene.name, true)
             }
         }
     }

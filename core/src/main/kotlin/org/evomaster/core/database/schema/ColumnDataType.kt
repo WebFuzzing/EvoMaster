@@ -50,6 +50,10 @@ enum class ColumnDataType(dataTypeName: String) {
      */
     TIMESTAMPTZ("TIMESTAMPTZ"),
     /**
+     * Alias for time with time zone. It is a PostgreSQL extension.
+     */
+    TIMETZ("TIMETZ"),
+    /**
      * VARBINARY is similar to VARCHAR, except that it contains binary strings rather than nonbinary strings.
      * That is, it contains byte sequences rather than character sequences.
      */
@@ -82,6 +86,10 @@ enum class ColumnDataType(dataTypeName: String) {
      * Example: DECIMAL(20, 2)
      **/
     DECIMAL("DECIMAL"),
+    /**
+     * Same as DECIMAL
+     */
+    NUMERIC("NUMERIC"),
     /**
      * A Binary Large Object, typically images, audio or multimedia.
      */
@@ -116,8 +124,15 @@ enum class ColumnDataType(dataTypeName: String) {
      * The data types serial and bigserial are not true types, but merely a notational convenience for creating unique
      * identifier columns (similar to the AUTO_INCREMENT property supported by some other databases).
      */
-    BIGSERIAL("BIGSERIAL");
+    BIGSERIAL("BIGSERIAL"),
 
+    SERIAL("SERIAL"),
+
+    //TODO tmp for dealing with arrays of chars in patio-api. would need more general solution, see:
+    //https://www.postgresql.org/docs/9.1/arrays.html
+    ARRAY_VARCHAR("_VARCHAR")
+
+    ;
 
     fun shouldBePrintedInQuotes(): Boolean {
         return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TIMESTAMPTZ) || equals(TEXT)

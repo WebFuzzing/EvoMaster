@@ -1,8 +1,7 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.rest.ContentType
-import org.evomaster.core.problem.rest.auth.JsonTokenPostLogin
+import org.evomaster.core.problem.httpws.service.auth.JsonTokenPostLogin
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.GeneUtils

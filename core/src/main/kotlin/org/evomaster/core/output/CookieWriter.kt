@@ -2,8 +2,7 @@ package org.evomaster.core.output
 
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.rest.ContentType
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.auth.CookieLogin
+import org.evomaster.core.problem.httpws.service.auth.CookieLogin
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 

@@ -7,21 +7,16 @@ import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.graphql.GQMethodType
-import org.evomaster.core.problem.graphql.GraphQLAction
-import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.graphql.GraphQlCallResult
+import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.EnumGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -43,6 +38,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         rc.resetSUT()
 
         val cookies = getCookies(individual)
+        val tokens = getTokens(individual)
 
         doInitializingActions(individual)
 
@@ -61,7 +57,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             var ok = false
 
             if (a is GraphQLAction) {
-                ok = handleGraphQLCall(a, actionResults, cookies)
+                ok = handleGraphQLCall(a, actionResults, cookies, tokens)
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
@@ -140,20 +136,20 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val anyError = hasErrors(result)
 
-        if (anyError){
+        if (anyError) {
             fv.updateTarget(errorId, 1.0, actionIndex)
             fv.updateTarget(okId, 0.5, actionIndex)
 
 
             // handle with last statement
-            val last = additionalInfoList[actionIndex].lastExecutedStatement?: DEFAULT_FAULT_CODE
+            val last = additionalInfoList[actionIndex].lastExecutedStatement ?: DEFAULT_FAULT_CODE
             result.setLastStatementWhenGQLErrors(last)
 
             // shall we add additional target with last?
             val errorlineId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodNameAndLine(line = last, method = name))
             fv.updateTarget(errorlineId, 1.0, actionIndex)
 
-        }else{
+        } else {
             fv.updateTarget(okId, 1.0, actionIndex)
             fv.updateTarget(errorId, 0.5, actionIndex)
         }
@@ -161,17 +157,17 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
     }
 
-    private fun hasErrors(result: GraphQlCallResult) : Boolean{
+    private fun hasErrors(result: GraphQlCallResult): Boolean {
 
-        val errors = extractBodyInGraphQlResponse(result)?.findPath("errors")?:return false
+        val errors = extractBodyInGraphQlResponse(result)?.findPath("errors") ?: return false
 
         return !errors.isEmpty || !errors.isMissingNode
     }
 
-    private fun extractBodyInGraphQlResponse(result: GraphQlCallResult) : JsonNode? {
+    private fun extractBodyInGraphQlResponse(result: GraphQlCallResult): JsonNode? {
         return try {
             result.getBody()?.run { mapper.readTree(result.getBody()) }
-        }catch (e: JsonProcessingException){
+        } catch (e: JsonProcessingException) {
             null
         }
     }
@@ -221,7 +217,8 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     private fun handleGraphQLCall(
             action: GraphQLAction,
             actionResults: MutableList<ActionResult>,
-            cookies: Map<String, List<NewCookie>>
+            cookies: Map<String, List<NewCookie>>,
+            tokens: Map<String,String>
     ): Boolean {
 
         /*
@@ -241,7 +238,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
          */
 
         val response = try {
-            createInvocation(action, cookies).invoke()
+            createInvocation(action, cookies, tokens).invoke()
         } catch (e: ProcessingException) {
 
             /*
@@ -284,7 +281,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                     TcpUtils.handleEphemeralPortIssue()
 
-                    createInvocation(action, cookies).invoke()
+                    createInvocation(action, cookies, tokens).invoke()
                 }
                 TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
                     /*
@@ -342,7 +339,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     }
 
 
-    fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>): Invocation {
+    fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>, tokens: Map<String,String>): Invocation {
         val baseUrl = getBaseUrl()
 
         val path = "/graphql"
@@ -364,23 +361,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val builder = client.target(fullUri).request("application/json")
 
-        a.auth.headers.forEach {
-            builder.header(it.name, it.value)
-        }
-
-        val prechosenAuthHeaders = a.auth.headers.map { it.name }
-
-
-        if (a.auth.cookieLogin != null) {
-            val list = cookies[a.auth.cookieLogin!!.username]
-            if (list == null || list.isEmpty()) {
-                log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
-            } else {
-                list.forEach {
-                    builder.cookie(it.toCookie())
-                }
-            }
-        }
+        handleAuth(a, builder, cookies, tokens)
 
         //TOdo check empty return type
         val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
@@ -393,18 +374,18 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             if (inputGenes.isNotEmpty()) {
 
-                val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+                val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
 
-                var printableInputGenes = getPrintableInputGenes(printableInputGene)
+                val printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
 
-                //primitive type
+                //primitive type in Return
                 bodyEntity = if (returnGene == null) {
                     Entity.json("""
                     {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
                 """.trimIndent())
 
                 } else {
-                    val query = getQuery(returnGene, a)
+                    val query = GraphQLUtils.getQuery(returnGene, a)
                     Entity.json("""
                     {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
                 """.trimIndent())
@@ -417,16 +398,16 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 """.trimIndent())
 
                 } else {
-                    var query = getQuery(returnGene, a)
+                    var query = GraphQLUtils.getQuery(returnGene, a)
                     Entity.json("""
                    {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
                 """.trimIndent())
                 }
             }
         } else if (a.methodType == GQMethodType.MUTATION) {
-            val printableInputGene: MutableList<String> = getPrintableInputGene(inputGenes)
+            val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
 
-            val printableInputGenes = getPrintableInputGenes(printableInputGene)
+            val printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
 
             /*
                 Need a check with Asma
@@ -445,7 +426,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             """.trimIndent())
 
             } else {
-                val mutation = getMutation(returnGene, a)
+                val mutation = GraphQLUtils.getMutation(returnGene, a)
                 Entity.json("""
                 { "query" : "mutation{    ${a.methodName}  $inputParams    $mutation    }","variables":null}
             """.trimIndent())
@@ -456,31 +437,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         return invocation
     }
 
-    fun getMutation(returnGene: Gene, a: GraphQLAction): String {
-        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
-    }
 
-    fun getQuery(returnGene: Gene, a: GraphQLAction): String {
-        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
-    }
 
-    fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
 
-        return printableInputGene.joinToString(",").replace("\"", "\\\"")
-
-    }
-
-    fun getPrintableInputGene(inputGenes: List<Gene>): MutableList<String> {
-        val printableInputGene = mutableListOf<String>()
-        for (gene in inputGenes) {
-            if (gene is EnumGene<*>) {
-                val i = gene.getValueAsRawString()
-                printableInputGene.add("${gene.name} : $i")
-            } else {
-                val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                printableInputGene.add("${gene.name} : $i")
-            }
-        }
-        return printableInputGene
-    }
 }

@@ -1,8 +1,8 @@
 package org.evomaster.core.problem.rest
 
 import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.param.Param
@@ -22,7 +22,7 @@ class RestCallAction(
         val id:String,
         val verb: HttpVerb,
         val path: RestPath,
-        val parameters: MutableList<Param>,
+        parameters: MutableList<Param>,
         auth: AuthenticationInfo = NoAuth(),
         /**
          * If true, it means that it will
@@ -44,7 +44,7 @@ class RestCallAction(
         var locationId: String? = null,
         val produces: List<String> = listOf(),
         val responseRefs : MutableMap<String, String> = mutableMapOf()
-) : HttpWsAction(auth), RestAction {
+) : HttpWsAction(auth, parameters), RestAction {
 
     /**
      * collect info of description and summary from swagger
