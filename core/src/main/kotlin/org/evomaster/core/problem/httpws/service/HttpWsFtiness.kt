@@ -12,6 +12,7 @@ import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.remote.SutProblemException
@@ -39,6 +40,7 @@ import javax.annotation.PostConstruct
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
+import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.NewCookie
 import javax.ws.rs.core.Response
@@ -46,7 +48,7 @@ import javax.ws.rs.core.Response
 abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
+        private val log: Logger = LoggerFactory.getLogger(HttpWsFitness::class.java)
         const val DEFAULT_FAULT_CODE = "framework_code"
     }
 
@@ -419,4 +421,44 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
         }
     }
 
+    protected fun handleAuth(a: HttpWsAction, builder: Invocation.Builder, cookies: Map<String, List<NewCookie>>, tokens: Map<String, String>) {
+        a.auth.headers.forEach {
+            builder.header(it.name, it.value)
+        }
+
+        val prechosenAuthHeaders = a.auth.headers.map { it.name }
+
+        /*
+            TODO: optimization, avoid mutating header gene if anyway
+            using pre-chosen one
+         */
+
+        a.parameters.filterIsInstance<HeaderParam>()
+                //TODO those should be skipped directly in the search, ie, right now they are useless genes
+                .filter { !prechosenAuthHeaders.contains(it.name) }
+                .filter { !(a.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
+                .forEach {
+                    builder.header(it.name, it.gene.getValueAsRawString())
+                }
+
+        if (a.auth.cookieLogin != null) {
+            val list = cookies[a.auth.cookieLogin!!.username]
+            if (list == null || list.isEmpty()) {
+                log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
+            } else {
+                list.forEach {
+                    builder.cookie(it.toCookie())
+                }
+            }
+        }
+
+        if (a.auth.jsonTokenPostLogin != null) {
+            val token = tokens[a.auth.jsonTokenPostLogin!!.userId]
+            if (token == null || token.isEmpty()) {
+                log.warn("No auth token for ${a.auth.jsonTokenPostLogin!!.userId}")
+            } else {
+                builder.header("Authorization", token)
+            }
+        }
+    }
 }

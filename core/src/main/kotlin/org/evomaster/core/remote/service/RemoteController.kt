@@ -49,13 +49,14 @@ class RemoteController() : DatabaseExecutor {
 
     private var client: Client = ClientBuilder.newClient()
 
-    constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean) : this() {
+    constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean, config: EMConfig = EMConfig()) : this() {
         if (computeSqlHeuristics && !extractSqlExecutionInfo)
             throw IllegalArgumentException("'extractSqlExecutionInfo' should be enabled when 'computeSqlHeuristics' is enabled")
         this.host = host
         this.port = port
         this.computeSqlHeuristics = computeSqlHeuristics
         this.extractSqlExecutionInfo = computeSqlHeuristics || extractSqlExecutionInfo
+        this.config = config
     }
 
     constructor(host: String, port: Int, computeSqlHeuristics: Boolean) : this(host, port, computeSqlHeuristics, computeSqlHeuristics)
@@ -285,7 +286,7 @@ class RemoteController() : DatabaseExecutor {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
                     .queryParam("ids", queryParam)
-                    .queryParam("killSwitch", true)
+                    .queryParam("killSwitch", config.killSwitch)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }

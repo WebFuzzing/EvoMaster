@@ -11,7 +11,7 @@ import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -38,6 +38,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         rc.resetSUT()
 
         val cookies = getCookies(individual)
+        val tokens = getTokens(individual)
 
         doInitializingActions(individual)
 
@@ -56,7 +57,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             var ok = false
 
             if (a is GraphQLAction) {
-                ok = handleGraphQLCall(a, actionResults, cookies)
+                ok = handleGraphQLCall(a, actionResults, cookies, tokens)
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
@@ -216,7 +217,8 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     private fun handleGraphQLCall(
             action: GraphQLAction,
             actionResults: MutableList<ActionResult>,
-            cookies: Map<String, List<NewCookie>>
+            cookies: Map<String, List<NewCookie>>,
+            tokens: Map<String,String>
     ): Boolean {
 
         /*
@@ -236,7 +238,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
          */
 
         val response = try {
-            createInvocation(action, cookies).invoke()
+            createInvocation(action, cookies, tokens).invoke()
         } catch (e: ProcessingException) {
 
             /*
@@ -279,7 +281,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                     TcpUtils.handleEphemeralPortIssue()
 
-                    createInvocation(action, cookies).invoke()
+                    createInvocation(action, cookies, tokens).invoke()
                 }
                 TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
                     /*
@@ -337,7 +339,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     }
 
 
-    fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>): Invocation {
+    fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>, tokens: Map<String,String>): Invocation {
         val baseUrl = getBaseUrl()
 
         val path = "/graphql"
@@ -359,94 +361,10 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val builder = client.target(fullUri).request("application/json")
 
-        a.auth.headers.forEach {
-            builder.header(it.name, it.value)
-        }
-
-        val prechosenAuthHeaders = a.auth.headers.map { it.name }
+        handleAuth(a, builder, cookies, tokens)
 
 
-        if (a.auth.cookieLogin != null) {
-            val list = cookies[a.auth.cookieLogin!!.username]
-            if (list == null || list.isEmpty()) {
-                log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
-            } else {
-                list.forEach {
-                    builder.cookie(it.toCookie())
-                }
-            }
-        }
-
-        //TOdo check empty return type
-        val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
-
-        val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
-
-        var bodyEntity: Entity<String> = Entity.json(" ")
-
-        if (a.methodType == GQMethodType.QUERY) {
-
-            if (inputGenes.isNotEmpty()) {
-
-                val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
-
-                var printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
-
-                //primitive type in Return
-                bodyEntity = if (returnGene == null) {
-                    Entity.json("""
-                    {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
-                """.trimIndent())
-
-                } else {
-                    val query = GraphQLUtils.getQuery(returnGene, a)
-                    Entity.json("""
-                    {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
-                """.trimIndent())
-
-                }
-            } else {//request without arguments and primitive type
-                bodyEntity = if (returnGene == null) {
-                    Entity.json("""
-                    {"query" : "  { ${a.methodName}       } ","variables":null}
-                """.trimIndent())
-
-                } else {
-                    var query = GraphQLUtils.getQuery(returnGene, a)
-                    Entity.json("""
-                   {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
-                """.trimIndent())
-                }
-            }
-        } else if (a.methodType == GQMethodType.MUTATION) {
-            val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
-
-            val printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
-
-            /*
-                Need a check with Asma
-                for mutation which does not have any param, there is no need for ()
-                e.g., createX:X!
-                      mutation{
-                        createX{
-                            ...
-                        }
-                      }
-             */
-            val inputParams = if (printableInputGene.isEmpty()) "" else "($printableInputGenes)"
-            bodyEntity = if (returnGene == null) {//primitive type
-                Entity.json("""
-                {"query" : " mutation{ ${a.methodName}  $inputParams         } ","variables":null}
-            """.trimIndent())
-
-            } else {
-                val mutation = GraphQLUtils.getMutation(returnGene, a)
-                Entity.json("""
-                { "query" : "mutation{    ${a.methodName}  $inputParams    $mutation    }","variables":null}
-            """.trimIndent())
-
-            }
-        }
+        val bodyEntity = GraphQLUtils.generateGQLBodyEntity(a, config.outputFormat)?:Entity.json(" ")
         val invocation = builder.buildPost(bodyEntity)
         return invocation
     }

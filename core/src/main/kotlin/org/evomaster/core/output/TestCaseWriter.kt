@@ -12,6 +12,7 @@ import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
+import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -413,7 +414,7 @@ class TestCaseWriter {
 
         when {
             format.isJavaOrKotlin() -> {
-                handleGQLHeaders(call, lines)
+                handleHeaders(call, lines)
                 handleGQLBody(call, lines)
                 handleGQLVerb(baseUrlOfSut, call, lines)
             }
@@ -421,7 +422,7 @@ class TestCaseWriter {
                 //in SuperAgent, verb must be first
                 handleGQLVerb(baseUrlOfSut, call, lines)
                 lines.append(getAcceptGQLHeader(call, res))
-                handleGQLHeaders(call, lines)
+                handleHeaders(call, lines)
                 handleGQLBody(call, lines)
             }
         }
@@ -782,9 +783,9 @@ class TestCaseWriter {
         lines.add(".assertThat()")
 
         if (res.getBodyType() == null) {
-            lines.add(".contentType(\"\")")
-            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
-
+//            lines.add(".contentType(\"\")")
+//            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
+            lines.add(".body(isEmptyOrNullString())")
         } else lines.add(
                 ".contentType(\"${
                 res.getBodyType()
@@ -883,9 +884,9 @@ class TestCaseWriter {
         lines.add(".assertThat()")
 
         if (res.getBodyType() == null) {
-            lines.add(".contentType(\"\")")
-            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
-
+//            lines.add(".contentType(\"\")")
+//            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
+            lines.add(".body(isEmptyOrNullString())")
         } else lines.add(".contentType(\"${res.getBodyType()
                 .toString()
                 .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
@@ -1159,50 +1160,10 @@ class TestCaseWriter {
 
         }
 
-        val body = if (call.methodType.toString() == "QUERY") {
-            if (inputGenes.isNotEmpty()) {
+        val bodyEntity = GraphQLUtils.generateGQLBodyEntity(call, configuration.outputFormat)
 
-                val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
-
-                var printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
-
-                if (returnGene == null) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
-
-                } else {
-
-                    var query = GraphQLUtils.getQuery(returnGene, call)
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \"{ ${call.methodName}($printableInputGenes)$query} \",\"variables\":null}")
-                }
-
-            } else {
-
-                if (returnGene == null) {
-
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \"{ ${call.methodName}   }\",\"variables\":null} ")
-                } else {
-
-                    var query = GraphQLUtils.getQuery(returnGene, call)
-                    OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\" : \" {${call.methodName}  $query  }    \",\"variables\":null} ")
-
-                }
-            }
-
-        } else if (call.methodType.toString() == "MUTATION") {
-            val printableInputGene: MutableList<String> = GraphQLUtils.getPrintableInputGene(inputGenes)
-
-            var printableInputGenes = GraphQLUtils.getPrintableInputGenes(printableInputGene)
-
-            if (returnGene == null) {//primitive type means without a return gene
-                OutputFormatter.JSON_FORMATTER.getFormatted("{\"query\": \" mutation{ ${call.methodName}($printableInputGenes)} \",\"variables\":null}")
-
-            } else {
-                var mutation = GraphQLUtils.getMutation(returnGene, call)
-
-                OutputFormatter.JSON_FORMATTER.getFormatted("{ \"query\" : \"mutation{${call.methodName}  ($printableInputGenes)    $mutation    } \",\"variables\":null} ")
-            }
-        } else {
-            LoggingUtil.uniqueWarn(TestCaseWriter.log, " method type not supported yet : ${call.methodType}").toString()
+        val body = if (bodyEntity!=null) OutputFormatter.JSON_FORMATTER.getFormatted(bodyEntity.entity) else {
+            LoggingUtil.uniqueWarn(log, " method type not supported yet : ${call.methodType}").toString()
         }
 
 
@@ -1224,7 +1185,7 @@ class TestCaseWriter {
         }
     }
 
-    private fun handleHeaders(call: RestCallAction, lines: Lines) {
+    private fun handleHeaders(call: HttpWsAction, lines: Lines) {
 
         val prechosenAuthHeaders = call.auth.headers.map { it.name }
 
@@ -1260,34 +1221,6 @@ class TestCaseWriter {
         }
     }
 
-    private fun handleGQLHeaders(call: GraphQLAction, lines: Lines) {
-
-        val prechosenAuthHeaders = call.auth.headers.map { it.name }
-
-        val set = when {
-            format.isJavaOrKotlin() -> "header"
-            format.isJavaScript() -> "set"
-            else -> throw IllegalArgumentException("Not supported format: $format")
-        }
-
-        call.auth.headers.forEach {
-            lines.add(".$set(\"${it.name}\", \"${it.value}\") // ${call.auth.name}")
-        }
-
-        call.parameters.filterIsInstance<HeaderParam>()
-                .filter { !prechosenAuthHeaders.contains(it.name) }
-                .forEach {
-                    lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
-                }
-
-        val cookieLogin = call.auth.cookieLogin
-        if (cookieLogin != null) {
-            when {
-                format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(cookieLogin)})")
-                format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(cookieLogin)})")
-            }
-        }
-    }
 
     private fun getAcceptHeader(call: RestCallAction, res: RestCallResult): String {
         /*

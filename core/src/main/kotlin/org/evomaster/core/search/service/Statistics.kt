@@ -262,6 +262,9 @@ class Statistics : SearchListener {
 
     private fun failedOracle(solution: Solution<*>): Int {
 
+        //Fix for GraphQL
+        if (!writer.hasPartialOracles()) return 0
+
         val oracles = writer.getPartialOracles()
         //count the distinct number of API paths for which we have a failed oracle
         // NOTE: calls with an error code (5xx) are excluded from this count.

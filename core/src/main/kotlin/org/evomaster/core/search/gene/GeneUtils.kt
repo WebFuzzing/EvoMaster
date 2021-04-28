@@ -45,7 +45,8 @@ object GeneUtils {
         BOOLEAN_SELECTION_MODE,
         BOOLEAN_SELECTION_NESTED_MODE,
         GQL_INPUT_MODE,
-        GQL_INPUT_ARRAY_MODE
+        GQL_INPUT_ARRAY_MODE,
+        GQL_STR_VALUE
     }
 
     fun getDelta(
@@ -198,6 +199,7 @@ object GeneUtils {
             EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
             EscapeMode.GQL_INPUT_ARRAY_MODE,
             EscapeMode.GQL_INPUT_MODE -> string
+            EscapeMode.GQL_STR_VALUE -> applyGQLStr(string, format)
             EscapeMode.BODY -> applyBodyEscapes(string, format)
             EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
         }
@@ -216,6 +218,17 @@ object GeneUtils {
                 .replace("\t", "\\t")
 
         return ret
+    }
+
+    /**
+     * TODO might need a further handling based on [format]
+     * Note that there is kind of post handling for graphQL, see [GraphQLUtils.getPrintableInputGenes]
+     */
+    fun applyGQLStr(string: String, format: OutputFormat) : String{
+        val replace = string
+            .replace("\"", "\\\\\"")
+
+        return replace
     }
 
     fun applyExpectationEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {

@@ -119,6 +119,21 @@ public class EMController {
         ExecutionTracer.setKillSwitch(previous);
     }
 
+    private void noKillSwitchForceCheck(Runnable lambda){
+        /*
+            Note: bit tricky for External. the calls on ExecutionTracer would have
+            no impact, only those on sutController. it is needed for when driver communicates
+            with SUT as part of driver operations, eg reset/seed state via an API call, which is
+            done for example in Proxyprint. But for all other cases, it can be just an unnecessary
+            overhead.
+         */
+
+        boolean previous = ExecutionTracer.isKillSwitch();
+        sutController.setKillSwitch(false);
+        lambda.run();
+        sutController.setKillSwitch(previous);
+    }
+
     @Path(ControllerConstants.INFO_SUT_PATH)
     @GET
     public Response getSutInfo(@Context HttpServletRequest httpServletRequest) {
@@ -279,7 +294,7 @@ public class EMController {
                                 is started but then not committed). Ideally, in the reset of DBs we should
                                 force all lock releases, and possibly point any left lock as a potential bug
                              */
-                            noKillSwitch(() -> sutController.resetStateOfSUT());
+                            noKillSwitchForceCheck(() -> sutController.resetStateOfSUT());
                         } finally {
                             noKillSwitch(() -> sutController.newTest());
                         }
