@@ -136,5 +136,6 @@ enum class ColumnDataType(dataTypeName: String) {
 
     fun shouldBePrintedInQuotes(): Boolean {
         return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TIMESTAMPTZ) || equals(TEXT)
+                || equals(UUID)
     }
 }
