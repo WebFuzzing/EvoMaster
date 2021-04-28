@@ -247,7 +247,7 @@ class ImpactUtils {
                 g.name == template.name && g::class.java.simpleName == template::class.java.simpleName && (includeSameValue || !g.containsSameValueAs(template))
             }.also {
                 if (it.size > 1)
-                    log.warn("{} genes have been mutated with the name {},",it.size, gene.name)
+                    log.warn("{} genes have been mutated with the name {}",it.size, gene.name)
             }.firstOrNull()
         }
     }
