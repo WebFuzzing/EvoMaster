@@ -609,6 +609,8 @@ class TestSuiteWriter {
         partialOracles = oracles
     }
 
+    fun hasPartialOracles() = (::partialOracles.isInitialized)
+
     fun getPartialOracles(): PartialOracles {
         return partialOracles
     }

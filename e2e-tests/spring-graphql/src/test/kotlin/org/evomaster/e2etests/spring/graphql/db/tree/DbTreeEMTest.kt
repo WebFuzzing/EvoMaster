@@ -29,8 +29,6 @@ class DbTreeEMTest : SpringTestBase() {
 
             args.add("--problemType")
             args.add(EMConfig.ProblemType.GRAPHQL.toString())
-            args.add("--enableBasicAssertions")
-            args.add("false")
 
             args.add("--heuristicsForSQL")
             args.add("true")
