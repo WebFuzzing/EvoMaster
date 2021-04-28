@@ -135,6 +135,10 @@ enum class ColumnDataType(dataTypeName: String) {
     ;
 
     fun shouldBePrintedInQuotes(): Boolean {
+        /*
+            TODO double check all them... likely this list is currently incompleted... need test for each
+            single type
+         */
         return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TIMESTAMPTZ) || equals(TEXT)
                 || equals(UUID)
     }
