@@ -1,8 +1,6 @@
 package org.evomaster.core.output.oracles
 
 import com.google.gson.Gson
-import com.google.gson.internal.LinkedTreeMap
-import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.*
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
@@ -17,7 +15,6 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.concurrent.LinkedTransferQueue
 import javax.ws.rs.core.MediaType
 
 
@@ -146,6 +143,16 @@ class SchemaOracle : ImplementedOracle() {
         }
     }
 
+    /**
+     * The [supportedObject] function evaluates if the [obj] ObjectGene object is supported
+     * by the [call] RestCallAction. In this case, the [obj] object is obtained from
+     * the [ObjectGenerator], and therefore it is of type [ObjectGene].
+     *
+     * This requires that the [ObjectGenerator] object is set (and connected to the \
+     * OpenAPI schema, in order to get the objects potentially supported by the call.
+     *
+     */
+
     fun supportedObject(obj: ObjectGene, call: RestCallAction): Boolean{
         val supportedObjects = getSupportedResponse(call)
         return supportedObjects.any { o ->
@@ -178,10 +185,17 @@ class SchemaOracle : ImplementedOracle() {
     }
 
     /**
+     * The [supportedObject] function evaluates if the [obj] object is supported
+     * by the [call] RestCallAction. In this case, the [obj] object is obtained from
+     * a response (e.g. by means of JSON) and therefore it's a Map, rather than
+     * obtained from the [ObjectGenerator].
+     *
+     * This requires that the [ObjectGenerator] object is set (and connected to the \
+     * OpenAPI schema, in order to get the objects potentially supported by the call.
      *
      */
 
-    fun supportedObject(obj: LinkedTreeMap<*,*>, call: RestCallAction): Boolean{
+    fun supportedObject(obj: Map<*,*>, call: RestCallAction): Boolean{
 
         // The obj is (presumably) obtained from the result. So little to no information is available
         // about
@@ -225,11 +239,18 @@ class SchemaOracle : ImplementedOracle() {
         }
     }
 
+    /*
     fun matchesStructure(call: RestCallAction, res: HttpWsCallResult): Boolean{
         val supportedTypes = getSupportedResponse(call)
         val actualType = res.getBody()
         return false
-    }
+    }*/
+
+    /**
+     * The function [getSupportedResponse] collects the supported responses for a particular call
+     * for all the supported HTTP verbs. The response contains the object names, as identified
+     * in the references defined by the OpenAPI.
+     */
 
     fun getSupportedResponse(call: RestCallAction): MutableMap<String, String>{
         val verb = call.verb
@@ -303,24 +324,19 @@ class SchemaOracle : ImplementedOracle() {
                 !basicTypes.contains(expectedObject)) {
             return true
         }
-        //val referenceObject = objectGenerator.getNamedReference(expectedObject)
-
         var supported = true
 
         if (res.getBodyType()?.isCompatible(MediaType.APPLICATION_JSON_TYPE) == true){
             val actualObject = Gson().fromJson(res.getBody(), Object::class.java)
-            if  (actualObject is LinkedTreeMap<*,*>)
+            if  (actualObject is Map<*,*>)
                 supported = supportedObject(actualObject, call)
             else if (actualObject is List<*>
                     && (actualObject as List<*>).isNotEmpty()
-                    && (actualObject as List<*>).first() is LinkedTreeMap<*,*>){
-                supported = supportedObject((actualObject as List<*>).first() as LinkedTreeMap<*, *>, call)
+                    && (actualObject as List<*>).first() is Map<*,*>){
+                supported = supportedObject((actualObject as List<*>).first() as Map<*, *>, call)
             }
-
             // A call should generate an expectation if:
-
             // The return object differs in structure from the expected (i.e. swagger object).
-
             // The return type is different than the actual type (i.e. return type is not supported)
         }
 
