@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.formatter.MismatchedFormatException
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.graphql.GraphQLAction
@@ -1162,7 +1163,14 @@ class TestCaseWriter {
 
         val bodyEntity = GraphQLUtils.generateGQLBodyEntity(call, configuration.outputFormat)
 
-        val body = if (bodyEntity!=null) OutputFormatter.JSON_FORMATTER.getFormatted(bodyEntity.entity) else {
+        val body = if (bodyEntity!=null) {
+            try{
+                OutputFormatter.JSON_FORMATTER.getFormatted(bodyEntity.entity)
+            }catch (e: MismatchedFormatException){
+                LoggingUtil.uniqueWarn(log, e.message?:"failed to format ${bodyEntity.entity}")
+                bodyEntity.entity
+            }
+        } else {
             LoggingUtil.uniqueWarn(log, " method type not supported yet : ${call.methodType}").toString()
         }
 
