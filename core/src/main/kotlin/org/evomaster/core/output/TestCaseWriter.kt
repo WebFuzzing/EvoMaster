@@ -1164,10 +1164,12 @@ class TestCaseWriter {
         val bodyEntity = GraphQLUtils.generateGQLBodyEntity(call, configuration.outputFormat)
 
         val body = if (bodyEntity!=null) {
-            if (OutputFormatter.JSON_FORMATTER.isValid(bodyEntity.entity))
+            try{
                 OutputFormatter.JSON_FORMATTER.getFormatted(bodyEntity.entity)
-            else
+            }catch (e: MismatchedFormatException){
+                LoggingUtil.uniqueWarn(log, e.message?:"failed to format ${bodyEntity.entity}")
                 bodyEntity.entity
+            }
         } else {
             LoggingUtil.uniqueWarn(log, " method type not supported yet : ${call.methodType}").toString()
         }
