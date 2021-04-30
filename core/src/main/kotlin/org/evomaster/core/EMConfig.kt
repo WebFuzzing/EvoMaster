@@ -314,6 +314,11 @@ class EMConfig {
         if (seedTestCases && seedTestCasesPath.isNullOrBlank()) {
             throw IllegalArgumentException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
+
+        // Clustering constraints: the executive summary is not really meaningful without the clustering
+        if(executiveSummary && testSuiteSplitType != TestSuiteSplitType.CLUSTER){
+            throw IllegalArgumentException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -668,15 +673,15 @@ class EMConfig {
     enum class TestSuiteSplitType {
         NONE,
         CLUSTER,
-        SUMMARY_ONLY,
         CODE
     }
 
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
     var testSuiteSplitType = TestSuiteSplitType.CODE
 
-    @Experimental
-    @Cfg("Generate an executive summary, containing an example of each category of potential fault found")
+    @Cfg("Generate an executive summary, containing an example of each category of potential fault found." +
+                    "NOTE: This option is only meaningful when used in conjuction with clustering. " +
+                    "This is achieved by turning the option --testSuiteSplitType to CLUSTER")
     var executiveSummary = false
 
     @Experimental

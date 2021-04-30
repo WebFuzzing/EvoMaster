@@ -51,11 +51,6 @@ object TestSuiteSplitter {
                 val clusters = conductClustering(sol, oracles, metrics, splitResult)
                 splitByCluster(clusters, sol, oracles, splitResult)
             }
-            EMConfig.TestSuiteSplitType.SUMMARY_ONLY -> {
-                val clusters = conductClustering(sol, oracles, metrics, splitResult)
-                //splitResult.splitOutcome = listOf(sol)
-                splitResult.splitOutcome = splitByCode(sol, oracles)
-            }
             EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol, oracles)
         }
 
