@@ -6,7 +6,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -38,7 +38,7 @@ class SupportedCodeOracle : ImplementedOracle() {
 
     }
 
-    override fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
+    override fun addExpectations(call: RestCallAction, lines: Lines, res: HttpWsCallResult, name: String, format: OutputFormat) {
         //if(!supportedCode(call, res)){
         if(generatesExpectation(call, res)){
             // The code is not among supported codes, so an expectation will be generated
@@ -72,7 +72,7 @@ class SupportedCodeOracle : ImplementedOracle() {
             }
         }
     }
-    fun supportedCode(call: RestCallAction, res: RestCallResult): Boolean{
+    fun supportedCode(call: RestCallAction, res: HttpWsCallResult): Boolean{
         val code = res.getStatusCode().toString()
         val validCodes = getSupportedCode(call)
         return validCodes.contains(code)
@@ -99,7 +99,7 @@ class SupportedCodeOracle : ImplementedOracle() {
         objectGenerator = gen
     }
 
-    override fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean {
+    override fun generatesExpectation(call: RestCallAction, res: HttpWsCallResult): Boolean {
         if(this::objectGenerator.isInitialized){
              return !supportedCode(call, res)
         }
@@ -110,13 +110,13 @@ class SupportedCodeOracle : ImplementedOracle() {
         if(individual.individual !is RestIndividual) return false
         if(!this::objectGenerator.isInitialized) return false
         val gens = individual.evaluatedActions().any {
-            !supportedCode(it.action as RestCallAction, it.result as RestCallResult)
+            !supportedCode(it.action as RestCallAction, it.result as HttpWsCallResult)
         }
         return false
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
-        return if (action.result is RestCallResult
+        return if (action.result is HttpWsCallResult
                 && action.action is RestCallAction
                 &&this::objectGenerator.isInitialized)
             !supportedCode(action.action, action.result)

@@ -26,7 +26,6 @@ public class StringsEMTest extends StringsTestBase {
                 "org.bar.StringsEM",
                 10_000,
                 (args) -> {
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

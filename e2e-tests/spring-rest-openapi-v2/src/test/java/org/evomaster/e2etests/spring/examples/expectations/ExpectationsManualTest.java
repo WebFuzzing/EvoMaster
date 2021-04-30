@@ -1,8 +1,11 @@
 package org.evomaster.e2etests.spring.examples.expectations;
 
+import com.foo.rest.examples.spring.expectations.ExpectationsController;
 import io.restassured.response.ValidatableResponse;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.expect.ExpectationHandler;
+import org.evomaster.e2etests.spring.examples.SpringTestBase;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -12,7 +15,13 @@ import static org.evomaster.client.java.controller.expect.ExpectationHandler.exp
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ExpectationsManualTest extends ExpectationsTestBase{
+public class ExpectationsManualTest extends SpringTestBase {
+
+    @BeforeAll
+    public static void initClass() throws Exception{
+
+        SpringTestBase.initClass(new ExpectationsController());
+    }
 
     @Test
     public void testRun(){
@@ -20,15 +29,15 @@ public class ExpectationsManualTest extends ExpectationsTestBase{
         ExpectationHandler expectationHandler = expectationHandler();
 
         ValidatableResponse call_0 = given().accept("*/*")
-                .get(baseUrlOfSut + "/api/expectations/getExpectations/true")
+                .get(baseUrlOfSut + "/api/basicResponsesNumeric/799")
                 .then()
                 .statusCode(200)
-                .body(containsString("True"));
+                .body(containsString("42"));
         expectationHandler.expect(true)
                 .that(true, Arrays.asList(200, 401, 403, 404).contains(call_0.extract().statusCode()));
 
         ValidatableResponse call_1 = given().accept("*/*")
-                .get(baseUrlOfSut + "/api/expectations/getExpectations/false")
+                .get(baseUrlOfSut + "/api/basicResponsesNumeric/-12")
                 .then()
                 .statusCode(500);
 

@@ -27,7 +27,6 @@ public class EnumsEMTest extends SpringTestBase {
                 "org.bar.EnumEM",
                 50,
                 (args) -> {
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

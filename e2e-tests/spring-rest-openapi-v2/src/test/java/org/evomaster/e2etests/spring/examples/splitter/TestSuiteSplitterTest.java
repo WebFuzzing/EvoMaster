@@ -24,7 +24,7 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
 
     @Test
     public void testRunEM_NONE() throws Throwable {
-        testRunEM(EMConfig.TestSuiteSplitType.NONE);
+        testRunEMMulti(EMConfig.TestSuiteSplitType.NONE);
     }
 
     @Test
@@ -63,10 +63,7 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
                 terminations,
                 10_000,
                 (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("" + splitType);
-                    args.add("--expectationsActive");
-                    args.add("" + true);
+
                     Solution<RestIndividual> solution = initAndRun(args);
                     assertTrue(solution.getIndividuals().size() >= 1);
                     SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);
@@ -74,32 +71,4 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
                 }
         );
     }
-
-    private void testRunEM(EMConfig.TestSuiteSplitType splitType) throws Throwable {
-        EMConfig em = new EMConfig();
-        em.setTestSuiteSplitType(splitType);
-
-        runTestHandlingFlakyAndCompilation(
-                "SplitterEM",
-                "org.bar.splitter.Split_" + splitType,
-                10_000,
-                (args) -> {
-                    args.add("--testSuiteSplitType");
-                    args.add("" + splitType);
-                    args.add("--expectationsActive");
-                    args.add("" + true);
-
-                    Solution<RestIndividual> solution = initAndRun(args);
-
-                    assertTrue(solution.getIndividuals().size() >= 1);
-
-                    SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);
-
-                    assertTrue(splits.splitOutcome.size() >= 1);
-
-                }
-        );
-    }
-
-
 }

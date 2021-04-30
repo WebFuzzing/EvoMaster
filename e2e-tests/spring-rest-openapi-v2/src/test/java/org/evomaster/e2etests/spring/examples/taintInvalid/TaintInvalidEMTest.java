@@ -34,7 +34,6 @@ public class TaintInvalidEMTest extends SpringTestBase {
                 "org.bar.TaintInvalidEM",
                 1000,
                 (args) -> {
-
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
 

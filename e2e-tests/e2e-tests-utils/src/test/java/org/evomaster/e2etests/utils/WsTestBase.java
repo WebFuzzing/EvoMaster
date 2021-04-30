@@ -151,25 +151,30 @@ public abstract class WsTestBase {
 
         List<ClassName> classNames = new ArrayList<>();
 
+        String splitType = "";
+
         if(terminations == null || terminations.isEmpty()){
             classNames.add(new ClassName(fullClassName));
+            splitType = "NONE";
         } else {
             for (String termination : terminations) {
                 classNames.add(new ClassName(fullClassName + termination));
             }
+            splitType = "CODE";
         }
 
          /*
             Years have passed, still JUnit 5 does not handle global test timeouts :(
             https://github.com/junit-team/junit5/issues/80
          */
+        String finalSplitType = splitType;
         assertTimeoutPreemptively(Duration.ofMinutes(timeoutMinutes), () -> {
             ClassName className = new ClassName(fullClassName);
             clearGeneratedFiles(outputFolderName, classNames);
 
             handleFlaky(
                     () -> {
-                        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests);
+                        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests, finalSplitType);
                         defaultSeed++;
                         lambda.accept(new ArrayList<>(args));
                     }
@@ -185,7 +190,7 @@ public abstract class WsTestBase {
             int iterations,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, Arrays.asList(""), iterations, true, lambda, 3);
+        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, null, iterations, true, lambda, 3);
     }
 
     protected void runTestHandlingFlakyAndCompilation(
@@ -209,7 +214,7 @@ public abstract class WsTestBase {
 
         runTestHandlingFlaky(outputFolderName, fullClassName, terminations, iterations, createTests,lambda, timeoutMinutes);
 
-
+        if (terminations == null) terminations = Arrays.asList("");
         //BMR: this is where I should handle multiples???
         if (createTests){
             for (String termination : terminations) {
@@ -324,6 +329,9 @@ public abstract class WsTestBase {
     }
 
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests){
+        return getArgsWithCompilation(iterations, outputFolderName, testClassName, createTests, "NONE");
+    }
+    protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests, String split){
 
         return new ArrayList<>(Arrays.asList(
                 "--createTests", "" + createTests,
@@ -334,7 +342,9 @@ public abstract class WsTestBase {
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
                 "--outputFolder", outputFolderPath(outputFolderName),
                 "--outputFormat", OutputFormat.KOTLIN_JUNIT_5.toString(),
-                "--testSuiteFileName", testClassName.getFullNameWithDots()
+                "--testSuiteFileName", testClassName.getFullNameWithDots(),
+                "--testSuiteSplitType", split,
+                "--expectationsActive", "TRUE"
         ));
     }
 
