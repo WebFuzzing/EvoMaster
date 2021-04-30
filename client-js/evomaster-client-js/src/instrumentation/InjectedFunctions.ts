@@ -13,6 +13,7 @@
 import ExecutionTracer from "./staticstate/ExecutionTracer";
 import HeuristicsForBooleans from "./heuristic/HeuristicsForBooleans";
 import ObjectiveRecorder from "./staticstate/ObjectiveRecorder";
+import FunctionCallHandler from "./methodreplacement/FunctionCallHandler";
 
 export default class InjectedFunctions {
 
@@ -67,11 +68,11 @@ export default class InjectedFunctions {
     }
 
     public static callBase(f: () => any) : any {
-        return HeuristicsForBooleans.handleFunctionCallBase(f);
+        return FunctionCallHandler.handleFunctionCallBase(f);
     }
 
     public static callTracked(fileName: string, line: number, branchId: number, obj: any, functionName: string, ...args: any[]) : any{
-        return HeuristicsForBooleans.handleFunctionCallTracked(fileName, line, branchId, obj, functionName, ...args);
+        return FunctionCallHandler.handleFunctionCallTracked(fileName, line, branchId, obj, functionName, ...args);
     }
 
 }

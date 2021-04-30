@@ -319,27 +319,5 @@ export default class HeuristicsForBooleans {
     }
 
 
-    public static handleFunctionCallBase(f: () => any) : any {
-
-        HeuristicsForBooleans.lastEvaluation = null;
-        const res = f();
-        HeuristicsForBooleans.lastEvaluation = null;
-
-        return res;
-    }
-
-    public static handleFunctionCallTracked(fileName: string, line: number, branchId: number, obj: any, functionName: string, ...args: any[]) : any {
-
-        HeuristicsForBooleans.lastEvaluation = null;
-
-        const idTemplate = ObjectiveNaming.methodReplacementObjectiveNameTemplate(fileName, line, branchId);
-
-        //const res = obj[functionName](...args);
-        const res = Replacement.replaceCall(idTemplate, obj,obj[functionName], ...args);
-
-        HeuristicsForBooleans.lastEvaluation = null;
-
-        return res;
-    }
 
 }
