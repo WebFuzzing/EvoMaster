@@ -51,7 +51,7 @@ object TestSuiteSplitter {
                 val clusters = conductClustering(sol, oracles, metrics, splitResult)
                 splitByCluster(clusters, sol, oracles, splitResult)
             }
-            EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol, oracles)
+            EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol)
         }
 
         return splitResult
@@ -197,11 +197,10 @@ object TestSuiteSplitter {
      * Nevertheless, it is up to individual test engineers to look at these test cases in more depth and decide
      * if any further action or investigation is required.
      */
-    private fun <T:Individual> splitByCode(solution: Solution<T>,
-                                           oracles: PartialOracles = PartialOracles()): List<Solution<T>>{
+    private fun <T:Individual> splitByCode(solution: Solution<T>): List<Solution<T>>{
         val s500 = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
-                assessFailed(ac, oracles)
+                assessFailed(ac, null)
 
             }
         }.toMutableList()
@@ -225,7 +224,7 @@ object TestSuiteSplitter {
         )
     }
 
-    fun assessFailed(action: EvaluatedAction, oracles: PartialOracles): Boolean{
+    fun assessFailed(action: EvaluatedAction, oracles: PartialOracles?): Boolean{
         val codeSelect = if(action.result is HttpWsCallResult){
             val code = (action.result as HttpWsCallResult).getStatusCode()
             (code != null && code == 500)
@@ -234,13 +233,58 @@ object TestSuiteSplitter {
             // "remainder" subset - as they are neither errors, nor successful runs.
         } else false
 
-        val oracleSelect = oracles.selectForClustering(action)
+        val oracleSelect = oracles?.selectForClustering(action) ?: false
+
         return codeSelect || oracleSelect
+    }
+
+    /**
+     * [splitByClusters] splits the Solution into several subsets based on the HTTP codes found in the actions.
+     * The split is as follows:
+     * - all individuals that count as failed go into a separate file. A failed call is likely
+     * to be indicative of a fault, and therefore goes into a separate set.
+     * This differs from [splitByCode] by also counting as failed those calls that fail the partial oracles as well
+     * as those that have a 500 code.
+     *
+     * - all individuals that contain 2xx and 3xx action only are deemed to be successful, and a "successful" subset
+     * is created for them. These are test cases that indicate no problem.
+     *
+     * - remaining test cases are set in a third subset. These are often test cases that don't contain outright bugs
+     * (i.e. 500 actions) but may include 4xx. User errors and input problems may be interesting, hence the separate file.
+     * Nevertheless, it is up to individual test engineers to look at these test cases in more depth and decide
+     * if any further action or investigation is required.
+     */
+    private fun <T:Individual> splitByCluster(solution: Solution<T>,
+                                           oracles: PartialOracles = PartialOracles()): List<Solution<T>>{
+        val s500 = solution.individuals.filter {
+            it.evaluatedActions().any { ac ->
+                assessFailed(ac, oracles)
+
+            }
+        }.toMutableList()
+
+        val successses = solution.individuals.filter {
+            !s500.contains(it) &&
+                    it.evaluatedActions().all { ac ->
+                        val code = (ac.result as HttpWsCallResult).getStatusCode()
+                        (code != null && code < 400)
+                    }
+        }.toMutableList()
+
+        val remainder = solution.individuals.filter {
+            !s500.contains(it) &&
+                    !successses.contains(it)
+        }.toMutableList()
+
+        return listOf(Solution(s500, solution.testSuiteName, Termination.FAULTS),
+                Solution(successses, solution.testSuiteName, Termination.SUCCESSES),
+                Solution(remainder, solution.testSuiteName, Termination.OTHER)
+        )
     }
 
 
     /**
-     * [splitByClusters] splits a given Solution object into a List of several Solution objects, each
+     * [splitIntoClusters] splits a given Solution object into a List of several Solution objects, each
      * containing a cluster of (error - i.e. containing 500s) [EvaluatedIndividual<RestIndividual>]. Each such solution
      * can be printed as a separate test file.
      *
@@ -252,7 +296,7 @@ object TestSuiteSplitter {
      */
     /*
 
-    private fun splitByClusters(solution: Solution<RestIndividual>,
+    private fun splitIntoClusters(solution: Solution<RestIndividual>,
                         oracles: PartialOracles = PartialOracles(),
                         metric: DistanceMetric<RestCallResult>): List<Solution<RestIndividual>>{
         val errs = solution.individuals.filter {
