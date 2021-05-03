@@ -11,6 +11,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Individual.GeneFilter
+import org.evomaster.core.search.Individual.ActionFilter
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -265,7 +266,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     }
 
     private fun verifyImpacts(){
-        impactInfo?.verifyActionGeneImpacts(individual.seeActions())
+        impactInfo?.verifyActionGeneImpacts(individual.seeActions(ActionFilter.NO_INIT))
     }
 
     private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, targetsInfo: Map<Int, EvaluatedMutation>, mutatedGenes: MutatedGeneSpecification){
@@ -304,7 +305,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             improvedTargets: Set<Int>
     ){
         Lazy.assert { impactInfo != null }
-        val sizeChanged = (mutatedGenes.mutatedIndividual!!.seeActions().size != previous.seeActions().size)
+        val sizeChanged = (mutatedGenes.mutatedIndividual!!.seeActions(ActionFilter.NO_INIT).size != previous.seeActions(ActionFilter.NO_INIT).size)
 
         //we update genes impact regarding structure only if structure mutated individual is 'next'
         if(this.index == next.index){
@@ -320,8 +321,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
             //handle removed
             if (mutatedGenes.getRemoved(true).isNotEmpty()){ //delete an action
-                impactInfo!!.deleteActionGeneImpacts(actionIndex = mutatedGenes.getRemoved(true)
-                    .mapNotNull { it.actionPosition }.toSet())
+                impactInfo!!.deleteActionGeneImpacts(
+                    actionIndex = mutatedGenes.getRemoved(true).mapNotNull { it.actionPosition }.toSet())
             }
 
             //handle added
@@ -329,7 +330,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 val addedGenes = mutatedGenes.getAdded(true)
                 //handle added actions with genes
                 val groupGeneByActionIndex = addedGenes.filter { it.gene != null }.groupBy {g->
-                    mutatedGenes.mutatedIndividual!!.seeActions().find { a->a.seeGenes().contains(g.gene) }.run { mutatedGenes.mutatedIndividual!!.seeActions().indexOf(this) }
+                    mutatedGenes.mutatedIndividual!!.seeActions(ActionFilter.NO_INIT).find {
+                            a->a.seeGenes().contains(g.gene) }.run { mutatedGenes.mutatedIndividual!!.seeActions(ActionFilter.NO_INIT).indexOf(this) }
                 }
 
                 //handle added actions without genes
@@ -338,7 +340,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 addedGenes.mapNotNull { it.actionPosition }.toSet().sorted().forEach { actionIndex->
                       if (emptyActions.contains(actionIndex)){
                           impactInfo!!.addOrUpdateActionGeneImpacts(
-                              actionName = individual.seeActions()[actionIndex].getName(),
+                              actionName = individual.seeActions(ActionFilter.NO_INIT)[actionIndex].getName(),
                               actionIndex = actionIndex,
                               newAction = true,
                               impacts = mutableMapOf()
@@ -350,7 +352,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                               throw IllegalArgumentException("mismatched impact info: genes should be mutated at $index action, but actually the index is $actionIndex")
                           impactInfo!!.addOrUpdateActionGeneImpacts(
                               actionIndex = actionIndex,
-                              actionName = individual.seeActions()[actionIndex].getName(),
+                              actionName = individual.seeActions(ActionFilter.NO_INIT)[actionIndex].getName(),
                               impacts = mgenes.map {g->
                                   g.gene?:throw IllegalStateException("Added gene is not recorded")
                                   val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, g.gene)
@@ -381,19 +383,19 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 (table_a, resource_a, table_b, resource_b), and the table_b refers to the table_a in the front of resource_a
              */
 
-            var fix = impactInfo!!.findFirstMismatchedIndex(individual.seeActions())
+            var fix = impactInfo!!.findFirstMismatchedIndex(individual.seeActions(ActionFilter.NO_INIT))
             while (fix.first != -1){
                 if (fix.second!!){
                     impactInfo.deleteActionGeneImpacts(setOf(fix.first))
                 }else{
                     impactInfo.addOrUpdateActionGeneImpacts(
-                        actionName = individual.seeActions()[fix.first].getName(),
+                        actionName = individual.seeActions(ActionFilter.NO_INIT)[fix.first].getName(),
                         actionIndex = fix.first,
                         newAction = true,
                         impacts = mutableMapOf()
                     )
                 }
-                val nextFix = impactInfo.findFirstMismatchedIndex(individual.seeActions())
+                val nextFix = impactInfo.findFirstMismatchedIndex(individual.seeActions(ActionFilter.NO_INIT))
                 if (nextFix.first < fix.first){
                     if (nextFix.first != -1)
                         log.warn("the fix at {} with remove/add ({}) does not work, and the next fix is at {}", fix.first, fix.second, nextFix.first)
@@ -450,17 +452,17 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     private fun syncImpact(previous : Individual, mutated : Individual) {
 
         // rest action
-        mutated.seeActions().forEachIndexed { index, action ->
+        mutated.seeActions(ActionFilter.NO_INIT).forEachIndexed { index, action ->
             action.seeGenes().filter { it.isMutable() }.forEach { sg->
                 val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
 
-                val p = previous.seeActions()[index].seeGenes().find { rootGeneId == ImpactUtils.generateGeneId(previous, it) }
+                val p = previous.seeActions(ActionFilter.NO_INIT)[index].seeGenes().find { rootGeneId == ImpactUtils.generateGeneId(previous, it) }
                 val impact = impactInfo!!.getGene(
                                 actionName = action.getName(),
                                 actionIndex = index,
                                 fromInitialization = false,
                                 geneId = rootGeneId
-                        )?:throw IllegalArgumentException("fail to identify impact info for the gene $rootGeneId at $index of actions11")
+                )?:throw IllegalArgumentException("fail to identify impact info for the gene $rootGeneId at $index of actions")
                 impact.syncImpact(p, sg)
             }
         }
@@ -469,69 +471,69 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
     }
 
-    fun findGeneById(id : String, index : Int = -1, isDb: Boolean=false) : Gene?{
-        if (!isDb){
-            if (index == -1) return individual.seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
-            if (index > individual.seeActions().size)
-                throw IllegalArgumentException("index $index is out of boundary of actions ${individual.seeActions().size} of the individual")
-            return individual.seeActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
-        }
-        if (index == -1) return individual.seeInitializingActions().flatMap { it.seeGenes() }.find { ImpactUtils.generateGeneId(individual, it) == id }
-        if (index >= individual.seeInitializingActions().size) return null
-            //throw IllegalArgumentException("index $index is out of boundary of initializing actions ${individual.seeInitializingActions().size} of the individual")
-        return individual.seeInitializingActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
-    }
-
-    fun findGeneWithActionIndexAndGene(index: Int, gene: Gene, isInitializationAction : Boolean) : Gene?{
-        val action = try {
-            (if (isInitializationAction) individual.seeInitializingActions() else individual.seeActions()).elementAt(index)
-        }catch(e: IndexOutOfBoundsException){
-            return null
-        }
-        // gene should be one of root genes
-        return ImpactUtils.findMutatedGene(action, gene)
-    }
+//    fun findGeneById(id : String, index : Int = -1, isDb: Boolean=false) : Gene?{
+//        if (!isDb){
+//            if (index == -1) return individual.seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
+//            if (index > individual.seeActions().size)
+//                throw IllegalArgumentException("index $index is out of boundary of actions ${individual.seeActions().size} of the individual")
+//            return individual.seeActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
+//        }
+//        if (index == -1) return individual.seeInitializingActions().flatMap { it.seeGenes() }.find { ImpactUtils.generateGeneId(individual, it) == id }
+//        if (index >= individual.seeInitializingActions().size) return null
+//            //throw IllegalArgumentException("index $index is out of boundary of initializing actions ${individual.seeInitializingActions().size} of the individual")
+//        return individual.seeInitializingActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
+//    }
+//
+//    fun findGeneWithActionIndexAndGene(index: Int, gene: Gene, isInitializationAction : Boolean) : Gene?{
+//        val action = try {
+//            (if (isInitializationAction) individual.seeInitializingActions() else individual.seeActions()).elementAt(index)
+//        }catch(e: IndexOutOfBoundsException){
+//            return null
+//        }
+//        // gene should be one of root genes
+//        return ImpactUtils.findMutatedGene(action, gene)
+//    }
 
 
     //**************** for impact *******************//
 
-    fun getImpactsRelatedTo(mutatedGenes: MutatedGeneSpecification) : List<Impact>{
-        impactInfo?:return emptyList()
-
-        if (mutatedGenes.didStructureMutation())
-            return emptyList()
-        val list = mutableListOf<Impact>()
-        mutatedGenes.getMutated(true).forEachIndexed { index, gene ->
-            gene.gene?:throw IllegalStateException("missing mutated rest gene info")
-            val actionIndex = gene.actionPosition?: throw IllegalStateException("cannot find actionPosition info for the mutated rest gene ${gene.gene.name}")
-            val action = mutatedGenes.mutatedIndividual!!.seeActions()[actionIndex]
-            val id = ImpactUtils.generateGeneId(action, gene.gene)
-            val found = impactInfo.getGene(
-                    actionName = action.getName(),
-                    actionIndex = actionIndex,
-                    geneId = id,
-                    fromInitialization = false
-            )?:throw IllegalArgumentException("mismatched impact info")
-            list.add(found)
-        }
-
-        mutatedGenes.getMutated(false).forEachIndexed { index, gene ->
-            gene.gene?:throw IllegalStateException("missing mutated db gene info")
-            val actionIndex = gene.actionPosition?:throw IllegalStateException("cannot find actionPosition info for the mutated db gene ${gene.gene.name}")
-            val action = mutatedGenes.mutatedIndividual!!.seeInitializingActions()[actionIndex]
-            val id = ImpactUtils.generateGeneId(action, gene.gene)
-            val found = impactInfo.getGene(
-                    actionName = action.getName(),
-                    actionIndex = actionIndex,
-                    geneId = id,
-                    fromInitialization = true
-            )?:throw IllegalArgumentException("mismatched impact info")
-            list.add(found)
-        }
-
-
-        return list
-    }
+//    fun getImpactsRelatedTo(mutatedGenes: MutatedGeneSpecification) : List<Impact>{
+//        impactInfo?:return emptyList()
+//
+//        if (mutatedGenes.didStructureMutation())
+//            return emptyList()
+//        val list = mutableListOf<Impact>()
+//        mutatedGenes.getMutated(true).forEachIndexed { index, gene ->
+//            gene.gene?:throw IllegalStateException("missing mutated rest gene info")
+//            val actionIndex = gene.actionPosition?: throw IllegalStateException("cannot find actionPosition info for the mutated rest gene ${gene.gene.name}")
+//            val action = mutatedGenes.mutatedIndividual!!.seeActions()[actionIndex]
+//            val id = ImpactUtils.generateGeneId(action, gene.gene)
+//            val found = impactInfo.getGene(
+//                    actionName = action.getName(),
+//                    actionIndex = actionIndex,
+//                    geneId = id,
+//                    fromInitialization = false
+//            )?:throw IllegalArgumentException("mismatched impact info")
+//            list.add(found)
+//        }
+//
+//        mutatedGenes.getMutated(false).forEachIndexed { index, gene ->
+//            gene.gene?:throw IllegalStateException("missing mutated db gene info")
+//            val actionIndex = gene.actionPosition?:throw IllegalStateException("cannot find actionPosition info for the mutated db gene ${gene.gene.name}")
+//            val action = mutatedGenes.mutatedIndividual!!.seeInitializingActions()[actionIndex]
+//            val id = ImpactUtils.generateGeneId(action, gene.gene)
+//            val found = impactInfo.getGene(
+//                    actionName = action.getName(),
+//                    actionIndex = actionIndex,
+//                    geneId = id,
+//                    fromInitialization = true
+//            )?:throw IllegalArgumentException("mismatched impact info")
+//            list.add(found)
+//        }
+//
+//
+//        return list
+//    }
 
     fun anyImpactfulGene() : Boolean{
         impactInfo?:return false
@@ -543,7 +545,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *  this is to handle unclassified, eg, a gene might be empty gson or a gene constrained with some class
      */
     fun addGeneImpact(individual: Individual, gene: Gene) : GeneImpact?{
-        val actions = if (individual is RestIndividual)  individual.seeActions(Individual.ActionFilter.NO_INIT) else individual.seeActions()
+        val actions = if (individual is RestIndividual)  individual.seeActions(ActionFilter.NO_INIT) else individual.seeActions()
 
         val action = actions.find {
             it.seeGenes().contains(gene)
@@ -567,11 +569,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         impactInfo?:return null
 
         val id = ImpactUtils.generateGeneId(individual, gene)
-        var action = individual.seeActions().find { it.seeGenes().contains(gene) }
+        var action = individual.seeActions(ActionFilter.NO_INIT).find { it.seeGenes().contains(gene) }
         if (action != null){
             return impactInfo.getGene(
                     actionName = action.getName(),
-                    actionIndex = individual.seeActions().indexOf(action),
+                    actionIndex = individual.seeActions(ActionFilter.NO_INIT).indexOf(action),
                     geneId = id,
                     fromInitialization = false
             )
@@ -668,7 +670,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         impactInfo?:return null
         return impactInfo.findImpactsByAction(
                 actionIndex = actionIndex,
-                actionName = if (fromInitialization) individual.seeInitializingActions()[actionIndex].getName() else individual.seeActions()[actionIndex].getName(),
+                actionName = if (fromInitialization) individual.seeInitializingActions()[actionIndex].getName() else individual.seeActions(ActionFilter.NO_INIT)[actionIndex].getName(),
                 fromInitialization = fromInitialization
         )
     }

@@ -263,8 +263,8 @@ class RestIndividual(
         resourceCalls.set(position2, first)
     }
 
-    fun getActionIndexes(resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions().map {
-        seeActions().indexOf(it)
+    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions().map {
+        seeActions(actionFilter).indexOf(it)
     }
 
     fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?, randomness: Randomness){

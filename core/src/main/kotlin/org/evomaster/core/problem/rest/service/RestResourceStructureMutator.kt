@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
@@ -10,6 +9,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.Individual.ActionFilter
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -167,7 +167,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         removedActions.forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
-                ind.seeActions().indexOf(it),
+                ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
                 true,
                 resourcePosition = pos
             )
@@ -185,7 +185,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         if(fromDependency){
             val pair = dm.handleSwapDepResource(ind)
             if(pair!=null){
-                mutatedGenes?.swapAction(pair.first, ind.getActionIndexes(pair.first), ind.getActionIndexes(pair.second))
+                mutatedGenes?.swapAction(pair.first, ind.getActionIndexes(ActionFilter.NO_INIT, pair.first), ind.getActionIndexes(ActionFilter.NO_INIT, pair.second))
                 ind.swapResourceCall(pair.first, pair.second)
                 return
             }
@@ -197,7 +197,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
                 val chosen = randomness.choose(position)
                 if(ind.isMovable(chosen)) {
                     val moveTo = randomness.choose(ind.getMovablePosition(chosen))
-                    mutatedGenes?.swapAction(moveTo, ind.getActionIndexes(chosen), ind.getActionIndexes(moveTo))
+                    mutatedGenes?.swapAction(moveTo, ind.getActionIndexes(ActionFilter.NO_INIT, chosen), ind.getActionIndexes(ActionFilter.NO_INIT, moveTo))
                     if(chosen < moveTo) ind.swapResourceCall(chosen, moveTo)
                     else ind.swapResourceCall(moveTo, chosen)
                     return
@@ -207,7 +207,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
             throw IllegalStateException("the individual cannot apply swap mutator!")
         }else{
             val candidates = randomness.choose(Array(ind.getResourceCalls().size){i -> i}.toList(), 2)
-            mutatedGenes?.swapAction(candidates[0], ind.getActionIndexes(candidates[0]), ind.getActionIndexes(candidates[1]))
+            mutatedGenes?.swapAction(candidates[0], ind.getActionIndexes(ActionFilter.NO_INIT, candidates[0]), ind.getActionIndexes(ActionFilter.NO_INIT, candidates[1]))
             ind.swapResourceCall(candidates[0], candidates[1])
         }
     }
@@ -249,7 +249,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
             randomCall.seeActions().forEach {
                 mutatedGenes?.addRemovedOrAddedByAction(
                     it,
-                    ind.seeActions().indexOf(it),
+                    ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
                     false,
                     resourcePosition = pos
                 )
@@ -271,7 +271,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
                 seeActions().forEach {
                     mutatedGenes?.addRemovedOrAddedByAction(
                         it,
-                        ind.seeActions().indexOf(it),
+                        ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
                         false,
                         resourcePosition = addPos
                     )
@@ -324,7 +324,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
        ind.getResourceCalls()[pos].seeActions().forEach {
            mutatedGenes?.addRemovedOrAddedByAction(
                it,
-               ind.seeActions().indexOf(it),
+               ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
                true,
                resourcePosition = pos
            )
@@ -338,7 +338,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         call.seeActions().forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
-                ind.seeActions().indexOf(it),
+                ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
                 false,
                 resourcePosition = pos
             )
@@ -369,7 +369,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         ind.getResourceCalls()[pos].seeActions().forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
-                ind.seeActions().indexOf(it),
+                ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
                 true,
                 resourcePosition = pos
             )
@@ -381,7 +381,7 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
         new.seeActions().forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
-                ind.seeActions().indexOf(it),
+                ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
                 false,
                 resourcePosition = pos
             )

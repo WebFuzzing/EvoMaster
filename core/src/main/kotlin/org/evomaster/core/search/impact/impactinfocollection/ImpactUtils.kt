@@ -2,6 +2,7 @@ package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.Individual.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.impact.impactinfocollection.sql.*
@@ -95,7 +96,7 @@ class ImpactUtils {
             }?.let {
                 return generateGeneId(it, gene)
             }
-            individual.seeActions().find { a-> a.seeGenes().contains(gene) }?.let {
+            individual.seeActions(Individual.ActionFilter.NO_INIT).find { a-> a.seeGenes().contains(gene) }?.let {
                 return generateGeneId(action = it, gene = gene)
             }
             return generateGeneId(gene)
@@ -108,37 +109,37 @@ class ImpactUtils {
          * @param individual a mutated individual with [mutatedGenes]
          * @param previousIndividual mutating [previousIndividual] becomes [individual]
          */
-        private fun extractMutatedGeneWithContext(
-                mutatedGenes : MutableList<Gene>,
-                individual: Individual,
-                previousIndividual: Individual
-        ) : Map<String, MutableList<MutatedGeneWithContext>>{
-            val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
-
-            if (individual.seeActions().isEmpty()){
-                individual.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
-                    val id = generateGeneId(individual, g)
-                    val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
-                    val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
-                    contexts.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = mutatedGenes.size))
-                }
-            }else{
-                individual.seeActions().forEachIndexed { index, action ->
-                    action.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
-                        val id = generateGeneId(action, g)
-                        val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
-                        val previous = findGeneById(previousIndividual, id, action.getName(), index, false)?: throw IllegalArgumentException("mismatched previous individual")
-                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous, mutatedGenes.size))
-                    }
-                }
-            }
-
-
-            Lazy.assert{
-                mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size
-            }
-            return mutatedGenesWithContext
-        }
+//        private fun extractMutatedGeneWithContext(
+//                mutatedGenes : MutableList<Gene>,
+//                individual: Individual,
+//                previousIndividual: Individual
+//        ) : Map<String, MutableList<MutatedGeneWithContext>>{
+//            val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
+//
+//            if (individual.seeActions().isEmpty()){
+//                individual.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
+//                    val id = generateGeneId(individual, g)
+//                    val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
+//                    val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
+//                    contexts.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = mutatedGenes.size))
+//                }
+//            }else{
+//                individual.seeActions().forEachIndexed { index, action ->
+//                    action.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
+//                        val id = generateGeneId(action, g)
+//                        val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
+//                        val previous = findGeneById(previousIndividual, id, action.getName(), index, false)?: throw IllegalArgumentException("mismatched previous individual")
+//                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous, mutatedGenes.size))
+//                    }
+//                }
+//            }
+//
+//
+//            Lazy.assert{
+//                mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size
+//            }
+//            return mutatedGenesWithContext
+//        }
 
         fun extractMutatedGeneWithContext(mutatedGeneSpecification: MutatedGeneSpecification,
                                           individual: Individual,
@@ -146,7 +147,7 @@ class ImpactUtils {
                                           fromInitialization : Boolean) : MutableList<MutatedGeneWithContext>{
             val num = mutatedGeneSpecification.numOfMutatedGeneInfo()
 
-            val actions = if (fromInitialization) individual.seeInitializingActions() else individual.seeActions()
+            val actions = if (fromInitialization) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)
             val list = mutableListOf<MutatedGeneWithContext>()
             if (actions.isEmpty()) return list
 
@@ -194,8 +195,8 @@ class ImpactUtils {
 
 
         private fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int, isDb : Boolean):Gene?{
-            if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions()).size) return null
-            val action = if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions()[indexOfAction]
+            if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)).size) return null
+            val action = if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions(ActionFilter.NO_INIT)[indexOfAction]
             if (action.getName() != actionName)
                 throw IllegalArgumentException("mismatched gene mutated info")
             return action.seeGenes().find { generateGeneId(action, it) == id }

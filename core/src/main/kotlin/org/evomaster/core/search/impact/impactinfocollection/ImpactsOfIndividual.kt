@@ -4,6 +4,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.Individual.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
@@ -40,7 +41,7 @@ class ImpactsOfIndividual private constructor(
 
     constructor(individual: Individual, abstractInitializationGeneToMutate: Boolean, maxSqlInitActionsPerMissingData: Int, fitnessValue: FitnessValue?) : this(
             initializationGeneImpacts = InitializationActionImpacts(abstractInitializationGeneToMutate),//individual.seeInitializingActions().map { a -> ImpactsOfAction(a) }.toMutableList(),
-            actionGeneImpacts = if (individual.seeActions().isEmpty()) mutableListOf(ImpactsOfAction(individual, individual.seeGenes())) else individual.seeActions().map { a -> ImpactsOfAction(a) }.toMutableList(),
+            actionGeneImpacts = if (individual.seeActions(ActionFilter.NO_INIT).isEmpty()) mutableListOf(ImpactsOfAction(individual, individual.seeGenes())) else individual.seeActions(ActionFilter.NO_INIT).map { a -> ImpactsOfAction(a) }.toMutableList(),
             maxSqlInitActionsPerMissingData = maxSqlInitActionsPerMissingData
     ) {
         if (fitnessValue != null) {
@@ -146,13 +147,13 @@ class ImpactsOfIndividual private constructor(
         }
 
         //for action
-        if ((individual.seeActions().isNotEmpty() && individual.seeActions().size != actionGeneImpacts.size) ||
-                (individual.seeActions().isEmpty() && !noneActionIndividual()))
+        if ((individual.seeActions(ActionFilter.NO_INIT).isNotEmpty() && individual.seeActions(ActionFilter.NO_INIT).size != actionGeneImpacts.size) ||
+                (individual.seeActions(ActionFilter.NO_INIT).isEmpty() && !noneActionIndividual()))
             throw IllegalArgumentException("inconsistent size of actions and impacts")
 
-        individual.seeActions().forEach { action ->
+        individual.seeActions(ActionFilter.NO_INIT).forEach { action ->
             val actionName = action.getName()
-            val index = individual.seeActions().indexOf(action)
+            val index = individual.seeActions(ActionFilter.NO_INIT).indexOf(action)
             //root genes might be changed e.g., additionalInfo, so sync impacts of all genes
             action.seeGenes().forEach { g ->
                 val id = ImpactUtils.generateGeneId(action, g)

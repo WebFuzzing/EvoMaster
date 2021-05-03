@@ -222,8 +222,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             "exception"
         }
         val position = when {
-            individual.seeActions(filter).isEmpty() -> individual.seeGenes().indexOf(gene)
             isFromInit -> individual.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
+            individual.seeActions(filter).isEmpty() -> individual.seeGenes().indexOf(gene)
             else -> individual.seeActions(ActionFilter.NO_INIT).indexOfFirst { it.seeGenes().contains(gene) }
         }
 
