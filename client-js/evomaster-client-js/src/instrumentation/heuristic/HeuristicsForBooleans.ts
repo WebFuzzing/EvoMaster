@@ -1,9 +1,6 @@
-import ObjectiveNaming from "../ObjectiveNaming";
-import ExecutionTracer from "../staticstate/ExecutionTracer";
 import Truthness from "./Truthness";
 import TruthnessUtils from "./TruthnessUtils";
 import ExecutionTracer from "../staticstate/ExecutionTracer";
-import Replacement from "../methodreplacement/Replacement";
 import ObjectiveNaming from "../ObjectiveNaming";
 
 
@@ -11,6 +8,10 @@ export default class HeuristicsForBooleans {
 
     public static readonly FLAG_NO_EXCEPTION = 0.01;
     public static readonly EXCEPTION = HeuristicsForBooleans.FLAG_NO_EXCEPTION / 2;
+
+    private static readonly validOps = ["==", "===", "!=", "!==", "<", "<=", ">", ">="];
+    private static lastEvaluation: Truthness = null;
+
 
     public static handleNot(value: any): any {
 
@@ -319,9 +320,7 @@ export default class HeuristicsForBooleans {
 
 
     public static handleTernary(f: () => any, fileName: string, line: number, index: number) {
-
         /*
-            Man: what is this for?
             Make sure that nested evaluations of && and || do not use unrelated previous computation.
          */
         HeuristicsForBooleans.lastEvaluation = null;
@@ -334,9 +333,7 @@ export default class HeuristicsForBooleans {
             ExecutionTracer.updateObjective(id, 1);
         } catch (e) {
             ExecutionTracer.updateObjective(id, 0.5);
-            // Man: might throw exception again
             throw e;
-            // res = e;
         } finally {
             HeuristicsForBooleans.lastEvaluation = null;
         }
@@ -344,8 +341,6 @@ export default class HeuristicsForBooleans {
 
     }
 
-    private static readonly validOps = ["==", "===", "!=", "!==", "<", "<=", ">", ">="];
 
-    private static lastEvaluation: Truthness = null;
 
 }
