@@ -1,11 +1,6 @@
-package org.evomaster.core.output.service
+package org.evomaster.core.output
 
 
-import com.google.inject.Inject
-import org.evomaster.core.EMConfig
-import org.evomaster.core.output.Lines
-import org.evomaster.core.output.ObjectGenerator
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.oracles.ImplementedOracle
 import org.evomaster.core.output.oracles.SchemaOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
@@ -35,14 +30,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 
 class PartialOracles {
 
-    @Inject
-    private lateinit var config : EMConfig
-
     private  var objectGenerator = ObjectGenerator()
-
-    private val format: OutputFormat
-        get(){return  config.outputFormat}
-
 
     // Disabled the SchemaOracle, as it was causing problems (see https://github.com/EMResearch/EvoMaster/issues/237)
     // TODO: Selection of what partial oracles to use should be revised.
@@ -50,6 +38,10 @@ class PartialOracles {
     //private var oracles = mutableListOf(SupportedCodeOracle())
     private var oracles = mutableListOf(SupportedCodeOracle(), SchemaOracle())
     private val expectationsMasterSwitch = "ems"
+
+    init {
+        setGenerator(ObjectGenerator())
+    }
 
     /**
      * The [variableDeclaration] method handles the generation of auxiliary variables for the partial oracles.

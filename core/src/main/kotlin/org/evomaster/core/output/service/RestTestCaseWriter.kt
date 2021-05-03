@@ -1,10 +1,10 @@
 package org.evomaster.core.output.service
 
 import com.google.gson.Gson
-import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
+import org.evomaster.core.output.PartialOracles
 import org.evomaster.core.output.SqlWriter
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.httpws.service.HttpWsAction
@@ -24,9 +24,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         private val log = LoggerFactory.getLogger(RestTestCaseWriter::class.java)
     }
 
-
-    @Inject
-    private lateinit var partialOracles: PartialOracles
+    private var partialOracles =  PartialOracles()
 
     constructor() : super()
 
@@ -632,8 +630,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
     fun addDeclarations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>){
-        if(!this::partialOracles.isInitialized ||
-                !partialOracles.generatesExpectation(individual)) return
+        if(!partialOracles.generatesExpectation(individual)) return
 
         lines.addEmpty()
         when{
@@ -645,8 +642,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
         lines.addEmpty()
-        if(this::partialOracles.isInitialized
-                && partialOracles.generatesExpectation(call, res)){
+        if( partialOracles.generatesExpectation(call, res)){
             partialOracles.addExpectations(call, lines, res, name, format)
         }
 

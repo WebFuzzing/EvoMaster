@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.ZonedDateTime
+import javax.annotation.PostConstruct
 
 
 /**
@@ -21,20 +22,6 @@ import java.time.ZonedDateTime
  * the tests that can be written to file and be compiled
  */
 class TestSuiteWriter {
-
-    @Inject
-    private lateinit var config: EMConfig
-
-    @Inject
-    private lateinit var searchTimeController: SearchTimeController
-
-    @Inject
-    private lateinit var testCaseWriter: TestCaseWriter
-
-    @Inject(optional = true)
-    private var partialOracles: PartialOracles? = null
-
-    private var activePartialOracles = mutableMapOf<String, Boolean>()
 
     companion object {
         const val jsImport = "EM"
@@ -47,6 +34,31 @@ class TestSuiteWriter {
 
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     }
+
+    @Inject
+    private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var searchTimeController: SearchTimeController
+
+    @Inject
+    private lateinit var testCaseWriter: TestCaseWriter
+
+    /*
+        Unfortunately, Guice seems buggy, and does not respect the optional here...
+     */
+    //@Inject(optional = true)
+    private var partialOracles: PartialOracles? = null
+
+    private var activePartialOracles = mutableMapOf<String, Boolean>()
+
+    @PostConstruct
+    private fun initialize(){
+        if(config.problemType == EMConfig.ProblemType.REST){
+            partialOracles = PartialOracles()
+        }
+    }
+
 
     fun writeTests(
         solution: Solution<*>,

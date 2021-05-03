@@ -1,7 +1,6 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction

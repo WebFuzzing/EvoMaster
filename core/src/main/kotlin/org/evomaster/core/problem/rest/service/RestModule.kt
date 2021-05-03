@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.problem.rest.RestIndividual
@@ -52,7 +51,5 @@ class RestModule : AbstractModule(){
                 .to(RestTestCaseWriter::class.java)
                 .asEagerSingleton()
 
-        bind(PartialOracles::class.java)
-                .asEagerSingleton()
     }
 }
