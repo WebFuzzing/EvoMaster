@@ -55,7 +55,6 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
                     args.add("1");
 
                     Injector injector = init(args);
-                    initPartialOracles(injector);
 
                     StandardMutator<RestIndividual> mutator = injector.getInstance(Key.get(
                            new TypeLiteral<StandardMutator<RestIndividual>> () {}));

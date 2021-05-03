@@ -1,12 +1,10 @@
 package org.evomaster.core.output
 
-import com.sun.istack.Pool
 import org.evomaster.core.Lazy
-import org.evomaster.core.output.oracles.ImplementedOracle
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution

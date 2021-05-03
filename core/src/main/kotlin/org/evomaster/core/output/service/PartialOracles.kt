@@ -1,6 +1,11 @@
-package org.evomaster.core.output
+package org.evomaster.core.output.service
 
 
+import com.google.inject.Inject
+import org.evomaster.core.EMConfig
+import org.evomaster.core.output.Lines
+import org.evomaster.core.output.ObjectGenerator
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.oracles.ImplementedOracle
 import org.evomaster.core.output.oracles.SchemaOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
@@ -29,8 +34,15 @@ import org.evomaster.core.search.EvaluatedIndividual
  */
 
 class PartialOracles {
-    private lateinit var objectGenerator: ObjectGenerator
-    private lateinit var format: OutputFormat
+
+    @Inject
+    private lateinit var config : EMConfig
+
+    private  var objectGenerator = ObjectGenerator()
+
+    private val format: OutputFormat
+        get(){return  config.outputFormat}
+
 
     // Disabled the SchemaOracle, as it was causing problems (see https://github.com/EMResearch/EvoMaster/issues/237)
     // TODO: Selection of what partial oracles to use should be revised.
@@ -79,17 +91,11 @@ class PartialOracles {
         }
     }
 
-    fun setFormat(format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5){
-        this.format = format
-    }
 
     fun selectForClustering(action: EvaluatedAction): Boolean{
-        if (::objectGenerator.isInitialized){
             return oracles.any { oracle ->
                 oracle.selectForClustering(action)
             }
-        }
-        else return false;
     }
 
     /**
@@ -136,7 +142,7 @@ class PartialOracles {
      * changes are made to the [EvaluatedIndividual] objects themselves.
      *
      */
-    fun failByOracle(individuals: MutableList<EvaluatedIndividual<RestIndividual>>): MutableMap<String, MutableList<EvaluatedIndividual<RestIndividual>>>{
+    fun failByOracle(individuals: List<EvaluatedIndividual<RestIndividual>>): MutableMap<String, MutableList<EvaluatedIndividual<RestIndividual>>>{
         val oracleInds = mutableMapOf<String, MutableList<EvaluatedIndividual<RestIndividual>>>()
         oracles.forEach { oracle ->
             val failindInds = individuals.filter {

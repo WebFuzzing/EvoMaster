@@ -3,6 +3,8 @@ package org.evomaster.core
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
+import org.evomaster.core.output.service.NoTestCaseWriter
+import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
 import org.evomaster.core.search.service.*
@@ -20,7 +22,7 @@ import org.evomaster.core.search.tracer.TrackService
  * default beans/services which are used regardless of the kind
  * of testing we do.
  */
-class BaseModule(val args: Array<String>) : AbstractModule() {
+class BaseModule(val args: Array<String>, val noTests: Boolean = false) : AbstractModule() {
 
     constructor() : this(emptyArray())
 
@@ -68,6 +70,12 @@ class BaseModule(val args: Array<String>) : AbstractModule() {
 
         bind(MutationWeightControl::class.java)
                 .asEagerSingleton()
+
+        if(noTests){
+            bind(TestCaseWriter::class.java)
+                    .to(NoTestCaseWriter::class.java)
+                    .asEagerSingleton()
+        }
     }
 
     @Provides @Singleton
