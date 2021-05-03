@@ -25,7 +25,7 @@ export default class StringClassReplacement extends MethodReplacementClass{
 
     static startsWith = (idTemplate: string, caller: string, searchString: any, position? : any) : boolean => {
 
-        if(!caller || typeof searchString !== "string" || (position && typeof position !== "number")){
+        if(caller===null || caller===undefined || typeof searchString !== "string" || (position && typeof position !== "number")){
             //can't compute distance, so just fallback on standard behavior
             return caller.startsWith(searchString, position);
         }
@@ -75,7 +75,7 @@ export default class StringClassReplacement extends MethodReplacementClass{
 
     static endsWith = (idTemplate: string, caller: string, searchString: any, length? : any) : boolean => {
 
-        if(!caller || typeof searchString !== "string" || (length && typeof length !== "number")){
+        if(caller===null || caller===undefined || typeof searchString !== "string" || (length && typeof length !== "number")){
             //can't compute distance, so just fallback on standard behavior
             return caller.endsWith(searchString, length);
         }
@@ -94,7 +94,7 @@ export default class StringClassReplacement extends MethodReplacementClass{
 
     static includes = (idTemplate: string, caller: string, searchString: any, position? : any) : boolean => {
 
-        if(!caller || typeof searchString !== "string" || (position && typeof position !== "number")){
+        if(caller===null || caller===undefined || typeof searchString !== "string" || (position && typeof position !== "number")){
             //can't compute distance, so just fallback on standard behavior
             return caller.includes(searchString, position);
         }
