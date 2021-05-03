@@ -148,4 +148,15 @@ public class SelectTransformerTest {
 
         assertEquivalent(base, res);
     }
+
+    @Test
+    public void testPatioApiIssue(){
+
+        String select = "SELECT v.* FROM voting v, groups g WHERE v.expired = false AND '2021-04-28T16:02:27.426+0200' >= v.created_at + g.voting_duration * INTERVAL '1 hour' AND v.group_id = g.id";
+
+        String res = SelectTransformer.addFieldsToSelect(select);
+
+        //FIXME: should make sure that the fields of groups should be added
+//        assertFalse(false);
+    }
 }

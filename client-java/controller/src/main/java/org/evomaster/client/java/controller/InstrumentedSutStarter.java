@@ -20,8 +20,14 @@ public class InstrumentedSutStarter {
             note: just passing a valid package at initialization, but that
             ll be modified later if needed.
          */
-        AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), "foobar_packagenameshouldnotexist.");
+        /*
+            This was not needed for external driver... it became a issue for JDK 9+, where agent
+            are not allowed by default. so now we only do for embedded
+         */
+        //AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), "foobar_packagenameshouldnotexist.");
     }
+
+    private static boolean alreadyLoaded = false;
 
     private final SutController sutController;
 
@@ -31,6 +37,10 @@ public class InstrumentedSutStarter {
         this.sutController = sutController;
 
         if (sutController instanceof EmbeddedSutController) {
+            if(! alreadyLoaded){
+                alreadyLoaded = true;
+                AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), "foobar_packagenameshouldnotexist.");
+            }
             InstrumentingAgent.changePackagesToInstrument(sutController.getPackagePrefixesToCover());
 
             String driver = sutController.getDatabaseDriverName();

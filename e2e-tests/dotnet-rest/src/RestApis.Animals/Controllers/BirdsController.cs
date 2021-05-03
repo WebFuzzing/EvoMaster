@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RestApis.Animals.Dtos;
 using RestApis.Animals.Entities;
 
 namespace RestApis.Animals.Controllers
@@ -15,6 +16,7 @@ namespace RestApis.Animals.Controllers
         {
             _context = context;
         }
+
         [HttpGet]
         public async Task<IActionResult> GetAsync()
         {
@@ -22,14 +24,16 @@ namespace RestApis.Animals.Controllers
             
             return Ok(birds);
         }
+
         [HttpPost]
-        public async Task<IActionResult> CreateAsync([FromBody] Bird bird)
+        public async Task<IActionResult> CreateAsync([FromBody] CreateAnimalDto dto)
         {
-            await _context.Birds.AddAsync(bird);
+            await _context.Birds.AddAsync(new Bird {Name = dto.Name});
 
             await _context.SaveChangesAsync();
-
+           
             return NoContent();
         }
+
     }
 }

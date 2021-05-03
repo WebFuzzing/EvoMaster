@@ -3,10 +3,10 @@ package org.evomaster.client.java.instrumentation.staticstate;
 import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.KillSwitchException;
-import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.shared.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -341,21 +341,21 @@ public class ExecutionTracer {
      */
     public static void executedLine(String className, String methodName, String descriptor, int line) {
 
-        if(isKillSwitch()){
-            String name = Thread.currentThread().getName();
-            //TODO this is now hardcoded for languagetool... but should be rather configurable from Driver
-            if(name.startsWith("remote-rule-pool-") || name.startsWith("lt-textchecker-thread-")) {
+        /*
+            This is done to prevent the SUT keep on executing code after a test case is evaluated
+         */
+        if (isKillSwitch()) {
 
-                /*
-                    if we are in the middle of a class initialization, we should NOT throw an exception, otherwise
-                    the entire SUT will end up in a inconsistent state
-                 */
-                boolean initClass = Arrays.stream(Thread.currentThread().getStackTrace())
-                        .anyMatch(e -> e.getMethodName().equals("<clinit>"));
+            boolean initClass = Arrays.stream(Thread.currentThread().getStackTrace())
+                    .anyMatch(e -> e.getMethodName().equals("<clinit>"));
 
-                if(!initClass) {
-                    throw new KillSwitchException();
-                }
+            /*
+                must NOT stop the initialization of a class, otherwise the SUT will be left in an
+                inconsistent state in the following calls
+             */
+
+            if (!initClass) {
+                throw new KillSwitchException();
             }
         }
 

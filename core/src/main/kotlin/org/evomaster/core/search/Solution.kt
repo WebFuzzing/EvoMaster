@@ -12,6 +12,7 @@ where T : Individual {
 
     val overall: FitnessValue = FitnessValue(0.0)
     var clusteringTime = 0
+    var statistics = mutableListOf<Any>()
 
     init{
         individuals.forEach {

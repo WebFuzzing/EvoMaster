@@ -237,7 +237,7 @@ public class SqlHandler {
      *  Check the fields involved in the WHERE clause (if any).
      *  Return a map from table name to column names of the involved fields.
      */
-    private static Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement) {
+    public static Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement) {
 
         /*
            TODO
@@ -258,6 +258,16 @@ public class SqlHandler {
             @Override
             public void visit(Column column) {
                 String cn = column.getColumnName();
+
+                if(cn.equals("false")){
+                    /*
+                        This is a bug in the JsqlParser library. Until we upgrade it, or fix it if not fixed yet,
+                        we use this workaround.
+                        TODO remove it once library upgraded/fixed
+                     */
+                    return;
+                }
+
                 String tn = context.getTableName(column);
 
                 if(tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)){

@@ -1,10 +1,9 @@
 package org.evomaster.core.problem.graphql.service
 
 import com.google.inject.Inject
-import org.evomaster.core.problem.graphql.GraphQLAction
-import org.evomaster.core.problem.graphql.GraphQLActionBuilder
-import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.graphql.IntrospectiveQuery
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
@@ -48,8 +47,12 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         val infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
-        val gqlEndpoint = infoDto.graphQLProblem?.endpoint
+        var gqlEndpoint = infoDto.graphQLProblem?.endpoint
                 ?: throw IllegalStateException("Missing information about the GraphQL ednpoint URL")
+
+        if(! gqlEndpoint.startsWith("http", true)){
+            gqlEndpoint = infoDto.baseUrlOfSUT + gqlEndpoint
+        }
 
         val iq = IntrospectiveQuery()
         val schema = iq.fetchSchema(gqlEndpoint)
@@ -62,7 +65,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         setupAuthentication(infoDto)
 
         //TODO this will require refactoring
-        //initSqlInfo(infoDto)
+        initSqlInfo(infoDto)
         //initAdHocInitialIndividuals()
         //postInits()
 
@@ -73,6 +76,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
 
 
+
     override fun sampleAtRandom(): GraphQLIndividual {
         val actions = mutableListOf<GraphQLAction>()
         val n = randomness.nextInt(1, config.maxTestSize)
@@ -80,11 +84,21 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05) as GraphQLAction)
         }
-        return GraphQLIndividual(actions, SampleType.RANDOM, mutableListOf())
+        val ind =  GraphQLIndividual(actions, SampleType.RANDOM, mutableListOf())
+        GraphQLUtils.repairIndividual(ind)
+        return ind
     }
 
     /*
         TODO smart sampling, in which we have only a single Query at the end, and variable
         number of Mutation before
      */
+
+    override fun initSqlInfo(infoDto: SutInfoDto) {
+        if (infoDto.sqlSchemaDto != null && config.shouldGenerateSqlData()) {
+
+            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
+            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
+        }
+    }
 }

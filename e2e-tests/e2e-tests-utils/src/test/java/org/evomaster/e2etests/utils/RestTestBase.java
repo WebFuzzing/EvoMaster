@@ -194,16 +194,6 @@ public abstract class RestTestBase  extends WsTestBase{
         assertTrue(ok, errorMsg + restActions(solution));
     }
 
-    protected void assertInsertionIntoTable(Solution<RestIndividual> solution, String tableName) {
-
-        boolean ok = solution.getIndividuals().stream().anyMatch(
-                ind -> ind.getIndividual().getDbInitialization().stream().anyMatch(
-                        da -> da.getTable().getName().equalsIgnoreCase(tableName))
-        );
-
-        assertTrue(ok);
-    }
-
     protected void assertHasAtLeastOne(Solution<RestIndividual> solution,
                                        HttpVerb verb,
                                        int expectedStatusCode) {

@@ -5,7 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
@@ -185,9 +185,26 @@ class Statistics : SearchListener {
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
             add(Pair("endpoints", "" + numberOfEndpoints()))
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
+
+            // Statistics on errors in gql
+            add(Pair("gqlerrors", "" + solution.overall.gqlErrors(idMapper, withLine = false).size))
+
+            // Statistics on errors in gql
+            add(Pair("gqlerrorsPerLines", "" + solution.overall.gqlErrors(idMapper, withLine = true).size))
+
+            // Statistics on faults found
+            // errors5xx - counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))
+            //distinct500Faults - counts the number of 500 (and NOT the other in 5xx), per endpoint, and distinct based on the last
+            //executed line
+            add(Pair("distinct500Faults", "" + solution.overall.potential500Faults(idMapper).size ))
+            // failedOracleExpectations - the number of calls in the individual that fail one active partial oracle.
+            // However, 5xx are not counted here.
+            add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
+            //this is the total of all potential faults, eg distinct500Faults + failedOracleExpectations + any other
+            //potential oracle we are going to introduce.
+            //Note: that 500 (and 5xx in general) MUST not be counted in failedOracles
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
-            add(Pair("FailedOracleExpectations", "" + failedOracle(solution)))
 
             add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
             add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))
@@ -206,9 +223,7 @@ class Statistics : SearchListener {
 
             add(Pair(TEST_TIMEOUTS, "$timeouts"))
             add(Pair("coverageFailures", "$coverageFailures"))
-
-            add(Pair("ClusteringTime", "${solution.clusteringTime}"))
-
+            add(Pair("clusteringTime", "${solution.clusteringTime}"))
             add(Pair("id", config.statisticsColumnId))
         }
         addConfig(list)
@@ -238,7 +253,7 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is RestCallResult && it.result.hasErrorCode()
+                    it.result is HttpWsCallResult && it.result.hasErrorCode()
                 }
                 .map { it.action.getName() }
                 .distinct()
@@ -247,12 +262,16 @@ class Statistics : SearchListener {
 
     private fun failedOracle(solution: Solution<*>): Int {
 
+        //Fix for GraphQL
+        if (!writer.hasPartialOracles()) return 0
+
         val oracles = writer.getPartialOracles()
         //count the distinct number of API paths for which we have a failed oracle
+        // NOTE: calls with an error code (5xx) are excluded from this count.
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is RestCallResult
+                    it.result is HttpWsCallResult
                             && it.action is RestCallAction
                             && !it.result.hasErrorCode()
                             && oracles.activeOracles(it.action, it.result).any { or -> or.value }
@@ -268,7 +287,7 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is RestCallResult && it.result.getStatusCode()?.let { c -> c in 200..299 } ?: false
+                    it.result is HttpWsCallResult && it.result.getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
                 .map { it.action.getName() }
                 .distinct()
@@ -279,14 +298,14 @@ class Statistics : SearchListener {
 
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
-                .filter { it.result is RestCallResult }
+                .filter { it.result is HttpWsCallResult }
                 .map { it.action.getName() }
                 .distinct() //distinct names of actions, ie VERB:PATH
                 .map { name ->
                     solution.individuals
                             .flatMap { it.evaluatedActions() }
                             .filter { it.action.getName() == name }
-                            .map { (it.result as RestCallResult).getStatusCode() }
+                            .map { (it.result as HttpWsCallResult).getStatusCode() }
                             .distinct()
                             .count()
                 }

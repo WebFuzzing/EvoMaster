@@ -1,3 +1,5 @@
+import ObjectiveNaming from "../ObjectiveNaming";
+import ExecutionTracer from "../staticstate/ExecutionTracer";
 import Truthness from "./Truthness";
 import TruthnessUtils from "./TruthnessUtils";
 import ExecutionTracer from "../staticstate/ExecutionTracer";
@@ -7,17 +9,12 @@ import ObjectiveNaming from "../ObjectiveNaming";
 
 export default class HeuristicsForBooleans {
 
-    private static readonly validOps = ["==", "===", "!=", "!==", "<", "<=", ">", ">="];
-
-    private static lastEvaluation: Truthness = null;
-
     public static readonly FLAG_NO_EXCEPTION = 0.01;
     public static readonly EXCEPTION = HeuristicsForBooleans.FLAG_NO_EXCEPTION / 2;
 
+    public static handleNot(value: any): any {
 
-    public static handleNot(value: any) : any{
-
-        if(HeuristicsForBooleans.lastEvaluation){
+        if (HeuristicsForBooleans.lastEvaluation) {
             HeuristicsForBooleans.lastEvaluation = HeuristicsForBooleans.lastEvaluation.invert();
         }
 
@@ -31,11 +28,11 @@ export default class HeuristicsForBooleans {
         HeuristicsForBooleans.lastEvaluation = t;
     }
 
-    public static getLastEvaluation() : Truthness{
+    public static getLastEvaluation(): Truthness {
         return HeuristicsForBooleans.lastEvaluation;
     }
 
-    public static clearLastEvaluation(){
+    public static clearLastEvaluation() {
         HeuristicsForBooleans.lastEvaluation = null;
     }
 
@@ -99,7 +96,7 @@ export default class HeuristicsForBooleans {
 
             h = new Truthness(
                 (xT.getOfTrue() / 2) + (yT.getOfTrue() / 2),
-                Math.max(xT.getOfFalse(), xE ? yT.getOfFalse()/2 : yT.getOfFalse())
+                Math.max(xT.getOfFalse(), xE ? yT.getOfFalse() / 2 : yT.getOfFalse())
             );
         } else {
 
@@ -208,7 +205,7 @@ export default class HeuristicsForBooleans {
             throw xE;
         }
 
-        if(leftIsFalse && yE){
+        if (leftIsFalse && yE) {
             throw yE;
         }
 
@@ -319,5 +316,36 @@ export default class HeuristicsForBooleans {
     }
 
 
+
+
+    public static handleTernary(f: () => any, fileName: string, line: number, index: number) {
+
+        /*
+            Man: what is this for?
+            Make sure that nested evaluations of && and || do not use unrelated previous computation.
+         */
+        HeuristicsForBooleans.lastEvaluation = null;
+
+        const id = ObjectiveNaming.statementObjectiveName(fileName, line, index);
+        let res;
+
+        try {
+            res = f();
+            ExecutionTracer.updateObjective(id, 1);
+        } catch (e) {
+            ExecutionTracer.updateObjective(id, 0.5);
+            // Man: might throw exception again
+            throw e;
+            // res = e;
+        } finally {
+            HeuristicsForBooleans.lastEvaluation = null;
+        }
+        return res;
+
+    }
+
+    private static readonly validOps = ["==", "===", "!=", "!==", "<", "<=", ">", ">="];
+
+    private static lastEvaluation: Truthness = null;
 
 }

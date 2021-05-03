@@ -152,10 +152,28 @@ class FitnessValue(
         updateTarget(id, MAX_VALUE)
     }
 
+    fun gqlErrors(idMapper: IdMapper, withLine : Boolean): List<String>{
+        return targets.keys
+            .filter { idMapper.isGQLErrors(it, withLine) }
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
     fun potentialFoundFaults(idMapper: IdMapper) : List<String>{
         return targets.keys
                 .filter { idMapper.isFault(it)}
                 .map { idMapper.getDescriptiveId(it) }
+    }
+
+    fun potential500Faults(idMapper: IdMapper): List<String>{
+        return targets.keys
+                .filter{ idMapper.isFault500(it)}
+                .map{idMapper.getDescriptiveId(it)}
+    }
+
+    fun potentialPartialOracleFaults(idMapper: IdMapper): List<String>{
+        return targets.keys
+                .filter{idMapper.isFaultExpectation(it)}
+                .map{idMapper.getDescriptiveId(it)}
     }
 
     /**

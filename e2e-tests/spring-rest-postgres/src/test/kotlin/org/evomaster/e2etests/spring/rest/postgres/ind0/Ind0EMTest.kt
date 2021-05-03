@@ -27,7 +27,6 @@ class Ind0EMTest : SpringRestPostgresTestBase(){
                     "org.bar.Ind0EM",
                     100
             ) { args ->
-
                 val solution = initAndRun(args)
 
                 assertTrue(solution.individuals.size >= 1)

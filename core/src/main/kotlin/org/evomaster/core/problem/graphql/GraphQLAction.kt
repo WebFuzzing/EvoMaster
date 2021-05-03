@@ -1,8 +1,8 @@
 package org.evomaster.core.problem.graphql
 
 import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
@@ -18,9 +18,9 @@ class GraphQLAction(
          */
         val methodName: String,
         val methodType: GQMethodType,
-        val parameters: MutableList<Param>,
+        parameters: MutableList<Param>,
         auth: AuthenticationInfo = NoAuth()
-        ) : HttpWsAction(auth) {
+        ) : HttpWsAction(auth, parameters) {
 
     override fun getName(): String {
         //TODO what if have same name but different inputs? need to add input list as well
@@ -40,5 +40,9 @@ class GraphQLAction(
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
         return true
+    }
+
+    override fun toString(): String {
+        return "$methodType $methodName, auth=${auth.name}"
     }
 }

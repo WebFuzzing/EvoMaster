@@ -3,6 +3,7 @@
  * specific values in the HTTP headers (eg, cookies)
  */
 import HeaderDto from "./HeaderDto";
+import {CookieLoginDto} from "./CookieLoginDto";
 
 export default class AuthenticationDto {
 

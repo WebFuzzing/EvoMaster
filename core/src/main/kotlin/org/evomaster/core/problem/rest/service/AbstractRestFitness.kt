@@ -2,16 +2,13 @@ package org.evomaster.core.problem.rest.service
 
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
-import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -185,12 +182,6 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     /**
-     * Initializing Actions before evaluating its fitness if need
-     */
-    open fun doInitializingActions(ind: T) {
-    }
-
-    /**
      * Create local targets for each HTTP status code in each
      * API entry point
      */
@@ -221,15 +212,6 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 }
     }
 
-    open fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: RestCallResult, name: String) : String?{
-        var location5xx : String? = null
-        if (status == 500){
-            val statement = additionalInfoList[indexOfAction].lastExecutedStatement
-            location5xx = statement ?: "framework_code"
-            result.setLastStatementWhen500(location5xx)
-        }
-        return location5xx
-    }
 
     fun handleAdditionalOracleTargetDescription(fv: FitnessValue, actions: List<RestAction>, result : RestCallResult, name: String, indexOfAction : Int){
         /*
@@ -238,7 +220,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         val call = actions[indexOfAction] as RestCallAction
         val oracles = writer.getPartialOracles().activeOracles(call, result)
         oracles.filter { it.value }.forEach { entry ->
-            val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
+            val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
             val bugId = idMapper.handleLocalTarget(oracleId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }
@@ -278,7 +260,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 executed statement in the SUT.
                 So, we create new targets for it.
             */
-            val descriptiveId = idMapper.getFaultDescriptiveId("${location5xx!!} $name")
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }
@@ -293,14 +275,15 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     protected fun handleRestCall(a: RestCallAction,
                                  actionResults: MutableList<ActionResult>,
                                  chainState: MutableMap<String, String>,
-                                 cookies: Map<String, List<NewCookie>>)
+                                 cookies: Map<String, List<NewCookie>>,
+                                tokens: Map<String,String>)
             : Boolean {
 
         val rcr = RestCallResult()
         actionResults.add(rcr)
 
         val response = try {
-            createInvocation(a, chainState, cookies).invoke()
+            createInvocation(a, chainState, cookies, tokens).invoke()
         } catch (e: ProcessingException) {
 
             log.debug("There has been an issue in the evaluation of a test: {}", e)
@@ -345,7 +328,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
                     TcpUtils.handleEphemeralPortIssue()
 
-                    createInvocation(a, chainState, cookies).invoke()
+                    createInvocation(a, chainState, cookies, tokens).invoke()
                 }
                 TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
                     /*
@@ -406,7 +389,12 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
 
-    private fun createInvocation(a: RestCallAction, chainState: MutableMap<String, String>, cookies: Map<String, List<NewCookie>>): Invocation {
+    private fun createInvocation(a: RestCallAction,
+                                 chainState: MutableMap<String, String>,
+                                 cookies: Map<String, List<NewCookie>>,
+                                 tokens: Map<String,String>
+    ): Invocation {
+
         val baseUrl = getBaseUrl()
 
         val path = a.resolvedPath()
@@ -444,33 +432,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             client.target(fullUri).request(a.produces.first())
         }
 
-        a.auth.headers.forEach {
-            builder.header(it.name, it.value)
-        }
-
-        val prechosenAuthHeaders = a.auth.headers.map { it.name }
-
-        /*
-            TODO: optimization, avoid mutating header gene if anyway
-            using pre-chosen one
-         */
-
-        a.parameters.filterIsInstance<HeaderParam>()
-                .filter { !prechosenAuthHeaders.contains(it.name) }
-                .forEach {
-                    builder.header(it.name, it.gene.getValueAsRawString())
-                }
-
-        if (a.auth.cookieLogin != null) {
-            val list = cookies[a.auth.cookieLogin!!.username]
-            if (list == null || list.isEmpty()) {
-                log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
-            } else {
-                list.forEach {
-                    builder.cookie(it.toCookie())
-                }
-            }
-        }
+        handleAuth(a, builder, cookies, tokens)
 
         /*
             TODO: need to handle "accept" of returned resource
@@ -517,6 +479,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         }
         return invocation
     }
+
+
 
     private fun handleSaveLocation(a: RestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
         if (a.saveLocation) {

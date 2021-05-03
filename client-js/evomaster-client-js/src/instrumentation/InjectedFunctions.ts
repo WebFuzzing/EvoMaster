@@ -54,7 +54,6 @@ export default class InjectedFunctions {
         return HeuristicsForBooleans.evaluate(left,op,right,fileName,line,branchId);
     }
 
-
     public static or(left: () => any, right: () => any, isRightPure: boolean, fileName: string, line: number, branchId: number): any {
         return HeuristicsForBooleans.evaluateOr(left, right, isRightPure, fileName, line, branchId);
     }
@@ -75,4 +74,7 @@ export default class InjectedFunctions {
         return FunctionCallHandler.handleFunctionCallTracked(fileName, line, branchId, obj, functionName, ...args);
     }
 
+    public static ternary(f: () => any, fileName: string, line: number, index: number) : any{
+       return HeuristicsForBooleans.handleTernary(f, fileName, line, index)
+    }
 }

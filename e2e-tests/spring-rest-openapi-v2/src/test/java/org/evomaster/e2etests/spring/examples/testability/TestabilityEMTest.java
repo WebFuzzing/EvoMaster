@@ -36,7 +36,6 @@ public class TestabilityEMTest extends SpringTestBase {
                 15_000,
                 true,
                 (args) -> {
-
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
 

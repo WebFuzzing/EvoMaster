@@ -31,7 +31,6 @@ public class TTPaperEMTest  extends SpringTestBase {
                 10_000,
                 true,
                 (args) -> {
-
                     args.add("--endpointFocus=/api/numeric/{x}");
 
                     Solution<RestIndividual> solution = initAndRun(args);

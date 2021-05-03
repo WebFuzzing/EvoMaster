@@ -6,7 +6,7 @@ import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.clustering.metrics.DistanceMetric
 import org.evomaster.core.output.clustering.metrics.DistanceMetricErrorText
 import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.SearchTimeController
@@ -64,8 +64,8 @@ object TestSuiteSplitter {
 
     private fun conductClustering(solution: Solution<RestIndividual>,
                                   oracles: PartialOracles = PartialOracles(),
-                                  metrics: List<DistanceMetric<RestCallResult>>,
-                                  splitResult: SplitResult) : MutableMap<String, MutableList<MutableList<RestCallResult>>> {
+                                  metrics: List<DistanceMetric<HttpWsCallResult>>,
+                                  splitResult: SplitResult) : MutableMap<String, MutableList<MutableList<HttpWsCallResult>>> {
 
         val clusteringStart = System.currentTimeMillis()
         val errs = solution.individuals.filter {
@@ -81,7 +81,7 @@ object TestSuiteSplitter {
             0 -> splitResult.splitOutcome = mutableListOf()
             1 -> splitResult.splitOutcome = mutableListOf(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
         }
-        val clusters = mutableMapOf<String, MutableList<MutableList<RestCallResult>>>()
+        val clusters = mutableMapOf<String, MutableList<MutableList<HttpWsCallResult>>>()
         val clusteringSol = Solution(errs, solution.testSuiteName, Termination.SUMMARY)
 
         for (metric in metrics) {
@@ -109,7 +109,7 @@ object TestSuiteSplitter {
      * The individual selected is the shortest (by action count) or random.
      */
 
-    private fun execSummary(clusters : MutableMap<String, MutableList<MutableList<RestCallResult>>>,
+    private fun execSummary(clusters : MutableMap<String, MutableList<MutableList<HttpWsCallResult>>>,
                             solution: Solution<RestIndividual>,
                             oracles: PartialOracles,
                             splitResult: SplitResult
@@ -119,7 +119,7 @@ object TestSuiteSplitter {
         val execSol = mutableSetOf<EvaluatedIndividual<RestIndividual>>()
         clusters.values.forEach { it.forEachIndexed { index, clu ->
             val inds = solution.individuals.filter { ind ->
-                ind.evaluatedActions().any { ac -> clu.contains(ac.result as RestCallResult) }
+                ind.evaluatedActions().any { ac -> clu.contains(ac.result as HttpWsCallResult) }
             }.toMutableList()
             inds.sortBy { it.individual.seeActions().size }
             inds.firstOrNull { execSol.add(it) }
@@ -134,7 +134,7 @@ object TestSuiteSplitter {
         return Solution(execSolList, solution.testSuiteName, Termination.SUMMARY)
     }
 
-    private fun splitByCluster(clusters: MutableMap<String, MutableList<MutableList<RestCallResult>>>,
+    private fun splitByCluster(clusters: MutableMap<String, MutableList<MutableList<HttpWsCallResult>>>,
                                  solution: Solution<RestIndividual>,
                                  oracles: PartialOracles,
                                  splitResult: SplitResult) : SplitResult {
@@ -149,7 +149,7 @@ object TestSuiteSplitter {
         val successses = solution.individuals.filter {
             !errs.contains(it) &&
                     it.evaluatedActions().all { ac ->
-                        val code = (ac.result as RestCallResult).getStatusCode()
+                        val code = (ac.result as HttpWsCallResult).getStatusCode()
                         (code != null && code < 400)
                     }
         }.toMutableList()
@@ -173,7 +173,7 @@ object TestSuiteSplitter {
         }.filterNot { ind ->
             ind.evaluatedActions().any { ac ->
                 clusters.any {
-                    it.value.any { va -> va.contains(ac.result as RestCallResult) } }
+                    it.value.any { va -> va.contains(ac.result as HttpWsCallResult) } }
             }
         }
         // add any Individuals that have a failed action and belong to no cluster to the executive summary too.
@@ -214,7 +214,7 @@ object TestSuiteSplitter {
         val successses = solution.individuals.filter {
             !s500.contains(it) &&
             it.evaluatedActions().all { ac ->
-                val code = (ac.result as RestCallResult).getStatusCode()
+                val code = (ac.result as HttpWsCallResult).getStatusCode()
                 (code != null && code < 400)
             }
         }.toMutableList()
@@ -231,8 +231,8 @@ object TestSuiteSplitter {
     }
 
     fun assessFailed(action: EvaluatedAction, oracles: PartialOracles): Boolean{
-        val codeSelect = if(action.result is RestCallResult){
-            val code = (action.result as RestCallResult).getStatusCode()
+        val codeSelect = if(action.result is HttpWsCallResult){
+            val code = (action.result as HttpWsCallResult).getStatusCode()
             (code != null && code == 500)
             // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
             // related to bug finding. Test cases that have other errors from the 5xx series will end up in the

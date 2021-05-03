@@ -21,7 +21,6 @@ public class NREMTest extends NRTestBase {
                 "org.bar.NrEM",
                 3_000,
                 (args) -> {
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

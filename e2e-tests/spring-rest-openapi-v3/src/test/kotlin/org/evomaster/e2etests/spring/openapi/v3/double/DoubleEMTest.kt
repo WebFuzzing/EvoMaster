@@ -35,7 +35,7 @@ class DoubleEMTest : SpringTestBase() {
                 "DoubleEM",
                 "org.foo.DoubleEM",
                 1_000
-        ) { args: List<String> ->
+        ) { args: MutableList<String> ->
 
             val solution = initAndRun(args)
 

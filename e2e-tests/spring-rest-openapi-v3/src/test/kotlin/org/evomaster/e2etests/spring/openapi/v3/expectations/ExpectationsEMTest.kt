@@ -40,8 +40,7 @@ class ExpectationsEMTest : SpringTestBase() {
                 "org.foo.ExpectationsEM",
                 100
         ){args: MutableList<String> ->
-            args.add("--expectationsActive")
-            args.add("" + true)
+
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)

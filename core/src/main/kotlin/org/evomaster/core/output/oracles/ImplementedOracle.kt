@@ -6,7 +6,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -24,7 +24,7 @@ abstract class ImplementedOracle {
      * [addExpectations] handles the process of generating the code for failing expectations, as evaluated
      * by the particular oracle implementation.
      */
-    abstract fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat)
+    abstract fun addExpectations(call: RestCallAction, lines: Lines, res: HttpWsCallResult, name: String, format: OutputFormat)
 
     /**
      * The [setObjectGenerator] method is used to add the [ObjectGenerator] to individual oracles. At the time
@@ -36,7 +36,7 @@ abstract class ImplementedOracle {
      * The [generatesExpectation] method is used to determine if, for a given [EvaluatedAction], the
      * [ImplementedOracle] generates an expectation.
      */
-    abstract fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean
+    abstract fun generatesExpectation(call: RestCallAction, res: HttpWsCallResult): Boolean
 
     /**
      * The [generatesExpectation] method is used to determine if, for a given [EvaluatedIndividual],

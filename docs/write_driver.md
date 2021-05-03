@@ -99,6 +99,9 @@ public static void main(String[] args){
 At this point, once this driver is started (e.g., by right-clicking on it in
 an IDE to run it as a Java process),
 then you can use `evomaster.jar` to finally generate test cases.
+Note that it is also possible to run the driver from command-line, like any other Java program with a `main` function.
+However, in such case, you will need to package an uber jar file (e.g., using plugins like `maven-shade-plugin` and `maven-assembly-plugin`).  
+
 
 __WARNING__: Java 9 broke backward compatibility. 
 One painful change was that self-attachment of Java-Agents (needed for bytecode instrumentation)

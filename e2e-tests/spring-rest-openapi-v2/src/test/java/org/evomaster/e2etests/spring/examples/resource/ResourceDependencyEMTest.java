@@ -72,7 +72,6 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     args.add("--structureMutationProbability");
                     args.add("1.0");
 
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
