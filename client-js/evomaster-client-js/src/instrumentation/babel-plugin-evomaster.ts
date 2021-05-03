@@ -307,6 +307,8 @@ export default function evomasterPlugin(
 
         let replaced;
 
+        //TODO only for known names
+
         if(t.isMemberExpression(call.callee)) {
             replaced = t.callExpression(
                 t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.callTracked.name)),
