@@ -13,11 +13,9 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
-import javax.annotation.PostConstruct
 import javax.ws.rs.core.MediaType
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
@@ -167,7 +165,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             format.isJavaScript() -> {
                 //in SuperAgent, verb must be first
                 handleVerb(baseUrlOfSut, call, lines)
-                lines.append(getAcceptHeader(call, res))
+                lines.append(getRestAcceptHeader(call, res))
                 handleHeaders(call, lines)
                 handleBody(call, lines)
             }
@@ -519,7 +517,11 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             lines.append(")")
     }
 
-    private fun getAcceptHeader(call: RestCallAction, res: RestCallResult): String {
+    override fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String {
+        return getRestAcceptHeader(call as RestCallAction, res as RestCallResult)
+    }
+
+    private fun getRestAcceptHeader(call: RestCallAction, res: RestCallResult): String {
         /*
          *  Note: using the type in result body is wrong:
          *  if you request a JSON but make an error, you might
@@ -528,53 +530,32 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
          *  TODO: get the type from the REST call
          */
 
-        val accept = when {
-            format.isJavaOrKotlin() -> ".accept("
-            format.isJavaScript() -> ".set('Accept', "
-            format.isCsharp() -> "Client.DefaultRequestHeaders.Add(\"Accept\", "
-            else -> throw IllegalArgumentException("Invalid format: $format")
-        }
+        val accept = openAcceptHeader()
 
         var result: String
 
         if (call.produces.isEmpty() || res.getBodyType() == null) {
-            result = "$accept\"*/*\")"
-        }
-
-        val accepted = call.produces.filter { res.getBodyType().toString().contains(it, true) }
-
-        result = if (accepted.size == 1) {
-            "$accept\"${accepted.first()}\")"
+            result = "$accept\"*/*\""
         } else {
-            //FIXME: there seems to have been something or a problem
-            "$accept\"*/*\")"
+
+            val accepted = call.produces.filter { res.getBodyType().toString().contains(it, true) }
+
+            result = if (accepted.size == 1) {
+                "$accept\"${accepted.first()}\""
+            } else {
+                //FIXME: there seems to have been something or a problem
+                "$accept\"*/*\""
+            }
         }
-        if (format.isCsharp()) result = "$result;"
+
+        result = closeAcceptHeader(result)
 
         return result
     }
 
-    private fun handleFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, resVarName: String) {
 
-        lines.addEmpty()
-        if (needsResponseVariable(call, res)) {
-            when {
-                format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
-                format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
-                //TODO JavaScript
-            }
-        }
 
-        when {
-            format.isJavaOrKotlin() -> lines.append("given()")
-            format.isJavaScript() -> lines.append("await superagent")
-            format.isCsharp() -> lines.append("Client.DefaultRequestHeaders.Clear();\n")
-        }
-        //TODO: check for C#
-        if (!format.isJavaScript()) {
-            lines.append(getAcceptHeader(call, res))
-        }
-    }
+
 
     private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, resVarName: String) {
 

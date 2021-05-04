@@ -11,6 +11,8 @@ import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
+import org.evomaster.core.problem.httpws.service.HttpWsAction
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedAction
@@ -37,22 +39,17 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         addGraphQlCallLines(action as GraphQLAction, lines, result as GraphQlCallResult, baseUrlOfSut)
     }
 
-    private fun getAcceptGQLHeader(call: GraphQLAction, res: GraphQlCallResult): String {
 
-        val accept = when {
-            format.isJavaOrKotlin() -> ".accept("
-            format.isJavaScript() -> ".set('Accept', "
-            else -> throw IllegalArgumentException("Invalid format: $format")
-        }
+    override fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String {
+
+        val accept = openAcceptHeader()
 
         /**
          * GQL services typically respond using JSON
          */
-        if (res.getBodyType() == null) {
-            return "$accept\"application/json\")"
-        } else
-
-            return "$accept\"application/json\")"
+        var result =  "$accept\"application/json\""
+        result = closeAcceptHeader(result)
+        return result
     }
 
 
@@ -66,7 +63,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         }
 
         if (!format.isJavaScript()) {
-            lines.append(getAcceptGQLHeader(call, res))
+            lines.append(getAcceptHeader(call, res))
         }
     }
 
@@ -143,7 +140,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
             format.isJavaScript() -> {
                 //in SuperAgent, verb must be first
                 handleGQLVerb(baseUrlOfSut, call, lines)
-                lines.append(getAcceptGQLHeader(call, res))
+                lines.append(getAcceptHeader(call, res))
                 handleHeaders(call, lines)
                 handleGQLBody(call, lines)
             }

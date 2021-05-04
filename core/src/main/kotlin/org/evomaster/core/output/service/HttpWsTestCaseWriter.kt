@@ -13,6 +13,9 @@ import org.evomaster.core.search.gene.GeneUtils
 
 abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
 
+    abstract fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String
+
+
     override fun shouldFailIfException(result: ActionResult) : Boolean{
         /*
             Fail test if exception is not thrown, but not if it was a timeout,
@@ -26,6 +29,46 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
         counter++
         return name
     }
+
+    protected fun openAcceptHeader() : String{
+        return when {
+            format.isJavaOrKotlin() -> ".accept("
+            format.isJavaScript() -> ".set('Accept', "
+            format.isCsharp() -> "Client.DefaultRequestHeaders.Add(\"Accept\", "
+            else -> throw IllegalArgumentException("Invalid format: $format")
+        }
+    }
+
+    protected fun closeAcceptHeader(openedHeader: String): String {
+        var result = openedHeader
+        result += ")"
+        if (format.isCsharp()) result = "$result;"
+        return result
+    }
+
+    protected fun handleFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, resVarName: String) {
+
+        lines.addEmpty()
+        if (needsResponseVariable(call, res)) {
+            when {
+                format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
+                format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
+                //TODO JavaScript
+            }
+        }
+
+        when {
+            format.isJavaOrKotlin() -> lines.append("given()")
+            format.isJavaScript() -> lines.append("await superagent")
+            format.isCsharp() -> lines.append("Client.DefaultRequestHeaders.Clear();\n")
+        }
+        //TODO: check for C#
+        if (!format.isJavaScript()) {
+            lines.append(getAcceptHeader(call, res))
+        }
+    }
+
+
 
     open fun needsResponseVariable(call: HttpWsAction, res: HttpWsCallResult): Boolean {
         return false; //TODO check format for C# and JS
