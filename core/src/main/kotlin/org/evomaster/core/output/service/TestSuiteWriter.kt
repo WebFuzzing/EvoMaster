@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchTimeController
@@ -44,20 +45,10 @@ class TestSuiteWriter {
     @Inject
     private lateinit var testCaseWriter: TestCaseWriter
 
-    /*
-        Unfortunately, Guice seems buggy, and does not respect the optional here...
-     */
-    //@Inject(optional = true)
-    private var partialOracles: PartialOracles? = null
+    @Inject
+    private lateinit var partialOracles: PartialOracles
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
-
-    @PostConstruct
-    private fun initialize(){
-        if(config.problemType == EMConfig.ProblemType.REST){
-            partialOracles = PartialOracles()
-        }
-    }
 
 
     fun writeTests(
@@ -80,9 +71,7 @@ class TestSuiteWriter {
         val lines = Lines()
         val testSuiteOrganizer = TestSuiteOrganizer()
 
-        if(partialOracles != null) {
-            activePartialOracles = partialOracles!!.activeOracles(solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>)
-        }
+        activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
         header(solution, testSuiteFileName, lines, controllerName)
 
@@ -282,11 +271,7 @@ class TestSuiteWriter {
             }
 
             if (config.expectationsActive) {
-                addImport(
-                    "org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler",
-                    lines,
-                    true
-                )
+                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
                 addImport("io.restassured.path.json.JsonPath", lines)
                 addImport("java.util.Arrays", lines)
@@ -310,7 +295,6 @@ class TestSuiteWriter {
             addUsing("System.Threading.Tasks", lines)
             addUsing("Newtonsoft.Json", lines)
             addUsing("EvoMaster.Controller", lines)
-
         }
 
         lines.addEmpty(4)
@@ -606,13 +590,13 @@ class TestSuiteWriter {
     }
 
 
-    fun hasPartialOracles() = (partialOracles != null)
 
     /**
-     * WARN: this will throw exception if [hasPartialOracles] is false
+     *  FIXME replace with direct injection
      */
+    @Deprecated("replace with direct injection")
     fun getPartialOracles(): PartialOracles {
-        return partialOracles!!
+        return partialOracles
     }
 
 

@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.OpenApiAccess
 import org.evomaster.core.problem.rest.RestActionBuilderV3
@@ -26,11 +27,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     @Inject
     protected lateinit var configuration: EMConfig
 
+    @Inject
+    protected lateinit var partialOracles: PartialOracles
+
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
-
-    //private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
-
-    //private val usedObjects: UsedObjects = UsedObjects()
 
     protected lateinit var swagger: OpenAPI
 
@@ -74,6 +74,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         postInits()
 
         updateConfigForTestOutput(infoDto)
+
+        /*
+            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
+         */
+        partialOracles.setOpenApi(swagger)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
@@ -124,18 +129,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         actionCluster.clear()
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf())
 
-        //modelCluster.clear()
-        // RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
-
         initAdHocInitialIndividuals()
 
         log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
-
-
-
-
-
 
     fun getOpenAPI(): OpenAPI{
         return swagger

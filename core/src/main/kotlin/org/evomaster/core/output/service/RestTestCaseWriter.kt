@@ -1,10 +1,10 @@
 package org.evomaster.core.output.service
 
 import com.google.gson.Gson
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
-import org.evomaster.core.output.PartialOracles
 import org.evomaster.core.output.SqlWriter
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.httpws.service.HttpWsAction
@@ -13,9 +13,11 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
 import javax.ws.rs.core.MediaType
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
@@ -24,7 +26,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         private val log = LoggerFactory.getLogger(RestTestCaseWriter::class.java)
     }
 
-    private var partialOracles =  PartialOracles()
+    @Inject
+    private lateinit var partialOracles : PartialOracles
 
     constructor() : super()
 
@@ -35,6 +38,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         this.config = config
         this.partialOracles = partialOracles
     }
+
 
     /**
      * When we make a HTTP call, do we need to store the response in a variable for following HTTP calls?
