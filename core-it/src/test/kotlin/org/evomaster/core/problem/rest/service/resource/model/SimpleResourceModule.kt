@@ -2,6 +2,8 @@ package org.evomaster.core.problem.rest.service.resource.model
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import org.evomaster.core.output.service.RestTestCaseWriter
+import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.search.service.Sampler
@@ -36,6 +38,10 @@ class SimpleResourceModule : AbstractModule(){
 
         bind(StructureMutator::class.java)
                 .to(RestResourceStructureMutator::class.java)
+                .asEagerSingleton()
+
+        bind(TestCaseWriter::class.java)
+                .to(RestTestCaseWriter::class.java)
                 .asEagerSingleton()
     }
 

@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import com.google.inject.AbstractModule
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
@@ -23,11 +24,24 @@ class TestSuiteWriterTest{
      */
     private val baseTargetFolder = "target/TestSuiteWriterTest"
 
+    private class ReducedModule : AbstractModule(){
+        override fun configure() {
+            //point here is to avoid connections to SUT...
+            bind(TestCaseWriter::class.java)
+                    .to(RestTestCaseWriter::class.java)
+                    .asEagerSingleton()
+
+            bind(PartialOracles::class.java)
+                    .asEagerSingleton()
+        }
+    }
+
+
     @Test
     fun testEmptySuite(){
 
         val injector = LifecycleInjector.builder()
-                .withModules(BaseModule())
+                .withModules(BaseModule(), ReducedModule())
                 .build().createInjector()
 
         val config = injector.getInstance(EMConfig::class.java)
@@ -58,9 +72,6 @@ class TestSuiteWriterTest{
 
         val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-        //val sampler = injector.getInstance(RestSampler::class.java)
-        //val swagger = sampler.getSwagger()
-        //writer.setSwagger(swagger)
 
         //write the test suite
         writer.writeTests(solution, FakeController::class.qualifiedName!!)

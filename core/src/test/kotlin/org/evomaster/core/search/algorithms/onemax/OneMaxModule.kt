@@ -2,6 +2,8 @@ package org.evomaster.core.search.algorithms.onemax
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import org.evomaster.core.output.service.NoTestCaseWriter
+import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.search.service.mutator.EmptyStructureMutator
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.*
@@ -47,5 +49,8 @@ class OneMaxModule : AbstractModule() {
         bind(ArchiveMutationTrackService::class.java)
                 .asEagerSingleton()
 
+        bind(TestCaseWriter::class.java)
+                .to(NoTestCaseWriter::class.java)
+                .asEagerSingleton()
     }
 }

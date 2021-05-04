@@ -2,6 +2,8 @@ package org.evomaster.core.search.matchproblem
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import org.evomaster.core.output.service.NoTestCaseWriter
+import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Sampler
@@ -34,6 +36,10 @@ class PrimitiveTypeMatchModule : AbstractModule() {
 
         bind(StructureMutator::class.java)
                 .to(EmptyStructureMutator::class.java)
+                .asEagerSingleton()
+
+        bind(TestCaseWriter::class.java)
+                .to(NoTestCaseWriter::class.java)
                 .asEagerSingleton()
     }
 }
