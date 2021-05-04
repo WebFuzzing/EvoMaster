@@ -99,10 +99,7 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
 
             handleFlaky(
                     () -> {
-                        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, true, split);
-                        args.add("--executiveSummary");
-                        args.add(executiveSummary.toString());
-
+                        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, true, split, executiveSummary.toString());
                         defaultSeed++;
                         lambda.accept(new ArrayList<>(args));
                     }
