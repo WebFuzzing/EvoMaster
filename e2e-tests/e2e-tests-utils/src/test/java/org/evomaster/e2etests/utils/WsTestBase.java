@@ -83,9 +83,6 @@ public abstract class WsTestBase {
         return Main.init(args.toArray(new String[0]));
     }
 
-    protected void initPartialOracles(Injector injector) {
-        Main.initPartialOracles(injector);
-    }
 
     protected String outputFolderPath(String outputFolderName){
         return TESTS_OUTPUT_ROOT_FOLDER + outputFolderName;

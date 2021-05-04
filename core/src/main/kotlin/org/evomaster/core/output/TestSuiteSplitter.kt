@@ -1,15 +1,14 @@
 package org.evomaster.core.output
 
-import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.clustering.metrics.DistanceMetric
 import org.evomaster.core.output.clustering.metrics.DistanceMetricErrorText
 import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.*
-import org.evomaster.core.search.service.SearchTimeController
 
 
 /**
@@ -130,9 +129,9 @@ object TestSuiteSplitter {
     }
 
     private fun splitByCluster(clusters: MutableMap<String, MutableList<MutableList<HttpWsCallResult>>>,
-                                 solution: Solution<RestIndividual>,
-                                 oracles: PartialOracles,
-                                 splitResult: SplitResult) : SplitResult {
+                               solution: Solution<RestIndividual>,
+                               oracles: PartialOracles,
+                               splitResult: SplitResult) : SplitResult {
 
         val errs = solution.individuals.filter {
             it.evaluatedActions().any { ac ->

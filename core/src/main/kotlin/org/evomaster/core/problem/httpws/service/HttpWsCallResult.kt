@@ -19,13 +19,10 @@ abstract class HttpWsCallResult : ActionResult {
         const val BODY_TYPE = "BODY_TYPE"
         const val TOO_LARGE_BODY = "TOO_LARGE_BODY"
         const val INFINITE_LOOP = "INFINITE_LOOP"
-        const val ERROR_MESSAGE = "ERROR_MESSAGE"
         const val TIMEDOUT = "TIMEDOUT"
         const val LAST_STATEMENT_WHEN_500 = "LAST_STATEMENT_WHEN_500"
         const val TCP_PROBLEM = "TCP_PROBLEM"
     }
-
-
 
     /**
      * In some cases (eg infinite loop redirection), a HTTP call
@@ -67,9 +64,6 @@ abstract class HttpWsCallResult : ActionResult {
 
     fun setInfiniteLoop(on: Boolean) = addResultValue(INFINITE_LOOP, on.toString())
     fun getInfiniteLoop(): Boolean = getResultValue(INFINITE_LOOP)?.toBoolean() ?: false
-
-    fun setErrorMessage(msg: String) = addResultValue(ERROR_MESSAGE, msg)
-    fun getErrorMessage(): String? = getResultValue(ERROR_MESSAGE)
 
     fun setTimedout(timedout: Boolean) = addResultValue(TIMEDOUT, timedout.toString())
     fun getTimedout(): Boolean = getResultValue(TIMEDOUT)?.toBoolean() ?: false

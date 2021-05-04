@@ -1,12 +1,12 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchTimeController
@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.ZonedDateTime
+import javax.annotation.PostConstruct
 
 
 /**
@@ -23,20 +24,8 @@ import java.time.ZonedDateTime
  */
 class TestSuiteWriter {
 
-    @Inject
-    private lateinit var config: EMConfig
-
-    @Inject
-    private lateinit var searchTimeController: SearchTimeController
-
-    private lateinit var swagger: OpenAPI
-    private lateinit var partialOracles: PartialOracles
-    private lateinit var objectGenerator: ObjectGenerator
-
-    private var active = mutableMapOf<String, Boolean>()
-
     companion object {
-        const val jsImport = "EM";
+        const val jsImport = "EM"
 
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
@@ -44,22 +33,28 @@ class TestSuiteWriter {
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
 
-        private val testCaseWriter = TestCaseWriter()
-
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     }
 
-    fun setSwagger(sw: OpenAPI) {
-        swagger = sw
-    }
+    @Inject
+    private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var searchTimeController: SearchTimeController
+
+    @Inject
+    private lateinit var testCaseWriter: TestCaseWriter
+
+    @Inject
+    private lateinit var partialOracles: PartialOracles
+
+    private var activePartialOracles = mutableMapOf<String, Boolean>()
+
 
     fun writeTests(
         solution: Solution<*>,
         controllerName: String?
     ) {
-
-        if (!::partialOracles.isInitialized) partialOracles = PartialOracles()
-
         val name = TestSuiteFileName("${solution.testSuiteName}${solution.termination.suffix}")
 
         val content = convertToCompilableTestCode(solution, name, controllerName)
@@ -71,18 +66,12 @@ class TestSuiteWriter {
         solution: Solution<*>,
         testSuiteFileName: TestSuiteFileName,
         controllerName: String?
-    )
-            : String {
+    ): String {
 
         val lines = Lines()
         val testSuiteOrganizer = TestSuiteOrganizer()
-        partialOracles.setFormat(config.outputFormat)
-        if (::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
-        testCaseWriter.setPartialOracles(partialOracles)
 
-        if(config.problemType == EMConfig.ProblemType.REST) {
-            active = partialOracles.activeOracles(solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>)
-        }
+        activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
         header(solution, testSuiteFileName, lines, controllerName)
 
@@ -114,9 +103,9 @@ class TestSuiteWriter {
             // catch writing problems on an individual test case basis
             val testLines = try {
                 if (config.outputFormat.isCsharp())
-                    testCaseWriter.convertToCompilableTestCode(config, test, "$fixture.$baseUrlOfSut")
+                    testCaseWriter.convertToCompilableTestCode(test, "$fixture.$baseUrlOfSut")
                 else
-                    testCaseWriter.convertToCompilableTestCode(config, test, baseUrlOfSut)
+                    testCaseWriter.convertToCompilableTestCode(test, baseUrlOfSut)
             } catch (ex: Exception) {
                 log.warn(
                     "A failure has occurred in writing test ${test.name}. \n "
@@ -282,11 +271,7 @@ class TestSuiteWriter {
             }
 
             if (config.expectationsActive) {
-                addImport(
-                    "org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler",
-                    lines,
-                    true
-                )
+                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
                 addImport("io.restassured.path.json.JsonPath", lines)
                 addImport("java.util.Arrays", lines)
@@ -310,7 +295,6 @@ class TestSuiteWriter {
             addUsing("System.Threading.Tasks", lines)
             addUsing("Newtonsoft.Json", lines)
             addUsing("EvoMaster.Controller", lines)
-
         }
 
         lines.addEmpty(4)
@@ -359,7 +343,7 @@ class TestSuiteWriter {
         if (config.expectationsActive) {
             if (config.outputFormat.isJavaOrKotlin()) {
                 //TODO JS
-                if (active.any { it.value }) {
+                if (activePartialOracles.any { it.value }) {
                     lines.add(
                         "/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
                                 "individual test cases"
@@ -372,7 +356,7 @@ class TestSuiteWriter {
                         lines.add("private val $expectationsMasterSwitch = false")
                     }
                 }
-                partialOracles.variableDeclaration(lines, config.outputFormat, active)
+                partialOracles?.variableDeclaration(lines, config.outputFormat, activePartialOracles)
             }
         }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
@@ -393,7 +377,7 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun initClass()")
             }
-            format.isJavaScript() -> lines.add("beforeAll( async () =>");
+            format.isJavaScript() -> lines.add("beforeAll( async () =>")
         }
 
         lines.block {
@@ -492,7 +476,7 @@ class TestSuiteWriter {
             format.isKotlin() -> {
                 lines.add("fun initTest()")
             }
-            format.isJavaScript() -> lines.add("beforeEach(async () => ");
+            format.isJavaScript() -> lines.add("beforeEach(async () => ")
             format.isCsharp() -> lines.add("public ${name.getClassName()} ($fixtureClass fixture)")
         }
 
@@ -605,17 +589,15 @@ class TestSuiteWriter {
         }
     }
 
-    fun setPartialOracles(oracles: PartialOracles) {
-        partialOracles = oracles
-    }
 
-    fun hasPartialOracles() = (::partialOracles.isInitialized)
 
+    /**
+     *  FIXME replace with direct injection
+     */
+    @Deprecated("replace with direct injection")
     fun getPartialOracles(): PartialOracles {
         return partialOracles
     }
 
-    fun setObjectGenerator(generator: ObjectGenerator) {
-        objectGenerator = generator
-    }
+
 }

@@ -12,13 +12,5 @@ class TestCase(val test: EvaluatedIndividual<*>, val name: String) {
         }
     }
 
-    /**
-     * Check if any action requires a chain based on location headers:
-     * eg a POST followed by a GET on the created resource
-     */
-    fun hasChainedLocations() : Boolean{
-        return test.individual.seeActions().any { a ->
-            a is RestCallAction && a.isLocationChained()
-        }
-    }
+
 }

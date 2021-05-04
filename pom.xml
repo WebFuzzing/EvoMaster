@@ -225,11 +225,7 @@
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
-                <!--
-                    We ll need to check when new version comes with fix for:
-                    https://github.com/google/guice/issues/1133
-                -->
-                <version>4.2.3</version>
+                <version>5.0.1</version>
             </dependency>
             <dependency> <!-- This is needed as Guice has no LifeCycle management -->
                 <groupId>com.netflix.governator</groupId>
