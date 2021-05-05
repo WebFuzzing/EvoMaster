@@ -275,9 +275,9 @@ object TestSuiteSplitter {
                     !successses.contains(it)
         }.toMutableList()
 
-        return listOf(Solution(s500, solution.testSuiteName, Termination.FAULTS),
-                Solution(successses, solution.testSuiteName, Termination.SUCCESSES),
-                Solution(remainder, solution.testSuiteName, Termination.OTHER)
+        return listOf(Solution(s500, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.FAULTS),
+                Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES),
+                Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER)
         )
     }
 
