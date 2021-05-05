@@ -5,6 +5,7 @@ import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.slf4j.LoggerFactory
@@ -13,6 +14,7 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Paths
+import java.util.logging.Logger
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -333,6 +335,14 @@ class EMConfig {
 
         if (seedTestCases && seedTestCasesPath.isNullOrBlank()) {
             throw IllegalArgumentException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
+        }
+
+        // Clustering constraints: the executive summary is not really meaningful without the clustering
+        if(executiveSummary && testSuiteSplitType != TestSuiteSplitType.CLUSTER){
+            executiveSummary = false
+            LoggingUtil.getInfoLogger().warn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
+                    "The option has been deactivated for this run, to prevent a crash.")
+            //throw IllegalArgumentException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
         }
     }
 
@@ -703,16 +713,16 @@ class EMConfig {
     enum class TestSuiteSplitType {
         NONE,
         CLUSTER,
-        SUMMARY_ONLY,
         CODE
     }
 
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
-    var testSuiteSplitType = TestSuiteSplitType.CODE
+    var testSuiteSplitType = TestSuiteSplitType.CLUSTER
 
-    @Experimental
-    @Cfg("Generate an executive summary, containing an example of each category of potential fault found")
-    var executiveSummary = false
+    @Cfg("Generate an executive summary, containing an example of each category of potential fault found." +
+                    "NOTE: This option is only meaningful when used in conjuction with clustering. " +
+                    "This is achieved by turning the option --testSuiteSplitType to CLUSTER")
+    var executiveSummary = true
 
     @Experimental
     @Cfg("The Distance Metric Last Line may use several values for epsilon." +

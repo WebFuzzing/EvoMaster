@@ -21,12 +21,9 @@ class LoginTokenEMTest : SpringTestBase(){
 
     @Test
     fun testRunEM() {
-        val terminations = Arrays.asList(Termination.FAULTS.suffix)
-
         runTestHandlingFlakyAndCompilation(
                 "LoginTokenEM",
                 "org.foo.LoginTokenEM",
-                terminations,
                 20
         ) { args: List<String> ->
 

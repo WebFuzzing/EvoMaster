@@ -1,6 +1,7 @@
 package org.evomaster.core.output.oracles
 
 import io.swagger.v3.oas.models.PathItem
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
@@ -49,7 +50,7 @@ class SupportedCodeOracle : ImplementedOracle() {
             if(supportedCodes.contains("0")){
                 lines.add("// WARNING: the code list seems to contain an unsupported code (0 is not a valid HTTP code). This could indicate a problem with the schema. The issue has been logged.")
                 supportedCodes.remove("0")
-                log.warn("The list of supported codes appears to contain an unsupported code (0 is not a valid HTTP code). This could indicate a problem with the schema.")
+                LoggingUtil.uniqueWarn(log, "The list of supported codes appears to contain an unsupported code (0 is not a valid HTTP code). This could indicate a problem with the schema.")
                 //TODO: if a need arises for more involved checks, refactor this
             }
             val supportedCode = supportedCodes.joinToString(", ")

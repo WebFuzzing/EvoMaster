@@ -171,7 +171,7 @@ public abstract class WsTestBase {
 
             handleFlaky(
                     () -> {
-                        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests, finalSplitType);
+                        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests, finalSplitType, "FALSE");
                         defaultSeed++;
                         lambda.accept(new ArrayList<>(args));
                     }
@@ -326,9 +326,9 @@ public abstract class WsTestBase {
     }
 
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests){
-        return getArgsWithCompilation(iterations, outputFolderName, testClassName, createTests, "NONE");
+        return getArgsWithCompilation(iterations, outputFolderName, testClassName, createTests, "NONE", "FALSE");
     }
-    protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests, String split){
+    protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests, String split, String summary){
 
         return new ArrayList<>(Arrays.asList(
                 "--createTests", "" + createTests,
@@ -342,7 +342,8 @@ public abstract class WsTestBase {
                 //FIXME: should avoid deprecated option, but then need TODO update how class files are deleted from FS
                 "--testSuiteFileName", testClassName.getFullNameWithDots(),
                 "--testSuiteSplitType", split,
-                "--expectationsActive", "TRUE"
+                "--expectationsActive", "TRUE",
+                "--executiveSummary", summary
         ));
     }
 
