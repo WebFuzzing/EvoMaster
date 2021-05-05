@@ -48,11 +48,13 @@ class TestSuiteWriterTest{
         config.createTests = true
         config.outputFormat = OutputFormat.KOTLIN_JUNIT_5
         config.outputFolder = "$baseTargetFolder/empty_suite"
-        config.testSuiteFileName = "Foo_testEmptySuite"
+        config.outputFilePrefix = "Foo_testEmptySuite"
+        config.outputFileSuffix = ""
 
         val solution = Solution<RestIndividual>(
                 mutableListOf(),
-                config.testSuiteFileName,
+                config.outputFilePrefix,
+                config.outputFileSuffix,
                 Termination.NONE
         )
 
@@ -64,7 +66,7 @@ class TestSuiteWriterTest{
         //this is what used by Maven and IntelliJ
         val testClassFolder = File("target/test-classes")
         val expectedCompiledFile = testClassFolder.toPath()
-                .resolve("${config.testSuiteFileName}.class")
+                .resolve("${config.outputFilePrefix}.class")
                 .toFile()
         expectedCompiledFile.delete()
         assertFalse(expectedCompiledFile.exists())
@@ -92,7 +94,7 @@ class TestSuiteWriterTest{
             as compiled directly into a folder of the classpath, current
             classloader should be able to load it
          */
-        val testSuiteClass = this.javaClass.classLoader.loadClass(config.testSuiteFileName)
+        val testSuiteClass = this.javaClass.classLoader.loadClass(config.outputFilePrefix)
 
         val methods = testSuiteClass.declaredMethods
         assertTrue(methods.any { it.name == "initClass" })

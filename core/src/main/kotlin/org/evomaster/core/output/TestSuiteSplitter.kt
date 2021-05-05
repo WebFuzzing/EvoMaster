@@ -78,10 +78,10 @@ object TestSuiteSplitter {
 
         when (errs.size) {
             0 -> splitResult.splitOutcome = mutableListOf()
-            1 -> splitResult.splitOutcome = mutableListOf(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
+            1 -> splitResult.splitOutcome = mutableListOf(Solution(errs, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY))
         }
         val clusters = mutableMapOf<String, MutableList<MutableList<HttpWsCallResult>>>()
-        val clusteringSol = Solution(errs, solution.testSuiteName, Termination.SUMMARY)
+        val clusteringSol = Solution(errs, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY)
 
         for (metric in metrics) {
             clusters[metric.getName()] = Clusterer.cluster(
@@ -130,7 +130,7 @@ object TestSuiteSplitter {
         }
 
         val execSolList = execSol.toMutableList()
-        return Solution(execSolList, solution.testSuiteName, Termination.SUMMARY)
+        return Solution(execSolList, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY)
     }
 
     private fun splitByCluster(clusters: MutableMap<String, MutableList<MutableList<HttpWsCallResult>>>,
@@ -153,13 +153,13 @@ object TestSuiteSplitter {
                     }
         }.toMutableList()
 
-        val solSuccesses = Solution(successses, solution.testSuiteName, Termination.SUCCESSES)
+        val solSuccesses = Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES)
         val remainder = solution.individuals.filter {
             !errs.contains(it) &&
                     !successses.contains(it)
         }.toMutableList()
 
-        val solRemainder = Solution(remainder, solution.testSuiteName, Termination.OTHER)
+        val solRemainder = Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER)
 
         // Failures by cluster
         val sumSol = mutableSetOf<EvaluatedIndividual<RestIndividual>>()
@@ -179,7 +179,7 @@ object TestSuiteSplitter {
         skipped.forEach {
             sumSol.add(it)
         }
-        val solErrors = Solution(sumSol.toMutableList(), solution.testSuiteName, Termination.FAULTS)
+        val solErrors = Solution(sumSol.toMutableList(), solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.FAULTS)
         splitResult.splitOutcome = mutableListOf(solErrors,
                 solSuccesses,
                 solRemainder)
@@ -223,9 +223,9 @@ object TestSuiteSplitter {
                     !successses.contains(it)
         }.toMutableList()
 
-        return listOf(Solution(s500, solution.testSuiteName, Termination.FAULTS),
-                Solution(successses, solution.testSuiteName, Termination.SUCCESSES),
-                Solution(remainder, solution.testSuiteName, Termination.OTHER)
+        return listOf(Solution(s500, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.FAULTS),
+                Solution(successses, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUCCESSES),
+                Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER)
         )
     }
 
