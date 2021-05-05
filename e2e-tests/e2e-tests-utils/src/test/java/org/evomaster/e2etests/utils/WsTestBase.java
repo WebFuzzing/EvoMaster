@@ -339,6 +339,7 @@ public abstract class WsTestBase {
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
                 "--outputFolder", outputFolderPath(outputFolderName),
                 "--outputFormat", OutputFormat.KOTLIN_JUNIT_5.toString(),
+                //FIXME: should avoid deprecated option, but then need TODO update how class files are deleted from FS
                 "--testSuiteFileName", testClassName.getFullNameWithDots(),
                 "--testSuiteSplitType", split,
                 "--expectationsActive", "TRUE",

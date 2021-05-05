@@ -44,7 +44,7 @@ rm -f $OUTPUT_FOLDER/*-test.js
 mkdir -p $OUTPUT_FOLDER
 
 
-#  Bit tricky... it has happend sometimes that 40100 gives issues on CI...
+#  Bit tricky... it has happened sometimes that 40100 gives issues on CI...
 #  Ideally should get an ephemeral port, but hard to extract it from NodeJS (eg, could
 #  print it on console, and then read it back here).
 #  As workaround, we can use a random port, "hoping" it is available (with should be 99.99% of

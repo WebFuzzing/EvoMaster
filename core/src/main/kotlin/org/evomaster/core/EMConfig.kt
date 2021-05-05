@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
+import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
 import java.net.URL
 import java.nio.file.Files
@@ -33,6 +34,8 @@ class EMConfig {
      */
 
     companion object {
+
+        private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -221,6 +224,22 @@ class EMConfig {
         }
 
         checkMultiFieldConstraints()
+
+        handleDeprecated()
+    }
+
+
+    private fun handleDeprecated(){
+        /*
+            TODO If this happens often, then should use annotations.
+            eg, could handle specially in Markdown all the deprecated fields
+         */
+        if(testSuiteFileName.isNotBlank()){
+            log.warn("Using deprecated option 'testSuiteFileName'")
+            outputFilePrefix = testSuiteFileName
+            outputFileSuffix = ""
+            testSuiteFileName = ""
+        }
     }
 
     private fun checkMultiFieldConstraints() {
@@ -309,8 +328,9 @@ class EMConfig {
             throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
         }
 
-        if (testSuiteFileName.contains("-") && outputFormat.isJavaOrKotlin()) {
-            throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
+        if ((outputFilePrefix.contains("-") || outputFileSuffix.contains("-"))
+                    && outputFormat.isJavaOrKotlin()) { //TODO also for C#?
+             throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
         }
 
         if (seedTestCases && seedTestCasesPath.isNullOrBlank()) {
@@ -608,13 +628,28 @@ class EMConfig {
 
 
     @Important(2.0)
-    @Cfg("The name of generated file with the test cases, without file type extension." +
+    @Cfg("The name prefix of generated file(s) with the test cases, without file type extension." +
             " In JVM languages, if the name contains '.', folders will be created to represent" +
             " the given package structure." +
             " Also, in JVM languages, should not use '-' in the file name, as not valid symbol" +
-            " for class identifiers.")
+            " for class identifiers." +
+            " This prefix be combined with the outputFileSuffix to combined the final name." +
+            " As EvoMaster can split the generated tests among different files, each will get a label," +
+            " and the names will be in the form prefix+label+suffix.")
     @Regex("[-a-zA-Z\$_][-0-9a-zA-Z\$_]*(.[-a-zA-Z\$_][-0-9a-zA-Z\$_]*)*")
-    var testSuiteFileName = "EvoMasterTest"
+    var outputFilePrefix = "EvoMaster"
+
+    @Important(2.0)
+    @Cfg("The name suffix for the generated file(s), to be added before the file type extension." +
+            " As EvoMaster can split the generated tests among different files, each will get a label," +
+            " and the names will be in the form prefix+label+suffix.")
+    @Regex("[-a-zA-Z\$_][-0-9a-zA-Z\$_]*(.[-a-zA-Z\$_][-0-9a-zA-Z\$_]*)*")
+    var outputFileSuffix = "Test"
+
+
+    @Deprecated("Should use outputFilePrefix and outputFileSuffix")
+    @Cfg("DEPRECATED. Rather use _outputFilePrefix_ and _outputFileSuffix_")
+    var testSuiteFileName = ""
 
     @Important(2.0)
     @Cfg("Specify in which format the tests should be outputted." +
