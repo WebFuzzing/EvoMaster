@@ -7,6 +7,7 @@ import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
+import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
 import java.net.URL
 import java.nio.file.Files
@@ -31,6 +32,8 @@ class EMConfig {
      */
 
     companion object {
+
+        private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -219,6 +222,21 @@ class EMConfig {
         }
 
         checkMultiFieldConstraints()
+
+        handleDeprecated()
+    }
+
+
+    private fun handleDeprecated(){
+        /*
+            TODO If this happens often, then should use annotations
+         */
+        if(testSuiteFileName.isNotBlank()){
+            log.warn("Using deprecated option 'testSuiteFileName'")
+            outputFilePrefix = testSuiteFileName
+            outputFileSuffix = ""
+            testSuiteFileName = ""
+        }
     }
 
     private fun checkMultiFieldConstraints() {
@@ -617,6 +635,10 @@ class EMConfig {
     @Regex("[-a-zA-Z\$_][-0-9a-zA-Z\$_]*(.[-a-zA-Z\$_][-0-9a-zA-Z\$_]*)*")
     var outputFileSuffix = "Test"
 
+
+    @Deprecated("Should use outputFilePrefix and outputFileSuffix")
+    @Cfg("DEPRECATED. Rather use _outputFilePrefix_ and _outputFileSuffix_")
+    var testSuiteFileName = ""
 
     @Important(2.0)
     @Cfg("Specify in which format the tests should be outputted." +

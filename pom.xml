@@ -264,6 +264,16 @@
 
             <!-- Misc -->
             <dependency>
+                <!--
+                    We do not (and SHOULD NOT) use it directly... but as it brought in transitively
+                    by different libraries, we force a specific version here to avoid conflicts (which for
+                    example happened when updating Guice)
+                -->
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>30.1.1-jre</version>
+            </dependency>
+            <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
                 <version>6.1.0.Final</version>
