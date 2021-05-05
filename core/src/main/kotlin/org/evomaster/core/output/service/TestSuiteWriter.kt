@@ -55,8 +55,7 @@ class TestSuiteWriter {
         solution: Solution<*>,
         controllerName: String?
     ) {
-        val name = TestSuiteFileName("${solution.testSuiteName}${solution.termination.suffix}")
-
+        val name = TestSuiteFileName(solution.getFileName())
         val content = convertToCompilableTestCode(solution, name, controllerName)
         saveToDisk(content, config, name)
     }

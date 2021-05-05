@@ -307,8 +307,9 @@ class EMConfig {
             throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
         }
 
-        if (testSuiteFileName.contains("-") && outputFormat.isJavaOrKotlin()) {
-            throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
+        if ((outputFilePrefix.contains("-") || outputFileSuffix.contains("-"))
+                    && outputFormat.isJavaOrKotlin()) { //TODO also for C#?
+             throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
         }
 
         if (seedTestCases && seedTestCasesPath.isNullOrBlank()) {
@@ -598,13 +599,24 @@ class EMConfig {
 
 
     @Important(2.0)
-    @Cfg("The name of generated file with the test cases, without file type extension." +
+    @Cfg("The name prefix of generated file(s) with the test cases, without file type extension." +
             " In JVM languages, if the name contains '.', folders will be created to represent" +
             " the given package structure." +
             " Also, in JVM languages, should not use '-' in the file name, as not valid symbol" +
-            " for class identifiers.")
+            " for class identifiers." +
+            " This prefix be combined with the outputFileSuffix to combined the final name." +
+            " As EvoMaster can split the generated tests among different files, each will get a label," +
+            " and the names will be in the form prefix+label+suffix.")
     @Regex("[-a-zA-Z\$_][-0-9a-zA-Z\$_]*(.[-a-zA-Z\$_][-0-9a-zA-Z\$_]*)*")
-    var testSuiteFileName = "EvoMasterTest"
+    var outputFilePrefix = "EvoMaster"
+
+    @Important(2.0)
+    @Cfg("The name suffix for the generated file(s), to be added before the file type extension." +
+            " As EvoMaster can split the generated tests among different files, each will get a label," +
+            " and the names will be in the form prefix+label+suffix.")
+    @Regex("[-a-zA-Z\$_][-0-9a-zA-Z\$_]*(.[-a-zA-Z\$_][-0-9a-zA-Z\$_]*)*")
+    var outputFileSuffix = "Test"
+
 
     @Important(2.0)
     @Cfg("Specify in which format the tests should be outputted." +

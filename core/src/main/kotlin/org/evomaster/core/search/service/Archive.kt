@@ -104,7 +104,7 @@ class Archive<T> where T : Individual {
             }
         }
 
-        return Solution(uniques.toMutableList(), config.testSuiteFileName, Termination.NONE)
+        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
     }
 
 
