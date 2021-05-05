@@ -229,7 +229,8 @@ class EMConfig {
 
     private fun handleDeprecated(){
         /*
-            TODO If this happens often, then should use annotations
+            TODO If this happens often, then should use annotations.
+            eg, could handle specially in Markdown all the deprecated fields
          */
         if(testSuiteFileName.isNotBlank()){
             log.warn("Using deprecated option 'testSuiteFileName'")
