@@ -118,6 +118,9 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
         if (hierarchySpecializationImpactInfo == null){
             if ((current as StringGene).specializationGenes.isNotEmpty()){
                 hierarchySpecializationImpactInfo = HierarchySpecializationImpactInfo(null, current.specializationGenes.map { ImpactUtils.createGeneImpact(it, it.name) }.toMutableList())
+                if (current.specializationGenes.size != getSpecializationImpacts().size){
+                    log.warn("invalid initialization of specializationGenes of string gene")
+                }
             }
         }else{
             val currentImpact = hierarchySpecializationImpactInfo!!.flattenImpacts().size
@@ -128,6 +131,9 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
                 log.info("some specializations of StringGene are removed {},{}", current.specializationGenes.size, previous.specializationGenes.size)
             }else{
                 log.info("the previous gene is null")
+                if (current.specializationGenes.size != getSpecializationImpacts().size){
+                    log.warn("invalid initialization of specializationGenes of string gene")
+                }
             }
         }
     }

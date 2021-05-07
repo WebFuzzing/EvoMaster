@@ -456,7 +456,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             action.seeGenes().filter { it.isMutable() }.forEach { sg->
                 val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
 
-                val p = previous.seeActions(ActionFilter.NO_INIT)[index].seeGenes().find { rootGeneId == ImpactUtils.generateGeneId(previous, it) }
+                val p = previous.seeActions(ActionFilter.NO_INIT)[index].seeGenes().find {
+                    rootGeneId == ImpactUtils.generateGeneId(previous, it)
+                }
                 val impact = impactInfo!!.getGene(
                                 actionName = action.getName(),
                                 actionIndex = index,

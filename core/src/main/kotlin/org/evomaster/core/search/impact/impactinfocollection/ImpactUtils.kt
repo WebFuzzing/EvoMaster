@@ -96,7 +96,7 @@ class ImpactUtils {
             }?.let {
                 return generateGeneId(it, gene)
             }
-            individual.seeActions(Individual.ActionFilter.NO_INIT).find { a-> a.seeGenes().contains(gene) }?.let {
+            individual.seeActions(ActionFilter.NO_INIT).find { a-> a.seeGenes().contains(gene) }?.let {
                 return generateGeneId(action = it, gene = gene)
             }
             return generateGeneId(gene)
