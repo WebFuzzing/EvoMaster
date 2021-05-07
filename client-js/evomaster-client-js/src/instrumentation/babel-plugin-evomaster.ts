@@ -6,7 +6,8 @@ import {
     LogicalExpression, Program,
     ReturnStatement,
     Statement,
-    UnaryExpression
+    UnaryExpression,
+    ConditionalExpression
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
@@ -132,6 +133,40 @@ export default function evomasterPlugin(
             Look like is checking for some types, which in theory should always be pure, like literals.
             But very unclear on its features... eg, would it handle as pure "!false" ???
             TODO need to check... furthermore we do not care if throwing exception
+
+            TODO: Man
+            also check the source code of isPure() from ../@babel/traverse/lib/scope/index.js
+
+            isPureish() seems not fully applicable, we might need to modify it.
+
+            found the source code of isPureish() from ../@babel/types/lib/validators/generated/index.js
+
+                function isPureish(node, opts) {
+                  if (!node) return false;
+                  const nodeType = node.type;
+
+                  if (nodeType === "Pureish"
+                    || "FunctionDeclaration" === nodeType
+                    || "FunctionExpression" === nodeType
+                    || "StringLiteral" === nodeType
+                    || "NumericLiteral" === nodeType
+                    || "NullLiteral" === nodeType
+                    || "BooleanLiteral" === nodeType
+                    || "ArrowFunctionExpression" === nodeType
+                    || "ClassExpression" === nodeType
+                    || "ClassDeclaration" === nodeType
+                    || "BigIntLiteral" === nodeType
+                    || nodeType === "Placeholder" && "StringLiteral" === node.expectedNode) {
+
+                    if (typeof opts === "undefined") {
+                      return true;
+                    } else {
+                      return (0, _shallowEqual.default)(node, opts);
+                    }
+                  }
+
+                  return false;
+                }
          */
         //const pure = t.isPureish(exp.right);
         const pure = false; //TODO
@@ -190,6 +225,67 @@ export default function evomasterPlugin(
         branchCounter++;
     }
 
+    function replaceConditionalExpression(path: NodePath){
+
+        if(!t.isConditionalExpression(path.node)){
+            throw Error("Node is not a ConditionalExpression: " + path.node);
+        }
+        const exp = path.node as ConditionalExpression;
+
+        if(! exp.loc){
+            return;
+        }
+
+        const l = exp.loc.start.line;
+        /*
+            test ? consequent : alternate
+            test: Expression;
+            consequent: Expression;
+            alternate: Expression;
+
+            transformed code:
+                test? __EM__.ternary(()=>consequent, ... ) : __EM__.ternary(()=>alternate, ...)
+
+            here, we create additional two statements targets for 'consequent' and 'alternate'
+            for the statement targets,
+                if consequent(/alternate) is executed without exception, h is 1
+                otherwise h is 0.5
+
+            Note that we do not further replace 'test' here.
+            if it is related to condition, it will be replaced by other existing replacement and
+            additional branch will be added there.
+
+            From trello
+            where ternary needs to create 2 objectives:
+                - 1 for for when it is executed/called  (h=1)
+                - 1 for when no exception (h=0.5 and then h=1 if and onyl if () => B did not throw exception)
+             Man: check with Andrea, I am not clear about the second point,
+                do we need to handle 'consequent' and 'alternate' differently?
+             Andrea: no, they should be treated the same.
+
+         */
+
+        const consequent = t.arrowFunctionExpression([], exp.consequent, false);
+        const alternate = t.arrowFunctionExpression([], exp.alternate, false);
+
+
+        objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
+        exp.consequent = t.callExpression(
+            t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.ternary.name)),
+            [consequent,
+                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
+        );
+        statementCounter++;
+
+        objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
+        exp.alternate = t.callExpression(
+            t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.ternary.name)),
+            [alternate,
+                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
+        );
+        statementCounter++;
+    }
+
     function replaceCallExpression(path: NodePath){
 
         //if(! t.isExpr) //TODO there is no available check for call expressions???
@@ -210,6 +306,8 @@ export default function evomasterPlugin(
         const l = call.loc.start.line;
 
         let replaced;
+
+        //TODO only for known names
 
         if(t.isMemberExpression(call.callee)) {
             replaced = t.callExpression(
@@ -368,6 +466,11 @@ export default function evomasterPlugin(
             UnaryExpression:{
                 enter(path: NodePath){
                     replaceUnaryExpression(path);
+                }
+            },
+            ConditionalExpression:{
+                enter(path: NodePath){
+                    replaceConditionalExpression(path);
                 }
             },
             Statement: {

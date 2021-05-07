@@ -1,7 +1,7 @@
 package org.evomaster.core.output.clustering.metrics
 
 import com.google.gson.Gson
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import javax.ws.rs.core.MediaType
 
 
@@ -20,11 +20,11 @@ import javax.ws.rs.core.MediaType
 
 class DistanceMetricErrorText(
         epsilon: Double = 0.6
-) : DistanceMetric<RestCallResult>() {
+) : DistanceMetric<HttpWsCallResult>() {
     private val name = "ErrorText"
     private val recommendedEpsilon = if (epsilon in 0.0..1.0) epsilon
                                     else throw IllegalArgumentException("The value of recommendedEpsilon is $epsilon. It should be between 0.0 and 1.0.")
-    override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
+    override fun calculateDistance(first: HttpWsCallResult, second: HttpWsCallResult): Double {
         val message1 = if (includeInClustering(first)){
             Gson().fromJson(first.getBody(), Map::class.java)?.get("message") ?: ""
         }
@@ -48,7 +48,7 @@ class DistanceMetricErrorText(
         return name
     }
 
-    private fun includeInClustering(callResult: RestCallResult): Boolean{
+    private fun includeInClustering(callResult: HttpWsCallResult): Boolean{
         return callResult.getBodyType() != null
                 && callResult.getStatusCode() == 500
                 && (callResult.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)

@@ -32,7 +32,7 @@ class ImpactMutationWeightControlTest {
     fun init(){
 
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(BaseModule()))
+                .withModules(* arrayOf<Module>(BaseModule(emptyArray(), true)))
                 .build().createInjector()
         randomness = injector.getInstance(Randomness::class.java)
         config = injector.getInstance(EMConfig::class.java)

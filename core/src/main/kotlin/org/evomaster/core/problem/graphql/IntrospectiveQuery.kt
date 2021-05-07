@@ -5,6 +5,7 @@ import org.evomaster.core.remote.SutProblemException
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
+import org.slf4j.LoggerFactory
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -12,6 +13,10 @@ import javax.ws.rs.core.MediaType
 
 
 class IntrospectiveQuery {
+
+    companion object{
+        private val log = LoggerFactory.getLogger(IntrospectiveQuery::class.java)
+    }
 
     private val clientConfiguration = ClientConfig()
             .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
@@ -44,10 +49,15 @@ class IntrospectiveQuery {
                 """.trimIndent(), MediaType.APPLICATION_JSON_TYPE)
 
         //TODO check if TCP problems
-        val response = client.target(graphQlEndpoint)
-                .request("application/json")
-                .buildPost(query)
-                .invoke()
+        val response = try {
+            client.target(graphQlEndpoint)
+                    .request("application/json")
+                    .buildPost(query)
+                    .invoke()
+        } catch (e: Exception){
+            log.error("Failed query to '$graphQlEndpoint' :  $query")
+            throw e
+        }
 
         //TODO check status code, and any other problem inside GraphQL response
 

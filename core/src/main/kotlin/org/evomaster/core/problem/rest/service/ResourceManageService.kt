@@ -10,7 +10,7 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.resource.InitMode
 import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.problem.rest.resource.RestResourceCalls

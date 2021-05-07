@@ -63,7 +63,7 @@ class DbActionGeneBuilder {
                 /**
                  * INT4/INTEGER(10) is a int/Integer field
                  */
-                ColumnDataType.INT4, ColumnDataType.INTEGER ->
+                ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL ->
                     handleIntegerColumn(column)
 
                 /**
@@ -84,8 +84,13 @@ class DbActionGeneBuilder {
                  * VARCHAR(N) is assumed to be a String with a maximum length of N.
                  * N could be as large as Integer.MAX_VALUE
                  */
+                ColumnDataType.ARRAY_VARCHAR, //FIXME need general solution for arrays
                 ColumnDataType.TEXT, ColumnDataType.VARCHAR, ColumnDataType.CLOB ->
                     handleTextColumn(column)
+
+                //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
+                ColumnDataType.TIMETZ ->
+                    TimeGene(column.name)
 
 
                 /**
@@ -115,7 +120,7 @@ class DbActionGeneBuilder {
                     handleRealColumn(column)
 
 
-                ColumnDataType.DECIMAL ->
+                ColumnDataType.DECIMAL, ColumnDataType.NUMERIC ->
                     handleDecimalColumn(column)
 
                 /**

@@ -66,7 +66,9 @@ class SQLGenerator{
                 ColumnDataType.DOUBLE,
                 ColumnDataType.SMALLINT,
                 ColumnDataType.REAL,
-                ColumnDataType.DECIMAL-> equalCondition(col.name, value)
+                ColumnDataType.DECIMAL,
+                ColumnDataType.NUMERIC
+                -> equalCondition(col.name, value)
                 ColumnDataType.CHAR,
                 ColumnDataType.VARCHAR -> equalCondition(col.name, "\'$value\'")
                 else -> {

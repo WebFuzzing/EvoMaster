@@ -43,14 +43,24 @@ TEST_LOCATION=$OUTPUT_FOLDER/$TEST_NAME.js
 rm -f $OUTPUT_FOLDER/*-test.js
 mkdir -p $OUTPUT_FOLDER
 
+
+#  Bit tricky... it has happened sometimes that 40100 gives issues on CI...
+#  Ideally should get an ephemeral port, but hard to extract it from NodeJS (eg, could
+#  print it on console, and then read it back here).
+#  As workaround, we can use a random port, "hoping" it is available (with should be 99.99% of
+#  the times)
+PORT=$((20000 + $RANDOM % 40000))
+
+echo Using Controller Port $PORT
+
 # Starting  NodeJS Driver in the background
-node $DRIVER &
+PORT=$PORT node $DRIVER &
 PID=$!
 
 # give enough time to start
 sleep 10
 
-java -jar $JAR --seed 42 --maxActionEvaluations 20000  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME --jsControllerPath $CONTROLLER_LOCATION
+java -jar $JAR --seed 42 --maxActionEvaluations 20000  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME --jsControllerPath $CONTROLLER_LOCATION -sutControllerPort $PORT
 
 # stop driver, which was run in background
 kill $PID

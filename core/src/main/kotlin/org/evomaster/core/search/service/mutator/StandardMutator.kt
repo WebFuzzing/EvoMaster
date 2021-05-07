@@ -5,6 +5,9 @@ import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.GraphQLUtils
+import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -191,6 +194,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         //Check that the repair was successful
         Lazy.assert { mutatedIndividual.verifyInitializationActions() }
 
+        /*
+            In GraphQL, each boolean selection in Objects MUST have at least one filed selected
+         */
+        if(mutatedIndividual is GraphQLIndividual) {
+            GraphQLUtils.repairIndividual(mutatedIndividual)
+        }
     }
 
     /**

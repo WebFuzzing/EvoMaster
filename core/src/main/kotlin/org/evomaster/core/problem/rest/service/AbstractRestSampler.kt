@@ -4,21 +4,13 @@ import com.google.inject.Inject
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.OpenApiAccess
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.auth.AuthenticationHeader
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.auth.CookieLogin
-import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -35,18 +27,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     @Inject
     protected lateinit var configuration: EMConfig
 
-
+    @Inject
+    protected lateinit var partialOracles: PartialOracles
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
-
-    protected var sqlInsertBuilder: SqlInsertBuilder? = null
-
-    var existingSqlData : List<DbAction> = listOf()
-        protected set
-
-    //private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
-
-    //private val usedObjects: UsedObjects = UsedObjects()
 
     protected lateinit var swagger: OpenAPI
 
@@ -91,33 +75,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         updateConfigForTestOutput(infoDto)
 
+        /*
+            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
+         */
+        partialOracles.setOpenApi(swagger)
+
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
-    fun canInsertInto(tableName: String) : Boolean {
-        //TODO might need to refactor/remove once we deal with VIEWs
-
-        return sqlInsertBuilder?.isTable(tableName) ?: false
-    }
-
-    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
-
-        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
-            ?: throw IllegalStateException("No DB schema is available")
-
-        DbActionUtils.randomizeDbActionGenes(actions, randomness)
-
-        if (log.isTraceEnabled){
-            log.trace("at sampleSqlInsertion, {} insertions are added, and they are {}", actions.size,
-                actions.joinToString(",") {
-                    if (it is DbAction) it.getResolvedName() else it.getName()
-                })
-        }
-
-        return actions
-    }
-
-    abstract fun initSqlInfo(infoDto: SutInfoDto)
 
     abstract fun initAdHocInitialIndividuals()
 
@@ -164,18 +129,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         actionCluster.clear()
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf())
 
-        //modelCluster.clear()
-        // RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
-
         initAdHocInitialIndividuals()
 
         log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
-
-
-
-
-
 
     fun getOpenAPI(): OpenAPI{
         return swagger

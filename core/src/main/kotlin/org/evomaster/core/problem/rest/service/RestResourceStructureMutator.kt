@@ -2,9 +2,11 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
@@ -15,8 +17,10 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import kotlin.math.max
 import kotlin.math.min
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-class RestResourceStructureMutator : AbstractRestStructureMutator() {
+class RestResourceStructureMutator : HttpWsStructureMutator() {
 
     @Inject
     private lateinit var rm : ResourceManageService
@@ -26,6 +30,10 @@ class RestResourceStructureMutator : AbstractRestStructureMutator() {
 
     @Inject
     private lateinit var sampler : ResourceSampler
+
+    companion object{
+        private val log : Logger = LoggerFactory.getLogger(RestResourceStructureMutator::class.java)
+    }
 
     override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
         if(individual !is RestIndividual)

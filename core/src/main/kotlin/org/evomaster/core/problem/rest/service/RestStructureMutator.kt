@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
@@ -12,7 +13,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class RestStructureMutator : AbstractRestStructureMutator() {
+class RestStructureMutator : HttpWsStructureMutator() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestStructureMutator::class.java)

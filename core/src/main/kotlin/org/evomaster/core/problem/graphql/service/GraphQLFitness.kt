@@ -1,29 +1,29 @@
 package org.evomaster.core.problem.graphql.service
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.controller.api.EMTestUtils
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.graphql.GraphQLAction
-import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.graphql.GraphQlCallResult
+import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.rest.auth.NoAuth
-import org.evomaster.core.problem.rest.service.AbstractRestFitness
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.RuntimeException
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
-import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.NewCookie
 
 
@@ -31,15 +31,16 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GraphQLFitness::class.java)
+        private val mapper: ObjectMapper = ObjectMapper()
     }
 
     override fun doCalculateCoverage(individual: GraphQLIndividual, targets: Set<Int>): EvaluatedIndividual<GraphQLIndividual>? {
         rc.resetSUT()
 
         val cookies = getCookies(individual)
+        val tokens = getTokens(individual)
 
-        //TODO
-        //doInitializingActions(individual)
+        doInitializingActions(individual)
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -56,7 +57,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             var ok = false
 
             if (a is GraphQLAction) {
-                ok = handleGraphQLCall(a, actionResults, cookies)
+                ok = handleGraphQLCall(a, actionResults, cookies, tokens)
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
@@ -85,6 +86,9 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         handleExtra(dto, fv)
 
+        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
+
+
         if (config.baseTaintAnalysisProbability > 0) {
             assert(actionResults.size == dto.additionalInfoList.size)
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
@@ -93,10 +97,128 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         return EvaluatedIndividual(fv, individual.copy() as GraphQLIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
+    private fun handleResponseTargets(fv: FitnessValue, actions: List<GraphQLAction>, actionResults: List<ActionResult>, additionalInfoList: List<AdditionalInfoDto>) {
+
+        (0 until actionResults.size)
+                .filter { actions[it] is GraphQLAction }
+                .filter { actionResults[it] is GraphQlCallResult }
+                .forEach {
+                    val result = actionResults[it] as GraphQlCallResult
+                    val status = result.getStatusCode() ?: -1
+                    val name = actions[it].getName()
+
+                    //objective for HTTP specific status code
+                    val statusId = idMapper.handleLocalTarget("$status:$name")
+                    fv.updateTarget(statusId, 1.0, it)
+
+                    val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
+
+                    handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
+
+                    /*
+                          we also have to check the actual response body...
+                          but, unfortunately, currently there is no way to distinguish between user and server errors
+                          https://github.com/graphql/graphql-spec/issues/698
+                     */
+                    handleGraphQLErrors(fv, name, it, result, additionalInfoList)
+
+
+                    //handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+                }
+    }
+
+    /**
+     *  handle targets with whether there exist errors in a gql action
+     */
+    private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult, additionalInfoList: List<AdditionalInfoDto>) {
+        val errorId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodName(name))
+        val okId = idMapper.handleLocalTarget("GQL_NO_ERRORS:$name")
+
+        val anyError = hasErrors(result)
+
+        if (anyError) {
+            fv.updateTarget(errorId, 1.0, actionIndex)
+            fv.updateTarget(okId, 0.5, actionIndex)
+
+
+            // handle with last statement
+            val last = additionalInfoList[actionIndex].lastExecutedStatement ?: DEFAULT_FAULT_CODE
+            result.setLastStatementWhenGQLErrors(last)
+
+            // shall we add additional target with last?
+            val errorlineId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodNameAndLine(line = last, method = name))
+            fv.updateTarget(errorlineId, 1.0, actionIndex)
+
+        } else {
+            fv.updateTarget(okId, 1.0, actionIndex)
+            fv.updateTarget(errorId, 0.5, actionIndex)
+        }
+
+
+    }
+
+    private fun hasErrors(result: GraphQlCallResult): Boolean {
+
+        val errors = extractBodyInGraphQlResponse(result)?.findPath("errors") ?: return false
+
+        return !errors.isEmpty || !errors.isMissingNode
+    }
+
+    private fun extractBodyInGraphQlResponse(result: GraphQlCallResult): JsonNode? {
+        return try {
+            result.getBody()?.run { mapper.readTree(result.getBody()) }
+        } catch (e: JsonProcessingException) {
+            null
+        }
+    }
+
+    private fun handleAdditionalStatusTargetDescription(fv: FitnessValue, status: Int, name: String, indexOfAction: Int, location5xx: String?) {
+
+        val okId = idMapper.handleLocalTarget("HTTP_SUCCESS:$name")
+        val faultId = idMapper.handleLocalTarget("HTTP_FAULT:$name")
+
+        /*
+            GraphQL is not linked to HTTP.
+            So, no point to create specific testing targets for all HTTP status codes.
+            Most GraphQL implementations will actually return 200 even in the case of errors, including
+            crashed from thrown exceptions...
+            However, if in case there is a 500, we still to report it.
+
+            Still, the server could return other codes like 503 when out of resources...
+            or 401/403 when wrong auth...
+         */
+
+        //OK -> 5xx being better than 4xx, as code executed
+        //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
+        if (status in 200..299) {
+            fv.updateTarget(okId, 1.0, indexOfAction)
+            fv.updateTarget(faultId, 0.5, indexOfAction)
+        } else {
+            fv.updateTarget(okId, 0.5, indexOfAction)
+            fv.updateTarget(faultId, 1.0, indexOfAction)
+        }
+
+        if (status == 500) {
+            Lazy.assert {
+                location5xx != null
+            }
+            /*
+                500 codes "might" be bugs. To distinguish between different bugs
+                that crash the same endpoint, we need to know what was the last
+                executed statement in the SUT.
+                So, we create new targets for it.
+            */
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
+            val bugId = idMapper.handleLocalTarget(descriptiveId)
+            fv.updateTarget(bugId, 1.0, indexOfAction)
+        }
+    }
+
     private fun handleGraphQLCall(
             action: GraphQLAction,
             actionResults: MutableList<ActionResult>,
-            cookies: Map<String, List<NewCookie>>
+            cookies: Map<String, List<NewCookie>>,
+            tokens: Map<String,String>
     ): Boolean {
 
         /*
@@ -116,7 +238,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
          */
 
         val response = try {
-            createInvocation(action, cookies).invoke()
+            createInvocation(action, cookies, tokens).invoke()
         } catch (e: ProcessingException) {
 
             /*
@@ -159,7 +281,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
                     TcpUtils.handleEphemeralPortIssue()
 
-                    createInvocation(action, cookies).invoke()
+                    createInvocation(action, cookies, tokens).invoke()
                 }
                 TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
                     /*
@@ -199,12 +321,12 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         } catch (e: Exception) {
 
-            if(e is ProcessingException && TcpUtils.isTimeout(e)){
+            if (e is ProcessingException && TcpUtils.isTimeout(e)) {
                 gqlcr.setTimedout(true)
                 statistics.reportTimeout()
                 return false
             } else {
-               log.warn("Failed to parse HTTP response: ${e.message}")
+                log.warn("Failed to parse HTTP response: ${e.message}")
             }
         }
 
@@ -217,7 +339,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     }
 
 
-    fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>): Invocation {
+    fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>, tokens: Map<String,String>): Invocation {
         val baseUrl = getBaseUrl()
 
         val path = "/graphql"
@@ -239,42 +361,15 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val builder = client.target(fullUri).request("application/json")
 
-        a.auth.headers.forEach {
-            builder.header(it.name, it.value)
-        }
-
-        val prechosenAuthHeaders = a.auth.headers.map { it.name }
+        handleAuth(a, builder, cookies, tokens)
 
 
-        if (a.auth.cookieLogin != null) {
-            val list = cookies[a.auth.cookieLogin!!.username]
-            if (list == null || list.isEmpty()) {
-                log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
-            } else {
-                list.forEach {
-                    builder.cookie(it.toCookie())
-                }
-            }
-        }
-
-
-        val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
-        //in GraphQL, there is ALWAYS a return type
-                ?: throw RuntimeException("ERROR: not specified return type")
-        val selection = GeneUtils.getBooleanSelection(returnGene)
-
-        //this might be optional
-        val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
-
-        //TODO inputGenes
-       val query = "{${selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)}}"
-
-        val bodyEntity = Entity.json("""
-            {"query" : "$query","variables":null}
-        """.trimIndent())
-
+        val bodyEntity = GraphQLUtils.generateGQLBodyEntity(a, config.outputFormat)?:Entity.json(" ")
         val invocation = builder.buildPost(bodyEntity)
         return invocation
     }
+
+
+
 
 }

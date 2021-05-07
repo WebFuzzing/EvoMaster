@@ -1,10 +1,12 @@
 package org.evomaster.core.problem.httpws.service
 
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.auth.*
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.httpws.service.auth.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
@@ -25,6 +27,10 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
 
     protected val authentications: MutableList<AuthenticationInfo> = mutableListOf()
 
+    protected var sqlInsertBuilder: SqlInsertBuilder? = null
+
+    var existingSqlData : List<DbAction> = listOf()
+        protected set
     /**
      * When genes are created, those are not necessarily initialized.
      * The reason is that some genes might depend on other genes (eg., foreign keys in SQL).
@@ -44,11 +50,7 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
     fun sampleRandomAction(noAuthP: Double): HttpWsAction {
         val action = randomness.choose(actionCluster).copy() as HttpWsAction
         randomizeActionGenes(action)
-
-        if (action is RestCallAction) {
-            action.auth = getRandomAuth(noAuthP)
-        }
-
+        action.auth = getRandomAuth(noAuthP)
         return action
     }
 
@@ -114,4 +116,29 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
             }
         }
     }
+
+    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
+
+        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
+            ?: throw IllegalStateException("No DB schema is available")
+
+        DbActionUtils.randomizeDbActionGenes(actions, randomness)
+
+        if (log.isTraceEnabled){
+            log.trace("at sampleSqlInsertion, {} insertions are added, and they are {}", actions.size,
+                actions.joinToString(",") {
+                    if (it is DbAction) it.getResolvedName() else it.getName()
+                })
+        }
+
+        return actions
+    }
+
+    fun canInsertInto(tableName: String) : Boolean {
+        //TODO might need to refactor/remove once we deal with VIEWs
+        return sqlInsertBuilder?.isTable(tableName) ?: false
+    }
+
+    abstract fun initSqlInfo(infoDto: SutInfoDto)
+
 }

@@ -397,7 +397,7 @@ class SqlInsertBuilder(
 
             val target = fk.targetTable
             val n = history.filter { it.equals(target, true) }.count()
-            if(n >= 3){
+            if(n >= 3 && fk.sourceColumns.all{it.nullable}){
                 //TODO as a configurable parameter in EMConfig?
                 continue
             }

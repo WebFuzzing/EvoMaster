@@ -4,6 +4,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.httpws.service.HttpWsIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
@@ -26,11 +27,11 @@ class RestIndividual(
         private val resourceCalls: MutableList<RestResourceCalls>,
         val sampleType: SampleType,
         val sampleSpec: SamplerSpecification? = null,
-        val dbInitialization: MutableList<DbAction> = mutableListOf(),
+        dbInitialization: MutableList<DbAction> = mutableListOf(),
 
         trackOperator: TrackOperator? = null,
         index : Int = -1
-): Individual (trackOperator, index) {
+): HttpWsIndividual (dbInitialization, trackOperator, index) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
@@ -121,14 +122,6 @@ class RestIndividual(
 
     override fun seeActions(): List<RestAction> = resourceCalls.flatMap { it.actions }
 
-    /*
-        TODO, Man: need to discuss this method with Andrea, only return [dbInitialization] or return all db actions
-        This is related to several functions which requires to return db genes.
-     */
-    override fun seeInitializingActions(): List<DbAction> {
-        return dbInitialization
-    }
-
     override fun seeDbActions(): List<DbAction> {
         return dbInitialization.plus(resourceCalls.flatMap { c-> c.dbActions })
     }
@@ -137,26 +130,6 @@ class RestIndividual(
         return DbActionUtils.verifyActions(seeDbActions())
     }
 
-
-    override fun repairInitializationActions(randomness: Randomness) {
-
-        /**
-         * First repair SQL Genes (i.e. SQL Timestamps)
-         */
-        if (log.isTraceEnabled)
-            log.trace("invoke GeneUtils.repairGenes")
-        GeneUtils.repairGenes(this.seeGenes(GeneFilter.ONLY_SQL).flatMap { it.flatView() })
-
-        /**
-         * Now repair database constraints (primary keys, foreign keys, unique fields, etc.)
-         */
-        if (!verifyInitializationActions()) {
-            if (log.isTraceEnabled)
-                log.trace("invoke GeneUtils.repairBrokenDbActionsList")
-            DbActionUtils.repairBrokenDbActionsList(seeDbActions().toMutableList(), randomness)
-            Lazy.assert{verifyInitializationActions()}
-        }
-    }
 
     override fun copy(copyFilter: TraceableElementCopyFilter): RestIndividual {
         val copy = copy() as RestIndividual

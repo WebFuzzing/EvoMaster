@@ -19,11 +19,11 @@ public class DbAuthEMTest extends DbAuthTestBase {
                 "org.bar.db.AuthEM",
                 500,
                 (args) -> {
-
                     args.add("--heuristicsForSQL");
                     args.add("true");
                     args.add("--generateSqlDataWithSearch");
                     args.add("true");
+
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

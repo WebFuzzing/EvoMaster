@@ -2,10 +2,9 @@ package org.evomaster.core.problem.graphql.service
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import org.evomaster.core.output.service.GraphQLTestCaseWriter
+import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.service.RestFitness
-import org.evomaster.core.problem.rest.service.RestStructureMutator
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
@@ -44,11 +43,15 @@ class GraphQLModule : AbstractModule() {
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<GraphQLIndividual>>() {})
-                .to(object : TypeLiteral<StandardMutator<GraphQLIndividual>>(){})
+                .to(object : TypeLiteral<StandardMutator<GraphQLIndividual>>() {})
                 .asEagerSingleton()
 
         bind(StructureMutator::class.java)
                 .to(GraphQLStructureMutator::class.java)
+                .asEagerSingleton()
+
+        bind(TestCaseWriter::class.java)
+                .to(GraphQLTestCaseWriter::class.java)
                 .asEagerSingleton()
     }
 }

@@ -5,7 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
@@ -186,6 +186,12 @@ class Statistics : SearchListener {
             add(Pair("endpoints", "" + numberOfEndpoints()))
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
 
+            // Statistics on errors in gql
+            add(Pair("gqlerrors", "" + solution.overall.gqlErrors(idMapper, withLine = false).size))
+
+            // Statistics on errors in gql
+            add(Pair("gqlerrorsPerLines", "" + solution.overall.gqlErrors(idMapper, withLine = true).size))
+
             // Statistics on faults found
             // errors5xx - counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))
@@ -247,7 +253,7 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is RestCallResult && it.result.hasErrorCode()
+                    it.result is HttpWsCallResult && it.result.hasErrorCode()
                 }
                 .map { it.action.getName() }
                 .distinct()
@@ -262,7 +268,7 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is RestCallResult
+                    it.result is HttpWsCallResult
                             && it.action is RestCallAction
                             && !it.result.hasErrorCode()
                             && oracles.activeOracles(it.action, it.result).any { or -> or.value }
@@ -278,7 +284,7 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is RestCallResult && it.result.getStatusCode()?.let { c -> c in 200..299 } ?: false
+                    it.result is HttpWsCallResult && it.result.getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
                 .map { it.action.getName() }
                 .distinct()
@@ -289,14 +295,14 @@ class Statistics : SearchListener {
 
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
-                .filter { it.result is RestCallResult }
+                .filter { it.result is HttpWsCallResult }
                 .map { it.action.getName() }
                 .distinct() //distinct names of actions, ie VERB:PATH
                 .map { name ->
                     solution.individuals
                             .flatMap { it.evaluatedActions() }
                             .filter { it.action.getName() == name }
-                            .map { (it.result as RestCallResult).getStatusCode() }
+                            .map { (it.result as HttpWsCallResult).getStatusCode() }
                             .distinct()
                             .count()
                 }

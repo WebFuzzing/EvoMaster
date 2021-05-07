@@ -225,11 +225,7 @@
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
-                <!--
-                    We ll need to check when new version comes with fix for:
-                    https://github.com/google/guice/issues/1133
-                -->
-                <version>4.2.3</version>
+                <version>5.0.1</version>
             </dependency>
             <dependency> <!-- This is needed as Guice has no LifeCycle management -->
                 <groupId>com.netflix.governator</groupId>
@@ -267,6 +263,16 @@
 
 
             <!-- Misc -->
+            <dependency>
+                <!--
+                    We do not (and SHOULD NOT) use it directly... but as it brought in transitively
+                    by different libraries, we force a specific version here to avoid conflicts (which for
+                    example happened when updating Guice)
+                -->
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>30.1.1-jre</version>
+            </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
