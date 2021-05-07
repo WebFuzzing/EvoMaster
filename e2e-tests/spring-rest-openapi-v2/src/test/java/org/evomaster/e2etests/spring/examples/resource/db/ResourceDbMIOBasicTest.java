@@ -28,7 +28,6 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
         args.add("0.1");
 
         Injector injector = init(args);
-        initPartialOracles(injector);
 
         ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
 
