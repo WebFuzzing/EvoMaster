@@ -83,12 +83,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
                 if (a is RestCallAction) {
                     ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
-                    /*
-                    update creation of resources regarding response status
-                     */
-                    if (a.verb.run { this == HttpVerb.POST || this == HttpVerb.PUT} && call.status == ResourceStatus.CREATED_REST && (actionResults[indexOfAction] as RestCallResult).getStatusCode().run { this != 201 || this != 200 }){
-                        call.getResourceNode().confirmFailureCreationByPost(call)
-                    }
+                    // update creation of resources regarding response status
+                    call.getResourceNode().confirmFailureCreationByPost(call, a, actionResults[indexOfAction])
 
                 } else {
                     throw IllegalStateException("Cannot handle: ${a.javaClass}")
@@ -120,12 +116,6 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
          */
         if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
-
-        /*
-            TODO Man: shall we update SQL Insertion fails here for resource creation?
-            then we prioritize to employ existing data if there exist
-            but there might be various reasons which lead to the failure.
-         */
 
         return EvaluatedIndividual(
                 fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)

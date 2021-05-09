@@ -2,10 +2,7 @@ package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestAction
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
@@ -14,6 +11,7 @@ import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
@@ -911,8 +909,13 @@ class RestResourceNode(
 
     fun getTemplates() : Map<String, CallsTemplate> = templates.toMap()
 
-    fun confirmFailureCreationByPost(calls: RestResourceCalls){
-        if (creations.isNotEmpty()){
+    fun confirmFailureCreationByPost(calls: RestResourceCalls, action: RestCallAction, result: ActionResult){
+        if (result !is RestCallResult) return
+
+        val fail = action.verb.run { this == HttpVerb.POST || this == HttpVerb.PUT} &&
+                calls.status == ResourceStatus.CREATED_REST && result.getStatusCode().run { this != 201 || this != 200 }
+
+        if (fail && creations.isNotEmpty()){
             creations.filter { it is PostCreationChain && calls.actions.map { a->a.getName() }.containsAll(it.actions.map { a-> a.getName() }) }.apply {
                 if (size == 1)
                     (first() as PostCreationChain).confirmFailure()
