@@ -75,9 +75,13 @@ abstract class ImplementedOracle {
      * This is a workaround (ScoutAPI only sees paths without the prefix, others with the prefix).
      * Longer term, this could also be a place to handle any additional peculiarities with SUT specific
      * OpenAPI standards.
+     *
+     * The same applies where the prefix is "v2" (e.g. language tools).
      */
+
     fun retrievePath(objectGenerator: ObjectGenerator, call: RestCallAction): PathItem? {
         return objectGenerator.getSwagger().paths.get(call.path.toString()) ?:
-        objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/api"))
+        objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/api")) ?:
+        objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/v2"))
     }
 }
