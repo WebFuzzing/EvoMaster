@@ -41,13 +41,17 @@ class ParamUtil {
 
         /**
          * bind values between [call] and [dbActions]
-         * [candidates] presents how to map [call] and [dbActions] at Gene-level
-         * [forceBindParamBasedOnDB] is an option to bind params of [call] based on [dbActions]
+         * @param call the call to be bounded with [dbActions]
+         * @param dbActions are the dbactions generated for the [call]
+         * @param candidates presents how to map rest actions in [call] and [dbActions] at Gene-level
+         * @param resourceCluster are existing [RestResourceNode]. keys are paths of the [RestResourceNode]s
+         * @param forceBindParamBasedOnDB specifies whether to bind params based on [dbActions] or reversed
+         * @param dbRemovedDueToRepair indiciates whether the dbactions are removed due to repair.
          */
         fun bindCallWithDBAction(
             call: RestResourceCalls,
             dbActions: MutableList<DbAction>,
-            candidates: MutableMap<RestAction, MutableList<ParamGeneBindMap>>,
+            candidates: Map<RestAction, MutableList<ParamGeneBindMap>>,
             resourceCluster : Map<String, RestResourceNode>,
             forceBindParamBasedOnDB: Boolean = false,
             dbRemovedDueToRepair : Boolean) {

@@ -1072,12 +1072,19 @@ class EMConfig {
     var maxSqlInitActionsPerResource = 0
 
     @Experimental
-    @Cfg("When generating resource using SQL (e.g., sampler or mutator), how many new rows (max) to generate for the specific resource each time")
+    @Cfg("Specify a strategy to determinate a number of resources to be manipulated throughout the search.")
     var employSqlNumResourceStrategy = SqlInitResourceStrategy.NONE
 
     enum class SqlInitResourceStrategy{
         NONE,
+
+        /**
+         * determinate a number of resource to be manipulated at random between 1 and [maxSqlInitActionsPerResource]
+         */
         RANDOM,
+        /**
+         * adaptively decrease a number of resources to be manipulated from [maxSqlInitActionsPerResource] to 1
+         */
         DPC
     }
     @Experimental

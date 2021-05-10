@@ -259,7 +259,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
 
         if(previous.getSizeOfImpact(false) != mutated.getSizeOfImpact(false)){
-            log.info("impacts should be same before updating")
+            log.warn("impacts should be same before updating")
         }
 
         compareWithLatest(next = mutated, previous = previous, targetsInfo = targetsInfo, mutatedGenes = mutatedGenes)
