@@ -212,11 +212,12 @@ public class SqlHandler {
 
         try {
             data = SqlScriptRunner.execCommand(connection, select);
-        } catch (SQLException e) {
+
+            return HeuristicsCalculator.computeDistance(command, data);
+
+        } catch (SQLException | IllegalArgumentException e) {
             throw new RuntimeException(e);
         }
-
-        return HeuristicsCalculator.computeDistance(command, data);
     }
 
     private String createSelectForSingleTable(String tableName, Set<String> columns){
