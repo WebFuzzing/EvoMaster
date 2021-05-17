@@ -9,8 +9,6 @@ import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -57,7 +55,23 @@ public class HeuristicsCalculator {
 
         double min = Double.MAX_VALUE;
         for (DataRow row : data.seeRows()) {
-            double dist = calculator.computeExpression(where, row);
+            double dist;
+            try{
+                dist = calculator.computeExpression(where, row);
+            }catch (IllegalArgumentException e){
+                /*
+                    Man: temporal fix in order to proceed
+                    catch the exception at 116 of DataRow.java
+
+                    SELECT g.* FROM voting v, groups g WHERE v.group_id = g.id AND v.created_at BETWEEN DATE_TRUNC('day', current_date) + EXTRACT(hour FROM g.voting_time) * INTERVAL '1 hour' + EXTRACT(minute FROM g.voting_time) * INTERVAL '1 minute' AND DATE_TRUNC('day', current_date) + EXTRACT(hour FROM g.voting_time) * INTERVAL '1 hour' + EXTRACT(minute FROM g.voting_time) * INTERVAL '1 minute' + g.voting_duration * INTERVAL '1 hour'
+
+                    the problem seems originate from the exp 'v.group_id = g.id'
+                    e.g., v.group_id -> find group_id from 'voting' table, but the data row [row] seems from 'groups' table
+                 */
+                SimpleLogger.uniqueWarn("Fail to calculate  " + e.getMessage());
+                continue;
+            }
+
             if (dist == 0) {
                 return 0;
             }
