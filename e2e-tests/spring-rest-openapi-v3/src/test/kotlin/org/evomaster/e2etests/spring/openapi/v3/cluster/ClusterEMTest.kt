@@ -1,33 +1,37 @@
 package org.evomaster.e2etests.spring.openapi.v3.examples.expectations
 
-import com.foo.rest.examples.spring.openapi.v3.expectations.ExpectationsController
+import com.foo.rest.examples.spring.openapi.v3.cluster.ClusterTestController
 import io.restassured.RestAssured.given
+import org.evomaster.core.EMConfig
+import org.evomaster.core.Main
 import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.Solution
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class ExpectationsEMTest : SpringTestBase() {
+class ClusterEMTest : SpringTestBase() {
     //TODO: BMR - more expectations related tests are possible. This is a good place for them.
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(ExpectationsController())
+            initClass(ClusterTestController())
         }
     }
 
     @Test
     fun testRunManual(){
         given().accept("*/*")
-                .get(baseUrlOfSut + "/api/expectations/" + true)
+                .get(baseUrlOfSut + "/api/cluster/path1/" + true)
                 .then()
                 .statusCode(200)
 
         given().accept("*/*")
-                .get(baseUrlOfSut + "/api/expectations/" + false)
+                .get(baseUrlOfSut + "/api/cluster/path2/" + false)
                 .then()
                 .statusCode(500)
 
@@ -35,11 +39,24 @@ class ExpectationsEMTest : SpringTestBase() {
 
     @Test
     fun testRunEM(){
+
+        val terminations = listOf("_faults", "_successes")
+
         runTestHandlingFlakyAndCompilation(
-                "ExpectationsEM",
-                "org.foo.ExpectationsEM",
+                "ClusterEM",
+                "org.foo.ClusterEM",
+                terminations,
                 100
         ){args: MutableList<String> ->
+
+            /*
+            val injector = Main.init(args.toTypedArray())
+
+            val config = injector.getInstance(EMConfig::class.java)
+            config.testSuiteSplitType = EMConfig.TestSuiteSplitType.CLUSTER
+
+            val solution = Main.run(injector) as Solution<RestIndividual>
+*/
 
             val solution = initAndRun(args)
 
