@@ -82,6 +82,8 @@ abstract class ImplementedOracle {
     fun retrievePath(objectGenerator: ObjectGenerator, call: RestCallAction): PathItem? {
         return objectGenerator.getSwagger().paths.get(call.path.toString()) ?:
         objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/api")) ?:
-        objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/v2"))
+        objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/v2")) ?:
+        objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/v1"))
+
     }
 }
