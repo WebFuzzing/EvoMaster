@@ -1,12 +1,14 @@
 package org.evomaster.e2etests.spring.openapi.v3.statistics
 
 import com.foo.rest.examples.spring.openapi.v3.statistics.StatisticsController
+import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.util.*
 
 class StatisticsEMTest : SpringTestBase() {
 
@@ -20,9 +22,13 @@ class StatisticsEMTest : SpringTestBase() {
 
     @Test
     fun testRunEM(){
+        val terminations = Arrays.asList(Termination.FAULTS.suffix,
+                Termination.SUCCESSES.suffix)
+
         runTestHandlingFlakyAndCompilation(
                 "StatisticsEM",
                 "org.foo.StatisticsEM",
+                terminations,
                 1000
         ){args: List<String> ->
 

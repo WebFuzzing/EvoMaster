@@ -79,7 +79,6 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     args.add("--probOfApplySQLActionToCreateResources");
                     args.add("0.8");
 
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

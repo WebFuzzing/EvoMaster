@@ -30,7 +30,6 @@ public class RegexDateEMTest extends SpringTestBase {
                 "org.bar.RegexDateEM",
                 1000,
                 (args) -> {
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

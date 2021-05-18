@@ -1,14 +1,21 @@
-package org.evomaster.core.output
+package org.evomaster.core.output.service
 
 
+import com.google.inject.Inject
+import io.swagger.v3.oas.models.OpenAPI
+import org.evomaster.core.EMConfig
+import org.evomaster.core.output.Lines
+import org.evomaster.core.output.ObjectGenerator
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.oracles.ImplementedOracle
 import org.evomaster.core.output.oracles.SchemaOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
+import javax.annotation.PostConstruct
 
 /**
  * [PartialOracles] are meant to be a way to handle different types of soft assertions/expectations (name may change in future)
@@ -29,15 +36,31 @@ import org.evomaster.core.search.EvaluatedIndividual
  */
 
 class PartialOracles {
-    private lateinit var objectGenerator: ObjectGenerator
-    private lateinit var format: OutputFormat
 
-    // Disabled the SchemaOracle, as it was causing problems (see https://github.com/EMResearch/EvoMaster/issues/237)
-    // TODO: Selection of what partial oracles to use should be revised.
+    @Inject
+    private lateinit var config: EMConfig
 
-    private var oracles = mutableListOf(SupportedCodeOracle())
-    //private var oracles = mutableListOf(SupportedCodeOracle(), SchemaOracle())
+    private val objectGenerator = ObjectGenerator()
+
+    private val oracles = mutableListOf<ImplementedOracle>()
     private val expectationsMasterSwitch = "ems"
+
+    @PostConstruct
+    private fun initialize(){
+
+        if(config.problemType == EMConfig.ProblemType.REST) {
+            oracles.add(SupportedCodeOracle())
+            oracles.add(SchemaOracle())
+        }
+
+        oracles.forEach {
+            it.setObjectGenerator(objectGenerator)
+        }
+    }
+
+    fun setOpenApi(schema: OpenAPI){
+        objectGenerator.setSwagger(schema)
+    }
 
     /**
      * The [variableDeclaration] method handles the generation of auxiliary variables for the partial oracles.
@@ -59,7 +82,7 @@ class PartialOracles {
         }
     }
 
-    fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
+    fun addExpectations(call: RestCallAction, lines: Lines, res: HttpWsCallResult, name: String, format: OutputFormat) {
         val generates = oracles.any {
             it.generatesExpectation(call, res)
         }
@@ -72,24 +95,12 @@ class PartialOracles {
     }
 
 
-    fun setGenerator(objGen: ObjectGenerator){
-        objectGenerator = objGen
-        oracles.forEach {
-            it.setObjectGenerator(objectGenerator)
-        }
-    }
 
-    fun setFormat(format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5){
-        this.format = format
-    }
 
     fun selectForClustering(action: EvaluatedAction): Boolean{
-        if (::objectGenerator.isInitialized){
             return oracles.any { oracle ->
                 oracle.selectForClustering(action)
             }
-        }
-        else return false;
     }
 
     /**
@@ -103,13 +114,13 @@ class PartialOracles {
             individual.evaluatedActions().any {
                 oracle.generatesExpectation(
                         (it.action as RestCallAction),
-                        (it.result as RestCallResult)
+                        (it.result as HttpWsCallResult)
                 )
             }
         }
     }
 
-    fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean{
+    fun generatesExpectation(call: RestCallAction, res: HttpWsCallResult): Boolean{
         return oracles.any { oracle ->
             oracle.generatesExpectation( call, res)
         }
@@ -136,7 +147,7 @@ class PartialOracles {
      * changes are made to the [EvaluatedIndividual] objects themselves.
      *
      */
-    fun failByOracle(individuals: MutableList<EvaluatedIndividual<RestIndividual>>): MutableMap<String, MutableList<EvaluatedIndividual<RestIndividual>>>{
+    fun failByOracle(individuals: List<EvaluatedIndividual<RestIndividual>>): MutableMap<String, MutableList<EvaluatedIndividual<RestIndividual>>>{
         val oracleInds = mutableMapOf<String, MutableList<EvaluatedIndividual<RestIndividual>>>()
         oracles.forEach { oracle ->
             val failindInds = individuals.filter {
@@ -148,21 +159,21 @@ class PartialOracles {
         return oracleInds
     }
 
-    fun activeOracles(individuals: MutableList<EvaluatedIndividual<RestIndividual>>): MutableMap<String, Boolean>{
+    fun activeOracles(individuals: List<EvaluatedIndividual<*>>): MutableMap<String, Boolean>{
         val active = mutableMapOf<String, Boolean>()
         oracles.forEach { oracle ->
             active.put(oracle.getName(), individuals.any { individual ->
                 individual.evaluatedActions().any {
                     oracle.generatesExpectation(
                             (it.action as RestCallAction),
-                            (it.result as RestCallResult)
+                            (it.result as HttpWsCallResult)
                     )
                 } })
         }
         return active
     }
 
-    fun activeOracles(call: RestCallAction, res: RestCallResult): MutableMap<String, Boolean>{
+    fun activeOracles(call: RestCallAction, res: HttpWsCallResult): MutableMap<String, Boolean>{
         val active = mutableMapOf<String, Boolean>()
         oracles.forEach { oracle ->
             active.put(oracle.getName(), oracle.generatesExpectation(call, res))

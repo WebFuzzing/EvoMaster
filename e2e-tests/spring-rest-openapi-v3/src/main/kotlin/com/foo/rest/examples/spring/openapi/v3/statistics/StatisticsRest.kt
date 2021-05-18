@@ -14,7 +14,7 @@ private class StatisticsRest {
     @GetMapping(path = ["/getExpectations/{b}"])
     open fun expectTest(@PathVariable("b") succeeded: Boolean ) : ResponseEntity<String> {
         if (succeeded){
-            return ResponseEntity.ok("Success is True!")
+            return ResponseEntity.ok("Success!")
         }
         else{
             return ResponseEntity.status(500).build()
@@ -25,7 +25,7 @@ private class StatisticsRest {
     @GetMapping(path = ["/basicResponsesString/{b}"])
     open fun basicResponseString(@PathVariable("b") succeeded: Boolean) : ResponseEntity<String> {
         if (succeeded){
-            return ResponseEntity.ok("Success is True!")
+            return ResponseEntity.ok("Success!")
         }
         else{
             return ResponseEntity.status(400).build()

@@ -44,6 +44,7 @@ public class PIEMTest extends PITestBase {
 
         handleFlaky(() -> {
             List<String> args = getArgsWithCompilation(iterations, outputFolderName, className);
+
             args.add("--algorithm");
             args.add(alg.toString());
             defaultSeed++;
@@ -69,6 +70,7 @@ public class PIEMTest extends PITestBase {
 
 
         List<String> args = getArgsWithCompilation(20, outputFolderName, className);
+
         Solution<RestIndividual> solution = initAndRun(args);
 
         assertHasAtLeastOne(solution, HttpVerb.GET, 200);

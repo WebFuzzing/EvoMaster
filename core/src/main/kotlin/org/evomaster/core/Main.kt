@@ -12,8 +12,6 @@ import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteSplitter
-import org.evomaster.core.output.ObjectGenerator
-import org.evomaster.core.output.PartialOracles
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.graphql.GraphQLIndividual
@@ -24,7 +22,6 @@ import org.evomaster.core.problem.web.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.MosaAlgorithm
@@ -149,8 +146,6 @@ class Main {
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)
 
-            val writer = setupPartialOracles(injector, config)
-
             val solution = run(injector)
             val faults = solution.overall.potentialFoundFaults(idMapper)
 
@@ -177,21 +172,21 @@ class Main {
                 info("Evaluated actions: ${stc.evaluatedActions}")
                 info("Needed budget: ${stc.neededBudget()}")
 
-                if(!config.avoidNonDeterministicLogs) {
+                if (!config.avoidNonDeterministicLogs) {
                     info("Passed time (seconds): ${stc.getElapsedSeconds()}")
                     info("Execution time per test (ms): ${stc.averageTestTimeMs}")
                     info("Computation overhead between tests (ms): ${stc.averageOverheadMsBetweenTests}")
                     val timeouts = data.find { p -> p.header == Statistics.TEST_TIMEOUTS }!!.element.toInt()
-                    if(timeouts > 0){
+                    if (timeouts > 0) {
                         info("TCP timeouts: $timeouts")
                     }
                 }
 
-                if(!config.blackBox || config.bbExperiments) {
+                if (!config.blackBox || config.bbExperiments) {
                     val rc = injector.getInstance(RemoteController::class.java)
                     val unitsInfo = rc.getSutInfo()?.unitsInfoDto
 
-                    if(unitsInfo != null) {
+                    if (unitsInfo != null) {
                         val units = unitsInfo.unitNames.size
                         val totalLines = unitsInfo.numberOfLines
                         val coveredLines = solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)
@@ -225,9 +220,9 @@ class Main {
 
             val problemModule = when (problemType) {
                 EMConfig.ProblemType.REST -> {
-                    if(config.blackBox){
+                    if (config.blackBox) {
                         BlackBoxRestModule(config.bbExperiments)
-                    } else if(config.resourceSampleStrategy == EMConfig.ResourceSamplingStrategy.NONE){
+                    } else if (config.resourceSampleStrategy == EMConfig.ResourceSamplingStrategy.NONE) {
                         RestModule()
                     } else {
                         ResourceRestModule()
@@ -286,9 +281,9 @@ class Main {
 //            }
 //        }
 
-        private  fun  getAlgorithmKeyGraphQL(config: EMConfig) : Key<out SearchAlgorithm<GraphQLIndividual>>{
+        private fun getAlgorithmKeyGraphQL(config: EMConfig): Key<out SearchAlgorithm<GraphQLIndividual>> {
 
-            return  when {
+            return when {
                 config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<GraphQLIndividual>>() {})
 
@@ -305,9 +300,9 @@ class Main {
             }
         }
 
-        private  fun  getAlgorithmKeyRest(config: EMConfig) : Key<out SearchAlgorithm<RestIndividual>>{
+        private fun getAlgorithmKeyRest(config: EMConfig): Key<out SearchAlgorithm<RestIndividual>> {
 
-            return  when {
+            return when {
                 config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
 
@@ -328,12 +323,12 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if(! config.blackBox || config.bbExperiments) {
+            if (!config.blackBox || config.bbExperiments) {
                 val rc = injector.getInstance(RemoteController::class.java)
                 rc.startANewSearch()
             }
 
-            val key = when(config.problemType) {
+            val key = when (config.problemType) {
                 EMConfig.ProblemType.REST -> getAlgorithmKeyRest(config)
                 EMConfig.ProblemType.GRAPHQL -> getAlgorithmKeyGraphQL(config)
                 else -> throw IllegalStateException("Unrecognized problem type ${config.problemType}")
@@ -368,7 +363,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if(config.blackBox && !config.bbExperiments){
+            if (config.blackBox && !config.bbExperiments) {
                 return null
             }
 
@@ -381,7 +376,7 @@ class Main {
                 LoggingUtil.getInfoLogger().warn("The system under test is running without instrumentation")
             }
 
-            if(dto.fullName.isNullOrBlank()){
+            if (dto.fullName.isNullOrBlank()) {
                 throw IllegalStateException("Failed to retrieve the name of the EvoMaster Driver")
             }
 
@@ -404,9 +399,9 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
-            if(config.problemType == EMConfig.ProblemType.REST) {
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-                val writer = setupPartialOracles(injector, config)
+            if (config.problemType == EMConfig.ProblemType.REST) {
 
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
@@ -423,34 +418,8 @@ class Main {
                     TODO refactor all the PartialOracle stuff that is meant for only REST
                  */
 
-                val writer = injector.getInstance(TestSuiteWriter::class.java)
-
                 writer.writeTests(solution, controllerInfoDto?.fullName)
             }
-        }
-
-        @JvmStatic
-        fun initPartialOracles(injector: Injector){
-            val config = injector.getInstance(EMConfig::class.java)
-            val writer = setupPartialOracles(injector, config)
-        }
-
-        private fun setupPartialOracles(injector: Injector, config: EMConfig): TestSuiteWriter{
-            val writer = injector.getInstance(TestSuiteWriter::class.java)
-            if(config.problemType == EMConfig.ProblemType.REST){
-                // Some initialization to handle test suite splitting and relevant partial oracles
-                val partialOracles = PartialOracles()
-                val swagger = injector.getInstance(RestSampler::class.java).getOpenAPI()
-                val objGenerator = ObjectGenerator()
-                objGenerator.setSwagger(swagger)
-                partialOracles.setGenerator(objGenerator)
-                partialOracles.setFormat(config.outputFormat)
-                //assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
-                writer.setSwagger(swagger)
-                writer.setPartialOracles(partialOracles)
-                writer.setObjectGenerator(objGenerator)
-            }
-            return writer
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
@@ -532,7 +501,7 @@ class Main {
 
         private fun writeExecSummary(injector: Injector,
                                      controllerInfoDto: ControllerInfoDto?,
-                                     splitResult: SplitResult){
+                                     splitResult: SplitResult) {
             val config = injector.getInstance(EMConfig::class.java)
 
             if (!config.createTests) {
@@ -540,7 +509,7 @@ class Main {
             }
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
-            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+            assert(controllerInfoDto == null || controllerInfoDto.fullName != null)
             writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName)
         }
     }

@@ -27,7 +27,7 @@ class BaseEMTest : SpringTestBase() {
                 "BaseEM",
                 "org.foo.BaseEM",
                 20
-        ) { args: List<String> ->
+        ) { args: MutableList<String> ->
 
             val solution = initAndRun(args)
 

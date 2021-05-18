@@ -5,7 +5,8 @@ import org.evomaster.core.output.Termination
 
 class Solution<T>(
         val individuals: MutableList<EvaluatedIndividual<T>>,
-        val testSuiteName: String,
+        val testSuiteNamePrefix: String,
+        val testSuiteNameSuffix: String,
         val termination: Termination = Termination.NONE
 )
 where T : Individual {
@@ -19,5 +20,17 @@ where T : Individual {
             overall.merge(it.fitness)
             overall.size += it.individual.size()
         }
+    }
+
+    fun getFileName() : String{
+
+        val name = testSuiteNamePrefix + termination.suffix
+        if(testSuiteNameSuffix.isBlank()){
+            return name
+        }
+        if(testSuiteNameSuffix.startsWith("_")){
+            return "$name$testSuiteNameSuffix"
+        }
+        return  "${name}_$testSuiteNameSuffix"
     }
 }

@@ -17,7 +17,6 @@ public class CNLEMTest extends CNLTestBase {
                 "org.foo.CnlEM",
                 1000,
                 (args) -> {
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
