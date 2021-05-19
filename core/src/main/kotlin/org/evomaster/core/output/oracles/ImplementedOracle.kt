@@ -10,8 +10,12 @@ import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 abstract class ImplementedOracle {
+
+    private val log: Logger = LoggerFactory.getLogger(ImplementedOracle::class.java)
 
     /**
      * [variableDeclaration] handles, for each [ImplementedOracle] the process of generating variables that
@@ -80,10 +84,21 @@ abstract class ImplementedOracle {
      */
 
     fun retrievePath(objectGenerator: ObjectGenerator, call: RestCallAction): PathItem? {
-        return objectGenerator.getSwagger().paths.get(call.path.toString()) ?:
-        objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/api")) ?:
-        objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/v2")) ?:
-        objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/v1"))
+        val possibleItems = objectGenerator.getSwagger().paths.filter{ e ->
+            call.path.toString().contains(e.key)
+        }
 
+        val result = when (possibleItems.size){
+            0 -> null
+            1 -> possibleItems.entries.first().value
+            else -> {
+                // This should not happen unless multiples paths match the call. But it's technically not impossible. Then pick the first element?
+                // I'd prefer not to throw exceptions that would disrupt the rest of the writing process.
+                log.warn("There seem to be multiple paths matching a call: ${call.verb}${call.path}. Only one will be returned.")
+                possibleItems.entries.first().value
+            }
+        }
+
+        return result
     }
 }
