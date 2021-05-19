@@ -4,10 +4,15 @@ import com.foo.rest.examples.spring.openapi.v3.cluster.ClusterTestController
 import io.restassured.RestAssured.given
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Main
+import org.evomaster.core.output.Termination
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
+import org.jetbrains.kotlin.utils.addToStdlib.assertedCast
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -59,6 +64,37 @@ class ClusterEMTest : SpringTestBase() {
 */
 
             val solution = initAndRun(args)
+
+            assertTrue(solution.individuals.size >= 1)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 500)
+        }
+    }
+
+    @Test
+    fun testClusterManual(){
+
+        // This is an initial test for the clustering bug. Once I find a way to replicate it.
+
+        val terminations = listOf("_faults", "_successes")
+        runTestHandlingFlakyAndCompilation(
+                "ClusterEM",
+                "org.foo.ClusterEM",
+                terminations,
+                100
+        ){args: MutableList<String> ->
+            val injector = Main.init(args.toTypedArray())
+
+            val config = injector.getInstance(EMConfig::class.java)
+            config.testSuiteSplitType = EMConfig.TestSuiteSplitType.CLUSTER
+
+            val solution = Main.run(injector) as Solution<RestIndividual>
+
+            val controllerInfoDto = Main.checkState(injector)
+
+            Main.writeTests(injector, solution, controllerInfoDto)
+
+            //val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200)
