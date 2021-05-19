@@ -7,8 +7,6 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
-import org.evomaster.core.problem.graphql.param.GQReturnParam
-import org.evomaster.core.problem.httpws.service.HttpWsIndividual
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
@@ -260,7 +258,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
             additionInfo!!.effectiveHistory.addAll(effective.mapNotNull {
                 if (it.individual.seeActions(isDb).isEmpty()){
-                    if(it.individual is HttpWsIndividual) null
+                    /*
+                        if there exist actions structure and the group (e.g., dbInitialization) of actions is empty,
+                        we do not find further possible impacts for it
+                     */
+                    if(it.individual.hasAnyAction()) null
                     else ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
                 } else
                     ImpactUtils.findMutatedGene(
@@ -269,7 +271,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
             additionInfo.history.addAll(history.mapNotNull {e->
                 if (e.individual.seeActions(isDb).isEmpty())
-                    if(e.individual is HttpWsIndividual) null
+                    /*
+                        if there exist actions structure and the group (e.g., dbInitialization) of actions is empty,
+                        we do not find further possible impacts for it
+                     */
+                    if(e.individual.hasAnyAction()) null
                     else ImpactUtils.findMutatedGene(
                            e.individual.seeGenes(), gene, includeSameValue)?.run {
                         this to EvaluatedInfo(
