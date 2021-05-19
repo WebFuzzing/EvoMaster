@@ -12,7 +12,6 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -215,7 +214,7 @@ public class SqlHandler {
 
             return HeuristicsCalculator.computeDistance(command, data);
 
-        } catch (SQLException | IllegalArgumentException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

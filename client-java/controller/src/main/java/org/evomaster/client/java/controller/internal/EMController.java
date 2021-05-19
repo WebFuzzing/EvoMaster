@@ -446,8 +446,14 @@ public class EMController {
 
             assert trackRequestSource(httpServletRequest);
 
-            //this MUST not be inside a noKillSwitch, as it sets to false
-            sutController.newAction(dto);
+            try {
+                //this MUST not be inside a noKillSwitch, as it sets to false
+                sutController.newAction(dto);
+            }catch (RuntimeException e){
+                String msg = "new action with thrown exception: " + e.getMessage();
+                SimpleLogger.error(msg, e);
+                return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+            }
         }
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
