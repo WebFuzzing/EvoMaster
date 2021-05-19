@@ -78,8 +78,8 @@ class ClusterEMTest : SpringTestBase() {
 
         val terminations = listOf("_faults", "_successes")
         runTestHandlingFlakyAndCompilation(
-                "ClusterEM",
-                "org.foo.ClusterEM",
+                "ClusterEMTypeBug",
+                "org.foo.ClusterEMTypeBug",
                 terminations,
                 100
         ){args: MutableList<String> ->
