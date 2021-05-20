@@ -137,5 +137,10 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
         return true
     }
 
+    /**
+     * @return whether there exist any actions in the individual,
+     *  e.g., if false, the individual might be composed of a sequence of genes.
+     */
+    open fun hasAnyAction()  = seeActions().isNotEmpty()
 }
 

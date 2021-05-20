@@ -46,4 +46,7 @@ abstract class HttpWsIndividual (
         }
     }
 
+    override fun hasAnyAction(): Boolean {
+        return super.hasAnyAction() || dbInitialization.isNotEmpty()
+    }
 }

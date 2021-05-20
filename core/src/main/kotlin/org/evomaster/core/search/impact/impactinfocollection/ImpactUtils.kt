@@ -96,7 +96,7 @@ class ImpactUtils {
             }?.let {
                 return generateGeneId(it, gene)
             }
-            individual.seeActions(ActionFilter.NO_INIT).find { a-> a.seeGenes().contains(gene) }?.let {
+            individual.seeActions().find { a-> a.seeGenes().contains(gene) }?.let {
                 return generateGeneId(action = it, gene = gene)
             }
             return generateGeneId(gene)
@@ -109,37 +109,37 @@ class ImpactUtils {
          * @param individual a mutated individual with [mutatedGenes]
          * @param previousIndividual mutating [previousIndividual] becomes [individual]
          */
-//        private fun extractMutatedGeneWithContext(
-//                mutatedGenes : MutableList<Gene>,
-//                individual: Individual,
-//                previousIndividual: Individual
-//        ) : Map<String, MutableList<MutatedGeneWithContext>>{
-//            val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
-//
-//            if (individual.seeActions().isEmpty()){
-//                individual.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
-//                    val id = generateGeneId(individual, g)
-//                    val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
-//                    val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
-//                    contexts.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = mutatedGenes.size))
-//                }
-//            }else{
-//                individual.seeActions().forEachIndexed { index, action ->
-//                    action.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
-//                        val id = generateGeneId(action, g)
-//                        val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
-//                        val previous = findGeneById(previousIndividual, id, action.getName(), index, false)?: throw IllegalArgumentException("mismatched previous individual")
-//                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous, mutatedGenes.size))
-//                    }
-//                }
-//            }
-//
-//
-//            Lazy.assert{
-//                mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size
-//            }
-//            return mutatedGenesWithContext
-//        }
+        private fun extractMutatedGeneWithContext(
+                mutatedGenes : MutableList<Gene>,
+                individual: Individual,
+                previousIndividual: Individual
+        ) : Map<String, MutableList<MutatedGeneWithContext>>{
+            val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
+
+            if (individual.seeActions().isEmpty()){
+                individual.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
+                    val id = generateGeneId(individual, g)
+                    val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
+                    val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
+                    contexts.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = mutatedGenes.size))
+                }
+            }else{
+                individual.seeActions().forEachIndexed { index, action ->
+                    action.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
+                        val id = generateGeneId(action, g)
+                        val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
+                        val previous = findGeneById(previousIndividual, id, action.getName(), index, false)?: throw IllegalArgumentException("mismatched previous individual")
+                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous, mutatedGenes.size))
+                    }
+                }
+            }
+
+
+            Lazy.assert{
+                mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size
+            }
+            return mutatedGenesWithContext
+        }
 
         fun extractMutatedGeneWithContext(mutatedGeneSpecification: MutatedGeneSpecification,
                                           individual: Individual,
@@ -248,7 +248,7 @@ class ImpactUtils {
                 g.name == template.name && g::class.java.simpleName == template::class.java.simpleName && (includeSameValue || !g.containsSameValueAs(template))
             }.also {
                 if (it.size > 1)
-                    log.info("{} genes have been mutated with the name {},",it.size, gene.name)
+                    log.warn("{} genes have been mutated with the name {}",it.size, gene.name)
             }.firstOrNull()
         }
     }
