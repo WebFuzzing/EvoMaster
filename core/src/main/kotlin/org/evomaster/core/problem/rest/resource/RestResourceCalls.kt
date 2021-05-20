@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.rest.util.inference.SimpleDeriveResourceBinding
+import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.gene.Gene
@@ -86,7 +87,7 @@ class RestResourceCalls(
      * */
     private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
 
-    fun repairGenesAfterMutation(mutatedGene: MutatedGeneSpecification?, cluster: Map<String, RestResourceNode>){
+    fun repairGenesAfterMutation(mutatedGene: MutatedGeneSpecification?){
 
         mutatedGene?: log.warn("repair genes of resource call ({}) with null mutated genes", getResourceNode().getName())
 
@@ -106,9 +107,36 @@ class RestResourceCalls(
             }
         }
         if (anyMutated && dbActions.isNotEmpty()){
+            bindCallWithDbActions(dbActions,null, false, false)
+        }
+    }
+
+
+    /**
+     * bind [actions] in this call based on the given [dbActions] using a map [bindingMap] if there exists
+     * @param dbActions are bound with [actions] in this call.
+     * @param bindingMap is a map to bind [actions] and [dbActions] at gene-level, and it is nullable.
+     *          if it is null, [SimpleDeriveResourceBinding] will be employed to derive the binding map based on the params of rest actions.
+     * @param forceBindParamBasedOnDB specifies whether to bind params based on [dbActions] or reversed
+     * @param dbRemovedDueToRepair indicates whether the dbactions are removed due to repair.
+     */
+    fun bindCallWithDbActions(dbActions: MutableList<DbAction>, bindingMap: Map<RestAction, MutableList<ParamGeneBindMap>>? = null, forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
+        var paramToTables = bindingMap
+        if (paramToTables == null){
             val paramInfo = getResourceNode().getMissingParams(template!!.template, false)
-            val paramToTables = SimpleDeriveResourceBinding.generateRelatedTables(paramInfo, this, dbActions)
-            ParamUtil.bindCallWithDBAction(this, dbActions, paramToTables, cluster, false, false)
+            paramToTables = SimpleDeriveResourceBinding.generateRelatedTables(paramInfo, this, dbActions)
+        }
+
+        for (a in actions) {
+            if (a is RestCallAction) {
+                var list = paramToTables[a]
+                if (list == null) list = paramToTables.filter { a.getName() == it.key.getName() }.values.run {
+                    if (this.isEmpty()) null else this.first()
+                }
+                if (list != null && list.isNotEmpty()) {
+                    ParamUtil.bindRestActionBasedOnDbActions(a, getResourceNode(), list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair)
+                }
+            }
         }
     }
 

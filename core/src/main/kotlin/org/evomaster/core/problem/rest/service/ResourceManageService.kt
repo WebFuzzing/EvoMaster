@@ -360,7 +360,7 @@ class ResourceManageService {
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
 
              */
-            ParamUtil.bindCallWithDBAction(call,dbActions, paramToTables, resourceCluster = resourceCluster, dbRemovedDueToRepair = removed)
+            call.bindCallWithDbActions(dbActions, bindingMap = paramToTables, forceBindParamBasedOnDB = false, dbRemovedDueToRepair = removed)
 
             call.dbActions.addAll(dbActions)
         }
