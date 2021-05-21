@@ -59,6 +59,8 @@ class ResourceManageService {
      */
     fun initResourceNodes(actionCluster : MutableMap<String, Action>, sqlInsertBuilder: SqlInsertBuilder? = null) {
 
+        this.sqlInsertBuilder = sqlInsertBuilder
+
         cluster.intResourceCluster(actionCluster, sqlInsertBuilder, config)
 
         if(config.extractSqlExecutionInfo && config.doesApplyNameMatching){
