@@ -34,7 +34,6 @@ class ResourceCluster {
      */
     fun intResourceCluster(actionCluster : Map<String, Action>, sqlInsertBuilder: SqlInsertBuilder? = null, config: EMConfig) {
         if (resourceCluster.isNotEmpty()) return
-        if (sqlInsertBuilder!= null) return
 
         if(config.extractSqlExecutionInfo) sqlInsertBuilder?.extractExistingTables(tables)
 
