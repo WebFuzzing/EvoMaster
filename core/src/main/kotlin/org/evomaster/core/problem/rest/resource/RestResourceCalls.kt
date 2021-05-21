@@ -87,7 +87,7 @@ class RestResourceCalls(
      * */
     private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
 
-    fun repairGenesAfterMutation(mutatedGene: MutatedGeneSpecification?){
+    fun repairGenesAfterMutation(mutatedGene: MutatedGeneSpecification?, cluster: Map<String, RestResourceNode>){
 
         mutatedGene?: log.warn("repair genes of resource call ({}) with null mutated genes", getResourceNode().getName())
 
@@ -107,7 +107,7 @@ class RestResourceCalls(
             }
         }
         if (anyMutated && dbActions.isNotEmpty()){
-            bindCallWithDbActions(dbActions,null, false, false)
+            bindCallWithDbActions(dbActions,null, cluster, false, false)
         }
     }
 
@@ -117,10 +117,13 @@ class RestResourceCalls(
      * @param dbActions are bound with [actions] in this call.
      * @param bindingMap is a map to bind [actions] and [dbActions] at gene-level, and it is nullable.
      *          if it is null, [SimpleDeriveResourceBinding] will be employed to derive the binding map based on the params of rest actions.
+     * @param cluster records all existing resource node in the sut, here we need this because the [actions] might employ action from other resource node.
      * @param forceBindParamBasedOnDB specifies whether to bind params based on [dbActions] or reversed
      * @param dbRemovedDueToRepair indicates whether the dbactions are removed due to repair.
      */
-    fun bindCallWithDbActions(dbActions: MutableList<DbAction>, bindingMap: Map<RestAction, MutableList<ParamGeneBindMap>>? = null, forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
+    fun bindCallWithDbActions(dbActions: MutableList<DbAction>, bindingMap: Map<RestAction, MutableList<ParamGeneBindMap>>? = null,
+                              cluster : Map<String, RestResourceNode>,
+                              forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
         var paramToTables = bindingMap
         if (paramToTables == null){
             val paramInfo = getResourceNode().getMissingParams(template!!.template, false)
@@ -134,7 +137,7 @@ class RestResourceCalls(
                     if (this.isEmpty()) null else this.first()
                 }
                 if (list != null && list.isNotEmpty()) {
-                    ParamUtil.bindRestActionBasedOnDbActions(a, getResourceNode(), list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair)
+                    ParamUtil.bindRestActionBasedOnDbActions(a, cluster.getValue(a.path.toString()), list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair)
                 }
             }
         }

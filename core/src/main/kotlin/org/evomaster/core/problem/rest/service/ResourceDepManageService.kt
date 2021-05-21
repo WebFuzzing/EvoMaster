@@ -1144,7 +1144,7 @@ class ResourceDepManageService {
 
         val dbActions = dbActions.plus(call.dbActions).toMutableList()
         extractRelatedTablesForCall(call, dbActions, false).let {
-            call.bindCallWithDbActions(dbActions, bindingMap = it, forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
+            call.bindCallWithDbActions(dbActions, bindingMap = it, cluster = rm.getResourceCluster(),forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
         }
     }
 
