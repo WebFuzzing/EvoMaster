@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.search.gene.BoundGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -20,7 +21,29 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
     /**
      * Make a deep copy of this individual
      */
-    abstract fun copy(): Individual
+    open fun copy(): Individual{
+        val copy = contentCopy()
+        copy.postCopy(this)
+        return copy
+    }
+
+    /**
+     * Make a deep copy of this individual regarding this content
+     */
+    abstract fun contentCopy() : Individual
+
+    /**
+     * post handling after the value copy, e.g.,
+     *      for [BoundGene], rebuild reference among genes in the individual
+     */
+    open fun postCopy(copiedIndividual : Individual){
+        val bound = copiedIndividual.seeGenes().flatMap { it.flatView() }.filterIsInstance<BoundGene>()
+        bound.forEach { b->
+            val previous = copiedIndividual.findGene(this, b)
+                ?:throw IllegalArgumentException("cannot find the same as gene (b with name ${b.name}) in the copiedIndividual")
+            b.rebuildBindingWithTemplate(this, copiedIndividual, previous as BoundGene)
+        }
+    }
 
     enum class GeneFilter { ALL, NO_SQL, ONLY_SQL }
 
@@ -142,5 +165,28 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      *  e.g., if false, the individual might be composed of a sequence of genes.
      */
     open fun hasAnyAction()  = seeActions().isNotEmpty()
+
+
+    open fun findGene(individual: Individual, gene: Gene): Gene?{
+        // individuals should be same type
+        if (individual::class.java.name != this::class.java.name) return null
+
+        val allgenes = individual.seeGenes().flatMap { it.flatView() }
+        val all = seeGenes().flatMap { it.flatView() }
+
+        if (allgenes.size != all.size) return null
+
+        val index = allgenes.indexOf(gene)
+        if (index == -1)
+            throw IllegalArgumentException("given gene (${gene.name}) does not belong to the individual which contains ${allgenes.joinToString(","){it.name}}")
+
+        val found = all[index]
+        if (!gene.possiblySame(found))
+            return null
+
+        return found
+    }
+
+
 }
 

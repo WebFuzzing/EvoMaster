@@ -468,9 +468,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 impact.syncImpact(p, sg)
             }
         }
-
-
-
     }
 
 //    fun findGeneById(id : String, index : Int = -1, isDb: Boolean=false) : Gene?{

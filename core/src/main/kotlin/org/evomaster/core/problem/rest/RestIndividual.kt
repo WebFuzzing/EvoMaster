@@ -53,7 +53,7 @@ class RestIndividual(
             )
 
 
-    override fun copy(): Individual {
+    override fun contentCopy(): Individual {
         return RestIndividual(
                 resourceCalls.map { it.copy() }.toMutableList(),
                 sampleType,

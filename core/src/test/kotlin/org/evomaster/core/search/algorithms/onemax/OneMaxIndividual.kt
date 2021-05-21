@@ -24,7 +24,7 @@ class OneMaxIndividual(
         }
     }
 
-    override fun copy(): Individual {
+    override fun contentCopy(): Individual {
 
         var copy = OneMaxIndividual(n, trackOperator)
         (0 until n).forEach {

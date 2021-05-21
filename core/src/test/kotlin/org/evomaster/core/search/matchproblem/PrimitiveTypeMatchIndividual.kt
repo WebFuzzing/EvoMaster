@@ -49,7 +49,7 @@ open class PrimitiveTypeMatchIndividual (
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> = listOf(gene)
 
-    override fun copy(): Individual {
+    override fun contentCopy(): Individual {
         return PrimitiveTypeMatchIndividual(gene.copy())
     }
 }

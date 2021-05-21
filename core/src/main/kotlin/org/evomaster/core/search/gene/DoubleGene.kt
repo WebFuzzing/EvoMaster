@@ -73,5 +73,4 @@ class DoubleGene(name: String,
     }
 
     override fun innerGene(): List<Gene> = listOf()
-
 }

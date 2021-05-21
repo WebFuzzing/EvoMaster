@@ -294,7 +294,7 @@ class IndividualGeneImpactTest {
                 return Ind(IndAction.getIndAction(2).toMutableList(), IndAction.getSeqIndAction(initializationSize).toMutableList())
             }
         }
-        override fun copy(): Individual {
+        override fun contentCopy(): Individual {
             return Ind(actions.map { it.copy() as IndAction }.toMutableList())
         }
 
