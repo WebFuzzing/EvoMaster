@@ -52,13 +52,14 @@ class ResourceManageService {
     val cluster: ResourceCluster = ResourceCluster()
 
 
-
     private var sqlInsertBuilder : SqlInsertBuilder? = null
+
     /**
      * init resource nodes based on [actionCluster] and [sqlInsertBuilder]
      */
     fun initResourceNodes(actionCluster : MutableMap<String, Action>, sqlInsertBuilder: SqlInsertBuilder? = null) {
 
+        if (this.sqlInsertBuilder!= null) return
         this.sqlInsertBuilder = sqlInsertBuilder
 
         cluster.intResourceCluster(actionCluster, sqlInsertBuilder, config)
