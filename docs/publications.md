@@ -14,7 +14,7 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
   ACM Transactions on Software Engineering and Methodology (TOSEM). (*to appear*)
   [[PDF](publications/2021_tosem_tt.pdf)]
 
-* M. Zhang, A. Arcuri
+* M. Zhang, A. Arcuri.
   *Adaptive Hypermutation for Search-Based System Test  Generation: A Study on REST APIs with EvoMaster*.
   ACM Transactions on Software Engineering and Methodology (TOSEM). (*to appear*)
   [[PDF](publications/2021_tosem_hm.pdf)]  
