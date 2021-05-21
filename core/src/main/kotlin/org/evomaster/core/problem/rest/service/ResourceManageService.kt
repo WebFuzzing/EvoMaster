@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.SqlInitResourceStrategy
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
@@ -11,11 +12,7 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.resource.InitMode
-import org.evomaster.core.problem.rest.resource.ResourceStatus
-import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.problem.rest.resource.RestResourceNode
-import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.rest.resource.*
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.GeneUtils
@@ -48,62 +45,30 @@ class ResourceManageService {
     @Inject
     private lateinit var apc: AdaptiveParameterControl
 
-    /**
-     * key is resource path
-     * value is an abstract resource
-     */
-    private val resourceCluster : MutableMap<String, RestResourceNode> = mutableMapOf()
 
     /**
-     * key is table name
-     * value is a list of existing data of PKs in DB
+     * a cluster for resource nodes in the sut
      */
-    private val dataInDB : MutableMap<String, MutableList<DataRowDto>> = mutableMapOf()
+    val cluster: ResourceCluster = ResourceCluster()
 
-    /**
-     * key is table name
-     * value is the table
-     */
-    private val tables : MutableMap<String, Table> = mutableMapOf()
+
 
     private var sqlInsertBuilder : SqlInsertBuilder? = null
     /**
      * init resource nodes based on [actionCluster] and [sqlInsertBuilder]
      */
     fun initResourceNodes(actionCluster : MutableMap<String, Action>, sqlInsertBuilder: SqlInsertBuilder? = null) {
-        if (resourceCluster.isNotEmpty()) return
-        if (this.sqlInsertBuilder!= null) return
 
-        this.sqlInsertBuilder = sqlInsertBuilder
-
-        if(config.extractSqlExecutionInfo) sqlInsertBuilder?.extractExistingTables(tables)
-
-        actionCluster.values.forEach { u ->
-            if (u is RestCallAction) {
-                val resource = resourceCluster.getOrPut(u.path.toString()) {
-                    RestResourceNode(
-                            u.path.copy(),
-                            initMode =
-                                if(config.probOfEnablingResourceDependencyHeuristics > 0.0 && config.doesApplyNameMatching) InitMode.WITH_DERIVED_DEPENDENCY
-                                else if(config.doesApplyNameMatching) InitMode.WITH_TOKEN
-                                else if (config.probOfEnablingResourceDependencyHeuristics > 0.0) InitMode.WITH_DEPENDENCY
-                                else InitMode.NONE, employNLP = config.enableNLPParser)
-                }
-                resource.actions.add(u)
-            }
-        }
-        resourceCluster.values.forEach{it.initAncestors(getResourceCluster().values.toList())}
-
-        resourceCluster.values.forEach{it.init()}
+        cluster.intResourceCluster(actionCluster, sqlInsertBuilder, config)
 
         if(config.extractSqlExecutionInfo && config.doesApplyNameMatching){
-            dm.initRelatedTables(resourceCluster.values.toMutableList(), getTableInfo())
+            dm.initRelatedTables(resourceCluster = cluster)
 
             if(config.probOfEnablingResourceDependencyHeuristics > 0.0)
-                dm.initDependencyBasedOnDerivedTables(resourceCluster.values.toList(), getTableInfo())
+                dm.initDependencyBasedOnDerivedTables(resourceCluster = cluster)
         }
         if(config.doesApplyNameMatching && config.probOfEnablingResourceDependencyHeuristics > 0.0)
-            dm.deriveDependencyBasedOnSchema(resourceCluster.values.toList())
+            dm.deriveDependencyBasedOnSchema(cluster)
     }
 
 
@@ -111,7 +76,7 @@ class ResourceManageService {
      * this function is used to initialized ad-hoc individuals for resource-based individual
      */
     fun createAdHocIndividuals(auth: AuthenticationInfo, adHocInitialIndividuals : MutableList<RestIndividual>){
-        val sortedResources = resourceCluster.values.sortedByDescending { it.getTokenMap().size }.asSequence()
+        val sortedResources = cluster.getCluster().values.sortedByDescending { it.getTokenMap().size }.asSequence()
 
         //GET, PATCH, DELETE
         sortedResources.forEach { ar->
@@ -170,7 +135,7 @@ class ResourceManageService {
     fun handleAddResource(ind : RestIndividual, maxTestSize : Int) : RestResourceCalls {
         val existingRs = ind.getResourceCalls().map { it.getResourceNodeKey() }
         val candidate = randomness.choose(getResourceCluster().filterNot { r-> existingRs.contains(r.key) }.keys)
-        return resourceCluster[candidate]!!.sampleAnyRestResourceCalls(randomness,maxTestSize )
+        return cluster.getResourceNode(candidate)!!.sampleAnyRestResourceCalls(randomness,maxTestSize )
     }
 
 
@@ -191,7 +156,7 @@ class ResourceManageService {
                    bindWith : MutableList<RestResourceCalls>? = null,
                    template: String? = null
     ){
-        val ar = resourceCluster[resourceKey]
+        val ar = cluster.getResourceNode(resourceKey)
                 ?: throw IllegalArgumentException("resource path $resourceKey does not exist!")
 
         if(!doesCreateResource ){
@@ -264,14 +229,15 @@ class ResourceManageService {
         snapshotDB()
 
         relatedTables.forEach { tableName->
+            val dataInDb = cluster.getDataInDb(tableName)
             if(forceInsert){
                 generateInserSql(tableName, dbActions)
             }else if(forceSelect){
-                if(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty()) generateSelectSql(tableName, dbActions)
+                if(dataInDb?.isNotEmpty() == true) generateSelectSql(tableName, dbActions)
                 else failToGenDB = true
             }else{
-                if(getDataInDb(tableName)!= null ){
-                    val size = getDataInDb(tableName)!!.size
+                if(dataInDb!= null ){
+                    val size = dataInDb.size
                     when{
                         size < config.minRowOfTable -> generateInserSql(tableName, dbActions).apply {
                             failToGenDB = failToGenDB || !this
@@ -360,7 +326,7 @@ class ResourceManageService {
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
 
              */
-            call.bindCallWithDbActions(dbActions, bindingMap = paramToTables, cluster = resourceCluster, forceBindParamBasedOnDB = false, dbRemovedDueToRepair = removed)
+            call.bindCallWithDbActions(dbActions, bindingMap = paramToTables, cluster = cluster, forceBindParamBasedOnDB = false, dbRemovedDueToRepair = removed)
 
             call.dbActions.addAll(dbActions)
         }
@@ -405,14 +371,14 @@ class ResourceManageService {
     private fun selectToDataRowDto(dbAction : DbAction, tableName : String) : DataRowDto{
         dbAction.seeGenes().forEach { assert((it is SqlPrimaryKeyGene || it is ImmutableDataHolderGene || it is SqlForeignKeyGene)) }
         val set = dbAction.seeGenes().filter { it is SqlPrimaryKeyGene }.map { ((it as SqlPrimaryKeyGene).gene as ImmutableDataHolderGene).value }.toSet()
-        return randomness.choose(getDataInDb(tableName)!!.filter { it.columnData.toSet().equals(set) })
+        return randomness.choose(cluster.getDataInDb(tableName)!!.filter { it.columnData.toSet().equals(set) })
     }
 
     private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null
 
     private fun snapshotDB(){
         if(hasDBHandler()){
-            sqlInsertBuilder!!.extractExistingPKs(dataInDB)
+            cluster.syncDataInDb(sqlInsertBuilder)
         }
     }
 
@@ -430,13 +396,15 @@ class ResourceManageService {
     private fun generateSelectSql(tableName : String, dbActions: MutableList<DbAction>, forceDifferent: Boolean = false, withDbAction: DbAction?=null){
         if(dbActions.map { it.table.name }.contains(tableName)) return
 
-        assert(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty())
-        assert(!forceDifferent || withDbAction == null)
+        val info = cluster.getDataInDb(tableName)
 
+        Lazy.assert {
+            info?.isNotEmpty() == true && (!forceDifferent || withDbAction == null)
+        }
         val columns = if(forceDifferent && withDbAction!!.representExistingData){
             selectToDataRowDto(withDbAction, tableName)
         }else {
-            randomness.choose(getDataInDb(tableName)!!)
+            randomness.choose(info!!)
         }
 
         val selectDbAction = sqlInsertBuilder!!.extractExistingByCols(tableName, columns)
@@ -480,25 +448,20 @@ class ResourceManageService {
 
     /*********************************** utility ***********************************/
 
-    fun getResourceCluster()  = resourceCluster.toMap()
+    fun getResourceCluster()  = cluster.getCluster()
 
-    fun getResourceNodeFromCluster(key : String) : RestResourceNode = resourceCluster[key]?: throw IllegalArgumentException("cannot find the resource with a key $key")
+    fun getResourceNodeFromCluster(key : String) : RestResourceNode = cluster.getResourceNode(key)?: throw IllegalArgumentException("cannot find the resource with a key $key")
 
-    fun getTableInfo() = tables.toMap()
+    fun getTableInfo() = cluster.getTableInfo()
 
     fun getSqlBuilder() : SqlInsertBuilder?{
         if(!hasDBHandler()) return null
         return sqlInsertBuilder
     }
 
-    private fun getDataInDb(tableName: String) : MutableList<DataRowDto>?{
-        val found = dataInDB.filterKeys { k-> k.equals(tableName, ignoreCase = true) }.keys
-        if (found.isEmpty()) return null
-        assert(found.size == 1)
-        return dataInDB.getValue(found.first())
-    }
 
-    fun getTableByName(name : String) = tables.keys.find { it.equals(name, ignoreCase = true) }?.run { tables[this] }
+
+    fun getTableByName(name : String) = cluster.getTableByName(name)
 
 
     /**

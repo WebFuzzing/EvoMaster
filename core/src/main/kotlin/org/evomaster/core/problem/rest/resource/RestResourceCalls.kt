@@ -87,7 +87,7 @@ class RestResourceCalls(
      * */
     private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
 
-    fun repairGenesAfterMutation(mutatedGene: MutatedGeneSpecification?, cluster: Map<String, RestResourceNode>){
+    fun repairGenesAfterMutation(mutatedGene: MutatedGeneSpecification?, cluster: ResourceCluster){
 
         mutatedGene?: log.warn("repair genes of resource call ({}) with null mutated genes", getResourceNode().getName())
 
@@ -122,7 +122,7 @@ class RestResourceCalls(
      * @param dbRemovedDueToRepair indicates whether the dbactions are removed due to repair.
      */
     fun bindCallWithDbActions(dbActions: MutableList<DbAction>, bindingMap: Map<RestAction, MutableList<ParamGeneBindMap>>? = null,
-                              cluster : Map<String, RestResourceNode>,
+                              cluster : ResourceCluster,
                               forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
         var paramToTables = bindingMap
         if (paramToTables == null){
@@ -137,7 +137,7 @@ class RestResourceCalls(
                     if (this.isEmpty()) null else this.first()
                 }
                 if (list != null && list.isNotEmpty()) {
-                    ParamUtil.bindRestActionBasedOnDbActions(a, cluster.getValue(a.path.toString()), list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair)
+                    ParamUtil.bindRestActionBasedOnDbActions(a, cluster.getResourceNode(a, true)!!, list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair)
                 }
             }
         }

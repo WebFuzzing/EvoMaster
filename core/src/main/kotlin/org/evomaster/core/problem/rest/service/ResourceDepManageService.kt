@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.resource.dependency.MutualResourcesRelations
@@ -242,9 +243,9 @@ class ResourceDepManageService {
     /**
      * init dependencies between [resourceCluster] and [tables]
      */
-    fun initDependencyBasedOnDerivedTables(resourceCluster: List<RestResourceNode>, tables: Map<String, Table>) {
-        tables.keys.forEach { table ->
-            val mutualResources = resourceCluster.filter { r -> r.getDerivedTables().any { e -> e.equals(table, ignoreCase = true) } }.map { it.getName() }.toList()
+    fun initDependencyBasedOnDerivedTables(resourceCluster: ResourceCluster) {
+        resourceCluster.getTableInfo().keys.forEach { table ->
+            val mutualResources = resourceCluster.getCluster().values.filter { r -> r.getDerivedTables().any { e -> e.equals(table, ignoreCase = true) } }.map { it.getName() }.toList()
             if (mutualResources.isNotEmpty() && mutualResources.size > 1) {
                 val mutualRelation = MutualResourcesRelations(mutualResources, StringSimilarityComparator.SimilarityThreshold, mutableSetOf(table))
 
@@ -267,8 +268,8 @@ class ResourceDepManageService {
      * If a description of a Post action includes some tokens (the token must be some "object") that is related to other rest action,
      * we create a "possible dependency" between the actions.
      */
-    fun deriveDependencyBasedOnSchema(resourceCluster: List<RestResourceNode>) {
-        resourceCluster
+    fun deriveDependencyBasedOnSchema(resourceCluster: ResourceCluster) {
+        resourceCluster.getCluster().values
                 .filter { it.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST }.isNotEmpty() }
                 .forEach { r ->
                     /*
@@ -276,7 +277,7 @@ class ResourceDepManageService {
                      */
                     val post = r.actions.first { it is RestCallAction && it.verb == HttpVerb.POST } as RestCallAction
                     post.tokens.forEach { _, u ->
-                        resourceCluster.forEach { or ->
+                        resourceCluster.getCluster().values.forEach { or ->
                             if (or != r) {
                                 or.actions
                                         .filterIsInstance<RestCallAction>()
@@ -1100,9 +1101,9 @@ class ResourceDepManageService {
     /**
      * init related tables for all [RestResourceNode] in [resourceCluster] based on [tables]
      */
-    fun initRelatedTables(resourceCluster: MutableList<RestResourceNode>, tables: Map<String, Table>) {
-        resourceCluster.forEach {
-            SimpleDeriveResourceBinding.deriveResourceToTable(it, tables)
+    fun initRelatedTables(resourceCluster: ResourceCluster) {
+        resourceCluster.getCluster().values.forEach {
+            SimpleDeriveResourceBinding.deriveResourceToTable(it, resourceCluster.getTableInfo())
         }
     }
     /**
@@ -1144,7 +1145,7 @@ class ResourceDepManageService {
 
         val dbActions = dbActions.plus(call.dbActions).toMutableList()
         extractRelatedTablesForCall(call, dbActions, false).let {
-            call.bindCallWithDbActions(dbActions, bindingMap = it, cluster = rm.getResourceCluster(),forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
+            call.bindCallWithDbActions(dbActions, bindingMap = it, cluster = rm.cluster, forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
         }
     }
 
