@@ -36,7 +36,7 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      *      for [BoundGene], rebuild reference among genes in the individual
      */
     open fun postCopy(copiedIndividual : Individual){
-        val bound = copiedIndividual.seeGenes().flatMap { it.flatView() }
+        val bound = copiedIndividual.seeGenes().flatMap { it.flatView() }.filter { it.isBoundGene() }
         bound.forEach { b->
             val previous = copiedIndividual.findGene(this, b)
                 ?:throw IllegalArgumentException("cannot find the same as gene (b with name ${b.name}) in the copiedIndividual")

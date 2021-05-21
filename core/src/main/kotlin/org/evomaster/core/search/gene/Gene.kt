@@ -271,7 +271,7 @@ abstract class Gene(var name: String) {
     open fun possiblySame(gene : Gene) : Boolean = gene.name == name && gene::class == this::class
 
 
-    //========
+    //============================================================
 
     private val bindingGenes: MutableList<Gene> = mutableListOf()
 
@@ -299,5 +299,7 @@ abstract class Gene(var name: String) {
 
         innerGene().forEach { it.syncWithBindingGenes() }
     }
+
+    fun isBoundGene() = bindingGenes.isNotEmpty()
 }
 
