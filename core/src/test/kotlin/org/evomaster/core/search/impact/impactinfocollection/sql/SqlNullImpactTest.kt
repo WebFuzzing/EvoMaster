@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.IntegerGeneValue
 import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
  */
 class SqlNullImpactTest : GeneImpactTest() {
     override fun getGene(): Gene {
-        val gene = IntegerGene("gene", 0)
+        val gene = IntegerGeneValue("gene", 0)
         return SqlNullable("o", isPresent = false, gene = gene)
     }
 
@@ -26,7 +26,7 @@ class SqlNullImpactTest : GeneImpactTest() {
         geneToMutate as SqlNullable
         geneToMutate.apply {
             when{
-                mutationTag == 0 -> (geneToMutate.gene as IntegerGene).value += 1
+                mutationTag == 0 -> (geneToMutate.gene as IntegerGeneValue).value += 1
                 mutationTag == 1 -> geneToMutate.isPresent = !geneToMutate.isPresent
                 else -> throw IllegalArgumentException("bug")
             }

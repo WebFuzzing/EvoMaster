@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.value.numeric
 
-import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.BooleanGeneValue
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
@@ -34,11 +34,11 @@ class BinaryGeneImpact (
         )
     }
 
-    override fun validate(gene: Gene): Boolean = gene is BooleanGene
+    override fun validate(gene: Gene): Boolean = gene is BooleanGeneValue
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets : Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
-        if (gc.current !is BooleanGene)
+        if (gc.current !is BooleanGeneValue)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be BooleanGene")
 
         if (gc.current.value){

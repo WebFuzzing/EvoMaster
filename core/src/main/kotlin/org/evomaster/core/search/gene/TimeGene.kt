@@ -5,10 +5,8 @@ import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -19,12 +17,12 @@ import org.slf4j.LoggerFactory
  * https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
  */
 class TimeGene(
-        name: String,
+    name: String,
         //note: ranges deliberately include wrong values.
-        val hour: IntegerGene = IntegerGene("hour", 0, MIN_HOUR, MAX_HOUR),
-        val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
-        val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
-        val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
+    val hour: IntegerGeneValue = IntegerGeneValue("hour", 0, MIN_HOUR, MAX_HOUR),
+    val minute: IntegerGeneValue = IntegerGeneValue("minute", 0, MIN_MINUTE, MAX_MINUTE),
+    val second: IntegerGeneValue = IntegerGeneValue("second", 0, MIN_SECOND, MAX_SECOND),
+    val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
 ) : Gene(name) {
 
     companion object{
@@ -59,9 +57,9 @@ class TimeGene(
 
     override fun copy(): Gene = TimeGene(
             name,
-            hour.copy() as IntegerGene,
-            minute.copy() as IntegerGene,
-            second.copy() as IntegerGene,
+            hour.copy() as IntegerGeneValue,
+            minute.copy() as IntegerGeneValue,
+            second.copy() as IntegerGeneValue,
             timeGeneFormat = this.timeGeneFormat
     )
 
@@ -134,15 +132,15 @@ class TimeGene(
                 .plus(second.flatView(excludePredicate))
     }
 
-    private fun isValidHourRange(gene: IntegerGene): Boolean {
+    private fun isValidHourRange(gene: IntegerGeneValue): Boolean {
         return gene.min == 0 && gene.max == 23
     }
 
-    private fun isValidMinuteRange(gene: IntegerGene): Boolean {
+    private fun isValidMinuteRange(gene: IntegerGeneValue): Boolean {
         return gene.min == 0 && gene.max == 59
     }
 
-    private fun isValidSecondRange(gene: IntegerGene): Boolean {
+    private fun isValidSecondRange(gene: IntegerGeneValue): Boolean {
         return gene.min == 0 && gene.max == 59
     }
 

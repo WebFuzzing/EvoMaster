@@ -12,7 +12,7 @@ class FlatViewTest {
 
     @Test
     fun testExcludeBooleanGene() {
-        val gene = BooleanGene("gene")
+        val gene = BooleanGeneValue("gene")
         assertEquals(1, gene.flatView { true }.size)
     }
 
@@ -25,13 +25,13 @@ class FlatViewTest {
 
     @Test
     fun testExcludeIntegerGene() {
-        val gene = IntegerGene("gene")
+        val gene = IntegerGeneValue("gene")
         assertEquals(1, gene.flatView { true }.size)
     }
 
     @Test
     fun testExcludeFloatGene() {
-        val gene = FloatGene("gene")
+        val gene = FloatGeneValue("gene")
         assertEquals(1, gene.flatView { true }.size)
     }
 

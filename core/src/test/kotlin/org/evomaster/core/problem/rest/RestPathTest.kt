@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.DisruptiveGene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.IntegerGeneValue
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -15,10 +15,10 @@ internal class RestPathTest{
     fun testResolveMultiVariableInterluded(){
 
         val x = 7
-        val xParam = PathParam("x", DisruptiveGene("d_", IntegerGene("x", x), 1.0))
+        val xParam = PathParam("x", DisruptiveGene("d_", IntegerGeneValue("x", x), 1.0))
 
         val y = 42
-        val yParam = PathParam("y", DisruptiveGene("d_", IntegerGene("y", y), 1.0))
+        val yParam = PathParam("y", DisruptiveGene("d_", IntegerGeneValue("y", y), 1.0))
 
         val path = "/api/foo/{x}/{y}/x-{x}/{y}-y/a{x}b{y}c"
         val restPath = RestPath(path)
@@ -30,10 +30,10 @@ internal class RestPathTest{
     @Test
     fun testResolveMultiVariable(){
         val x = 7
-        val xParam = PathParam("x", DisruptiveGene("d_", IntegerGene("x", x), 1.0))
+        val xParam = PathParam("x", DisruptiveGene("d_", IntegerGeneValue("x", x), 1.0))
 
         val y = 42
-        val yParam = PathParam("y", DisruptiveGene("d_", IntegerGene("y", y), 1.0))
+        val yParam = PathParam("y", DisruptiveGene("d_", IntegerGeneValue("y", y), 1.0))
 
         val path = "/api/foo/{x}{y}"
         val restPath = RestPath(path)
@@ -46,7 +46,7 @@ internal class RestPathTest{
     fun testResolvePathWithVariable(){
 
         val id = 5
-        val pathParam = PathParam("id", DisruptiveGene("d_", IntegerGene("id", id), 1.0))
+        val pathParam = PathParam("id", DisruptiveGene("d_", IntegerGeneValue("id", id), 1.0))
 
         val path = "/api/foo/{id}"
         val restPath = RestPath(path)
@@ -123,7 +123,7 @@ internal class RestPathTest{
 
         val path = RestPath("/x")
 
-        val a = QueryParam("a", IntegerGene("a", 5))
+        val a = QueryParam("a", IntegerGeneValue("a", 5))
 
         val uri = path.resolve(listOf(a))
 
@@ -147,7 +147,7 @@ internal class RestPathTest{
 
         val path = RestPath("/x")
 
-        val a = QueryParam("a", IntegerGene("a", 5))
+        val a = QueryParam("a", IntegerGeneValue("a", 5))
         val b = QueryParam("b", StringGene("b", "foo"))
 
         val uri = path.resolve(listOf(a,b))

@@ -1,7 +1,7 @@
 package org.evomaster.core.database
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.NumberGene
+import org.evomaster.core.search.gene.NumberGeneValue
 import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.dbconstraint.*
 import java.util.regex.Pattern
@@ -93,7 +93,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         // However, it is possible to specify DEFAULT values in the
         // TODO: Handle DEFAULT column values different than NULL
         val gene = dbAction.seeGenes().firstOrNull { it.name == constraint.columnName } ?: return false
-        val numberGene = gene.flatView().filterIsInstance<NumberGene<*>>().first()
+        val numberGene = gene.flatView().filterIsInstance<NumberGeneValue<*>>().first()
 
         return constraint.lowerBound <= numberGene.toLong()
     }
@@ -114,7 +114,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         // However, it is possible to specify DEFAULT values in the
         // TODO: Handle DEFAULT column values different than NULL
         val gene = dbAction.seeGenes().firstOrNull { it.name == constraint.columnName } ?: return false
-        val numberGene = gene.flatView().filterIsInstance<NumberGene<*>>().first()
+        val numberGene = gene.flatView().filterIsInstance<NumberGeneValue<*>>().first()
 
         return numberGene.toLong() <= constraint.upperBound
     }
@@ -136,7 +136,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         // However, it is possible to specify DEFAULT values in the
         // TODO: Handle DEFAULT column values different than NULL
         val gene = dbAction.seeGenes().firstOrNull { it.name == constraint.columnName } ?: return false
-        val numberGene = gene.flatView().filterIsInstance<NumberGene<*>>().first()
+        val numberGene = gene.flatView().filterIsInstance<NumberGeneValue<*>>().first()
 
         return constraint.minValue <= numberGene.toLong()
                 && numberGene.toLong() <= constraint.maxValue

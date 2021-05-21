@@ -125,7 +125,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                     when (it) {
                         is OptionalGene -> it.isActive
                         is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
-                        is BooleanGene -> it.value
+                        is BooleanGeneValue -> it.value
                         is DisruptiveGene<*> -> it.probability == 0.0
                         else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
                     }
@@ -140,7 +140,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                         is ObjectGene -> {
                             it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
                         }
-                        is BooleanGene -> {
+                        is BooleanGeneValue -> {
                             it.name
                         }
                         //is DisruptiveGene<*> -> {

@@ -1,6 +1,5 @@
 package org.evomaster.core.search
 
-import org.evomaster.core.search.gene.BoundGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -37,11 +36,11 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      *      for [BoundGene], rebuild reference among genes in the individual
      */
     open fun postCopy(copiedIndividual : Individual){
-        val bound = copiedIndividual.seeGenes().flatMap { it.flatView() }.filterIsInstance<BoundGene>()
+        val bound = copiedIndividual.seeGenes().flatMap { it.flatView() }
         bound.forEach { b->
             val previous = copiedIndividual.findGene(this, b)
                 ?:throw IllegalArgumentException("cannot find the same as gene (b with name ${b.name}) in the copiedIndividual")
-            b.rebuildBindingWithTemplate(this, copiedIndividual, previous as BoundGene)
+            b.rebuildBindingWithTemplate(this, copiedIndividual, previous)
         }
     }
 

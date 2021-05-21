@@ -6,7 +6,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.IntegerGeneValue
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.Randomness
@@ -335,7 +335,7 @@ class IndividualGeneImpactTest {
             fun getSeqIndAction(size : Int) : List<IndAction>{
                 if(size < 0) throw IllegalArgumentException("size should not be less than 0, but $size")
                 if (size == 0) return  listOf()
-                return (0 until size).map { IndAction(listOf(IntegerGene(
+                return (0 until size).map { IndAction(listOf(IntegerGeneValue(
                         name = "index$it",
                         value = it
                 ))) }
@@ -349,7 +349,7 @@ class IndividualGeneImpactTest {
                 templates.forEachIndexed { t, i ->
                     (0..repeat[t]).forEach { _->
                         actions.add((0 until i).map {
-                            IndAction(listOf(IntegerGene(
+                            IndAction(listOf(IntegerGeneValue(
                                     name = "index$t$it",
                                     value = it
                             )))

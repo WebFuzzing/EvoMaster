@@ -41,7 +41,7 @@ internal class GeneUtilsTest {
 
     @Test
     fun testRepairBrokenDateGene() {
-        val gene = DateGene("date", IntegerGene("year", 1998), IntegerGene("month", 4), IntegerGene("day", 31))
+        val gene = DateGene("date", IntegerGeneValue("year", 1998), IntegerGeneValue("month", 4), IntegerGeneValue("day", 31))
         GeneUtils.repairGenes(gene.flatView())
         GregorianCalendar(gene.year.value, gene.month.value, gene.day.value, 0, 0)
         assertEquals(1998, gene.year.value)
@@ -109,7 +109,7 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSelectionSimple() {
 
-        val obj = ObjectGene("foo", listOf(StringGene("a", "hello"), IntegerGene("b", 42)))
+        val obj = ObjectGene("foo", listOf(StringGene("a", "hello"), IntegerGeneValue("b", 42)))
 
         val selection = GeneUtils.getBooleanSelection(obj)
 
@@ -123,11 +123,11 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSectionSkip() {
 
-        val obj = ObjectGene("foo", listOf(OptionalGene("a", StringGene("a", "hello")), IntegerGene("b", 42)))
+        val obj = ObjectGene("foo", listOf(OptionalGene("a", StringGene("a", "hello")), IntegerGeneValue("b", 42)))
 
         val selection = GeneUtils.getBooleanSelection(obj)
 
-        val a = selection.fields.find { it.name == "a" } as BooleanGene
+        val a = selection.fields.find { it.name == "a" } as BooleanGeneValue
         a.value = false
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
@@ -194,11 +194,11 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSectionInteger() {
 
-        val objInteger = ObjectGene("foo", listOf(IntegerGene("a", 1)))
+        val objInteger = ObjectGene("foo", listOf(IntegerGeneValue("a", 1)))
 
         val selection = GeneUtils.getBooleanSelection(objInteger)
 
-        val a = selection.fields.find { it.name == "a" } as BooleanGene
+        val a = selection.fields.find { it.name == "a" } as BooleanGeneValue
 
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
@@ -213,7 +213,7 @@ internal class GeneUtilsTest {
         val objOpt = ObjectGene("foo", listOf(OptionalGene("Opti", StringGene("Opti", "hello"))))
         val selection = GeneUtils.getBooleanSelection(objOpt)
 
-        val a = selection.fields.find { it.name == "Opti" } as BooleanGene
+        val a = selection.fields.find { it.name == "Opti" } as BooleanGeneValue
         //todo extra check
         a.value = true
 
@@ -226,11 +226,11 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSectionBoolean() {
 
-        val objBoolean = ObjectGene("foo", listOf(BooleanGene("a")))
+        val objBoolean = ObjectGene("foo", listOf(BooleanGeneValue("a")))
 
         val selection = GeneUtils.getBooleanSelection(objBoolean)
 
-        val a = selection.fields.find { it.name == "a" } as BooleanGene
+        val a = selection.fields.find { it.name == "a" } as BooleanGeneValue
 
 
         val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
@@ -242,11 +242,11 @@ internal class GeneUtilsTest {
     @Test
     fun testRepaireBooleanSectionFF() {
 
-        val objBoolean = ObjectGene("foo", listOf(BooleanGene("a", false), (BooleanGene("b", false))))
+        val objBoolean = ObjectGene("foo", listOf(BooleanGeneValue("a", false), (BooleanGeneValue("b", false))))
 
         GeneUtils.repairBooleanSelection(objBoolean)
 
-        assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
+        assertTrue(objBoolean.fields.any { it is BooleanGeneValue && it.value == true })
     }
 
     @Test
@@ -261,15 +261,15 @@ internal class GeneUtilsTest {
         assertTrue(pettypes.parameters[0].gene is ObjectGene)
         val objPetType = pettypes.parameters[0].gene as ObjectGene
         assertEquals(2, objPetType.fields.size)
-        assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "name" })
+        assertTrue(objPetType.fields.any { it is BooleanGeneValue && it.name == "id" })
+        assertTrue(objPetType.fields.any { it is BooleanGeneValue && it.name == "name" })
 
-        (objPetType.fields[0] as BooleanGene).value = false
-        (objPetType.fields[1] as BooleanGene).value = false
+        (objPetType.fields[0] as BooleanGeneValue).value = false
+        (objPetType.fields[1] as BooleanGeneValue).value = false
 
-        assertFalse(objPetType.fields.any{ it is BooleanGene && it.value})
+        assertFalse(objPetType.fields.any{ it is BooleanGeneValue && it.value})
         GeneUtils.repairBooleanSelection(objPetType)
-        assertTrue(objPetType.fields.any{ it is BooleanGene && it.value})
+        assertTrue(objPetType.fields.any{ it is BooleanGeneValue && it.value})
     }
 
 }

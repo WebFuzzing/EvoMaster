@@ -221,7 +221,7 @@ class TestCaseWriterTest {
 
         val id = 0L
 
-        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val integerGene = IntegerGeneValue(idColumn.name, 42, 0, 10)
         val stringGene = StringGene(nameColumn.name, "nameValue", 0, 10)
 
         val insertIntoTableAction = DbAction(aTable, setOf(idColumn, nameColumn), id, listOf(integerGene, stringGene))
@@ -268,7 +268,7 @@ class TestCaseWriterTest {
 
         val id = 0L
 
-        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val integerGene = IntegerGeneValue(idColumn.name, 42, 0, 10)
         val primaryKeyGene = SqlPrimaryKeyGene(idColumn.name, "myTable", integerGene, 10)
         val stringGene = StringGene(nameColumn.name, "nameValue", 0, 10)
 
@@ -317,7 +317,7 @@ class TestCaseWriterTest {
 
         val pkGeneUniqueId = 12345L
 
-        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val integerGene = IntegerGeneValue(idColumn.name, 42, 0, 10)
         val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", integerGene, pkGeneUniqueId)
         val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", integerGene, 10)
 
@@ -374,7 +374,7 @@ class TestCaseWriterTest {
 
         val id = 0L
 
-        val gene = BooleanGene(aColumn.name, false)
+        val gene = BooleanGeneValue(aColumn.name, false)
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
@@ -420,7 +420,7 @@ class TestCaseWriterTest {
         val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
 
 
-        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val integerGene = IntegerGeneValue(idColumn.name, 42, 0, 10)
         val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", integerGene, 10)
         val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", integerGene, 10)
 
@@ -840,7 +840,7 @@ class TestCaseWriterTest {
 
         val autoGene = SqlAutoIncrementGene(table.name)
         val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
-        val objectGene = ObjectGene(jsonbColumn.name, listOf(IntegerGene("integerField")))
+        val objectGene = ObjectGene(jsonbColumn.name, listOf(IntegerGeneValue("integerField")))
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
@@ -884,7 +884,7 @@ class TestCaseWriterTest {
 
         val autoGene = SqlAutoIncrementGene(table.name)
         val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
-        val objectGene = ObjectGene(jsonbColumn.name, listOf(BooleanGene("booleanField")))
+        val objectGene = ObjectGene(jsonbColumn.name, listOf(BooleanGeneValue("booleanField")))
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
@@ -1047,7 +1047,7 @@ class TestCaseWriterTest {
 
         val pkGeneUniqueId = 12345L
 
-        val integerGene = IntegerGene(fooId.name, 42, 0, 10)
+        val integerGene = IntegerGeneValue(fooId.name, 42, 0, 10)
         val pkFoo = SqlPrimaryKeyGene(fooId.name, "Foo", integerGene, pkGeneUniqueId)
         val pkBar = SqlPrimaryKeyGene(fooId.name, "Bar", integerGene, 10)
         val fooInsertionId = 1001L

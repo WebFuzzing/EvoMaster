@@ -381,28 +381,28 @@ class StringGene(
         }
 
         if (toAddSpecs.any { it.stringSpecialization == BOOLEAN }) {
-            toAddGenes.add(BooleanGene(name))
+            toAddGenes.add(BooleanGeneValue(name))
             log.trace("BOOLEAN, added specification size: {}", toAddGenes.size)
         }
 
         if (toAddSpecs.any { it.stringSpecialization == INTEGER }) {
-            toAddGenes.add(IntegerGene(name))
+            toAddGenes.add(IntegerGeneValue(name))
             log.trace("INTEGER, added specification size: {}", toAddGenes.size)
 
         }
 
         if (toAddSpecs.any { it.stringSpecialization == LONG }) {
-            toAddGenes.add(LongGene(name))
+            toAddGenes.add(LongGeneValue(name))
             log.trace("LONG, added specification size: {}", toAddGenes.size)
         }
 
         if (toAddSpecs.any { it.stringSpecialization == FLOAT }) {
-            toAddGenes.add(FloatGene(name))
+            toAddGenes.add(FloatGeneValue(name))
             log.trace("FLOAT, added specification size: {}", toAddGenes.size)
         }
 
         if (toAddSpecs.any { it.stringSpecialization == DOUBLE }) {
-            toAddGenes.add(DoubleGene(name))
+            toAddGenes.add(DoubleGeneValue(name))
             log.trace("DOUBLE, added specification size: {}", toAddGenes.size)
         }
 

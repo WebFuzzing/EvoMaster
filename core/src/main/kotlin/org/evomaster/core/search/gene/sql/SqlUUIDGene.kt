@@ -3,15 +3,13 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.gene.LongGeneValue
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlUUIDGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -24,15 +22,15 @@ import java.util.*
  * https://www.postgresql.org/docs/9.1/datatype-uuid.html
  */
 class SqlUUIDGene(
-        name: String,
-        val mostSigBits: LongGene = LongGene("mostSigBits", 0L),
-        val leastSigBits: LongGene = LongGene("leastSigBits", 0L)
+    name: String,
+    val mostSigBits: LongGeneValue = LongGeneValue("mostSigBits", 0L),
+    val leastSigBits: LongGeneValue = LongGeneValue("leastSigBits", 0L)
 ) : Gene(name) {
 
     override fun copy(): Gene = SqlUUIDGene(
             name,
-            mostSigBits.copy() as LongGene,
-            leastSigBits.copy() as LongGene
+            mostSigBits.copy() as LongGeneValue,
+            leastSigBits.copy() as LongGeneValue
     )
 
     companion object{

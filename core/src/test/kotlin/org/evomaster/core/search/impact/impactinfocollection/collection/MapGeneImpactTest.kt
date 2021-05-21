@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.collection
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.IntegerGeneValue
 import org.evomaster.core.search.gene.MapGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
@@ -15,7 +15,7 @@ import kotlin.random.Random
  * created by manzh on 2019-10-10
  */
 class MapGeneImpactTest : GeneImpactTest(){
-    val map = listOf(1,2,3).map { IntegerGene(it.toString(), value = it) }.toMutableList()
+    val map = listOf(1,2,3).map { IntegerGeneValue(it.toString(), value = it) }.toMutableList()
     var counter = 3
 
     fun generateKey() :Int{
@@ -31,7 +31,7 @@ class MapGeneImpactTest : GeneImpactTest(){
     }
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
-        geneToMutate as MapGene<IntegerGene>
+        geneToMutate as MapGene<IntegerGeneValue>
 
         val p = Random.nextBoolean()
 
@@ -47,7 +47,7 @@ class MapGeneImpactTest : GeneImpactTest(){
                     geneToMutate.elements.removeAt(0)
                 else{
                     val key = generateKey()
-                    geneToMutate.elements.add(IntegerGene(key.toString(), key))
+                    geneToMutate.elements.add(IntegerGeneValue(key.toString(), key))
                 }
             }
         }

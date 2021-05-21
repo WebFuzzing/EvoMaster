@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -10,28 +11,28 @@ import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHis
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 
-class IntegerGene(
+class IntegerGeneValue(
         name: String,
         value: Int = 0,
         /** Inclusive */
         val min: Int = Int.MIN_VALUE,
         /** Inclusive */
         val max: Int = Int.MAX_VALUE
-) : NumberGene<Int>(name, value) {
+) : NumberGeneValue<Int>(name, value) {
 
     override fun copy(): Gene {
-        return IntegerGene(name, value, min, max)
+        return IntegerGeneValue(name, value, min, max)
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is IntegerGene) {
+        if (other !is IntegerGeneValue) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.value = other.value
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is IntegerGene) {
+        if (other !is IntegerGeneValue) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.value == other.value
@@ -115,4 +116,23 @@ class IntegerGene(
 
     override fun innerGene(): List<Gene> = listOf()
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        when(gene){
+            is IntegerGeneValue -> value = gene.value
+            is FloatGeneValue -> value = gene.value.toInt()
+            is DoubleGeneValue -> value = gene.value.toInt()
+            is LongGeneValue -> value = gene.value.toInt()
+            is StringGene -> {
+                value = gene.value.toIntOrNull() ?: return false
+            }
+            is ImmutableDataHolderGene -> {
+                value = gene.value.toIntOrNull() ?: return false
+            }
+            is SqlPrimaryKeyGene ->{
+                value = gene.uniqueId.toInt()
+            }
+            else -> return false
+        }
+        return true
+    }
 }

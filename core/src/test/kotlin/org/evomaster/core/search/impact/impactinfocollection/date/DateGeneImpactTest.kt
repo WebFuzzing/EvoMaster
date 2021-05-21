@@ -2,7 +2,7 @@ package org.evomaster.core.search.impact.impactinfocollection.date
 
 import org.evomaster.core.search.gene.DateGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.IntegerGeneValue
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.ImpactOptions
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test
 class DateGeneImpactTest : GeneImpactTest() {
 
     override fun getGene(): Gene {
-        return DateGene("d", year = IntegerGene("y", 2019), month = IntegerGene("m", 10), day = IntegerGene("d", 9))
+        return DateGene("d", year = IntegerGeneValue("y", 2019), month = IntegerGeneValue("m", 10), day = IntegerGeneValue("d", 9))
     }
 
     override fun checkImpactType(impact: GeneImpact) {

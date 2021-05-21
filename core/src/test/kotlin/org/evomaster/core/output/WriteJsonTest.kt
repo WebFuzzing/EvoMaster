@@ -10,8 +10,8 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildEvaluatedIndividual
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
-import org.evomaster.core.search.gene.BooleanGene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.BooleanGeneValue
+import org.evomaster.core.search.gene.IntegerGeneValue
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
@@ -82,7 +82,7 @@ class WriteJsonTest {
 
         val autoGene = SqlAutoIncrementGene(table.name)
         val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
-        val objectGene = ObjectGene(jsonbColumn.name, listOf(IntegerGene("integerField")))
+        val objectGene = ObjectGene(jsonbColumn.name, listOf(IntegerGeneValue("integerField")))
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
@@ -128,7 +128,7 @@ class WriteJsonTest {
 
         val autoGene = SqlAutoIncrementGene(table.name)
         val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
-        val objectGene = ObjectGene(jsonbColumn.name, listOf(BooleanGene("booleanField")))
+        val objectGene = ObjectGene(jsonbColumn.name, listOf(BooleanGeneValue("booleanField")))
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))

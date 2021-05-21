@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.numeric
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.gene.LongGeneValue
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.MutatedGeneWithContext
@@ -13,7 +13,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.LongG
 class LongGeneTest : GeneImpactTest() {
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
-        geneToMutate as LongGene
+        geneToMutate as LongGeneValue
 
         if (geneToMutate.value + 1L > Long.MAX_VALUE)
             geneToMutate.value -= 1L
@@ -23,7 +23,7 @@ class LongGeneTest : GeneImpactTest() {
         return MutatedGeneWithContext(previous = original, current = geneToMutate)
     }
 
-    override fun getGene(): Gene = LongGene("i",  value= 1L)
+    override fun getGene(): Gene = LongGeneValue("i",  value= 1L)
 
     override fun checkImpactType(impact: GeneImpact) {
         assert(impact is LongGeneImpact)

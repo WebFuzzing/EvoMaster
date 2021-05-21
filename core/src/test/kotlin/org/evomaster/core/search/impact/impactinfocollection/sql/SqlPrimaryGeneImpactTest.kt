@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.IntegerGeneValue
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
  */
 class SqlPrimaryGeneImpactTest : GeneImpactTest() {
     override fun getGene(): Gene {
-        val gene = IntegerGene("gene", 0)
+        val gene = IntegerGeneValue("gene", 0)
         return SqlPrimaryKeyGene("primaryKey", tableName = "fake",gene = gene, uniqueId = 1L)
     }
 
@@ -25,7 +25,7 @@ class SqlPrimaryGeneImpactTest : GeneImpactTest() {
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
         geneToMutate as SqlPrimaryKeyGene
-        val gene = geneToMutate.gene as IntegerGene
+        val gene = geneToMutate.gene as IntegerGeneValue
         gene.value += if (gene.value + 1 > gene.max) -1 else 1
         return MutatedGeneWithContext(previous = original, current = geneToMutate)
     }

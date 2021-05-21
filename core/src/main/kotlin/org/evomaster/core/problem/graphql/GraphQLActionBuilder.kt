@@ -647,9 +647,9 @@ object GraphQLActionBuilder {
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
             "int" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(tableType, IntegerGene(tableType))
+                    return OptionalGene(tableType, IntegerGeneValue(tableType))
                 else
-                    return IntegerGene(tableType)
+                    return IntegerGeneValue(tableType)
             "string" ->
                 if (isKindOfTableFieldTypeOptional)
                     return OptionalGene(tableType, StringGene(tableType))
@@ -657,19 +657,19 @@ object GraphQLActionBuilder {
                     return StringGene(tableType)
             "float" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(tableType, FloatGene(tableType))
+                    return OptionalGene(tableType, FloatGeneValue(tableType))
                 else
-                    return FloatGene(tableType)
+                    return FloatGeneValue(tableType)
             "boolean" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(tableType, BooleanGene(tableType))
+                    return OptionalGene(tableType, BooleanGeneValue(tableType))
                 else
-                    return BooleanGene(tableType)
+                    return BooleanGeneValue(tableType)
             "long" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(tableType, LongGene(tableType))
+                    return OptionalGene(tableType, LongGeneValue(tableType))
                 else
-                    return LongGene(tableType)
+                    return LongGeneValue(tableType)
             "null" ->
                 return getInputGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
@@ -741,19 +741,19 @@ object GraphQLActionBuilder {
                 return OptionalGene(methodName, optInputObjGene)
             }
             "int" ->
-                return OptionalGene(tableType, IntegerGene(tableType))
+                return OptionalGene(tableType, IntegerGeneValue(tableType))
             "string" ->
                 return OptionalGene(tableType, StringGene(tableType))
 
             "float" ->
-                return OptionalGene(tableType, FloatGene(tableType))
+                return OptionalGene(tableType, FloatGeneValue(tableType))
 
             "boolean" ->
-                return OptionalGene(tableType, BooleanGene(tableType))
+                return OptionalGene(tableType, BooleanGeneValue(tableType))
 
             "long" ->
 
-                return OptionalGene(tableType, LongGene(tableType))
+                return OptionalGene(tableType, LongGeneValue(tableType))
 
             "null" ->
                 return getReturnGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
@@ -812,9 +812,9 @@ object GraphQLActionBuilder {
                 }
             "int" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(methodName, IntegerGene(methodName))
+                    return OptionalGene(methodName, IntegerGeneValue(methodName))
                 else
-                    return IntegerGene(methodName)
+                    return IntegerGeneValue(methodName)
             "string" ->
                 if (isKindOfTableFieldTypeOptional)
                     return OptionalGene(methodName, StringGene(methodName))
@@ -822,25 +822,25 @@ object GraphQLActionBuilder {
                     return StringGene(methodName)
             "float" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(methodName, FloatGene(methodName))
+                    return OptionalGene(methodName, FloatGeneValue(methodName))
                 else
-                    return FloatGene(methodName)
+                    return FloatGeneValue(methodName)
             "boolean" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(methodName, BooleanGene(methodName))
+                    return OptionalGene(methodName, BooleanGeneValue(methodName))
                 else
-                    return BooleanGene(methodName)
+                    return BooleanGeneValue(methodName)
             "long" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(methodName, LongGene(methodName))
+                    return OptionalGene(methodName, LongGeneValue(methodName))
                 else
-                    return LongGene(methodName)
+                    return LongGeneValue(methodName)
             "null" ->
                 return getInputListOrScalarGene(state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
             "date" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(methodName, BooleanGene(methodName))
+                    return OptionalGene(methodName, BooleanGeneValue(methodName))
                 else
                     return DateGene(methodName)
             "scalar" ->

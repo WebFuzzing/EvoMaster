@@ -35,15 +35,15 @@ class DbActionUtilsTest {
         val table = Table(tableName, setOf(x, y), setOf())
 
 
-        val gx0 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 1)
-        val gy0 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 2)
+        val gx0 = SqlPrimaryKeyGene(x.name, tableName, IntegerGeneValue(x.name, 42), 1)
+        val gy0 = SqlPrimaryKeyGene(y.name, tableName, IntegerGeneValue(y.name, 66), 2)
         val action0 = DbAction(table, setOf(x, y), 0L, listOf(gx0, gy0))
 
         assertTrue(DbActionUtils.verifyUniqueColumns(listOf(action0)))
 
         //second action with exact same PK
-        val gx1 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 3)
-        val gy1 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 4)
+        val gx1 = SqlPrimaryKeyGene(x.name, tableName, IntegerGeneValue(x.name, 42), 3)
+        val gy1 = SqlPrimaryKeyGene(y.name, tableName, IntegerGeneValue(y.name, 66), 4)
         val action1 = DbAction(table, setOf(x, y), 1L, listOf(gx1, gy1))
 
         //validation should fail
@@ -51,8 +51,8 @@ class DbActionUtilsTest {
 
 
         //third action with inverted values
-        val gx2 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 66), 5)
-        val gy2 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 42), 6)
+        val gx2 = SqlPrimaryKeyGene(x.name, tableName, IntegerGeneValue(x.name, 66), 5)
+        val gy2 = SqlPrimaryKeyGene(y.name, tableName, IntegerGeneValue(y.name, 42), 6)
         val action2 = DbAction(table, setOf(x, y), 2L, listOf(gx2, gy2))
 
         //should be fine
@@ -60,8 +60,8 @@ class DbActionUtilsTest {
 
 
         //fourth action with one column as same value
-        val gx3 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 7)
-        val gy3 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 1234), 8)
+        val gx3 = SqlPrimaryKeyGene(x.name, tableName, IntegerGeneValue(x.name, 42), 7)
+        val gy3 = SqlPrimaryKeyGene(y.name, tableName, IntegerGeneValue(y.name, 1234), 8)
         val action3 = DbAction(table, setOf(x, y), 3L, listOf(gx3, gy3))
 
         //should still be fine, as PK is composed of 2 columns
@@ -93,15 +93,15 @@ class DbActionUtilsTest {
         val table = Table(tableName, setOf(x, y), setOf())
 
 
-        val gx0 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 1)
-        val gy0 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 2)
+        val gx0 = SqlPrimaryKeyGene(x.name, tableName, IntegerGeneValue(x.name, 42), 1)
+        val gy0 = SqlPrimaryKeyGene(y.name, tableName, IntegerGeneValue(y.name, 66), 2)
         val action0 = DbAction(table, setOf(x, y), 0L, listOf(gx0, gy0))
 
         assertTrue(DbActionUtils.verifyUniqueColumns(listOf(action0)))
 
         //second action with exact same PK
-        val gx1 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 3)
-        val gy1 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 4)
+        val gx1 = SqlPrimaryKeyGene(x.name, tableName, IntegerGeneValue(x.name, 42), 3)
+        val gy1 = SqlPrimaryKeyGene(y.name, tableName, IntegerGeneValue(y.name, 66), 4)
         val action1 = DbAction(table, setOf(x, y), 1L, listOf(gx1, gy1))
 
         //validation should fail
@@ -109,8 +109,8 @@ class DbActionUtilsTest {
 
 
         //third action with different y
-        val gx2 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 5)
-        val gy2 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 77), 6)
+        val gx2 = SqlPrimaryKeyGene(x.name, tableName, IntegerGeneValue(x.name, 42), 5)
+        val gy2 = SqlPrimaryKeyGene(y.name, tableName, IntegerGeneValue(y.name, 77), 6)
         val action2 = DbAction(table, setOf(x, y), 2L, listOf(gx2, gy2))
 
         //should still fail, due to unique x
@@ -118,8 +118,8 @@ class DbActionUtilsTest {
 
 
         //fourth action with same y, and different x
-        val gx3 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 1234), 7)
-        val gy3 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 8)
+        val gx3 = SqlPrimaryKeyGene(x.name, tableName, IntegerGeneValue(x.name, 1234), 7)
+        val gy3 = SqlPrimaryKeyGene(y.name, tableName, IntegerGeneValue(y.name, 66), 8)
         val action3 = DbAction(table, setOf(x, y), 3L, listOf(gx3, gy3))
 
         //should be fine, as PK is composed of 2 columns, and y does not need to be unique
@@ -241,7 +241,7 @@ class DbActionUtilsTest {
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
-        val gene0 = BooleanGene(uniqueColumn.name, true)
+        val gene0 = BooleanGeneValue(uniqueColumn.name, true)
         val action0 = DbAction(aTable, setOf(uniqueColumn), 0L, mutableListOf(gene0))
 
         val gene1 = gene0.copy()
@@ -269,7 +269,7 @@ class DbActionUtilsTest {
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
-        val gene0 = IntegerGene(uniqueColumn.name, 42)
+        val gene0 = IntegerGeneValue(uniqueColumn.name, 42)
         val action0 = DbAction(aTable, setOf(uniqueColumn), 0L, mutableListOf(gene0))
 
         val gene1 = gene0.copy()
@@ -309,7 +309,7 @@ class DbActionUtilsTest {
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
-        val gene0 = BooleanGene(uniqueColumn.name, true)
+        val gene0 = BooleanGeneValue(uniqueColumn.name, true)
         val action0 = DbAction(aTable, setOf(uniqueColumn), 0L, mutableListOf(gene0))
 
         val gene1 = gene0.copy()
@@ -347,7 +347,7 @@ class DbActionUtilsTest {
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
-        val innerGene = IntegerGene(uniqueColumn.name, 42)
+        val innerGene = IntegerGeneValue(uniqueColumn.name, 42)
         val uniqueId = 1001L
         val gene0 = SqlPrimaryKeyGene(uniqueColumn.name, aTable.name, innerGene, uniqueId)
         val action0 = DbAction(aTable, setOf(uniqueColumn), 0L, mutableListOf(gene0))
@@ -414,7 +414,7 @@ class DbActionUtilsTest {
 
         val table1 = Table("Table1", setOf(fkColumn), setOf(foreignKey))
 
-        val integerGene = IntegerGene("Id", 42, 0, 10)
+        val integerGene = IntegerGeneValue("Id", 42, 0, 10)
 
 
         val insertId0 = 1001L

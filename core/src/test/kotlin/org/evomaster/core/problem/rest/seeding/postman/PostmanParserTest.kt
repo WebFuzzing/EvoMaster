@@ -62,7 +62,7 @@ class PostmanParserTest {
 
         val optIntQueryParam = request.parameters.find { it.name == "optIntQueryParam" }?.gene as OptionalGene
         assertTrue(optIntQueryParam.isActive)
-        assertEquals(10, (optIntQueryParam.gene as IntegerGene).value)
+        assertEquals(10, (optIntQueryParam.gene as IntegerGeneValue).value)
 
         val optIntEnumQueryParam = request.parameters.find { it.name == "optIntEnumQueryParam" }?.gene as OptionalGene
         assertTrue(optIntEnumQueryParam.isActive)
@@ -74,7 +74,7 @@ class PostmanParserTest {
 
         val optBoolQueryParam = request.parameters.find { it.name == "optBoolQueryParam" }?.gene as OptionalGene
         assertTrue(optBoolQueryParam.isActive)
-        assertEquals(true, (optBoolQueryParam.gene as BooleanGene).value)
+        assertEquals(true, (optBoolQueryParam.gene as BooleanGeneValue).value)
 
         val optDateQueryParam = request.parameters.find { it.name == "optDateQueryParam" }?.gene as OptionalGene
         assertTrue(optDateQueryParam.isActive)
@@ -97,15 +97,15 @@ class PostmanParserTest {
 
         val optDoubleQueryParam = request.parameters.find { it.name == "optDoubleQueryParam" }?.gene as OptionalGene
         assertTrue(optDoubleQueryParam.isActive)
-        assertEquals(12.143425253, (optDoubleQueryParam.gene as DoubleGene).value)
+        assertEquals(12.143425253, (optDoubleQueryParam.gene as DoubleGeneValue).value)
 
         val optFloatQueryParam = request.parameters.find { it.name == "optFloatQueryParam" }?.gene as OptionalGene
         assertTrue(optFloatQueryParam.isActive)
-        assertEquals(1.9f, (optFloatQueryParam.gene as FloatGene).value)
+        assertEquals(1.9f, (optFloatQueryParam.gene as FloatGeneValue).value)
 
         val optLongQueryParam = request.parameters.find { it.name == "optLongQueryParam" }?.gene as OptionalGene
         assertTrue(optLongQueryParam.isActive)
-        assertEquals(3147483647, (optLongQueryParam.gene as LongGene).value)
+        assertEquals(3147483647, (optLongQueryParam.gene as LongGeneValue).value)
 
         val optArrayQueryParam = request.parameters.find { it.name == "optArrayQueryParam" }?.gene as OptionalGene
         assertTrue(optArrayQueryParam.isActive)
@@ -203,8 +203,8 @@ class PostmanParserTest {
         val originalOptIntQueryParam = originalRequest.parameters.find { it.name == "optIntQueryParam" }?.gene as OptionalGene
         assertTrue(optIntQueryParam.isActive)
         assertEquals(
-                (originalOptIntQueryParam.gene as IntegerGene).value,
-                (optIntQueryParam.gene as IntegerGene).value
+                (originalOptIntQueryParam.gene as IntegerGeneValue).value,
+                (optIntQueryParam.gene as IntegerGeneValue).value
         )
 
         val optIntEnumQueryParam = request.parameters.find { it.name == "optIntEnumQueryParam" }?.gene as OptionalGene
@@ -227,8 +227,8 @@ class PostmanParserTest {
         val originalOptBoolQueryParam = originalRequest.parameters.find { it.name == "optBoolQueryParam" }?.gene as OptionalGene
         assertTrue(optBoolQueryParam.isActive)
         assertEquals(
-                (originalOptBoolQueryParam.gene as BooleanGene).value,
-                (optBoolQueryParam.gene as BooleanGene).value
+                (originalOptBoolQueryParam.gene as BooleanGeneValue).value,
+                (optBoolQueryParam.gene as BooleanGeneValue).value
         )
 
         val optDateQueryParam = request.parameters.find { it.name == "optDateQueryParam" }?.gene as OptionalGene
@@ -283,24 +283,24 @@ class PostmanParserTest {
         val originalOptDoubleQueryParam = originalRequest.parameters.find { it.name == "optDoubleQueryParam" }?.gene as OptionalGene
         assertTrue(optDoubleQueryParam.isActive)
         assertEquals(
-                (originalOptDoubleQueryParam.gene as DoubleGene).value,
-                (optDoubleQueryParam.gene as DoubleGene).value
+                (originalOptDoubleQueryParam.gene as DoubleGeneValue).value,
+                (optDoubleQueryParam.gene as DoubleGeneValue).value
         )
 
         val optFloatQueryParam = request.parameters.find { it.name == "optFloatQueryParam" }?.gene as OptionalGene
         val originalOptFloatQueryParam = originalRequest.parameters.find { it.name == "optFloatQueryParam" }?.gene as OptionalGene
         assertTrue(optFloatQueryParam.isActive)
         assertEquals(
-                (originalOptFloatQueryParam.gene as FloatGene).value,
-                (optFloatQueryParam.gene as FloatGene).value
+                (originalOptFloatQueryParam.gene as FloatGeneValue).value,
+                (optFloatQueryParam.gene as FloatGeneValue).value
         )
 
         val optLongQueryParam = request.parameters.find { it.name == "optLongQueryParam" }?.gene as OptionalGene
         val originalOptLongQueryParam = originalRequest.parameters.find { it.name == "optLongQueryParam" }?.gene as OptionalGene
         assertTrue(optLongQueryParam.isActive)
         assertEquals(
-                (originalOptLongQueryParam.gene as LongGene).value,
-                (optLongQueryParam.gene as LongGene).value
+                (originalOptLongQueryParam.gene as LongGeneValue).value,
+                (optLongQueryParam.gene as LongGeneValue).value
         )
 
         val optArrayQueryParam = request.parameters.find { it.name == "optArrayQueryParam" }?.gene as OptionalGene
@@ -409,7 +409,7 @@ class PostmanParserTest {
 
         val optObjBoolProp = objProp.fields.find { it.name == "objBoolProp" } as OptionalGene
         assertTrue(optObjBoolProp.isActive)
-        assertEquals(false, (optObjBoolProp.gene as BooleanGene).value)
+        assertEquals(false, (optObjBoolProp.gene as BooleanGeneValue).value)
 
         val objEnumStrProp = objProp.fields.find { it.name == "objEnumStrProp" } as EnumGene<*>
         assertEquals("val2", objEnumStrProp.values[objEnumStrProp.index])
@@ -468,7 +468,7 @@ class PostmanParserTest {
         val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene
         assertTrue(optIntProp.isActive)
 
-        val intProp = optIntProp.gene as IntegerGene
+        val intProp = optIntProp.gene as IntegerGeneValue
         assertEquals(10000, intProp.value)
 
         val optObjProp = bodyObj.fields.find { it.name == "objProp" } as OptionalGene
@@ -478,7 +478,7 @@ class PostmanParserTest {
 
         val optObjBoolProp = objProp.fields.find { it.name == "objBoolProp" } as OptionalGene
         assertTrue(optObjBoolProp.isActive)
-        assertEquals(false, (optObjBoolProp.gene as BooleanGene).value)
+        assertEquals(false, (optObjBoolProp.gene as BooleanGeneValue).value)
 
         val objEnumStrProp = objProp.fields.find { it.name == "objEnumStrProp" } as EnumGene<*>
         assertEquals(originalObjEnumStrProp.values[originalObjEnumStrProp.index], objEnumStrProp.values[objEnumStrProp.index])
@@ -535,7 +535,7 @@ class PostmanParserTest {
         val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene
         assertEquals(true, optIntProp.isActive)
 
-        val intProp = optIntProp.gene as IntegerGene
+        val intProp = optIntProp.gene as IntegerGeneValue
         assertEquals(999999, intProp.value)
 
         val optDateTimeProp = bodyObj.fields.find { it.name == "dateTimeProp" } as OptionalGene
@@ -549,7 +549,7 @@ class PostmanParserTest {
         assertEquals(45, dateTimeProp.time.minute.value)
         assertEquals(8, dateTimeProp.time.second.value)
 
-        val boolProp = bodyObj.fields.find { it.name == "boolProp" } as BooleanGene
+        val boolProp = bodyObj.fields.find { it.name == "boolProp" } as BooleanGeneValue
         assertEquals(true, boolProp.value)
     }
 
@@ -584,8 +584,8 @@ class PostmanParserTest {
         val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene
         assertEquals(true, optIntProp.isActive)
 
-        val intProp = optIntProp.gene as IntegerGene
-        val originalIntProp = (originalBodyObj.fields.find { it.name == "intProp" } as OptionalGene).gene as IntegerGene
+        val intProp = optIntProp.gene as IntegerGeneValue
+        val originalIntProp = (originalBodyObj.fields.find { it.name == "intProp" } as OptionalGene).gene as IntegerGeneValue
         assertEquals(originalIntProp.value, intProp.value)
 
         val optDateTimeProp = bodyObj.fields.find { it.name == "dateTimeProp" } as OptionalGene
@@ -600,7 +600,7 @@ class PostmanParserTest {
         assertEquals(originalDateTimeProp.time.minute.value, dateTimeProp.time.minute.value)
         assertEquals(originalDateTimeProp.time.second.value, dateTimeProp.time.second.value)
 
-        val boolProp = bodyObj.fields.find { it.name == "boolProp" } as BooleanGene
+        val boolProp = bodyObj.fields.find { it.name == "boolProp" } as BooleanGeneValue
         assertEquals(true, boolProp.value)
     }
 

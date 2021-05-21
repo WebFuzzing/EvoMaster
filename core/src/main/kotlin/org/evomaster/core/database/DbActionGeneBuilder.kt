@@ -164,7 +164,7 @@ class DbActionGeneBuilder {
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toLong() })
         } else {
 
-            LongGene(column.name)
+            LongGeneValue(column.name)
         }
     }
 
@@ -173,7 +173,7 @@ class DbActionGeneBuilder {
             Companion.checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toInt() })
         } else {
-            IntegerGene(column.name,
+            IntegerGeneValue(column.name,
                     min = column.lowerBound ?: Int.MIN_VALUE,
                     max = column.upperBound ?: Int.MAX_VALUE)
         }
@@ -195,7 +195,7 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toDouble() })
         } else {
-            DoubleGene(column.name)
+            DoubleGeneValue(column.name)
         }
     }
 
@@ -207,7 +207,7 @@ class DbActionGeneBuilder {
                 EnumGene(column.name, column.enumValuesAsStrings.map { it.toInt() })
             }
         } else {
-            IntegerGene(column.name,
+            IntegerGeneValue(column.name,
                     min = column.lowerBound ?: Short.MIN_VALUE.toInt(),
                     max = column.upperBound ?: Short.MAX_VALUE.toInt())
         }
@@ -221,7 +221,7 @@ class DbActionGeneBuilder {
                 EnumGene(column.name, column.enumValuesAsStrings.map { it.toInt() })
             }
         } else {
-            IntegerGene(column.name,
+            IntegerGeneValue(column.name,
                     min = column.lowerBound ?: Byte.MIN_VALUE.toInt(),
                     max = column.upperBound ?: Byte.MAX_VALUE.toInt())
         }
@@ -297,14 +297,14 @@ class DbActionGeneBuilder {
         return DateTimeGene(
                 name = name,
                 date = DateGene("date",
-                        year = IntegerGene("year", 2016, 1900, 2100),
-                        month = IntegerGene("month", 3, 1, 12),
-                        day = IntegerGene("day", 12, 1, 31),
+                        year = IntegerGeneValue("year", 2016, 1900, 2100),
+                        month = IntegerGeneValue("month", 3, 1, 12),
+                        day = IntegerGeneValue("day", 12, 1, 31),
                         onlyValidDates = true),
                 time = TimeGene("time",
-                        hour = IntegerGene("hour", 0, 0, 23),
-                        minute = IntegerGene("minute", 0, 0, 59),
-                        second = IntegerGene("second", 0, 0, 59)
+                        hour = IntegerGeneValue("hour", 0, 0, 23),
+                        minute = IntegerGeneValue("minute", 0, 0, 59),
+                        second = IntegerGeneValue("second", 0, 0, 59)
                         ),
                 dateTimeGeneFormat =  DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
         )
@@ -348,7 +348,7 @@ class DbActionGeneBuilder {
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toDouble() })
 
         } else {
-            DoubleGene(column.name)
+            DoubleGeneValue(column.name)
         }
     }
 
@@ -360,7 +360,7 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
-            FloatGene(column.name)
+            FloatGeneValue(column.name)
         }
     }
 
@@ -370,7 +370,7 @@ class DbActionGeneBuilder {
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toBoolean() })
 
         } else {
-            BooleanGene(column.name)
+            BooleanGeneValue(column.name)
         }
     }
 

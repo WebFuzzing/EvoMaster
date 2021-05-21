@@ -1,6 +1,8 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -268,5 +270,34 @@ abstract class Gene(var name: String) {
      */
     open fun possiblySame(gene : Gene) : Boolean = gene.name == name && gene::class == this::class
 
+
+    //========
+
+    private val bindingGenes: MutableList<Gene> = mutableListOf()
+
+    fun rebuildBindingWithTemplate(newIndividual: Individual, copiedIndividual: Individual, copiedGene: Gene){
+        if (bindingGenes.isNotEmpty())
+            throw IllegalArgumentException("gene ($name) has been rebuilt")
+
+        val list = copiedGene.bindingGenes.map { g->
+            newIndividual.findGene(copiedIndividual, g)
+                ?:throw IllegalArgumentException("cannot find the gene (${g.name}) in the copiedIndividual")
+        }
+
+        bindingGenes.addAll(list)
+    }
+
+    open fun syncWithBindingGenes(){
+        if (bindingGenes.isEmpty()) return
+
+        bindingGenes.forEach { b->
+            if (b !is ValueBindableGene)
+                throw IllegalStateException("invalid gene wit the type (${b::class.java.simpleName}) in the binding list")
+            if(!b.bindValueBasedOn(this))
+                LoggingUtil.uniqueWarn(log, "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})")
+        }
+
+        innerGene().forEach { it.syncWithBindingGenes() }
+    }
 }
 

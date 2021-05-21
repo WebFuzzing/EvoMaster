@@ -3,16 +3,16 @@ package org.evomaster.core.search.algorithms.constant
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.IntegerGeneValue
 import org.evomaster.core.search.service.Randomness
 
 /**
  * Created by arcuri82 on 20-Feb-17.
  */
-class ConstantIndividual(val gene: IntegerGene) : Individual() {
+class ConstantIndividual(val gene: IntegerGeneValue) : Individual() {
 
     override fun contentCopy(): Individual {
-        return ConstantIndividual(gene.copy() as IntegerGene)
+        return ConstantIndividual(gene.copy() as IntegerGeneValue)
     }
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {

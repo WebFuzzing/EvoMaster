@@ -5,10 +5,8 @@ import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -22,13 +20,13 @@ import java.time.format.DateTimeParseException
  * https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
  */
 class DateGene(
-        name: String,
+    name: String,
         //note: ranges deliberately include wrong values.
-        val year: IntegerGene = IntegerGene("year", 2016, MIN_YEAR, MAX_YEAR),
-        val month: IntegerGene = IntegerGene("month", 3, MIN_MONTH, MAX_MONTH),
-        val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
-        val onlyValidDates: Boolean = false,
-        val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
+    val year: IntegerGeneValue = IntegerGeneValue("year", 2016, MIN_YEAR, MAX_YEAR),
+    val month: IntegerGeneValue = IntegerGeneValue("month", 3, MIN_MONTH, MAX_MONTH),
+    val day: IntegerGeneValue = IntegerGeneValue("day", 12, MIN_DAY, MAX_DAY),
+    val onlyValidDates: Boolean = false,
+    val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
 ) : Gene(name) {
 
     companion object{
@@ -53,9 +51,9 @@ class DateGene(
 
 
     override fun copy(): Gene = DateGene(name,
-            year.copy() as IntegerGene,
-            month.copy() as IntegerGene,
-            day.copy() as IntegerGene,
+            year.copy() as IntegerGeneValue,
+            month.copy() as IntegerGeneValue,
+            day.copy() as IntegerGeneValue,
             dateGeneFormat = this.dateGeneFormat,
             onlyValidDates = this.onlyValidDates)
 

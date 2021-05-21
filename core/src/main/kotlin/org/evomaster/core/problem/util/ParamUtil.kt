@@ -6,7 +6,6 @@ import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
-import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
@@ -281,10 +280,10 @@ class ParamUtil {
             copyWithTypeAdapter(geneAWithGeneBType, geneA)
             return when(geneB){
                 is StringGene -> geneB.value == (geneAWithGeneBType as StringGene).value
-                is IntegerGene -> geneB.value == (geneAWithGeneBType as IntegerGene).value
-                is DoubleGene -> geneB.value == (geneAWithGeneBType as DoubleGene).value
-                is FloatGene -> geneB.value == (geneAWithGeneBType as FloatGene).value
-                is LongGene -> geneB.value == (geneAWithGeneBType as LongGene).value
+                is IntegerGeneValue -> geneB.value == (geneAWithGeneBType as IntegerGeneValue).value
+                is DoubleGeneValue -> geneB.value == (geneAWithGeneBType as DoubleGeneValue).value
+                is FloatGeneValue -> geneB.value == (geneAWithGeneBType as FloatGeneValue).value
+                is LongGeneValue -> geneB.value == (geneAWithGeneBType as LongGeneValue).value
                 else ->{
                     throw IllegalArgumentException("the type of $geneB is not supported")
                 }
@@ -298,21 +297,21 @@ class ParamUtil {
          */
         private fun copyWithTypeAdapter(b : Gene, g : Gene) : Boolean{
             return when(b){
-                is DoubleGene -> covertToDouble(b,g)
-                is FloatGene -> covertToFloat(b,g)
-                is IntegerGene -> covertToInteger(b,g)
-                is LongGene -> covertToLong(b,g)
+                is DoubleGeneValue -> covertToDouble(b,g)
+                is FloatGeneValue -> covertToFloat(b,g)
+                is IntegerGeneValue -> covertToInteger(b,g)
+                is LongGeneValue -> covertToLong(b,g)
                 is StringGene -> covertToString(b,g)
                 else -> false
             }
         }
 
-        private fun covertToDouble(b: DoubleGene, g : Gene) : Boolean{
+        private fun covertToDouble(b: DoubleGeneValue, g : Gene) : Boolean{
             when(g){
-                is DoubleGene -> b.value = g.value
-                is FloatGene -> b.value = g.value.toDouble()
-                is IntegerGene -> b.value = g.value.toDouble()
-                is LongGene -> b.value = g.value.toDouble()
+                is DoubleGeneValue -> b.value = g.value
+                is FloatGeneValue -> b.value = g.value.toDouble()
+                is IntegerGeneValue -> b.value = g.value.toDouble()
+                is LongGeneValue -> b.value = g.value.toDouble()
                 is StringGene -> {
                     val value = g.value.toDoubleOrNull() ?: return false
                     b.value = value
@@ -329,12 +328,12 @@ class ParamUtil {
             return true
         }
 
-        private fun covertToFloat(b: FloatGene, g : Gene) : Boolean{
+        private fun covertToFloat(b: FloatGeneValue, g : Gene) : Boolean{
             when(g){
-                is FloatGene -> b.value = g.value
-                is DoubleGene -> b.value = g.value.toFloat()
-                is IntegerGene -> b.value = g.value.toFloat()
-                is LongGene -> b.value = g.value.toFloat()
+                is FloatGeneValue -> b.value = g.value
+                is DoubleGeneValue -> b.value = g.value.toFloat()
+                is IntegerGeneValue -> b.value = g.value.toFloat()
+                is LongGeneValue -> b.value = g.value.toFloat()
                 is StringGene -> {
                     val value = g.value.toFloatOrNull() ?: return false
                     b.value = value
@@ -351,12 +350,12 @@ class ParamUtil {
             return true
         }
 
-        private fun covertToInteger(b: IntegerGene, g : Gene) : Boolean{
+        private fun covertToInteger(b: IntegerGeneValue, g : Gene) : Boolean{
             when(g){
-                is IntegerGene -> b.value = g.value
-                is FloatGene -> b.value = g.value.toInt()
-                is DoubleGene -> b.value = g.value.toInt()
-                is LongGene -> b.value = g.value.toInt()
+                is IntegerGeneValue -> b.value = g.value
+                is FloatGeneValue -> b.value = g.value.toInt()
+                is DoubleGeneValue -> b.value = g.value.toInt()
+                is LongGeneValue -> b.value = g.value.toInt()
                 is StringGene -> {
                     val value = g.value.toIntOrNull() ?: return false
                     b.value = value
@@ -373,12 +372,12 @@ class ParamUtil {
             return true
         }
 
-        private fun covertToLong(b: LongGene, g : Gene) : Boolean{
+        private fun covertToLong(b: LongGeneValue, g : Gene) : Boolean{
             when(g){
-                is LongGene -> b.value = g.value
-                is FloatGene -> b.value = g.value.toLong()
-                is IntegerGene -> b.value = g.value.toLong()
-                is DoubleGene -> b.value = g.value.toLong()
+                is LongGeneValue -> b.value = g.value
+                is FloatGeneValue -> b.value = g.value.toLong()
+                is IntegerGeneValue -> b.value = g.value.toLong()
+                is DoubleGeneValue -> b.value = g.value.toLong()
                 is StringGene -> {
                     val value = g.value.toLongOrNull() ?: return false
                     b.value = value
@@ -398,10 +397,10 @@ class ParamUtil {
         private fun covertToString(b: StringGene, g : Gene) : Boolean{
             when(g){
                 is StringGene -> b.value = g.value
-                is FloatGene -> b.value = g.value.toString()
-                is IntegerGene -> b.value = g.value.toString()
-                is LongGene -> b.value = g.value.toString()
-                is DoubleGene -> b.value = g.value.toString()
+                is FloatGeneValue -> b.value = g.value.toString()
+                is IntegerGeneValue -> b.value = g.value.toString()
+                is LongGeneValue -> b.value = g.value.toString()
+                is DoubleGeneValue -> b.value = g.value.toString()
                 is ImmutableDataHolderGene -> b.value = g.value
                 is SqlPrimaryKeyGene ->{
                     b.value = g.uniqueId.toString()
@@ -466,10 +465,10 @@ class ParamUtil {
                 (0 to setOf(SqlPrimaryKeyGene::class.java.simpleName, SqlAutoIncrementGene::class.java.simpleName, SqlForeignKeyGene::class.java.simpleName, ImmutableDataHolderGene::class.java.simpleName)),
                 (1 to setOf(DateTimeGene::class.java.simpleName, DateGene::class.java.simpleName, TimeGene::class.java.simpleName)),
                 (2 to setOf(Boolean::class.java.simpleName)),
-                (3 to setOf(IntegerGene::class.java.simpleName)),
-                (4 to setOf(LongGene::class.java.simpleName)),
-                (5 to setOf(FloatGene::class.java.simpleName)),
-                (6 to setOf(DoubleGene::class.java.simpleName)),
+                (3 to setOf(IntegerGeneValue::class.java.simpleName)),
+                (4 to setOf(LongGeneValue::class.java.simpleName)),
+                (5 to setOf(FloatGeneValue::class.java.simpleName)),
+                (6 to setOf(DoubleGeneValue::class.java.simpleName)),
                 (7 to setOf(ArrayGene::class.java.simpleName, ObjectGene::class.java.simpleName, EnumGene::class.java.simpleName, CycleObjectGene::class.java.simpleName, MapGene::class.java.simpleName)),
                 (8 to setOf(StringGene::class.java.simpleName, Base64StringGene::class.java.simpleName))
         )

@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.value.numeric
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.IntegerGeneValue
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.SharedImpactInfo
 import org.evomaster.core.search.impact.impactinfocollection.SpecificImpactInfo
@@ -29,5 +29,5 @@ class IntegerGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo:
         )
     }
 
-    override fun validate(gene: Gene): Boolean = gene is IntegerGene
+    override fun validate(gene: Gene): Boolean = gene is IntegerGeneValue
 }

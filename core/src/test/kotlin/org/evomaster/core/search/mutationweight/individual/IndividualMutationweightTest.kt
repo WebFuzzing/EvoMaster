@@ -12,7 +12,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.gene.DateGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.IntegerGeneValue
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -67,9 +67,9 @@ class IndividualMutationweightTest {
             val info = Column("info", ColumnDataType.JSON, databaseType = DatabaseType.H2)
             val table = Table("foo", setOf(key, date, info), setOf())
 
-            val gk0 = SqlPrimaryKeyGene(key.name, table.name, IntegerGene(key.name, 1), 1)
+            val gk0 = SqlPrimaryKeyGene(key.name, table.name, IntegerGeneValue(key.name, 1), 1)
             val gd0 = DateGene(date.name)
-            val gj0 = ObjectGene(info.name, listOf(DateGene("field1"), IntegerGene("field2", 2)))
+            val gj0 = ObjectGene(info.name, listOf(DateGene("field1"), IntegerGeneValue("field2", 2)))
             val action0 =  DbAction(table, setOf(key, date, info), 0L, listOf(gk0, gd0, gj0))
 
             val dbActions = (0 until numSQLAction).map { action0.copy() as DbAction}.toMutableList()

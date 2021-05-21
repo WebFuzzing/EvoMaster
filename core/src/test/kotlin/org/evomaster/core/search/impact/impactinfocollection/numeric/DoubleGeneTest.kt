@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.numeric
 
-import org.evomaster.core.search.gene.DoubleGene
+import org.evomaster.core.search.gene.DoubleGeneValue
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
@@ -13,7 +13,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.Doubl
 class DoubleGeneTest : GeneImpactTest() {
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
-        geneToMutate as DoubleGene
+        geneToMutate as DoubleGeneValue
 
         if (geneToMutate.value + 1.0 > Double.MAX_VALUE)
             geneToMutate.value -= 1.0
@@ -23,7 +23,7 @@ class DoubleGeneTest : GeneImpactTest() {
         return MutatedGeneWithContext(previous = original, current = geneToMutate)
     }
 
-    override fun getGene(): Gene = DoubleGene("i",  value= 1.0)
+    override fun getGene(): Gene = DoubleGeneValue("i",  value= 1.0)
 
     override fun checkImpactType(impact: GeneImpact) {
         assert(impact is DoubleGeneImpact)

@@ -24,7 +24,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 
 /**
  * created by manzh on 2020-07-01
@@ -73,9 +72,9 @@ class ArchiveGeneMutator{
                 val applied = deriveMutatorForStringValue(history, gene, allGenes)
                 if (!applied) gene.standardValueMutation(randomness, allGenes, apc)
             }
-            is IntegerGene -> gene.value = sampleValue(
+            is IntegerGeneValue -> gene.value = sampleValue(
                     history = history.map {
-                        ((it.first as? IntegerGene)
+                        ((it.first as? IntegerGeneValue)
                                 ?: throw DifferentGeneInHistory(gene, it.first)
                                 ).value.toLong() to (it.second.result?.value?:-2)
                     },
@@ -83,26 +82,26 @@ class ArchiveGeneMutator{
                     valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.min.toLong(), max = gene.max.toLong()),
                     start = GeneUtils.intpow2.size, end = 10
             ).toInt()
-            is LongGene -> gene.value =  sampleValue(
+            is LongGeneValue -> gene.value =  sampleValue(
                     history = history.map {
-                        ((it.first as? LongGene)
+                        ((it.first as? LongGeneValue)
                                 ?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
                     valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = Long.MIN_VALUE, max = Long.MAX_VALUE),
                     start = GeneUtils.intpow2.size, end = 10
             )
-            is DoubleGene -> gene.value =  sampleValue(
+            is DoubleGeneValue -> gene.value =  sampleValue(
                     history = history.map {
-                        ((it.first as? DoubleGene)?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
+                        ((it.first as? DoubleGeneValue)?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
                     valueUpdate = DoubleMutationUpdate(config.archiveGeneMutation.withDirection, min = Double.MIN_VALUE, max = Double.MAX_VALUE),
                     start = GeneUtils.intpow2.size, end = 10
             )
-            is FloatGene -> gene.value = sampleValue(
+            is FloatGeneValue -> gene.value = sampleValue(
                     history = history.map {
-                        ((it.first as? FloatGene)?: throw DifferentGeneInHistory(gene, it.first)).value.toDouble() to (it.second.result?.value?:-2)
+                        ((it.first as? FloatGeneValue)?: throw DifferentGeneInHistory(gene, it.first)).value.toDouble() to (it.second.result?.value?:-2)
                     },
                     value = gene.value.toDouble(),
                     valueUpdate = DoubleMutationUpdate(config.archiveGeneMutation.withDirection, min = Float.MIN_VALUE.toDouble(), max = Float.MAX_VALUE.toDouble()),

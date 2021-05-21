@@ -51,11 +51,11 @@ abstract class AbstractParser(
 
             // Basic data type genes
             is StringGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is BooleanGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is DoubleGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is FloatGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is IntegerGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is LongGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is BooleanGeneValue -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is DoubleGeneValue -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is FloatGeneValue -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is IntegerGeneValue -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is LongGeneValue -> updateGeneWithParameterValue(gene, paramName, paramValue)
 
             // Non-basic data type but terminal genes
             is Base64StringGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
@@ -84,7 +84,7 @@ abstract class AbstractParser(
         return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: BooleanGene, paramName: String, paramValue: String): Boolean {
+    protected fun updateGeneWithParameterValue(gene: BooleanGeneValue, paramName: String, paramValue: String): Boolean {
         when (paramValue) {
             "true" -> gene.value = true
             "false" -> gene.value = false
@@ -94,7 +94,7 @@ abstract class AbstractParser(
         return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: DoubleGene, paramName: String, paramValue: String): Boolean {
+    protected fun updateGeneWithParameterValue(gene: DoubleGeneValue, paramName: String, paramValue: String): Boolean {
         try {
             gene.value = paramValue.toDouble()
         } catch (e: NumberFormatException) {
@@ -104,7 +104,7 @@ abstract class AbstractParser(
         return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: FloatGene, paramName: String, paramValue: String): Boolean {
+    protected fun updateGeneWithParameterValue(gene: FloatGeneValue, paramName: String, paramValue: String): Boolean {
         try {
             gene.value = paramValue.toFloat()
         } catch (e: NumberFormatException) {
@@ -114,7 +114,7 @@ abstract class AbstractParser(
         return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: IntegerGene, paramName: String, paramValue: String): Boolean {
+    protected fun updateGeneWithParameterValue(gene: IntegerGeneValue, paramName: String, paramValue: String): Boolean {
         try {
             gene.value = paramValue.toInt()
         } catch (e: NumberFormatException) {
@@ -124,7 +124,7 @@ abstract class AbstractParser(
         return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: LongGene, paramName: String, paramValue: String): Boolean {
+    protected fun updateGeneWithParameterValue(gene: LongGeneValue, paramName: String, paramValue: String): Boolean {
         try {
             gene.value = paramValue.toLong()
         } catch (e: NumberFormatException) {
@@ -332,11 +332,11 @@ abstract class AbstractParser(
     private fun addGeneToArrayGene(gene: ArrayGene<*>, elementGene: Gene) {
         when (elementGene) {
             is StringGene -> (gene as ArrayGene<StringGene>).elements.add(elementGene)
-            is BooleanGene -> (gene as ArrayGene<BooleanGene>).elements.add(elementGene)
-            is DoubleGene -> (gene as ArrayGene<DoubleGene>).elements.add(elementGene)
-            is FloatGene -> (gene as ArrayGene<FloatGene>).elements.add(elementGene)
-            is IntegerGene -> (gene as ArrayGene<IntegerGene>).elements.add(elementGene)
-            is LongGene -> (gene as ArrayGene<LongGene>).elements.add(elementGene)
+            is BooleanGeneValue -> (gene as ArrayGene<BooleanGeneValue>).elements.add(elementGene)
+            is DoubleGeneValue -> (gene as ArrayGene<DoubleGeneValue>).elements.add(elementGene)
+            is FloatGeneValue -> (gene as ArrayGene<FloatGeneValue>).elements.add(elementGene)
+            is IntegerGeneValue -> (gene as ArrayGene<IntegerGeneValue>).elements.add(elementGene)
+            is LongGeneValue -> (gene as ArrayGene<LongGeneValue>).elements.add(elementGene)
             is Base64StringGene -> (gene as ArrayGene<Base64StringGene>).elements.add(elementGene)
             is EnumGene<*> -> (gene as ArrayGene<EnumGene<*>>).elements.add(elementGene)
             is DateGene -> (gene as ArrayGene<DateGene>).elements.add(elementGene)
@@ -353,11 +353,11 @@ abstract class AbstractParser(
     private fun addGeneToMapGene(gene: MapGene<*>, elementGene: Gene) {
         when(elementGene) {
             is StringGene -> (gene as MapGene<StringGene>).elements.add(elementGene)
-            is BooleanGene -> (gene as MapGene<BooleanGene>).elements.add(elementGene)
-            is DoubleGene -> (gene as MapGene<DoubleGene>).elements.add(elementGene)
-            is FloatGene -> (gene as MapGene<FloatGene>).elements.add(elementGene)
-            is IntegerGene -> (gene as MapGene<IntegerGene>).elements.add(elementGene)
-            is LongGene -> (gene as MapGene<LongGene>).elements.add(elementGene)
+            is BooleanGeneValue -> (gene as MapGene<BooleanGeneValue>).elements.add(elementGene)
+            is DoubleGeneValue -> (gene as MapGene<DoubleGeneValue>).elements.add(elementGene)
+            is FloatGeneValue -> (gene as MapGene<FloatGeneValue>).elements.add(elementGene)
+            is IntegerGeneValue -> (gene as MapGene<IntegerGeneValue>).elements.add(elementGene)
+            is LongGeneValue -> (gene as MapGene<LongGeneValue>).elements.add(elementGene)
             is Base64StringGene -> (gene as MapGene<Base64StringGene>).elements.add(elementGene)
             is EnumGene<*> -> (gene as MapGene<EnumGene<*>>).elements.add(elementGene)
             is DateGene -> (gene as MapGene<DateGene>).elements.add(elementGene)

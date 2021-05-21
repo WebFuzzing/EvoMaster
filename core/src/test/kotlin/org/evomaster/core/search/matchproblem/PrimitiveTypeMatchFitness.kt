@@ -30,10 +30,10 @@ class PrimitiveTypeMatchFitness : FitnessFunction<PrimitiveTypeMatchIndividual>(
     private fun getTargets(individual: PrimitiveTypeMatchIndividual) : List<Any>{
         return when{
             individual.gene is StringGene -> listOf("bar", "", "Y8l4x0WC9qtH5mTN")
-            individual.gene is IntegerGene -> listOf(Int.MIN_VALUE, -1, 0, 1, Int.MAX_VALUE)
-            individual.gene is DoubleGene -> listOf(Double.MIN_VALUE, -1.0, 0.0, 1.0, Double.MAX_VALUE)
-            individual.gene is FloatGene -> listOf(Float.MIN_VALUE, -1.0f, 0.0f, 1.0f, Float.MAX_VALUE)
-            individual.gene is LongGene -> listOf(Long.MIN_VALUE, -1L, 0L, 1L, Long.MAX_VALUE)
+            individual.gene is IntegerGeneValue -> listOf(Int.MIN_VALUE, -1, 0, 1, Int.MAX_VALUE)
+            individual.gene is DoubleGeneValue -> listOf(Double.MIN_VALUE, -1.0, 0.0, 1.0, Double.MAX_VALUE)
+            individual.gene is FloatGeneValue -> listOf(Float.MIN_VALUE, -1.0f, 0.0f, 1.0f, Float.MAX_VALUE)
+            individual.gene is LongGeneValue -> listOf(Long.MIN_VALUE, -1L, 0L, 1L, Long.MAX_VALUE)
 
             else -> throw IllegalStateException("NOT SUPPORT")
         }
@@ -42,10 +42,10 @@ class PrimitiveTypeMatchFitness : FitnessFunction<PrimitiveTypeMatchIndividual>(
     private fun getValue(individual: PrimitiveTypeMatchIndividual) : Any{
         return when{
             individual.gene is StringGene -> individual.gene.value
-            individual.gene is IntegerGene -> individual.gene.value
-            individual.gene is DoubleGene -> individual.gene.value
-            individual.gene is FloatGene -> individual.gene.value
-            individual.gene is LongGene -> individual.gene.value
+            individual.gene is IntegerGeneValue -> individual.gene.value
+            individual.gene is DoubleGeneValue -> individual.gene.value
+            individual.gene is FloatGeneValue -> individual.gene.value
+            individual.gene is LongGeneValue -> individual.gene.value
 
             else -> throw IllegalStateException("NOT SUPPORT")
         }
