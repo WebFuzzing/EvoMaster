@@ -470,69 +470,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
     }
 
-//    fun findGeneById(id : String, index : Int = -1, isDb: Boolean=false) : Gene?{
-//        if (!isDb){
-//            if (index == -1) return individual.seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
-//            if (index > individual.seeActions().size)
-//                throw IllegalArgumentException("index $index is out of boundary of actions ${individual.seeActions().size} of the individual")
-//            return individual.seeActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
-//        }
-//        if (index == -1) return individual.seeInitializingActions().flatMap { it.seeGenes() }.find { ImpactUtils.generateGeneId(individual, it) == id }
-//        if (index >= individual.seeInitializingActions().size) return null
-//            //throw IllegalArgumentException("index $index is out of boundary of initializing actions ${individual.seeInitializingActions().size} of the individual")
-//        return individual.seeInitializingActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
-//    }
-//
-//    fun findGeneWithActionIndexAndGene(index: Int, gene: Gene, isInitializationAction : Boolean) : Gene?{
-//        val action = try {
-//            (if (isInitializationAction) individual.seeInitializingActions() else individual.seeActions()).elementAt(index)
-//        }catch(e: IndexOutOfBoundsException){
-//            return null
-//        }
-//        // gene should be one of root genes
-//        return ImpactUtils.findMutatedGene(action, gene)
-//    }
-
-
     //**************** for impact *******************//
 
-//    fun getImpactsRelatedTo(mutatedGenes: MutatedGeneSpecification) : List<Impact>{
-//        impactInfo?:return emptyList()
-//
-//        if (mutatedGenes.didStructureMutation())
-//            return emptyList()
-//        val list = mutableListOf<Impact>()
-//        mutatedGenes.getMutated(true).forEachIndexed { index, gene ->
-//            gene.gene?:throw IllegalStateException("missing mutated rest gene info")
-//            val actionIndex = gene.actionPosition?: throw IllegalStateException("cannot find actionPosition info for the mutated rest gene ${gene.gene.name}")
-//            val action = mutatedGenes.mutatedIndividual!!.seeActions()[actionIndex]
-//            val id = ImpactUtils.generateGeneId(action, gene.gene)
-//            val found = impactInfo.getGene(
-//                    actionName = action.getName(),
-//                    actionIndex = actionIndex,
-//                    geneId = id,
-//                    fromInitialization = false
-//            )?:throw IllegalArgumentException("mismatched impact info")
-//            list.add(found)
-//        }
-//
-//        mutatedGenes.getMutated(false).forEachIndexed { index, gene ->
-//            gene.gene?:throw IllegalStateException("missing mutated db gene info")
-//            val actionIndex = gene.actionPosition?:throw IllegalStateException("cannot find actionPosition info for the mutated db gene ${gene.gene.name}")
-//            val action = mutatedGenes.mutatedIndividual!!.seeInitializingActions()[actionIndex]
-//            val id = ImpactUtils.generateGeneId(action, gene.gene)
-//            val found = impactInfo.getGene(
-//                    actionName = action.getName(),
-//                    actionIndex = actionIndex,
-//                    geneId = id,
-//                    fromInitialization = true
-//            )?:throw IllegalArgumentException("mismatched impact info")
-//            list.add(found)
-//        }
-//
-//
-//        return list
-//    }
 
     fun anyImpactfulGene() : Boolean{
         impactInfo?:return false
