@@ -1,12 +1,16 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class LongGene(
@@ -14,6 +18,9 @@ class LongGene(
         value: Long = 0
 ) : NumberGene<Long>(name, value) {
 
+    companion object{
+        private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)
+    }
 
     override fun copy(): Gene {
         val copy = LongGene(name, value)
@@ -83,5 +90,26 @@ class LongGene(
 
     override fun innerGene(): List<Gene> = listOf()
 
-
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        when(gene){
+            is LongGene -> value = gene.value
+            is FloatGene -> value = gene.value.toLong()
+            is IntegerGene -> value = gene.value.toLong()
+            is DoubleGene -> value = gene.value.toLong()
+            is StringGene -> {
+                value = gene.value.toLongOrNull() ?: return false
+            }
+            is ImmutableDataHolderGene -> {
+                value = gene.value.toLongOrNull() ?: return false
+            }
+            is SqlPrimaryKeyGene ->{
+                value = gene.uniqueId
+            }
+            else -> {
+                LoggingUtil.uniqueWarn(log, "Do not support to bind long gene with the type: ${gene::class.java.simpleName}")
+                return false
+            }
+        }
+        return true
+    }
 }

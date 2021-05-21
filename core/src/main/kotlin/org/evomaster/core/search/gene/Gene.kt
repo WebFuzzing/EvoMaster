@@ -267,5 +267,6 @@ abstract class Gene(var name: String) {
      * evaluate whether [this] and [gene] belong to one evolution during search
      */
     open fun possiblySame(gene : Gene) : Boolean = gene.name == name && gene::class == this::class
+
 }
 

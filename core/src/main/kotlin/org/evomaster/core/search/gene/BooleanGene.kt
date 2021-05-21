@@ -1,18 +1,24 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class BooleanGene(
         name: String,
         var value: Boolean = true
-) : Gene(name) {
+) : Gene(name), PrimitiveGene {
 
+    companion object{
+        private val log : Logger = LoggerFactory.getLogger(BooleanGene::class.java)
+    }
 
     override fun copy(): Gene {
         return BooleanGene(name, value)
@@ -53,4 +59,13 @@ class BooleanGene(
     }
 
     override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene !is BooleanGene){
+            LoggingUtil.uniqueWarn(log, "Do not support to bind boolean gene with the type: ${gene::class.java.simpleName}")
+            return false
+        }
+        value = gene.value
+        return true
+    }
 }
