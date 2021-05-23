@@ -9,8 +9,11 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
+import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -37,7 +40,7 @@ class StringGene(
          */
         val invalidChars: List<Char> = listOf()
 
-) : Gene(name) {
+) : Gene(name), ValueBindableGene {
 
     companion object {
 
@@ -386,23 +389,23 @@ class StringGene(
         }
 
         if (toAddSpecs.any { it.stringSpecialization == INTEGER }) {
-            toAddGenes.add(IntegerGeneValue(name))
+            toAddGenes.add(IntegerGene(name))
             log.trace("INTEGER, added specification size: {}", toAddGenes.size)
 
         }
 
         if (toAddSpecs.any { it.stringSpecialization == LONG }) {
-            toAddGenes.add(LongGeneValue(name))
+            toAddGenes.add(LongGene(name))
             log.trace("LONG, added specification size: {}", toAddGenes.size)
         }
 
         if (toAddSpecs.any { it.stringSpecialization == FLOAT }) {
-            toAddGenes.add(FloatGeneValue(name))
+            toAddGenes.add(FloatGene(name))
             log.trace("FLOAT, added specification size: {}", toAddGenes.size)
         }
 
         if (toAddSpecs.any { it.stringSpecialization == DOUBLE }) {
-            toAddGenes.add(DoubleGeneValue(name))
+            toAddGenes.add(DoubleGene(name))
             log.trace("DOUBLE, added specification size: {}", toAddGenes.size)
         }
 
@@ -612,5 +615,32 @@ class StringGene(
      *  [specializationGenes] is not considered as part of its inner genes.
      */
     override fun innerGene(): List<Gene> = listOf()
+
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        when(gene){
+            //shall I add the specification into the string if it applies?
+            is StringGene -> value = gene.value
+            is FloatGene -> value = gene.value.toString()
+            is IntegerGene -> value = gene.value.toString()
+            is LongGene -> value = gene.value.toString()
+            is DoubleGene -> value = gene.value.toString()
+            is ImmutableDataHolderGene -> value = gene.value
+            is SqlPrimaryKeyGene ->{
+                value = gene.uniqueId.toString()
+            }
+            else -> {
+                //return false
+                //Man: with taint analysis, g might be any other type.
+                if (gene is SqlForeignKeyGene){
+                    LoggingUtil.uniqueWarn(log, "attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}")
+                    value = "${gene.uniqueIdOfPrimaryKey}"
+                } else{
+                    value = gene.getValueAsRawString()
+                }
+            }
+        }
+        return true
+    }
 
 }

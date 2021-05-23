@@ -41,7 +41,7 @@ internal class GeneUtilsTest {
 
     @Test
     fun testRepairBrokenDateGene() {
-        val gene = DateGene("date", IntegerGeneValue("year", 1998), IntegerGeneValue("month", 4), IntegerGeneValue("day", 31))
+        val gene = DateGene("date", IntegerGene("year", 1998), IntegerGene("month", 4), IntegerGene("day", 31))
         GeneUtils.repairGenes(gene.flatView())
         GregorianCalendar(gene.year.value, gene.month.value, gene.day.value, 0, 0)
         assertEquals(1998, gene.year.value)
@@ -109,7 +109,7 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSelectionSimple() {
 
-        val obj = ObjectGene("foo", listOf(StringGene("a", "hello"), IntegerGeneValue("b", 42)))
+        val obj = ObjectGene("foo", listOf(StringGene("a", "hello"), IntegerGene("b", 42)))
 
         val selection = GeneUtils.getBooleanSelection(obj)
 
@@ -123,7 +123,7 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSectionSkip() {
 
-        val obj = ObjectGene("foo", listOf(OptionalGene("a", StringGene("a", "hello")), IntegerGeneValue("b", 42)))
+        val obj = ObjectGene("foo", listOf(OptionalGene("a", StringGene("a", "hello")), IntegerGene("b", 42)))
 
         val selection = GeneUtils.getBooleanSelection(obj)
 
@@ -194,7 +194,7 @@ internal class GeneUtilsTest {
     @Test
     fun testBooleanSectionInteger() {
 
-        val objInteger = ObjectGene("foo", listOf(IntegerGeneValue("a", 1)))
+        val objInteger = ObjectGene("foo", listOf(IntegerGene("a", 1)))
 
         val selection = GeneUtils.getBooleanSelection(objInteger)
 

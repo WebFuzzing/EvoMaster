@@ -2,7 +2,6 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -12,28 +11,41 @@ import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHis
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
-import java.math.RoundingMode
 
 
-class DoubleGeneValue(name: String,
-                      value: Double = 0.0
-) : NumberGeneValue<Double>(name, value) {
+class LongGene(
+        name: String,
+        value: Long = 0
+) : NumberGene<Long>(name, value) {
 
     companion object{
-        private val log : Logger = LoggerFactory.getLogger(DoubleGeneValue::class.java)
+        private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)
     }
 
-    override fun copy() = DoubleGeneValue(name, value)
+    override fun copy(): Gene {
+        val copy = LongGene(name, value)
+        return copy
+    }
+
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        //need for forceNewValue?
-        value = randomness.nextDouble()
+        var k = if (randomness.nextBoolean(0.1)) {
+            randomness.nextLong()
+        } else if (randomness.nextBoolean(0.1)) {
+            randomness.nextInt().toLong()
+        } else {
+            randomness.nextInt(1000).toLong()
+        }
+
+        while (forceNewValue && k == value) {
+            k = randomness.nextInt().toLong()
+        }
+
+        value = k
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
-
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
             if (additionalGeneMutationInfo.hasHistory()){
@@ -44,21 +56,17 @@ class DoubleGeneValue(name: String,
                             allGenes
                     )
                     return true
-                }catch (e : DifferentGeneInHistory){}
-
+                }catch (e: DifferentGeneInHistory){}
             }
         }
 
-        //TODO min/max for Double
-        value = when (randomness.choose(listOf(0, 1, 2))) {
-            //for small changes
-            0 -> value + randomness.nextGaussian()
-            //for large jumps
-            1 -> value + (getDelta(randomness, apc) * randomness.nextGaussian())
-            //to reduce precision, ie chop off digits after the "."
-            2 -> BigDecimal(value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
-            else -> throw IllegalStateException("Regression bug")
-        }
+        //choose an i for 2^i modification
+        val delta = GeneUtils.getDelta(randomness, apc)
+
+        val sign = randomness.choose(listOf(-1, +1))
+
+        value += (sign * delta)
+
         return true
     }
 
@@ -67,14 +75,14 @@ class DoubleGeneValue(name: String,
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is DoubleGeneValue) {
+        if (other !is LongGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.value = other.value
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is DoubleGeneValue) {
+        if (other !is LongGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.value == other.value
@@ -82,25 +90,27 @@ class DoubleGeneValue(name: String,
 
     override fun innerGene(): List<Gene> = listOf()
 
-    override fun bindValueBasedOn(gene: Gene) : Boolean{
+    override fun bindValueBasedOn(gene: Gene): Boolean {
         when(gene){
-            is DoubleGeneValue -> value = gene.value
-            is FloatGeneValue -> value = gene.value.toDouble()
-            is IntegerGeneValue -> value = gene.value.toDouble()
-            is LongGeneValue -> value = gene.value.toDouble()
+            is LongGene -> value = gene.value
+            is FloatGene -> value = gene.value.toLong()
+            is IntegerGene -> value = gene.value.toLong()
+            is DoubleGene -> value = gene.value.toLong()
             is StringGene -> {
-                value = gene.value.toDoubleOrNull() ?: return false
+                value = gene.value.toLongOrNull() ?: return false
             }
             is ImmutableDataHolderGene -> {
-                value = gene.value.toDoubleOrNull() ?: return false
+                value = gene.value.toLongOrNull() ?: return false
             }
             is SqlPrimaryKeyGene ->{
-                value = gene.uniqueId.toDouble()
-            } else -> {
-                LoggingUtil.uniqueWarn(log, "Do not support to bind double gene with the type: ${gene::class.java.simpleName}")
+                value = gene.uniqueId
+            }
+            else -> {
+                LoggingUtil.uniqueWarn(log, "Do not support to bind long gene with the type: ${gene::class.java.simpleName}")
                 return false
             }
         }
         return true
     }
+
 }

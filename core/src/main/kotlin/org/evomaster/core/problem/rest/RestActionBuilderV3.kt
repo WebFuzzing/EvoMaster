@@ -414,10 +414,10 @@ object RestActionBuilderV3 {
 
         //first check for "optional" format
         when (format) {
-            "int32" -> return IntegerGeneValue(name)
-            "int64" -> return LongGeneValue(name)
-            "double" -> return DoubleGeneValue(name)
-            "float" -> return FloatGeneValue(name)
+            "int32" -> return IntegerGene(name)
+            "int64" -> return LongGene(name)
+            "double" -> return DoubleGene(name)
+            "float" -> return FloatGene(name)
             "password" -> return StringGene(name) //nothing special to do, it is just a hint
             "binary" -> return StringGene(name) //does it need to be treated specially?
             "byte" -> return Base64StringGene(name)
@@ -433,8 +433,8 @@ object RestActionBuilderV3 {
                 the JSON Schema definition
             */
         when (type) {
-            "integer" -> return IntegerGeneValue(name)
-            "number" -> return DoubleGeneValue(name)
+            "integer" -> return IntegerGene(name)
+            "number" -> return DoubleGene(name)
             "boolean" -> return BooleanGeneValue(name)
             "string" -> {
                 return if (schema.pattern == null) {

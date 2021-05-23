@@ -38,9 +38,9 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
     open fun postCopy(copiedIndividual : Individual){
         val bound = copiedIndividual.seeGenes().flatMap { it.flatView() }.filter { it.isBoundGene() }
         bound.forEach { b->
-            val previous = copiedIndividual.findGene(this, b)
+            val current = findGene(copiedIndividual, b)
                 ?:throw IllegalArgumentException("cannot find the same as gene (b with name ${b.name}) in the copiedIndividual")
-            b.rebuildBindingWithTemplate(this, copiedIndividual, previous)
+            current.rebuildBindingWithTemplate(this, copiedIndividual, b)
         }
     }
 
@@ -166,6 +166,9 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
     open fun hasAnyAction()  = seeActions().isNotEmpty()
 
 
+    /**
+     * @return a gene in [this] based on the [gene] in [individual]
+     */
     open fun findGene(individual: Individual, gene: Gene): Gene?{
         // individuals should be same type
         if (individual::class.java.name != this::class.java.name) return null

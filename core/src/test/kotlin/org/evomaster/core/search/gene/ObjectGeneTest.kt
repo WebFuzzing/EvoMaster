@@ -33,7 +33,7 @@ internal class ObjectGeneTest {
 
     @Test
     fun testIntegerGene() {
-        val gene = ObjectGene("anElement", listOf(IntegerGeneValue("integerValue", value = 0)))
+        val gene = ObjectGene("anElement", listOf(IntegerGene("integerValue", value = 0)))
         val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
         Assertions.assertEquals("<anElement>0</anElement>", actual)
     }
@@ -73,7 +73,7 @@ internal class ObjectGeneTest {
     fun testBooleanSelectionBase(){
 
         val foo = StringGene("foo")
-        val bar = IntegerGeneValue("bar")
+        val bar = IntegerGene("bar")
         val gene = ObjectGene("parent", listOf(foo, bar))
 
         val selection = GeneUtils.getBooleanSelection(gene)
@@ -87,7 +87,7 @@ internal class ObjectGeneTest {
     fun testBooleanSelectionNested(){
 
         val foo = StringGene("foo")
-        val bar = IntegerGeneValue("bar")
+        val bar = IntegerGene("bar")
         val hello = StringGene("hello")
         val nested = ObjectGene("nested", listOf(hello))
         val gene = ObjectGene("parent", listOf(foo, bar, nested))

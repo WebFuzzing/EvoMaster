@@ -1,6 +1,6 @@
 package org.evomaster.core.search.algorithms.constant
 
-import org.evomaster.core.search.gene.IntegerGeneValue
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.service.Sampler
 
 /**
@@ -9,7 +9,7 @@ import org.evomaster.core.search.service.Sampler
 class ConstantSampler : Sampler<ConstantIndividual>() {
 
     override fun sampleAtRandom(): ConstantIndividual{
-        val gene = IntegerGeneValue("value", 0, 0, 1000)
+        val gene = IntegerGene("value", 0, 0, 1000)
         gene.randomize(randomness, false)
         val ind = ConstantIndividual(gene)
         return ind

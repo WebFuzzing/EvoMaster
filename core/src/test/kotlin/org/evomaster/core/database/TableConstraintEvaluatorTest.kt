@@ -5,7 +5,7 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.gene.DateTimeGene
-import org.evomaster.core.search.gene.IntegerGeneValue
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.dbconstraint.*
@@ -21,7 +21,7 @@ class TableConstraintEvaluatorTest {
         val constraint = LowerBoundConstraint("table0", "column0", -10L)
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
         val evaluator = TableConstraintEvaluator()
         val value = constraint.accept(evaluator, action)
         assertTrue(value)
@@ -33,7 +33,7 @@ class TableConstraintEvaluatorTest {
         val constraint = LowerBoundConstraint("table0", "column0", 10L)
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
         val evaluator = TableConstraintEvaluator()
         val value = constraint.accept(evaluator, action)
         assertFalse(value)
@@ -45,7 +45,7 @@ class TableConstraintEvaluatorTest {
         val constraint = UpperBoundConstraint("table0", "column0", 10L)
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
         val evaluator = TableConstraintEvaluator()
         val value = constraint.accept(evaluator, action)
         assertTrue(value)
@@ -57,7 +57,7 @@ class TableConstraintEvaluatorTest {
         val constraint = UpperBoundConstraint("table0", "column0", -10L)
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
         val evaluator = TableConstraintEvaluator()
         val value = constraint.accept(evaluator, action)
         assertFalse(value)
@@ -69,7 +69,7 @@ class TableConstraintEvaluatorTest {
         val constraint = RangeConstraint("table0", "column0", -10L, 10L)
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
         val evaluator = TableConstraintEvaluator()
         val value = constraint.accept(evaluator, action)
         assertTrue(value)
@@ -81,7 +81,7 @@ class TableConstraintEvaluatorTest {
         val constraint = RangeConstraint("table0", "column0", -10L, 10L)
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 100L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 1000))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 1000))
         val evaluator = TableConstraintEvaluator()
         val value = constraint.accept(evaluator, action)
         assertFalse(value)
@@ -97,7 +97,7 @@ class TableConstraintEvaluatorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
 
 
         val evaluator = TableConstraintEvaluator()
@@ -115,7 +115,7 @@ class TableConstraintEvaluatorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = -15))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = -15))
 
 
         val evaluator = TableConstraintEvaluator()
@@ -133,7 +133,7 @@ class TableConstraintEvaluatorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = -15))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = -15))
 
 
         val evaluator = TableConstraintEvaluator()
@@ -151,7 +151,7 @@ class TableConstraintEvaluatorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
 
 
         val evaluator = TableConstraintEvaluator()
@@ -169,7 +169,7 @@ class TableConstraintEvaluatorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
 
 
         val evaluator = TableConstraintEvaluator()
@@ -187,7 +187,7 @@ class TableConstraintEvaluatorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
 
 
         val evaluator = TableConstraintEvaluator()
@@ -200,7 +200,7 @@ class TableConstraintEvaluatorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=false)
         val table = Table("table0", setOf(column), setOf(), setOf())
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
         val evaluator = TableConstraintEvaluator()
 
         val constraint = UpperBoundConstraint("table1", "column0", 10L)
@@ -214,7 +214,7 @@ class TableConstraintEvaluatorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=false)
         val table = Table("table0", setOf(column), setOf(), setOf())
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
         val evaluator = TableConstraintEvaluator()
 
         val constraint = LowerBoundConstraint("table1", "column0", 10L)
@@ -227,7 +227,7 @@ class TableConstraintEvaluatorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=false)
         val table = Table("table0", setOf(column), setOf(), setOf())
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
         val evaluator = TableConstraintEvaluator()
 
         val constraint = RangeConstraint("table1", "column0", -10L, +10L)
@@ -240,7 +240,7 @@ class TableConstraintEvaluatorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=false)
         val table = Table("table0", setOf(column), setOf(), setOf())
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
         val evaluator = TableConstraintEvaluator()
 
         val constraint = IsNotNullConstraint("table0", "column0")
@@ -253,7 +253,7 @@ class TableConstraintEvaluatorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=false)
         val table = Table("table0", setOf(column), setOf(), setOf())
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeGenes()[0] as IntegerGeneValue).copyValueFrom(IntegerGeneValue("column0", value = 0))
+        (action.seeGenes()[0] as IntegerGene).copyValueFrom(IntegerGene("column0", value = 0))
         val evaluator = TableConstraintEvaluator()
 
         val constraint = IsNotNullConstraint("table1", "column0")

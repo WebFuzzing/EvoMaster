@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.value.numeric
 
-import org.evomaster.core.search.gene.FloatGeneValue
+import org.evomaster.core.search.gene.FloatGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.SharedImpactInfo
@@ -30,5 +30,5 @@ class FloatGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Sp
         )
     }
 
-    override fun validate(gene: Gene): Boolean = gene is FloatGeneValue
+    override fun validate(gene: Gene): Boolean = gene is FloatGene
 }

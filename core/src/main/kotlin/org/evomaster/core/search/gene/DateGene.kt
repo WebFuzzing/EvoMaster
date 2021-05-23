@@ -22,9 +22,9 @@ import java.time.format.DateTimeParseException
 class DateGene(
     name: String,
         //note: ranges deliberately include wrong values.
-    val year: IntegerGeneValue = IntegerGeneValue("year", 2016, MIN_YEAR, MAX_YEAR),
-    val month: IntegerGeneValue = IntegerGeneValue("month", 3, MIN_MONTH, MAX_MONTH),
-    val day: IntegerGeneValue = IntegerGeneValue("day", 12, MIN_DAY, MAX_DAY),
+    val year: IntegerGene = IntegerGene("year", 2016, MIN_YEAR, MAX_YEAR),
+    val month: IntegerGene = IntegerGene("month", 3, MIN_MONTH, MAX_MONTH),
+    val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
     val onlyValidDates: Boolean = false,
     val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
 ) : Gene(name) {
@@ -51,9 +51,9 @@ class DateGene(
 
 
     override fun copy(): Gene = DateGene(name,
-            year.copy() as IntegerGeneValue,
-            month.copy() as IntegerGeneValue,
-            day.copy() as IntegerGeneValue,
+            year.copy() as IntegerGene,
+            month.copy() as IntegerGene,
+            day.copy() as IntegerGene,
             dateGeneFormat = this.dateGeneFormat,
             onlyValidDates = this.onlyValidDates)
 

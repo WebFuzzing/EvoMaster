@@ -72,9 +72,9 @@ class ArchiveGeneMutator{
                 val applied = deriveMutatorForStringValue(history, gene, allGenes)
                 if (!applied) gene.standardValueMutation(randomness, allGenes, apc)
             }
-            is IntegerGeneValue -> gene.value = sampleValue(
+            is IntegerGene -> gene.value = sampleValue(
                     history = history.map {
-                        ((it.first as? IntegerGeneValue)
+                        ((it.first as? IntegerGene)
                                 ?: throw DifferentGeneInHistory(gene, it.first)
                                 ).value.toLong() to (it.second.result?.value?:-2)
                     },
@@ -82,26 +82,26 @@ class ArchiveGeneMutator{
                     valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.min.toLong(), max = gene.max.toLong()),
                     start = GeneUtils.intpow2.size, end = 10
             ).toInt()
-            is LongGeneValue -> gene.value =  sampleValue(
+            is LongGene -> gene.value =  sampleValue(
                     history = history.map {
-                        ((it.first as? LongGeneValue)
+                        ((it.first as? LongGene)
                                 ?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
                     valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = Long.MIN_VALUE, max = Long.MAX_VALUE),
                     start = GeneUtils.intpow2.size, end = 10
             )
-            is DoubleGeneValue -> gene.value =  sampleValue(
+            is DoubleGene -> gene.value =  sampleValue(
                     history = history.map {
-                        ((it.first as? DoubleGeneValue)?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
+                        ((it.first as? DoubleGene)?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
                     valueUpdate = DoubleMutationUpdate(config.archiveGeneMutation.withDirection, min = Double.MIN_VALUE, max = Double.MAX_VALUE),
                     start = GeneUtils.intpow2.size, end = 10
             )
-            is FloatGeneValue -> gene.value = sampleValue(
+            is FloatGene -> gene.value = sampleValue(
                     history = history.map {
-                        ((it.first as? FloatGeneValue)?: throw DifferentGeneInHistory(gene, it.first)).value.toDouble() to (it.second.result?.value?:-2)
+                        ((it.first as? FloatGene)?: throw DifferentGeneInHistory(gene, it.first)).value.toDouble() to (it.second.result?.value?:-2)
                     },
                     value = gene.value.toDouble(),
                     valueUpdate = DoubleMutationUpdate(config.archiveGeneMutation.withDirection, min = Float.MIN_VALUE.toDouble(), max = Float.MAX_VALUE.toDouble()),

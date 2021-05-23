@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.value.numeric
 
-import org.evomaster.core.search.gene.DoubleGeneValue
+import org.evomaster.core.search.gene.DoubleGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.SharedImpactInfo
@@ -25,5 +25,5 @@ class DoubleGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: 
                 shared.clone(), specific.clone())
     }
 
-    override fun validate(gene: Gene): Boolean = gene is DoubleGeneValue
+    override fun validate(gene: Gene): Boolean = gene is DoubleGene
 }

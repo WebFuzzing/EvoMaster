@@ -53,7 +53,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is IntegerGeneValue)
+        assertTrue(genes[0] is IntegerGene)
     }
 
 
@@ -92,7 +92,7 @@ class SqlInsertBuilderTest {
         assertFalse(genes.any { it.name.equals("z", ignoreCase = true) })
 
         assertEquals(3, genes.size)
-        assertEquals(1, genes.filterIsInstance(IntegerGeneValue::class.java).size)
+        assertEquals(1, genes.filterIsInstance(IntegerGene::class.java).size)
         assertEquals(1, genes.filterIsInstance(SqlPrimaryKeyGene::class.java).size)
     }
 
@@ -208,7 +208,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is DoubleGeneValue)
+        assertTrue(genes[0] is DoubleGene)
     }
 
 
@@ -247,7 +247,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is IntegerGeneValue)
+        assertTrue(genes[0] is IntegerGene)
     }
 
     @Test
@@ -266,7 +266,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is IntegerGeneValue)
+        assertTrue(genes[0] is IntegerGene)
     }
 
 
@@ -350,7 +350,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is LongGeneValue)
+        assertTrue(genes[0] is LongGene)
     }
 
     @Test
@@ -369,7 +369,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is DoubleGeneValue)
+        assertTrue(genes[0] is DoubleGene)
     }
 
     @Test
@@ -783,7 +783,7 @@ class SqlInsertBuilderTest {
         assertEquals(1, fooActions.size)
         assertEquals(1, fooActions[0].seeGenes().size)
 
-        val gene = fooActions[0].seeGenes()[0] as IntegerGeneValue
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
         assertEquals(-10, gene.min)
 
     }
@@ -809,7 +809,7 @@ class SqlInsertBuilderTest {
         assertEquals(1, fooActions.size)
         assertEquals(1, fooActions[0].seeGenes().size)
 
-        val gene = fooActions[0].seeGenes()[0] as IntegerGeneValue
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
         assertEquals(10, gene.max)
 
     }
@@ -842,7 +842,7 @@ class SqlInsertBuilderTest {
         assertEquals(1, fooActions.size)
         assertEquals(1, fooActions[0].seeGenes().size)
 
-        val gene = fooActions[0].seeGenes()[0] as IntegerGeneValue
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
         assertEquals(-10, gene.min)
         assertEquals(10, gene.max)
 
@@ -870,7 +870,7 @@ class SqlInsertBuilderTest {
         assertEquals(1, fooActions.size)
         assertEquals(1, fooActions[0].seeGenes().size)
 
-        val gene = fooActions[0].seeGenes()[0] as IntegerGeneValue
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
         assertEquals(10, gene.min)
         assertEquals(10, gene.max)
 

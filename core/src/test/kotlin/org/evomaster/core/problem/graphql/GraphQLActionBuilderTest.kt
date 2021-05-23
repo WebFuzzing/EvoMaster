@@ -95,7 +95,7 @@ class GraphQLActionBuilderTest {
         val pet = actionCluster.get("pet") as GraphQLAction
         assertEquals(2, pet.parameters.size)
         assertTrue(pet.parameters[0] is GQInputParam)
-        assertTrue(pet.parameters[0].gene is IntegerGeneValue)
+        assertTrue(pet.parameters[0].gene is IntegerGene)
         assertTrue(pet.parameters[0].gene.name == "id")
         assertTrue(pet.parameters[1] is GQReturnParam)
         assertTrue(pet.parameters[1].gene is ObjectGene)
@@ -123,8 +123,8 @@ class GraphQLActionBuilderTest {
         val page = actionCluster.get("Page") as GraphQLAction
         assertEquals(3, page.parameters.size)
         assertTrue(page.parameters[0] is GQInputParam)
-        assertTrue((page.parameters[0].gene as OptionalGene).gene is IntegerGeneValue)
-        assertTrue((page.parameters[1].gene as OptionalGene).gene is IntegerGeneValue)
+        assertTrue((page.parameters[0].gene as OptionalGene).gene is IntegerGene)
+        assertTrue((page.parameters[1].gene as OptionalGene).gene is IntegerGene)
 
         assertTrue(page.parameters[1] is GQInputParam)
         assertTrue(page.parameters[2] is GQReturnParam)
@@ -205,7 +205,7 @@ class GraphQLActionBuilderTest {
         assertTrue(categoryCollection.parameters[1] is GQInputParam)
         assertTrue(categoryCollection.parameters[2] is GQInputParam)
         assertTrue(categoryCollection.parameters[6] is GQReturnParam)
-        assertTrue((categoryCollection.parameters[0].gene as OptionalGene).gene is IntegerGeneValue)
+        assertTrue((categoryCollection.parameters[0].gene as OptionalGene).gene is IntegerGene)
         assertTrue((categoryCollection.parameters[4].gene as OptionalGene).gene is ObjectGene)
         assertTrue((((categoryCollection.parameters[4].gene as OptionalGene).gene as ObjectGene).fields[6] as OptionalGene).gene is StringGene)
 

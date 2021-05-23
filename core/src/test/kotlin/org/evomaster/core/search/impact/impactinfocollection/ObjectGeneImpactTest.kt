@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGeneValue
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
@@ -17,7 +17,7 @@ class ObjectGeneImpactTest : GeneImpactTest() {
 
     override fun getGene(): Gene {
         val f1 = StringGene(f1, "string1")
-        val f2 = IntegerGeneValue(f2, 2)
+        val f2 = IntegerGene(f2, 2)
 
         return ObjectGene("obj", listOf(f1, f2))
     }
@@ -31,8 +31,8 @@ class ObjectGeneImpactTest : GeneImpactTest() {
 
         assert(geneToMutate.fields.first() is StringGene)
         val f1 = geneToMutate.fields.first() as StringGene
-        assert(geneToMutate.fields.last() is IntegerGeneValue)
-        val f2 = geneToMutate.fields.last() as IntegerGeneValue
+        assert(geneToMutate.fields.last() is IntegerGene)
+        val f2 = geneToMutate.fields.last() as IntegerGene
 
         val p = Math.random() < 0.5
 

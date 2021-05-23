@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test
 class DateTimeGeneImpactTest : GeneImpactTest() {
 
     override fun getGene(): Gene {
-        val date = DateGene("d", year = IntegerGeneValue("y", 2019), month = IntegerGeneValue("m", 10), day = IntegerGeneValue("d", 9))
-        val time = TimeGene("t", hour = IntegerGeneValue("h", 16), minute = IntegerGeneValue("m", 36), second = IntegerGeneValue("s", 9))
+        val date = DateGene("d", year = IntegerGene("y", 2019), month = IntegerGene("m", 10), day = IntegerGene("d", 9))
+        val time = TimeGene("t", hour = IntegerGene("h", 16), minute = IntegerGene("m", 36), second = IntegerGene("s", 9))
         return DateTimeGene("dt", date, time)
     }
 

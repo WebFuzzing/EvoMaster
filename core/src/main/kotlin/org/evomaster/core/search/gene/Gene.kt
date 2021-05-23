@@ -287,19 +287,27 @@ abstract class Gene(var name: String) {
         bindingGenes.addAll(list)
     }
 
-    open fun syncWithBindingGenes(){
+    open fun syncBindingGenesBasedOnThis(all : MutableSet<Gene> = mutableSetOf()){
         if (bindingGenes.isEmpty()) return
-
-        bindingGenes.forEach { b->
+        all.add(this)
+        bindingGenes.filterNot { all.contains(it) }.forEach { b->
             if (b !is ValueBindableGene)
                 throw IllegalStateException("invalid gene wit the type (${b::class.java.simpleName}) in the binding list")
+            all.add(b)
             if(!b.bindValueBasedOn(this))
                 LoggingUtil.uniqueWarn(log, "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})")
+            b.syncBindingGenesBasedOnThis(all)
         }
 
-        innerGene().forEach { it.syncWithBindingGenes() }
+        innerGene().filterNot { all.contains(it) }.forEach { it.syncBindingGenesBasedOnThis(all) }
     }
 
     fun isBoundGene() = bindingGenes.isNotEmpty()
+
+    fun addBindingGene(gene: Gene) {
+        bindingGenes.add(gene)
+    }
+
+    fun isBoundWith(gene: Gene) = bindingGenes.contains(gene)
 }
 

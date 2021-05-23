@@ -11,28 +11,28 @@ import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHis
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 
-class IntegerGeneValue(
+class IntegerGene(
         name: String,
         value: Int = 0,
         /** Inclusive */
         val min: Int = Int.MIN_VALUE,
         /** Inclusive */
         val max: Int = Int.MAX_VALUE
-) : NumberGeneValue<Int>(name, value) {
+) : NumberGene<Int>(name, value) {
 
     override fun copy(): Gene {
-        return IntegerGeneValue(name, value, min, max)
+        return IntegerGene(name, value, min, max)
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is IntegerGeneValue) {
+        if (other !is IntegerGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.value = other.value
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is IntegerGeneValue) {
+        if (other !is IntegerGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.value == other.value
@@ -118,10 +118,10 @@ class IntegerGeneValue(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         when(gene){
-            is IntegerGeneValue -> value = gene.value
-            is FloatGeneValue -> value = gene.value.toInt()
-            is DoubleGeneValue -> value = gene.value.toInt()
-            is LongGeneValue -> value = gene.value.toInt()
+            is IntegerGene -> value = gene.value
+            is FloatGene -> value = gene.value.toInt()
+            is DoubleGene -> value = gene.value.toInt()
+            is LongGene -> value = gene.value.toInt()
             is StringGene -> {
                 value = gene.value.toIntOrNull() ?: return false
             }

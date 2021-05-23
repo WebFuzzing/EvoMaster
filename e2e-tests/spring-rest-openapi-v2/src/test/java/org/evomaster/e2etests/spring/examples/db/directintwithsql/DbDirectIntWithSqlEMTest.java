@@ -15,7 +15,7 @@ import org.evomaster.core.search.EvaluatedAction;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.FitnessValue;
 import org.evomaster.core.search.Solution;
-import org.evomaster.core.search.gene.IntegerGeneValue;
+import org.evomaster.core.search.gene.IntegerGene;
 import org.evomaster.core.search.service.FitnessFunction;
 import org.evomaster.core.search.tracer.TraceableElement;
 import org.junit.jupiter.api.Test;
@@ -147,10 +147,10 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                 .flatMap(a -> a.seeGenes().stream())
                 .forEach(g -> {
                     if (g.getName().equalsIgnoreCase("x")) {
-                        IntegerGeneValue gene = (IntegerGeneValue) g;
+                        IntegerGene gene = (IntegerGene) g;
                         gene.setValue(x + 1);
                     } else if (g.getName().equalsIgnoreCase("y")) {
-                        IntegerGeneValue gene = (IntegerGeneValue) g;
+                        IntegerGene gene = (IntegerGene) g;
                         gene.setValue(y + 1);
                     }
                 });
@@ -180,10 +180,10 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                 .flatMap(a -> a.seeGenes().stream())
                 .forEach(g -> {
                     if (g.getName().equalsIgnoreCase("x")) {
-                        IntegerGeneValue gene = (IntegerGeneValue) g;
+                        IntegerGene gene = (IntegerGene) g;
                         gene.setValue(x);
                     } else if (g.getName().equalsIgnoreCase("y")) {
-                        IntegerGeneValue gene = (IntegerGeneValue) g;
+                        IntegerGene gene = (IntegerGene) g;
                         gene.setValue(y);
                     }
                 });

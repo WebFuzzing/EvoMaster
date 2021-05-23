@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.DateGene
-import org.evomaster.core.search.gene.IntegerGeneValue
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -40,7 +40,7 @@ class SqlDateColumnTest : ExtractTestBasePostgres() {
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("logins", setOf("userId", "lastLogin"))
         val genes = actions[0].seeGenes()
-        val userIdValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGeneValue).value
+        val userIdValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
         val lastLoginDayValue = (genes[1] as DateGene).day.value
         val lastLoginMonthValue = (genes[1] as DateGene).month.value
         val lastLoginYearValue = (genes[1] as DateGene).year.value

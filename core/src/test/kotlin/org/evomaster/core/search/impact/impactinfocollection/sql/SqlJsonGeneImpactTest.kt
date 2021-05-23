@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGeneValue
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.sql.SqlJSONGene
@@ -21,7 +21,7 @@ class SqlJsonGeneImpactTest : GeneImpactTest() {
 
     override fun getGene(): Gene {
         val f1 = StringGene(f1, "string1")
-        val f2 = IntegerGeneValue(f2, 2)
+        val f2 = IntegerGene(f2, 2)
 
         val obj = ObjectGene("obj", listOf(f1, f2))
 
@@ -38,8 +38,8 @@ class SqlJsonGeneImpactTest : GeneImpactTest() {
 
         assert(gene.fields.first() is StringGene)
         val f1 = gene.fields.first() as StringGene
-        assert(gene.fields.last() is IntegerGeneValue)
-        val f2 = gene.fields.last() as IntegerGeneValue
+        assert(gene.fields.last() is IntegerGene)
+        val f2 = gene.fields.last() as IntegerGene
 
         val p = Math.random() < 0.5
 

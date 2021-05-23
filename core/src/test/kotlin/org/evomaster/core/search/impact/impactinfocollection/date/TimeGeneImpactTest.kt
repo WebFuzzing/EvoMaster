@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.date
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGeneValue
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.TimeGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test
 class TimeGeneImpactTest : GeneImpactTest() {
 
     override fun getGene(): Gene {
-        return TimeGene("d", hour = IntegerGeneValue("h", 16), minute = IntegerGeneValue("m", 36), second = IntegerGeneValue("s", 9))
+        return TimeGene("d", hour = IntegerGene("h", 16), minute = IntegerGene("m", 36), second = IntegerGene("s", 9))
     }
 
     override fun checkImpactType(impact: GeneImpact) {

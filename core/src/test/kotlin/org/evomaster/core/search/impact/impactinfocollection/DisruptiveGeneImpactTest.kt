@@ -2,7 +2,7 @@ package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.search.gene.DisruptiveGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGeneValue
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.impact.impactinfocollection.value.DisruptiveGeneImpact
 
 import org.junit.jupiter.api.Test
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
  */
 class DisruptiveGeneImpactTest : GeneImpactTest() {
     override fun getGene(): Gene {
-        val gene = IntegerGeneValue("gene", 0)
+        val gene = IntegerGene("gene", 0)
         return DisruptiveGene("o", gene = gene, probability =  0.9)
     }
 
@@ -21,7 +21,7 @@ class DisruptiveGeneImpactTest : GeneImpactTest() {
     }
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
-        geneToMutate as DisruptiveGene<IntegerGeneValue>
+        geneToMutate as DisruptiveGene<IntegerGene>
         val gene = geneToMutate.gene
         gene.value += if (gene.value + 1 > gene.max) -1 else 1
         return MutatedGeneWithContext(previous = original, current = geneToMutate)

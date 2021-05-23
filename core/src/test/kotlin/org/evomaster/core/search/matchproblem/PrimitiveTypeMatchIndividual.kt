@@ -18,19 +18,21 @@ open class PrimitiveTypeMatchIndividual (
     companion object{
         fun name() = "value"
 
-        fun instance(value : Any, name : String) = when (value) {
-            is Int -> IntegerGeneValue(name =  name, value = value)
-            is Double -> DoubleGeneValue(name =  name, value = value)
-            is Float -> FloatGeneValue(name = name, value = value)
-            is Long -> LongGeneValue(name = name, value = value)
-            is String -> StringGene(name = name, value = value)
-            else -> throw IllegalStateException("NOT SUPPORT")
+        fun instance(value : Any, name : String) :Gene{
+            return when (value) {
+                is Int -> IntegerGene(name =  name, value = value)
+                is Double -> DoubleGene(name =  name, value = value)
+                is Float -> FloatGene(name = name, value = value)
+                is Long -> LongGene(name = name, value = value)
+                is String -> StringGene(name = name, value = value)
+                else -> throw IllegalStateException("NOT SUPPORT")
+            }
         }
 
-        fun intTemplate() = PrimitiveTypeMatchIndividual(IntegerGeneValue(name()))
-        fun doubleTemplate() = PrimitiveTypeMatchIndividual(DoubleGeneValue(name()))
-        fun floatTemplate() = PrimitiveTypeMatchIndividual(FloatGeneValue(name()))
-        fun longTemplate() = PrimitiveTypeMatchIndividual(LongGeneValue(name()))
+        fun intTemplate() = PrimitiveTypeMatchIndividual(IntegerGene(name()))
+        fun doubleTemplate() = PrimitiveTypeMatchIndividual(DoubleGene(name()))
+        fun floatTemplate() = PrimitiveTypeMatchIndividual(FloatGene(name()))
+        fun longTemplate() = PrimitiveTypeMatchIndividual(LongGene(name()))
         fun stringTemplate() = PrimitiveTypeMatchIndividual(StringGene(name()))
     }
 

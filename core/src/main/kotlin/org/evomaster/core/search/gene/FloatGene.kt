@@ -15,15 +15,15 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 
-class FloatGeneValue(name: String,
-                     value: Float = 0.0f
-) : NumberGeneValue<Float>(name, value) {
+class FloatGene(name: String,
+                value: Float = 0.0f
+) : NumberGene<Float>(name, value) {
 
     companion object{
-        private val log : Logger = LoggerFactory.getLogger(FloatGeneValue::class.java)
+        private val log : Logger = LoggerFactory.getLogger(FloatGene::class.java)
     }
 
-    override fun copy() = FloatGeneValue(name, value)
+    override fun copy() = FloatGene(name, value)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
@@ -67,14 +67,14 @@ class FloatGeneValue(name: String,
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is FloatGeneValue) {
+        if (other !is FloatGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.value = other.value
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is FloatGeneValue) {
+        if (other !is FloatGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.value == other.value
@@ -84,10 +84,10 @@ class FloatGeneValue(name: String,
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         when(gene){
-            is FloatGeneValue -> value = gene.value
-            is DoubleGeneValue -> value = gene.value.toFloat()
-            is IntegerGeneValue -> value = gene.value.toFloat()
-            is LongGeneValue -> value = gene.value.toFloat()
+            is FloatGene -> value = gene.value
+            is DoubleGene -> value = gene.value.toFloat()
+            is IntegerGene -> value = gene.value.toFloat()
+            is LongGene -> value = gene.value.toFloat()
             is StringGene -> {
                 value = gene.value.toFloatOrNull() ?: return false
             }

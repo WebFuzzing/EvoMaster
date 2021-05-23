@@ -3,7 +3,7 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.LongGeneValue
+import org.evomaster.core.search.gene.LongGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlUUIDGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -23,14 +23,14 @@ import java.util.*
  */
 class SqlUUIDGene(
     name: String,
-    val mostSigBits: LongGeneValue = LongGeneValue("mostSigBits", 0L),
-    val leastSigBits: LongGeneValue = LongGeneValue("leastSigBits", 0L)
+    val mostSigBits: LongGene = LongGene("mostSigBits", 0L),
+    val leastSigBits: LongGene = LongGene("leastSigBits", 0L)
 ) : Gene(name) {
 
     override fun copy(): Gene = SqlUUIDGene(
             name,
-            mostSigBits.copy() as LongGeneValue,
-            leastSigBits.copy() as LongGeneValue
+            mostSigBits.copy() as LongGene,
+            leastSigBits.copy() as LongGene
     )
 
     companion object{

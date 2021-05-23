@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGeneValue
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.impact.impactinfocollection.value.OptionalGeneImpact
 import org.junit.jupiter.api.Test
@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
  */
 class OptionalGeneImpactTest : GeneImpactTest() {
     override fun getGene(): Gene {
-        val gene = IntegerGeneValue("gene", 0)
+        val gene = IntegerGene("gene", 0)
         return OptionalGene("o", isActive = false, gene = gene)
     }
 
@@ -23,7 +23,7 @@ class OptionalGeneImpactTest : GeneImpactTest() {
         geneToMutate as OptionalGene
         geneToMutate.apply {
             when{
-                mutationTag == 0 -> (geneToMutate.gene as IntegerGeneValue).value += 1
+                mutationTag == 0 -> (geneToMutate.gene as IntegerGene).value += 1
                 mutationTag == 1 -> geneToMutate.isActive = !geneToMutate.isActive
                 else -> throw IllegalArgumentException("bug")
             }

@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.numeric
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGeneValue
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.MutatedGeneWithContext
@@ -13,7 +13,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.Integ
 class IntegerGeneTest : GeneImpactTest() {
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
-        geneToMutate as IntegerGeneValue
+        geneToMutate as IntegerGene
 
         if (geneToMutate.value + 1 > Int.MAX_VALUE)
             geneToMutate.value -= 1
@@ -23,7 +23,7 @@ class IntegerGeneTest : GeneImpactTest() {
         return MutatedGeneWithContext(previous = original, current = geneToMutate)
     }
 
-    override fun getGene(): Gene = IntegerGeneValue("i", value = 2)
+    override fun getGene(): Gene = IntegerGene("i", value = 2)
 
     override fun checkImpactType(impact: GeneImpact) {
         assert(impact is IntegerGeneImpact)
