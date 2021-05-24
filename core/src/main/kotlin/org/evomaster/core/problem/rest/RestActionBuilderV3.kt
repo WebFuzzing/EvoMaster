@@ -435,7 +435,7 @@ object RestActionBuilderV3 {
         when (type) {
             "integer" -> return IntegerGene(name)
             "number" -> return DoubleGene(name)
-            "boolean" -> return BooleanGeneValue(name)
+            "boolean" -> return BooleanGene(name)
             "string" -> {
                 return if (schema.pattern == null) {
                     StringGene(name)

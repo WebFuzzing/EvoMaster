@@ -101,7 +101,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
         val action = actions[0]
 
-        val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(BooleanGeneValue("booleanElement", value = false))))
+        val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(BooleanGene("booleanElement", value = false))))
         val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"

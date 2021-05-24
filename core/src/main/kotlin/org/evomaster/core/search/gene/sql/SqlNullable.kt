@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpact
 import org.evomaster.core.search.gene.GeneUtils
@@ -121,4 +122,8 @@ class SqlNullable(name: String,
 
     override fun innerGene(): List<Gene> = listOf(gene)
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is SqlNullable) isPresent = gene.isPresent
+        return ParamUtil.getValueGene(gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
+    }
 }

@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateGeneImpact
@@ -145,4 +146,22 @@ class DateGene(
     */
 
     override fun innerGene(): List<Gene> = listOf(year, month, day)
+
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return when{
+            gene is DateGene -> {
+                day.bindValueBasedOn(gene.day) &&
+                        month.bindValueBasedOn(gene.month) &&
+                        year.bindValueBasedOn(gene.year)
+            }
+            gene is DateTimeGene -> bindValueBasedOn(gene.date)
+            gene is StringGene && gene.getSpecializationGene() != null-> bindValueBasedOn(gene.getSpecializationGene()!!)
+            // Man: convert to string based on the format?
+            else-> {
+                LoggingUtil.uniqueWarn(log, "cannot bind DateGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
 }

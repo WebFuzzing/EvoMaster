@@ -370,7 +370,7 @@ class DbActionGeneBuilder {
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toBoolean() })
 
         } else {
-            BooleanGeneValue(column.name)
+            BooleanGene(column.name)
         }
     }
 

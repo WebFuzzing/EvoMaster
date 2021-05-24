@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
@@ -8,12 +9,17 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.LoggerFactory
 
 
 class CharacterRangeRxGene(
         val negated: Boolean,
         val ranges: List<Pair<Char,Char>>
 ) : RxAtom("."){
+
+    companion object{
+        private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
+    }
 
     init {
         //TODO this will need to be supported
@@ -108,5 +114,13 @@ class CharacterRangeRxGene(
 
     override fun innerGene(): List<Gene> = listOf()
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if(gene is CharacterRangeRxGene){
+            value = gene.value
+            return true
+        }
+        LoggingUtil.uniqueWarn(log,"cannot bind CharacterClassEscapeRxGene with ${gene::class.java.simpleName}")
 
+        return false
+    }
 }

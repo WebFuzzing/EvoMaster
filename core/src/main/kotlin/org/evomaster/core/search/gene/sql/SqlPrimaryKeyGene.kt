@@ -119,4 +119,9 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun innerGene(): List<Gene> = listOf(gene)
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing
+        return true
+    }
+
 }

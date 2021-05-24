@@ -100,4 +100,11 @@ class RegexGene(
     override fun mutationWeight(): Double = disjunctions.mutationWeight()
 
     override fun innerGene(): List<Gene> = listOf(disjunctions)
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is RegexGene){
+            return disjunctions.bindValueBasedOn(gene.disjunctions)
+        }
+        return false
+    }
 }

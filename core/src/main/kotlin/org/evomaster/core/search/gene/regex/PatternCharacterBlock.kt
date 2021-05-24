@@ -56,4 +56,9 @@ class PatternCharacterBlock(
     }
 
     override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing
+        return true
+    }
 }

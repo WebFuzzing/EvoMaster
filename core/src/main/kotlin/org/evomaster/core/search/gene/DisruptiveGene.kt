@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.impact.impactinfocollection.value.DisruptiveGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -114,5 +115,9 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
 
     override fun possiblySame(gene: Gene): Boolean {
         return gene is DisruptiveGene<*> && gene.name == this.name && this.gene.possiblySame((gene as DisruptiveGene<T>).gene)
+    }
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 }

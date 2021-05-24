@@ -50,4 +50,9 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
 
     override fun innerGene(): List<Gene> = listOf()
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing
+        return true
+    }
+
 }

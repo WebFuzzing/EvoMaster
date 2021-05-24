@@ -40,7 +40,7 @@ internal class ObjectGeneTest {
 
     @Test
     fun testBooleanGene() {
-        val gene = ObjectGene("anElement", listOf(BooleanGeneValue("booleanValue", value = false)))
+        val gene = ObjectGene("anElement", listOf(BooleanGene("booleanValue", value = false)))
         val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
         Assertions.assertEquals("<anElement>false</anElement>", actual)
     }

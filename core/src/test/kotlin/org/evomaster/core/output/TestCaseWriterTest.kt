@@ -374,7 +374,7 @@ class TestCaseWriterTest {
 
         val id = 0L
 
-        val gene = BooleanGeneValue(aColumn.name, false)
+        val gene = BooleanGene(aColumn.name, false)
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
@@ -884,7 +884,7 @@ class TestCaseWriterTest {
 
         val autoGene = SqlAutoIncrementGene(table.name)
         val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
-        val objectGene = ObjectGene(jsonbColumn.name, listOf(BooleanGeneValue("booleanField")))
+        val objectGene = ObjectGene(jsonbColumn.name, listOf(BooleanGene("booleanField")))
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))

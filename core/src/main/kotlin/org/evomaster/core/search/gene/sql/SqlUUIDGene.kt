@@ -1,9 +1,11 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlUUIDGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -90,5 +92,20 @@ class SqlUUIDGene(
     }
 
     override fun innerGene(): List<Gene> = listOf(mostSigBits, leastSigBits)
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return when{
+            gene is SqlUUIDGene ->{
+                mostSigBits.bindValueBasedOn(gene.mostSigBits) && leastSigBits.bindValueBasedOn(gene.leastSigBits)
+            }
+            gene is StringGene && gene.getSpecializationGene() != null ->{
+                bindValueBasedOn(gene.getSpecializationGene()!!)
+            }
+            else->{
+                LoggingUtil.uniqueWarn(log,"cannot bind SqlUUIDGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
 
 }

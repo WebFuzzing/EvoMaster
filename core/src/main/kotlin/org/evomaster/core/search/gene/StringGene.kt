@@ -9,7 +9,6 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
-import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -40,7 +39,7 @@ class StringGene(
          */
         val invalidChars: List<Char> = listOf()
 
-) : Gene(name), ValueBindableGene {
+) : Gene(name) {
 
     companion object {
 
@@ -384,7 +383,7 @@ class StringGene(
         }
 
         if (toAddSpecs.any { it.stringSpecialization == BOOLEAN }) {
-            toAddGenes.add(BooleanGeneValue(name))
+            toAddGenes.add(BooleanGene(name))
             log.trace("BOOLEAN, added specification size: {}", toAddGenes.size)
         }
 
@@ -621,6 +620,7 @@ class StringGene(
         when(gene){
             //shall I add the specification into the string if it applies?
             is StringGene -> value = gene.value
+            is Base64StringGene -> value = gene.data.value
             is FloatGene -> value = gene.value.toString()
             is IntegerGene -> value = gene.value.toString()
             is LongGene -> value = gene.value.toString()

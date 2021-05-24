@@ -74,7 +74,7 @@ class PostmanParserTest {
 
         val optBoolQueryParam = request.parameters.find { it.name == "optBoolQueryParam" }?.gene as OptionalGene
         assertTrue(optBoolQueryParam.isActive)
-        assertEquals(true, (optBoolQueryParam.gene as BooleanGeneValue).value)
+        assertEquals(true, (optBoolQueryParam.gene as BooleanGene).value)
 
         val optDateQueryParam = request.parameters.find { it.name == "optDateQueryParam" }?.gene as OptionalGene
         assertTrue(optDateQueryParam.isActive)
@@ -227,8 +227,8 @@ class PostmanParserTest {
         val originalOptBoolQueryParam = originalRequest.parameters.find { it.name == "optBoolQueryParam" }?.gene as OptionalGene
         assertTrue(optBoolQueryParam.isActive)
         assertEquals(
-                (originalOptBoolQueryParam.gene as BooleanGeneValue).value,
-                (optBoolQueryParam.gene as BooleanGeneValue).value
+                (originalOptBoolQueryParam.gene as BooleanGene).value,
+                (optBoolQueryParam.gene as BooleanGene).value
         )
 
         val optDateQueryParam = request.parameters.find { it.name == "optDateQueryParam" }?.gene as OptionalGene
@@ -409,7 +409,7 @@ class PostmanParserTest {
 
         val optObjBoolProp = objProp.fields.find { it.name == "objBoolProp" } as OptionalGene
         assertTrue(optObjBoolProp.isActive)
-        assertEquals(false, (optObjBoolProp.gene as BooleanGeneValue).value)
+        assertEquals(false, (optObjBoolProp.gene as BooleanGene).value)
 
         val objEnumStrProp = objProp.fields.find { it.name == "objEnumStrProp" } as EnumGene<*>
         assertEquals("val2", objEnumStrProp.values[objEnumStrProp.index])
@@ -478,7 +478,7 @@ class PostmanParserTest {
 
         val optObjBoolProp = objProp.fields.find { it.name == "objBoolProp" } as OptionalGene
         assertTrue(optObjBoolProp.isActive)
-        assertEquals(false, (optObjBoolProp.gene as BooleanGeneValue).value)
+        assertEquals(false, (optObjBoolProp.gene as BooleanGene).value)
 
         val objEnumStrProp = objProp.fields.find { it.name == "objEnumStrProp" } as EnumGene<*>
         assertEquals(originalObjEnumStrProp.values[originalObjEnumStrProp.index], objEnumStrProp.values[objEnumStrProp.index])
@@ -549,7 +549,7 @@ class PostmanParserTest {
         assertEquals(45, dateTimeProp.time.minute.value)
         assertEquals(8, dateTimeProp.time.second.value)
 
-        val boolProp = bodyObj.fields.find { it.name == "boolProp" } as BooleanGeneValue
+        val boolProp = bodyObj.fields.find { it.name == "boolProp" } as BooleanGene
         assertEquals(true, boolProp.value)
     }
 
@@ -600,7 +600,7 @@ class PostmanParserTest {
         assertEquals(originalDateTimeProp.time.minute.value, dateTimeProp.time.minute.value)
         assertEquals(originalDateTimeProp.time.second.value, dateTimeProp.time.second.value)
 
-        val boolProp = bodyObj.fields.find { it.name == "boolProp" } as BooleanGeneValue
+        val boolProp = bodyObj.fields.find { it.name == "boolProp" } as BooleanGene
         assertEquals(true, boolProp.value)
     }
 

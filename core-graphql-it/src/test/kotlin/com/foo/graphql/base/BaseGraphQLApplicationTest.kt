@@ -37,10 +37,10 @@ class BaseGraphQLApplicationTest{
             //
            val objUser=all.parameters[0].gene as ObjectGene
            assertEquals(4, objUser.fields.size)
-           assertTrue(objUser.fields.first { it.name == "id" } is BooleanGeneValue)
-           assertTrue(objUser.fields.first { it.name == "name" } is BooleanGeneValue)
-           assertTrue(objUser.fields.first { it.name == "surname" } is BooleanGeneValue)
-           assertTrue(objUser.fields.any{ it is BooleanGeneValue && it.name == "age"})
+           assertTrue(objUser.fields.first { it.name == "id" } is BooleanGene)
+           assertTrue(objUser.fields.first { it.name == "name" } is BooleanGene)
+           assertTrue(objUser.fields.first { it.name == "surname" } is BooleanGene)
+           assertTrue(objUser.fields.any{ it is BooleanGene && it.name == "age"})
 
 
 

@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
@@ -161,4 +162,19 @@ class TimeGene(
 
     override fun innerGene(): List<Gene> = listOf(hour, minute, second)
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return when{
+            gene is TimeGene->{
+                hour.bindValueBasedOn(gene.hour) &&
+                        second.bindValueBasedOn(gene.minute) &&
+                        minute.bindValueBasedOn(gene.second)
+            }
+            gene is DateTimeGene -> bindValueBasedOn(gene.time)
+            gene is StringGene && gene.getSpecializationGene() != null-> bindValueBasedOn(gene.getSpecializationGene()!!)
+            else ->{
+                LoggingUtil.uniqueWarn(log, "cannot bind TimeGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
 }

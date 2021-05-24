@@ -51,7 +51,7 @@ abstract class AbstractParser(
 
             // Basic data type genes
             is StringGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is BooleanGeneValue -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is BooleanGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is DoubleGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is FloatGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is IntegerGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
@@ -84,7 +84,7 @@ abstract class AbstractParser(
         return true
     }
 
-    protected fun updateGeneWithParameterValue(gene: BooleanGeneValue, paramName: String, paramValue: String): Boolean {
+    protected fun updateGeneWithParameterValue(gene: BooleanGene, paramName: String, paramValue: String): Boolean {
         when (paramValue) {
             "true" -> gene.value = true
             "false" -> gene.value = false
@@ -332,7 +332,7 @@ abstract class AbstractParser(
     private fun addGeneToArrayGene(gene: ArrayGene<*>, elementGene: Gene) {
         when (elementGene) {
             is StringGene -> (gene as ArrayGene<StringGene>).elements.add(elementGene)
-            is BooleanGeneValue -> (gene as ArrayGene<BooleanGeneValue>).elements.add(elementGene)
+            is BooleanGene -> (gene as ArrayGene<BooleanGene>).elements.add(elementGene)
             is DoubleGene -> (gene as ArrayGene<DoubleGene>).elements.add(elementGene)
             is FloatGene -> (gene as ArrayGene<FloatGene>).elements.add(elementGene)
             is IntegerGene -> (gene as ArrayGene<IntegerGene>).elements.add(elementGene)
@@ -353,7 +353,7 @@ abstract class AbstractParser(
     private fun addGeneToMapGene(gene: MapGene<*>, elementGene: Gene) {
         when(elementGene) {
             is StringGene -> (gene as MapGene<StringGene>).elements.add(elementGene)
-            is BooleanGeneValue -> (gene as MapGene<BooleanGeneValue>).elements.add(elementGene)
+            is BooleanGene -> (gene as MapGene<BooleanGene>).elements.add(elementGene)
             is DoubleGene -> (gene as MapGene<DoubleGene>).elements.add(elementGene)
             is FloatGene -> (gene as MapGene<FloatGene>).elements.add(elementGene)
             is IntegerGene -> (gene as MapGene<IntegerGene>).elements.add(elementGene)

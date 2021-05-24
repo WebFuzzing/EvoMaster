@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.numeric
 
-import org.evomaster.core.search.gene.BooleanGeneValue
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
@@ -15,14 +15,14 @@ import org.junit.jupiter.api.Test
 class BoolenGeneTest : GeneImpactTest() {
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
-        geneToMutate as BooleanGeneValue
+        geneToMutate as BooleanGene
 
         geneToMutate.value = !geneToMutate.value
 
         return MutatedGeneWithContext(previous = original, current = geneToMutate)
     }
 
-    override fun getGene(): Gene = BooleanGeneValue("i",  value= false)
+    override fun getGene(): Gene = BooleanGene("i",  value= false)
 
     override fun checkImpactType(impact: GeneImpact) {
         assert(impact is BinaryGeneImpact)
@@ -30,7 +30,7 @@ class BoolenGeneTest : GeneImpactTest() {
 
     @Test
     fun testT2F(){
-        val gene = BooleanGeneValue("b",  value= true)
+        val gene = BooleanGene("b",  value= true)
         val impact = initImpact(gene)
         val updatedImpact = template( gene, impact, listOf(ImpactOptions.NO_IMPACT)).second
         assertImpact((impact as BinaryGeneImpact).falseValue, (updatedImpact as BinaryGeneImpact).falseValue, ImpactOptions.NO_IMPACT)
@@ -38,7 +38,7 @@ class BoolenGeneTest : GeneImpactTest() {
 
     @Test
     fun testF2T(){
-        val gene = BooleanGeneValue("b",  value= false)
+        val gene = BooleanGene("b",  value= false)
         val impact = initImpact(gene)
         val updatedImpact = template( gene, impact, listOf(ImpactOptions.IMPACT_IMPROVEMENT)).second
         assertImpact((impact as BinaryGeneImpact).trueValue, (updatedImpact as BinaryGeneImpact).trueValue, ImpactOptions.IMPACT_IMPROVEMENT)
@@ -46,7 +46,7 @@ class BoolenGeneTest : GeneImpactTest() {
 
     @Test
     fun testF2T2F(){
-        val gene = BooleanGeneValue("b",  value= false)
+        val gene = BooleanGene("b",  value= false)
         val impact = initImpact(gene)
         val pair = template( gene, impact, listOf(ImpactOptions.IMPACT_IMPROVEMENT))
         assertImpact((impact as BinaryGeneImpact).trueValue, (pair.second as BinaryGeneImpact).trueValue, ImpactOptions.IMPACT_IMPROVEMENT)

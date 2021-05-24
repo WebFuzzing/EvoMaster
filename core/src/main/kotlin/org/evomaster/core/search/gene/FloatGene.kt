@@ -91,6 +91,9 @@ class FloatGene(name: String,
             is StringGene -> {
                 value = gene.value.toFloatOrNull() ?: return false
             }
+            is Base64StringGene ->{
+                value = gene.data.value.toFloatOrNull() ?: return false
+            }
             is ImmutableDataHolderGene -> {
                 value = gene.value.toFloatOrNull() ?: return false
             }

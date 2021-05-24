@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.impact.impactinfocollection.value.OptionalGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -162,5 +163,10 @@ class OptionalGene(name: String,
     }
 
     override fun innerGene(): List<Gene> = listOf(gene)
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is OptionalGene) isActive = gene.isActive
+        return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
+    }
 
 }

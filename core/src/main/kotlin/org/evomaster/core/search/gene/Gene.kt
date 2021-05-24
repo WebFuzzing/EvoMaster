@@ -291,8 +291,6 @@ abstract class Gene(var name: String) {
         if (bindingGenes.isEmpty()) return
         all.add(this)
         bindingGenes.filterNot { all.contains(it) }.forEach { b->
-            if (b !is ValueBindableGene)
-                throw IllegalStateException("invalid gene wit the type (${b::class.java.simpleName}) in the binding list")
             all.add(b)
             if(!b.bindValueBasedOn(this))
                 LoggingUtil.uniqueWarn(log, "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})")
@@ -309,5 +307,12 @@ abstract class Gene(var name: String) {
     }
 
     fun isBoundWith(gene: Gene) = bindingGenes.contains(gene)
+
+
+    /**
+     * bind value of [this] gene based on [gene]
+     * @return whether the binding performs successfully
+     */
+    abstract fun bindValueBasedOn(gene: Gene) : Boolean
 }
 

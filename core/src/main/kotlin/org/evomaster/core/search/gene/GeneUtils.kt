@@ -452,11 +452,11 @@ object GeneUtils {
     fun repairBooleanSelection(obj: ObjectGene) {
 
         if (obj.fields.isEmpty()
-                || obj.fields.count { it !is OptionalGene && it !is BooleanGeneValue } > 0) {
+                || obj.fields.count { it !is OptionalGene && it !is BooleanGene } > 0) {
             throw IllegalArgumentException("There should be at least 1 field, and they must be all optional or boolean")
         }
 
-        val selected = obj.fields.filter { (it is OptionalGene && it.isActive) || (it is BooleanGeneValue && it.value) }
+        val selected = obj.fields.filter { (it is OptionalGene && it.isActive) || (it is BooleanGene && it.value) }
 
         if (selected.isNotEmpty()) {
             //it is fine, but we still need to make sure selected objects are fine
@@ -468,7 +468,7 @@ object GeneUtils {
         } else {
             //must select at least one
 
-            val candidates = obj.fields.filter { (it is OptionalGene && it.selectable) || it is BooleanGeneValue }
+            val candidates = obj.fields.filter { (it is OptionalGene && it.selectable) || it is BooleanGene }
             assert(candidates.isNotEmpty())
 
             // maybe do at random?
@@ -480,7 +480,7 @@ object GeneUtils {
                     repairBooleanSelection(selected.gene)
                 }
             } else {
-                (selected as BooleanGeneValue).value = true
+                (selected as BooleanGene).value = true
             }
         }
     }
@@ -509,7 +509,7 @@ object GeneUtils {
                         handleBooleanSelection(gene.gene.template)
                     } else {
                         // on by default, but can be deselected during the search
-                        BooleanGeneValue(gene.name, true)
+                        BooleanGene(gene.name, true)
                     }
                 }
             }
@@ -522,7 +522,7 @@ object GeneUtils {
             }
             is ArrayGene<*> -> handleBooleanSelection(gene.template)
             else -> {
-                BooleanGeneValue(gene.name, true)
+                BooleanGene(gene.name, true)
             }
         }
     }

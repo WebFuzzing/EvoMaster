@@ -662,9 +662,9 @@ object GraphQLActionBuilder {
                     return FloatGene(tableType)
             "boolean" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(tableType, BooleanGeneValue(tableType))
+                    return OptionalGene(tableType, BooleanGene(tableType))
                 else
-                    return BooleanGeneValue(tableType)
+                    return BooleanGene(tableType)
             "long" ->
                 if (isKindOfTableFieldTypeOptional)
                     return OptionalGene(tableType, LongGene(tableType))
@@ -749,7 +749,7 @@ object GraphQLActionBuilder {
                 return OptionalGene(tableType, FloatGene(tableType))
 
             "boolean" ->
-                return OptionalGene(tableType, BooleanGeneValue(tableType))
+                return OptionalGene(tableType, BooleanGene(tableType))
 
             "long" ->
 
@@ -827,9 +827,9 @@ object GraphQLActionBuilder {
                     return FloatGene(methodName)
             "boolean" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(methodName, BooleanGeneValue(methodName))
+                    return OptionalGene(methodName, BooleanGene(methodName))
                 else
-                    return BooleanGeneValue(methodName)
+                    return BooleanGene(methodName)
             "long" ->
                 if (isKindOfTableFieldTypeOptional)
                     return OptionalGene(methodName, LongGene(methodName))
@@ -840,7 +840,7 @@ object GraphQLActionBuilder {
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName)
             "date" ->
                 if (isKindOfTableFieldTypeOptional)
-                    return OptionalGene(methodName, BooleanGeneValue(methodName))
+                    return OptionalGene(methodName, BooleanGene(methodName))
                 else
                     return DateGene(methodName)
             "scalar" ->

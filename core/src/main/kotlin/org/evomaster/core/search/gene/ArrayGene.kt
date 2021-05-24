@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -183,4 +184,15 @@ class ArrayGene<T>(
 
     override fun innerGene(): List<Gene> = elements
 
+    /*
+        Note that value binding cannot be performed on the [elements]
+     */
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
+            elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
+            return true
+        }
+        LoggingUtil.uniqueWarn(log, "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}")
+        return false
+    }
 }

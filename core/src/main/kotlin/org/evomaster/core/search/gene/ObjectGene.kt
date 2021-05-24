@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
@@ -125,7 +126,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                     when (it) {
                         is OptionalGene -> it.isActive
                         is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
-                        is BooleanGeneValue -> it.value
+                        is BooleanGene -> it.value
                         is DisruptiveGene<*> -> it.probability == 0.0
                         else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
                     }
@@ -140,7 +141,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                         is ObjectGene -> {
                             it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
                         }
-                        is BooleanGeneValue -> {
+                        is BooleanGene -> {
                             it.name
                         }
                         //is DisruptiveGene<*> -> {
@@ -219,5 +220,23 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
     override fun innerGene(): List<Gene> = fields
 
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is ObjectGene &&  (fields.indices).all { fields[it].possiblySame(gene.fields[it])}){
+            var result = true
+            (fields.indices).forEach{
+                val r = fields[it].bindValueBasedOn(gene.fields[it])
+                if (!r)
+                    LoggingUtil.uniqueWarn(log, "cannot bind the field ${fields[it].name}")
+                result = result && r
+            }
+            if (!result)
+                LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${refType?:"null"}) with the object gene (with the refType ${gene.refType?:"null"})")
+            return result
+        }
+        // might be cycle object genet
+        LoggingUtil.uniqueWarn(log,"cannot bind the ${this::class.java.simpleName} (with the refType ${refType?:"null"}) with ${gene::class.java.simpleName}")
+        return false
+    }
 
 }

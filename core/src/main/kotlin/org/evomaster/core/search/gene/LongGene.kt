@@ -99,6 +99,9 @@ class LongGene(
             is StringGene -> {
                 value = gene.value.toLongOrNull() ?: return false
             }
+            is Base64StringGene ->{
+                value = gene.data.value.toLongOrNull() ?: return false
+            }
             is ImmutableDataHolderGene -> {
                 value = gene.value.toLongOrNull() ?: return false
             }

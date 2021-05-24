@@ -40,7 +40,7 @@ class ImpactUtils {
             return when(gene){
                 is DisruptiveGene<*> -> DisruptiveGeneImpact(id, gene)
                 is OptionalGene -> OptionalGeneImpact(id, gene)
-                is BooleanGeneValue -> BinaryGeneImpact(id)
+                is BooleanGene -> BinaryGeneImpact(id)
                 is EnumGene<*> -> EnumGeneImpact(id, gene)
                 is IntegerGene -> IntegerGeneImpact(id)
                 is LongGene -> LongGeneImpact(id)

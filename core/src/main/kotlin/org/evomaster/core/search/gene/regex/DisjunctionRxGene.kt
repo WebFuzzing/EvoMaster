@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
@@ -10,6 +11,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class DisjunctionRxGene(
@@ -41,6 +44,8 @@ class DisjunctionRxGene(
 
     companion object{
         private const val APPEND = 0.05
+        private val log : Logger = LoggerFactory.getLogger(DisjunctionRxGene::class.java)
+
     }
 
     override fun copy(): Gene {
@@ -160,4 +165,28 @@ class DisjunctionRxGene(
     }
 
     override fun innerGene(): List<Gene> = terms
+
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is DisjunctionRxGene && terms.size == gene.terms.size){
+            var result = true
+            terms.indices.forEach { i->
+                val r = terms[i].bindValueBasedOn(gene.terms[i])
+                if (!r)
+                    LoggingUtil.uniqueWarn(log, "cannot bind the term (name: ${terms[i].name}) at index $i")
+                result = result && r
+            }
+
+            extraPostfix = gene.extraPrefix
+            extraPrefix = gene.extraPrefix
+
+            if (!result){
+                LoggingUtil.uniqueWarn(log, "not fully completely bind DisjunctionRxGene")
+            }
+            return result
+        }
+
+        LoggingUtil.uniqueWarn(log, "cannot bind DisjunctionRxGene with ${gene::class.java.simpleName}")
+        return false
+    }
 }

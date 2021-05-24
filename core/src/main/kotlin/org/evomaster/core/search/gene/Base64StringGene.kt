@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -59,4 +60,15 @@ class Base64StringGene(
     }
 
     override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return when(gene){
+            is Base64StringGene -> data.bindValueBasedOn(gene.data)
+            is StringGene -> data.bindValueBasedOn(gene)
+            else->{
+                LoggingUtil.uniqueWarn(log, "cannot bind the Base64StringGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
 }

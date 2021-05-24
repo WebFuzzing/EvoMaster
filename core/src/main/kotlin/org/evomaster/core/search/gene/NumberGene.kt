@@ -3,7 +3,7 @@ package org.evomaster.core.search.gene
 /**
  * Common superclass for all number genes (i.e. Float,Double,Integer,Long)
  */
-abstract class NumberGene<T : Number>(name: String, var value: T) : Gene(name), ValueBindableGene {
+abstract class NumberGene<T : Number>(name: String, var value: T) : Gene(name) {
 
     fun toInt(): Int =
             value.toInt()

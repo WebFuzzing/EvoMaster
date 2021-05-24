@@ -91,6 +91,9 @@ class DoubleGene(name: String,
             is StringGene -> {
                 value = gene.value.toDoubleOrNull() ?: return false
             }
+            is Base64StringGene ->{
+                value = gene.data.value.toDoubleOrNull() ?: return false
+            }
             is ImmutableDataHolderGene -> {
                 value = gene.value.toDoubleOrNull() ?: return false
             }

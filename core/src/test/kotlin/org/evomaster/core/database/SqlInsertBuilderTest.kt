@@ -311,7 +311,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is BooleanGeneValue)
+        assertTrue(genes[0] is BooleanGene)
     }
 
     @Test

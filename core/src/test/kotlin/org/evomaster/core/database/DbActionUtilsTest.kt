@@ -241,7 +241,7 @@ class DbActionUtilsTest {
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
-        val gene0 = BooleanGeneValue(uniqueColumn.name, true)
+        val gene0 = BooleanGene(uniqueColumn.name, true)
         val action0 = DbAction(aTable, setOf(uniqueColumn), 0L, mutableListOf(gene0))
 
         val gene1 = gene0.copy()
@@ -309,7 +309,7 @@ class DbActionUtilsTest {
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
-        val gene0 = BooleanGeneValue(uniqueColumn.name, true)
+        val gene0 = BooleanGene(uniqueColumn.name, true)
         val action0 = DbAction(aTable, setOf(uniqueColumn), 0L, mutableListOf(gene0))
 
         val gene1 = gene0.copy()

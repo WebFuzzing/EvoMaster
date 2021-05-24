@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -127,4 +128,23 @@ open class DateTimeGene(
     */
 
     override fun innerGene(): List<Gene> = listOf(date, time)
+
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return when{
+            gene is DateTimeGene -> {
+                date.bindValueBasedOn(gene.date) &&
+                        time.bindValueBasedOn(gene.time)
+            }
+            gene is DateGene -> date.bindValueBasedOn(gene)
+            gene is TimeGene -> time.bindValueBasedOn(gene)
+            gene is StringGene && gene.getSpecializationGene()!= null -> {
+                bindValueBasedOn(gene.getSpecializationGene()!!)
+            }
+            else -> {
+                LoggingUtil.uniqueWarn(log, "cannot bind DateTimeGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
 }

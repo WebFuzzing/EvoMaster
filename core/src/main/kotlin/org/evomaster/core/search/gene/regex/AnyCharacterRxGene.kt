@@ -1,16 +1,22 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class AnyCharacterRxGene : RxAtom("."){
+
+    companion object{
+        private val log : Logger = LoggerFactory.getLogger(AnyCharacterRxGene::class.java)
+    }
 
     var value: Char = 'a'
 
@@ -53,6 +59,27 @@ class AnyCharacterRxGene : RxAtom("."){
 
     override fun innerGene(): List<Gene> = listOf()
 
-
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        when(gene){
+            is AnyCharacterRxGene -> {
+                value = gene.value
+            }
+            is IntegerGene -> value = gene.value.toChar()
+            is DoubleGene -> value = gene.value.toChar()
+            is FloatGene -> value = gene.value.toChar()
+            is LongGene -> value = gene.value.toChar()
+            else -> {
+                if (gene is StringGene && gene.value.length == 1)
+                    value = gene.value.first()
+                else if(gene is StringGene && gene.getSpecializationGene() != null){
+                    return bindValueBasedOn(gene.getSpecializationGene()!!)
+                }else{
+                    LoggingUtil.uniqueWarn(log, "cannot bind AnyCharacterRxGene with ${gene::class.java.simpleName}")
+                    return false
+                }
+            }
+        }
+        return true
+    }
 
 }

@@ -11,17 +11,17 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class BooleanGeneValue(
+class BooleanGene(
         name: String,
         var value: Boolean = true
-) : Gene(name), ValueBindableGene {
+) : Gene(name) {
 
     companion object{
-        private val log : Logger = LoggerFactory.getLogger(BooleanGeneValue::class.java)
+        private val log : Logger = LoggerFactory.getLogger(BooleanGene::class.java)
     }
 
     override fun copy(): Gene {
-        return BooleanGeneValue(name, value)
+        return BooleanGene(name, value)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -45,14 +45,14 @@ class BooleanGeneValue(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is BooleanGeneValue) {
+        if (other !is BooleanGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.value = other.value
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is BooleanGeneValue) {
+        if (other !is BooleanGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.value == other.value
@@ -61,7 +61,7 @@ class BooleanGeneValue(
     override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene !is BooleanGeneValue){
+        if (gene !is BooleanGene){
             LoggingUtil.uniqueWarn(log, "Do not support to bind boolean gene with the type: ${gene::class.java.simpleName}")
             return false
         }
