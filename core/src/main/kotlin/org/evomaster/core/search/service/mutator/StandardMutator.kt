@@ -116,6 +116,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 log.trace("structure mutator will be applied")
             }
             structureMutator.mutateStructure(copy, mutatedGene)
+            copy.cleanBrokenBindingReference()
             return copy
         }
 

@@ -283,7 +283,7 @@ class ParamUtil {
                 val result = if(b2g) copyWithTypeAdapter(b, g)
                             else copyWithTypeAdapter(g, b)
                 if(!result){
-                    log.info("{} fails to copy value from gene {}", g, g)
+                    log.info("{} fails to copy value from gene {}", b, g)
                 }
             }
         }

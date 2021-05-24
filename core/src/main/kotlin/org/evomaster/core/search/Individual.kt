@@ -166,6 +166,14 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
     open fun hasAnyAction()  = seeActions().isNotEmpty()
 
 
+    open fun cleanBrokenBindingReference(){
+        val all = seeGenes(GeneFilter.ALL).flatMap { it.flatView() }
+        all.filter { it.isBoundGene() }.forEach { b->
+            b.cleanBrokenReference(all)
+        }
+    }
+
+
     /**
      * @return a gene in [this] based on the [gene] in [individual]
      */
@@ -179,8 +187,9 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
         if (allgenes.size != all.size) return null
 
         val index = allgenes.indexOf(gene)
-        if (index == -1)
+        if (index == -1){
             throw IllegalArgumentException("given gene (${gene.name}) does not belong to the individual which contains ${allgenes.joinToString(","){it.name}}")
+        }
 
         val found = all[index]
         if (!gene.possiblySame(found))

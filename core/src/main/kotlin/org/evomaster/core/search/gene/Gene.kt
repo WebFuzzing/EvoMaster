@@ -302,6 +302,10 @@ abstract class Gene(var name: String) {
 
     fun isBoundGene() = bindingGenes.isNotEmpty()
 
+    fun cleanBrokenReference(all : List<Gene>) : Boolean{
+        return bindingGenes.removeIf { !all.contains(it) }
+    }
+
     fun addBindingGene(gene: Gene) {
         bindingGenes.add(gene)
     }
