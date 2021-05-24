@@ -425,4 +425,11 @@ object DbActionUtils {
             throw IllegalStateException("FK repair fails")
     }
 
+    /**
+     * @return a list of dbactions from [dbActions] whose related table is [tableName]
+     */
+    fun findDbActionsByTableName(dbActions: List<DbAction>, tableName : String) : List<DbAction>{
+        return dbActions.filter { it.table.name.equals(tableName, ignoreCase = true) }
+    }
+
 }

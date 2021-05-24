@@ -2,7 +2,7 @@ package org.evomaster.core.search.service.mutator.genemutation
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.ActionFilter

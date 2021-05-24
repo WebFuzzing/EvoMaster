@@ -3,15 +3,14 @@ package org.evomaster.core.problem.rest.resource
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
-import org.evomaster.core.problem.rest.util.inference.SimpleDeriveResourceBinding
-import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
+import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
+import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.evomaster.core.search.service.mutator.MutatedGeneSpecification.MutatedGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

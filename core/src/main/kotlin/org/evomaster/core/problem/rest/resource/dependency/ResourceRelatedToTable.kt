@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.Execution
 import org.evomaster.core.database.SQLKey
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.Param
-import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
+import org.evomaster.core.problem.util.inference.model.MatchedInfo
 
 /**
  * related info between resource and tables

@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.util
+package org.evomaster.core.problem.util
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
@@ -7,8 +7,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.resource.RestResourceNode
-import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
-import org.evomaster.core.problem.util.StringSimilarityComparator
+import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -156,11 +155,10 @@ class ParamUtil {
                 }
                 if (pValueGene !is ObjectGene){
                     val field = valueGene.fields.find {
-                        it::class.java.simpleName == pValueGene::class.java.simpleName && (it.name.equals(pValueGene.name, ignoreCase = true) || StringSimilarityComparator.isSimilar(modifyFieldName(valueGene, it), pValueGene.name))
+                        it::class.java.simpleName == pValueGene::class.java.simpleName && (it.name.equals(pValueGene.name, ignoreCase = true) || StringSimilarityComparator.isSimilar(
+                            modifyFieldName(valueGene, it), pValueGene.name))
                     }?: return
                     // FIXME, binding point
-                    field.addBindingGene(pValueGene)
-                    pValueGene.addBindingGene(pValueGene)
                     field.copyValueFrom(pValueGene)
                     return
                 }
@@ -188,8 +186,6 @@ class ParamUtil {
                             else{
                                 // FIXME, binding point
                                 val vg = getValueGene(found)
-                                vg.addBindingGene(mf)
-                                mf.addBindingGene(vg)
                                 mf.copyValueFrom(vg)
                             }
 
@@ -199,7 +195,7 @@ class ParamUtil {
             }
         }
 
-        private fun modifyFieldName(obj: ObjectGene, field : Gene) : String{
+        fun modifyFieldName(obj: ObjectGene, field : Gene) : String{
             return if (isGeneralName(field.name)) (obj.refType?:"") + field.name else field.name
         }
 
@@ -216,7 +212,7 @@ class ParamUtil {
             }
         }
 
-        private fun findField(fieldName : String, refType : String?, name : String) :Boolean{
+        fun findField(fieldName : String, refType : String?, name : String) :Boolean{
             if (!isGeneralName(fieldName) || refType == null) return fieldName.equals(name, ignoreCase = true)
             val prefix = "$refType$fieldName".equals(name, ignoreCase = true)
             if (prefix) return true
@@ -259,7 +255,7 @@ class ParamUtil {
             return numOfBodyParam(params) == params.size
         }
 
-        private fun numOfBodyParam(params: List<Param>) : Int{
+        fun numOfBodyParam(params: List<Param>) : Int{
             return params.count { it is BodyParam }
         }
 
@@ -270,8 +266,6 @@ class ParamUtil {
 
         private fun copyGene(b : Gene, g : Gene, b2g :Boolean){
             // FIXME, binding point
-            b.addBindingGene(g)
-            g.addBindingGene(b)
             if(b::class.java.simpleName == g::class.java.simpleName){
                 if (b2g) b.copyValueFrom(g)
                 else g.copyValueFrom(b)
@@ -432,7 +426,7 @@ class ParamUtil {
             return true
         }
 
-        private fun scoreOfMatch(target : String, source : String, inner : Boolean) : Int{
+        fun scoreOfMatch(target : String, source : String, inner : Boolean) : Int{
             val targets = target.split(separator).filter { it != DISRUPTIVE_NAME  }.toMutableList()
             val sources = source.split(separator).filter { it != DISRUPTIVE_NAME  }.toMutableList()
             if(inner){
@@ -454,7 +448,7 @@ class ParamUtil {
 
         }
 
-        private fun geneNameMaps(parameters: List<Param>, tokensInPath: List<String>?) : MutableMap<String, Gene>{
+        fun geneNameMaps(parameters: List<Param>, tokensInPath: List<String>?) : MutableMap<String, Gene>{
             val maps = mutableMapOf<String, Gene>()
             val pred = {gene : Gene -> (gene is DateTimeGene)}
             parameters.forEach { p->
@@ -533,10 +527,10 @@ class ParamUtil {
                     if gene of dbaction is PK, FK or AutoIncrementGene,
                         bind gene of Param according to the gene from dbaction
                  */
-                copyGene(b=getValueGene(dbgene), g=getValueGene(paramGene), b2g=false)
+                copyGene(b= getValueGene(dbgene), g= getValueGene(paramGene), b2g=false)
             }else{
-                val db2Action = !existingData && (!enableFlexibleBind || checkBindSequence(getValueGene(dbgene), getValueGene(paramGene))?:true)
-                copyGene(b=getValueGene(dbgene), g=getValueGene(paramGene), b2g=db2Action)
+                val db2Action = !existingData && (!enableFlexibleBind || checkBindSequence(getValueGene(dbgene), getValueGene(paramGene)) ?:true)
+                copyGene(b= getValueGene(dbgene), g= getValueGene(paramGene), b2g=db2Action)
             }
 
         }

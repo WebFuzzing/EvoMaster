@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.util.inference
+package org.evomaster.core.problem.util.inference
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Table
@@ -10,16 +10,16 @@ import org.evomaster.core.problem.rest.resource.ParamInfo
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.resource.dependency.*
-import org.evomaster.core.problem.rest.util.ParamUtil
-import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
-import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
+import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.problem.util.inference.model.MatchedInfo
+import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.gene.ObjectGene
 
 /**
  * process inference related to resource
  */
-object SimpleDeriveResourceBinding : DeriveResourceBinding{
+object SimpleDeriveResourceBinding : DeriveResourceBinding {
 
     /*************************** resource to table and param to table *****************************/
 
