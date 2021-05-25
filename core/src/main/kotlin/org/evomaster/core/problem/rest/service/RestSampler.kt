@@ -3,16 +3,13 @@ package org.evomaster.core.problem.rest.service
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.tracer.TraceableElement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -32,60 +29,23 @@ class RestSampler : AbstractRestSampler(){
         }
     }
 
-
-    fun canInsertInto(tableName: String) : Boolean {
-        //TODO might need to refactor/remove once we deal with VIEWs
-
-        return sqlInsertBuilder?.isTable(tableName) ?: false
-    }
-
-    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
-
-        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
-                ?: throw IllegalStateException("No DB schema is available")
-
-        DbActionUtils.randomizeDbActionGenes(actions, randomness)
-
-        return actions
-    }
-
     override fun sampleAtRandom(): RestIndividual {
 
         val actions = mutableListOf<RestAction>()
         val n = randomness.nextInt(1, config.maxTestSize)
 
         (0 until n).forEach {
-            actions.add(sampleRandomAction(0.05))
+            actions.add(sampleRandomAction(0.05) as RestAction)
         }
         return RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
     }
 
-    /**
-     * When genes are created, those are not necessarily initialized.
-     * The reason is that some genes might depend on other genes (eg., foreign keys in SQL).
-     * So, once all genes are created, we force their initialization, which will also randomize their values.
+
+    /*
+        FIXME: following call is likely unnecessary... originally under RestAction will could have different
+        action types like SQL, but in the end we used a different approach (ie pre-init steps).
+        So, likely can be removed, but need to check the refactoring RestResouce first
      */
-    private fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
-        action.seeGenes().forEach { it.randomize(randomness, false) }
-    }
-
-    /**
-     * Given the current schema definition, create a random action among the available ones.
-     * All the genes in such action will have their values initialized at random, but still within
-     * their given constraints (if any, e.g., a day number being between 1 and 12).
-     *
-     * @param noAuthP the probability of having an HTTP call without any authentication header.
-     */
-    fun sampleRandomAction(noAuthP: Double): RestAction {
-        val action = randomness.choose(actionCluster).copy() as RestAction
-        randomizeActionGenes(action)
-
-        if (action is RestCallAction) {
-            action.auth = getRandomAuth(noAuthP)
-        }
-
-        return action
-    }
 
     private fun sampleRandomCallAction(noAuthP: Double): RestCallAction {
         val action = randomness.choose(actionCluster.filter { a -> a.value is RestCallAction }).copy() as RestCallAction

@@ -26,6 +26,12 @@ public class AuthenticationDto {
      */
     public CookieLoginDto cookieLogin;
 
+    /**
+     * If the login is based on tokens, retrieved via JSON messages,
+     * specify how to do it
+     */
+    public JsonTokenPostLoginDto jsonTokenPostLogin;
+
     public AuthenticationDto() {
     }
 

@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Date;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -116,7 +117,7 @@ public class ObjectsClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateObject1 = sdf.parse(date1 + " " + time1);
         Date dateObject2 = sdf.parse(date1 + " " + time2);

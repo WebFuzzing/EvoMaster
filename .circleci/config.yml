@@ -72,3 +72,9 @@ jobs: # a collection of steps
       # Save coverage
       - store_artifacts:
           path: report/target/site/jacoco-aggregate
+
+      # Upload to CodeCov
+      # Moved to GitHub Actions, as in CircleCI few tests are disabled as flacky
+#      - run:
+#          name: Upload coverage to CodeCov
+#          command: curl -s https://codecov.io/bash | bash

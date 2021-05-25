@@ -7,17 +7,39 @@ These can be useful if you want to know more on how _EvoMaster_ works internally
 e.g., details on the Many Independent Objective (MIO) algorithm.
 
 
+### 2021
+
+* A. Arcuri, J.P. Galeotti.
+  *Enhancing Search-Based Testing With Testability Transformations For Existing APIs*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM). (*to appear*)
+  [[PDF](publications/2021_tosem_tt.pdf)]
+
+* M. Zhang, A. Arcuri.
+  *Adaptive Hypermutation for Search-Based System Test  Generation: A Study on REST APIs with EvoMaster*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM). (*to appear*)
+  [[PDF](publications/2021_tosem_hm.pdf)]  
+
+* M. Zhang, B. Marculescu, A. Arcuri.
+  *Resource and Dependency based Test Case Generation for RESTful Web Services*.
+  Empirical Software Engineering (EMSE). (*to appear*)
+  [[PDF](publications/2021_emse.pdf)]
+
+* A. Arcuri, J.P. Galeotti, B. Marculescu, M. Zhang.
+  *EvoMaster: A Search-Based System Test Generation Tool*.
+  The Journal of Open Source Software (JOSS).
+  [[PDF](publications/2021_joss.pdf)]
+
 ### 2020
 
 * A. Arcuri.
   *Automated Blackbox and Whitebox Testing of RESTful APIs with EvoMaster*.
   IEEE Software.
-  [[PDF](publications/2020_sw.pdf)].
+  [[PDF](publications/2020_sw.pdf)]
 
 * A. Arcuri, J.P. Galeotti.
   *Handling SQL Databases in Automated System Test Generation*. 
   ACM Transactions on Software Engineering and Methodology (TOSEM).
-  [[PDF](publications/2020_tosem.pdf)].   
+  [[PDF](publications/2020_tosem.pdf)]   
 
 * A. Arcuri, J.P. Galeotti.
   *Testability Transformations For Existing APIs*.

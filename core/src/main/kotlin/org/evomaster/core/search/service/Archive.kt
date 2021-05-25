@@ -116,8 +116,9 @@ class Archive<T> where T : Individual {
                 uniques.add(ind)
             }
         }
-        return uniques
+        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
     }
+
 
     fun isEmpty() = populations.isEmpty()
 

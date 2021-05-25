@@ -14,6 +14,8 @@ import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelecto
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 abstract class Mutator<T> : TrackOperator where T : Individual {
 
@@ -77,6 +79,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
     open fun update(previous: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation){}
 
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(Mutator::class.java)
+    }
+
     /**
      * @param upToNTimes how many mutations will be applied. can be less if running out of time
      * @param individual which will be mutated
@@ -84,6 +90,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      */
     fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>)
             : EvaluatedIndividual<T> {
+
+        if (log.isTraceEnabled){
+            log.trace("mutator will be applied, and the individual contains {} dbactions which are",
+                individual.individual.seeInitializingActions().size,
+                individual.individual.seeInitializingActions().joinToString(","){
+                    if (it is DbAction) it.getResolvedName() else it.getName()
+                } )
+        }
 
         var current = individual
 
@@ -94,6 +108,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         for (i in 0 until upToNTimes) {
 
+            if (log.isTraceEnabled){
+                log.trace("the individual will be mutated {} times, now it is {}th", upToNTimes, i)
+            }
+
             //save ei (i.e., impact and traces) before its individual is mutated, because the impact info might be updated during mutation
             val currentWithTraces = current.copy(tracker.getCopyFilterForEvalInd(current))
 
@@ -103,8 +121,16 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             val mutatedGenes = MutatedGeneSpecification()
 
+            if (log.isTraceEnabled){
+                log.trace("now it is {}th, do addInitializingActions starts", i)
+            }
+
             // impact info is updated due to newly added initialization actions
             structureMutator.addInitializingActions(current, mutatedGenes)
+
+            if (log.isTraceEnabled){
+                log.trace("now it is {}th, do addInitializingActions ends", i)
+            }
 
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
@@ -119,6 +145,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             //evaluated mutated by comparing with current using employed targets
             val result = evaluateMutation(mutated, current, targets, archive)
+
+            if (log.isTraceEnabled){
+                log.trace("results of evaluateMutation {}", result.value)
+            }
 
             //enable further actions for extracting
             update(currentWithTraces, mutated, mutatedGenes, result)
@@ -139,7 +169,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val targetsInfo =
                 evaluateMutationInDetails(mutated = mutated, current = current, targets = targets, archive = archive)
 
-            if (config.collectImpact()){
+            if (config.isEnabledImpactCollection()){
                 /*
                     update impact info regarding targets.
                     To avoid side-effect to impactful gene, remove covered targets
@@ -166,6 +196,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                     targets.addAll(archive.notCoveredTargets())
                 }
             }
+
+            if (log.isTraceEnabled){
+                log.trace("{}th mutation ends", i)
+            }
         }
         return current
     }
@@ -183,8 +217,18 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @return a result by comparing mutated individual [mutated] with before [current] regarding [targets].
      */
     fun evaluateMutation(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, targets: Set<Int>, archive: Archive<T>): EvaluatedMutation {
+        if (log.isTraceEnabled){
+            log.trace("evaluateMutation with the targets {}", targets.joinToString(","){it.toString() })
+        }
+
         // global check
-        if (archive.wouldReachNewTarget(mutated)) return EvaluatedMutation.BETTER_THAN
+        if (archive.wouldReachNewTarget(mutated)){
+
+            if (log.isTraceEnabled){
+                log.trace("archive reach new targets")
+            }
+            return EvaluatedMutation.BETTER_THAN
+        }
 
         /*
             to compare mutated with current,
@@ -201,7 +245,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      */
     private fun evaluateMutationInDetails(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, targets: Set<Int>, archive: Archive<T>): Map<Int, EvaluatedMutation> {
 
-        if (!config.collectImpact() && !config.enableArchiveSolution()) return emptyMap()
+        if (!config.isEnabledImpactCollection() && !config.isEnabledArchiveSolution()) return emptyMap()
 
         val evaluatedTargets = targets.map { it to EvaluatedMutation.UNSURE }.toMap().toMutableMap()
 
@@ -215,6 +259,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     }
 
     private fun compare(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, targets: Set<Int>): EvaluatedMutation {
+
         // current is better than mutated
         val beforeBetter = current.fitness.subsumes(other = mutated.fitness, targetSubset = targets, config = config)
         if (beforeBetter) return EvaluatedMutation.WORSE_THAN
@@ -238,6 +283,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
     fun saveMutation(evaluatedMutation: EvaluatedMutation, archive: Archive<T>, current: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>) : EvaluatedIndividual<T>{
         // if mutated is not worse than current, we employ the mutated for next mutation
+        if (log.isTraceEnabled){
+            log.trace("mutation is effective? {}", evaluatedMutation.isEffective())
+        }
         if (evaluatedMutation.isEffective()){
             /*
                 worse mutated might be added into archive if there exist space in population.

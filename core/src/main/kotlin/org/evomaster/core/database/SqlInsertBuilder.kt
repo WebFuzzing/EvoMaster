@@ -15,6 +15,8 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.dbconstraint.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class SqlInsertBuilder(
@@ -36,6 +38,10 @@ class SqlInsertBuilder(
     private val databaseType: DatabaseType
 
     private val name: String
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(SqlInsertBuilder::class.java)
+    }
 
 
     init {
@@ -282,6 +288,9 @@ class SqlInsertBuilder(
             DatabaseType.H2 -> ConstraintDatabaseType.H2
             DatabaseType.POSTGRES -> ConstraintDatabaseType.POSTGRES
             DatabaseType.DERBY -> ConstraintDatabaseType.DERBY
+            DatabaseType.MYSQL -> ConstraintDatabaseType.MYSQL
+            DatabaseType.MARIADB -> ConstraintDatabaseType.MARIADB
+            DatabaseType.MS_SQL_SERVER -> ConstraintDatabaseType.MS_SQL_SERVER
             DatabaseType.OTHER -> ConstraintDatabaseType.OTHER
         }
     }
@@ -325,7 +334,27 @@ class SqlInsertBuilder(
      * This is (should not) be a problem when running EM, but can be trickier when writing
      * test cases manually for EM
      */
-    fun createSqlInsertionAction(tableName: String, columnNames: Set<String>): List<DbAction> {
+    fun createSqlInsertionAction(
+            tableName: String,
+            /**
+             * Which columns to create data for. Default is all, ie *.
+             * Notice that more columns might be added, eg, to satisfy non-null
+             * and PK constraints
+             */
+            columnNames: Set<String> = setOf("*"),
+            /**
+             * used to avoid infinite recursion
+             */
+            history : MutableList<String> = mutableListOf(),
+            /**
+             *   When adding new insertions due to FK constraints, specify if
+             *   should get all columns for those new insertions, or just the minimal
+             *   needed to satisfy all the constraints
+             */
+            forceAll : Boolean = false
+    ): List<DbAction> {
+
+        history.add(tableName)
 
         val table = getTable(tableName)
 
@@ -358,17 +387,31 @@ class SqlInsertBuilder(
         }
 
         val insertion = DbAction(table, selectedColumns, counter++)
+        if (log.isTraceEnabled){
+            log.trace("create an insertion which is {} and the counter is ", insertion.getResolvedName(), counter)
+        }
+
         val actions = mutableListOf(insertion)
 
         for (fk in table.foreignKeys) {
-            /*
-                Assumption: in a valid Schema, this should never end up
-                in a infinite loop?
-             */
-            val pre = createSqlInsertionAction(fk.targetTable, setOf())
+
+            val target = fk.targetTable
+            val n = history.filter { it.equals(target, true) }.count()
+            if(n >= 3 && fk.sourceColumns.all{it.nullable}){
+                //TODO as a configurable parameter in EMConfig?
+                continue
+            }
+
+            val pre = if(forceAll) {
+                createSqlInsertionAction(target, setOf("*"), history, true)
+            } else {
+                createSqlInsertionAction(target, setOf(), history, false)
+            }
             actions.addAll(0, pre)
         }
-
+        if (log.isTraceEnabled){
+            log.trace("create insertions and current size is", actions.size)
+        }
         return actions
     }
 
@@ -441,7 +484,7 @@ class SqlInsertBuilder(
             throw IllegalStateException("No Database Executor registered for this object")
         }
 
-        val table = tables.values.find { it.name.toLowerCase() == tableName.toLowerCase() }
+        val table = tables.values.find { it.name.equals(tableName, ignoreCase = true) }
                 ?: throw  IllegalArgumentException("cannot find the table by name $tableName")
 
 
@@ -498,59 +541,7 @@ class SqlInsertBuilder(
 
     }
 
-    /**
-     * @return a list of sql insertion, and each of insertion includes all columns of the table.
-     *
-     * Note that the function is quite similar with [createSqlInsertionAction], we may add some variables
-     *      to insert an row with all columns into a reference table (by FK)
-     */
-    fun createSqlInsertionActionWithAllColumn(tableName: String): List<DbAction> {
 
-        val table = getTable(tableName)
-        val columnNames = table.columns.map { it.name }.toSet()
-
-        val takeAll = columnNames.contains("*")
-
-        if (takeAll && columnNames.size > 1) {
-            throw IllegalArgumentException("Invalid column description: more than one entry when using '*'")
-        }
-
-        for (cn in columnNames) {
-            if (cn != "*" && !table.columns.any { it.name == cn }) {
-                throw IllegalArgumentException("No column called $cn in table $tableName")
-            }
-        }
-
-        val selectedColumns = mutableSetOf<Column>()
-
-        for (c in table.columns) {
-            /*
-                we need to take primaryKey even if autoIncrement.
-                Point is, even if value will be set by DB, and so could skip it,
-                we would still need a non-modifiable, non-printable Gene to
-                store it, as we can have other Foreign Key genes pointing to it
-             */
-
-            if (takeAll || columnNames.contains(c.name) || !c.nullable || c.primaryKey) {
-                //TODO are there also other constraints to consider?
-                selectedColumns.add(c)
-            }
-        }
-
-        val insertion = DbAction(table, selectedColumns, counter++)
-        val actions = mutableListOf(insertion)
-
-        for (fk in table.foreignKeys) {
-            /*
-                Assumption: in a valid Schema, this should never end up
-                in a infinite loop?
-             */
-            val pre = createSqlInsertionActionWithAllColumn(fk.targetTable)
-            actions.addAll(0, pre)
-        }
-
-        return actions
-    }
 
     /**
      * get existing pks in db

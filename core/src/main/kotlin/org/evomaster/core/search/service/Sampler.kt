@@ -6,6 +6,8 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.tracer.TrackOperator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 abstract class Sampler<T> : TrackOperator where T : Individual {
@@ -33,12 +35,21 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
     fun numberOfDistinctActions() = actionCluster.size
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(Sampler::class.java)
+    }
+
+
     /**
      * Create a new individual. Usually each call to this method
      * will create a new, different individual, but there is no
      * hard guarantee
      */
     fun sample(): T {
+        if (log.isTraceEnabled){
+            log.trace("sampler will be applied")
+        }
+
         if (randomness.nextBoolean(config.probOfSmartSampling)) {
             return smartSample()
         } else {

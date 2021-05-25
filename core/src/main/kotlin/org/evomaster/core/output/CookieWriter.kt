@@ -1,9 +1,10 @@
 package org.evomaster.core.output
 
+import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.rest.ContentType
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.auth.CookieLogin
+import org.evomaster.core.problem.httpws.service.auth.CookieLogin
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Individual
 
 
 /**
@@ -16,12 +17,23 @@ object CookieWriter {
     fun cookiesName(info: CookieLogin): String = "cookies_${info.username}"
 
 
+    /**
+     *  Return the distinct auth info on cookie-based login in all actions
+     *  of this individual
+     */
+    fun getCookieLoginAuth(ind: Individual) =  ind.seeActions()
+            .filterIsInstance<HttpWsAction>()
+            .filter { it.auth.cookieLogin != null }
+            .map { it.auth.cookieLogin!! }
+            .distinctBy { it.username }
+
+
     fun handleGettingCookies(format: OutputFormat,
                              ind: EvaluatedIndividual<*>,
                              lines: Lines,
                              baseUrlOfSut: String) {
 
-        val cookiesInfo = (ind.individual as RestIndividual).getCookieLoginAuth()
+        val cookiesInfo =  getCookieLoginAuth(ind.individual)
 
         if (cookiesInfo.isNotEmpty()) {
             lines.addEmpty()

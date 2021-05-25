@@ -13,7 +13,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.lang.IllegalStateException
-import java.net.URI
+import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
 class PostmanParser(
@@ -23,6 +23,7 @@ class PostmanParser(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(PostmanParser::class.java)
+        private const val TMP_PATH_STR = "_TEMP_REPLACE_1234_ABCD_"
     }
 
     override fun parseTestCases(path: String): MutableList<MutableList<RestCallAction>> {
@@ -54,7 +55,7 @@ class PostmanParser(
 
     private fun getRestAction(defaultRestActions: List<RestCallAction>, postmanRequest: Request): RestCallAction? {
         val verb = postmanRequest.method
-        val path = URI(getEncodedPath(postmanRequest.url.raw)).path.trim()
+        val path = getPath(postmanRequest.url.path)
         val originalRestAction = defaultRestActions.firstOrNull { it.verb.toString() == verb && it.path.matches(path) }
 
         if (originalRestAction == null)
@@ -85,11 +86,19 @@ class PostmanParser(
         var value: String? = null
         when (parameter) {
             is HeaderParam -> value = postmanRequest.header?.find { it.key == parameter.name }?.value
-            is QueryParam -> value = postmanRequest.url.query?.find { it.key == parameter.name }?.value
+            is QueryParam -> {
+                value = postmanRequest.url.query?.find { it.key == parameter.name }?.value
+                if (value != null)
+                    value = URLDecoder.decode(value, StandardCharsets.UTF_8.toString()) // Query params must be encoded
+            }
             is BodyParam -> value = postmanRequest.body?.raw // Will return null for form bodies
             is PathParam -> {
-                val path = URI(getEncodedPath(postmanRequest.url.raw)).path.trim()
-                value = restAction.path.getKeyValues(path)?.get(parameter.name)
+                val path = getPath(postmanRequest.url.path)
+                val pathParamValue = restAction.path.getKeyValues(path)?.get(parameter.name)
+                if (pathParamValue == null)
+                    log.warn("Ignoring path parameter value... RestAction path and Postman path do not match: {} vs {}", restAction.path.toString(), path)
+                else
+                    value = getDecodedPathElement(pathParamValue)
             }
         }
 
@@ -133,16 +142,25 @@ class PostmanParser(
         }
     }
 
-    private fun getEncodedPath(path: String): String {
-        /*
-            WARNING: Postman doesn't encode parameter values properly. The best we can do is to manually encode
-            some safe-to-encode characters (i.e., they must be encoded regardless of where they occur)
-         */
-        return path
-                .replace(" ", "%20")
-                .replace("\"", "%22")
-                .replace("<", "%3C")
-                .replace(">", "%3E")
+    private fun getPath(pathElements: List<String>): String {
+        return "/" + pathElements.joinToString("/")
+    }
+
+    /**
+     * Path elements are encoded/decoded differently that query elements in a URL.
+     * Actually, the only problem when decoding path elements are white spaces,
+     * which could be encoded as "+" in the query. When decoding a "+" in the path,
+     * it should remain as "+" and not be changed for " ".
+     *
+     * This method decodes path elements using the standard URLDecoder class from
+     * the Java API, but replaces "+" chars with a temporary string before and
+     * after, so that those do not get transformed to " ".
+     */
+    private fun getDecodedPathElement(pathElement: String): String {
+        return URLDecoder.decode(
+                pathElement.replace("+", TMP_PATH_STR),
+                StandardCharsets.UTF_8.toString()
+        ).replace(TMP_PATH_STR, "+")
     }
 
     private fun isFormBody(parameter: Param): Boolean {

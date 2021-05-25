@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
 import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.InputProperties;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.databasespy.P6SpyFormatter;
@@ -46,6 +47,13 @@ public abstract class ExternalSutController extends SutController {
         still want to print it for debugging
      */
     private volatile StringBuffer errorBuffer;
+
+    /**
+     * Command used to run java, when starting the SUT.
+     * This might need to be overridden whea dealing with experiments
+     * using different versions of Java (eg, 8 vs 11)
+     */
+    private volatile String javaCommand = "java";
 
     @Override
     public final void setupForGeneratedTest(){
@@ -123,6 +131,13 @@ public abstract class ExternalSutController extends SutController {
 
     //-------------------------------------------------------------
 
+    public final void setJavaCommand(String command){
+        if(command==null || command.isEmpty()){
+            throw new IllegalArgumentException("Empty java command");
+        }
+        javaCommand = command;
+    }
+
     @Override
     public String startSut() {
 
@@ -146,7 +161,7 @@ public abstract class ExternalSutController extends SutController {
 
 
         List<String> command = new ArrayList<>();
-        command.add("java");
+        command.add(javaCommand);
 
 
         if (instrumentation) {
@@ -336,6 +351,14 @@ public abstract class ExternalSutController extends SutController {
         }
 
         return getUnitsInfoDto(serverController.getUnitsInfoRecorder());
+    }
+
+    @Override
+    public void setKillSwitch(boolean b) {
+        checkInstrumentation();
+
+        serverController.setKillSwitch(b);
+        ExecutionTracer.setKillSwitch(b);// store info locally as well, to avoid needing to do call to fetch current value
     }
 
 

@@ -1,12 +1,12 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchTimeController
@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.ZonedDateTime
+import javax.annotation.PostConstruct
 
 
 /**
@@ -23,33 +24,32 @@ import java.time.ZonedDateTime
  */
 class TestSuiteWriter {
 
+    companion object {
+        const val jsImport = "EM"
+
+        private const val controller = "controller"
+        private const val baseUrlOfSut = "baseUrlOfSut"
+        private const val expectationsMasterSwitch = "ems"
+        private const val fixtureClass = "ControllerFixture"
+        private const val fixture = "_fixture"
+
+        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
+    }
+
     @Inject
     private lateinit var config: EMConfig
 
     @Inject
     private lateinit var searchTimeController: SearchTimeController
 
-    private lateinit var swagger: OpenAPI
+    @Inject
+    private lateinit var testCaseWriter: TestCaseWriter
+
+    @Inject
     private lateinit var partialOracles: PartialOracles
-    private lateinit var objectGenerator: ObjectGenerator
 
-    private var active = mutableMapOf<String, Boolean>()
+    private var activePartialOracles = mutableMapOf<String, Boolean>()
 
-    companion object {
-        const val jsImport = "EM";
-
-        private const val controller = "controller"
-        private const val baseUrlOfSut = "baseUrlOfSut"
-        private const val expectationsMasterSwitch = "ems"
-
-        private val testCaseWriter = TestCaseWriter()
-
-        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
-    }
-
-    fun setSwagger(sw: OpenAPI) {
-        swagger = sw
-    }
 
     fun writeTests(
             solution: Solution<*>,
@@ -83,10 +83,8 @@ class TestSuiteWriter {
 
         val lines = Lines()
         val testSuiteOrganizer = TestSuiteOrganizer()
-        partialOracles.setFormat(config.outputFormat)
-        if (::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
-        testCaseWriter.setPartialOracles(partialOracles)
-        active = partialOracles.activeOracles(solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>)
+
+        activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -97,16 +95,18 @@ class TestSuiteWriter {
             lines.indent()
         }
 
-        beforeAfterMethods(controllerName, lines)
+        beforeAfterMethods(controllerName, lines, config.outputFormat, testSuiteFileName)
 
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
             testSuiteOrganizer.sortTests(solution, config.customNaming)
         } catch (ex: Exception) {
             var counter = 0
-            log.warn("A failure has occurred with the test sorting. Reverting to default settings. \n"
-                    + "Exception: ${ex.localizedMessage} \n"
-                    + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. ")
+            log.warn(
+                "A failure has occurred with the test sorting. Reverting to default settings. \n"
+                        + "Exception: ${ex.localizedMessage} \n"
+                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+            )
             solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
         }
 
@@ -115,17 +115,22 @@ class TestSuiteWriter {
 
             // catch writing problems on an individual test case basis
             val testLines = try {
-                testCaseWriter.convertToCompilableTestCode(config, test, baseUrlOfSut)
+                if (config.outputFormat.isCsharp())
+                    testCaseWriter.convertToCompilableTestCode(test, "$fixture.$baseUrlOfSut")
+                else
+                    testCaseWriter.convertToCompilableTestCode(test, baseUrlOfSut)
             } catch (ex: Exception) {
-                log.warn("A failure has occurred in writing test ${test.name}. \n "
-                        + "Exception: ${ex.localizedMessage} \n"
-                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. ")
+                log.warn(
+                    "A failure has occurred in writing test ${test.name}. \n "
+                            + "Exception: ${ex.localizedMessage} \n"
+                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+                )
                 Lines()
             }
             lines.add(testLines)
         }
 
-        if(config.outputFormat.isJavaOrKotlin()){
+        if (config.outputFormat.isJavaOrKotlin()) {
             lines.deindent()
         }
 
@@ -135,9 +140,11 @@ class TestSuiteWriter {
     }
 
 
-    private fun saveToDisk(testFileContent: String,
-                           config: EMConfig,
-                           testSuiteFileName: TestSuiteFileName) {
+    private fun saveToDisk(
+        testFileContent: String,
+        config: EMConfig,
+        testSuiteFileName: TestSuiteFileName
+    ) {
 
         val path = Paths.get(config.outputFolder, testSuiteFileName.getAsPath(config.outputFormat))
 
@@ -167,7 +174,13 @@ class TestSuiteWriter {
 
     private fun classDescriptionComment(solution: Solution<*>, lines: Lines, timestamp : String = "") {
         lines.add("/**")
-        lines.add(" * This file was automatically generated by EvoMaster on ${escapeDocs(ZonedDateTime.now().toString())}")
+        lines.add(
+            " * This file was automatically generated by EvoMaster on ${
+                escapeDocs(
+                    ZonedDateTime.now().toString()
+                )
+            }"
+        )
         classDescriptionEmptyLine(lines)
         if (isAnSnapshot(solution)) {
             lines.add(" ************************************ WARNING ************************************ ")
@@ -255,16 +268,30 @@ class TestSuiteWriter {
         if (format.isJavaScript()) {
             lines.add("const superagent = require(\"superagent\");")
             lines.add("const $jsImport = require(\"evomaster-client-js\");")
-            if(controllerName != null) {
+            if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }
+        }
+
+        if (format.isCsharp()) {
+            addUsing("System", lines)
+            addUsing("System.Text", lines)
+            addUsing("Xunit", lines)
+            addUsing("System.Net.Http", lines)
+            addUsing("System.Net.Http.Headers", lines)
+            addUsing("System.Threading.Tasks", lines)
+            addUsing("Newtonsoft.Json", lines)
+            addUsing("EvoMaster.Controller", lines)
         }
 
         lines.addEmpty(4)
 
         classDescriptionComment(solution, lines, timestamp)
 
-        if (format.isJavaOrKotlin()) {
+        if (format.isCsharp()) {
+            defineFixture(lines, controllerName)
+        }
+        if (format.isJavaOrKotlin() || format.isCsharp()) {
             defineClass(name, lines)
             lines.addEmpty()
         }
@@ -294,24 +321,29 @@ class TestSuiteWriter {
             } else {
                 lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
             }
+        } else if (config.outputFormat.isCsharp()) {
+            if (!config.blackBox || config.bbExperiments) {
+                lines.add("private static readonly HttpClient Client = new HttpClient ();")
+            }
         }
 
-        if(config.expectationsActive) {
+        if (config.expectationsActive) {
             if (config.outputFormat.isJavaOrKotlin()) {
                 //TODO JS
-                if(active.any{it.value}) {
-                    lines.add("/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
-                            "individual test cases")
+                if (activePartialOracles.any { it.value }) {
+                    lines.add(
+                        "/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
+                                "individual test cases"
+                    )
                     lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
                     lines.add("*/")
-                    if(config.outputFormat.isJava()){
+                    if (config.outputFormat.isJava()) {
                         lines.add("private static boolean $expectationsMasterSwitch = false;")
-                    }
-                    else if(config.outputFormat.isKotlin()){
+                    } else if (config.outputFormat.isKotlin()) {
                         lines.add("private val $expectationsMasterSwitch = false")
                     }
                 }
-                partialOracles.variableDeclaration(lines, config.outputFormat, active)
+                partialOracles?.variableDeclaration(lines, config.outputFormat, activePartialOracles)
             }
         }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
@@ -332,17 +364,20 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun initClass()")
             }
-            format.isJavaScript() -> lines.add("beforeAll( async () =>");
+            format.isJavaScript() -> lines.add("beforeAll( async () =>")
         }
 
         lines.block {
             if (!config.blackBox) {
-                if(config.outputFormat.isJavaScript()){
-                    addStatement("await $controller.setupForGeneratedTest()", lines)
-                    addStatement("baseUrlOfSut = await $controller.startSut()", lines)
-                } else {
-                    addStatement("$controller.setupForGeneratedTest()", lines)
-                    addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                when {
+                    config.outputFormat.isJavaScript() -> {
+                        addStatement("await $controller.setupForGeneratedTest()", lines)
+                        addStatement("baseUrlOfSut = await $controller.startSut()", lines)
+                    }
+                    config.outputFormat.isJavaOrKotlin() -> {
+                        addStatement("$controller.setupForGeneratedTest()", lines)
+                        addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                    }
                 }
 
                 when {
@@ -393,11 +428,16 @@ class TestSuiteWriter {
             format.isJavaScript() -> lines.add("afterAll( async () =>")
         }
 
-        lines.block {
-            if(format.isJavaScript()){
-                addStatement("await $controller.stopSut()", lines)
-            } else {
-                addStatement("$controller.stopSut()", lines)
+        if (!format.isCsharp()) {
+            lines.block {
+                when {
+                    format.isJavaScript() -> {
+                        addStatement("await $controller.stopSut()", lines)
+                    }
+                    else -> {
+                        addStatement("$controller.stopSut()", lines)
+                    }
+                }
             }
         }
 
@@ -406,7 +446,7 @@ class TestSuiteWriter {
         }
     }
 
-    private fun initTestMethod(lines: Lines) {
+    private fun initTestMethod(lines: Lines, name: TestSuiteFileName) {
 
         if (config.blackBox) {
             return
@@ -423,34 +463,53 @@ class TestSuiteWriter {
             format.isKotlin() -> {
                 lines.add("fun initTest()")
             }
-            format.isJavaScript() -> lines.add("beforeEach(async () => ");
+            format.isJavaScript() -> lines.add("beforeEach(async () => ")
+            format.isCsharp() -> lines.add("public ${name.getClassName()} ($fixtureClass fixture)")
         }
 
+
         lines.block {
-            if(format.isJavaScript()){
+            if (format.isJavaScript()) {
                 addStatement("await $controller.resetStateOfSUT()", lines)
-            } else {
+            } else if (format.isJavaOrKotlin()) {
                 addStatement("$controller.resetStateOfSUT()", lines)
+            } else if (format.isCsharp()) {
+                addStatement("$fixture = fixture", lines)
+                addStatement("$fixture.controller.ResetStateOfSut()", lines)
             }
         }
+
 
         if (format.isJavaScript()) {
             lines.append(");")
         }
     }
 
-    private fun beforeAfterMethods(controllerName: String?, lines: Lines) {
+    private fun beforeAfterMethods(
+        controllerName: String?,
+        lines: Lines,
+        format: OutputFormat,
+        testSuiteFileName: TestSuiteFileName
+    ) {
 
         lines.addEmpty()
 
         val staticInit = {
             staticVariables(controllerName, lines)
-            lines.addEmpty(2)
 
-            initClassMethod(lines)
-            lines.addEmpty(2)
+            if (!format.isCsharp()) {
+                lines.addEmpty(2)
+                initClassMethod(lines)
+                lines.addEmpty(2)
 
-            tearDownMethod(lines)
+                tearDownMethod(lines)
+            } else {
+                addStatement("private $fixtureClass $fixture", lines)
+                addStatement("private HttpResponseMessage response", lines)
+                addStatement("private string responseBody", lines)
+                addStatement("private string body", lines)
+                addStatement("private StringContent httpContent", lines)
+            }
         }
 
         if (config.outputFormat.isKotlin()) {
@@ -461,13 +520,13 @@ class TestSuiteWriter {
         }
         lines.addEmpty(2)
 
-        initTestMethod(lines)
+        initTestMethod(lines, testSuiteFileName)
         lines.addEmpty(2)
     }
 
 
     private fun footer(lines: Lines) {
-        if (config.outputFormat.isJavaOrKotlin()) {
+        if (config.outputFormat.isJavaOrKotlin() || config.outputFormat.isCsharp()) {
             lines.addEmpty(2)
             lines.add("}")
         }
@@ -482,9 +541,13 @@ class TestSuiteWriter {
         when {
             format.isJava() -> lines.append("public ")
             format.isKotlin() -> lines.append("internal ")
+            format.isCsharp() -> lines.append("public ")
         }
 
-        lines.append("class ${name.getClassName()} {")
+        if (!format.isCsharp())
+            lines.append("class ${name.getClassName()} {")
+        else
+            lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
     }
 
     private fun addImport(klass: String, lines: Lines, static: Boolean = false) {
@@ -495,24 +558,33 @@ class TestSuiteWriter {
         addStatement("import $s $klass", lines)
     }
 
+    private fun addUsing(library: String, lines: Lines, static: Boolean = false) {
+
+        val s = if (static) "static" else ""
+
+        addStatement("using $s $library", lines)
+    }
+
     private fun addStatement(statement: String, lines: Lines) {
         lines.add(statement)
         appendSemicolon(lines)
     }
 
     private fun appendSemicolon(lines: Lines) {
-        if (config.outputFormat.let { it.isJava() || it.isJavaScript() }) {
+        if (config.outputFormat.let { it.isJava() || it.isJavaScript() || it.isCsharp() }) {
             lines.append(";")
         }
     }
 
-    fun setPartialOracles(oracles: PartialOracles){
-        partialOracles = oracles
-    }
-    fun getPartialOracles(): PartialOracles{
+
+
+    /**
+     *  FIXME replace with direct injection
+     */
+    @Deprecated("replace with direct injection")
+    fun getPartialOracles(): PartialOracles {
         return partialOracles
     }
-    fun setObjectGenerator(generator: ObjectGenerator){
-        objectGenerator = generator
-    }
+
+
 }

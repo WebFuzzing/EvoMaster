@@ -49,13 +49,14 @@ class RemoteController() : DatabaseExecutor {
 
     private var client: Client = ClientBuilder.newClient()
 
-    constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean) : this() {
+    constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean, config: EMConfig = EMConfig()) : this() {
         if (computeSqlHeuristics && !extractSqlExecutionInfo)
             throw IllegalArgumentException("'extractSqlExecutionInfo' should be enabled when 'computeSqlHeuristics' is enabled")
         this.host = host
         this.port = port
         this.computeSqlHeuristics = computeSqlHeuristics
         this.extractSqlExecutionInfo = computeSqlHeuristics || extractSqlExecutionInfo
+        this.config = config
     }
 
     constructor(host: String, port: Int, computeSqlHeuristics: Boolean) : this(host, port, computeSqlHeuristics, computeSqlHeuristics)
@@ -95,6 +96,9 @@ class RemoteController() : DatabaseExecutor {
 
                     TcpUtils.handleEphemeralPortIssue()
 
+                    /*
+                        [non-determinism-source] Man: this might lead to non-determinism
+                     */
                     lambda.invoke()
                 }
                 TcpUtils.isRefusedConnection(e) -> {
@@ -112,6 +116,10 @@ class RemoteController() : DatabaseExecutor {
                     log.warn("EvoMaster Driver TCP connection is having issues: '${e.cause!!.message}'." +
                             " Let's wait a bit and try again.")
                     Thread.sleep(5_000)
+
+                    /*
+                        [non-determinism-source] Man: this might lead to non-determinism
+                     */
                     lambda.invoke()
                 }
                 else -> throw e
@@ -278,6 +286,7 @@ class RemoteController() : DatabaseExecutor {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
                     .queryParam("ids", queryParam)
+                    .queryParam("killSwitch", config.killSwitch)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
@@ -305,6 +314,8 @@ class RemoteController() : DatabaseExecutor {
 
     override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
 
+        log.trace("Going to execute database command. Command:{} , Insertion.size={}",dto.command,dto.insertions?.size ?: 0)
+
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.DATABASE_COMMAND)
@@ -312,7 +323,11 @@ class RemoteController() : DatabaseExecutor {
                     .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
         }
 
+        /*
+           [non-determinism-source] Man: this might lead to non-determinism
+        */
         if (!wasSuccess(response)) {
+
             LoggingUtil.uniqueWarn(log, "Failed to execute database command. HTTP status: {}.", response.status)
 
             if(response.mediaType == MediaType.TEXT_PLAIN_TYPE){

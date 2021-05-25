@@ -201,7 +201,7 @@ class ArchiveGeneSelector {
     /**
      * @return whether apply archive-based gene selection for individual or eg, ObjectGene
      */
-    fun applyArchiveSelection() = config.enableArchiveGeneSelection() && randomness.nextBoolean(config.probOfArchiveMutation)
+    fun applyArchiveSelection() = config.isEnabledArchiveGeneSelection() && randomness.nextBoolean(config.probOfArchiveMutation)
 
     /**
      * export impact info collected during search that is normally used for experiment
@@ -236,7 +236,7 @@ class ArchiveGeneSelector {
     }
 
     fun saveImpactSnapshot(index : Int, checkedTargets: Set<Int>, targetsInfo : Map<Int, EvaluatedMutation>, result: EvaluatedMutation, evaluatedIndividual: EvaluatedIndividual<*>) {
-        if (!config.collectImpact()) return
+        if (!config.isEnabledImpactCollection()) return
         if(!config.saveImpactAfterMutation) return
 
         val path = Paths.get(config.impactAfterMutationFile)

@@ -14,7 +14,7 @@ class AppController  extends em.SutController {
     }
 
     getPreferredOutputFormat() {
-        return em.dto.OutputFormat.JAVA_JUNIT_4; // TODO JavaScript
+        return em.dto.OutputFormat.JS_JEST;
     }
 
     getProblemInfo() {

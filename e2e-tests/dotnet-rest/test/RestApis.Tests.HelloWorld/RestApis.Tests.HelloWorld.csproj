@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+
+    <!-->TODO</-->
+    <StartupObject>RestApis.Tests.HelloWorld.Controller.EmbeddedEvoMasterController</StartupObject>
+  </PropertyGroup>
+
+  <Target Name="htmlWarning" AfterTargets="AfterBuild">
+    <Copy SourceFiles="../../../../client-dotnet/src/EvoMaster.Controller/Resources/warning.html" DestinationFolder="$(OutDir)" />
+  </Target>
+  
+  <ItemGroup>
+
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
+    <PackageReference Include="xunit" Version="2.4.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
+    <PackageReference Include="coverlet.collector" Version="1.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/RestApis.HelloWorld/RestApis.HelloWorld.csproj" />
+    <ProjectReference Include="..\..\..\..\client-dotnet\src\EvoMaster.Controller\EvoMaster.Controller.csproj" />
+  </ItemGroup>
+
+</Project>

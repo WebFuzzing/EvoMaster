@@ -14,10 +14,28 @@ import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException
 
 
+/**
+ *  A representation of typical array, for a fixed type T, ie, no mixed types are allowed here.
+ */
 class ArrayGene<T>(
+        /**
+         * The name of this gene
+         */
         name: String,
+        /**
+         * The type for this array. Every time we create a new element to add, it has to be based
+         * on this template
+         */
         val template: T,
+        /**
+         *  How max elements to have in this array. Usually arrays are unbound, till the maximum int size (ie, 2 billion
+         *  elements on the JVM). But, for search reasons, too large arrays are impractical
+         */
         var maxSize: Int = MAX_SIZE,
+        /**
+         * The actual elements in the array, based on the template. Ie, usually those elements will be clones
+         * of the templated, and then mutated/randomized
+         */
         var elements: MutableList<T> = mutableListOf()
 ) : CollectionGene, Gene(name)
         where T : Gene {

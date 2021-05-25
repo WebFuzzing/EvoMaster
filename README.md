@@ -5,7 +5,7 @@
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
-[![Build Status](https://travis-ci.org/EMResearch/EvoMaster.svg?branch=master)](https://travis-ci.org/EMResearch/EvoMaster)
+![CI](https://github.com/EMResearch/EvoMaster/workflows/CI/badge.svg)
 [![CircleCI](https://circleci.com/gh/EMResearch/EvoMaster.svg?style=svg)](https://circleci.com/gh/EMResearch/EvoMaster)
 [![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
 <!---
@@ -56,8 +56,8 @@ __Key features__:
   as long as an OpenAPI schema is provided. However, results will be worse than whitebox testing (e.g., due
   to lack of bytecode analysis).
 
-* _Authentication_: we support auth based on authentication headers and cookies. 
-   However, at the moment we do not support OAuth.
+* _Authentication_: for white-box testing we support auth based on authentication headers and cookies. 
+   However, at the moment we do not support OAuth, nor authentication in black-box testing.
 
 __Known limitations__:
 
@@ -99,11 +99,12 @@ case studies in [EMB](https://github.com/EMResearch/EMB).
   shows how to write a white-box driver for EvoMaster, for the
   [rest-api-example](https://github.com/EMResearch/rest-api-example). 
  
+<!---
 ### Hiring
 
 Each year we usually have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
 For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
-
+--->
 
 
 
@@ -139,6 +140,12 @@ as part of the *ERC Consolidator* project
 <i>Using Evolutionary Algorithms to Understand and Secure Web/Enterprise Systems</i>.
 *  2018-2021: a 7.8 million Norwegian Kroner grant  by the Research Council of Norway (RCN), 
 as part of the Frinatek project <i>Evolutionary Enterprise Testing</i>.  
+
+
+<img src="https://github.com/EMResearch/EvoMaster/blob/master/docs/img/LOGO_ERC-FLAG_EU_.jpg?raw=true" width="200" >
+
+
+This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No 864972).
 
 
 ### License

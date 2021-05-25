@@ -55,6 +55,17 @@ public class CoverageClassVisitor extends ClassVisitor {
             return mv;
         }
 
+        if(bytecodeClassName.contains("$InterceptedDefinition") ||
+                bytecodeClassName.contains("$Introspection")){
+            /*
+                In general, we should avoid dealing with classes generated on the fly by frameworks like
+                Hibernate or Micronaut. But not simple to identify. These classes here are particularly
+                troublesome, especially for patio-api. it does not impact performance of EM, but mess up
+                experiments.
+             */
+            return mv;
+        }
+
         ObjectiveRecorder.registerTarget(ObjectiveNaming.classObjectiveName(bytecodeClassName));
 
         mv = new LineCovMethodVisitor(mv, bytecodeClassName, name, descriptor);

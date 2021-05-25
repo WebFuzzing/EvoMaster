@@ -5,13 +5,16 @@ import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
+import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Paths
+import java.util.logging.Logger
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -31,6 +34,8 @@ class EMConfig {
      */
 
     companion object {
+
+        private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -68,7 +73,7 @@ class EMConfig {
 
             val defaultInstance = EMConfig()
 
-            var parser = OptionParser()
+            val parser = OptionParser()
 
             parser.accepts("help", "Print this help documentation")
                     .forHelp()
@@ -219,6 +224,22 @@ class EMConfig {
         }
 
         checkMultiFieldConstraints()
+
+        handleDeprecated()
+    }
+
+
+    private fun handleDeprecated(){
+        /*
+            TODO If this happens often, then should use annotations.
+            eg, could handle specially in Markdown all the deprecated fields
+         */
+        if(testSuiteFileName.isNotBlank()){
+            log.warn("Using deprecated option 'testSuiteFileName'")
+            outputFilePrefix = testSuiteFileName
+            outputFileSuffix = ""
+            testSuiteFileName = ""
+        }
     }
 
     private fun checkMultiFieldConstraints() {
@@ -272,9 +293,9 @@ class EMConfig {
             resource-mio and sql configuration
             TODO if required
          */
-        if (resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)) {
-            throw IllegalArgumentException("Resource-mio does not support SQL strategies for the moment")
-        }
+//        if (resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)) {
+//            throw IllegalArgumentException("Resource-mio does not support SQL strategies for the moment")
+//        }
 
         //archive-based mutation
 //        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
@@ -307,12 +328,21 @@ class EMConfig {
             throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
         }
 
-        if (testSuiteFileName.contains("-") && outputFormat.isJavaOrKotlin()) {
-            throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
+        if ((outputFilePrefix.contains("-") || outputFileSuffix.contains("-"))
+                    && outputFormat.isJavaOrKotlin()) { //TODO also for C#?
+             throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
         }
 
         if (seedTestCases && seedTestCasesPath.isNullOrBlank()) {
             throw IllegalArgumentException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
+        }
+
+        // Clustering constraints: the executive summary is not really meaningful without the clustering
+        if(executiveSummary && testSuiteSplitType != TestSuiteSplitType.CLUSTER){
+            executiveSummary = false
+            LoggingUtil.getInfoLogger().warn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
+                    "The option has been deactivated for this run, to prevent a crash.")
+            //throw IllegalArgumentException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
         }
     }
 
@@ -598,13 +628,28 @@ class EMConfig {
 
 
     @Important(2.0)
-    @Cfg("The name of generated file with the test cases, without file type extension." +
+    @Cfg("The name prefix of generated file(s) with the test cases, without file type extension." +
             " In JVM languages, if the name contains '.', folders will be created to represent" +
             " the given package structure." +
             " Also, in JVM languages, should not use '-' in the file name, as not valid symbol" +
-            " for class identifiers.")
+            " for class identifiers." +
+            " This prefix be combined with the outputFileSuffix to combined the final name." +
+            " As EvoMaster can split the generated tests among different files, each will get a label," +
+            " and the names will be in the form prefix+label+suffix.")
     @Regex("[-a-zA-Z\$_][-0-9a-zA-Z\$_]*(.[-a-zA-Z\$_][-0-9a-zA-Z\$_]*)*")
-    var testSuiteFileName = "EvoMasterTest"
+    var outputFilePrefix = "EvoMaster"
+
+    @Important(2.0)
+    @Cfg("The name suffix for the generated file(s), to be added before the file type extension." +
+            " As EvoMaster can split the generated tests among different files, each will get a label," +
+            " and the names will be in the form prefix+label+suffix.")
+    @Regex("[-a-zA-Z\$_][-0-9a-zA-Z\$_]*(.[-a-zA-Z\$_][-0-9a-zA-Z\$_]*)*")
+    var outputFileSuffix = "Test"
+
+
+    @Deprecated("Should use outputFilePrefix and outputFileSuffix")
+    @Cfg("DEPRECATED. Rather use _outputFilePrefix_ and _outputFileSuffix_")
+    var testSuiteFileName = ""
 
     @Important(2.0)
     @Cfg("Specify in which format the tests should be outputted." +
@@ -652,6 +697,7 @@ class EMConfig {
 
     enum class ProblemType(private val experimental: Boolean) : WithExperimentalOptions {
         REST(experimental = false),
+        GRAPHQL(experimental = true),
         WEB(experimental = true);
         override fun isExperimental() = experimental
     }
@@ -664,21 +710,19 @@ class EMConfig {
             "Usually, you would put it to 'false' only when debugging EvoMaster itself")
     var createTests = true
 
-
     enum class TestSuiteSplitType {
         NONE,
         CLUSTER,
-        SUMMARY_ONLY,
         CODE
     }
 
-    @Experimental
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
-    var testSuiteSplitType = TestSuiteSplitType.NONE
+    var testSuiteSplitType = TestSuiteSplitType.CLUSTER
 
-    @Experimental
-    @Cfg("Generate an executive summary, containing an example of each category of potential fault found")
-    var executiveSummary = false
+    @Cfg("Generate an executive summary, containing an example of each category of potential fault found." +
+                    "NOTE: This option is only meaningful when used in conjuction with clustering. " +
+                    "This is achieved by turning the option --testSuiteSplitType to CLUSTER")
+    var executiveSummary = true
 
     @Experimental
     @Cfg("The Distance Metric Last Line may use several values for epsilon." +
@@ -898,13 +942,42 @@ class EMConfig {
     var enableProcessMonitor = false
 
     @Experimental
+    @Cfg("Specify a format to save the process data")
+    var processFormat = ProcessDataFormat.JSON_ALL
+
+    enum class ProcessDataFormat{
+        /**
+         * save evaluated individuals and Archive with a json format
+         */
+        JSON_ALL,
+//        /**
+//         * save Archive with a json format and save the evaluated individual with the specified test format
+//         */
+//        JSON_ARCHIVE_TEST_IND,
+//        /**
+//         * only save the evaluated individuals with json format
+//         */
+//        JSON_IND,
+        /**
+         * only save the evaluated individual with the specified test format
+         */
+        TEST_IND,
+        /**
+         * save covered targets with the specified target format and tests with the specified test format
+         */
+        TARGET_TEST_IND
+    }
+
+    @Experimental
     @Cfg("Specify a folder to save results when a search monitor is enabled")
     @Folder
     var processFiles = "process_data"
 
     @Experimental
-    @Cfg("Specify how often to save results when a search monitor is enabled ")
-    var processInterval = 100
+    @Cfg("Specify how often to save results when a search monitor is enabled, and 0.0 presents to record all evaluated individual")
+    @Max(50.0)
+    @Min(0.0)
+    var processInterval = 0.0
 
     @Experimental
     @Cfg("Whether to enable tracking the history of modifications of the individuals during the search")
@@ -930,10 +1003,9 @@ class EMConfig {
     @Cfg("QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==")
     var e_u1f984 = false
 
-    @Experimental
     @Cfg("Enable Expectation Generation. If enabled, expectations will be generated. " +
             "A variable called expectationsMasterSwitch is added to the test suite, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail.")
-    var expectationsActive = false
+    var expectationsActive = true
 
     @Cfg("Generate basic assertions. Basic assertions (comparing the returned object to itself) are added to the code. " +
             "NOTE: this should not cause any tests to fail.")
@@ -1002,6 +1074,11 @@ class EMConfig {
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
     var probOfApplySQLActionToCreateResources = 0.0
+
+    @Experimental
+    @Cfg("When generating resource using SQL (e.g., sampler or mutator), how many new rows (max) to generate for the specific resource each time")
+    @Min(0.0)
+    var maxSqlInitActionsPerResource = 0
 
     @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
@@ -1286,6 +1363,11 @@ class EMConfig {
     @Cfg("File path where the seeded test cases are located")
     var seedTestCasesPath : String = "postman.postman_collection.json"
 
+    @Experimental
+    @Cfg("Try to enforce the stopping of SUT business-level code." +
+            " This is needed when TCP connections timeouts, to avoid thread executions" +
+            " from previous HTTP calls affecting the current one")
+    var killSwitch = false
 
 
     fun timeLimitInSeconds(): Int {
@@ -1317,19 +1399,28 @@ class EMConfig {
     /**
      * impact info can be collected when archive-based solution is enabled or doCollectImpact
      */
-    fun collectImpact() = algorithm == Algorithm.MIO && doCollectImpact || enableArchiveGeneSelection()
+    fun isEnabledImpactCollection() = algorithm == Algorithm.MIO && doCollectImpact || isEnabledArchiveGeneSelection()
 
     /**
      * @return whether archive-based gene selection is enabled
      */
-    fun enableArchiveGeneSelection() = algorithm == Algorithm.MIO && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+    fun isEnabledArchiveGeneSelection() = algorithm == Algorithm.MIO && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
 
     /**
      * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
      */
-    fun enableArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+    fun isEnabledArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
 
+    fun isEnabledArchiveSolution() = isEnabledArchiveGeneMutation() || isEnabledArchiveGeneSelection()
 
-    fun enableArchiveSolution() = enableArchiveGeneMutation() || enableArchiveGeneSelection()
+    /**
+     * @return whether enable resource-dependency based method
+     */
+    fun isEnabledResourceDependency() = probOfSmartSampling > 0.0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+
+    /**
+     * @return whether to generate SQL between rest actions
+     */
+    fun isEnabledSQLInBetween() = isEnabledResourceDependency() && heuristicsForSQL && probOfApplySQLActionToCreateResources > 0.0
 
 }

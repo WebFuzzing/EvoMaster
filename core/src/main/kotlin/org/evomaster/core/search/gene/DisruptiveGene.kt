@@ -59,6 +59,11 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         throw IllegalArgumentException("impact is null or not DisruptiveGeneImpact")
     }
 
+    /**
+     *  mutation of inside gene in DisruptiveGene is based on the probability.
+     *  In [candidatesInternalGenes], we decide whether to return the inside gene .
+     *  if the return is empty, [mutate] will be invoked
+     */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         // do nothing due to rand() > probability
         return true

@@ -185,7 +185,7 @@ export default class ExecutionTracer {
         return ExecutionTracer.objectiveCoverage.get(id).value;
     }
 
-    private static updateObjective(id: string, value: number) {
+    public static updateObjective(id: string, value: number) {
         if (value < 0 || value > 1) {
             throw new Error("Invalid value " + value + " out of range [0,1]");
         }

@@ -136,6 +136,11 @@ class RestActionBuilderV3Test{
     // ----------- V2 --------------
 
     @Test
+    fun testGitLab() {
+        loadAndAssertActions("/swagger/others/gitlab.json", 358)
+    }
+
+    @Test
     fun testCyclotron() {
         loadAndAssertActions("/swagger/others/cyclotron.json", 50)
     }

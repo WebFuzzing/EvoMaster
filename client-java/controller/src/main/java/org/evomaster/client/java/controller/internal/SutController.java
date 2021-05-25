@@ -154,6 +154,9 @@ public abstract class SutController implements SutHandler {
         }
     }
 
+    public int getActionIndex(){
+        return actionIndex;
+    }
 
     /**
      * Calculate heuristics based on intercepted SQL commands
@@ -459,6 +462,9 @@ public abstract class SutController implements SutHandler {
 
     public abstract UnitsInfoDto getUnitsInfoDto();
 
+    public abstract void setKillSwitch(boolean b);
+
+
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
 
         if(recorder == null){
@@ -473,6 +479,7 @@ public abstract class SutController implements SutHandler {
         dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
         dto.unitNames = recorder.getUnitNames();
         dto.parsedDtos = recorder.getParsedDtos();
+        dto.numberOfInstrumentedNumberComparisons = recorder.getNumberOfInstrumentedNumberComparisons();
         return dto;
     }
 }

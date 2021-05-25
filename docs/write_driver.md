@@ -99,6 +99,9 @@ public static void main(String[] args){
 At this point, once this driver is started (e.g., by right-clicking on it in
 an IDE to run it as a Java process),
 then you can use `evomaster.jar` to finally generate test cases.
+Note that it is also possible to run the driver from command-line, like any other Java program with a `main` function.
+However, in such case, you will need to package an uber jar file (e.g., using plugins like `maven-shade-plugin` and `maven-assembly-plugin`).  
+
 
 __WARNING__: Java 9 broke backward compatibility. 
 One painful change was that self-attachment of Java-Agents (needed for bytecode instrumentation)
@@ -180,6 +183,16 @@ Finally, the `startSut()` method must return the URL of where the SUT is listeni
 When running tests locally, this is as simple as returning `"http://localhost:" + getSutPort()`.
 
 
+Note that you need to make sure you can run your application programmatically, regardless of EvoMaster. A simple way is to check if the following works:
+
+```
+public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+}
+```
+
+The issue could arise when using `spring-boot-maven-plugin` to start the application, and there are some classpath problems in your application.
+
 ## SQL Databases
 
 If the application is using a SQL database, you must configure `getConnection()` and `getDatabaseDriverName()`,
@@ -219,7 +232,7 @@ the option `--spring.cache.type=NONE`.
 Whenever possible, it would be best to use an embedded database such as _H2_.
 However, if you need to rely on a specific database such as _Postgres_, we recommend starting
 it with _Docker_.  
-In Java, this can be done with libraries such as [TestContainers](https://github.com/testcontainers/testcontainers-java/).
+In Java, this can be done with libraries such as [TestContainers](https://github.com/testcontainers/testcontainers-java/) (which you will need to import in Maven/Gradle).
 In your driver, you can then have code like:
 
 ```
@@ -236,7 +249,7 @@ Then, the URL to connect to the database can be something like:
 ```
 String host = postgres.getContainerIpAddress();
 int port = postgres.getMappedPort(5432);
-String url = "jdbc:p6spy:postgresql://"+host+":"+port+"/postgres
+String url = "jdbc:p6spy:postgresql://"+host+":"+port+"/postgres"
 ```
 
 You can then tell Spring to use such URL with the parameter `--spring.datasource.url`.
@@ -245,7 +258,8 @@ Note: the `withTmpFs` configuration is very important, and it is database depend
 A database running in _Docker_ will still write on your hard-drive, which is an unnecessary,
 time-consuming overhead. 
 The idea then is to mount the folder, in which the database writes, directly in RAM.   
- 
+
+For an example, you can look at the E2E tests in EvoMaster, like the class [com.foo.spring.rest.postgres.SpringRestPostgresController](https://github.com/EMResearch/EvoMaster/blob/master/e2e-tests/spring-rest-postgres/src/test/kotlin/com/foo/spring/rest/postgres/SpringRestPostgresController.kt). 
 
 ## Code Coverage  
  

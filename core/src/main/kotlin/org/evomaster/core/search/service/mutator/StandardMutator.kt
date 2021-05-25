@@ -5,6 +5,8 @@ import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
@@ -17,6 +19,8 @@ import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.EvaluatedInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.math.max
 
 /**
@@ -25,6 +29,10 @@ import kotlin.math.max
  * e.g., in order to handle resource rest individual
  */
 open class StandardMutator<T> : Mutator<T>() where T : Individual {
+
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(StandardMutator::class.java)
+    }
 
     override fun doesStructureMutation(individual : T): Boolean {
         /**
@@ -40,7 +48,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
         val mutable = individual.seeGenes(filterMutate).filter { it.isMutable() }
-        if (!config.enableArchiveGeneMutation())
+        if (!config.isEnabledArchiveGeneMutation())
             return mutable
 
         return mutable
@@ -106,6 +114,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
 
         if(doesStructureMutation(individual.individual)){
+            if (log.isTraceEnabled){
+                log.trace("structure mutator will be applied")
+            }
             structureMutator.mutateStructure(copy, mutatedGene)
             return copy
         }
@@ -126,9 +137,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             // enable weight based mutation when mutating gene
             val enableWGS = config.weightBasedMutationRate && config.enableWeightBasedMutationRateSelectionForGene
             // enable gene selection when mutating gene, eg, ObjectGene
-            val enableAGS = enableWGS && adaptive && config.enableArchiveGeneSelection()
+            val enableAGS = enableWGS && adaptive && config.isEnabledArchiveGeneSelection()
             // enable gene mutation based on history
-            val enableAGM = adaptive && config.enableArchiveGeneMutation()
+            val enableAGM = adaptive && config.isEnabledArchiveGeneMutation()
 
             val selectionStrategy = when {
                 enableAGS -> SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
@@ -184,6 +195,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         //Check that the repair was successful
         Lazy.assert { mutatedIndividual.verifyInitializationActions() }
 
+        /*
+            In GraphQL, each boolean selection in Objects MUST have at least one filed selected
+         */
+        if(mutatedIndividual is GraphQLIndividual) {
+            GraphQLUtils.repairIndividual(mutatedIndividual)
+        }
     }
 
     /**
@@ -240,16 +257,26 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
 
             additionInfo!!.effectiveHistory.addAll(effective.mapNotNull {
-                if (it.individual.seeActions(isDb).isEmpty())
-                    ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
-                else
+                if (it.individual.seeActions(isDb).isEmpty()){
+                    /*
+                        if there exist actions structure and the group (e.g., dbInitialization) of actions is empty,
+                        we do not find further possible impacts for it
+                     */
+                    if(it.individual.hasAnyAction()) null
+                    else ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
+                } else
                     ImpactUtils.findMutatedGene(
                         it.individual.seeActions(isDb)[position], gene, includeSameValue)
             })
 
             additionInfo.history.addAll(history.mapNotNull {e->
                 if (e.individual.seeActions(isDb).isEmpty())
-                    ImpactUtils.findMutatedGene(
+                    /*
+                        if there exist actions structure and the group (e.g., dbInitialization) of actions is empty,
+                        we do not find further possible impacts for it
+                     */
+                    if(e.individual.hasAnyAction()) null
+                    else ImpactUtils.findMutatedGene(
                            e.individual.seeGenes(), gene, includeSameValue)?.run {
                         this to EvaluatedInfo(
                                 index =  e.index,

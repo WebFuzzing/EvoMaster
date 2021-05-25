@@ -1,0 +1,19 @@
+type Query {
+    # Return all bouquets
+    bouquets: [Bouquet!]!
+}
+
+# A bouquet for the API
+type Bouquet {
+    id: String!
+    name: String!
+    pot: String!
+    store: Store!
+}
+
+# A store for the API
+type Store{
+    id: String!
+    adress: String!
+    bouquet: Bouquet
+}

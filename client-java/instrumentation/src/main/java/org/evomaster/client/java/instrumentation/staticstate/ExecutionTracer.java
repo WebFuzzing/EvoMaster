@@ -2,10 +2,11 @@ package org.evomaster.client.java.instrumentation.staticstate;
 
 import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.shared.*;
+import org.evomaster.client.java.instrumentation.KillSwitchException;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.shared.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +63,21 @@ public class ExecutionTracer {
      */
     private static final List<AdditionalInfo> additionalInfoList = new ArrayList<>();
 
+    /**
+     * Keep track of expensive operations. Might want to skip doing them if too many.
+     * This should be re-set for each action
+     */
+    private static  int expensiveOperation = 0;
+
     private static final Object lock = new Object();
+
+
+    /**
+     * One problem is that, once a test case is evaluated, some background tests might still be running.
+     * We want to kill them to avoid issue (eg, when evaluating new tests while previous threads
+     * are still running).
+     */
+    private static volatile boolean killSwitch = false;
 
     static {
         reset();
@@ -76,11 +91,24 @@ public class ExecutionTracer {
             additionalInfoList.clear();
             additionalInfoList.add(new AdditionalInfo());
             inputVariables = new HashSet<>();
+            killSwitch = false;
+            expensiveOperation = 0;
         }
+    }
+
+    public static boolean isKillSwitch() {
+        return killSwitch;
+    }
+
+    public static void setKillSwitch(boolean killSwitch) {
+        ExecutionTracer.killSwitch = killSwitch;
     }
 
     public static void setAction(Action action) {
         synchronized (lock) {
+            setKillSwitch(false);
+            expensiveOperation = 0;
+
             if (action.getIndex() != actionIndex) {
                 actionIndex = action.getIndex();
                 additionalInfoList.add(new AdditionalInfo());
@@ -90,6 +118,14 @@ public class ExecutionTracer {
                 inputVariables = action.getInputVariables();
             }
         }
+    }
+
+    public static void increaseExpensiveOperationCount(){
+        expensiveOperation++;
+    }
+
+    public static boolean isTooManyExpensiveOperations(){
+        return expensiveOperation >= 50;
     }
 
     /**
@@ -304,6 +340,25 @@ public class ExecutionTracer {
      * Report on the fact that a given line has been executed.
      */
     public static void executedLine(String className, String methodName, String descriptor, int line) {
+
+        /*
+            This is done to prevent the SUT keep on executing code after a test case is evaluated
+         */
+        if (isKillSwitch()) {
+
+            boolean initClass = Arrays.stream(Thread.currentThread().getStackTrace())
+                    .anyMatch(e -> e.getMethodName().equals("<clinit>"));
+
+            /*
+                must NOT stop the initialization of a class, otherwise the SUT will be left in an
+                inconsistent state in the following calls
+             */
+
+            if (!initClass) {
+                throw new KillSwitchException();
+            }
+        }
+
         //for targets to cover
         String lineId = ObjectiveNaming.lineObjectiveName(className, line);
         String classId = ObjectiveNaming.classObjectiveName(className);

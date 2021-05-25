@@ -1,45 +1,27 @@
 package org.evomaster.core.problem.rest.service
 
-import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
-import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.core.database.DatabaseExecution
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.ObjectGenerator
-import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.httpws.service.HttpWsAction
+import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
-import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.ExtraHeuristicsLogger
-import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.core.search.service.IdMapper
-import org.evomaster.core.search.service.SearchTimeController
-import org.glassfish.jersey.client.ClientConfig
-import org.glassfish.jersey.client.ClientProperties
-import org.glassfish.jersey.client.HttpUrlConnectorProvider
+import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.net.MalformedURLException
-import java.net.URL
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
-import javax.annotation.PostConstruct
 import javax.ws.rs.ProcessingException
-import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
@@ -48,112 +30,13 @@ import javax.ws.rs.core.NewCookie
 import javax.ws.rs.core.Response
 
 
-abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individual {
+abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
     }
 
-    @Inject(optional = true)
-    private lateinit var rc: RemoteController
 
-    @Inject
-    private lateinit var extraHeuristicsLogger: ExtraHeuristicsLogger
-
-    @Inject
-    private lateinit var searchTimeController: SearchTimeController
-
-    @Inject
-    private lateinit var writer: TestSuiteWriter
-
-    private val clientConfiguration = ClientConfig()
-            .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
-            .property(ClientProperties.READ_TIMEOUT, 10_000)
-            //workaround bug in Jersey client
-            .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-            .property(ClientProperties.FOLLOW_REDIRECTS, false)
-
-
-    private var client: Client = ClientBuilder.newClient(clientConfiguration)
-
-
-    private lateinit var infoDto: SutInfoDto
-
-
-    @PostConstruct
-    private fun initialize() {
-
-        log.debug("Initializing {}", AbstractRestFitness::class.simpleName)
-
-        if (!config.blackBox || config.bbExperiments) {
-            rc.checkConnection()
-
-            val started = rc.startSUT()
-            if (!started) {
-                throw SutProblemException("Failed to start the system under test")
-            }
-
-            infoDto = rc.getSutInfo()
-                    ?: throw SutProblemException("Failed to retrieve the info about the system under test")
-        }
-
-        log.debug("Done initializing {}", AbstractRestFitness::class.simpleName)
-    }
-
-    override fun reinitialize(): Boolean {
-
-        try {
-            if (!config.blackBox) {
-                rc.stopSUT()
-            }
-            initialize()
-        } catch (e: Exception) {
-            log.warn("Failed to re-initialize the SUT: $e")
-            return false
-        }
-
-        return true
-    }
-
-    protected fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
-        if (configuration.heuristicsForSQL) {
-
-            for (i in 0 until dto.extraHeuristics.size) {
-
-                val extra = dto.extraHeuristics[i]
-
-                //TODO handling of toMaximize as well
-                //TODO refactoring when will have other heuristics besides for SQL
-
-                extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
-
-                val toMinimize = extra.heuristics
-                        .filter {
-                            it != null
-                                    && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
-                        }.map { it.value }
-                        .toList()
-
-                if (!toMinimize.isEmpty()) {
-                    fv.setExtraToMinimize(i, toMinimize)
-                }
-
-                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
-            }
-
-            fv.aggregateDatabaseData()
-
-            if (!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
-                searchTimeController.newIndividualsWithSqlFailedWhere()
-            }
-        } else if (configuration.extractSqlExecutionInfo) {
-
-            for (i in 0 until dto.extraHeuristics.size) {
-                val extra = dto.extraHeuristics[i]
-                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
-            }
-        }
-    }
 
     /**
      * Based on what executed by the test, we might need to add new genes to the individual.
@@ -200,15 +83,17 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         !action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach {
-                        action.parameters.add(HeaderParam(it, OptionalGene(it, StringGene(it), false, requestSelection = true)))
+                        val gene = StringGene(it).apply { randomize(randomness, false, listOf()) }
+                        action.parameters.add(HeaderParam(it, OptionalGene(it, gene, false, requestSelection = true)))
                     }
 
             info.queryParameters
                     .filter { name ->
                         !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
                     }
-                    .forEach { name ->
-                        action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false, requestSelection = true)))
+                    .forEach {
+                        val gene = StringGene(it).apply { randomize(randomness, false, listOf()) }
+                        action.parameters.add(QueryParam(it, OptionalGene(it, gene, false, requestSelection = true)))
                     }
 
             if(result.getStatusCode() == 415){
@@ -265,6 +150,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 }
                 val name = dtoNames.first()
                 val obj = getObjectGeneForDto(name)
+                obj.randomize(randomness, false, listOf())
 
                 val body = BodyParam(obj, EnumGene("contentType", listOf("application/json")))
                 val update = UpdateForBodyParam(body)
@@ -296,16 +182,10 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     }
 
     /**
-     * Initializing Actions before evaluating its fitness if need
-     */
-    open fun doInitializingActions(ind: T) {
-    }
-
-    /**
      * Create local targets for each HTTP status code in each
      * API entry point
      */
-    protected fun handleResponseTargets(
+    fun handleResponseTargets(
             fv: FitnessValue,
             actions: List<RestAction>,
             actionResults: List<ActionResult>,
@@ -323,84 +203,70 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     val statusId = idMapper.handleLocalTarget("$status:$name")
                     fv.updateTarget(statusId, 1.0, it)
 
-                    /*
-                        Objectives for results on endpoints.
-                        Problem: we might get a 4xx/5xx, but then no gradient to keep sampling for
-                        that endpoint. If we get 2xx, and full coverage, then no gradient to try
-                        to keep sampling that endpoint to get a 5xx
-                     */
-                    val okId = idMapper.handleLocalTarget("HTTP_SUCCESS:$name")
-                    val faultId = idMapper.handleLocalTarget("HTTP_FAULT:$name")
+                    val location5xx : String? = getlocation5xx(status, additionalInfoList, it, result, name)
 
-                    //OK -> 5xx being better than 4xx, as code executed
-                    //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
-                    if (status in 200..299) {
-                        fv.updateTarget(okId, 1.0, it)
-                        fv.updateTarget(faultId, 0.5, it)
-                    } else if (status in 400..499) {
-                        fv.updateTarget(okId, 0.1, it)
-                        fv.updateTarget(faultId, 0.1, it)
-                    } else if (status in 500..599) {
-                        fv.updateTarget(okId, 0.5, it)
-                        fv.updateTarget(faultId, 1.0, it)
-                    }
+                    handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
-                    /*
-                        500 codes "might" be bugs. To distinguish between different bugs
-                        that crash the same endpoint, we need to know what was the last
-                        executed statement in the SUT.
-                        So, we create new targets for it.
-                     */
-                    if (status == 500) {
-                        val statement = additionalInfoList[it].lastExecutedStatement
-                        val source = statement ?: "framework_code"
-                        val descriptiveId = idMapper.getFaultDescriptiveId("$source $name")
-                        val bugId = idMapper.handleLocalTarget(descriptiveId)
-                        fv.updateTarget(bugId, 1.0, it)
-                        result.setLastStatementWhen500(source)
-                    }
-                    /*
-                        Objectives for the two partial oracles implemented thus far.
-                    */
-                    val call = actions[it] as RestCallAction
-                    val oracles = writer.getPartialOracles().activeOracles(call, result)
-                    oracles.filter { it.value }.forEach { entry ->
-                        val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
-                        val bugId = idMapper.handleLocalTarget(oracleId)
-                        fv.updateTarget(bugId, 1.0, it)
-                    }
+                    handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+
                 }
     }
 
 
-    private fun getBaseUrl(): String {
-        var baseUrl = if (!config.blackBox || config.bbExperiments) {
-            infoDto.baseUrlOfSUT
-        } else {
-            BlackBoxUtils.restUrl(config)
+    fun handleAdditionalOracleTargetDescription(fv: FitnessValue, actions: List<RestAction>, result : RestCallResult, name: String, indexOfAction : Int){
+        /*
+           Objectives for the two partial oracles implemented thus far.
+        */
+        val call = actions[indexOfAction] as RestCallAction
+        val oracles = writer.getPartialOracles().activeOracles(call, result)
+        oracles.filter { it.value }.forEach { entry ->
+            val oracleId = idMapper.getFaultDescriptiveIdForPartialOracle("${entry.key} $name")
+            val bugId = idMapper.handleLocalTarget(oracleId)
+            fv.updateTarget(bugId, 1.0, indexOfAction)
         }
-
-        try{
-            /*
-                Note: this in theory should already been checked: either in EMConfig for
-                Black-box testing, or already in the driver for White-Box testing
-             */
-            URL(baseUrl)
-        } catch (e: MalformedURLException){
-            val base = "Invalid 'baseUrl'."
-            val wb = "In the EvoMaster driver, in the startSut() method, you must make sure to return a valid URL."
-            val err = " ERROR: $e"
-
-            val msg = if(config.blackBox) "$base $err" else "$base $wb $err"
-            throw SutProblemException(msg)
-        }
-
-        if (baseUrl.endsWith("/")) {
-            baseUrl = baseUrl.substring(0, baseUrl.length - 1)
-        }
-
-        return baseUrl
     }
+
+
+    fun handleAdditionalStatusTargetDescription(fv: FitnessValue, status : Int, name: String, indexOfAction : Int, location5xx: String?){
+        /*
+           Objectives for results on endpoints.
+           Problem: we might get a 4xx/5xx, but then no gradient to keep sampling for
+           that endpoint. If we get 2xx, and full coverage, then no gradient to try
+           to keep sampling that endpoint to get a 5xx
+        */
+        val okId = idMapper.handleLocalTarget("HTTP_SUCCESS:$name")
+        val faultId = idMapper.handleLocalTarget("HTTP_FAULT:$name")
+
+        //OK -> 5xx being better than 4xx, as code executed
+        //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
+        if (status in 200..299) {
+            fv.updateTarget(okId, 1.0, indexOfAction)
+            fv.updateTarget(faultId, 0.5, indexOfAction)
+        } else if (status in 400..499) {
+            fv.updateTarget(okId, 0.1, indexOfAction)
+            fv.updateTarget(faultId, 0.1, indexOfAction)
+        } else if (status in 500..599) {
+            fv.updateTarget(okId, 0.5, indexOfAction)
+            fv.updateTarget(faultId, 1.0, indexOfAction)
+        }
+
+        if (status == 500){
+            Lazy.assert {
+                location5xx != null
+            }
+            /*
+                500 codes "might" be bugs. To distinguish between different bugs
+                that crash the same endpoint, we need to know what was the last
+                executed statement in the SUT.
+                So, we create new targets for it.
+            */
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
+            val bugId = idMapper.handleLocalTarget(descriptiveId)
+            fv.updateTarget(bugId, 1.0, indexOfAction)
+        }
+    }
+
+
 
     /**
      * @return whether the call was OK. Eg, in some cases, we might want to stop
@@ -409,15 +275,18 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     protected fun handleRestCall(a: RestCallAction,
                                  actionResults: MutableList<ActionResult>,
                                  chainState: MutableMap<String, String>,
-                                 cookies: Map<String, List<NewCookie>>)
+                                 cookies: Map<String, List<NewCookie>>,
+                                tokens: Map<String,String>)
             : Boolean {
 
         val rcr = RestCallResult()
         actionResults.add(rcr)
 
         val response = try {
-            createInvocation(a, chainState, cookies).invoke()
+            createInvocation(a, chainState, cookies, tokens).invoke()
         } catch (e: ProcessingException) {
+
+            log.debug("There has been an issue in the evaluation of a test: {}", e)
 
             /*
                 this could have happened for example if call ends up in an infinite redirection loop.
@@ -459,7 +328,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
                     TcpUtils.handleEphemeralPortIssue()
 
-                    createInvocation(a, chainState, cookies).invoke()
+                    createInvocation(a, chainState, cookies, tokens).invoke()
                 }
                 TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
                     /*
@@ -519,17 +388,13 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         return true
     }
 
-    /**
-     * In general, we should avoid having SUT send close requests on the TCP socket.
-     * However, Tomcat (default in SpringBoot) by default will do that any 100 requests... :(
-     */
-    private fun handlePossibleConnectionClose(response: Response) {
-        if(response.getHeaderString("Connection")?.contains("close", true) == true){
-            searchTimeController.reportConnectionCloseRequest(response.status)
-        }
-    }
 
-    private fun createInvocation(a: RestCallAction, chainState: MutableMap<String, String>, cookies: Map<String, List<NewCookie>>): Invocation {
+    private fun createInvocation(a: RestCallAction,
+                                 chainState: MutableMap<String, String>,
+                                 cookies: Map<String, List<NewCookie>>,
+                                 tokens: Map<String,String>
+    ): Invocation {
+
         val baseUrl = getBaseUrl()
 
         val path = a.resolvedPath()
@@ -567,33 +432,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             client.target(fullUri).request(a.produces.first())
         }
 
-        a.auth.headers.forEach {
-            builder.header(it.name, it.value)
-        }
-
-        val prechosenAuthHeaders = a.auth.headers.map { it.name }
-
-        /*
-            TODO: optimization, avoid mutating header gene if anyway
-            using pre-chosen one
-         */
-
-        a.parameters.filterIsInstance<HeaderParam>()
-                .filter { !prechosenAuthHeaders.contains(it.name) }
-                .forEach {
-                    builder.header(it.name, it.gene.getValueAsRawString())
-                }
-
-        if (a.auth.cookieLogin != null) {
-            val list = cookies[a.auth.cookieLogin!!.username]
-            if (list == null || list.isEmpty()) {
-                log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
-            } else {
-                list.forEach {
-                    builder.cookie(it.toCookie())
-                }
-            }
-        }
+        handleAuth(a, builder, cookies, tokens)
 
         /*
             TODO: need to handle "accept" of returned resource
@@ -641,6 +480,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         return invocation
     }
 
+
+
     private fun handleSaveLocation(a: RestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
         if (a.saveLocation) {
 
@@ -687,95 +528,39 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         return "location_$id"
     }
 
-    /**
-     * If any action needs auth based on cookies, do a "login" before
-     * running the actions, and collect the cookies from the server.
-     *
-     * @return a map from username to auth cookie for those users
-     */
-    protected fun getCookies(ind: RestIndividual): Map<String, List<NewCookie>> {
+    protected fun restActionResultHandling(
+        individual: RestIndividual, targets: Set<Int>, actionResults: MutableList<ActionResult>, fv: FitnessValue) : TestResultsDto?{
 
-        val cookieLogins = ind.getCookieLoginAuth()
-
-        val map: MutableMap<String, List<NewCookie>> = HashMap()
-
-        val baseUrl = getBaseUrl()
-
-        for (cl in cookieLogins) {
-
-            val mediaType = when (cl.contentType) {
-                ContentType.X_WWW_FORM_URLENCODED -> MediaType.APPLICATION_FORM_URLENCODED_TYPE
-                ContentType.JSON -> MediaType.APPLICATION_JSON_TYPE
-            }
-
-            val response = try {
-                client.target(baseUrl + cl.loginEndpointUrl)
-                        .request()
-                        //TODO could consider other cases besides POST
-                        .buildPost(Entity.entity(cl.payload(), mediaType))
-                        .invoke()
-            } catch (e: Exception) {
-                log.warn("Failed to login for ${cl.username}/${cl.password}: $e")
-                continue
-            }
-
-            if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
-
-                /*
-                    if it is a 3xx, we need to look at Location header to determine
-                    if a success or failure.
-                    TODO: could explicitly ask for this info in the auth DTO.
-                    However, as 3xx makes little sense in a REST API, maybe not so
-                    important right now, although had this issue with some APIs using
-                    default settings in Spring Security
-                */
-                if (response.statusInfo.family == Response.Status.Family.REDIRECTION) {
-                    val location = response.getHeaderString("location")
-                    if (location != null && (location.contains("error", true) || location.contains("login", true))) {
-                        log.warn("Login request failed with ${response.status} redirection toward $location")
-                        continue
-                    }
-                } else {
-                    log.warn("Login request failed with status ${response.status}")
-                    continue
-                }
-            }
-
-            if (response.cookies.isEmpty()) {
-                log.warn("Cookie-based login request did not give back any new cookie")
-                continue
-            }
-
-            map[cl.username] = response.cookies.values.toList()
+        if(actionResults.any { it is RestCallResult && it.getTcpProblem() }){
+            /*
+                If there are socket issues, we avoid trying to compute any coverage.
+                The caller might restart the SUT and try again.
+                Hopefully, this should be just a glitch...
+                TODO if we see this happening often, we need to find a proper solution.
+                For example, we could re-run the test, and see if this one always fails,
+                while others in the archive do pass.
+                It could be handled specially in the archive.
+             */
+            return null
         }
 
-        return map
-    }
+        val dto = updateFitnessAfterEvaluation(targets, individual as T, fv)
+            ?: return null
 
-    override fun targetsToEvaluate(targets: Set<Int>, individual: T): Set<Int> {
-        /*
-            We cannot request all non-covered targets, because:
-            1) performance hit
-            2) might not be possible to have a too long URL
-         */
-        //TODO prioritized list
-        val ts = targets.filter { !IdMapper.isLocal(it) }.toMutableSet()
-        val nc = archive.notCoveredTargets().filter { !IdMapper.isLocal(it) && !ts.contains(it)}
-        recordExceededTarget(nc)
-        return when {
-            ts.size > 100 -> randomness.choose(ts, 100)
-            nc.isEmpty() -> ts
-            else -> ts.plus(randomness.choose(nc, 100 - ts.size))
+        handleExtra(dto, fv)
+
+        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
+
+        if (config.expandRestIndividuals) {
+            expandIndividual(individual, dto.additionalInfoList, actionResults)
         }
-    }
 
-    private fun recordExceededTarget(targets: Collection<Int>){
-        if(!config.recordExceededTargets) return
-        if (targets.size <= 100) return
+        if (config.baseTaintAnalysisProbability > 0) {
+            assert(actionResults.size == dto.additionalInfoList.size)
+            //TODO add taint analysis for resource-based solution
+            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
+        }
 
-        val path = Paths.get(config.exceedTargetsFile)
-        if (Files.notExists(path.parent)) Files.createDirectories(path.parent)
-        if (Files.notExists(path)) Files.createFile(path)
-        Files.write(path, listOf(time.evaluatedIndividuals.toString()).plus(targets.map { idMapper.getDescriptiveId(it) }), StandardOpenOption.APPEND)
+        return dto
     }
 }

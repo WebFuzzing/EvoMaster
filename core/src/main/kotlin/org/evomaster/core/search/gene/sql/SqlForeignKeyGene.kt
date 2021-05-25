@@ -56,7 +56,8 @@ class SqlForeignKeyGene(
         val pks = allGenes.asSequence()
                 .flatMap { it.flatView().asSequence() }
                 .takeWhile { it !is SqlForeignKeyGene || it.uniqueId != uniqueId }
-                .filterIsInstance(SqlPrimaryKeyGene::class.java)
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .filter { it.uniqueId != uniqueId } // avoid self-references
                 .filter { it.tableName == targetTable }
                 .map { it.uniqueId }
                 .toSet()

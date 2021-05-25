@@ -8,6 +8,9 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType.*
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResourceEvaluatedIndividual
+import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -34,9 +37,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -68,9 +71,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -135,9 +138,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -184,9 +187,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -230,9 +233,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -278,9 +281,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -333,9 +336,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -384,9 +387,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -436,9 +439,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -489,9 +492,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -539,9 +542,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -600,9 +603,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -663,9 +666,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -711,9 +714,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -756,9 +759,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -801,9 +804,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -847,9 +850,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -891,9 +894,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -935,9 +938,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -980,10 +983,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
-        writer.setPartialOracles(partialOracles)
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -1033,6 +1035,127 @@ class TestCaseWriterTest {
     }
 
      */
+
+
+    @Test
+    fun testDbInBetween() {
+        val fooId = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
+        val foo = Table("Foo", setOf(fooId), HashSet<ForeignKey>())
+
+        val fkId = Column("fkId", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
+        val bar = Table("Bar", setOf(fooId, fkId), HashSet<ForeignKey>())
+
+        val pkGeneUniqueId = 12345L
+
+        val integerGene = IntegerGene(fooId.name, 42, 0, 10)
+        val pkFoo = SqlPrimaryKeyGene(fooId.name, "Foo", integerGene, pkGeneUniqueId)
+        val pkBar = SqlPrimaryKeyGene(fooId.name, "Bar", integerGene, 10)
+        val fooInsertionId = 1001L
+        val fooInsertion = DbAction(foo, setOf(fooId), fooInsertionId, listOf(pkFoo))
+        val barInsertionId = 1002L
+        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val barInsertion = DbAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
+
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf(fooInsertion) to mutableListOf(fooAction as RestAction)),
+                (mutableListOf(barInsertion) to mutableListOf(barAction as RestAction))
+            )
+        )
+
+        val config = EMConfig()
+        config.outputFormat = format
+        config.expectationsActive = false
+        config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
+        config.probOfApplySQLActionToCreateResources=0.1
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+@Test
+public void test() throws Exception {
+    List<InsertionDto> insertions0 = sql().insertInto("Foo", 1001L)
+            .d("Id", "42")
+        .dtos();
+    controller.execInsertionsIntoDatabase(insertions0);
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/foo");
+    } catch(Exception e){
+    }
+    List<InsertionDto> insertions1 = sql().insertInto("Bar", 1002L)
+            .d("Id", "42")
+            .d("fkId", "42")
+        .dtos();
+    controller.execInsertionsIntoDatabase(insertions1);
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/bar");
+    } catch(Exception e){
+    }
+}
+
+""".trimIndent()
+
+        assertEquals(expectedLines, lines.toString())
+    }
+
+    @Test
+    fun testDbInBetweenWithEmptyDb() {
+
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<DbAction>() to mutableListOf(fooAction as RestAction)),
+                (mutableListOf<DbAction>() to mutableListOf(barAction as RestAction))
+            )
+        )
+
+        val config = EMConfig()
+        config.outputFormat = format
+        config.expectationsActive = false
+        config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
+        config.probOfApplySQLActionToCreateResources=0.1
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+@Test
+public void test() throws Exception {
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/foo");
+    } catch(Exception e){
+    }
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/bar");
+    } catch(Exception e){
+    }
+}
+
+""".trimIndent()
+
+        assertEquals(expectedLines, lines.toString())
+    }
+
 
 
 }

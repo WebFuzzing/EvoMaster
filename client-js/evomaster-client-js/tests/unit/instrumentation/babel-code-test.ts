@@ -177,7 +177,7 @@ test("simple multi lines", () => {
         
         __EM__.enteringStatement("test.ts", 9, 4);
         
-        const k = sum(x, y);
+        const k = __EM__.callBase(() => sum(x, y));
         
         __EM__.completedStatement("test.ts", 9, 4);        
     `);
@@ -267,7 +267,7 @@ test("&& branch distance", () => {
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
-        const x = __EM__.and(() => 4, () => foo.bar(), false, "test.ts", 1, 0);
+        const x = __EM__.and(() => 4, () => __EM__.callTracked("test.ts", 1, 1, foo, "bar"), false, "test.ts", 1, 0);
         
         __EM__.completedStatement("test.ts", 1, 0);        
     `);
@@ -296,6 +296,107 @@ test("for loop", () => {
           __EM__.completedStatement("test.ts", 1, 1);
         }        
     `);
+});
+
+
+test("function call simple", () => {
+
+    const code = dedent`
+        foo()
+    `;
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0"]);
+
+        __EM__.enteringStatement("test.ts", 1, 0);
+
+        __EM__.callBase(() => foo());
+
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+
+});
+
+
+test("function call chain", () => {
+
+    const code = dedent`
+        a.b.c.foo().bar(x)(y,z)
+    `;
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0"]);
+
+        __EM__.enteringStatement("test.ts", 1, 0);
+
+        __EM__.callBase(() => __EM__.callTracked("test.ts", 1, 0, __EM__.callTracked("test.ts", 1, 1, a.b.c, "foo"), "bar", x)(y, z));
+
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+
+});
+
+
+test("ternary", () => {
+
+    const code = dedent`
+        (x==42) ? foo():b.bar()
+    `;
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+    
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+    
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0", "Statement_test.ts_00001_1", "Statement_test.ts_00001_2"]);
+    
+        __EM__.enteringStatement("test.ts", 1, 0);
+    
+        __EM__.cmp(x, "==", 42, "test.ts", 1, 0) ? __EM__.ternary(() => __EM__.callBase(() => foo()), "test.ts", 1, 1) : __EM__.ternary(() => __EM__.callTracked("test.ts", 1, 1, b, "bar"), "test.ts", 1, 2);
+    
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+
+});
+
+
+test("ternary throw", () => {
+
+    const code = dedent`
+        (x==42) ? foo():()=>{throw new Error(42)}
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+    
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0", "Statement_test.ts_00001_1", "Statement_test.ts_00001_2", "Statement_test.ts_00001_3"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        __EM__.cmp(x, "==", 42, "test.ts", 1, 0) ? __EM__.ternary(() => __EM__.callBase(() => foo()), "test.ts", 1, 1) : __EM__.ternary(() => () => {
+          __EM__.markStatementForCompletion("test.ts", 1, 3);
+        
+          throw new Error(42);
+        }, "test.ts", 1, 2);
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+
 });
 
 

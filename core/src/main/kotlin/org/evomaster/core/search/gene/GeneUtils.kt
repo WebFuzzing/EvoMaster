@@ -1,12 +1,12 @@
 package org.evomaster.core.search.gene
 
+import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import kotlin.math.pow
-import org.apache.commons.lang3.StringEscapeUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.pow
 
 object GeneUtils {
 
@@ -41,7 +41,12 @@ object GeneUtils {
         XML,
         BODY,
         NONE,
-        X_WWW_FORM_URLENCODED
+        X_WWW_FORM_URLENCODED,
+        BOOLEAN_SELECTION_MODE,
+        BOOLEAN_SELECTION_NESTED_MODE,
+        GQL_INPUT_MODE,
+        GQL_INPUT_ARRAY_MODE,
+        GQL_STR_VALUE
     }
 
     fun getDelta(
@@ -97,6 +102,17 @@ object GeneUtils {
      * So, we simply "repair" such genes with only valid inputs.
      */
     fun repairGenes(genes: Collection<Gene>) {
+
+        if (log.isTraceEnabled) {
+            log.trace("repair genes {}", genes.joinToString(",") {
+                //note that check whether the gene is printable is not enough here
+                try {
+                    it.getValueAsRawString()
+                } catch (e: Exception) {
+                    "null"
+                }
+            })
+        }
 
         for (g in genes) {
             when (g) {
@@ -177,7 +193,13 @@ object GeneUtils {
             EscapeMode.EXPECTATION -> applyExpectationEscapes(string, format)
             EscapeMode.JSON -> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
-            EscapeMode.NONE, EscapeMode.X_WWW_FORM_URLENCODED -> string
+            EscapeMode.NONE,
+            EscapeMode.X_WWW_FORM_URLENCODED,
+            EscapeMode.BOOLEAN_SELECTION_MODE,
+            EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
+            EscapeMode.GQL_INPUT_ARRAY_MODE,
+            EscapeMode.GQL_INPUT_MODE -> string
+            EscapeMode.GQL_STR_VALUE -> applyGQLStr(string, format)
             EscapeMode.BODY -> applyBodyEscapes(string, format)
             EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
         }
@@ -196,6 +218,17 @@ object GeneUtils {
                 .replace("\t", "\\t")
 
         return ret
+    }
+
+    /**
+     * TODO might need a further handling based on [format]
+     * Note that there is kind of post handling for graphQL, see [GraphQLUtils.getPrintableInputGenes]
+     */
+    fun applyGQLStr(string: String, format: OutputFormat) : String{
+        val replace = string
+            .replace("\"", "\\\\\"")
+
+        return replace
     }
 
     fun applyExpectationEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
@@ -295,8 +328,10 @@ object GeneUtils {
      * However, it is not necessarily trivial. An [CycleObjectGene] might be required,
      * and so we would need to scan to its first ancestor in the tree which is an optional
      * or an array.
+     *
+     * [force] if true, throw exception if cannot prevent the cyclces
      */
-    fun preventCycles(gene: Gene) {
+    fun preventCycles(gene: Gene, force: Boolean = false) {
 
         val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
         if (cycles.isEmpty()) {
@@ -320,7 +355,11 @@ object GeneUtils {
             }
 
             if (p == null) {
-                log.warn("Could not prevent cycle in ${gene.name} gene")
+                val msg = "Could not prevent cycle in ${gene.name} gene"
+                if (force) {
+                    throw RuntimeException(msg)
+                }
+                log.warn(msg)
             }
         }
     }
@@ -346,7 +385,7 @@ object GeneUtils {
                 }
             }
 
-            if(p==null) {
+            if (p == null) {
                 return true
             }
         }
@@ -381,5 +420,113 @@ object GeneUtils {
 
         return true
     }
+
+
+    /**
+     * In some cases, in particular GraphQL, given an object we might want to specify
+     * just which fields we want to have, which is a boolean selection (ie, either a filed should
+     * be present, or not). But we need to handle this recursively, because an object could have
+     * objects inside, and so on recursively.
+     *
+     * However, to be able to print such selection for GraphQL, we need then to have a special mode
+     * for its string representation.
+     *
+     * Also, we need to deal for when elements are non-nullable vs. nullable.
+     */
+    fun getBooleanSelection(gene: Gene): ObjectGene {
+
+        if (shouldApplyBooleanSelection(gene)) {
+            val selectedGene = handleBooleanSelection(gene)
+            if (selectedGene is OptionalGene) {
+                return selectedGene.gene as ObjectGene
+            } else {
+                return selectedGene as ObjectGene
+            }
+        }
+        throw IllegalArgumentException("Invalid input type: ${gene.javaClass}")
+    }
+
+    /**
+     * force at least one boolean to be selected
+     */
+    fun repairBooleanSelection(obj: ObjectGene) {
+
+        if (obj.fields.isEmpty()
+                || obj.fields.count { it !is OptionalGene && it !is BooleanGene } > 0) {
+            throw IllegalArgumentException("There should be at least 1 field, and they must be all optional or boolean")
+        }
+
+        val selected = obj.fields.filter { (it is OptionalGene && it.isActive) || (it is BooleanGene && it.value) }
+
+        if (selected.isNotEmpty()) {
+            //it is fine, but we still need to make sure selected objects are fine
+            selected.forEach {
+                if (it is OptionalGene && it.gene is ObjectGene && it.gene !is CycleObjectGene) {
+                    repairBooleanSelection(it.gene)
+                }
+            }
+        } else {
+            //must select at least one
+
+            val candidates = obj.fields.filter { (it is OptionalGene && it.selectable) || it is BooleanGene }
+            assert(candidates.isNotEmpty())
+
+            // maybe do at random?
+            val selected = candidates[0]
+            if (selected is OptionalGene) {
+                selected.isActive = true
+                if (selected.gene is ObjectGene) {
+                    assert(selected.gene !is CycleObjectGene)
+                    repairBooleanSelection(selected.gene)
+                }
+            } else {
+                (selected as BooleanGene).value = true
+            }
+        }
+    }
+
+    fun shouldApplyBooleanSelection(gene: Gene) =
+            (gene is OptionalGene && gene.gene is ObjectGene)
+                    || gene is ObjectGene
+                    || (gene is ArrayGene<*> && gene.template is ObjectGene)
+                    || (gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is ObjectGene)
+                    || (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is ObjectGene)
+                    || (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is ObjectGene)
+
+    private fun handleBooleanSelection(gene: Gene): Gene {
+
+        return when (gene) {
+            is OptionalGene -> {
+                /*
+                    this is nullable.
+                    Any basic field will be represented with a BooleanGene (selected/unselected).
+                    But for objects we need to use an Optional
+                 */
+                if (gene.gene is ObjectGene) {
+                    OptionalGene(gene.name, handleBooleanSelection(gene.gene))
+                } else {
+                    if (gene.gene is ArrayGene<*>) {
+                        handleBooleanSelection(gene.gene.template)
+                    } else {
+                        // on by default, but can be deselected during the search
+                        BooleanGene(gene.name, true)
+                    }
+                }
+            }
+            is CycleObjectGene -> {
+                gene
+            }
+            is ObjectGene -> {
+                //need to look at each field
+                ObjectGene(gene.name, gene.fields.map { handleBooleanSelection(it) })
+            }
+            is ArrayGene<*> -> handleBooleanSelection(gene.template)
+            else -> {
+                BooleanGene(gene.name, true)
+            }
+        }
+    }
+
+
 }
 

@@ -21,7 +21,7 @@ internal class AdaptiveParameterControlTest{
     fun init(){
 
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(BaseModule()))
+                .withModules(* arrayOf<Module>(BaseModule(emptyArray(), true)))
                 .build().createInjector()
 
 
