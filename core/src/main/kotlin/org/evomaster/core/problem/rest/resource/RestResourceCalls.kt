@@ -5,6 +5,7 @@ import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
+import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.Action
@@ -136,7 +137,7 @@ class RestResourceCalls(
                     if (this.isEmpty()) null else this.first()
                 }
                 if (list != null && list.isNotEmpty()) {
-                    ParamUtil.bindRestActionBasedOnDbActions(a, cluster.getResourceNode(a, true)!!, list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair)
+                    BindingBuilder.bindRestAndDbAction(a, cluster.getResourceNode(a, true)!!, list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair)
                 }
             }
         }

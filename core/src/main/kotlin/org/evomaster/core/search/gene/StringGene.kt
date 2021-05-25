@@ -624,7 +624,9 @@ class StringGene(
             is FloatGene -> value = gene.value.toString()
             is IntegerGene -> value = gene.value.toString()
             is LongGene -> value = gene.value.toString()
-            is DoubleGene -> value = gene.value.toString()
+            is DoubleGene -> {
+                value = gene.value.toString()
+            }
             is ImmutableDataHolderGene -> value = gene.value
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId.toString()

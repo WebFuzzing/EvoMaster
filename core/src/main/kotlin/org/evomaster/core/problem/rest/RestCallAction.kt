@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
+import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
@@ -169,12 +170,12 @@ class RestCallAction(
            the body parameter will be bound by "repair" process to ensure the same attribute of path and body parameter have same value.
          */
         if(!ParamUtil.isAllBodyParam(parameters)){
-            parameters.filter { param -> !(param is BodyParam) }.forEach { param->
-                ParamUtil.bindParam(param, this.path, otherPath, params)
+            parameters.filterNot { param -> param is BodyParam }.forEach { param->
+                BindingBuilder.bindRestAction(param, this.path, otherPath, params)
             }
         }else{
             parameters.forEach {param->
-                ParamUtil.bindParam(param, this.path, otherPath, params)
+                BindingBuilder.bindRestAction(param, this.path, otherPath, params)
             }
         }
     }

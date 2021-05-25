@@ -19,7 +19,7 @@ import org.evomaster.core.problem.rest.resource.dependency.MutualResourcesRelati
 import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToResources
 import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToTable
 import org.evomaster.core.problem.rest.resource.dependency.SelfResourcesRelation
-import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
@@ -1186,11 +1186,11 @@ class ResourceDepManageService {
          bind values based front actions,
          */
         call.actions
-                .filter { it is RestCallAction }
+                .filterIsInstance<RestCallAction>()
                 .forEach { a ->
-                    (a as RestCallAction).parameters.forEach { p ->
+                    a.parameters.forEach { p ->
                         targets.forEach { ta ->
-                            ParamUtil.bindParam(p, a.path, (ta as RestCallAction).path, ta.parameters)
+                            BindingBuilder.bindRestAction(p, a.path, (ta as RestCallAction).path, ta.parameters)
                         }
                     }
                 }

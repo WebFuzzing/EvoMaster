@@ -10,6 +10,7 @@ import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
+import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.gene.Gene
@@ -360,13 +361,15 @@ class RestResourceNode(
 
     private fun repairRandomGenes(params : List<Param>){
         if(ParamUtil.existBodyParam(params)){
-            params.filter { p -> p is BodyParam }.forEach { bp->
-                ParamUtil.bindParam(bp, path, path, params.filter { p -> !(p is BodyParam )}, true)
+            params.filterIsInstance<BodyParam>().forEach { bp->
+                //ParamUtil.bindParam(bp, path, path, params.filter { p -> p !is BodyParam }, true)
+                BindingBuilder.buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true)
             }
         }
         params.forEach { p->
             params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.apply {
-                ParamUtil.bindParam(this, path, path, mutableListOf(p))
+//                ParamUtil.bindParam(this, path, path, mutableListOf(p))
+                BindingBuilder.buildBindBetweenParams(this, path, path, mutableListOf(p))
             }
         }
     }

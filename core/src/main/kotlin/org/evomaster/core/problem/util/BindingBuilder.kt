@@ -15,10 +15,29 @@ import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.slf4j.LoggerFactory
 
+/**
+ * gene binding builder among actions/genes for an individual
+ */
 object BindingBuilder {
 
     private val log = LoggerFactory.getLogger(BindingBuilder::class.java)
 
+    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false){
+        buildBindBetweenParams(target, targetPath, sourcePath, params, inner).forEach { p->
+            p.first.bindValueBasedOn(p.second)
+        }
+    }
+
+    fun bindRestAndDbAction(restAction: RestCallAction,
+                            restNode: RestResourceNode,
+                            paramGeneBindMap: List<ParamGeneBindMap>,
+                            dbActions: MutableList<DbAction>,
+                            forceBindParamBasedOnDB: Boolean = false,
+                            dbRemovedDueToRepair : Boolean){
+        buildBindRestActionBasedOnDbActions(restAction, restNode, paramGeneBindMap, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair).forEach { p->
+            p.first.bindValueBasedOn(p.second)
+        }
+    }
 
     /**
      * @param target bind [target] based on other params, i.e., [params]
