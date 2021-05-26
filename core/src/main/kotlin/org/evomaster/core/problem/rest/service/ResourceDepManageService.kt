@@ -1139,8 +1139,8 @@ class ResourceDepManageService {
                 previous.add(dbaction)
             }
             call.dbActions.addAll(0, created)
-            remove = remove || rm.repairDbActionsForResource(dbActions.plus(call.dbActions).toMutableList())
-            //call.dbActions.addAll(0, selections)
+            val removed = rm.repairDbActionsForResource(dbActions.plus(call.dbActions).toMutableList())
+            remove = remove || removed
         }
 
         val dbActions = dbActions.plus(call.dbActions).toMutableList()
