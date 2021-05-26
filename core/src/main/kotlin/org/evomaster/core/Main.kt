@@ -359,7 +359,7 @@ class Main {
                     " Used experimental settings: $options")
         }
 
-        private fun checkState(injector: Injector): ControllerInfoDto? {
+         fun checkState(injector: Injector): ControllerInfoDto? {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -386,7 +386,7 @@ class Main {
         }
 
 
-        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
+         fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
