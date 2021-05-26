@@ -1,6 +1,7 @@
 package org.evomaster.core.output.oracles
 
 import io.swagger.v3.oas.models.PathItem
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
@@ -92,10 +93,12 @@ abstract class ImplementedOracle {
             0 -> null
             1 -> possibleItems.entries.first().value
             else -> {
-                // This should not happen unless multiples paths match the call. But it's technically not impossible. Then pick the first element?
+                // This should not happen unless multiples paths match the call. But it's technically not impossible. Then pick the longest key (to avoid matching root "/", see ProxyPrint).
                 // I'd prefer not to throw exceptions that would disrupt the rest of the writing process.
-                log.warn("There seem to be multiple paths matching a call: ${call.verb}${call.path}. Only one will be returned.")
-                possibleItems.entries.first().value
+                //log.warn("There seem to be multiple paths matching a call: ${call.verb}${call.path}. Only one will be returned.")
+                val possibleItemString = possibleItems.entries.joinToString { it.key }
+                LoggingUtil.Companion.uniqueWarn(log, "There seem to be multiple paths matching a call: ${call.verb}\n${possibleItemString}. Only one will be returned.")
+                possibleItems.entries.maxBy{ it.key.length }?.value
             }
         }
 
