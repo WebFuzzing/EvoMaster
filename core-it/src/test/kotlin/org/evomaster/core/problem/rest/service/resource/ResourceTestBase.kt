@@ -304,13 +304,13 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     override fun testResourceStructureMutator() {
         val individual = sampler.sampleWithMethodAndDependencyOption(ResourceSamplingMethod.S1dR, false)
         assertNotNull(individual)
-        assert(individual!!.getResourceCalls().size == 1)
+        assertEquals(1, individual!!.getResourceCalls().size)
         val addSpec = MutatedGeneSpecification()
         val evaluatedIndividual = EvaluatedIndividual(FitnessValue(0.0), individual, listOf())
         structureMutator.mutateRestResourceCalls(individual,  RestResourceStructureMutator.MutationType.ADD, addSpec)
-        assert(addSpec.mutatedGenes.mapNotNull { it.resourcePosition }.toSet().size == 1)
+        assertEquals(1, addSpec.mutatedGenes.distinctBy { it.resourcePosition }.size)
         assert(addSpec.getAdded(true).isNotEmpty())
-        assert(individual.getResourceCalls().size == 2)
+        assertEquals(2, individual.getResourceCalls().size)
 
         val first = individual.getResourceCalls()[0].getResourceNode()
         val second = individual.getResourceCalls()[1].getResourceNode()
@@ -324,9 +324,9 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         val previousIndividual = individual.copy() as RestIndividual
         val delSpec = MutatedGeneSpecification()
         structureMutator.mutateRestResourceCalls(individual,  RestResourceStructureMutator.MutationType.DELETE, delSpec)
-        assert(delSpec.getRemoved(true).mapNotNull { it.resourcePosition }.toSet().size == 1)
+        assertEquals(1, delSpec.getRemoved(true).distinctBy { it.resourcePosition }.size )
         assert(delSpec.getRemoved(true).isNotEmpty())
-        assert(individual.getResourceCalls().size == 1)
+        assertEquals(1, individual.getResourceCalls().size)
 
         val current = individual.getResourceCalls()[0].getResourceNode()
         val replaceSpec = MutatedGeneSpecification()
@@ -334,7 +334,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         val replaced = individual.getResourceCalls()[0]
         assert(replaceSpec.getRemoved(true).isNotEmpty())
         assert(replaceSpec.getAdded(true).isNotEmpty())
-        assert(replaceSpec.mutatedGenes.mapNotNull { it.resourcePosition }.toSet().size == 1)
+        assertEquals(1, replaceSpec.mutatedGenes.distinctBy { it.resourcePosition }.size)
         assert(current.getName() != replaced.getResourceNode().getName())
 
         if (replaced.getResourceNode().numOfTemplates() > 1){
@@ -343,11 +343,11 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
             val modified = individual.getResourceCalls()[0]
             assert(modifySpec.getRemoved(true).isNotEmpty())
             assert(modifySpec.getAdded(true).isNotEmpty())
-            assert(modifySpec.mutatedGenes.mapNotNull { it.resourcePosition }.toSet().size == 1)
-            assert(modified.getResourceNode().getName() == replaced.getResourceNode().getName())
+            assertEquals(1, modifySpec.mutatedGenes.distinctBy { it.resourcePosition }.size)
+            assertEquals(modified.getResourceNode().getName(), replaced.getResourceNode().getName())
             assertNotNull(modified.template)
             assertNotNull(replaced.template)
-            assert(modified.template.toString() != replaced.template.toString())
+            assertTrue(modified.template.toString() != replaced.template.toString())
         }
     }
 

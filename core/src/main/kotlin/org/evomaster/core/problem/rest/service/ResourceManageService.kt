@@ -62,7 +62,7 @@ class ResourceManageService {
         if (this.sqlInsertBuilder!= null) return
         this.sqlInsertBuilder = sqlInsertBuilder
 
-        cluster.intResourceCluster(actionCluster, sqlInsertBuilder, config)
+        cluster.initResourceCluster(actionCluster, sqlInsertBuilder, config)
 
         if(config.extractSqlExecutionInfo && config.doesApplyNameMatching){
             dm.initRelatedTables(resourceCluster = cluster)
