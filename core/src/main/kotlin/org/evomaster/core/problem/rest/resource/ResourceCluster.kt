@@ -7,6 +7,9 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.Action
 
+/**
+ * this class is to record the identified resources in the sut, i.e., based on the 'paths' of 'OpenAPI'
+ */
 class ResourceCluster {
 
     /**
@@ -32,7 +35,7 @@ class ResourceCluster {
     /**
      * init resource nodes based on [actionCluster] and [sqlInsertBuilder]
      */
-    fun intResourceCluster(actionCluster : Map<String, Action>, sqlInsertBuilder: SqlInsertBuilder? = null, config: EMConfig) {
+    fun initResourceCluster(actionCluster : Map<String, Action>, sqlInsertBuilder: SqlInsertBuilder? = null, config: EMConfig) {
         if (resourceCluster.isNotEmpty()) return
 
         if(config.extractSqlExecutionInfo) sqlInsertBuilder?.extractExistingTables(tables)
