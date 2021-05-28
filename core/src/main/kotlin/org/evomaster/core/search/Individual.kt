@@ -3,9 +3,10 @@ package org.evomaster.core.search
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
+import org.evomaster.core.search.tracer.TrackingHistory
 
 /**
  * An individual for the search.
@@ -15,13 +16,19 @@ import org.evomaster.core.search.tracer.TrackOperator
  * to a RESTful API, SQL operations on a database or WireMock setup)
  *
  */
-abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DEFAULT_INDEX) : TraceableElement(trackOperator, index){
+abstract class Individual(override var trackOperator: TrackOperator? = null,
+                          override var index: Int = Traceable.DEFAULT_INDEX
+) : Traceable{
+
+    override var evaluatedResult: EvaluatedMutation? = null
+
+    override var tracking: TrackingHistory<out Traceable>? = null
 
     /**
      * Make a deep copy of this individual
      */
     open fun copy(): Individual{
-        val copy = contentCopy()
+        val copy = copyContent()
         copy.postCopy(this)
         return copy
     }
@@ -29,7 +36,7 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
     /**
      * Make a deep copy of this individual regarding this content
      */
-    abstract fun contentCopy() : Individual
+    abstract fun copyContent() : Individual
 
     /**
      * post handling after the value copy, e.g.,
@@ -109,7 +116,7 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      */
     abstract fun repairInitializationActions(randomness: Randomness)
 
-    override fun copy(options: TraceableElementCopyFilter): TraceableElement {
+    override fun copy(options: TraceableElementCopyFilter): Traceable {
         val copy = copy()
         when(options){
             TraceableElementCopyFilter.NONE -> return copy
@@ -125,7 +132,7 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
         }
     }
 
-    override fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): TraceableElement? {
+    override fun next(next: Traceable, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): Traceable? {
         tracking?: throw IllegalStateException("cannot create next due to unavailable tracking info")
 
         val nextInTracking = (next.copy(copyFilter) as Individual).also { this.wrapWithEvaluatedResults(evaluatedResult) }
@@ -197,7 +204,6 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
 
         return found
     }
-
 
 }
 

@@ -22,6 +22,22 @@ object BindingBuilder {
 
     private val log = LoggerFactory.getLogger(BindingBuilder::class.java)
 
+    fun bindParamsInRestAction(restAction: RestCallAction){
+        val params = restAction.parameters
+        val path = restAction.path
+
+        if(ParamUtil.existBodyParam(params)){
+            params.filterIsInstance<BodyParam>().forEach { bp->
+                buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true)
+            }
+        }
+        params.forEach { p->
+            params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.also {sp->
+                buildBindBetweenParams(sp, path, path, mutableListOf(p))
+            }
+        }
+    }
+
     fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false){
         buildBindBetweenParams(target, targetPath, sourcePath, params, inner).forEach { p->
             p.first.bindValueBasedOn(p.second)

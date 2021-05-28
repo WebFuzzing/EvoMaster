@@ -273,7 +273,7 @@ abstract class Gene(var name: String) {
 
     //============================================================
 
-    private val bindingGenes: MutableList<Gene> = mutableListOf()
+    private val bindingGenes: MutableSet<Gene> = mutableSetOf()
 
     fun rebuildBindingWithTemplate(newIndividual: Individual, copiedIndividual: Individual, copiedGene: Gene){
         if (bindingGenes.isNotEmpty())
@@ -310,6 +310,11 @@ abstract class Gene(var name: String) {
         bindingGenes.add(gene)
     }
 
+    fun resetBinding(genes: Set<Gene>) {
+        bindingGenes.clear()
+        bindingGenes.addAll(genes)
+    }
+
     fun isBoundWith(gene: Gene) = bindingGenes.contains(gene)
 
 
@@ -318,5 +323,6 @@ abstract class Gene(var name: String) {
      * @return whether the binding performs successfully
      */
     abstract fun bindValueBasedOn(gene: Gene) : Boolean
+
 }
 

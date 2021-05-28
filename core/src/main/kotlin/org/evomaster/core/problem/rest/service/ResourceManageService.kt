@@ -181,7 +181,7 @@ class ResourceManageService {
             var candidateForInsertion : String? = null
             if(employSQL){
                 //Insert - GET/PUT/PATCH
-                val candidates = ar.getTemplates().filter { it.value.isSingleAction() }//ar.getTemplates().filter { setOf("GET", "PUT", "PATCH").contains(it.value.template) && it.value.independent}
+                val candidates = ar.getTemplates().filter { it.value.isSingleAction() }
                 candidateForInsertion = if(candidates.isNotEmpty()) randomness.choose(candidates.keys) else null
                 employSQL = candidateForInsertion != null
             }

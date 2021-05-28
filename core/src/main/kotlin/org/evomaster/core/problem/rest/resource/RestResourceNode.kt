@@ -203,7 +203,6 @@ class RestResourceNode(
     //if only get
     fun isIndependent() : Boolean{
         return templates.all { it.value.independent } && (creations.none { c->c.isComplete() } || resourceToTable.paramToTable.isEmpty())
-        //resourceToTable.paramToTable.isEmpty() && verbs[RestResourceTemplateHandler.getIndexOfHttpVerb(HttpVerb.GET)] && verbs.filter {it}.size == 1
     }
 
     // if only post, the resource does not contain any independent action
@@ -355,22 +354,8 @@ class RestResourceNode(
 
     private fun randomizeActionGenes(action: Action, randomness: Randomness) {
         action.seeGenes().forEach { it.randomize(randomness, false) }
-        if(action is RestCallAction)
-            repairRandomGenes(action.parameters)
-    }
-
-    private fun repairRandomGenes(params : List<Param>){
-        if(ParamUtil.existBodyParam(params)){
-            params.filterIsInstance<BodyParam>().forEach { bp->
-                //ParamUtil.bindParam(bp, path, path, params.filter { p -> p !is BodyParam }, true)
-                BindingBuilder.buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true)
-            }
-        }
-        params.forEach { p->
-            params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.apply {
-//                ParamUtil.bindParam(this, path, path, mutableListOf(p))
-                BindingBuilder.buildBindBetweenParams(this, path, path, mutableListOf(p))
-            }
+        if(action is RestCallAction){
+            BindingBuilder.bindParamsInRestAction(action)
         }
     }
 
@@ -444,6 +429,22 @@ class RestResourceNode(
             return null
 
         return genCalls(template.template, randomness, maxTestSize)
+    }
+
+    fun createResourceCall(template: String, randomness: Randomness, maxTestSize: Int, doCreateResource: Boolean, additionalPatch: Boolean, checkActionSize : Boolean){
+        if(!templates.containsKey(template))
+            throw IllegalArgumentException("$template does not exist in the resource node ($path)")
+        val verbs = RestResourceTemplateHandler.parseTemplate(template)
+        val restActions = verbs.mapNotNull {
+            (getActionByHttpVerb(actions, it)?.copy() as? RestCallAction)?.also {a->
+                randomizeActionGenes(a, randomness)
+            }
+        }
+
+
+
+
+
     }
 
     //TODO update postCreation accordingly
@@ -637,18 +638,6 @@ class RestResourceNode(
     }
 
 
-
-    private fun independentPost() : RestAction? {
-        if(!verbs.last()) return null
-        val post = getActionByHttpVerb(actions, HttpVerb.POST) as RestCallAction
-        if(post.path.hasVariablePathParameters() &&
-                (!post.path.isLastElementAParameter()) ||
-                post.path.getVariableNames().size >= 2){
-            return post
-        }
-        return null
-    }
-
     private fun createResourcesFor(target: RestCallAction, test: MutableList<RestAction>, maxTestSize: Int, randomness: Randomness, forCheckSize : Boolean)
             : Int {
 
@@ -656,7 +645,7 @@ class RestResourceNode(
             return -1
         }
 
-        var template = chooseClosestAncestor(target, listOf(HttpVerb.POST), randomness)?:
+        val template = chooseClosestAncestor(target, listOf(HttpVerb.POST), randomness)?:
                     return (if(target.verb == HttpVerb.POST) 0 else -2)
 
         val post = createActionFor(template, target, randomness)

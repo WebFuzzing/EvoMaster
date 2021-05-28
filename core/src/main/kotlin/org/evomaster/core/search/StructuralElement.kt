@@ -5,7 +5,8 @@ import org.slf4j.LoggerFactory
 
 /**
  * an element which has a structure, i.e., 0..1 [parent] and 0..* [children]
- * @param children its children
+ * @property children its children
+ * @property parent its parent
  */
 abstract class StructuralElement(
     val children : MutableList<StructuralElement> = mutableListOf()
@@ -15,9 +16,6 @@ abstract class StructuralElement(
         private val log = LoggerFactory.getLogger(StructuralElement::class.java)
     }
 
-    /**
-     * its parent
-     */
     var parent : StructuralElement? = null
         private set
 

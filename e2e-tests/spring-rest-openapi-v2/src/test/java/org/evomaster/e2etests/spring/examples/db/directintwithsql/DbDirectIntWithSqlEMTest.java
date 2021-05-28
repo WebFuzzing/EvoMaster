@@ -17,7 +17,7 @@ import org.evomaster.core.search.FitnessValue;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.IntegerGene;
 import org.evomaster.core.search.service.FitnessFunction;
-import org.evomaster.core.search.tracer.TraceableElement;
+import org.evomaster.core.search.tracer.Traceable;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -155,7 +155,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                     }
                 });
 
-        RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, TraceableElement.DEFAULT_INDEX);
+        RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, Traceable.DEFAULT_INDEX);
 
         ei = ff.calculateCoverage(withSQL, noDataFV.getViewOfData().keySet());
         assertNotNull(ei);

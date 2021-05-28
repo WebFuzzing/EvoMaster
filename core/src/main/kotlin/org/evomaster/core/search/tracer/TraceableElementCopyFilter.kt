@@ -3,7 +3,7 @@ package org.evomaster.core.search.tracer
 /**
  * created by manzh on 2019-09-06
  *
- * this is used to decide applicable copy filter for [TraceableElement]
+ * this is used to decide applicable copy filter for [Traceable]
  */
 abstract class TraceableElementCopyFilter (val name : String) {
 
@@ -37,6 +37,6 @@ abstract class TraceableElementCopyFilter (val name : String) {
     /**
      * check if accept the [element] is applicable with the copy filter
      */
-    open fun accept(element : Any): Boolean = element is TraceableElement
+    open fun accept(element : Any): Boolean = element is Traceable
 
 }

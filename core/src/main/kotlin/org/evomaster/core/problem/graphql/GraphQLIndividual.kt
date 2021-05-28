@@ -16,7 +16,7 @@ class GraphQLIndividual(
         dbInitialization: MutableList<DbAction> = mutableListOf()
 ) : HttpWsIndividual(dbInitialization= dbInitialization) {
 
-    override fun contentCopy(): Individual {
+    override fun copyContent(): Individual {
 
         return GraphQLIndividual(
                 actions.map { it.copy() as GraphQLAction}.toMutableList(),

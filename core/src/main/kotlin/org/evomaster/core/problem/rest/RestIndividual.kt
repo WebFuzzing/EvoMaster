@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
@@ -11,7 +10,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
@@ -42,7 +41,7 @@ class RestIndividual(
             sampleType: SampleType,
             dbInitialization: MutableList<DbAction> = mutableListOf(),
             trackOperator: TrackOperator? = null,
-            index : Int = TraceableElement.DEFAULT_INDEX) :
+            index : Int = Traceable.DEFAULT_INDEX) :
             this(
                     actions.map { RestResourceCalls(actions= mutableListOf(it as RestAction)) }.toMutableList(),
                     sampleType,
@@ -53,7 +52,7 @@ class RestIndividual(
             )
 
 
-    override fun contentCopy(): Individual {
+    override fun copyContent(): Individual {
         return RestIndividual(
                 resourceCalls.map { it.copy() }.toMutableList(),
                 sampleType,

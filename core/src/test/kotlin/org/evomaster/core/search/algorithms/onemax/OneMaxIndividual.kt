@@ -5,8 +5,6 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.tracer.TraceableElement
-import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 
 
@@ -24,7 +22,7 @@ class OneMaxIndividual(
         }
     }
 
-    override fun contentCopy(): Individual {
+    override fun copyContent(): Individual {
 
         var copy = OneMaxIndividual(n, trackOperator)
         (0 until n).forEach {

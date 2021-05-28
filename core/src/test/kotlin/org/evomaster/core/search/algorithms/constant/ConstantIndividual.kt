@@ -11,7 +11,7 @@ import org.evomaster.core.search.service.Randomness
  */
 class ConstantIndividual(val gene: IntegerGene) : Individual() {
 
-    override fun contentCopy(): Individual {
+    override fun copyContent(): Individual {
         return ConstantIndividual(gene.copy() as IntegerGene)
     }
 

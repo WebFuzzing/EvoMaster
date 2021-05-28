@@ -10,7 +10,7 @@ import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
-import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -101,7 +101,7 @@ class RestSampler : AbstractRestSampler(){
 
         if (!test.isEmpty()) {
             val objInd = RestIndividual(test, sampleType, mutableListOf()//, usedObjects.copy()
-                    ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+                    ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
 
             //usedObjects.clear()
             return objInd
@@ -425,7 +425,7 @@ class RestSampler : AbstractRestSampler(){
 
     private fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
         return RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
-                ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+                ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
     }
 
     private fun getParser(): Parser {
