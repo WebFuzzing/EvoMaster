@@ -72,6 +72,11 @@ class RestActionBuilderV3Test{
     // ----------- V3 --------------
 
     @Test
+    fun testNexmo(){
+        loadAndAssertActions("/swagger/apisguru-v3/nexmo.json", 5)
+    }
+
+    @Test
     fun testBcgnews() {
         val map = loadAndAssertActions("/swagger/apisguru-v3/bcgnws.json", 14)
     }

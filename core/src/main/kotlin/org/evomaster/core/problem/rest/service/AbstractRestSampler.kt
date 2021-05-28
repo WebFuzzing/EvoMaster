@@ -131,6 +131,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         initAdHocInitialIndividuals()
 
+        /*
+            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
+         */
+        partialOracles.setOpenApi(swagger)
+
         log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
 
