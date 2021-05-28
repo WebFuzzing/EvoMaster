@@ -65,6 +65,8 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
 
     /**
      * @return actions based on the specified [filter]
+     *
+     * TODO refactor [seeActions], [seeInitializingActions] and [seeDbActions] based on this fun
      */
     open fun seeActions(filter: ActionFilter) : List<out Action>{
         return seeActions()
