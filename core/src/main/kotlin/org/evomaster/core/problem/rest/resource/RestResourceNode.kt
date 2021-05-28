@@ -1,10 +1,8 @@
 package org.evomaster.core.problem.rest.resource
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestAction
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
@@ -13,6 +11,8 @@ import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -26,7 +26,8 @@ import org.slf4j.LoggerFactory
 class RestResourceNode(
         val path : RestPath,
         val actions: MutableList<RestAction> = mutableListOf(),
-        val initMode : InitMode
+        val initMode : InitMode,
+        val employNLP : Boolean
 ) {
 
     companion object {
@@ -52,7 +53,7 @@ class RestResourceNode(
             InitMode.WITH_TOKEN, InitMode.WITH_DERIVED_DEPENDENCY, InitMode.WITH_DEPENDENCY ->{
                 if(path.getNonParameterTokens().isNotEmpty()){
                     tokens.clear()
-                    ParserUtil.parsePathTokens(this.path, tokens, initMode != InitMode.WITH_DEPENDENCY)
+                    ParserUtil.parsePathTokens(this.path, tokens, employNLP && initMode != InitMode.WITH_DEPENDENCY)
                 }
                 initSegments()
             }
@@ -99,6 +100,13 @@ class RestResourceNode(
     private val templates : MutableMap<String, CallsTemplate> = mutableMapOf()
 
     /**
+     * In REST, params of the action might be modified, e.g., for WebRequest
+     * In this case, we modify the [actions] with updated action with new params if there exist,
+     * and backup its original form with [originalActions]
+     */
+    private val originalActions : MutableList<RestAction> = mutableListOf()
+
+    /**
      * this init occurs after actions and ancestors are set up
      */
     fun init(){
@@ -115,6 +123,57 @@ class RestResourceNode(
             if(!r.path.isEquivalent(this.path) && r.path.isAncestorOf(this.path))
                 ancestors.add(r)
         }
+    }
+
+    fun getResourceNode(path: RestPath) : RestResourceNode?{
+        if (path.toString() == path.toString()) return this
+        return ancestors.find { it.path.toString() == path.toString() }
+    }
+
+
+    /**
+     * @return mutable genes in [dbactions] and they do not bind with rest actions.
+     */
+    fun getMutableSQLGenes(dbactions: MutableList<DbAction>, template: String, is2POST : Boolean) : List<out Gene>{
+
+        val related = getMissingParams(template, is2POST).map {
+            resourceToTable.paramToTable[it.key]
+        }
+
+        return dbactions.filterNot { it.representExistingData }.flatMap { db->
+            val exclude = related.flatMap { r-> r?.getRelatedColumn(db.table.name)?.toList()?:listOf() }
+            db.seeGenesForInsertion(exclude)
+        }.filter(Gene::isMutable)
+    }
+
+    /**
+     * @return mutable genes in [actions] which perform action on current [this] resource node
+     *          with [callsTemplate] template, e.g., POST-GET
+     */
+    private fun getMutableRestGenes(actions: List<RestAction>, template: String) : List<out Gene>{
+
+        if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestAction::seeGenes).filter(Gene::isMutable)
+
+        val missing = getMissingParams(template, false)
+        val params = mutableListOf<Param>()
+        (actions.indices).forEach { i ->
+            val a = actions[i]
+            if (a is RestCallAction){
+                if (i != actions.size-1 && (i == 0 || a.verb == HttpVerb.POST)) {
+                    params.addAll(a.parameters)
+                } else{
+                    //add the parameters which does not bind with POST if exist
+                    params.addAll(a.parameters.filter { p->
+                        missing.none { m->
+                            m.key == getParamId(a.parameters, p)
+                        }
+                    })
+                }
+            }else{
+                throw IllegalStateException("Rest action at index $i is not a RestCallAction")
+            }
+        }
+        return params.flatMap(Param::seeGenes).filter(Gene::isMutable)
     }
 
     private fun initVerbs(){
@@ -152,6 +211,16 @@ class RestResourceNode(
     }
 
     /************************** creation manage*********************************/
+
+    fun getSqlCreationPoints() : List<String>{
+        if (resourceToTable.confirmedSet.isNotEmpty()) return resourceToTable.confirmedSet.keys.toList()
+        return resourceToTable.derivedMap.keys.toList()
+    }
+
+    /**
+     * @return whether there exist POST action (either from [this] node or its [ancestors]) to create the resource
+     */
+    fun hasPostCreation() = creations.any { it is PostCreationChain && it.actions.isNotEmpty() } || verbs.first()
 
     private fun initCreationPoints(){
 
@@ -196,7 +265,7 @@ class RestResourceNode(
         }
     }
 
-    private fun checkDifferenceOrInit(dbactions : MutableList<DbAction> = mutableListOf(), postactions: MutableList<RestCallAction> = mutableListOf()) : Pair<Boolean, CreationChain>{
+    fun checkDifferenceOrInit(dbactions : MutableList<DbAction> = mutableListOf(), postactions: MutableList<RestCallAction> = mutableListOf()) : Pair<Boolean, CreationChain>{
         when{
             dbactions.isNotEmpty() && postactions.isNotEmpty() ->{
                 creations.find { it is CompositeCreationChain }?.let {
@@ -241,7 +310,7 @@ class RestResourceNode(
         }
     }
 
-    private fun getCreation(predicate: (CreationChain) -> Boolean) : CreationChain?{
+    fun getCreation(predicate: (CreationChain) -> Boolean) : CreationChain?{
         return creations.find(predicate)
     }
 
@@ -254,7 +323,7 @@ class RestResourceNode(
     /***********************************************************/
 
 
-    private fun updateTemplateSize(){
+    fun updateTemplateSize(){
         getCreation { creationChain : CreationChain-> creationChain is PostCreationChain  }?.let {c->
             val dif = (c as PostCreationChain).actions.size - (if(verbs[RestResourceTemplateHandler.getIndexOfHttpVerb(HttpVerb.POST)]) 1 else 0)
             templates.values.filter { it.template.contains("POST") }.forEach { u ->
@@ -334,7 +403,7 @@ class RestResourceNode(
         if(action is RestCallAction && action.verb == HttpVerb.POST){
             getCreation { c : CreationChain -> (c is PostCreationChain) }.let {
                 if(it != null && (it as PostCreationChain).actions.size == 1 && it.isComplete()){
-                    call.status = ResourceStatus.CREATED
+                    call.status = ResourceStatus.CREATED_REST
                 }else{
                     call.status = ResourceStatus.NOT_FOUND_DEPENDENT
                 }
@@ -469,7 +538,7 @@ class RestResourceNode(
                 calls.status = ResourceStatus.NOT_EXISTING
             }
             0 ->{
-                calls.status = ResourceStatus.CREATED
+                calls.status = ResourceStatus.CREATED_REST
             }
             -1 -> {
                 calls.status = ResourceStatus.NOT_ENOUGH_LENGTH
@@ -510,8 +579,7 @@ class RestResourceNode(
             throw IllegalArgumentException("Cannot choose from an empty collection")
         }
 
-        val max = actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }.max()!!
-        val candidates = actions.filter { a -> a is RestCallAction && a.path.levels() == max }
+        val candidates = ParamUtil.selectLongestPathAction(actions)
 
         if(randomness == null){
             return candidates.first() as RestCallAction
@@ -636,6 +704,17 @@ class RestResourceNode(
     }
 
     /********************** utility *************************/
+
+    fun updateActionsWithAdditionalParams(action: RestCallAction){
+        val org = actions.find { it is RestCallAction && it.verb == action.verb }
+        org?:throw IllegalStateException("cannot find the action (${action.getName()}) in the node $path")
+        if (action.parameters.size > (org as RestCallAction).parameters.size){
+            originalActions.add(org)
+            actions.remove(org)
+            actions.add(action)
+        }
+    }
+
     fun isPartOfStaticTokens(text : String) : Boolean{
         return tokens.any { token ->
             token.equals(text)
@@ -796,12 +875,19 @@ class RestResourceNode(
         return paramInfo
     }
 
-    fun getMissingParams(actionTemplate: String) : List<ParamInfo>{
+    /**
+     * @return params in a [RestResourceCalls] that are not bounded with POST actions if there exist based on the template [actionTemplate]
+     *
+     */
+    fun getMissingParams(actionTemplate: String, withSql : Boolean) : List<ParamInfo>{
         val actions = RestResourceTemplateHandler.parseTemplate(actionTemplate)
-        assert(actions.isNotEmpty())
+        Lazy.assert {
+            actions.isNotEmpty()
+        }
 
         when(actions[0]){
             HttpVerb.POST->{
+                if (withSql) return paramsInfo.values.toList()
                 return paramsInfo.values.filter { it.missing }
             }
             HttpVerb.PATCH, HttpVerb.PUT->{
@@ -816,10 +902,20 @@ class RestResourceNode(
         }
     }
 
+    fun getTemplate(key: String) : CallsTemplate{
+        if (templates.containsKey(key)) return templates.getValue(key)
+        throw IllegalArgumentException("cannot find $key template in the node $path")
+    }
+
     fun getTemplates() : Map<String, CallsTemplate> = templates.toMap()
 
-    fun confirmFailureCreationByPost(calls: RestResourceCalls){
-        if (creations.isNotEmpty()){
+    fun confirmFailureCreationByPost(calls: RestResourceCalls, action: RestCallAction, result: ActionResult){
+        if (result !is RestCallResult) return
+
+        val fail = action.verb.run { this == HttpVerb.POST || this == HttpVerb.PUT} &&
+                calls.status == ResourceStatus.CREATED_REST && result.getStatusCode().run { this != 201 || this != 200 }
+
+        if (fail && creations.isNotEmpty()){
             creations.filter { it is PostCreationChain && calls.actions.map { a->a.getName() }.containsAll(it.actions.map { a-> a.getName() }) }.apply {
                 if (size == 1)
                     (first() as PostCreationChain).confirmFailure()
@@ -842,7 +938,7 @@ enum class InitMode{
 /**
  * extract info for a parm
  */
-class ParamInfo(
+data class ParamInfo(
         val name : String,
         val key : String,
         val preSegment : String, //by default is flatten segment

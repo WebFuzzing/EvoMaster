@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.util
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.resource.CallsTemplate
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.service.Randomness
 
 
@@ -30,20 +31,29 @@ class RestResourceTemplateHandler{
             return temp.split(SeparatorTemplate).map { HttpVerb.valueOf(it) }.toTypedArray()
         }
 
-        fun getStringTemplateByActions(actions : List<RestCallAction>) : String = formatTemplate(actions.map { it.verb }.toTypedArray())
+        fun getStringTemplateByActions(actions : List<RestCallAction>) : String{
+            return formatTemplate(actions.map { it.verb }.toTypedArray())
+        }
+
+        fun getStringTemplateByCalls(calls: RestResourceCalls) : String{
+            val verbs = mutableListOf((calls.actions.last() as RestCallAction).verb)
+            if (calls.dbActions.isNotEmpty() || calls.actions.size > 1)
+                verbs.add(0, HttpVerb.POST)
+            return  formatTemplate(verbs.toTypedArray())
+        }
 
         private fun combination(space : Array<HttpVerb>, len : Int = 5, excluding: Array<HttpVerb>? = null) : Array<String>{
-            var cspace = if(excluding!= null) space.filter { !excluding.contains(it) }.toList() else space.toList()
-            var nums = List(len){ i -> cspace.size - i}
-            var result = Array(nums.reduce { acc, i ->  acc * i}){""}
+            val cspace = if(excluding!= null) space.filter { !excluding.contains(it) }.toList() else space.toList()
+            val nums = List(len){ i -> cspace.size - i}
+            val result = Array(nums.reduce { acc, i ->  acc * i}){""}
 
             for (ei in 0 until result.size){
                 var t = ei
-                var remove : MutableList<String> = mutableListOf()
+                val remove : MutableList<String> = mutableListOf()
                 for(id in 0 until len-1){
-                    var l = (nums.subList(id+1, len).reduce { acc, i -> acc * i })
-                    var i = t/l
-                    var value = cspace.filter { r -> !remove.contains(r.toString()) }[i].toString()
+                    val l = (nums.subList(id+1, len).reduce { acc, i -> acc * i })
+                    val i = t/l
+                    val value = cspace.filter { r -> !remove.contains(r.toString()) }[i].toString()
                     result[ei] = result[ei] + value + SeparatorTemplate
                     remove.add(value)
                     t -= l * i
@@ -83,12 +93,12 @@ class RestResourceTemplateHandler{
             }else{
                 if(len == space.size && len - (if(_space.first()) 1 else 0) - (if(_space[4]) 1 else 0) == 1)
                     return formatTemplate(space.toTypedArray())
-                var remove : MutableList<String> = mutableListOf()
-                var result = Array(len){i->
+                val remove : MutableList<String> = mutableListOf()
+                val result = Array(len){i->
                     if(i > 0) remove.add(HttpVerb.POST.toString())
                     if(i < len -1) remove.add(HttpVerb.DELETE.toString())
                     if(i == len -1) remove.remove(HttpVerb.DELETE.toString())
-                    var chosen = randomness.choose(space.filter { v-> !remove.contains(v.toString())}).toString()
+                    val chosen = randomness.choose(space.filter { v-> !remove.contains(v.toString())}).toString()
                     remove.add(chosen)
                     chosen
                 }

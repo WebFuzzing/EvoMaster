@@ -1072,6 +1072,22 @@ class EMConfig {
     var maxSqlInitActionsPerResource = 0
 
     @Experimental
+    @Cfg("Specify a strategy to determinate a number of resources to be manipulated throughout the search.")
+    var employSqlNumResourceStrategy = SqlInitResourceStrategy.NONE
+
+    enum class SqlInitResourceStrategy{
+        NONE,
+
+        /**
+         * determinate a number of resource to be manipulated at random between 1 and [maxSqlInitActionsPerResource]
+         */
+        RANDOM,
+        /**
+         * adaptively decrease a number of resources to be manipulated from [maxSqlInitActionsPerResource] to 1
+         */
+        DPC
+    }
+    @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
             "In other word, if the number is less than the specified, insertion is always applied.")
     @Min(0.0)
@@ -1085,6 +1101,10 @@ class EMConfig {
     @Experimental
     @Cfg("Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
     var doesApplyNameMatching = false
+
+    @Experimental
+    @Cfg("Whether to employ nlp parser to process text")
+    var enableNLPParser = false
 
     @Experimental
     @Cfg("Whether to save mutated gene info, which is typically used for debugging mutation")

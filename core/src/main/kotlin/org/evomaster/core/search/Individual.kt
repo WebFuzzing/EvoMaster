@@ -36,6 +36,42 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      */
     abstract fun size(): Int
 
+    enum class ActionFilter {
+        /**
+         * all actions
+         */
+        ALL,
+
+        /**
+         * actions which are in initialization, e.g., HttpWsIndividual
+         */
+        INIT,
+
+        /**
+         * actions which are not in initialization
+         */
+        NO_INIT,
+
+        /**
+         * actions which are SQL-related actions
+         */
+        ONLY_SQL,
+
+        /**
+         * actions which are not SQL-related actions
+         */
+        NO_SQL
+    }
+
+    /**
+     * @return actions based on the specified [filter]
+     *
+     * TODO refactor [seeActions], [seeInitializingActions] and [seeDbActions] based on this fun
+     */
+    open fun seeActions(filter: ActionFilter) : List<out Action>{
+        return seeActions()
+    }
+
     /**
      * Return a view of all the "actions" defined in this individual.
      * Note: each action could be composed by 0 or more genes
@@ -58,13 +94,6 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      * would be same with [seeInitializingActions]
      */
     open fun seeDbActions() : List<Action> = seeInitializingActions()
-
-    /**
-     *  TODO MAN
-     *  when integrating resource-based solutions with impact-based solutions,
-     *  this method needs to be refactored.
-     */
-    open fun seeActions(isInitialization : Boolean) = if (isInitialization) seeInitializingActions() else seeActions()
 
     /**
      * Determine if the structure (ie the actions) of this individual

@@ -1,8 +1,9 @@
-package org.evomaster.e2etests.spring.examples.resource;
+package org.evomaster.e2etests.spring.examples.resource.dependency;
 
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
+import org.evomaster.e2etests.spring.examples.resource.ResourceTestBase;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;

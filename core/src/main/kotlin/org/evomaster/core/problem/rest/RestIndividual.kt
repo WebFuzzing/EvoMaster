@@ -236,6 +236,9 @@ class RestIndividual(
         resourceCalls.set(position2, first)
     }
 
+    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions().map {
+        seeActions(actionFilter).indexOf(it)
+    }
 
     fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?, randomness: Randomness){
         val previousDbActions = mutableListOf<DbAction>()
@@ -293,6 +296,16 @@ class RestIndividual(
                 .any {
                     if(it < position) validateSwap(it, position) else if(it > position) validateSwap(position, it) else false
                 }
+    }
+
+    override fun seeActions(filter: ActionFilter): List<out Action> {
+        return when(filter){
+            ActionFilter.ALL-> dbInitialization.plus(getResourceCalls().flatMap { it.seeActions() })
+            ActionFilter.NO_INIT -> getResourceCalls().flatMap { it.seeActions() }
+            ActionFilter.INIT -> dbInitialization
+            ActionFilter.ONLY_SQL -> dbInitialization.plus(getResourceCalls().flatMap { it.dbActions })
+            ActionFilter.NO_SQL -> getResourceCalls().flatMap { it.actions }
+        }
     }
 
 
