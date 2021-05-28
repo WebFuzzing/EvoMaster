@@ -1,10 +1,11 @@
-package org.evomaster.e2etests.spring.examples.resource;
+package org.evomaster.e2etests.spring.examples.resource.db;
 
 import com.foo.rest.examples.spring.resource.ResourceRestController;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
+import org.evomaster.e2etests.spring.examples.resource.ResourceTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -69,7 +70,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     args.add("--probOfSmartSampling");
                     args.add("1.0");
                     args.add("--doesApplyNameMatching");
-                    args.add("false");
+                    args.add("true");
 
                     args.add("--probOfEnablingResourceDependencyHeuristics");
                     args.add("1.0");
@@ -93,7 +94,6 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     boolean ok = solution.getIndividuals().stream().anyMatch(
                             s -> hasAtLeastOneSequence(s, new HttpVerb[]{HttpVerb.POST}, new int[]{201}, new String[]{"/api/rpR"}) ||
                                     hasAtLeastOneSequence(s, new HttpVerb[]{HttpVerb.GET, HttpVerb.POST}, new int[]{200, 201}, new String[]{"/api/rd/{rdId}","/api/rpR"})
-
                     );
 
                     assertTrue(ok);

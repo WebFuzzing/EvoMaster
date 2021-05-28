@@ -510,7 +510,7 @@ class SqlInsertBuilder(
             val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
                     ?: throw IllegalArgumentException("rows regarding pks can not be found")
             if (result.rows.size != 1) {
-                throw IllegalArgumentException("the size of rows regarding pks is ${result.rows.size}, and except is 1")
+                log.warn("there exist more than one rows (${result.rows.size}) with pkValues $condition")
             }
             row = result.rows.first()
         } else

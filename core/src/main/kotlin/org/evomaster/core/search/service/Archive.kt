@@ -524,7 +524,7 @@ class Archive<T> where T : Individual {
         return populations.values.find {
             it.any { i-> i.individual.sameActions(other) }
         }?.run {
-            if (this == null || this.isEmpty())
+            if (this.isEmpty())
                 null
             else
                 find{i -> i.individual.sameActions(other)}!!.impactInfo?.clone()

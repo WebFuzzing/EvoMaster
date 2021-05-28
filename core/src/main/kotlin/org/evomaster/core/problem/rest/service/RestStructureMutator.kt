@@ -137,10 +137,14 @@ class RestStructureMutator : HttpWsStructureMutator() {
             //save mutated genes
             val removedActions = ind.getResourceCalls()[chosen].actions
             assert(removedActions.size == 1)
-            mutatedGenes?.removedGene?.addAll(removedActions.first().seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
 
-            //ind.seeActions().removeAt(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                removedActions.first(),
+                chosen,
+                true,
+                chosen
+            )
+
             ind.removeResourceCall(chosen)
 
         } else {
@@ -153,8 +157,12 @@ class RestStructureMutator : HttpWsStructureMutator() {
             val post = sampler.createActionFor(postTemplate, ind.seeActions().last() as RestCallAction)
 
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(post.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(idx)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                post,
+                idx,
+                false,
+                idx
+            )
 
             /*
                 where it is inserted should not matter, as long as
@@ -171,9 +179,14 @@ class RestStructureMutator : HttpWsStructureMutator() {
         if (ind.seeActions().size == 1) {
             val sampledAction = sampler.sampleRandomAction(0.05) as RestAction
 
+            val pos = ind.seeActions().size
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(ind.seeActions().size)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                sampledAction,
+                pos,
+                false,
+                pos
+            )
 
             //ind.seeActions().add(sampledAction)
             ind.addResourceCall(RestResourceCalls(actions = mutableListOf(sampledAction)))
@@ -191,8 +204,12 @@ class RestStructureMutator : HttpWsStructureMutator() {
             //save mutated genes
             val removedActions = ind.getResourceCalls()[chosen].actions
             assert(removedActions.size == 1)
-            mutatedGenes?.removedGene?.addAll(removedActions.first().seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                removedActions.first(),
+                chosen,
+                true,
+                chosen
+            )
 
             //ind.seeActions().removeAt(chosen)
             ind.removeResourceCall(chosen)
@@ -207,8 +224,12 @@ class RestStructureMutator : HttpWsStructureMutator() {
             ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction)))
 
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                sampledAction,
+                chosen,
+                false,
+                chosen
+            )
 
             //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             // BMR: Perhaps we could have a function for individual.addAction(action) which would cover both

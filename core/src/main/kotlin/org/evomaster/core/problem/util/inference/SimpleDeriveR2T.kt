@@ -19,7 +19,7 @@ import org.evomaster.core.search.gene.ObjectGene
 /**
  * process inference related to resource
  */
-class SimpleDeriveResourceBinding : DeriveResourceBinding{
+object SimpleDeriveResourceBinding : DeriveResourceBinding{
 
     /*************************** resource to table and param to table *****************************/
 
@@ -211,28 +211,15 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
         }
     }
 
-    override fun generateRelatedTables(calls: RestResourceCalls, dbActions : MutableList<DbAction>): MutableMap<RestAction, MutableList<ParamGeneBindMap>> {
-        val missingParamsInfo = calls.getResourceNode().getMissingParams(calls.template!!.template)
+    /**
+     * @return a binding map between rest actions (key) in [calls] and dbactions in [dbActions]
+     */
+    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, dbActions : MutableList<DbAction>): MutableMap<RestAction, MutableList<ParamGeneBindMap>> {
 
         val result = mutableMapOf<RestAction, MutableList<ParamGeneBindMap>>()
 
-        val missingParams = missingParamsInfo.map { it.key }
+        val missingParams = paramsInfo.map { it.key }
         val resource = calls.getResourceNode()
-
-
-//        val resourcesMap = mutableMapOf<RestResourceNode, MutableSet<String>>()
-//        val actionMap = mutableMapOf<RestAction, MutableSet<String>>()
-//        calls.actions.forEach {
-//            if(it is RestCallAction){
-//                val ar = calls.getResourceNode()
-//                val paramIdSets = resourcesMap.getOrPut(ar){ mutableSetOf()}
-//                val paramIdSetForAction = actionMap.getOrPut(it){ mutableSetOf()}
-//                it.parameters.forEach { p->
-//                    paramIdSets.add(ar.getParamId(it.parameters, p))
-//                    paramIdSetForAction.add(ar.getParamId(it.parameters, p))
-//                }
-//            }
-//        }
 
         val relatedTables = dbActions.map { it.table.name }.toHashSet()
 
@@ -243,7 +230,7 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
                 if(!cleanList.any { e->e.equalWith(p)}) cleanList.add(p)
             }
             calls.actions.filter { it is RestCallAction  && it.path.toString() == resource.getName()}.forEach { a->
-                result.put(a, cleanList.filter { p-> (a is RestCallAction) && (missingParamsInfo.any { m-> m.key == p.paramId && m.involvedAction.contains(a.verb) })}.toMutableList())
+                result.put(a, cleanList.filter { p-> (a is RestCallAction) && (paramsInfo.any { m-> m.key == p.paramId && m.involvedAction.contains(a.verb) })}.toMutableList())
             }
         }
 
