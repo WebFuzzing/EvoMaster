@@ -17,13 +17,4 @@ open class QueryResolver (
         return dataRepo.getStores()
     }
 
-/*second solution
-    fun potStore(): PotStore? {
-        return null
-    }
-    fun flowerStore(): FlowerStore? {
-        return null
-    }
-
- */
 }
