@@ -11,12 +11,14 @@ class Leaf(val data: String) : StructuralElement() {
         return Leaf(data)
     }
 
-    override fun postCopy(target: StructuralElement) {
+    override fun postCopy(template: StructuralElement) {
         val root = getRoot()
-        val postBinding = binding.map {b->
+        val postBinding = (template as Leaf).binding.map {b->
             root.find(b) as? Leaf?:throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (Leaf)")
         }
         binding.clear()
         binding.addAll(postBinding)
+
+        super.postCopy(template)
     }
 }

@@ -29,9 +29,15 @@ abstract class StructuralElement(
     abstract fun copyContent(): StructuralElement
 
     /**
-     * post-handling on the copy based on its [target]
+     * post-handling on the copy based on its [template]
      */
-    abstract fun postCopy(target : StructuralElement)
+    open fun postCopy(template : StructuralElement){
+        if (children.size != template.children.size)
+            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${children.size}) vs. template (${template.children.size})")
+        children.indices.forEach {
+            children[it].postCopy(template.children[it])
+        }
+    }
 
     /**
      * make a deep copy

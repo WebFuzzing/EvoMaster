@@ -9,7 +9,4 @@ class Root(val data: Double, val middles : MutableList<Middle>) : StructuralElem
         return Root(data, middles.map { it.copyContent() }.toMutableList())
     }
 
-    override fun postCopy(target: StructuralElement) {
-
-    }
 }
