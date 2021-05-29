@@ -242,13 +242,37 @@ class EMConfig {
         }
     }
 
-    private fun checkMultiFieldConstraints() {
+    fun checkMultiFieldConstraints() {
         /*
             Each option field might have specific constraints, setup with @annotations.
             However, there can be multi-field constraints as well.
             Those are defined here.
             They can be check only once all fields have been updated
          */
+
+        if (blackBox && !bbExperiments) {
+
+            if(problemType == ProblemType.DEFAULT){
+                log.warn(AnsiColor.inRed("WARNING: you are doing Black-Box testing, but you did not specify the" +
+                        " 'problemType'. The system will default to RESTful API testing."))
+                problemType = ProblemType.REST
+            }
+
+            if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
+                throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
+            }
+            if (outputFormat == OutputFormat.DEFAULT) {
+                /*
+                    TODO in the future, once we support POSTMAN outputs, we should default it here
+                 */
+                throw IllegalArgumentException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
+            }
+        }
+
+        if (!blackBox && bbExperiments) {
+            throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
+        }
+
 
         when (stoppingCriterion) {
             StoppingCriterion.TIME -> if (maxActionEvaluations != defaultMaxActionEvaluations) {
@@ -313,19 +337,6 @@ class EMConfig {
 
         if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
-        }
-
-        if (blackBox && !bbExperiments) {
-            if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
-                throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
-            }
-            if (outputFormat == OutputFormat.DEFAULT) {
-                throw IllegalArgumentException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
-            }
-        }
-
-        if (!blackBox && bbExperiments) {
-            throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
         }
 
         if ((outputFilePrefix.contains("-") || outputFileSuffix.contains("-"))
@@ -696,14 +707,20 @@ class EMConfig {
     }
 
     enum class ProblemType(private val experimental: Boolean) : WithExperimentalOptions {
+        DEFAULT(experimental = false),
         REST(experimental = false),
         GRAPHQL(experimental = true),
         WEB(experimental = true);
         override fun isExperimental() = experimental
     }
 
-    @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API")
-    var problemType = ProblemType.REST
+    @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API." +
+            " If left to DEFAULT, the type will be inferred from the EM Driver." +
+            " However, in case of ambiguities (e.g., the driver specifies more than one type)," +
+            " then this field must be set with a specific type." +
+            " This is also the case for Black-Box testing where there is no EM Driver." +
+            " In this latter case, the system defaults to handle REST APIs.")
+    var problemType = ProblemType.DEFAULT
 
 
     @Cfg("Specify if test classes should be created as output of the tool. " +

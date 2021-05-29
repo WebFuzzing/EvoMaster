@@ -216,9 +216,31 @@ class Main {
             val base = BaseModule(args)
             val config = base.getEMConfig()
 
-            val problemType = base.getEMConfig().problemType
+            if(config.problemType == EMConfig.ProblemType.DEFAULT){
+                /*
+                    Note that, in case ob BB-testing, this would had been already modified
+                 */
+                assert(!config.blackBox || config.bbExperiments)
 
-            val problemModule = when (problemType) {
+                val rc = RemoteController(base.getEMConfig())
+                val info = rc.getSutInfo()
+                        ?: throw IllegalStateException("No 'problemType' was defined, but failed to retried the needed" +
+                                " info from the EM Driver.")
+
+                if(info.restProblem != null){
+                    config.problemType = EMConfig.ProblemType.REST
+                } else if (info.graphQLProblem != null){
+                    config.problemType = EMConfig.ProblemType.GRAPHQL
+                } else {
+                    throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
+                }
+                //TODO in future might support Driver with multi-problem definitions
+
+                //as we modified problemType, we need to re-check these constraints
+                config.checkMultiFieldConstraints()
+            }
+
+            val problemModule = when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     if (config.blackBox) {
                         BlackBoxRestModule(config.bbExperiments)
@@ -237,11 +259,11 @@ class Main {
                 EMConfig.ProblemType.WEB -> WebModule()
 
                 //this should never happen, unless we add new type and forget to add it here
-                else -> throw IllegalStateException("Unrecognized problem type: $problemType")
+                else -> throw IllegalStateException("Unrecognized problem type: ${config.problemType}")
             }
 
-            try {
-                return LifecycleInjector.builder()
+            val injector = try {
+                LifecycleInjector.builder()
                         .withModules(base, problemModule)
                         .build()
                         .createInjector()
@@ -258,6 +280,11 @@ class Main {
 
                 throw e
             }
+
+            val cfg = injector.getInstance(EMConfig::class.java)
+            cfg.problemType = config.problemType
+
+            return injector
         }
 
 
