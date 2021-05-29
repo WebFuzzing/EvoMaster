@@ -299,18 +299,20 @@ class EMConfig {
         }
 
         //resource related parameters
-        if ((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
-                && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)) {
-            throw IllegalArgumentException("Parameters (${
-            arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics", "exportDependencies")
-                    .filterIndexed { index, _ ->
-                        (index == 0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE) ||
-                                (index == 1 && (probOfApplySQLActionToCreateResources > 0.0)) ||
-                                (index == 2 && doesApplyNameMatching) ||
-                                (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
-                                (index == 4 && exportDependencies)
-                    }.joinToString(" and ")
-            }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
+        if(problemType != ProblemType.DEFAULT) {
+            if ((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
+                    && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)) {
+                throw IllegalArgumentException("Parameters (${
+                    arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics", "exportDependencies")
+                            .filterIndexed { index, _ ->
+                                (index == 0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE) ||
+                                        (index == 1 && (probOfApplySQLActionToCreateResources > 0.0)) ||
+                                        (index == 2 && doesApplyNameMatching) ||
+                                        (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
+                                        (index == 4 && exportDependencies)
+                            }.joinToString(" and ")
+                }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
+            }
         }
 
         /*
