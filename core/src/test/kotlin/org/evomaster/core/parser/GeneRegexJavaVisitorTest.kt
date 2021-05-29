@@ -54,4 +54,9 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         val s = "a[](){}\\\"^$.b"
         checkCanSample(RegexUtils.ignoreCaseRegex(s), listOf(s.toUpperCase(), s.toLowerCase()), 200)
     }
+
+    @Test
+    fun testCharEscapeRegex(){
+        checkSameAsJava("\\s\\S\\d\\D\\w\\W")
+    }
 }

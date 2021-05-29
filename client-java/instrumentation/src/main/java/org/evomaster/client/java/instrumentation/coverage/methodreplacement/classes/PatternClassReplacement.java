@@ -32,7 +32,7 @@ public class PatternClassReplacement implements MethodReplacementClass {
             // if any of the required inputs is null, throw a NPE
             return Pattern.matches(regex, input);
         } else {
-            // otherwise use the helper clase for pattern matching distances
+            // otherwise use the helper class for pattern matching distances
             return PatternMatchingHelper.matches(regex, input.toString(), idTemplate);
         }
     }
