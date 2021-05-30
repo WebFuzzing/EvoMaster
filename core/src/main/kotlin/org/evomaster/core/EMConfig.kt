@@ -253,7 +253,7 @@ class EMConfig {
         if (blackBox && !bbExperiments) {
 
             if(problemType == ProblemType.DEFAULT){
-                log.warn(AnsiColor.inRed("WARNING: you are doing Black-Box testing, but you did not specify the" +
+                LoggingUtil.uniqueWarn(log, AnsiColor.inRed("WARNING: you are doing Black-Box testing, but you did not specify the" +
                         " 'problemType'. The system will default to RESTful API testing."))
                 problemType = ProblemType.REST
             }
