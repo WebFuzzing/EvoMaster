@@ -78,7 +78,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         /*
             TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
          */
-        partialOracles.setOpenApi(swagger)
+        partialOracles.setupForRest(swagger)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
@@ -134,7 +134,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         /*
             TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
          */
-        partialOracles.setOpenApi(swagger)
+        partialOracles.setupForRest(swagger)
 
         log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
