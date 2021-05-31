@@ -119,7 +119,7 @@ class GraphQLActionBuilderTest {
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
 
-        assertEquals(50, actionCluster.size)// TODO They are 54 (50+4 (UNION)) but we do not handle UNION type yet
+        assertEquals(54, actionCluster.size)
         val page = actionCluster.get("Page") as GraphQLAction
         assertEquals(3, page.parameters.size)
         assertTrue(page.parameters[0] is GQInputParam)
@@ -147,6 +147,30 @@ class GraphQLActionBuilderTest {
 
         val objMedia = media.parameters[66].gene as ObjectGene
         assertTrue(objMedia.fields.any { it is BooleanGene && it.name == "type" })
+        /**/
+        val notification = actionCluster.get("Notification") as GraphQLAction
+        assertEquals(4, notification.parameters.size)
+        assertTrue(notification.parameters[0] is GQInputParam)
+        assertTrue(notification.parameters[3] is GQReturnParam)
+
+
+        assertTrue(notification.parameters[3].gene is ObjectGene)
+        val unionObjectsNotificationUnion= notification.parameters[3].gene as ObjectGene
+        assertEquals(14, unionObjectsNotificationUnion.fields.size)
+
+        assertTrue( unionObjectsNotificationUnion.fields[0] is OptionalGene)
+        assertTrue((unionObjectsNotificationUnion.fields[0] as OptionalGene).gene is ObjectGene)
+        val objAiringNotification = (unionObjectsNotificationUnion.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(7, objAiringNotification.fields.size)
+        assertTrue(objAiringNotification.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objAiringNotification.fields.any { it is OptionalGene && it.name == "media" })
+
+
+        val objMediaa = (objAiringNotification.fields.first { it.name == "media" } as OptionalGene).gene as ObjectGene
+        assertEquals(53, objMediaa.fields.size)
+        assertTrue(objMediaa.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objMediaa.fields.any { it is BooleanGene && it.name == "modNotes" })
+
     }
 
 
