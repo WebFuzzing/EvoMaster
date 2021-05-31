@@ -13,7 +13,7 @@ object GraphQLUtils {
 
     private val log = LoggerFactory.getLogger(GraphQLUtils::class.java)
 
-    fun generateGQLBodyEntity(a : GraphQLAction, targetFormat: OutputFormat): Entity<String>?{
+    fun generateGQLBodyEntity(a: GraphQLAction, targetFormat: OutputFormat): Entity<String>? {
 
         //TOdo check empty return type
         val returnGene = a.parameters.find { p -> p is GQReturnParam }?.gene
@@ -36,6 +36,13 @@ object GraphQLUtils {
                     {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
                 """.trimIndent())
 
+                } else if (returnGene.name.contains("#UNION#")) {
+
+                    var query = getUnionQuery(returnGene, a)
+                    Entity.json("""
+                   {"query" : " {  ${a.methodName} ($printableInputGenes)  { $query }  }   ","variables":null}
+                """.trimIndent())
+
                 } else {
                     val query = getQuery(returnGene, a)
                     Entity.json("""
@@ -47,6 +54,13 @@ object GraphQLUtils {
                 bodyEntity = if (returnGene == null) {
                     Entity.json("""
                     {"query" : "  { ${a.methodName}       } ","variables":null}
+                """.trimIndent())
+
+                } else if (returnGene.name.contains("#UNION#")) {
+
+                    var query = getUnionQuery(returnGene, a)
+                    Entity.json("""
+                   {"query" : " {  ${a.methodName} { $query }  }   ","variables":null}
                 """.trimIndent())
 
                 } else {
@@ -84,7 +98,7 @@ object GraphQLUtils {
             """.trimIndent())
 
             }
-        }else{
+        } else {
             LoggingUtil.uniqueWarn(log, " method type not supported yet : ${a.methodType}")
             return null
         }
@@ -99,13 +113,17 @@ object GraphQLUtils {
         return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
     }
 
+    fun getUnionQuery(returnGene: Gene, a: GraphQLAction): String {
+        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_OBJECT_MODE)
+    }
+
     fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
         // Man: is the fun to handle " in printable
         return printableInputGene.joinToString(",").replace("\"", "\\\"")
 
     }
 
-    fun getPrintableInputGene(inputGenes: List<Gene>, targetFormat: OutputFormat?=null): MutableList<String> {
+    fun getPrintableInputGene(inputGenes: List<Gene>, targetFormat: OutputFormat? = null): MutableList<String> {
         val printableInputGene = mutableListOf<String>()
         for (gene in inputGenes) {
             if (gene is EnumGene<*> || (gene is OptionalGene && gene.gene is EnumGene<*>)) {
@@ -136,10 +154,10 @@ object GraphQLUtils {
     }
 
 
-    fun repairIndividual(ind: GraphQLIndividual){
+    fun repairIndividual(ind: GraphQLIndividual) {
         ind.seeActions().forEach { a ->
             a.parameters.filterIsInstance<GQReturnParam>().forEach { p ->
-                if(p.gene is ObjectGene){
+                if (p.gene is ObjectGene) {
                     GeneUtils.repairBooleanSelection(p.gene)
                 }
             }
