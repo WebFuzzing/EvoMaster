@@ -46,6 +46,10 @@ class Table(
         /*
          * Containing the union possible types
          */
-        var unionTypes: MutableList<String> = mutableListOf()
+        var unionTypes: MutableList<String> = mutableListOf(),
+        /*
+         * Containing the interface possible types
+          */
+        var interfaceTypes: MutableList<String> = mutableListOf()
 
 )
