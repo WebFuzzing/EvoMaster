@@ -46,7 +46,8 @@ class IndividualMutationweightTest {
             by default, fields of object genes are OptionalGene that might increase the static weight
          */
         // 2+2+5 for foo type
-        assertEquals(9.0, sumWeight(other))
+        assertEquals(9.0, sumWeight(other), "genes are ${other.joinToString(",") { "${it.name}:${it::class.java.simpleName}" }}")
+
 
         val all = individual.seeGenes().filter { it.isMutable() }
         assertEquals(4, all.size)
