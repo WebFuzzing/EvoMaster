@@ -155,10 +155,10 @@ class GraphQLActionBuilderTest {
 
 
         assertTrue(notification.parameters[3].gene is ObjectGene)
-        val unionObjectsNotificationUnion= notification.parameters[3].gene as ObjectGene
+        val unionObjectsNotificationUnion = notification.parameters[3].gene as ObjectGene
         assertEquals(14, unionObjectsNotificationUnion.fields.size)
 
-        assertTrue( unionObjectsNotificationUnion.fields[0] is OptionalGene)
+        assertTrue(unionObjectsNotificationUnion.fields[0] is OptionalGene)
         assertTrue((unionObjectsNotificationUnion.fields[0] as OptionalGene).gene is ObjectGene)
         val objAiringNotification = (unionObjectsNotificationUnion.fields[0] as OptionalGene).gene as ObjectGene
         assertEquals(7, objAiringNotification.fields.size)
@@ -201,7 +201,7 @@ class GraphQLActionBuilderTest {
         val json = PetClinicCheckMain::class.java.getResource("/graphql/CatalysisHub.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        assertEquals(10, actionCluster.size)//TODO (10 + 1 interface)
+        assertEquals(11, actionCluster.size)
 
     }
 
@@ -278,8 +278,22 @@ class GraphQLActionBuilderTest {
         val json = PetClinicCheckMain::class.java.getResource("/graphql/DigitransitHSL.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        assertEquals(32, actionCluster.size)// TODO 33 (32 + 1 interface)
+        assertEquals(33, actionCluster.size)
 
+        val node = actionCluster.get("node") as GraphQLAction
+        assertEquals(2, node.parameters.size)
+        assertTrue(node.parameters[1] is GQReturnParam)
+
+        assertTrue(node.parameters[1].gene is ObjectGene)
+        val interfaceObjectNode = node.parameters[1].gene as ObjectGene
+        assertEquals(15, interfaceObjectNode.fields.size)
+
+        assertTrue(interfaceObjectNode.fields[0] is OptionalGene)
+        assertTrue((interfaceObjectNode.fields[0] as OptionalGene).gene is ObjectGene)
+        val objAgency = (interfaceObjectNode.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(10, objAgency.fields.size)
+        assertTrue(objAgency.fields.any { it is BooleanGene && it.name == "lang" })
+        assertTrue(objAgency.fields.any { it is BooleanGene && it.name == "phone" })
     }
 
     @Test
@@ -455,6 +469,49 @@ class GraphQLActionBuilderTest {
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(3, actionCluster.size)
+    }
+
+
+    @Test
+    fun interfaceEgTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/interfaceEg.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(1, actionCluster.size)
+
+
+        val stores = actionCluster.get("stores") as GraphQLAction
+        assertEquals(1, stores.parameters.size)
+        assertTrue(stores.parameters[0] is GQReturnParam)
+
+        assertTrue(stores.parameters[0].gene is ObjectGene)
+        val interfaceObjectStore = stores.parameters[0].gene as ObjectGene
+        assertEquals(3, interfaceObjectStore.fields.size)
+
+        assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
+        assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
+        val objFlowerStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objFlowerStore.fields.size)
+        assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "name" })
+
+        assertTrue(interfaceObjectStore.fields[1] is OptionalGene)
+        assertTrue((interfaceObjectStore.fields[1] as OptionalGene).gene is ObjectGene)
+        val objPotStore = (interfaceObjectStore.fields[1] as OptionalGene).gene as ObjectGene
+        assertEquals(3, objPotStore.fields.size)
+        assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "name" })
+        assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "address" })
+
+        assertTrue(interfaceObjectStore.fields[2] is OptionalGene)
+        assertTrue((interfaceObjectStore.fields[2] as OptionalGene).gene is ObjectGene)
+        val objStore = (interfaceObjectStore.fields[2] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objStore.fields.size)
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "name" })
+
     }
 
 }
