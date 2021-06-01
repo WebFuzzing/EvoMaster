@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.search.service.monitor
 
 import com.google.gson.*
 import org.evomaster.core.problem.rest.RestCallAction
@@ -134,7 +134,7 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
         val elements = Array<Any>(props.size){
             i-> run{
             if(props[i].name.equals("gene")){
-                var genJsonObject = data.get(props[i].name).asJsonObject
+                val genJsonObject = data.get(props[i].name).asJsonObject
                 val genClazzName = (genJsonObject.get(CLASSNAME) as JsonPrimitive).asString
                 val genClazz = getObjectClass(genClazzName)
                 if(containGenProperty(genClazz))
@@ -148,7 +148,7 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
             }
             }
         }
-        var con = clazz.constructors.filter { c -> c.parameters!!.size == props.size || c.parameterCount == props.size }
+        val con = clazz.constructors.filter { c -> c.parameters!!.size == props.size || c.parameterCount == props.size }
 
         //FIXME MAN: c.parameters > props.size cannot be handled if it exists
         return createEntity(clazz, if(con.isEmpty()) clazz.constructors.first() else con.first(), *elements)

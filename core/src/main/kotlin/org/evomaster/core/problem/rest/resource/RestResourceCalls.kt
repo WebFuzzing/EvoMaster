@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
@@ -25,7 +24,7 @@ import org.slf4j.LoggerFactory
 class RestResourceCalls(
         val template: CallsTemplate? = null,
         val resourceInstance: RestResourceInstance?=null,
-        val actions: MutableList<RestAction>,
+        val actions: MutableList<RestCallAction>,
         val dbActions : MutableList<DbAction> = mutableListOf()
 ){
 
@@ -53,7 +52,7 @@ class RestResourceCalls(
     var shouldBefore = mutableListOf<String>()
 
     fun copy() : RestResourceCalls{
-        val copy = RestResourceCalls(template, resourceInstance?.copy(), actions.map { a -> a.copy() as RestAction}.toMutableList())
+        val copy = RestResourceCalls(template, resourceInstance?.copy(), actions.map { a -> a.copy() as RestCallAction}.toMutableList())
         if(dbActions.isNotEmpty()){
             dbActions.forEach { db->
                 copy.dbActions.add(db.copy() as DbAction)
@@ -72,9 +71,9 @@ class RestResourceCalls(
      */
     fun seeGenes(filter : GeneFilter = GeneFilter.NO_SQL) : List<out Gene>{
         return when(filter){
-            GeneFilter.NO_SQL -> actions.flatMap(RestAction::seeGenes)
+            GeneFilter.NO_SQL -> actions.flatMap(RestCallAction::seeGenes)
             GeneFilter.ONLY_SQL -> seeMutableSQLGenes()
-            GeneFilter.ALL-> seeMutableSQLGenes().plus(actions.flatMap(RestAction::seeGenes))
+            GeneFilter.ALL-> seeMutableSQLGenes().plus(actions.flatMap(RestCallAction::seeGenes))
             else -> throw IllegalArgumentException("there is no initialization in an ResourceCall")
         }
     }
@@ -121,7 +120,7 @@ class RestResourceCalls(
      * @param forceBindParamBasedOnDB specifies whether to bind params based on [dbActions] or reversed
      * @param dbRemovedDueToRepair indicates whether the dbactions are removed due to repair.
      */
-    fun bindCallWithDbActions(dbActions: MutableList<DbAction>, bindingMap: Map<RestAction, MutableList<ParamGeneBindMap>>? = null,
+    fun bindCallWithDbActions(dbActions: MutableList<DbAction>, bindingMap: Map<RestCallAction, MutableList<ParamGeneBindMap>>? = null,
                               cluster : ResourceCluster,
                               forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
         var paramToTables = bindingMap
@@ -158,12 +157,12 @@ class RestResourceCalls(
     /**
      * employing the longest action to represent a group of calls on a resource
      */
-    private fun longestPath() : RestAction{
+    private fun longestPath() : RestCallAction{
         val candidates = ParamUtil.selectLongestPathAction(actions)
         return candidates.first()
     }
 
-    private fun repairGenePerAction(gene: Gene, action : RestAction){
+    private fun repairGenePerAction(gene: Gene, action : RestCallAction){
         val genes = action.seeGenes().flatMap { g->g.flatView() }
         if(genes.contains(gene))
             genes.filter { ig-> ig != gene && ig.name == gene.name && ig::class.java.simpleName == gene::class.java.simpleName }.forEach {cg->

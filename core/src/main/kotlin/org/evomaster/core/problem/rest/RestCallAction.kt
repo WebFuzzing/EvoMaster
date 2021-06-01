@@ -45,7 +45,7 @@ class RestCallAction(
         var locationId: String? = null,
         val produces: List<String> = listOf(),
         val responseRefs : MutableMap<String, String> = mutableMapOf()
-) : HttpWsAction(auth, parameters), RestAction {
+) : HttpWsAction(auth, parameters) {
 
     /**
      * collect info of description and summary from swagger

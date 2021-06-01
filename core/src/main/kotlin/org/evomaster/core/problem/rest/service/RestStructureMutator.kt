@@ -177,7 +177,7 @@ class RestStructureMutator : HttpWsStructureMutator() {
     private fun mutateForRandomType(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?) {
 
         if (ind.seeActions().size == 1) {
-            val sampledAction = sampler.sampleRandomAction(0.05) as RestAction
+            val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
 
             val pos = ind.seeActions().size
             //save mutated genes
@@ -218,7 +218,7 @@ class RestStructureMutator : HttpWsStructureMutator() {
 
             //add one at random
             log.trace("Adding action to test")
-            val sampledAction = sampler.sampleRandomAction(0.05) as RestAction
+            val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
             val chosen = randomness.nextInt(ind.seeActions().size)
             //ind.seeActions().add(chosen, sampledAction)
             ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction)))

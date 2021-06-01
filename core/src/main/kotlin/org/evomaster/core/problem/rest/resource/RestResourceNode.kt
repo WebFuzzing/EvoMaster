@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory
  */
 class RestResourceNode(
         val path : RestPath,
-        val actions: MutableList<RestAction> = mutableListOf(),
+        val actions: MutableList<RestCallAction> = mutableListOf(),
         val initMode : InitMode,
         val employNLP : Boolean
 ) {
@@ -105,7 +105,7 @@ class RestResourceNode(
      * In this case, we modify the [actions] with updated action with new params if there exist,
      * and backup its original form with [originalActions]
      */
-    private val originalActions : MutableList<RestAction> = mutableListOf()
+    private val originalActions : MutableList<RestCallAction> = mutableListOf()
 
     /**
      * this init occurs after actions and ancestors are set up
@@ -151,9 +151,9 @@ class RestResourceNode(
      * @return mutable genes in [actions] which perform action on current [this] resource node
      *          with [callsTemplate] template, e.g., POST-GET
      */
-    private fun getMutableRestGenes(actions: List<RestAction>, template: String) : List<out Gene>{
+    private fun getMutableRestGenes(actions: List<RestCallAction>, template: String) : List<out Gene>{
 
-        if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestAction::seeGenes).filter(Gene::isMutable)
+        if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestCallAction::seeGenes).filter(Gene::isMutable)
 
         val missing = getMissingParams(template, false)
         val params = mutableListOf<Param>()
@@ -376,11 +376,11 @@ class RestResourceNode(
 
 
     fun sampleOneAction(verb : HttpVerb? = null, randomness: Randomness) : RestResourceCalls{
-        val al = if(verb != null) getActionByHttpVerb(actions, verb) else randomness.choose(actions).copy() as RestAction
+        val al = if(verb != null) getActionByHttpVerb(actions, verb) else randomness.choose(actions).copy() as RestCallAction
         return sampleOneAction(al!!, randomness)
     }
 
-    fun sampleOneAction(action : RestAction, randomness: Randomness) : RestResourceCalls{
+    fun sampleOneAction(action : RestCallAction, randomness: Randomness) : RestResourceCalls{
         val copy = action.copy()
         randomizeActionGenes(copy as RestCallAction, randomness)
 
@@ -458,10 +458,10 @@ class RestResourceNode(
         if(!templates.containsKey(template))
             throw IllegalArgumentException("$template does not exist in $path")
         val ats = RestResourceTemplateHandler.parseTemplate(template)
-        val result : MutableList<RestAction> = mutableListOf()
+        val result : MutableList<RestCallAction> = mutableListOf()
         var resource : RestResourceInstance? = null
 
-        val skipBind : MutableList<RestAction> = mutableListOf()
+        val skipBind : MutableList<RestCallAction> = mutableListOf()
 
         var isCreated = 1
         var creation : CreationChain? = null
@@ -491,8 +491,8 @@ class RestResourceNode(
             if(nonPostIndex == -1){
                 (1 until ats.size).forEach{
                     result.add(lastPost.copy().also {
-                        skipBind.add(it as RestAction)
-                    } as RestAction)
+                        skipBind.add(it as RestCallAction)
+                    } as RestCallAction)
                 }
             }else{
                 if(nonPostIndex != ats.size -1){
@@ -532,7 +532,7 @@ class RestResourceNode(
 
         if(additionalPatch && randomness.nextBoolean(PROB_EXTRA_PATCH) &&!templates.getValue(template).independent && template.contains(HttpVerb.PATCH.toString()) && result.size + 1 <= maxTestSize){
             val index = result.indexOfFirst { (it is RestCallAction) && it.verb == HttpVerb.PATCH }
-            val copy = result.get(index).copy() as RestAction
+            val copy = result.get(index).copy() as RestCallAction
             result.add(index, copy)
         }
         val calls = RestResourceCalls(templates[template]!!, resource, result)
@@ -573,11 +573,11 @@ class RestResourceNode(
     }
 
 
-    private fun getActionByHttpVerb(actions : List<RestAction>, verb : HttpVerb) : RestAction? {
+    private fun getActionByHttpVerb(actions : List<RestCallAction>, verb : HttpVerb) : RestCallAction? {
         return actions.find { a -> a is RestCallAction && a.verb == verb }
     }
 
-    private fun chooseLongestPath(actions: List<RestAction>, randomness: Randomness? = null): RestCallAction {
+    private fun chooseLongestPath(actions: List<RestCallAction>, randomness: Randomness? = null): RestCallAction {
 
         if (actions.isEmpty()) {
             throw IllegalArgumentException("Cannot choose from an empty collection")
@@ -638,7 +638,7 @@ class RestResourceNode(
     }
 
 
-    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestAction>, maxTestSize: Int, randomness: Randomness, forCheckSize : Boolean)
+    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestCallAction>, maxTestSize: Int, randomness: Randomness, forCheckSize : Boolean)
             : Int {
 
         if (!forCheckSize && test.size >= maxTestSize) {

@@ -161,7 +161,7 @@ class RestActionBuilderV3Test{
     fun testNews() {
         val map = loadAndAssertActions("/swagger/sut/news.json", 7)
 
-        val create = map["POST:/news"] as RestAction
+        val create = map["POST:/news"] as RestCallAction
         assertEquals(2, create.seeGenes().size)
         val bodyNews = create.seeGenes().find { it.name == "body" }
         assertNotNull(bodyNews)
@@ -177,7 +177,7 @@ class RestActionBuilderV3Test{
     fun testCatWatch() {
         val map = loadAndAssertActions("/swagger/sut/catwatch.json", 23)
 
-        val postScoring = map["POST:/config/scoring.project"] as RestAction
+        val postScoring = map["POST:/config/scoring.project"] as RestCallAction
         assertEquals(3, postScoring.seeGenes().size)
         val bodyPostScoring = postScoring.seeGenes().find { it.name == "body" }
         assertNotNull(bodyPostScoring)

@@ -3,7 +3,6 @@ package org.evomaster.core.problem.util.inference
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.resource.ParamInfo
@@ -214,9 +213,9 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
     /**
      * @return a binding map between rest actions (key) in [calls] and dbactions in [dbActions]
      */
-    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, dbActions : MutableList<DbAction>): MutableMap<RestAction, MutableList<ParamGeneBindMap>> {
+    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, dbActions : MutableList<DbAction>): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
 
-        val result = mutableMapOf<RestAction, MutableList<ParamGeneBindMap>>()
+        val result = mutableMapOf<RestCallAction, MutableList<ParamGeneBindMap>>()
 
         val missingParams = paramsInfo.map { it.key }
         val resource = calls.getResourceNode()

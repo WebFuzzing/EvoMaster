@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.util
 
-import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
@@ -31,7 +30,7 @@ class ParamUtil {
         private val log: Logger = LoggerFactory.getLogger(ParamUtil::class.java)
 
 
-        fun selectLongestPathAction(actions: List<RestAction>): List<RestAction> {
+        fun selectLongestPathAction(actions: List<RestCallAction>): List<RestCallAction> {
             val max =
                 actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }
                     .max()!!

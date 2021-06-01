@@ -8,7 +8,6 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -94,7 +93,7 @@ class ResourceDepManageService {
 
     }
 
-    private fun updateParamInfo(action: RestAction, tables: Map<String, Table>) {
+    private fun updateParamInfo(action: RestCallAction, tables: Map<String, Table>) {
         if (action is RestCallAction) {
             val r = rm.getResourceNodeFromCluster(action.path.toString())
             val additionalInfo = r.updateAdditionalParams(action)
@@ -1111,7 +1110,7 @@ class ResourceDepManageService {
      * if [dbActions] is not empty, return related table from tables in [dbActions]
      * if [dbActions] is empty, return all derived related table
      */
-    fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf(), withSql : Boolean): MutableMap<RestAction, MutableList<ParamGeneBindMap>> {
+    fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf(), withSql : Boolean): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
         val paramsInfo = call.getResourceNode().getMissingParams(call.template!!.template, withSql)
         return SimpleDeriveResourceBinding.generateRelatedTables(paramsInfo, call, dbActions)
     }

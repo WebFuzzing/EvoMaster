@@ -102,7 +102,7 @@ class TestCaseWriterTest {
 
         val sampleType = SampleType.RANDOM
 
-        val restActions = emptyList<RestAction>().toMutableList()
+        val restActions = emptyList<RestCallAction>().toMutableList()
 
 
         val individual = RestIndividual(restActions, sampleType, dbInitialization)
@@ -1062,8 +1062,8 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
             groups = mutableListOf(
-                (mutableListOf(fooInsertion) to mutableListOf(fooAction as RestAction)),
-                (mutableListOf(barInsertion) to mutableListOf(barAction as RestAction))
+                (mutableListOf(fooInsertion) to mutableListOf(fooAction as RestCallAction)),
+                (mutableListOf(barInsertion) to mutableListOf(barAction as RestCallAction))
             )
         )
 
@@ -1118,8 +1118,8 @@ public void test() throws Exception {
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
             groups = mutableListOf(
-                (mutableListOf<DbAction>() to mutableListOf(fooAction as RestAction)),
-                (mutableListOf<DbAction>() to mutableListOf(barAction as RestAction))
+                (mutableListOf<DbAction>() to mutableListOf(fooAction as RestCallAction)),
+                (mutableListOf<DbAction>() to mutableListOf(barAction as RestCallAction))
             )
         )
 

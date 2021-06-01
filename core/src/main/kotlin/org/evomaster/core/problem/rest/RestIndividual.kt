@@ -43,7 +43,7 @@ class RestIndividual(
             trackOperator: TrackOperator? = null,
             index : Int = Traceable.DEFAULT_INDEX) :
             this(
-                    actions.map { RestResourceCalls(actions= mutableListOf(it as RestAction)) }.toMutableList(),
+                    actions.map { RestResourceCalls(actions= mutableListOf(it as RestCallAction)) }.toMutableList(),
                     sampleType,
                     null,
                     dbInitialization,
@@ -119,7 +119,7 @@ class RestIndividual(
 
     override fun size() = seeActions().size
 
-    override fun seeActions(): List<RestAction> = resourceCalls.flatMap { it.actions }
+    override fun seeActions(): List<RestCallAction> = resourceCalls.flatMap { it.actions }
 
     override fun seeDbActions(): List<DbAction> {
         return dbInitialization.plus(resourceCalls.flatMap { c-> c.dbActions })

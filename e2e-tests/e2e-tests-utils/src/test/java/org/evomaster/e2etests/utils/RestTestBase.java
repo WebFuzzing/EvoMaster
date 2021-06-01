@@ -118,7 +118,7 @@ public abstract class RestTestBase  extends WsTestBase{
                                     String path,
                                     String inResponse) {
 
-        List<RestAction> actions = ind.getIndividual().seeActions();
+        List<RestCallAction> actions = ind.getIndividual().seeActions();
 
         boolean stopped = false;
 
@@ -127,11 +127,7 @@ public abstract class RestTestBase  extends WsTestBase{
             RestCallResult res = (RestCallResult) ind.getResults().get(i);
             stopped = res.getStopping();
 
-            if (!(actions.get(i) instanceof RestCallAction)) {
-                continue;
-            }
-
-            RestCallAction action = (RestCallAction) actions.get(i);
+            RestCallAction action = actions.get(i);
 
             if (action.getVerb() != verb) {
                 continue;

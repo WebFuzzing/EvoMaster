@@ -6,7 +6,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.rest.RestAction
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
@@ -17,7 +17,6 @@ import org.evomaster.core.search.service.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.net.ConnectException
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.Files
@@ -246,7 +245,7 @@ class SearchProcessMonitor: SearchListener {
     }
     private fun getGsonBuilder() : Gson? {
         if (config.enableProcessMonitor && config.processFormat == EMConfig.ProcessDataFormat.JSON_ALL)
-            if (gson == null) gson = GsonBuilder().registerTypeAdapter(RestAction::class.java, InterfaceAdapter<RestAction>())
+            if (gson == null) gson = GsonBuilder().registerTypeAdapter(RestCallAction::class.java, InterfaceAdapter<RestCallAction>())
                     .registerTypeAdapter(Param::class.java, InterfaceAdapter<Param>())
                     .registerTypeAdapter(Gene::class.java, InterfaceAdapter<Gene>())
                     .create()
