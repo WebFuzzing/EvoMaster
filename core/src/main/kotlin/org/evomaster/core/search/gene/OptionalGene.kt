@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.value.OptionalGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -27,7 +28,7 @@ class OptionalGene(name: String,
                     * put them on.
                     */
                    var requestSelection: Boolean = false)
-    : Gene(name) {
+    : Gene(name, mutableListOf(gene)) {
 
 
     companion object{
@@ -42,19 +43,15 @@ class OptionalGene(name: String,
         private set
 
 
-
-    init{
-        gene.parent = this
-    }
-
-
     fun forbidSelection(){
         selectable = false
         isActive = false
     }
 
-    override fun copy(): Gene {
-        val copy = OptionalGene(name, gene.copy(), isActive, requestSelection)
+    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
+
+    override fun copyContent(): Gene {
+        val copy = OptionalGene(name, gene.copyContent(), isActive, requestSelection)
         copy.selectable = this.selectable
         return copy
     }

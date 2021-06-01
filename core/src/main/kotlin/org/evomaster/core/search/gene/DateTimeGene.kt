@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -23,7 +24,7 @@ open class DateTimeGene(
         val date: DateGene = DateGene("date"),
         val time: TimeGene = TimeGene("time"),
         val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
-) : Gene(name) {
+) : Gene(name, mutableListOf(date, time)) {
 
     enum class DateTimeGeneFormat {
         // YYYY-MM-DDTHH:SS:MM
@@ -36,17 +37,12 @@ open class DateTimeGene(
         val log : Logger = LoggerFactory.getLogger(DateTimeGene::class.java)
     }
 
-    init {
-        date.parent = this
-        time.parent = this
-    }
+    override fun getChildren(): MutableList<Gene> = mutableListOf(date, time)
 
-
-
-    override fun copy(): Gene = DateTimeGene(
+    override fun copyContent(): Gene = DateTimeGene(
             name,
-            date.copy() as DateGene,
-            time.copy() as TimeGene,
+            date.copyContent() as DateGene,
+            time.copyContent() as TimeGene,
             dateTimeGeneFormat = this.dateTimeGeneFormat
     )
 

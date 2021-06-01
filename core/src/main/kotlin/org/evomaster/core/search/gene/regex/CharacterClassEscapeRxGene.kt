@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
  */
 class CharacterClassEscapeRxGene(
         val type: String
-) : RxAtom("\\$type") {
+) : RxAtom("\\$type", listOf()) {
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
@@ -35,7 +35,9 @@ class CharacterClassEscapeRxGene(
         }
     }
 
-    override fun copy(): Gene {
+    override fun getChildren(): List<Gene> = listOf()
+
+    override fun copyContent(): Gene {
         val copy = CharacterClassEscapeRxGene(type)
         copy.value = this.value
         return copy

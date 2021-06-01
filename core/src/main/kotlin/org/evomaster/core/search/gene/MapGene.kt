@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -24,7 +25,7 @@ class MapGene<T>(
         val template: T,
         var maxSize: Int = MAX_SIZE,
         var elements: MutableList<T> = mutableListOf()
-) : CollectionGene, Gene(name)
+) : CollectionGene, Gene(name, elements)
         where T : Gene {
 
     private var keyCounter = 0
@@ -34,10 +35,6 @@ class MapGene<T>(
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
-
-        for(e in elements){
-            e.parent = this
-        }
     }
 
     companion object{
@@ -45,7 +42,11 @@ class MapGene<T>(
         const val MAX_SIZE = 5
     }
 
-    override fun copy(): Gene {
+    override fun getChildren(): MutableList<T> {
+        return elements
+    }
+
+    override fun copyContent(): Gene {
         return MapGene<T>(name,
                 template.copy() as T,
                 maxSize,
@@ -80,7 +81,7 @@ class MapGene<T>(
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
             val gene = template.copy() as T
-            gene.parent = this
+//            gene.parent = this
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
             elements.add(gene)
@@ -122,7 +123,7 @@ class MapGene<T>(
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
             val gene = template.copy() as T
-            gene.parent = this
+//            gene.parent = this
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
             elements.add(gene)

@@ -16,19 +16,18 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name) {
+class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name, mutableListOf(objectGene)) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(SqlJSONGene::class.java)
     }
 
-    init {
-        objectGene.parent = this
-    }
-
-    override fun copy(): Gene = SqlJSONGene(
+    override fun copyContent(): Gene = SqlJSONGene(
             name,
-            objectGene = this.objectGene.copy() as ObjectGene)
+            objectGene = this.objectGene.copyContent() as ObjectGene)
+
+
+    override fun getChildren(): MutableList<Gene> = mutableListOf(objectGene)
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

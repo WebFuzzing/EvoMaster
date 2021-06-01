@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.value.DisruptiveGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -14,7 +15,7 @@ import org.slf4j.LoggerFactory
  * A gene that has a major, disruptive impact on the whole chromosome.
  * As such, it should be mutated only with low probability
  */
-class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) : Gene(name)
+class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) : Gene(name, mutableListOf(gene))
         where T : Gene {
 
     init {
@@ -30,13 +31,10 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         private val log: Logger = LoggerFactory.getLogger(DisruptiveGene::class.java)
     }
 
-    init {
-        gene.parent = this
-    }
+    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
 
-
-    override fun copy(): Gene {
-        return DisruptiveGene(name, gene.copy(), probability)
+    override fun copyContent(): Gene {
+        return DisruptiveGene(name, gene.copyContent(), probability)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

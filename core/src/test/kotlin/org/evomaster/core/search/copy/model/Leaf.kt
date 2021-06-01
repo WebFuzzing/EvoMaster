@@ -6,6 +6,8 @@ class Leaf(val data: String) : StructuralElement() {
 
     val binding = mutableListOf<Leaf>()
 
+    override fun getChildren(): MutableList<StructuralElement> = mutableListOf()
+
 
     override fun copyContent(): Leaf {
         return Leaf(data)

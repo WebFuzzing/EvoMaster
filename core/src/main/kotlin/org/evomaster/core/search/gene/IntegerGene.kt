@@ -27,7 +27,7 @@ class IntegerGene(
         private val log : Logger = LoggerFactory.getLogger(IntegerGene::class.java)
     }
 
-    override fun copy(): Gene {
+    override fun copyContent(): Gene {
         return IntegerGene(name, value, min, max)
     }
 

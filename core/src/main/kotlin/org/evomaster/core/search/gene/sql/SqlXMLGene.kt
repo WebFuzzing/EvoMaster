@@ -14,20 +14,18 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name) {
+class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name, mutableListOf(objectGene)) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(SqlXMLGene::class.java)
     }
 
-    init {
-        objectGene.parent = this
-    }
 
-    override fun copy(): Gene = SqlXMLGene(
+    override fun copyContent(): Gene = SqlXMLGene(
             name,
-            objectGene = this.objectGene.copy() as ObjectGene)
+            objectGene = this.objectGene.copyContent() as ObjectGene)
 
+    override fun getChildren(): MutableList<Gene> = mutableListOf(objectGene)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         objectGene.randomize(randomness, forceNewValue, allGenes)

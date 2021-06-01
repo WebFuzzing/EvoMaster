@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -38,7 +39,7 @@ class ArrayGene<T>(
          * of the templated, and then mutated/randomized
          */
         var elements: MutableList<T> = mutableListOf()
-) : CollectionGene, Gene(name)
+) : CollectionGene, Gene(name, elements)
         where T : Gene {
 
     init {
@@ -50,10 +51,6 @@ class ArrayGene<T>(
         if (elements.size > maxSize) {
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
-        }
-
-        for(e in elements){
-            e.parent = this
         }
     }
 
@@ -68,11 +65,13 @@ class ArrayGene<T>(
         elements.clear()
     }
 
-    override fun copy(): Gene {
+    override fun getChildren(): MutableList<T> = elements
+
+    override fun copyContent(): Gene {
         return ArrayGene<T>(name,
-                template.copy() as T,
+                template.copyContent() as T,
                 maxSize,
-                elements.map { e -> e.copy() as T }.toMutableList()
+                elements.map { e -> e.copyContent() as T }.toMutableList()
         )
     }
 
@@ -116,7 +115,7 @@ class ArrayGene<T>(
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
             val gene = template.copy() as T
-            gene.parent = this
+//            gene.parent = this
             gene.randomize(randomness, false)
             elements.add(gene)
         }
@@ -153,7 +152,7 @@ class ArrayGene<T>(
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
             val gene = template.copy() as T
-            gene.parent = this
+//            gene.parent = this
             gene.randomize(randomness, false)
             elements.add(gene)
         }else{

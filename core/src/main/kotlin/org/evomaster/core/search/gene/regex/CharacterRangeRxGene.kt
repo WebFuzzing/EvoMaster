@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -15,7 +16,7 @@ import org.slf4j.LoggerFactory
 class CharacterRangeRxGene(
         val negated: Boolean,
         val ranges: List<Pair<Char,Char>>
-) : RxAtom("."){
+) : RxAtom(".", listOf()){
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
@@ -34,13 +35,13 @@ class CharacterRangeRxGene(
 
     var value : Char = ranges[0].first
 
-
+    override fun getChildren(): List<Gene> = listOf()
 
     override fun isMutable(): Boolean {
         return ranges.size > 1 || ranges[0].let { it.first != it.second }
     }
 
-    override fun copy(): Gene {
+    override fun copyContent(): Gene {
         val copy = CharacterRangeRxGene(negated, ranges)
         copy.value = this.value
         return copy

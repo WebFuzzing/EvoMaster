@@ -9,6 +9,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -39,7 +40,7 @@ class StringGene(
          */
         val invalidChars: List<Char> = listOf()
 
-) : Gene(name) {
+) : Gene(name, listOf()) {
 
     companion object {
 
@@ -93,10 +94,12 @@ class StringGene(
      */
     var bindingIds = mutableSetOf<String>()
 
-    override fun copy(): Gene {
+    override fun getChildren(): List<Gene> = specializationGenes
+
+    override fun copyContent(): Gene {
         val copy = StringGene(name, value, minLength, maxLength, invalidChars)
                 .also {
-                    it.specializationGenes = this.specializationGenes.map { g -> g.copy() }.toMutableList()
+                    it.specializationGenes = this.specializationGenes.map { g -> g.copyContent() }.toMutableList()
                     it.specializations.addAll(this.specializations)
                     it.validChar = this.validChar
                     it.selectedSpecialization = this.selectedSpecialization
@@ -104,7 +107,8 @@ class StringGene(
                     it.tainted = this.tainted
                     it.bindingIds = this.bindingIds.map { id -> id }.toMutableSet()
                 }
-        copy.specializationGenes.forEach { it.parent = copy }
+//        copy.specializationGenes.forEach { it.parent = copy }
+        copy().addChildren(copy.specializationGenes)
         return copy
     }
 
@@ -425,10 +429,12 @@ class StringGene(
             selectionUpdatedSinceLastMutation = true
             toAddGenes.forEach {
                 it.randomize(randomness, false, listOf())
-                it.parent = this
+//                it.parent = this
             }
             log.trace("in total added specification size: {}", toAddGenes.size)
             specializationGenes.addAll(toAddGenes)
+            addChildren(toAddGenes)
+
             specializations.addAll(toAddSpecs)
         }
 
@@ -554,7 +560,8 @@ class StringGene(
         this.specializations.addAll(other.specializations)
 
         this.specializationGenes.clear()
-        this.specializationGenes.addAll(other.specializationGenes.map { it.copy() })
+        this.specializationGenes.addAll(other.specializationGenes.map { it.copyContent() })
+        addChildren(this.specializationGenes)
 
         this.tainted = other.tainted
 

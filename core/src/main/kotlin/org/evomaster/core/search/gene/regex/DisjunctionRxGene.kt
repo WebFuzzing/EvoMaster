@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
@@ -22,7 +23,7 @@ class DisjunctionRxGene(
         var matchStart: Boolean,
         /** does this disjunction match the end of the string, or could it be at any position? */
         var matchEnd: Boolean
-) : RxAtom(name) {
+) : RxAtom(name, terms.toMutableList()) {
 
     /**
      * whether we should append a prefix.
@@ -36,20 +37,15 @@ class DisjunctionRxGene(
      */
     var extraPostfix = false
 
-    init {
-        for(t in terms){
-            t.parent = this
-        }
-    }
-
     companion object{
         private const val APPEND = 0.05
         private val log : Logger = LoggerFactory.getLogger(DisjunctionRxGene::class.java)
-
     }
 
-    override fun copy(): Gene {
-        val copy = DisjunctionRxGene(name, terms.map { it.copy() as RxTerm }, matchStart, matchEnd)
+    override fun getChildren(): List<RxTerm> = terms
+
+    override fun copyContent(): Gene {
+        val copy = DisjunctionRxGene(name, terms.map { it.copyContent() as RxTerm }, matchStart, matchEnd)
         copy.extraPrefix = this.extraPrefix
         copy.extraPostfix = this.extraPostfix
         return copy

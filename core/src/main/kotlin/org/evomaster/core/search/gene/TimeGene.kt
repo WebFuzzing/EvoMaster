@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -24,7 +25,7 @@ class TimeGene(
     val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
     val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
     val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
-) : Gene(name) {
+) : Gene(name, mutableListOf<Gene>(hour, minute, second)) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(TimeGene::class.java)
@@ -44,23 +45,18 @@ class TimeGene(
         TIME_WITH_MILLISECONDS
     }
 
-    init {
-        hour.parent = this
-        minute.parent = this
-        second.parent = this
-    }
-
+    override fun getChildren(): MutableList<Gene> = mutableListOf(hour, minute, second)
 
     /*
         Note: would need to handle timezone and second fractions,
         but not sure how important for testing purposes
      */
 
-    override fun copy(): Gene = TimeGene(
+    override fun copyContent(): Gene = TimeGene(
             name,
-            hour.copy() as IntegerGene,
-            minute.copy() as IntegerGene,
-            second.copy() as IntegerGene,
+            hour.copyContent() as IntegerGene,
+            minute.copyContent() as IntegerGene,
+            second.copyContent() as IntegerGene,
             timeGeneFormat = this.timeGeneFormat
     )
 

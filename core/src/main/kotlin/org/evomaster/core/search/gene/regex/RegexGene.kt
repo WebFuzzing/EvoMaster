@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpact
@@ -16,14 +17,12 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 class RegexGene(
         name: String,
         val disjunctions: DisjunctionListRxGene
-) : Gene(name) {
+) : Gene(name, listOf(disjunctions)) {
 
-    init {
-        disjunctions.parent = this
-    }
+    override fun getChildren(): List<DisjunctionListRxGene> = listOf(disjunctions)
 
-    override fun copy(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene)
+    override fun copyContent(): Gene {
+        return RegexGene(name, disjunctions.copyContent() as DisjunctionListRxGene)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

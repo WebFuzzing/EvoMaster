@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionListRxGeneImpact
@@ -16,23 +17,18 @@ import org.slf4j.LoggerFactory
 
 class DisjunctionListRxGene(
         val disjunctions: List<DisjunctionRxGene>
-) : RxAtom("disjunction_list") {
+) : RxAtom("disjunction_list", disjunctions) {
 
     var activeDisjunction: Int = 0
-
-    init {
-        for(d in disjunctions){
-            d.parent = this
-        }
-    }
 
     companion object{
         private const val PROB_NEXT = 0.1
         private val log: Logger = LoggerFactory.getLogger(DisjunctionListRxGene::class.java)
     }
 
+    override fun getChildren(): List<DisjunctionRxGene> = disjunctions
 
-    override fun copy(): Gene {
+    override fun copyContent(): Gene {
         val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
         copy.activeDisjunction = this.activeDisjunction
         return copy

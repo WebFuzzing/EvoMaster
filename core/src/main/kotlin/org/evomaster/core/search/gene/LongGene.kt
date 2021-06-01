@@ -22,7 +22,7 @@ class LongGene(
         private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)
     }
 
-    override fun copy(): Gene {
+    override fun copyContent(): Gene {
         val copy = LongGene(name, value)
         return copy
     }

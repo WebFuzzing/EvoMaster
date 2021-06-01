@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -16,7 +17,7 @@ import org.slf4j.LoggerFactory
  * A building block representing one part of an Individual.
  * The terms "gene" comes from the evolutionary algorithm literature
  */
-abstract class Gene(var name: String) {
+abstract class Gene(var name: String, children: List<out StructuralElement>) : StructuralElement(children){
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
@@ -29,33 +30,18 @@ abstract class Gene(var name: String) {
     }
 
     /**
-     *  A gene could be inside a gene, in a tree-like structure.
-     *  So for each gene, but the root, we keep track of its parent.
-     *
-     *  When a gene X is created with a child Y, then X is responsible
-     *  to mark itself as parent of Y
+     * Make a copy of this gene.
      */
-    var parent : Gene? = null
-
-    /**
-     * Follow the parent's path until the root of gene tree,
-     * which could be this same gene
-     */
-    fun getRoot() : Gene{
-        var curr = this
-        while(curr.parent != null){
-            curr = curr.parent!!
-        }
-        return curr
+    final override fun copy() : Gene{
+        val copy = super.copy()
+        if (copy !is Gene)
+            throw IllegalStateException("mismatched type: the type should be Gene")
+        return copy
     }
 
-    /**
-     * Make a copy of this gene.
-     *
-     * Note: the [parent] of this gene will be [null], but all children
-     * will have the correct parent
-     */
-    abstract fun copy() : Gene
+    override fun copyContent(): Gene {
+        throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
+    }
 
     /**
      * weight for mutation

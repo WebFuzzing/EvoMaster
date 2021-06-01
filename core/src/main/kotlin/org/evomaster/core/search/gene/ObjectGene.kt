@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -17,22 +18,19 @@ import java.net.URLEncoder
 /**
  * @property refType presents the name of reference type of the object
  */
-open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null) : Gene(name) {
+open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null) : Gene(name, mutableListOf<StructuralElement>().apply { addAll(fields) }) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
 
     }
 
-    init {
-        for (f in fields) {
-            f.parent = this
-        }
+    override fun getChildren(): MutableList<Gene> {
+        return fields as MutableList<Gene>
     }
 
-
-    override fun copy(): Gene {
-        return ObjectGene(name, fields.map(Gene::copy), refType)
+    override fun copyContent(): Gene {
+        return ObjectGene(name, fields.map(Gene::copyContent), refType)
     }
 
     override fun copyValueFrom(other: Gene) {

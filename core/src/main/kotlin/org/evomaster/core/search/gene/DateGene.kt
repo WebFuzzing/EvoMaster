@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -28,7 +29,7 @@ class DateGene(
     val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
     val onlyValidDates: Boolean = false,
     val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
-) : Gene(name) {
+) : Gene(name, mutableListOf(year, month, day)) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(DateGene::class.java)
@@ -44,17 +45,12 @@ class DateGene(
         ISO_LOCAL_DATE_FORMAT
     }
 
-    init {
-        year.parent = this
-        month.parent = this
-        day.parent = this
-    }
+    override fun getChildren(): MutableList<Gene> = mutableListOf(year, month, day)
 
-
-    override fun copy(): Gene = DateGene(name,
-            year.copy() as IntegerGene,
-            month.copy() as IntegerGene,
-            day.copy() as IntegerGene,
+    override fun copyContent(): Gene = DateGene(name,
+            year.copyContent() as IntegerGene,
+            month.copyContent() as IntegerGene,
+            day.copyContent() as IntegerGene,
             dateGeneFormat = this.dateGeneFormat,
             onlyValidDates = this.onlyValidDates)
 

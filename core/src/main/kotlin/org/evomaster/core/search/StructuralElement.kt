@@ -4,12 +4,13 @@ import org.evomaster.core.logging.LoggingUtil
 import org.slf4j.LoggerFactory
 
 /**
- * an element which has a structure, i.e., 0..1 [parent] and 0..* [children]
- * @property children its children
+ * an element which has a structure, i.e., 0..1 [parent] and 0..* children
+ * the children can be initialized with constructor, and further added with [addChild] and [addChildren]
+ * @param children its children
  * @property parent its parent
  */
-abstract class StructuralElement(
-    val children : MutableList<StructuralElement> = mutableListOf()
+abstract class StructuralElement (
+    children : List<out StructuralElement> = mutableListOf()
 ) {
 
     companion object{
@@ -20,7 +21,24 @@ abstract class StructuralElement(
         private set
 
     init {
+        initChildren(children)
+    }
+
+    private fun initChildren(children : List<StructuralElement>){
         children.forEach { it.parent = this }
+    }
+
+    /**
+     * @return children of [this]
+     */
+    abstract fun getChildren(): List<out StructuralElement>
+
+    open fun addChild(child: StructuralElement){
+        child.parent = this
+    }
+
+    open fun addChildren(children : List<StructuralElement>){
+        initChildren(children)
     }
 
     /**
@@ -32,10 +50,10 @@ abstract class StructuralElement(
      * post-handling on the copy based on its [template]
      */
     open fun postCopy(template : StructuralElement){
-        if (children.size != template.children.size)
-            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${children.size}) vs. template (${template.children.size})")
-        children.indices.forEach {
-            children[it].postCopy(template.children[it])
+        if (getChildren().size != template.getChildren().size)
+            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${getChildren().size}) vs. template (${template.getChildren().size})")
+        getChildren().indices.forEach {
+            getChildren()[it].postCopy(template.getChildren()[it])
         }
     }
 
@@ -43,7 +61,7 @@ abstract class StructuralElement(
      * make a deep copy
      * @return a new Copyable based on [this]
      */
-    fun copy() : StructuralElement{
+    open fun copy() : StructuralElement {
         if (parent != null)
             LoggingUtil.uniqueWarn(log, "${this::class.java} has a parent, the return copy might lose some info, e.g., parent")
         val copy = copyContent()
@@ -51,7 +69,7 @@ abstract class StructuralElement(
         return copy
     }
 
-    fun getRoot() : StructuralElement{
+    fun getRoot() : StructuralElement {
         if (parent!=null) return parent!!.getRoot()
         return this
     }
@@ -59,7 +77,7 @@ abstract class StructuralElement(
     /**
      * @return a copy in [this] based on the [template] in [parent]
      */
-    fun find(template: StructuralElement): StructuralElement{
+    fun find(template: StructuralElement): StructuralElement {
         val traverseBack = mutableListOf<Int>()
         traverseBackIndex(traverseBack)
         val start = traverseBack.size
@@ -81,12 +99,12 @@ abstract class StructuralElement(
     /**
      * @return an object based on [parent]
      */
-    fun targetWithIndex(path: List<Int>): StructuralElement{
+    fun targetWithIndex(path: List<Int>): StructuralElement {
         var target = this
         path.forEach {
-            if (it >= target.children.size)
-                throw IllegalStateException("cannot get the children at index $it for $target which has ${target.children.size} children")
-            target = target.children[it]
+            if (it >= target.getChildren().size)
+                throw IllegalStateException("cannot get the children at index $it for $target which has ${target.getChildren().size} children")
+            target = target.getChildren()[it]
         }
         return target
     }
@@ -106,7 +124,7 @@ abstract class StructuralElement(
      */
     fun traverseBackIndex(back : MutableList<Int>) {
         if (parent!=null) {
-            val index = parent!!.children.indexOf(this)
+            val index = parent!!.getChildren().indexOf(this)
             if (index == -1)
                 throw IllegalStateException("cannot find this in its parent")
             back.add(0, index)

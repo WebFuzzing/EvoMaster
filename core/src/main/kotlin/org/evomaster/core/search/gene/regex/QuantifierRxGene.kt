@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -17,7 +18,7 @@ class QuantifierRxGene(
         val template: RxAtom,
         val min: Int = 1,
         val max: Int = 1
-) : RxTerm(name) {
+) : RxTerm(name, listOf()) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(QuantifierRxGene::class.java)
@@ -60,26 +61,30 @@ class QuantifierRxGene(
              */
             for(i in 0 until min){
                 val a = template.copy() as RxAtom
-                a.parent = this
+//                a.parent = this
                 atoms.add(a)
+                addChild(a)
             }
         }
     }
 
 
-    override fun copy(): Gene {
+    override fun getChildren(): List<RxAtom> = atoms
+
+    override fun copyContent(): Gene {
 
         val copy = QuantifierRxGene(
                 name,
-                template.copy() as RxAtom,
+                template.copyContent() as RxAtom,
                 min,
                 max
         )
         copy.atoms.clear()
         this.atoms.forEach {
-            val a = it.copy() as RxAtom
-            a.parent = copy
+            val a = it.copyContent() as RxAtom
+//            a.parent = copy
             copy.atoms.add(a)
+            copy.addChild(a)
         }
 
         return copy
@@ -160,11 +165,12 @@ class QuantifierRxGene(
 
     fun addNewAtom(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>){
         val base = template.copy() as RxAtom
-        base.parent = this
+//        base.parent = this
         if (base.isMutable()) {
             base.randomize(randomness, forceNewValue, allGenes)
         }
         atoms.add(base)
+        addChild(base)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -188,8 +194,9 @@ class QuantifierRxGene(
             this.atoms.clear()
             other.atoms.forEach{
                 val a = it.copy() as RxAtom
-                a.parent = this
+//                a.parent = this
                 this.atoms.add(a)
+                this.addChild(a)
             }
         }
     }
@@ -240,7 +247,7 @@ class QuantifierRxGene(
                 this.atoms.clear()
                 gene.atoms.forEach{
                     val a = it.copy() as RxAtom
-                    a.parent = this
+//                    a.parent = this
                     this.atoms.add(a)
                 }
             }

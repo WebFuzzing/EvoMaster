@@ -258,7 +258,7 @@ abstract class AbstractParser(
             gene.maxSize = elements.size
         elements.forEach { element ->
             val elementGene = gene.template.copy()
-            elementGene.parent = gene
+//            elementGene.parent = gene
             if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, getJsonifiedString(element)))
                 addGeneToArrayGene(gene, elementGene)
             else if (res)
@@ -308,7 +308,7 @@ abstract class AbstractParser(
             elements.forEach { (key, value) ->
                 val elementGene = gene.template.copy()
                 elementGene.name = key as String
-                elementGene.parent = gene
+//                elementGene.parent = gene
                 if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, getJsonifiedString(value)))
                     addGeneToMapGene(gene, elementGene)
                 else if (res)

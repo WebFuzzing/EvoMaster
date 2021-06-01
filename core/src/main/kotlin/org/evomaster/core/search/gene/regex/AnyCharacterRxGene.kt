@@ -12,7 +12,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class AnyCharacterRxGene : RxAtom("."){
+class AnyCharacterRxGene : RxAtom(".", listOf()){
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(AnyCharacterRxGene::class.java)
@@ -20,7 +20,9 @@ class AnyCharacterRxGene : RxAtom("."){
 
     var value: Char = 'a'
 
-    override fun copy(): Gene {
+    override fun getChildren(): List<Gene> = listOf()
+
+    override fun copyContent(): Gene {
         val copy = AnyCharacterRxGene()
         copy.value = this.value
         return copy

@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.LongGene
@@ -27,12 +28,14 @@ class SqlUUIDGene(
     name: String,
     val mostSigBits: LongGene = LongGene("mostSigBits", 0L),
     val leastSigBits: LongGene = LongGene("leastSigBits", 0L)
-) : Gene(name) {
+) : Gene(name, mutableListOf(mostSigBits, leastSigBits)) {
 
-    override fun copy(): Gene = SqlUUIDGene(
+    override fun getChildren(): MutableList<LongGene> = mutableListOf(mostSigBits, leastSigBits)
+
+    override fun copyContent(): Gene = SqlUUIDGene(
             name,
-            mostSigBits.copy() as LongGene,
-            leastSigBits.copy() as LongGene
+            mostSigBits.copyContent() as LongGene,
+            leastSigBits.copyContent() as LongGene
     )
 
     companion object{

@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.EnumGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -22,7 +23,7 @@ class EnumGene<T : Comparable<T>>(
     name: String,
     data: Collection<T>,
     var index: Int = 0
-) : Gene(name) {
+) : Gene(name, mutableListOf()) {
 
     companion object {
 
@@ -67,11 +68,13 @@ class EnumGene<T : Comparable<T>>(
         }
     }
 
+    override fun getChildren(): MutableList<Gene> = mutableListOf()
+
     override fun isMutable(): Boolean {
         return values.size > 1
     }
 
-    override fun copy(): Gene {
+    override fun copyContent(): Gene {
         //recall: "values" is immutable
         return EnumGene<T>(name, values, index)
     }

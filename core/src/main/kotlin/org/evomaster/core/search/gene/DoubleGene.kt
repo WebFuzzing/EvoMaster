@@ -24,7 +24,7 @@ class DoubleGene(name: String,
         private val log : Logger = LoggerFactory.getLogger(DoubleGene::class.java)
     }
 
-    override fun copy() = DoubleGene(name, value)
+    override fun copyContent() = DoubleGene(name, value)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 

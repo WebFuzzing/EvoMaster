@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -14,13 +15,15 @@ import org.slf4j.LoggerFactory
 class BooleanGene(
         name: String,
         var value: Boolean = true
-) : Gene(name) {
+) : Gene(name, mutableListOf()) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(BooleanGene::class.java)
     }
 
-    override fun copy(): Gene {
+    override fun getChildren(): MutableList<Gene> = mutableListOf()
+
+    override fun copyContent(): Gene {
         return BooleanGene(name, value)
     }
 
