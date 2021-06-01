@@ -3,7 +3,6 @@ package org.evomaster.core.problem.rest.resource
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.Action
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -22,7 +21,7 @@ class ResourceNodeTest {
         val cluster = ResourceCluster()
         val config = EMConfig()
         config.doesApplyNameMatching = true
-        cluster.intResourceCluster(actions, config = config)
+        cluster.initResourceCluster(actions, config = config)
         assertEquals(4, cluster.getCluster().size)
 
         val postFoo = "/v3/api/foo"

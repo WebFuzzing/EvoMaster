@@ -10,12 +10,10 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
-import org.evomaster.core.search.gene.DateGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -42,11 +40,21 @@ class IndividualMutationweightTest {
 
         val other = individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }
         assertEquals(1, other.size)
+        assertTrue(other.first() is ObjectGene)
+        (other.first() as ObjectGene).apply {
+            assertEquals(3, fields.size)
+            fields.forEach{f->
+                assertTrue(f is OptionalGene)
+            }
+            assertEquals(2.0, fields[0].mutationWeight())
+            assertEquals(2.0, fields[1].mutationWeight())
+            assertEquals(5.0, fields[2].mutationWeight())
+        }
         /*
             by default, fields of object genes are OptionalGene that might increase the static weight
          */
         // 2+2+5 for foo type
-        assertEquals(9.0, sumWeight(other), "genes are ${other.joinToString(",") { "${it.name}:${it::class.java.simpleName}" }}")
+        assertEquals(9.0, other.first().mutationWeight())
 
 
         val all = individual.seeGenes().filter { it.isMutable() }
