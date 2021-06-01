@@ -13,6 +13,8 @@ import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
+import java.net.URISyntaxException
 
 abstract class ImplementedOracle {
 
@@ -85,8 +87,16 @@ abstract class ImplementedOracle {
      */
 
     fun retrievePath(objectGenerator: ObjectGenerator, call: RestCallAction): PathItem? {
+        val serverUrl = objectGenerator.getSwagger().servers[0].url
+        val basePath: String = try {
+            URI(serverUrl).path.trim()
+        } catch (e: URISyntaxException){
+            LoggingUtil.uniqueWarn(log, "Invalid URI used in schema to define servers: $serverUrl")
+            ""
+        }
+
         val possibleItems = objectGenerator.getSwagger().paths.filter{ e ->
-            call.path.toString().contains(e.key)
+            call.path.toString().contentEquals(basePath+e.key)
         }
 
         val result = when (possibleItems.size){
