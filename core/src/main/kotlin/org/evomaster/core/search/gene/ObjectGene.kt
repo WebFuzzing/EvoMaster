@@ -25,8 +25,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
     }
 
-    override fun getChildren(): MutableList<Gene> {
-        return fields as MutableList<Gene>
+    override fun getChildren(): List<Gene> {
+        return fields
     }
 
     override fun copyContent(): Gene {
