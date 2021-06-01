@@ -108,7 +108,7 @@ class StringGene(
                     it.bindingIds = this.bindingIds.map { id -> id }.toMutableSet()
                 }
 //        copy.specializationGenes.forEach { it.parent = copy }
-        copy().addChildren(copy.specializationGenes)
+        copy.addChildren(copy.specializationGenes)
         return copy
     }
 
