@@ -52,6 +52,9 @@ class StringGene(
          * These are regex with no value, as they match everything.
          * Note: we could have something more sophisticated, to check for any possible meaningless one.
          * But this simple list should do for most cases.
+         *
+         * TODO: this is not really true, as by default . does not match line breakers like \n
+         * So, although they are not important, they are technically not "meaningless"
          */
         private val meaninglesRegex = setOf(".*","(.*)","^(.*)","(.*)$","^(.*)$","^((.*))","((.*))$","^((.*))$")
     }
@@ -127,6 +130,15 @@ class StringGene(
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+
+        /*
+            TODO weirdly we did not do taint on sampling!!! we must do it, and evaluate it
+
+        if(!tainted){
+            redoTaint()
+        }
+         */
+
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
         repair()
         selectedSpecialization = -1

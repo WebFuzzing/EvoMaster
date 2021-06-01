@@ -157,7 +157,7 @@ public abstract class WsTestBase {
             for (String termination : terminations) {
                 classNames.add(new ClassName(fullClassName + termination));
             }
-            splitType = "CODE";
+            splitType = "CLUSTER";
         }
 
          /*

@@ -49,6 +49,11 @@ class RemoteController() : DatabaseExecutor {
 
     private var client: Client = ClientBuilder.newClient()
 
+    constructor(config: EMConfig) : this(){
+        this.config = config
+        initialize()
+    }
+
     constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean, config: EMConfig = EMConfig()) : this() {
         if (computeSqlHeuristics && !extractSqlExecutionInfo)
             throw IllegalArgumentException("'extractSqlExecutionInfo' should be enabled when 'computeSqlHeuristics' is enabled")

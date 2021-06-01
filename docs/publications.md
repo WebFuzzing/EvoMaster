@@ -9,6 +9,16 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 
 ### 2021
 
+* A. Arcuri, J.P. Galeotti.
+  *Enhancing Search-Based Testing With Testability Transformations For Existing APIs*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM). (*to appear*)
+  [[PDF](publications/2021_tosem_tt.pdf)]
+
+* M. Zhang, A. Arcuri.
+  *Adaptive Hypermutation for Search-Based System Test  Generation: A Study on REST APIs with EvoMaster*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM). (*to appear*)
+  [[PDF](publications/2021_tosem_hm.pdf)]  
+
 * M. Zhang, B. Marculescu, A. Arcuri.
   *Resource and Dependency based Test Case Generation for RESTful Web Services*.
   Empirical Software Engineering (EMSE). (*to appear*)

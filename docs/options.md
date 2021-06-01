@@ -88,7 +88,7 @@ There are 3 types of options:
 |`probOfArchiveMutation`| __Double__. Specify a probability to enable archive-based mutation. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`probOfRandomSampling`| __Double__. Probability of sampling a new individual at random. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`probOfSmartSampling`| __Double__. When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
-|`problemType`| __Enum__. The type of SUT we want to generate tests for, e.g., a RESTful API. *Valid values*: `REST`. *Experimental values*: `GRAPHQL, WEB`. *Default value*: `REST`.|
+|`problemType`| __Enum__. The type of SUT we want to generate tests for, e.g., a RESTful API. If left to DEFAULT, the type will be inferred from the EM Driver. However, in case of ambiguities (e.g., the driver specifies more than one type), then this field must be set with a specific type. This is also the case for Black-Box testing where there is no EM Driver. In this latter case, the system defaults to handle REST APIs. *Valid values*: `DEFAULT, REST`. *Experimental values*: `GRAPHQL, WEB`. *Default value*: `DEFAULT`.|
 |`secondaryObjectiveStrategy`| __Enum__. Strategy used to handle the extra heuristics in the secondary objectives. *Valid values*: `AVG_DISTANCE, AVG_DISTANCE_SAME_N_ACTIONS, BEST_MIN`. *Default value*: `AVG_DISTANCE_SAME_N_ACTIONS`.|
 |`seed`| __Long__. The seed for the random generator used during the search. A negative value means the CPU clock time will be rather used as seed. *Default value*: `-1`.|
 |`showProgress`| __Boolean__. Whether to print how much search done so far. *Default value*: `true`.|

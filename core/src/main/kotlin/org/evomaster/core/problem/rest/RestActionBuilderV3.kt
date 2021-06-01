@@ -206,38 +206,51 @@ object RestActionBuilderV3 {
         removeDuplicatedParams(operation)
                 .forEach { p ->
 
-                    val name = p.name ?: "undefined"
-
-                    var gene = getGene(name, p.schema, swagger)
-
-                    if (p.`in` == "path" && gene is StringGene) {
-                        /*
-                            We want to avoid empty paths, and special chars like / which
-                            would lead to 2 variables, or any other char that does affect the
-                            structure of the URL, like '.'
-                         */
-                        gene = StringGene(gene.name, (gene as StringGene).value, 1, (gene as StringGene).maxLength, listOf('/', '.'))
-                    }
-
-                    if (p.required != true && p.`in` != "path" && gene !is OptionalGene) {
-                        // As of V3, "path" parameters must be required
-                        gene = OptionalGene(name, gene)
-                    }
-
-                    //TODO could exploit "x-example" if available in OpenApi
-
-                    when (p.`in`) {
-                        "query" -> params.add(QueryParam(name, gene))
-                        "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
-                        "header" -> params.add(HeaderParam(name, gene))
-                        //TODO "cookie"
-                        else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
+                    if(p.`$ref` != null){
+                        val param = getLocalParameter(swagger, p.`$ref`)
+                        if(param == null){
+                            log.warn("Failed to handle: ${p.`$ref`}")
+                        } else {
+                            handleParam(param, swagger, params)
+                        }
+                    } else {
+                        handleParam(p, swagger, params)
                     }
                 }
 
         handleBodyPayload(operation, verb, restPath, swagger, params)
 
         return params
+    }
+
+    private fun handleParam(p: Parameter, swagger: OpenAPI, params: MutableList<Param>) {
+        val name = p.name ?: "undefined"
+
+        var gene = getGene(name, p.schema, swagger)
+
+        if (p.`in` == "path" && gene is StringGene) {
+            /*
+                            We want to avoid empty paths, and special chars like / which
+                            would lead to 2 variables, or any other char that does affect the
+                            structure of the URL, like '.'
+                         */
+            gene = StringGene(gene.name, (gene as StringGene).value, 1, (gene as StringGene).maxLength, listOf('/', '.'))
+        }
+
+        if (p.required != true && p.`in` != "path" && gene !is OptionalGene) {
+            // As of V3, "path" parameters must be required
+            gene = OptionalGene(name, gene)
+        }
+
+        //TODO could exploit "x-example" if available in OpenApi
+
+        when (p.`in`) {
+            "query" -> params.add(QueryParam(name, gene))
+            "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
+            "header" -> params.add(HeaderParam(name, gene))
+            //TODO "cookie"
+            else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
+        }
     }
 
     /**
@@ -607,8 +620,20 @@ object RestActionBuilderV3 {
         return gene
     }
 
+    private fun getLocalParameter(swagger: OpenAPI, reference: String) : Parameter?{
+        val name = extractReferenceName(reference)
+
+        return swagger.components.parameters[name]
+    }
+
     private fun getLocalObjectSchema(swagger: OpenAPI, reference: String): Schema<*>? {
 
+        val classDef = extractReferenceName(reference)
+
+        return swagger.components.schemas[classDef]
+    }
+
+    private fun extractReferenceName(reference: String): String {
         try {
             URI(reference)
         } catch (e: URISyntaxException) {
@@ -616,9 +641,7 @@ object RestActionBuilderV3 {
         }
 
         //token after last /
-        val classDef = reference.substring(reference.lastIndexOf("/") + 1)
-
-        return swagger.components.schemas[classDef]
+        return reference.substring(reference.lastIndexOf("/") + 1)
     }
 
     private fun removeDuplicatedParams(operation: Operation): List<Parameter> {
