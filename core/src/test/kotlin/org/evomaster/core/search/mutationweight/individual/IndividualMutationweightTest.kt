@@ -42,10 +42,10 @@ class IndividualMutationweightTest {
         assertEquals(1, other.size)
         assertTrue(other.first() is ObjectGene)
         (other.first() as ObjectGene).apply {
-            assertEquals(3, fields.size)
-            fields.forEach{f->
-                assertTrue(f is OptionalGene)
+            fields.forEachIndexed { index, f->
+                assertTrue(f is OptionalGene, "at index $index: ${f::class.java.simpleName}")
             }
+            assertEquals(3, fields.size,"fields are ${fields.mapIndexed { index, gene ->  "$index:${gene.name}" }.joinToString(",")}")
             assertEquals(2.0, fields[0].mutationWeight())
             assertEquals(2.0, fields[1].mutationWeight())
             assertEquals(5.0, fields[2].mutationWeight())

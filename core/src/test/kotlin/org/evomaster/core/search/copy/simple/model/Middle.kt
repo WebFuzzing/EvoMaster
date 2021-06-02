@@ -1,4 +1,4 @@
-package org.evomaster.core.search.copy.model
+package org.evomaster.core.search.copy.simple.model
 
 import org.evomaster.core.search.StructuralElement
 
