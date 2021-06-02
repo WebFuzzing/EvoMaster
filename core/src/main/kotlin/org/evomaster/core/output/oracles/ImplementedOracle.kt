@@ -88,8 +88,8 @@ abstract class ImplementedOracle {
      */
 
     fun retrievePath(objectGenerator: ObjectGenerator, call: RestCallAction): PathItem? {
-        val serverUrl = objectGenerator.getSwagger().servers[0].url
-        val basePath = RestActionBuilderV3.getBasePathFromURL(serverUrl)
+        val swagger = objectGenerator.getSwagger()
+        val basePath = RestActionBuilderV3.getBasePathFromURL(swagger)
 
         val possibleItems = objectGenerator.getSwagger().paths.filter{ e ->
             call.path.toString().contentEquals(basePath+e.key)

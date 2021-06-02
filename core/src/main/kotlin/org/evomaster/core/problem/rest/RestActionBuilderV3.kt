@@ -58,8 +58,8 @@ object RestActionBuilderV3 {
             TODO would need more general approach, as different HTTP servers could
             have different base paths
          */
-        val serverUrl = swagger.servers[0].url
-        val basePath = getBasePathFromURL(serverUrl)
+
+        val basePath = getBasePathFromURL(swagger)
 
         swagger.paths
                 .filter { e ->
@@ -723,7 +723,8 @@ object RestActionBuilderV3 {
         }
     }
 
-    fun getBasePathFromURL(serverUrl: String): String {
+    fun getBasePathFromURL(swagger: OpenAPI): String {
+        val serverUrl = swagger.servers[0].url
         val basePath: String = try {
             URI(serverUrl).path.trim()
         } catch (e: URISyntaxException) {
