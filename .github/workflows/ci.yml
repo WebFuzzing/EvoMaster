@@ -2,6 +2,12 @@ name: CI
 
 on: [push]
 
+env:
+  evomaster-version: 1.1.1
+  release-jdk: 16
+  retention-days: 3
+
+
 # This build is quite expensive (1ish hour), so we run it whole only on 1 JVM version, and 1 OS.
 # Recall that we also build on CircleCI, with different configurations.
 # For the moment, we need to support JVM 8 and 11, with 17 when it comes out.
@@ -9,6 +15,7 @@ on: [push]
 # testing whole build with all E2E only on Linux should be fine.
 
 jobs:
+
   build:
     runs-on: ubuntu-latest
     # Currently does not like Docker...
@@ -59,10 +66,17 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
-        run: mvn clean verify --fae
+#        TODO remember put back tests!!!
+        run: mvn clean verify --fae -DskipTests
         env:
           CI_env: GithubAction
 
+      - name: Upload evomaster.jar
+        uses: actions/upload-artifact@v2
+        with:
+          name: evomaster.jar
+          path: core/target/evomaster.jar
+          retention-days: ${{retention-days}}
 
       # E2E for JS. Must be run AFTER the JS and Core builds
       - name: E2E for JavaScript
@@ -81,3 +95,75 @@ jobs:
           java-version: 11
       - name: Compile with JDK 11
         run: mvn clean verify -DskipTests
+
+
+  windows:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Setup JDK ${{release-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{release-jdk}}
+      - name: Download fat jar
+        uses: actions/download-artifact@v2
+        with:
+          name: evomaster.jar
+          path: core/target
+      - name: Build installation file
+        shell: bash
+        run: bash makeExecutable.sh WINDOWS
+      - name: Upload installation file
+        uses: actions/upload-artifact@v2
+        with:
+          name: msi
+          path: release/evomaster-${{evomaster-version}}.msi
+          retention-days: ${{retention-days}}
+
+
+  osx:
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - name: Setup JDK ${{release-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{release-jdk}}
+      - name: Download fat jar
+        uses: actions/download-artifact@v2
+        with:
+          name: evomaster.jar
+          path: core/target
+      - name: Build installation file
+        shell: bash
+        run: bash makeExecutable.sh OSX
+      - name: Upload installation file
+        uses: actions/upload-artifact@v2
+        with:
+          name: dmg
+          path: release/evomaster-${{evomaster-version}}.dmg
+          retention-days: ${{retention-days}}
+
+
+  debian:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup JDK ${{release-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{release-jdk}}
+      - name: Download fat jar
+        uses: actions/download-artifact@v2
+        with:
+          name: evomaster.jar
+          path: core/target
+      - name: Build installation file
+        shell: bash
+        run: bash makeExecutable.sh DEBIAN
+      - name: Upload installation file
+        uses: actions/upload-artifact@v2
+        with:
+          name: deb
+          path: release/evomaster-${{evomaster-version}}.deb
+          retention-days: ${{retention-days}}
