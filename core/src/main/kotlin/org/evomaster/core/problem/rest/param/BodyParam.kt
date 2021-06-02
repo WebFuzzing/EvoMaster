@@ -49,10 +49,13 @@ class BodyParam(gene: Gene,
         }
 
        contenTypeGene = EnumGene(typeGene.name, options, typeGene.index)
+        addChild(contenTypeGene)
     }
 
-    override fun copy(): Param {
-        return BodyParam(gene.copy(), contenTypeGene.copy() as EnumGene<String>)
+    override fun getChildren(): List<Gene> = listOf(gene, contenTypeGene)
+
+    override fun copyContent(): Param {
+        return BodyParam(gene.copyContent(), contenTypeGene.copyContent() as EnumGene<String>)
     }
 
     override fun seeGenes() = listOf(gene, contenTypeGene)

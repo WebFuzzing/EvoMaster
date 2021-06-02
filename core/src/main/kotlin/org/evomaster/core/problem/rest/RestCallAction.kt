@@ -64,8 +64,8 @@ class RestCallAction(
 
     fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
 
-    override fun copy(): Action {
-        val p = parameters.asSequence().map(Param::copy).toMutableList()
+    override fun copyContent(): Action {
+        val p = parameters.asSequence().map(Param::copyContent).toMutableList()
         return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs)
     }
 

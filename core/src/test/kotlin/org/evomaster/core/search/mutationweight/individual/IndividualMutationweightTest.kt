@@ -31,6 +31,7 @@ class IndividualMutationweightTest {
 
     @Test
     fun testRestIndividual(){
+
         val individual = newRestIndividual()
 
         val sql = individual.seeGenes(Individual.GeneFilter.ONLY_SQL)
