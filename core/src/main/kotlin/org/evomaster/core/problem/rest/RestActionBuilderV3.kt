@@ -54,17 +54,7 @@ object RestActionBuilderV3 {
 
         val skipped = mutableListOf<String>()
 
-        /*
-            TODO would need more general approach, as different HTTP servers could
-            have different base paths
-         */
-        val serverUrl = swagger.servers[0].url
-        val basePath: String = try {
-            URI(serverUrl).path.trim()
-        } catch (e: URISyntaxException) {
-            LoggingUtil.uniqueWarn(log, "Invalid URI used in schema to define servers: $serverUrl")
-            ""
-        }
+        val basePath = getBasePathFromURL(swagger)
 
         swagger.paths
                 .filter { e ->
@@ -726,6 +716,21 @@ object RestActionBuilderV3 {
 
                     }
         }
+    }
+
+    fun getBasePathFromURL(swagger: OpenAPI): String {
+        /*
+            TODO would need more general approach, as different HTTP servers could
+            have different base paths
+         */
+        val serverUrl = swagger.servers[0].url
+        val basePath: String = try {
+            URI(serverUrl).path.trim()
+        } catch (e: URISyntaxException) {
+            LoggingUtil.uniqueWarn(log, "Invalid URI used in schema to define servers: $serverUrl")
+            ""
+        }
+        return basePath
     }
 
 }
