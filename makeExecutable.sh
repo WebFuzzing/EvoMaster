@@ -11,7 +11,7 @@ if [ "$TAG" == "WINDOWS" ]; then
     OS=$WINDOWS
     JPACKAGE="jpackage.exe"
 elif [ "$TAG" == "OSX" ]; then
-    OS=OSX
+    OS=$OSX
 elif [ "$TAG" == "DEBIAN" ]; then
     OS=$DEBIAN
 else
