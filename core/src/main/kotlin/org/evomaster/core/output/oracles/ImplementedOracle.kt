@@ -8,6 +8,7 @@ import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -88,12 +89,7 @@ abstract class ImplementedOracle {
 
     fun retrievePath(objectGenerator: ObjectGenerator, call: RestCallAction): PathItem? {
         val serverUrl = objectGenerator.getSwagger().servers[0].url
-        val basePath: String = try {
-            URI(serverUrl).path.trim()
-        } catch (e: URISyntaxException){
-            LoggingUtil.uniqueWarn(log, "Invalid URI used in schema to define servers: $serverUrl")
-            ""
-        }
+        val basePath = RestActionBuilderV3.getBasePathFromURL(serverUrl)
 
         val possibleItems = objectGenerator.getSwagger().paths.filter{ e ->
             call.path.toString().contentEquals(basePath+e.key)

@@ -59,12 +59,7 @@ object RestActionBuilderV3 {
             have different base paths
          */
         val serverUrl = swagger.servers[0].url
-        val basePath: String = try {
-            URI(serverUrl).path.trim()
-        } catch (e: URISyntaxException) {
-            LoggingUtil.uniqueWarn(log, "Invalid URI used in schema to define servers: $serverUrl")
-            ""
-        }
+        val basePath = getBasePathFromURL(serverUrl)
 
         swagger.paths
                 .filter { e ->
@@ -726,6 +721,16 @@ object RestActionBuilderV3 {
 
                     }
         }
+    }
+
+    fun getBasePathFromURL(serverUrl: String): String {
+        val basePath: String = try {
+            URI(serverUrl).path.trim()
+        } catch (e: URISyntaxException) {
+            LoggingUtil.uniqueWarn(log, "Invalid URI used in schema to define servers: $serverUrl")
+            ""
+        }
+        return basePath
     }
 
 }
