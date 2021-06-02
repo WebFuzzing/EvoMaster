@@ -117,7 +117,7 @@ jobs:
       - name: Upload installation file
         uses: actions/upload-artifact@v2
         with:
-          name: msi
+          name: evomaster.msi
           path: release/evomaster-${{env.evomaster-version}}.msi
           retention-days: ${{env.retention-days}}
 
@@ -142,7 +142,7 @@ jobs:
       - name: Upload installation file
         uses: actions/upload-artifact@v2
         with:
-          name: dmg
+          name: evomaster.dmg
           path: release/evomaster-${{env.evomaster-version}}.dmg
           retention-days: ${{env.retention-days}}
 
@@ -167,6 +167,6 @@ jobs:
       - name: Upload installation file
         uses: actions/upload-artifact@v2
         with:
-          name: deb
+          name: evomaster.deb
           path: release/evomaster-${{env.evomaster-version}}.deb
           retention-days: ${{env.retention-days}}

@@ -3,12 +3,13 @@
 WINDOWS="--type msi --win-dir-chooser  --win-console"
 OSX="--type dmg"
 DEBIAN="--type deb"
-
+JPACKAGE=jpackage
 
 TAG=$1
 
 if [ "$TAG" == "WINDOWS" ]; then
     OS=$WINDOWS
+    JPACKAGE="jpackage.exe"
 elif [ "$TAG" == "OSX" ]; then
     OS=OSX
 elif [ "$TAG" == "DEBIAN" ]; then
@@ -36,5 +37,5 @@ YEAR=`date +'%Y'`
 COPYRIGHT="Copyright 2016-$YEAR EvoMaster Team"
 VENDOR="EvoMaster Team"
 
-jpackage.exe --main-jar $JAR --input $BUILD --dest $RELEASE --name evomaster \
+$JPACKAGE --main-jar $JAR --input $BUILD --dest $RELEASE --name evomaster \
   --copyright "$COPYRIGHT" --license-file ./LICENSE --vendor "$VENDOR" --app-version $VERSION $OS
