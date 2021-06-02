@@ -21,7 +21,7 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 
 * M. Zhang, B. Marculescu, A. Arcuri.
   *Resource and Dependency based Test Case Generation for RESTful Web Services*.
-  Empirical Software Engineering (EMSE). (*to appear*)
+  Empirical Software Engineering (EMSE). 
   [[PDF](publications/2021_emse.pdf)]
 
 * A. Arcuri, J.P. Galeotti, B. Marculescu, M. Zhang.
