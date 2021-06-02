@@ -76,7 +76,7 @@ jobs:
         with:
           name: evomaster.jar
           path: core/target/evomaster.jar
-          retention-days: ${{retention-days}}
+          retention-days: ${{env.retention-days}}
 
       # E2E for JS. Must be run AFTER the JS and Core builds
       - name: E2E for JavaScript
@@ -101,10 +101,10 @@ jobs:
     needs: build
     runs-on: windows-latest
     steps:
-      - name: Setup JDK ${{release-jdk}}
+      - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{release-jdk}}
+          java-version: ${{env.release-jdk}}
       - name: Download fat jar
         uses: actions/download-artifact@v2
         with:
@@ -117,18 +117,18 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: msi
-          path: release/evomaster-${{evomaster-version}}.msi
-          retention-days: ${{retention-days}}
+          path: release/evomaster-${{env.evomaster-version}}.msi
+          retention-days: ${{env.retention-days}}
 
 
   osx:
     needs: build
     runs-on: macos-latest
     steps:
-      - name: Setup JDK ${{release-jdk}}
+      - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{release-jdk}}
+          java-version: ${{env.release-jdk}}
       - name: Download fat jar
         uses: actions/download-artifact@v2
         with:
@@ -141,18 +141,18 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: dmg
-          path: release/evomaster-${{evomaster-version}}.dmg
-          retention-days: ${{retention-days}}
+          path: release/evomaster-${{env.evomaster-version}}.dmg
+          retention-days: ${{env.retention-days}}
 
 
   debian:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Setup JDK ${{release-jdk}}
+      - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{release-jdk}}
+          java-version: ${{env.release-jdk}}
       - name: Download fat jar
         uses: actions/download-artifact@v2
         with:
@@ -165,5 +165,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: deb
-          path: release/evomaster-${{evomaster-version}}.deb
-          retention-days: ${{retention-days}}
+          path: release/evomaster-${{env.evomaster-version}}.deb
+          retention-days: ${{env.retention-days}}
