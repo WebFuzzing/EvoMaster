@@ -66,8 +66,7 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
-#        TODO remember put back tests!!!
-        run: mvn clean verify --fae -DskipTests
+        run: mvn clean verify --fae
         env:
           CI_env: GithubAction
 
