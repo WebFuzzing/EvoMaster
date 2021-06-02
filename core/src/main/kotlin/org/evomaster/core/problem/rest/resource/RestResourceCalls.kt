@@ -9,6 +9,7 @@ import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual.GeneFilter
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
@@ -26,7 +27,7 @@ class RestResourceCalls(
         val resourceInstance: RestResourceInstance?=null,
         val actions: MutableList<RestCallAction>,
         val dbActions : MutableList<DbAction> = mutableListOf()
-){
+): StructuralElement(mutableListOf<StructuralElement>().apply { addAll(dbActions); addAll(actions) }){
 
     companion object{
         private val  log : Logger = LoggerFactory.getLogger(RestResourceCalls::class.java)
@@ -51,13 +52,22 @@ class RestResourceCalls(
      */
     var shouldBefore = mutableListOf<String>()
 
-    fun copy() : RestResourceCalls{
-        val copy = RestResourceCalls(template, resourceInstance?.copy(), actions.map { a -> a.copy() as RestCallAction}.toMutableList())
-        if(dbActions.isNotEmpty()){
-            dbActions.forEach { db->
-                copy.dbActions.add(db.copy() as DbAction)
-            }
-        }
+    final override fun copy(): RestResourceCalls {
+        val copy = super.copy()
+        if (copy !is RestResourceCalls)
+            throw IllegalStateException("mismatched type: the type should be RestResourceCall, but it is ${this::class.java.simpleName}")
+        return copy
+    }
+
+    override fun getChildren(): List<Action> = dbActions.plus(actions)
+
+    override fun copyContent() : RestResourceCalls{
+        val copy = RestResourceCalls(
+            template,
+            resourceInstance?.copy(),
+            actions.map { a -> a.copyContent() as RestCallAction}.toMutableList(),
+            dbActions.map { db-> db.copyContent() as DbAction }.toMutableList()
+        )
 
         copy.isDeletable = isDeletable
         copy.shouldBefore.addAll(shouldBefore)

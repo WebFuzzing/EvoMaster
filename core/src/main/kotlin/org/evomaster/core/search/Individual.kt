@@ -17,8 +17,9 @@ import org.evomaster.core.search.tracer.TrackingHistory
  *
  */
 abstract class Individual(override var trackOperator: TrackOperator? = null,
-                          override var index: Int = Traceable.DEFAULT_INDEX
-) : Traceable{
+                          override var index: Int = Traceable.DEFAULT_INDEX,
+                          children: List<out StructuralElement>
+) : Traceable, StructuralElement(children){
 
     override var evaluatedResult: EvaluatedMutation? = null
 
@@ -27,29 +28,29 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     /**
      * Make a deep copy of this individual
      */
-    open fun copy(): Individual{
-        val copy = copyContent()
-        copy.postCopy(this)
+    final override fun copy(): Individual{
+        val copy = super.copy()
+        if (copy !is Individual)
+            throw IllegalStateException("mismatched type: the type should be Individual, but it is ${this::class.java.simpleName}")
         return copy
     }
 
-    /**
-     * Make a deep copy of this individual regarding this content
-     */
-    abstract fun copyContent() : Individual
-
-    /**
-     * post handling after the value copy, e.g.,
-     *      for [BoundGene], rebuild reference among genes in the individual
-     */
-    open fun postCopy(copiedIndividual : Individual){
-        val bound = copiedIndividual.seeGenes().flatMap { it.flatView() }.filter { it.isBoundGene() }
-        bound.forEach { b->
-            val current = findGene(copiedIndividual, b)
-                ?:throw IllegalArgumentException("cannot find the same as gene (b with name ${b.name}) in the copiedIndividual")
-            current.rebuildBindingWithTemplate(this, copiedIndividual, b)
-        }
+    override fun copyContent(): Individual {
+        throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
+
+//    /**
+//     * post handling after the value copy, e.g.,
+//     *      for [BoundGene], rebuild reference among genes in the individual
+//     */
+//    open fun postCopy(copiedIndividual : Individual){
+//        val bound = copiedIndividual.seeGenes().flatMap { it.flatView() }.filter { it.isBoundGene() }
+//        bound.forEach { b->
+//            val current = findGene(copiedIndividual, b)
+//                ?:throw IllegalArgumentException("cannot find the same as gene (b with name ${b.name}) in the copiedIndividual")
+//            current.rebuildBindingWithTemplate(this, copiedIndividual, b)
+//        }
+//    }
 
     enum class GeneFilter { ALL, NO_SQL, ONLY_SQL }
 

@@ -8,6 +8,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.Traceable
@@ -30,7 +31,9 @@ class RestIndividual(
 
         trackOperator: TrackOperator? = null,
         index : Int = -1
-): HttpWsIndividual (dbInitialization, trackOperator, index) {
+): HttpWsIndividual (dbInitialization, trackOperator, index, mutableListOf<StructuralElement>().apply {
+    addAll(dbInitialization); addAll(resourceCalls)
+}) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
@@ -54,7 +57,7 @@ class RestIndividual(
 
     override fun copyContent(): Individual {
         return RestIndividual(
-                resourceCalls.map { it.copy() }.toMutableList(),
+                resourceCalls.map { it.copyContent() }.toMutableList(),
                 sampleType,
                 sampleSpec?.copy(),
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
@@ -62,6 +65,8 @@ class RestIndividual(
                 index
         )
     }
+
+    override fun getChildren(): List<StructuralElement> = dbInitialization.plus(resourceCalls)
 
     override fun canMutateStructure(): Boolean {
         return sampleType == SampleType.RANDOM ||

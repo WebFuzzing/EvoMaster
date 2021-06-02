@@ -7,25 +7,25 @@ import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 
 class GraphQLIndividual(
         val actions: MutableList<GraphQLAction>,
         val sampleType: SampleType,
         dbInitialization: MutableList<DbAction> = mutableListOf()
-) : HttpWsIndividual(dbInitialization= dbInitialization) {
+) : HttpWsIndividual(dbInitialization= dbInitialization, children = dbInitialization.plus(actions)) {
 
     override fun copyContent(): Individual {
 
         return GraphQLIndividual(
-                actions.map { it.copy() as GraphQLAction}.toMutableList(),
+                actions.map { it.copyContent() as GraphQLAction}.toMutableList(),
                 sampleType,
-                dbInitialization.map { it.copy() as DbAction } as MutableList<DbAction>
+                dbInitialization.map { it.copyContent() as DbAction } as MutableList<DbAction>
         )
 
     }
 
+    override fun getChildren(): List<Action> = dbInitialization.plus(actions)
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {

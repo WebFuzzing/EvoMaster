@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
@@ -14,8 +15,9 @@ import org.slf4j.LoggerFactory
 abstract class HttpWsIndividual (
     val dbInitialization: MutableList<DbAction> = mutableListOf(),
     trackOperator: TrackOperator? = null,
-    index : Int = -1
-): Individual(trackOperator, index){
+    index : Int = -1,
+    children: List<out StructuralElement>
+): Individual(trackOperator, index, children){
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(HttpWsIndividual::class.java)

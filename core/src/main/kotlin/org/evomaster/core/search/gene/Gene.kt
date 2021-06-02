@@ -35,7 +35,7 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     final override fun copy() : Gene{
         val copy = super.copy()
         if (copy !is Gene)
-            throw IllegalStateException("mismatched type: the type should be Gene")
+            throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
         return copy
     }
 

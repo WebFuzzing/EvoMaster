@@ -281,7 +281,7 @@ class IndividualGeneImpactTest {
 
     }
 
-    class Ind(val actions : MutableList<IndAction>, val initialization : MutableList<IndAction> = mutableListOf()) : Individual(){
+    class Ind(val actions : MutableList<IndAction>, val initialization : MutableList<IndAction> = mutableListOf()) : Individual(children = initialization.plus(actions)){
         companion object{
             fun getInd() : Ind{
                 return Ind(IndAction.getIndAction(2).toMutableList())
@@ -292,8 +292,10 @@ class IndividualGeneImpactTest {
             }
         }
         override fun copyContent(): Individual {
-            return Ind(actions.map { it.copy() as IndAction }.toMutableList())
+            return Ind(actions.map { it.copyContent() as IndAction }.toMutableList())
         }
+
+        override fun getChildren(): List<Action> = initialization.plus(actions)
 
         override fun seeGenes(filter: GeneFilter): List<out Gene> {
            return when(filter){
