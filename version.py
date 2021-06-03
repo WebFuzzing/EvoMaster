@@ -48,7 +48,7 @@ def replaceInMakeExecutable():
 
 def replaceInCI():
     regex = re.compile(r'  evomaster-version:.*')
-    replacement = '  evomaster-version:'+reducedVersion+'\n'
+    replacement = '  evomaster-version: '+reducedVersion+'\n'
     replace(".github/workflows/ci.yml", regex, replacement)
 
 
