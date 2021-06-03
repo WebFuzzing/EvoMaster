@@ -24,27 +24,27 @@ class ResourceNodeTest {
         cluster.initResourceCluster(actions, config = config)
         assertEquals(4, cluster.getCluster().size)
 
-        val postFoo = "/v3/api/foo"
-        val postAction = "POST:/v3/api/foo"
+        val postFoo = "/v3/api/rfoo"
+        val postAction = "POST:/v3/api/rfoo"
         val fooNode = cluster.getResourceNode(postFoo)
         assertNotNull(fooNode)
         assertEquals(2, fooNode!!.getTemplates().size)
         assertEquals(setOf("POST", "POST-POST"), fooNode.getTemplates().keys)
         assertEquals(1, fooNode.paramsInfo.size)
 
-        val getFoo = "/v3/api/foo/{id}"
+        val getFoo = "/v3/api/rfoo/{id}"
         val fooIdNode = cluster.getResourceNode(getFoo)
         assertNotNull(fooIdNode)
         assertEquals(2, fooIdNode!!.getTemplates().size)
         assertEquals(setOf("GET", "POST-GET"), fooIdNode.getTemplates().keys)
         assertEquals(2, fooIdNode.paramsInfo.size)
 
-        val postBar = "/v3/api/bar"
+        val postBar = "/v3/api/rbar"
         assertNotNull(cluster.getResourceNode(postBar))
         assertEquals(2, cluster.getResourceNode(postBar)!!.getTemplates().size)
         assertEquals(setOf("POST", "POST-POST"), cluster.getResourceNode(postBar)!!.getTemplates().keys)
 
-        val getBar = "/v3/api/bar/{id}"
+        val getBar = "/v3/api/rbar/{id}"
         assertNotNull(cluster.getResourceNode(getBar))
         assertEquals(2, cluster.getResourceNode(getBar)!!.getTemplates().size)
         assertEquals(setOf("GET", "POST-GET"), cluster.getResourceNode(getBar)!!.getTemplates().keys)

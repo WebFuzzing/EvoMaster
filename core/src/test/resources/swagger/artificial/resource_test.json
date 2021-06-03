@@ -19,7 +19,7 @@
     }
   ],
   "paths": {
-    "/api/foo": {
+    "/api/rfoo": {
       "post": {
         "tags": [
           "Foo"
@@ -30,7 +30,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Foo"
+                "$ref": "#/components/schemas/RFoo"
               }
             }
           }
@@ -48,7 +48,7 @@
         }
       }
     },
-    "/api/foo/{id}": {
+    "/api/rfoo/{id}": {
       "get": {
         "tags": [
           "Foo"
@@ -82,7 +82,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Foo"
+                    "$ref": "#/components/schemas/RFoo"
                   }
                 }
               }
@@ -97,7 +97,7 @@
         }
       }
     },
-    "/api/bar": {
+    "/api/rbar": {
       "post": {
         "tags": [
           "Bar"
@@ -108,7 +108,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Bar"
+                "$ref": "#/components/schemas/RBar"
               }
             }
           }
@@ -126,7 +126,7 @@
         }
       }
     },
-    "/api/bar/{id}": {
+    "/api/rbar/{id}": {
       "get": {
         "tags": [
           "Bar"
@@ -160,7 +160,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Bar"
+                    "$ref": "#/components/schemas/RBar"
                   }
                 }
               }
@@ -225,7 +225,7 @@
           "message"
         ]
       },
-      "Foo": {
+      "RFoo": {
         "type": "object",
         "properties": {
           "id": {
@@ -249,7 +249,7 @@
           "id"
         ]
       },
-      "Bar": {
+      "RBar": {
         "type": "object",
         "properties": {
           "id": {

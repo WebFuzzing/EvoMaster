@@ -39,19 +39,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
 
-//    /**
-//     * post handling after the value copy, e.g.,
-//     *      for [BoundGene], rebuild reference among genes in the individual
-//     */
-//    open fun postCopy(copiedIndividual : Individual){
-//        val bound = copiedIndividual.seeGenes().flatMap { it.flatView() }.filter { it.isBoundGene() }
-//        bound.forEach { b->
-//            val current = findGene(copiedIndividual, b)
-//                ?:throw IllegalArgumentException("cannot find the same as gene (b with name ${b.name}) in the copiedIndividual")
-//            current.rebuildBindingWithTemplate(this, copiedIndividual, b)
-//        }
-//    }
-
     enum class GeneFilter { ALL, NO_SQL, ONLY_SQL }
 
     /**
