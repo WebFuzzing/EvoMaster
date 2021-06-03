@@ -48,9 +48,9 @@ class MapGene<T>(
 
     override fun copyContent(): Gene {
         return MapGene<T>(name,
-                template.copy() as T,
+                template.copyContent() as T,
                 maxSize,
-                elements.map { e -> e.copy() as T }.toMutableList()
+                elements.map { e -> e.copyContent() as T }.toMutableList()
         )
     }
 
