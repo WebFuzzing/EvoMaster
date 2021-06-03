@@ -1,0 +1,59 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "xyz1",
+    "description": "xyz1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/v1"
+    }
+  ],
+  "paths": {
+    "/xyz1": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/XYZ"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "XYZ": {
+        "type": "object",
+        "properties": {
+          "xyzf1": {
+            "type": "number",
+            "format": "int64"
+          },
+          "xyzf2": {
+            "type": "number",
+            "format": "double"
+          },
+          "xyzf3": {
+            "type": "number",
+            "format": "int32"
+          },
+          "xyzf4": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      }
+    }
+  }
+}
