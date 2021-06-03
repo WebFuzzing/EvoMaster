@@ -73,6 +73,8 @@ class TraceableElementTest {
         config.probOfArchiveMutation = 0.0
         config.weightBasedMutationRate = false
         config.testSuiteSplitType = EMConfig.TestSuiteSplitType.NONE
+        config.seed = 42
+        config.useTimeInFeedbackSampling = false
 
         val inds10 = (0 until 10).map { ff.calculateCoverage(sampler.sample())!!.also { archive.addIfNeeded(it) }}
         assert(inds10.all { it.trackOperator != null })
