@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import com.google.gson.annotations.Expose
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.Individual
@@ -310,5 +311,17 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
      */
     abstract fun bindValueBasedOn(gene: Gene) : Boolean
 
+
+    override fun postCopy(template: StructuralElement) {
+        //rebuild the binding genes
+        val root = getRoot()
+        val postBinding = (template as Gene).bindingGenes.map {b->
+            root.find(b) as? Gene?:throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (Gene)")
+        }
+        bindingGenes.clear()
+        bindingGenes.addAll(postBinding)
+
+        super.postCopy(template)
+    }
 }
 

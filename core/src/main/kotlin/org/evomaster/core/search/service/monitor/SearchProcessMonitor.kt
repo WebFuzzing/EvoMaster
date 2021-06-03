@@ -1,5 +1,7 @@
 package org.evomaster.core.search.service.monitor
 
+import com.google.gson.ExclusionStrategy
+import com.google.gson.FieldAttributes
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.inject.Inject
@@ -12,6 +14,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
 import org.slf4j.Logger
@@ -24,7 +27,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import javax.annotation.PostConstruct
-import kotlin.IllegalStateException
 
 
 /**
@@ -83,6 +85,17 @@ class SearchProcessMonitor: SearchListener {
         private const val FILE_TYPE = ".json"
 
         private var gson : Gson? = null
+
+        private val strategy: ExclusionStrategy = object : ExclusionStrategy {
+            //TODO systematic way to configure the skipped field
+            override fun shouldSkipField(field: FieldAttributes): Boolean {
+                return field.name == "parent" || field.name == "bindingGenes"
+            }
+
+            override fun shouldSkipClass(clazz: Class<*>?): Boolean {
+                return false
+            }
+        }
 
     }
 
@@ -248,9 +261,12 @@ class SearchProcessMonitor: SearchListener {
             if (gson == null) gson = GsonBuilder().registerTypeAdapter(RestCallAction::class.java, InterfaceAdapter<RestCallAction>())
                     .registerTypeAdapter(Param::class.java, InterfaceAdapter<Param>())
                     .registerTypeAdapter(Gene::class.java, InterfaceAdapter<Gene>())
+                    .setExclusionStrategies(strategy)
                     .create()
         return gson
     }
+
+
 
 }
 
