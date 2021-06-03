@@ -38,9 +38,14 @@ class StringGene(
          * For example, in a URL Path variable, we do not want have "/", as otherwise
          * it would create 2 distinct paths
          */
-        val invalidChars: List<Char> = listOf()
+        val invalidChars: List<Char> = listOf(),
 
-) : Gene(name, listOf()) {
+        /**
+         * specialization based on taint analysis
+         */
+        val specializationGenes: MutableList<Gene> = mutableListOf()
+
+) : Gene(name, specializationGenes) {
 
     companion object {
 
@@ -75,8 +80,6 @@ class StringGene(
      */
     private val specializations: MutableSet<StringSpecializationInfo> = mutableSetOf()
 
-    var specializationGenes: MutableList<Gene> = mutableListOf()
-
     var selectedSpecialization = -1
 
     var selectionUpdatedSinceLastMutation = false
@@ -100,9 +103,8 @@ class StringGene(
     override fun getChildren(): List<Gene> = specializationGenes
 
     override fun copyContent(): Gene {
-        val copy = StringGene(name, value, minLength, maxLength, invalidChars)
+        val copy = StringGene(name, value, minLength, maxLength, invalidChars, this.specializationGenes.map { g -> g.copyContent() }.toMutableList())
                 .also {
-                    it.specializationGenes = this.specializationGenes.map { g -> g.copyContent() }.toMutableList()
                     it.specializations.addAll(this.specializations)
                     it.validChar = this.validChar
                     it.selectedSpecialization = this.selectedSpecialization

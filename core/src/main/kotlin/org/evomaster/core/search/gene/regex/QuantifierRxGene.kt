@@ -18,7 +18,7 @@ class QuantifierRxGene(
         val template: RxAtom,
         val min: Int = 1,
         val max: Int = 1
-) : RxTerm(name, listOf()) {
+) : RxTerm(name, listOf(template)) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(QuantifierRxGene::class.java)
@@ -69,7 +69,7 @@ class QuantifierRxGene(
     }
 
 
-    override fun getChildren(): List<RxAtom> = atoms
+    override fun getChildren(): List<RxAtom> = listOf(template).plus(atoms)
 
     override fun copyContent(): Gene {
 

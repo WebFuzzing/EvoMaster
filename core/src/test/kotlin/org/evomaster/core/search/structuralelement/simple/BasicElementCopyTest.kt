@@ -1,8 +1,8 @@
-package org.evomaster.core.search.copy.simple
+package org.evomaster.core.search.structuralelement.simple
 
-import org.evomaster.core.search.copy.simple.model.Leaf
-import org.evomaster.core.search.copy.simple.model.Middle
-import org.evomaster.core.search.copy.simple.model.Root
+import org.evomaster.core.search.structuralelement.simple.model.Leaf
+import org.evomaster.core.search.structuralelement.simple.model.Middle
+import org.evomaster.core.search.structuralelement.simple.model.Root
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
