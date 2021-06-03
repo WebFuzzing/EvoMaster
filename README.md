@@ -121,6 +121,7 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
     * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
+* [Console output](docs/console_output.md)  
 * [Library dependencies for the generated tests](docs/library_dependencies.md)
 * [How to contribute](docs/contribute.md)
     * [Technical notes for developers contributing to EvoMaster](docs/for_developers.md)
