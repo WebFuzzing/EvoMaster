@@ -31,7 +31,10 @@ __Key features__:
 * At the moment, _EvoMaster_ targets RESTful APIs compiled to 
   JVM __8__ and __11__ bytecode. Might work on other JVM versions, but we provide __NO__ support for it.
 
-* The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
+* We provide installers for the main operating systems: Windows (`.msi`), 
+  OSX (`.dmg`) and Linux (`.deb`). We also provide an uber-fat JAR file.
+
+* The REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
   format (either _v2_ or _v3_).
 
 * The tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin.

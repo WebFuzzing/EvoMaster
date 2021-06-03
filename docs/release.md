@@ -63,6 +63,12 @@ mvn versions:set -DnewVersion=x.y.z
 ```
 
 where `x.y.z` should be substituted with the actual version number, e.g., `0.4.0`.
+However, there are other files besides the pom ones that need to be updated, like for example `makeExecutable.sh`.
+So, the update of versions should be done with the `version.py` script. E.g.,
+```
+py version.py x.y.z
+```
+
 
 From project root  folder, execute:
 ```
@@ -95,13 +101,18 @@ It needs to be tagged, with `v` prefix, e.g., `v0.4.0`.
 On GitHub, upload the `core/target/evomaster.jar` executable as part of the release 
 (there should be an option for _attaching binaries_).
 
+Update: now we are building `.msi`/`.deb`/`.dmg` files as well, as part of GitHub Action CI. Download those from the release commit, and upload them here in the release page. 
 
 ## SNAPSHOT Update
 
 Once `EvoMaster` is released on both Maven Central and GitHub, you need to prepare
 the next snapshot version, which will have the same version with `z+1` and suffix
 `-SNAPSHOT`, e.g, given `0.4.0`, the following snapshot version would 
-be `0.4.1-SNAPSHOT`.
+be `0.4.1-SNAPSHOT`:
+```
+py version.py 0.4.1-SNAPSHOT
+```
+
 
 
 ## EMB Release

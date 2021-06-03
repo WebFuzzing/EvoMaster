@@ -18,6 +18,16 @@ Note: it does not matter where you download the jar file (e.g., your home folder
 of your project), as long as you can easily access it from a command-line terminal (e.g.,
 to be able to execute `java -jar` on it).
 
+Besides an uber-fat jar, since version 1.2.0 we also provide installers for Windows/OSX/Linux.
+Note: the installers are built with `jpackage`, that currently does not support 
+updating the [PATH environment variable](https://stackoverflow.com/questions/67784565/jpackage-update-path-environment-variable).
+This means that, unless you want to type the full absolute path of where _EvoMaster_
+gets installed each time you want to use it, you will need to update the PATH environmental variable by hand.
+By default, _EvoMaster_ will get installed at:
+* On Windows: `C:\Program Files\evomaster\evomaster.exe`
+* On OSX: `/Applications/evomaster.app/Contents/MacOS/evomaster`
+* On Linux: ` /opt/evomaster/bin/evomaster`
+
 
 Regarding the _driver_ library, it depends on the language/environment.
 For example, the JVM support is available from [Maven Central](https://mvnrepository.com/artifact/org.evomaster). 
