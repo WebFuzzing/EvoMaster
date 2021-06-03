@@ -48,7 +48,7 @@ class BodyParam(gene: Gene,
             }
         }
 
-       contenTypeGene = EnumGene(typeGene.name, options, typeGene.index)
+        contenTypeGene = EnumGene(typeGene.name, options, typeGene.index)
         addChild(contenTypeGene)
     }
 

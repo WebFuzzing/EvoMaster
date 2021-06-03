@@ -21,7 +21,7 @@ abstract class Param(val name: String, val gene : Gene, children: List<Structura
         return copy as Param
     }
 
-    override fun getChildren(): List<Gene> = listOf(gene)
+    override fun getChildren(): List<out StructuralElement> = listOf(gene)
 
     open fun seeGenes() =  listOf<Gene>(gene)
 
