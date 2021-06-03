@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "xyz1",
-    "description": "xyz1",
+    "title": "xyz2",
+    "description": "xyz2",
     "version": "1.0.0"
   },
   "servers": [
