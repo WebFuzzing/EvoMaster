@@ -18,6 +18,7 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.IntegerGene;
 import org.evomaster.core.search.service.FitnessFunction;
 import org.evomaster.core.search.tracer.Traceable;
+import org.evomaster.e2etests.utils.CIUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -94,6 +95,8 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
     @Test
     public void testSteps() {
+
+        CIUtils.skipIfOnCircleCI();
 
         String[] args = new String[]{
                 "--createTests", "true",
