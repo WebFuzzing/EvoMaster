@@ -1,4 +1,4 @@
-# Download EvoMaster
+# Download and Install EvoMaster
 
 
 _EvoMaster_ is composed of two main components:

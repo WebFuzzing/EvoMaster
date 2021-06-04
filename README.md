@@ -114,7 +114,7 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 ### Documentation
 
 * [Example of generated tests](docs/example.md)
-* [Download EvoMaster](docs/download.md)
+* [Download and Install EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
 * [Console options](docs/options.md)
 * [OpenApi/Swagger Schema](docs/openapi.md)
