@@ -47,17 +47,17 @@ class SameObjectNameTest {
             assertTrue((parameters.first().gene) is ObjectGene)
             (parameters.first().gene as ObjectGene).apply {
 
-                assertEquals(4, fields.size)
-                assertEquals("xyzf1", fields[0].name)
-                assertEquals("xyzf2", fields[1].name)
-                assertEquals("xyzf3", fields[2].name)
-                assertEquals("xyzf4", fields[3].name)
+//                assertEquals(4, fields.size)
+//                assertEquals("xyzf1", fields[0].name)
+//                assertEquals("xyzf2", fields[1].name)
+//                assertEquals("xyzf3", fields[2].name)
+//                assertEquals("xyzf4", fields[3].name)
 
                 // but this should be 3
-//                assertEquals(3, fields.size)
-//                assertEquals("f1", fields[0].name)
-//                assertEquals("f2", fields[1].name)
-//                assertEquals("f3", fields[2].name)
+                assertEquals(3, fields.size)
+                assertEquals("f1", fields[0].name)
+                assertEquals("f2", fields[1].name)
+                assertEquals("f3", fields[2].name)
             }
         }
 

@@ -51,6 +51,8 @@ object RestActionBuilderV3 {
                               doParseDescription: Boolean = false) {
 
         actionCluster.clear()
+        refCache.clear()
+        dtoCache.clear()
 
         val skipped = mutableListOf<String>()
 
