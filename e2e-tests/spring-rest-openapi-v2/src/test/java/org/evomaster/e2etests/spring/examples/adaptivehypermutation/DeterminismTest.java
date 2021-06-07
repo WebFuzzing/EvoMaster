@@ -7,9 +7,9 @@ import org.evomaster.core.problem.rest.RestActionBuilderV3;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
+import org.evomaster.e2etests.utils.CIUtils;
 import org.jetbrains.kotlin.com.intellij.util.containers.hash.LinkedHashMap;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -43,19 +43,24 @@ public class DeterminismTest extends AHypermuationTestBase {
      */
 
 
-    @Disabled("non-determinism may due to SQL execution failure or multiple retries of cleaning H2 database")
+    //"non-determinism may due to SQL execution failure or multiple retries of cleaning H2 database"
     @Test
     public void testNotDeterminismAHyMIO() {
+        CIUtils.skipIfOnCircleCI();
+        CIUtils.skipIfOnGA();
+
         runAndCheckDeterminism(3000, (args)->{
             Solution<RestIndividual> solution = initAndRun(args);
-            int count = countExpectedCoveredTargets(solution, new ArrayList<>());
-            System.out.println(count);
-        }, 5,  false);
+            countExpectedCoveredTargets(solution, new ArrayList<>());
+        }, 2,  false);
     }
 
-    @Disabled("non-determinism may due to SQL execution failure or multiple retries of cleaning H2 database")
+    //"non-determinism may due to SQL execution failure or multiple retries of cleaning H2 database"
     @Test
     public void testNotDeterminismMIO() {
+        CIUtils.skipIfOnCircleCI();
+        CIUtils.skipIfOnGA();
+
         List<String> args =  new ArrayList<>(Arrays.asList(
                 "--createTests", "false",
                 "--seed", "42",

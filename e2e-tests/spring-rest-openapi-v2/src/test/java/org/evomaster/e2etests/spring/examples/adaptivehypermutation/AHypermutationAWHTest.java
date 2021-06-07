@@ -56,6 +56,9 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
                     true,
                     (args) -> {
 
+                        args.add("--secondaryObjectiveStrategy");
+                        args.add("AVG_DISTANCE");
+
                         args.add("--probOfArchiveMutation");
                         args.add("0.0");
 
@@ -111,6 +114,9 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
                 budget,
                 true,
                 (args) -> {
+
+                    args.add("--secondaryObjectiveStrategy");
+                    args.add("AVG_DISTANCE");
 
                     args.add("--probOfArchiveMutation");
                     args.add("0.5");

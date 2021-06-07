@@ -97,13 +97,14 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
         String[] args = new String[]{
                 "--createTests", "true",
-                "--seed", "42",
+                "--seed", "2",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "1",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
                 "--heuristicsForSQL", "true",
                 "--generateSqlDataWithSearch", "true",
-                "--maxTestSize", "1"
+                "--maxTestSize", "1",
+                "--useTimeInFeedbackSampling" , "false"
         };
 
         Injector injector = Main.init(args);
