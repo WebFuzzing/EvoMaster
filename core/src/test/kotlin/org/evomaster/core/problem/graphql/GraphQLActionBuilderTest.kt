@@ -554,4 +554,42 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Test
+    fun unionInternalRecEgTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/unionInternalRecEg.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(1, actionCluster.size)
+
+
+        val stores = actionCluster.get("stores") as GraphQLAction
+        assertEquals(1, stores.parameters.size)
+        assertTrue(stores.parameters[0] is GQReturnParam)
+
+        assertTrue(stores.parameters[0].gene is ObjectGene)
+        val objectStore = stores.parameters[0].gene as ObjectGene
+        assertEquals(2, objectStore.fields.size)
+        assertTrue(objectStore.fields[0] is BooleanGene)
+        assertTrue(objectStore.fields[1] is OptionalGene)
+        assertTrue((objectStore.fields[1] as OptionalGene).gene is ObjectGene)
+        val unionObjBouquet = (objectStore.fields[1] as OptionalGene).gene as ObjectGene
+        assertEquals(2, unionObjBouquet.fields.size)
+        assertTrue(unionObjBouquet.fields[0] is OptionalGene)
+        assertTrue((unionObjBouquet.fields[0] as OptionalGene).gene is ObjectGene)
+        val objFlower = (unionObjBouquet.fields[0] as OptionalGene).gene as ObjectGene
+        assertTrue(objFlower.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objFlower.fields.any { it is OptionalGene && it.name == "color" })
+
+        /**/
+        assertTrue(unionObjBouquet.fields[1] is OptionalGene)
+        assertTrue((unionObjBouquet.fields[1] as OptionalGene).gene is ObjectGene)
+        val objPot = (unionObjBouquet.fields[1] as OptionalGene).gene as ObjectGene
+
+        assertTrue(objPot.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objPot.fields.any { it is BooleanGene && it.name == "size" })
+
+    }
+
 }
