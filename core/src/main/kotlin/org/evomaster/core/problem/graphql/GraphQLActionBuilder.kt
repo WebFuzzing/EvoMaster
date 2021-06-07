@@ -1102,7 +1102,7 @@ object GraphQLActionBuilder {
             "union" -> {
                 val optObjGene = createUnionObjectGene(state, tableType, kindOfTableFieldType, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes, interfaceTypes)
-                return OptionalGene(methodName, optObjGene)
+                return OptionalGene("$methodName#UNION#", optObjGene)
             }
             "interface" -> {
                 //will contain basic interface fields, and had as name the methode name
@@ -1174,7 +1174,7 @@ object GraphQLActionBuilder {
                         val field = element.tableField
                         val template = field?.let {
                             getReturnGene(state, tableType, element.tableFieldType, kindOfTableFieldType, it, history,
-                                    element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, unionTypes, interfaceTypes)
+                                    element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, interfaceTypes)
                         }
                         if (template != null)
                             fields.add(template)
@@ -1184,7 +1184,7 @@ object GraphQLActionBuilder {
                             val template =
                                     element.tableField?.let {
                                         getReturnGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(),
-                                                element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, unionTypes, interfaceTypes)
+                                                element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, element.unionTypes, interfaceTypes)
                                     }
 
 
@@ -1198,7 +1198,7 @@ object GraphQLActionBuilder {
                                     val template =
                                             element.tableField?.let {
                                                 getReturnGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
-                                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, unionTypes, interfaceTypes)
+                                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, element.unionTypes, interfaceTypes)
                                             }
 
                                     history.removeLast()
@@ -1215,7 +1215,7 @@ object GraphQLActionBuilder {
                                 val field = element.tableField
                                 val template = field?.let {
                                     getReturnGene(state, tableType, element.kindOfTableFieldType.toString(), kindOfTableFieldType, it, history,
-                                            element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, unionTypes, interfaceTypes)//TODO
+                                            element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, interfaceTypes)
                                 }
                                 if (template != null)
                                     fields.add(template)
