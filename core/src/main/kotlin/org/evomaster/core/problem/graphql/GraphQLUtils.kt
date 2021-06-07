@@ -21,6 +21,7 @@ object GraphQLUtils {
         val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
         var bodyEntity: Entity<String> = Entity.json(" ")
+        val union= "#UNION#"
 
         if (a.methodType == GQMethodType.QUERY) {
 
@@ -36,7 +37,7 @@ object GraphQLUtils {
                     {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
                 """.trimIndent())
 
-                } else if (returnGene.name.contains("#UNION#")) {
+                } else if (returnGene.name.contains(union)) {
 
                     var query = getUnionQuery(returnGene, a)
                     Entity.json("""
@@ -56,14 +57,18 @@ object GraphQLUtils {
                     {"query" : "  { ${a.methodName}       } ","variables":null}
                 """.trimIndent())
 
-                } else if (returnGene.name.contains("#UNION#")) {
+                }
+
+                /*else if (returnGene.name.contains("#UNION#")) {//for the first one
 
                     var query = getUnionQuery(returnGene, a)
                     Entity.json("""
                    {"query" : " {  ${a.methodName} { $query }  }   ","variables":null}
                 """.trimIndent())
 
-                } else {
+                }*/
+
+                    else {
                     var query = getQuery(returnGene, a)
                     Entity.json("""
                    {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
