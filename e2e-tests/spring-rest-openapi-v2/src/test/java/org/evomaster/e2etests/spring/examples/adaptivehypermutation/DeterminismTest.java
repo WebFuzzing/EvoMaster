@@ -49,7 +49,7 @@ public class DeterminismTest extends AHypermuationTestBase {
         CIUtils.skipIfOnCircleCI();
         CIUtils.skipIfOnGA();
 
-        runAndCheckDeterminism(3000, (args)->{
+        runAndCheckDeterminism(5000, (args)->{
             Solution<RestIndividual> solution = initAndRun(args);
             countExpectedCoveredTargets(solution, new ArrayList<>());
         }, 2,  false);

@@ -29,7 +29,7 @@ public abstract class RestTestBase  extends WsTestBase{
         runAndCheckDeterminism(iterations, lambda, 2, false);
     }
 
-    protected String runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda, int times, boolean notDeterminism){
+    protected void runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda, int times, boolean notDeterminism){
 
         /*
             As some HTTP verbs are idempotent, they could be repeated... and we have no control whatsoever on it :(
@@ -45,16 +45,17 @@ public abstract class RestTestBase  extends WsTestBase{
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--useTimeInFeedbackSampling" , "false"
+                "--useTimeInFeedbackSampling" , "false",
+                "--secondaryObjectiveStrategy", "AVG_DISTANCE"
         ));
 
-        return isDeterminismConsumer(args, lambda, times, notDeterminism);
+        isDeterminismConsumer(args, lambda, times, notDeterminism);
     }
-    protected String isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda) {
-        return isDeterminismConsumer(args, lambda, 2, false);
+    protected void isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda) {
+        isDeterminismConsumer(args, lambda, 2, false);
     }
 
-    protected String isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda, int times, boolean notEqual) {
+    protected void isDeterminismConsumer(List<String> args, Consumer<List<String>> lambda, int times, boolean notEqual) {
         assert(times >= 2);
 
         String firstRun = consumerToString(args, lambda);
@@ -69,7 +70,6 @@ public abstract class RestTestBase  extends WsTestBase{
             firstRun = secondRun;
             c++;
         }
-        return firstRun;
     }
 
     protected String consumerToString(List<String> args, Consumer<List<String>> lambda){

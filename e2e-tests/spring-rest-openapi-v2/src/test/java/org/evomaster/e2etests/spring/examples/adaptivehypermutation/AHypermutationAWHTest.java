@@ -38,7 +38,7 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     private final static int budget = 20_000;
     private static final String statisticsFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/statistics.csv";
     private static final String snapshotFile = TESTS_OUTPUT_ROOT_FOLDER + "/AWH/snapshot.csv";
-    private final static int SEED = 42;
+    private final static int SEED = 0;
 
     @Test
     public void testRunMIO() {
@@ -55,9 +55,6 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
                     budget,
                     true,
                     (args) -> {
-
-                        args.add("--secondaryObjectiveStrategy");
-                        args.add("AVG_DISTANCE");
 
                         args.add("--probOfArchiveMutation");
                         args.add("0.0");
@@ -114,9 +111,6 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
                 budget,
                 true,
                 (args) -> {
-
-                    args.add("--secondaryObjectiveStrategy");
-                    args.add("AVG_DISTANCE");
 
                     args.add("--probOfArchiveMutation");
                     args.add("0.5");
