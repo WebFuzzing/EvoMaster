@@ -1,6 +1,7 @@
 package org.evomaster.core.search.structuralelement
 
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.Gene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
@@ -26,10 +27,14 @@ abstract class StructuralElementBaseTest {
 
     fun assertChildren(obj : StructuralElement, expectedSize: Int){
         obj.getChildren().apply {
-            assertEquals(expectedSize, size)
+            if (expectedSize!= -1)
+                assertEquals(expectedSize, size)
             forEach {
                 assertNotNull(it.parent)
                 assertEquals(obj, it.parent)
+                if (it.getChildren().isNotEmpty()){
+                    assertChildren(it, -1)
+                }
             }
         }
     }

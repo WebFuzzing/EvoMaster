@@ -574,7 +574,7 @@ class StringGene(
         this.specializations.addAll(other.specializations)
 
         this.specializationGenes.clear()
-        this.specializationGenes.addAll(other.specializationGenes.map { it.copyContent() })
+        this.specializationGenes.addAll(other.specializationGenes.map { it.copy() })
         addChildren(this.specializationGenes)
 
         this.tainted = other.tainted

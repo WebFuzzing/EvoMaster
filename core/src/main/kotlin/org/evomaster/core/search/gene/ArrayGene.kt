@@ -80,6 +80,8 @@ class ArrayGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
+        // build parents for [element]
+        addChildren(this.elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -119,6 +121,7 @@ class ArrayGene<T>(
             gene.randomize(randomness, false)
             elements.add(gene)
         }
+        addChildren(elements)
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {

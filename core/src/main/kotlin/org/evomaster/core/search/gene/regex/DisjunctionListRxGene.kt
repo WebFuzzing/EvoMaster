@@ -29,7 +29,7 @@ class DisjunctionListRxGene(
     override fun getChildren(): List<DisjunctionRxGene> = disjunctions
 
     override fun copyContent(): Gene {
-        val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
+        val copy = DisjunctionListRxGene(disjunctions.map { it.copyContent() as DisjunctionRxGene })
         copy.activeDisjunction = this.activeDisjunction
         return copy
     }
@@ -126,6 +126,8 @@ class DisjunctionListRxGene(
         if (other !is DisjunctionListRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+
+        //TODO: Man, shall we check the size of [disjunctions]
 
         this.activeDisjunction = other.activeDisjunction
         for (i in 0 until disjunctions.size) {

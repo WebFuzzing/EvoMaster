@@ -25,6 +25,8 @@ class SqlAutoIncrementGene(name: String) : Gene(name, mutableListOf()) {
 
     /**
      * TODO Shouldn't this method throw an IllegalStateException ?
+     *
+     * Man: need to check with Andrea, copyValueFrom of [ImmutableDataHolderGene] throw an exception
      */
     override fun copyValueFrom(other: Gene) {
         if (other !is SqlAutoIncrementGene) {

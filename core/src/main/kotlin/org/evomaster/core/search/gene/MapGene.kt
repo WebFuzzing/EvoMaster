@@ -59,6 +59,7 @@ class MapGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
+        addChildren(this.elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -86,6 +87,7 @@ class MapGene<T>(
             gene.name = "key_${keyCounter++}"
             elements.add(gene)
         }
+        addChildren(elements)
     }
 
     override fun isMutable(): Boolean {

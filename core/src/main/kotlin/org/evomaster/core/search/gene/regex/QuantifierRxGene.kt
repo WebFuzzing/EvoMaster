@@ -106,6 +106,7 @@ class QuantifierRxGene(
         for (i in 0 until length) {
            addNewAtom(randomness, forceNewValue, allGenes)
         }
+        addChildren(atoms)
     }
 
     override fun isMutable(): Boolean {
