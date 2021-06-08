@@ -592,4 +592,15 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Test
+    fun unionInternalRecEg2Test() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/unionInternalRecEg2.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(1, actionCluster.size)
+
+
+    }
 }
