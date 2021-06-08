@@ -60,7 +60,7 @@ class RestIndividual(
                 resourceCalls.map { it.copyContent() }.toMutableList(),
                 sampleType,
                 sampleSpec?.copy(),
-                dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                dbInitialization.map { d -> d.copyContent() as DbAction } as MutableList<DbAction>,
                 trackOperator,
                 index
         )

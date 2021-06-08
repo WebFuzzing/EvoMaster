@@ -163,6 +163,12 @@ class RestResourceCalls(
         }
     }
 
+    fun resetDbAction(dbActions: MutableList<DbAction>){
+        dbActions.clear()
+        dbActions.addAll(dbActions)
+        addChildren(dbActions)
+    }
+
 
     /**
      * employing the longest action to represent a group of calls on a resource

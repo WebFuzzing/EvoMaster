@@ -1,6 +1,5 @@
 package org.evomaster.core.search
 
-import org.evomaster.core.search.gene.DisruptiveGene
 import org.evomaster.core.search.gene.Gene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
