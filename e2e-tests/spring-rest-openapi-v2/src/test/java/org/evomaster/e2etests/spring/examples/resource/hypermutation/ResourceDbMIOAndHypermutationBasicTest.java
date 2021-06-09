@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rest.service.ResourceManageService;
 import org.evomaster.core.problem.rest.service.ResourceRestMutator;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
 import org.evomaster.core.problem.rest.service.RestResourceStructureMutator;
+import org.evomaster.core.search.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual.GeneFilter;
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification;
@@ -112,9 +113,9 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         assertEquals("POST", rAcall.getRestTemplate());
         assertEquals("POST-POST", rAcall.extractTemplate());
 
-        assertEquals(1, rAcall.getDbActions().size());
-        assertEquals(1, rAcall.getActions().size());
-        assertEquals(2, rAcall.seeActions().size());
+        assertEquals(1, rAcall.seeActions(ActionFilter.ONLY_SQL).size());
+        assertEquals(1, rAcall.seeActions(ActionFilter.NO_SQL).size());
+        assertEquals(2, rAcall.seeActions(ActionFilter.ALL).size());
         // check whether POST is bound with SQL
         checkingBinding(rAcall, "POST", raKey, true);
 
@@ -130,9 +131,9 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         assertEquals("GET",rAIdcall.getRestTemplate());
         assertEquals("POST-GET", rAIdcall.extractTemplate());
 
-        assertEquals(1, rAIdcall.getDbActions().size());
-        assertEquals(1, rAIdcall.getActions().size());
-        assertEquals(2, rAIdcall.seeActions().size());
+        assertEquals(1, rAIdcall.seeActionSize(ActionFilter.ONLY_SQL));
+        assertEquals(1, rAIdcall.seeActionSize(ActionFilter.NO_SQL));
+        assertEquals(2, rAIdcall.seeActionSize(ActionFilter.ALL));
         // check whether get is bounded with SQL
         checkingBinding(rAIdcall, "GET", raIdKey,true);
 
