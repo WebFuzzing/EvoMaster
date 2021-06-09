@@ -13,6 +13,7 @@ class Lines {
         private set
 
     fun appendSemicolon(format: OutputFormat) {
+        //TODO what about C#???
         if (format.isJava() || format.isJavaScript()) {
             append(";")
         }

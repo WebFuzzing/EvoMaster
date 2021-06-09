@@ -2,6 +2,7 @@ package org.evomaster.core.output.service
 
 import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.Lines
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
@@ -30,6 +31,28 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
         return name
     }
 
+    /**
+     * Some fields might lead to flackiness, eg assertions on timestamps.
+     *
+     * TODO: could be set in EMConfig
+     */
+    protected fun isFieldToSkip(fieldName: String) =
+            listOf(
+                    "timestamp", //needed since timestamps will change between runs
+                    "self" //TODO: temporary hack. Needed since ports might change between runs.
+            ).contains(fieldName.toLowerCase())
+
+    protected fun hasFieldToSkip(fieldNames: Collection<*>) = fieldNames.any { it is String && isFieldToSkip(it) }
+
+    protected fun isVerbWithPossibleBodyPayload(verb: String): Boolean {
+
+        val verbs = arrayOf("post", "put", "patch")
+
+        if (verbs.contains(verb.toLowerCase()))
+            return true;
+        return false;
+    }
+
     protected fun openAcceptHeader() : String{
         return when {
             format.isJavaOrKotlin() -> ".accept("
@@ -53,7 +76,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
             when {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
                 format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
-                //TODO JavaScript
+                format.isJavaScript() -> lines.append("const $resVarName = ")
+                //TODO C#
             }
         }
 
@@ -62,8 +86,9 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
             format.isJavaScript() -> lines.append("await superagent")
             format.isCsharp() -> lines.append("Client.DefaultRequestHeaders.Clear();\n")
         }
-        //TODO: check for C#
+
         if (!format.isJavaScript()) {
+            // in JS, the Accept must be after the verb
             lines.append(getAcceptHeader(call, res))
         }
     }
@@ -71,7 +96,12 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
 
 
     open fun needsResponseVariable(call: HttpWsAction, res: HttpWsCallResult): Boolean {
-        return false; //TODO check format for C# and JS
+        /*
+          Bit tricky... when using RestAssured on JVM, we can assert directly on the call...
+          but that is not the case for the other libraries used for example in JS and C#
+         */
+        return config.outputFormat == OutputFormat.JS_JEST
+                || config.outputFormat == OutputFormat.CSHARP_XUNIT
     }
 
     protected fun handleHeaders(call: HttpWsAction, lines: Lines) {
@@ -81,6 +111,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
         val set = when {
             format.isJavaOrKotlin() -> "header"
             format.isJavaScript() -> "set"
+            //TODO C#
             else -> throw IllegalArgumentException("Not supported format: $format")
         }
 
@@ -100,6 +131,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
             when {
                 format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(cookieLogin)})")
                 format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(cookieLogin)})")
+                //TODO C#
             }
         }
 
@@ -151,6 +183,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
         * */
     }
 
+
+
     protected fun handleMapLines(index: Int, map: Map<*, *>, lines: Lines) {
         map.keys.forEach {
             val printableTh = handleFieldValues(map[it])
@@ -163,9 +197,6 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
         }
     }
 
-
-
-
     protected fun addObjectAssertions(resContents: Map<*, *>, lines: Lines) {
         if (resContents.isEmpty()) {
             if (format.isKotlin()) lines.add(".body(\"isEmpty()\", `is`(true))")
@@ -175,8 +206,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
         val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
         // Removed size checks for objects.
         flatContent.keys
-                .filter { !it.contains("timestamp") } //needed since timestamps will change between runs
-                .filter { !it.contains("self") } //TODO: temporary hack. Needed since ports might change between runs.
+                .filter { !hasFieldToSkip(it)  }
                 .forEach {
                     val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
                     val actualValue = flatContent[it]
@@ -234,14 +264,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
         return returnMap
     }
 
-    protected fun isVerbWithPossibleBodyPayload(verb: String): Boolean {
 
-        val verbs = arrayOf("post", "put", "patch")
-
-        if (verbs.contains(verb.toLowerCase()))
-            return true;
-        return false;
-    }
 
     /**
      * handle field which is array<Map> with additional assertions, e.g., size
@@ -257,7 +280,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
                     if (v is Map<*, *>){
                         val flatContent = flattenForAssert(mutableListOf<String>(), v)
                         flatContent.keys
-                                .filter { !it.contains("timestamp")  && !it.contains("self")}
+                                .filter { ! hasFieldToSkip(it)}
                                 .forEach {key->
                                     val fstringKey = key.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
                                     val factualValue = flatContent[key]

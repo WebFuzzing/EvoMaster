@@ -39,22 +39,21 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
 
     /**
-     * When we make a HTTP call, do we need to store the response in a variable for following HTTP calls?
+     * When we make a HTTP call, do we need to store the response in a variable for following HTTP calls
+     * or to create assertions on it?
      */
     override fun needsResponseVariable(call: HttpWsAction, res: HttpWsCallResult): Boolean {
 
         return super.needsResponseVariable(call, res) ||
-                (config.expectationsActive
-                && partialOracles.generatesExpectation(call as RestCallAction, res))
-                // || !res.failedCall()
+                (config.expectationsActive && partialOracles.generatesExpectation(call as RestCallAction, res))
                 || ((call as RestCallAction).saveLocation && !res.stopping)
     }
 
     override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>) {
         super.handleFieldDeclarations(lines, baseUrlOfSut, ind)
 
-        if (config.expectationsActive) {
-            addDeclarations(lines, ind as EvaluatedIndividual<RestIndividual>)
+        if (shouldCheckExpectations()) {
+            addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)
             //TODO: -> also check expectation generation before adding declarations
         }
 
@@ -82,6 +81,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                             format.isKotlin() -> lines.add("var $name : String? = \"\"")
                             format.isJavaScript() -> lines.add("let $name = \"\";")
                             format.isCsharp() -> lines.add("var $name = \"\";")
+                                // should never happen
+                            else -> throw IllegalStateException("Unsupported format $format")
                         }
                     }
         }
@@ -109,6 +110,13 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
     }
 
+    protected fun locationVar(id: String): String {
+        //TODO make sure name is syntactically valid
+        //TODO use counters to make them unique
+        return "location_${id.trim().replace(" ", "_")}"
+    }
+
+
     /**
      * Check if any action requires a chain based on location headers:
      * eg a POST followed by a GET on the created resource
@@ -118,8 +126,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             a is RestCallAction && a.isLocationChained()
         }
     }
-
-
 
 
     override fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String){
@@ -136,8 +142,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         val call = evaluatedAction.action as RestCallAction
         val res = evaluatedAction.result as RestCallResult
 
-        if (res.failedCall() || format.isJavaScript() //looks like even 400 throws exception with SuperAgent... :(
-        ) {
+        if (res.failedCall()) {
             addActionInTryCatch(call, lines, res, baseUrlOfSut)
         } else {
             addActionLines(call, lines, res, baseUrlOfSut)
@@ -150,9 +155,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                                  baseUrlOfSut: String) {
 
         //first handle the first line
-        val name = createUniqueResponseVariableName()
+        val responseVariableName = createUniqueResponseVariableName()
 
-        handleFirstLine(call, lines, res, name)
+        handleFirstLine(call, lines, res, responseVariableName)
 
         lines.indent(2)
 
@@ -175,17 +180,59 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
         }
 
-        handleResponse(call, res, lines)
-        handleLastLine(call, res, lines, name)
+        handleResponseDirectlyInTheCall(call, res, lines)
+        handleLastLine(call, res, lines, responseVariableName)
+
+        handleLocationHeader(call, res, responseVariableName, lines)
+        handleResponseAfterTheCall(call, res, responseVariableName, lines)
 
         //BMR should expectations be here?
         // Having them at the end of a test makes some sense...
-        if (config.expectationsActive) {
-            handleExpectationSpecificLines(call, lines, res, name)
+        if (shouldCheckExpectations()) {
+            handleExpectationSpecificLines(call, lines, res, responseVariableName)
         }
     }
 
-    private fun handleResponse(call: RestCallAction, res: RestCallResult, lines: Lines) {
+    private fun handleResponseAfterTheCall(call: RestCallAction, res: RestCallResult, responseVariableName: String, lines: Lines) {
+
+        if(format.isJavaOrKotlin() //assertions handled in the call
+                || ! needsResponseVariable(call,res)
+                || res.failedCall()
+                ){
+            return
+        }
+
+        val code = res.getStatusCode()
+
+        when{
+            format.isJavaScript() ->{
+                lines.add("expect($responseVariableName.status).toBe($code);")
+            }
+            else ->{
+                LoggingUtil.uniqueWarn(log, "No status assertion supported for format $format")
+            }
+        }
+
+        if (code == 500) {
+            lines.append(" // " + res.getLastStatementWhen500())
+        }
+
+        if(config.enableBasicAssertions){
+            //TODO
+        }
+
+    }
+
+    private fun shouldCheckExpectations() =
+            //for now Expectations are only supported on the JVM
+            //TODO C# (and maybe JS as well???)
+            config.expectationsActive && config.outputFormat.isJavaOrKotlin()
+
+
+    /**
+     * This is done mainly for RestAssured
+     */
+    private fun handleResponseDirectlyInTheCall(call: RestCallAction, res: RestCallResult, lines: Lines) {
         if (!res.failedCall()) {
 
             val code = res.getStatusCode()
@@ -195,7 +242,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     lines.add(".then()")
                     lines.add(".statusCode($code)")
                 }
-                format.isCsharp() -> lines.add("Assert.Equal($code, (int) response.StatusCode);")
+                else -> throw IllegalStateException("No assertion in calls for format: $format")
+                //format.isCsharp() -> lines.add("Assert.Equal($code, (int) response.StatusCode);")
                 // This does not work in Superagent. TODO will need after the HTTP call
                 //format.isJavaScript() -> lines.add(".expect($code)")
             }
@@ -205,23 +253,25 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
 
             if (config.enableBasicAssertions) {
-                handleResponseContents(lines, res)
+                handleResponseDirectlyInTheCallContents(lines, res)
             }
+
         } else if (partialOracles.generatesExpectation(call, res)
-                && format.isJavaOrKotlin()) lines.add(".then()")
+                && format.isJavaOrKotlin()){
+                    //FIXME what is this for???
+                    lines.add(".then()")
+        }
     }
 
 
 
-    private fun handleResponseContents(lines: Lines, res: RestCallResult) {
+    private fun handleResponseDirectlyInTheCallContents(lines: Lines, res: RestCallResult) {
 
-        if (format.isJavaScript()) {
-            //TODO
-            return
-        }
-
-        if (format.isCsharp()) {
-            //TODO
+        if (format.isJavaScript() || format.isCsharp()) {
+            /*
+                This is done only for RestAssured... for others, we extract the response object,
+                and do assertions on it after the call
+             */
             return
         }
 
@@ -317,11 +367,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     //TODO: check again for C#, especially when not json
     private fun handleBody(call: RestCallAction, lines: Lines): Boolean {
 
-        var hasBody: Boolean = false
+        var hasBody = false
         val bodyParam = call.parameters.find { p -> p is BodyParam }
         val form = call.getBodyFormData()
-        var bodyLines: List<String> = emptyList()
-
 
         if (bodyParam != null && form != null) {
             throw IllegalStateException("Issue: both Body and FormData present")
@@ -353,7 +401,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 }
 
                 //needed as JSON uses ""
-                bodyLines = body.split("\n").map { s ->
+                val bodyLines = body.split("\n").map { s ->
                     "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
                 }
 
@@ -467,6 +515,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 lines.append("${TestSuiteWriter.jsImport}")
             }
 
+            //TODO aren't those exactly the same???
             if (format.isCsharp())
                 lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
             else
@@ -554,18 +603,29 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
 
-
-
-
     private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, resVarName: String) {
+
+        if(format.isJavaScript()){
+            /*
+                This is to deal with very weird behavior in SuperAgent that crashes the tests
+                for status codes different from 2xx...
+                so, here we make it passes as long as a status was present
+             */
+            lines.add(".ok(res => res.status)")
+        }
 
         lines.appendSemicolon(format)
         lines.deindent(2)
+    }
 
+    private fun handleLocationHeader(call: RestCallAction, res: RestCallResult, resVarName: String, lines: Lines) {
         if (call.saveLocation && !res.stopping) {
 
             if (!res.getHeuristicsForChainedLocation()) {
+
+                //TODO JS and C#
                 val extract = "$resVarName.extract().header(\"location\")"
+
                 lines.add("${locationVar(call.path.lastElement())} = $extract")
                 lines.appendSemicolon(format)
 
@@ -592,8 +652,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         lines.add("Assert.True(IsValidURIorEmpty(${locationVar(call.path.lastElement())}));")
                     }
                 }
-
-
             } else {
 
                 val extraTypeInfo = when {
@@ -606,6 +664,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     call.path.resolveOnlyPath(call.parameters)
                 }
 
+                //TODO JS and C#
                 val extract = "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
 
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + $extract")
@@ -614,8 +673,15 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
     }
 
-    fun addDeclarations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>){
-        if(!partialOracles.generatesExpectation(individual)) return
+    fun addDeclarationsForExpectations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>){
+        if(!partialOracles.generatesExpectation(individual)){
+            return
+        }
+
+        if(! format.isJavaOrKotlin()){
+            //TODO will need to see if going to support JS and C# as well
+            return
+        }
 
         lines.addEmpty()
         when{
@@ -630,6 +696,5 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         if( partialOracles.generatesExpectation(call, res)){
             partialOracles.addExpectations(call, lines, res, name, format)
         }
-
     }
 }
