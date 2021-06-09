@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene
 
-import com.google.gson.annotations.Expose
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.Individual
@@ -126,6 +125,9 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
                 }
             }
         }
+
+        //sync binding gene after value mutation
+        syncBindingGenesBasedOnThis()
     }
 
     /**
@@ -250,6 +252,9 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     abstract fun containsSameValueAs(other: Gene): Boolean
 
 
+    /**
+     * @return internal genes
+     */
     abstract fun innerGene() : List<Gene>
 
     /**
@@ -258,10 +263,13 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     open fun possiblySame(gene : Gene) : Boolean = gene.name == name && gene::class == this::class
 
 
-    //============================================================
+    //========================= handing binding genes ===================================
 
     private val bindingGenes: MutableSet<Gene> = mutableSetOf()
 
+    /**
+     * rebuild the binding relationship of [this] gene based on [copiedGene] which exists in [copiedIndividual]
+     */
     fun rebuildBindingWithTemplate(newIndividual: Individual, copiedIndividual: Individual, copiedGene: Gene){
         if (bindingGenes.isNotEmpty())
             throw IllegalArgumentException("gene ($name) has been rebuilt")
@@ -274,7 +282,10 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
         bindingGenes.addAll(list)
     }
 
-    open fun syncBindingGenesBasedOnThis(all : MutableSet<Gene> = mutableSetOf()){
+    /**
+     * sync [bindingGenes] based on [this]
+     */
+    fun syncBindingGenesBasedOnThis(all : MutableSet<Gene> = mutableSetOf()){
         if (bindingGenes.isEmpty()) return
         all.add(this)
         bindingGenes.filterNot { all.contains(it) }.forEach { b->
@@ -287,21 +298,36 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
         innerGene().filterNot { all.contains(it) }.forEach { it.syncBindingGenesBasedOnThis(all) }
     }
 
+    /**
+     * @return whether [this] gene is bound with any other gene
+     */
     fun isBoundGene() = bindingGenes.isNotEmpty()
 
+    /**
+     * repair the broken binding reference e.g., the binding gene is removed from the current individual
+     */
     fun cleanBrokenReference(all : List<Gene>) : Boolean{
         return bindingGenes.removeIf { !all.contains(it) }
     }
 
+    /**
+     * add [gene] as the binding gene
+     */
     fun addBindingGene(gene: Gene) {
         bindingGenes.add(gene)
     }
 
+    /**
+     * reset binding based on [genes]
+     */
     fun resetBinding(genes: Set<Gene>) {
         bindingGenes.clear()
         bindingGenes.addAll(genes)
     }
 
+    /**
+     * @return whether [this] is bound with [gene]
+     */
     fun isBoundWith(gene: Gene) = bindingGenes.contains(gene)
 
 

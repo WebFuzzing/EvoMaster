@@ -173,31 +173,30 @@ class RestResourceCalls(
         }
 
         for (a in actions) {
-            if (a is RestCallAction) {
-                var list = paramToTables[a]
-                if (list == null) list = paramToTables.filter { a.getName() == it.key.getName() }.values.run {
-                    if (this.isEmpty()) null else this.first()
-                }
-                if (list != null && list.isNotEmpty()) {
-                    BindingBuilder.bindRestAndDbAction(a, cluster.getResourceNode(a, true)!!, list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair)
-                }
+            var list = paramToTables[a]
+            if (list == null) list = paramToTables.filter { a.getName() == it.key.getName() }.values.run {
+                if (this.isEmpty()) null else this.first()
+            }
+            if (list != null && list.isNotEmpty()) {
+                BindingBuilder.bindRestAndDbAction(a, cluster.getResourceNode(a, true)!!, list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair)
             }
         }
     }
 
+
+    /**
+     * build the binding between [this] with other [restResourceCalls]
+     */
     fun bindRestActionsWith(restResourceCalls: RestResourceCalls){
         if (restResourceCalls.getResourceNode().path != getResourceNode().path)
             throw IllegalArgumentException("target to bind refers to a different resource node, i.e., target (${restResourceCalls.getResourceNode().path}) vs. this (${getResourceNode().path})")
         val params = restResourceCalls.resourceInstance?.params?:restResourceCalls.actions.filterIsInstance<RestCallAction>().flatMap { it.parameters }
         actions.forEach { ac ->
-            if((ac as RestCallAction).parameters.isNotEmpty()){
+            if(ac.parameters.isNotEmpty()){
                 ac.bindToSamePathResolution(ac.path, params)
             }
         }
     }
-
-
-
 
     /**
      * employing the longest action to represent a group of calls on a resource
