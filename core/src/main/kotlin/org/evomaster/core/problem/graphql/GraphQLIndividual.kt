@@ -20,18 +20,18 @@ class GraphQLIndividual(
         return GraphQLIndividual(
                 actions.map { it.copyContent() as GraphQLAction}.toMutableList(),
                 sampleType,
-                dbInitialization.map { it.copyContent() as DbAction } as MutableList<DbAction>
+                seeInitializingActions().map { it.copyContent() as DbAction } as MutableList<DbAction>
         )
 
     }
 
-    override fun getChildren(): List<Action> = dbInitialization.plus(actions)
+    override fun getChildren(): List<Action> = seeInitializingActions().plus(actions)
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
-            GeneFilter.ALL -> dbInitialization.flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
+            GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
             GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-            GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
+            GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(DbAction::seeGenes)
         }
     }
 
@@ -45,7 +45,7 @@ class GraphQLIndividual(
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(dbInitialization)
+        return DbActionUtils.verifyActions(seeInitializingActions())
     }
 
 

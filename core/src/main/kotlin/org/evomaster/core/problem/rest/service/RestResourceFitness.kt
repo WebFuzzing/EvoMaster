@@ -52,7 +52,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         val executedDbActions = mutableListOf<DbAction>()
 
         //whether there exist some SQL execution failure
-        var failureBefore = doDbCalls(individual.dbInitialization, sqlIdMap, false, executedDbActions)
+        var failureBefore = doDbCalls(individual.seeInitializingActions(), sqlIdMap, false, executedDbActions)
 
         val cookies = getCookies(individual)
         val tokens = getTokens(individual)

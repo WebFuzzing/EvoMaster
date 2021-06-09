@@ -78,7 +78,7 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
         val root = getStructuralElement()
         assertEquals(root, root.getRoot())
 
-        val barId = root.dbInitialization[1].seeGenes()[0]
+        val barId = root.seeInitializingActions()[1].seeGenes()[0]
         val dbpath = listOf(1, 0)
         assertEquals(barId, root.targetWithIndex(dbpath))
 

@@ -224,4 +224,3 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
 }
-

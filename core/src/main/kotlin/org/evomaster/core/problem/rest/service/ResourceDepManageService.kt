@@ -966,7 +966,7 @@ class ResourceDepManageService {
      */
     fun unRelatedSQL(ind: RestIndividual) : List<DbAction>{
         val allrelated = getAllRelatedTables(ind)
-        return ind.dbInitialization.filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
+        return ind.seeInitializingActions().filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
     /**
@@ -982,7 +982,7 @@ class ResourceDepManageService {
 
         val other = if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
             val notincluded = allrelated.filterNot {
-                ind.dbInitialization.any { d-> it.equals(d.table.name, ignoreCase = true) }
+                ind.seeInitializingActions().any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
             //prioritize notincluded related ones with a probability 0.8
             if (notincluded.isNotEmpty() && randomness.nextBoolean(0.8)){
@@ -990,7 +990,7 @@ class ResourceDepManageService {
             }else randomness.choose(allrelated)
         }else{
             val left = rm.getTableInfo().keys.filterNot {
-                ind.dbInitialization.any { d-> it.equals(d.table.name, ignoreCase = true) }
+                ind.seeInitializingActions().any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
             if (left.isNotEmpty() && randomness.nextBoolean()) randomness.choose(left)
             else randomness.choose(rm.getTableInfo().keys)
@@ -1071,7 +1071,7 @@ class ResourceDepManageService {
         DbActionUtils.randomizeDbActionGenes(added, randomness)
         DbActionUtils.repairBrokenDbActionsList(added,randomness)
 
-        ind.dbInitialization.addAll(added)
+        ind.addInitializingActions(actions = added)
     }
 
     private fun getAllRelatedTables(ind: RestIndividual) : Set<String>{

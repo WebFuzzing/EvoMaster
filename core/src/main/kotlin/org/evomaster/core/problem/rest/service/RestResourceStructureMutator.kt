@@ -70,7 +70,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
                 // if there is no db or sql resource handling is not enabled, SQL_REMOVE and SQL_ALL are not applicable
                 ((config.maxSqlInitActionsPerResource == 0 || rm.getTableInfo().isEmpty()) && (it == MutationType.SQL_ADD || it == MutationType.SQL_REMOVE) ) ||
                         // if there is no dbInitialization, SQL_REMOVE is not applicable
-                        (ind.dbInitialization.isEmpty() && it == MutationType.SQL_REMOVE)
+                        (ind.seeInitializingActions().isEmpty() && it == MutationType.SQL_REMOVE)
             }
             .filterNot{
                 (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
@@ -109,7 +109,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         val added = if (doesApplyDependencyHeuristics()) dm.addRelatedSQL(ind, numOfResource)
                     else dm.createDbActions(randomness.choose(rm.getTableInfo().keys),numOfResource)
 
-        ind.dbInitialization.addAll(added.flatten())
+        ind.addInitializingActions(actions = added.flatten())
         mutatedGenes?.addedDbActions?.addAll(added)
     }
 
@@ -121,10 +121,10 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      */
     private fun handleRemoveSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
         // remove unrelated tables
-        var candidates = if (doesApplyDependencyHeuristics()) dm.unRelatedSQL(ind) else ind.dbInitialization
+        var candidates = if (doesApplyDependencyHeuristics()) dm.unRelatedSQL(ind) else ind.seeInitializingActions()
 
         if (candidates.isEmpty())
-            candidates = ind.dbInitialization
+            candidates = ind.seeInitializingActions()
 
         val num = randomness.nextInt(1, max(1, min(rm.getResourceNum(), candidates.size -1)))
         val remove = randomness.choose(candidates, num)
@@ -134,15 +134,15 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             getRelatedRemoveDbActions(ind, it, relatedRemove)
         }
         val set = relatedRemove.toSet().toMutableList()
-        mutatedGenes?.removedDbActions?.addAll(set.map { it to ind.dbInitialization.indexOf(it) })
-        ind.dbInitialization.removeAll(set)
+        mutatedGenes?.removedDbActions?.addAll(set.map { it to ind.seeInitializingActions().indexOf(it) })
+        ind.removeAll(set)
     }
 
     private fun getRelatedRemoveDbActions(ind: RestIndividual, remove : DbAction, relatedRemove: MutableList<DbAction>){
         val pks = remove.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
-        val index = ind.dbInitialization.indexOf(remove)
-        if (index < ind.dbInitialization.size - 1 && pks.isNotEmpty()){
-            val removeDbFKs = ind.dbInitialization.subList(index + 1, ind.dbInitialization.size).filter {
+        val index = ind.seeInitializingActions().indexOf(remove)
+        if (index < ind.seeInitializingActions().size - 1 && pks.isNotEmpty()){
+            val removeDbFKs = ind.seeInitializingActions().subList(index + 1, ind.seeInitializingActions().size).filter {
                 it.seeGenes().flatMap { g-> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
                     .any {fk-> pks.any {pk->fk.uniqueIdOfPrimaryKey == pk.uniqueId} } }
             relatedRemove.addAll(removeDbFKs)

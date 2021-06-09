@@ -60,13 +60,13 @@ class RestIndividual(
                 resourceCalls.map { it.copyContent() }.toMutableList(),
                 sampleType,
                 sampleSpec?.copy(),
-                dbInitialization.map { d -> d.copyContent() as DbAction } as MutableList<DbAction>,
+                seeInitializingActions().map { d -> d.copyContent() as DbAction } as MutableList<DbAction>,
                 trackOperator,
                 index
         )
     }
 
-    override fun getChildren(): List<StructuralElement> = dbInitialization.plus(resourceCalls)
+    override fun getChildren(): List<StructuralElement> = seeInitializingActions().plus(resourceCalls)
 
     override fun canMutateStructure(): Boolean {
         return sampleType == SampleType.RANDOM ||
@@ -106,13 +106,13 @@ class RestIndividual(
      */
     fun seeResource(filter: ResourceFilter) : List<String>{
         return when(filter){
-            ResourceFilter.ALL -> dbInitialization.map { it.table.name }.plus(
+            ResourceFilter.ALL -> seeInitializingActions().map { it.table.name }.plus(
                 getResourceCalls().map { it.getResourceNodeKey() }
             )
             ResourceFilter.NO_SQL -> getResourceCalls().map { it.getResourceNodeKey() }
-            ResourceFilter.ONLY_SQL -> dbInitialization.map { it.table.name }
-            ResourceFilter.ONLY_SQL_EXISTING -> dbInitialization.filter { it.representExistingData }.map { it.table.name }
-            ResourceFilter.ONLY_SQL_INSERTION -> dbInitialization.filterNot { it.representExistingData }.map { it.table.name }
+            ResourceFilter.ONLY_SQL -> seeInitializingActions().map { it.table.name }
+            ResourceFilter.ONLY_SQL_EXISTING -> seeInitializingActions().filter { it.representExistingData }.map { it.table.name }
+            ResourceFilter.ONLY_SQL_INSERTION -> seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
         }
     }
 
@@ -127,7 +127,7 @@ class RestIndividual(
     override fun seeActions(): List<RestCallAction> = resourceCalls.flatMap { it.actions }
 
     override fun seeDbActions(): List<DbAction> {
-        return dbInitialization.plus(resourceCalls.flatMap { c-> c.dbActions })
+        return seeInitializingActions().plus(resourceCalls.flatMap { c-> c.dbActions })
     }
 
     override fun verifyInitializationActions(): Boolean {
@@ -304,10 +304,10 @@ class RestIndividual(
 
     override fun seeActions(filter: ActionFilter): List<out Action> {
         return when(filter){
-            ActionFilter.ALL-> dbInitialization.plus(getResourceCalls().flatMap { it.seeActions() })
+            ActionFilter.ALL-> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions() })
             ActionFilter.NO_INIT -> getResourceCalls().flatMap { it.seeActions() }
-            ActionFilter.INIT -> dbInitialization
-            ActionFilter.ONLY_SQL -> dbInitialization.plus(getResourceCalls().flatMap { it.dbActions })
+            ActionFilter.INIT -> seeInitializingActions()
+            ActionFilter.ONLY_SQL -> seeInitializingActions().plus(getResourceCalls().flatMap { it.dbActions })
             ActionFilter.NO_SQL -> getResourceCalls().flatMap { it.actions }
         }
     }

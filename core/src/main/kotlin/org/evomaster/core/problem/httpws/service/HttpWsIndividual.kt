@@ -3,7 +3,6 @@ package org.evomaster.core.problem.httpws.service
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.GeneUtils
@@ -13,7 +12,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 abstract class HttpWsIndividual (
-    val dbInitialization: MutableList<DbAction> = mutableListOf(),
+    private val dbInitialization: MutableList<DbAction> = mutableListOf(),
     trackOperator: TrackOperator? = null,
     index : Int = -1,
     children: List<out StructuralElement>
@@ -50,5 +49,27 @@ abstract class HttpWsIndividual (
 
     override fun hasAnyAction(): Boolean {
         return super.hasAnyAction() || dbInitialization.isNotEmpty()
+    }
+
+    /**
+     * add [actions] at [position]
+     * if [position] = -1, append the [actions] at the end
+     */
+    fun addInitializingActions(position: Int=-1, actions: List<DbAction>){
+        if (position == -1)  dbInitialization.addAll(actions)
+        else{
+            dbInitialization.addAll(position, actions)
+        }
+        addChildren(actions)
+    }
+
+    fun resetInitializingActions(actions: List<DbAction>){
+        dbInitialization.clear()
+        dbInitialization.addAll(actions)
+        addChildren(actions)
+    }
+
+    fun removeAll(actions: List<DbAction>) {
+        dbInitialization.removeAll(actions)
     }
 }
