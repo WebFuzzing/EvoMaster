@@ -11,6 +11,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.database.DatabaseExecutor
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.extract.h2.ExtractTestBaseH2
 import org.evomaster.core.problem.rest.RestCallAction
@@ -22,6 +23,7 @@ import org.evomaster.core.problem.rest.service.resource.model.ResourceBasedTestI
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceModule
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceSampler
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.Randomness
@@ -146,8 +148,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                 ResourceSamplingMethod.S1dR->{
                     assertEquals(1, this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
-                        assertTrue(!template!!.independent || dbActions.isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${dbActions.size} dbActions"
+                        assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
 
@@ -155,8 +157,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                 ResourceSamplingMethod.S2dR->{
                     assertEquals(2, this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
-                        assertTrue(!template!!.independent || dbActions.isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${dbActions.size} dbActions"
+                        assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
 
@@ -164,8 +166,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                 ResourceSamplingMethod.SMdR->{
                     assertTrue(2 <= this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
-                        assertTrue(!template!!.independent || dbActions.isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${dbActions.size} dbActions"
+                        assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
                 }
@@ -193,12 +195,12 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
             colName : String
     ) : Boolean{
 
-        if(resourceCalls.dbActions.isEmpty()) return false
-        if(!resourceCalls.dbActions.any { it.table.name.equals(tableName, ignoreCase = true) }) return false
+        if(resourceCalls.seeActions(ActionFilter.ONLY_SQL).isEmpty()) return false
+        if(!(resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>).any { it.table.name.equals(tableName, ignoreCase = true) }) return false
 
-        val dbGene = resourceCalls.dbActions.find { it.table.name.equals(tableName, ignoreCase = true) }!!.seeGenes().find { it.name.equals(colName, ignoreCase = true) }?: return false
+        val dbGene = (resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>).find { it.table.name.equals(tableName, ignoreCase = true) }!!.seeGenes().find { it.name.equals(colName, ignoreCase = true) }?: return false
 
-        return resourceCalls.actions.filterIsInstance<RestCallAction>().flatMap { it.parameters.filter { it.name == paramName } }.all { p->
+        return resourceCalls.seeActions(ActionFilter.ONLY_SQL).filterIsInstance<RestCallAction>().flatMap { it.parameters.filter { it.name == paramName } }.all { p->
             ParamUtil.compareGenesWithValue(ParamUtil.getValueGene(dbGene!!), ParamUtil.getValueGene(p.gene))
         }
     }
@@ -220,7 +222,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         rm.sampleCall(resourceNode.getName(), true, resourceCalls, config.maxTestSize, true)
 
         assertEquals(1, resourceCalls.size)
-        assertTrue(resourceCalls.first().dbActions.isNotEmpty())
+        assertTrue(resourceCalls.first().seeActions(ActionFilter.ONLY_SQL).isNotEmpty())
 
         val first = resourceCalls.first()
 
@@ -241,7 +243,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         val call = resourceNode.genCalls(template, randomness, config.maxTestSize, true, true)
 
         call.apply {
-            val paramsRequiredToBind = actions.filterIsInstance<RestCallAction>()
+            val paramsRequiredToBind = seeActions(ActionFilter.NO_SQL).filterIsInstance<RestCallAction>()
                     .flatMap { it.parameters.filter { it.name == paramName }}
             assertTrue(paramsRequiredToBind.size > 1)
             val base = ParamUtil.getValueGene(paramsRequiredToBind.first().gene)
@@ -389,19 +391,19 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
             genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
 
-        val targetsOfA = callA.actions.mapIndexed { index, _ -> index + 1}
+        val targetsOfA = callA.seeActions(ActionFilter.NO_SQL).mapIndexed { index, _ -> index + 1}
 
         val callB = rm.getResourceNodeFromCluster(resourceB).run {
             genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
 
-        val targetsOfB = callB.actions.mapIndexed { index, _ -> targetsOfA.last() + 1 + index }
+        val targetsOfB = callB.seeActions(ActionFilter.NO_SQL).mapIndexed { index, _ -> targetsOfA.last() + 1 + index }
 
         val callC = rm.getResourceNodeFromCluster(resourceC).run {
             genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
 
-        val targetsOfC = callC.actions.mapIndexed { index, _ -> targetsOfB.last() + 1 + index  }
+        val targetsOfC = callC.seeActions(ActionFilter.NO_SQL).mapIndexed { index, _ -> targetsOfB.last() + 1 + index  }
 
         val ind1With2Resources = RestIndividual(mutableListOf(callB, callA), SampleType.SMART_RESOURCE)
 
