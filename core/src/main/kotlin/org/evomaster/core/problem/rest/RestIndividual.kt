@@ -203,19 +203,17 @@ class RestIndividual(
     }
 
     /**
-     * add [resourceCalls] at [position]
+     * add [restCalls] at [position], if [position] == -1, append the [restCalls] at the end
      */
-    fun addResourceCall(position: Int, restCalls : RestResourceCalls) {
-        if(position > resourceCalls.size)
-            throw IllegalArgumentException("position is out of range of list")
-        resourceCalls.add(position, restCalls)
-    }
-
-    /**
-     * append [resourceCalls] at the end
-     */
-    fun addResourceCall(restCalls : RestResourceCalls) {
-        resourceCalls.add(restCalls)
+    fun addResourceCall(position: Int = -1, restCalls : RestResourceCalls) {
+        if (position == -1){
+            resourceCalls.add(restCalls)
+        }else{
+            if(position > resourceCalls.size)
+                throw IllegalArgumentException("position is out of range of list")
+            resourceCalls.add(position, restCalls)
+        }
+        addChild(restCalls)
     }
 
     /**
@@ -224,7 +222,8 @@ class RestIndividual(
     fun replaceResourceCall(position: Int, restCalls: RestResourceCalls){
         if(position > resourceCalls.size)
             throw IllegalArgumentException("position is out of range of list")
-        resourceCalls.set(position, restCalls)
+        resourceCalls[position] = restCalls
+        addChild(restCalls)
     }
 
     /**
@@ -236,8 +235,8 @@ class RestIndividual(
         if(position1 == position2)
             throw IllegalArgumentException("It is not necessary to swap two same position on the resource call list")
         val first = resourceCalls[position1]
-        resourceCalls.set(position1, resourceCalls[position2])
-        resourceCalls.set(position2, first)
+        resourceCalls[position1] = resourceCalls[position2]
+        resourceCalls[position2] = first
     }
 
     fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions().map {
@@ -260,6 +259,8 @@ class RestIndividual(
             }else{
                 previousDbActions.addAll(it.dbActions)
             }
+            // build parent for the dbactions
+            it.addChildren(it.dbActions)
         }
 
         if(!DbActionUtils.verifyForeignKeys(getResourceCalls().flatMap { it.dbActions })){

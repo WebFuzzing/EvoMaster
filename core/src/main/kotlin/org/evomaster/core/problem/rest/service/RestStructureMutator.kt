@@ -189,7 +189,7 @@ class RestStructureMutator : HttpWsStructureMutator() {
             )
 
             //ind.seeActions().add(sampledAction)
-            ind.addResourceCall(RestResourceCalls(actions = mutableListOf(sampledAction)))
+            ind.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(sampledAction)))
 
             //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             return
