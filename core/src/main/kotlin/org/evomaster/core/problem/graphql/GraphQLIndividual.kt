@@ -10,7 +10,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 
 class GraphQLIndividual(
-        val actions: MutableList<GraphQLAction>,
+        private val actions: MutableList<GraphQLAction>,
         val sampleType: SampleType,
         dbInitialization: MutableList<DbAction> = mutableListOf()
 ) : HttpWsIndividual(dbInitialization= dbInitialization, children = dbInitialization.plus(actions)) {
@@ -58,6 +58,17 @@ class GraphQLIndividual(
             }else -> throw IllegalStateException("${copyFilter.name} is not implemented!")
         }
         return copy
+    }
+
+    fun addGQLAction(position: Int = -1, action: GraphQLAction){
+        if (position == -1) actions.add(action)
+        else{
+            actions.add(position, action)
+        }
+    }
+
+    fun removeGQLActionAt(position: Int){
+        actions.removeAt(position)
     }
 
 }

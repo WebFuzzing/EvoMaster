@@ -506,7 +506,7 @@ class StringGene(
     /**
      * Make sure no invalid chars is used
      */
-    fun repair() {
+    override fun repair() {
         if (invalidChars.isEmpty()) {
             //nothing to do
             return
