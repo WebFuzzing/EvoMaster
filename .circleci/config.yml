@@ -13,6 +13,8 @@ jobs: # a collection of steps
     docker: # run the steps with Docker
       - image: circleci/openjdk:11
 
+    resource_class: large
+
     steps: # a collection of executable commands
 
       - checkout # check out source code to working directory
