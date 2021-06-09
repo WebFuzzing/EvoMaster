@@ -42,7 +42,9 @@ abstract class HttpWsIndividual (
         if (!verifyInitializationActions()) {
             if (log.isTraceEnabled)
                 log.trace("invoke GeneUtils.repairBrokenDbActionsList")
-            DbActionUtils.repairBrokenDbActionsList(dbInitialization, randomness)
+            val previous = dbInitialization.toMutableList()
+            DbActionUtils.repairBrokenDbActionsList(previous, randomness)
+            resetInitializingActions(previous)
             Lazy.assert{verifyInitializationActions()}
         }
     }

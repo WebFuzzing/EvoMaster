@@ -160,4 +160,26 @@ class DateGene(
             }
         }
     }
+
+    override fun repair() {
+        if (month.value < 1) {
+            month.value = 1
+        } else if (month.value > 12) {
+            month.value = 12
+        }
+
+        if (day.value < 1) {
+            day.value = 1
+        }
+
+        //February
+        if (month.value == 2 && day.value > 28) {
+            //for simplicity, let's not consider cases in which 29...
+            day.value = 28
+        } else if (day.value > 30 && (month.value.let { it == 11 || it == 4 || it == 6 || it == 9 })) {
+            day.value = 30
+        } else if (day.value > 31) {
+            day.value = 31
+        }
+    }
 }

@@ -173,4 +173,24 @@ class TimeGene(
             }
         }
     }
+
+    override fun repair() {
+        if (hour.value < 0) {
+            hour.value = 0
+        } else if (hour.value > 23) {
+            hour.value = 23
+        }
+
+        if (minute.value < 0) {
+            minute.value = 0
+        } else if (minute.value > 59) {
+            minute.value = 59
+        }
+
+        if (second.value < 0) {
+            second.value = 0
+        } else if (second.value > 59) {
+            second.value = 59
+        }
+    }
 }

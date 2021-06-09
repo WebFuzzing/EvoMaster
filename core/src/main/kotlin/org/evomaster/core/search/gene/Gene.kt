@@ -323,5 +323,12 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
 
         super.postCopy(template)
     }
+
+    /**
+     * there might be a need to repair gene based on some constraints, e.g., DateGene and TimeGene
+     */
+    open fun repair(){
+        //do nothing
+    }
 }
 
