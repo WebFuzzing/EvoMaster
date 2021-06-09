@@ -36,7 +36,8 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
      * So, once all genes are created, we force their initialization, which will also randomize their values.
      */
     fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
-        action.seeGenes().forEach { it.randomize(randomness, false) }
+        //action.seeGenes().forEach { it.randomize(randomness, false) }
+        action.randomize(randomness, false)
     }
 
     /**

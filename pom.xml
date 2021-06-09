@@ -695,7 +695,7 @@
                             of creating an external process to do the Agent attachment
                             https://github.com/raphw/byte-buddy/issues/295
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx8192m -Djdk.attach.allowAttachSelf=true</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>

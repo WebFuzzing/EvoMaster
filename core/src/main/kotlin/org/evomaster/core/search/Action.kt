@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -37,5 +38,9 @@ abstract class Action(children: List<out StructuralElement>) : StructuralElement
      */
     abstract fun shouldCountForFitnessEvaluations(): Boolean
 
+    abstract fun randomize(
+        randomness: Randomness,
+        forceNewValue: Boolean,
+        all: List<Action> = listOf())
 
 }

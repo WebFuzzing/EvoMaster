@@ -353,7 +353,8 @@ class RestResourceNode(
     }
 
     private fun randomizeActionGenes(action: Action, randomness: Randomness) {
-        action.seeGenes().forEach { it.randomize(randomness, false) }
+        //action.seeGenes().forEach { it.randomize(randomness, false) }
+        action.randomize(randomness, false)
         if(action is RestCallAction){
             BindingBuilder.bindParamsInRestAction(action)
         }
@@ -440,11 +441,6 @@ class RestResourceNode(
                 randomizeActionGenes(a, randomness)
             }
         }
-
-
-
-
-
     }
 
     //TODO update postCreation accordingly

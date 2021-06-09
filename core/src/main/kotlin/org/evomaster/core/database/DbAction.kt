@@ -1,5 +1,6 @@
 package org.evomaster.core.database
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.Action
@@ -8,6 +9,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.service.Randomness
 
 /**
  *  An action executed on the database.
@@ -106,6 +108,15 @@ class DbAction(
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
         return false
+    }
+
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
+        val allGenes = all.flatMap { it.seeGenes() }
+        seeGenes().asSequence()
+            .filter { it.isMutable() }
+            .forEach {
+                it.randomize(randomness, false, allGenes)
+            }
     }
 
     fun geInsertionId(): Long {
