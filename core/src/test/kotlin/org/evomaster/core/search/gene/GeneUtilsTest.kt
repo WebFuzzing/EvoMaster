@@ -272,4 +272,17 @@ internal class GeneUtilsTest {
         assertTrue(objPetType.fields.any{ it is BooleanGene && it.value})
     }
 
+
+    @Test
+    fun testUnionSelection(){
+
+        val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
+        val b = OptionalGene("B",ObjectGene("B", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+
+        val unionObj = ObjectGene("foo_${ObjectGene.unionTag}", listOf(a,b))
+
+        val res = unionObj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+
+        assertEquals("{... on A{a1} ... on B{b1,b2}}", res)
+    }
 }

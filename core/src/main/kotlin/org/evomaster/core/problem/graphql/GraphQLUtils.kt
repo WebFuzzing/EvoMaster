@@ -21,7 +21,7 @@ object GraphQLUtils {
         val inputGenes = a.parameters.filterIsInstance<GQInputParam>().map { it.gene }
 
         var bodyEntity: Entity<String> = Entity.json(" ")
-        val union= "#UNION#"
+
 
         if (a.methodType == GQMethodType.QUERY) {
 
@@ -37,7 +37,7 @@ object GraphQLUtils {
                     {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
                 """.trimIndent())
 
-                } else if (returnGene.name.contains(union)) {
+                } else if (returnGene.name.endsWith(ObjectGene.unionTag)) {
 
                     var query = getUnionQuery(returnGene, a)
                     Entity.json("""
