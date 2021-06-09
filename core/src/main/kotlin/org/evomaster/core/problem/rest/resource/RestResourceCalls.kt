@@ -3,11 +3,12 @@ package org.evomaster.core.problem.rest.resource
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
+import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
@@ -25,8 +26,8 @@ import org.slf4j.LoggerFactory
 class RestResourceCalls(
         val template: CallsTemplate? = null,
         val resourceInstance: RestResourceInstance?=null,
-        val actions: MutableList<RestCallAction>,
-        val dbActions : MutableList<DbAction> = mutableListOf()
+        private val actions: MutableList<RestCallAction>,
+        private val dbActions : MutableList<DbAction> = mutableListOf()
 ): StructuralElement(mutableListOf<StructuralElement>().apply { addAll(dbActions); addAll(actions) }){
 
     companion object{
@@ -88,7 +89,39 @@ class RestResourceCalls(
         }
     }
 
-    fun seeActions() : List<out Action> = dbActions.plus(actions)
+    fun seeActions(filter: ActionFilter) : List<out Action>{
+        return when(filter){
+            ActionFilter.ALL-> dbActions.plus(actions)
+            ActionFilter.INIT, ActionFilter.ONLY_SQL -> dbActions
+            ActionFilter.NO_INIT,
+            ActionFilter.NO_SQL -> actions
+        }
+    }
+
+    fun seeActionSize(filter: ActionFilter) : Int{
+        return seeActions(filter).size
+    }
+
+    fun addDbAction(position : Int = -1, actions: List<DbAction>){
+        if (position == -1) dbActions.addAll(actions)
+        else{
+            dbActions.addAll(position, actions)
+        }
+        addChildren(actions)
+    }
+
+    fun resetDbAction(actions: List<DbAction>){
+        dbActions.clear()
+        dbActions.addAll(actions)
+        addChildren(actions)
+    }
+
+    fun removeDbActionIf(removePredict: (DbAction) -> Boolean){
+        dbActions.removeIf{
+            removePredict(it)
+        }
+    }
+
 
     /**
      * @return the mutable SQL genes and they do not bind with any of Rest Actions
@@ -163,11 +196,7 @@ class RestResourceCalls(
         }
     }
 
-    fun resetDbAction(dbActions: MutableList<DbAction>){
-        dbActions.clear()
-        dbActions.addAll(dbActions)
-        addChildren(dbActions)
-    }
+
 
 
     /**
@@ -191,7 +220,7 @@ class RestResourceCalls(
     }
 
 
-    fun getRestTemplate() = template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(actions as MutableList<RestCallAction>)
+    fun getRestTemplate() = template?.template?: RestResourceTemplateHandler.getStringTemplateByActions(actions as MutableList<RestCallAction>)
 
     fun getResourceNode() : RestResourceNode = resourceInstance?.referResourceNode?:throw IllegalArgumentException("the individual does not have resource structure")
 

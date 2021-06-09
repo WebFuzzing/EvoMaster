@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
@@ -11,7 +10,8 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Individual.ActionFilter
+import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -171,7 +171,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         val pos = if(removed != null) ind.getResourceCalls().indexOf(removed)
             else ind.getResourceCalls().indexOf(randomness.choose(ind.getResourceCalls().filter(RestResourceCalls::isDeletable)))
 
-        val removedActions = ind.getResourceCalls()[pos].seeActions()
+        val removedActions = ind.getResourceCalls()[pos].seeActions(ActionFilter.ALL)
         removedActions.forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
@@ -235,7 +235,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         val sizeOfCalls = ind.getResourceCalls().size
 
         var max = config.maxTestSize
-        ind.getResourceCalls().forEach { max -= it.actions.size }
+        ind.getResourceCalls().forEach { max -= it.seeActions(NO_SQL).size }
         if (max == 0){
             handleDelete(ind, mutatedGenes)
             return
@@ -254,10 +254,10 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             maintainAuth(auth, randomCall)
             ind.addResourceCall(pos, randomCall)
 
-            randomCall.seeActions().forEach {
+            randomCall.seeActions(ALL).forEach {
                 mutatedGenes?.addRemovedOrAddedByAction(
                     it,
-                    ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
+                    ind.seeActions(NO_INIT).indexOf(it),
                     false,
                     resourcePosition = pos
                 )
@@ -276,7 +276,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             ind.addResourceCall( addPos, pair.second)
 
             pair.second.apply {
-                seeActions().forEach {
+                seeActions(ALL).forEach {
                     mutatedGenes?.addRemovedOrAddedByAction(
                         it,
                         ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
@@ -300,7 +300,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         }
 
         var max = config.maxTestSize
-        ind.getResourceCalls().forEach { max -= it.actions.size }
+        ind.getResourceCalls().forEach { max -= it.seeActionSize(NO_SQL) }
 
         val fromDependency = doesApplyDependencyHeuristics()
 
@@ -314,7 +314,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         if(pos == null)
             pos = ind.getResourceCalls().indexOf(randomness.choose(ind.getResourceCalls().filter(RestResourceCalls::isDeletable)))
 
-        max += ind.getResourceCalls()[pos].actions.size
+        max += ind.getResourceCalls()[pos].seeActionSize(NO_SQL)
 
         val pair = if(fromDependency && pos != ind.getResourceCalls().size -1){
                         dm.handleAddDepResource(ind, max, if (pos == ind.getResourceCalls().size-1) mutableListOf() else ind.getResourceCalls().subList(pos+1, ind.getResourceCalls().size).toMutableList())
@@ -329,7 +329,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             }
         }
 
-       ind.getResourceCalls()[pos].seeActions().forEach {
+       ind.getResourceCalls()[pos].seeActions(ALL).forEach {
            mutatedGenes?.addRemovedOrAddedByAction(
                it,
                ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
@@ -343,7 +343,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         maintainAuth(auth, call!!)
         ind.addResourceCall(pos, call)
 
-        call.seeActions().forEach {
+        call.seeActions(ALL).forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
                 ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
@@ -365,8 +365,8 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         val pos = randomness.nextInt(0, ind.getResourceCalls().size-1)
         val old = ind.getResourceCalls()[pos]
         var max = config.maxTestSize
-        ind.getResourceCalls().forEach { max -= it.actions.size }
-        max += ind.getResourceCalls()[pos].actions.size
+        ind.getResourceCalls().forEach { max -= it.seeActionSize(NO_SQL)}
+        max += ind.getResourceCalls()[pos].seeActionSize(NO_SQL)
         var new = old.getResourceNode().generateAnother(old, randomness, max)
         if(new == null){
             new = old.getResourceNode().sampleOneAction(null, randomness)
@@ -374,10 +374,10 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         maintainAuth(auth, new)
 
         //record removed
-        ind.getResourceCalls()[pos].seeActions().forEach {
+        ind.getResourceCalls()[pos].seeActions(ALL).forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
-                ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
+                ind.seeActions(NO_INIT).indexOf(it),
                 true,
                 resourcePosition = pos
             )
@@ -386,10 +386,10 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         ind.replaceResourceCall(pos, new)
 
         //record replaced
-        new.seeActions().forEach {
+        new.seeActions(ALL).forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
-                ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
+                ind.seeActions(NO_INIT).indexOf(it),
                 false,
                 resourcePosition = pos
             )
@@ -432,7 +432,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
 
     private fun maintainAuth(authInfo: AuthenticationInfo?, mutated: RestResourceCalls){
         authInfo?.let { auth->
-            mutated.actions.forEach { if(it is RestCallAction) it.auth = auth }
+            mutated.seeActions(NO_SQL).forEach { if(it is RestCallAction) it.auth = auth }
         }
     }
 

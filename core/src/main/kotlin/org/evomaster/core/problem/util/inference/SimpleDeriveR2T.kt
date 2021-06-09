@@ -13,6 +13,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.gene.ObjectGene
 
 /**
@@ -228,8 +229,8 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
             list.forEach { p->
                 if(!cleanList.any { e->e.equalWith(p)}) cleanList.add(p)
             }
-            calls.actions.filter { it is RestCallAction  && it.path.toString() == resource.getName()}.forEach { a->
-                result.put(a, cleanList.filter { p-> (a is RestCallAction) && (paramsInfo.any { m-> m.key == p.paramId && m.involvedAction.contains(a.verb) })}.toMutableList())
+            calls.seeActions(ActionFilter.NO_SQL).filter { it is RestCallAction  && it.path.toString() == resource.getName()}.forEach { a->
+                result.put(a as RestCallAction, cleanList.filter { p-> (a is RestCallAction) && (paramsInfo.any { m-> m.key == p.paramId && m.involvedAction.contains(a.verb) })}.toMutableList())
             }
         }
 

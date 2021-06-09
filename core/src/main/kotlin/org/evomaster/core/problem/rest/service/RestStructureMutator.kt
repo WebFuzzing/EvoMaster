@@ -6,6 +6,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -135,8 +136,8 @@ class RestStructureMutator : HttpWsStructureMutator() {
             val chosen = randomness.choose(indices)
 
             //save mutated genes
-            val removedActions = ind.getResourceCalls()[chosen].actions
-            assert(removedActions.size == 1)
+            val removedActions = ind.getResourceCalls()[chosen].seeActions(ActionFilter.NO_SQL)
+            Lazy.assert { removedActions.size == 1 }
 
             mutatedGenes?.addRemovedOrAddedByAction(
                 removedActions.first(),
@@ -202,8 +203,8 @@ class RestStructureMutator : HttpWsStructureMutator() {
             val chosen = randomness.nextInt(ind.seeActions().size)
 
             //save mutated genes
-            val removedActions = ind.getResourceCalls()[chosen].actions
-            assert(removedActions.size == 1)
+            val removedActions = ind.getResourceCalls()[chosen].seeActions(ActionFilter.NO_SQL)
+            Lazy.assert { removedActions.size == 1 }
             mutatedGenes?.addRemovedOrAddedByAction(
                 removedActions.first(),
                 chosen,

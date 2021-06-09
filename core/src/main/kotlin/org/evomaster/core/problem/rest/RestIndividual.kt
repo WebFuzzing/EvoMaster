@@ -7,6 +7,8 @@ import org.evomaster.core.problem.httpws.service.HttpWsIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
@@ -124,10 +126,10 @@ class RestIndividual(
 
     override fun size() = seeActions().size
 
-    override fun seeActions(): List<RestCallAction> = resourceCalls.flatMap { it.actions }
+    override fun seeActions(): List<RestCallAction> = resourceCalls.flatMap { it.seeActions(NO_INIT) as List<RestCallAction> }
 
     override fun seeDbActions(): List<DbAction> {
-        return seeInitializingActions().plus(resourceCalls.flatMap { c-> c.dbActions })
+        return seeInitializingActions().plus(resourceCalls.flatMap { c-> c.seeActions(ONLY_SQL) as List<DbAction> })
     }
 
     override fun verifyInitializationActions(): Boolean {
@@ -239,31 +241,29 @@ class RestIndividual(
         resourceCalls[position2] = first
     }
 
-    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions().map {
+    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions(ALL).map {
         seeActions(actionFilter).indexOf(it)
     }
 
     fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?, randomness: Randomness){
         val previousDbActions = mutableListOf<DbAction>()
 
-        getResourceCalls().filter { it.dbActions.isNotEmpty() }.forEach {
-            val result = DbActionUtils.verifyForeignKeys( previousDbActions.plus(it.dbActions))
+        getResourceCalls().filter { it.seeActions(ALL).isNotEmpty() }.forEach {
+            val result = DbActionUtils.verifyForeignKeys( previousDbActions.plus(it.seeActions(ONLY_SQL) as List<DbAction>))
             if(!result){
                 val created = mutableListOf<DbAction>()
-                it.dbActions.forEach { db->
+                (it.seeActions(ONLY_SQL) as List<DbAction>).forEach { db->
                     DbActionUtils.repairFK(db, previousDbActions, created, sqlInsertBuilder, randomness)
                     previousDbActions.add(db)
                 }
-                it.dbActions.addAll(0, created)
+                it.addDbAction(0, created)
 
             }else{
-                previousDbActions.addAll(it.dbActions)
+                previousDbActions.addAll(it.seeActions(ONLY_SQL) as List<DbAction>)
             }
-            // build parent for the dbactions
-            it.addChildren(it.dbActions)
         }
 
-        if(!DbActionUtils.verifyForeignKeys(getResourceCalls().flatMap { it.dbActions })){
+        if(!DbActionUtils.verifyForeignKeys(getResourceCalls().flatMap { it.seeActions(ONLY_SQL) as List<DbAction> })){
             throw IllegalStateException("after a FK repair, there still exist invalid FKs")
         }
 
@@ -305,11 +305,11 @@ class RestIndividual(
 
     override fun seeActions(filter: ActionFilter): List<out Action> {
         return when(filter){
-            ActionFilter.ALL-> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions() })
-            ActionFilter.NO_INIT -> getResourceCalls().flatMap { it.seeActions() }
-            ActionFilter.INIT -> seeInitializingActions()
-            ActionFilter.ONLY_SQL -> seeInitializingActions().plus(getResourceCalls().flatMap { it.dbActions })
-            ActionFilter.NO_SQL -> getResourceCalls().flatMap { it.actions }
+            ALL-> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions(ALL) })
+            NO_INIT -> getResourceCalls().flatMap { it.seeActions(ALL) }
+            INIT -> seeInitializingActions()
+            ONLY_SQL -> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions(ONLY_SQL) })
+            NO_SQL -> getResourceCalls().flatMap { it.seeActions(NO_SQL) }
         }
     }
 

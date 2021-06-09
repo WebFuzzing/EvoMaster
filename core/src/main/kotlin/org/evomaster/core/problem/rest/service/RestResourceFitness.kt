@@ -8,6 +8,7 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.ResourceStatus
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -69,12 +70,12 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            val result = doDbCalls(call.dbActions, sqlIdMap, failureBefore, executedDbActions)
+            val result = doDbCalls(call.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>, sqlIdMap, failureBefore, executedDbActions)
             failureBefore = failureBefore || result
 
             var terminated = false
 
-            for (a in call.actions){
+            for (a in call.seeActions(ActionFilter.NO_SQL)){
 
                 //TODO handling of inputVariables
                 registerNewAction(a, indexOfAction)

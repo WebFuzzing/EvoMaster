@@ -9,9 +9,10 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
-import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
+import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
@@ -336,7 +337,7 @@ class RestResourceNode(
     }
 
     fun generateAnother(calls : RestResourceCalls, randomness: Randomness, maxTestSize: Int) : RestResourceCalls?{
-        val current = calls.template?.template?:RestResourceTemplateHandler.getStringTemplateByActions(calls.actions.filterIsInstance<RestCallAction>())
+        val current = calls.template?.template?: RestResourceTemplateHandler.getStringTemplateByActions(calls.seeActions(ActionFilter.NO_SQL).filterIsInstance<RestCallAction>())
         val rest = templates.filter { it.value.template != current}
         if(rest.isEmpty()) return null
         val selected = randomness.choose(rest.keys)
@@ -904,7 +905,7 @@ class RestResourceNode(
                 calls.status == ResourceStatus.CREATED_REST && result.getStatusCode().run { this != 201 || this != 200 }
 
         if (fail && creations.isNotEmpty()){
-            creations.filter { it is PostCreationChain && calls.actions.map { a->a.getName() }.containsAll(it.actions.map { a-> a.getName() }) }.apply {
+            creations.filter { it is PostCreationChain && calls.seeActions(ActionFilter.NO_SQL).map { a->a.getName() }.containsAll(it.actions.map { a-> a.getName() }) }.apply {
                 if (size == 1)
                     (first() as PostCreationChain).confirmFailure()
             }

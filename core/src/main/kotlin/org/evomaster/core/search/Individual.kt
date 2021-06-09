@@ -53,32 +53,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     abstract fun size(): Int
 
-    enum class ActionFilter {
-        /**
-         * all actions
-         */
-        ALL,
 
-        /**
-         * actions which are in initialization, e.g., HttpWsIndividual
-         */
-        INIT,
-
-        /**
-         * actions which are not in initialization
-         */
-        NO_INIT,
-
-        /**
-         * actions which are SQL-related actions
-         */
-        ONLY_SQL,
-
-        /**
-         * actions which are not SQL-related actions
-         */
-        NO_SQL
-    }
 
     /**
      * @return actions based on the specified [filter]

@@ -13,8 +13,9 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.resource.*
-import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
+import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -85,7 +86,7 @@ class ResourceManageService {
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb != HttpVerb.POST && it.verb != HttpVerb.PUT }.forEach {a->
                 val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
-                call.actions.forEach {a->
+                call.seeActions(ActionFilter.NO_SQL).forEach { a->
                     if(a is RestCallAction) a.auth = auth
                 }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
@@ -96,7 +97,7 @@ class ResourceManageService {
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST}.forEach { a->
                 val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
-                call.actions.forEach { it.auth = auth }
+                (call.seeActions(ActionFilter.NO_SQL) as List<RestCallAction>).forEach { it.auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }
         }
@@ -105,7 +106,7 @@ class ResourceManageService {
                 .filter { it.actions.find { a -> a is RestCallAction && a.verb == HttpVerb.POST } != null && it.getPostChain()?.actions?.run { this.size > 1 }?:false  }
                 .forEach { ar->
                     ar.genPostChain(randomness, config.maxTestSize)?.let {call->
-                        call.actions.forEach { (it as RestCallAction).auth = auth }
+                        call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
                         adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
                     }
                 }
@@ -114,7 +115,7 @@ class ResourceManageService {
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.PUT }.forEach {a->
                 val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
-                call.actions.forEach { (it as RestCallAction).auth = auth }
+                call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }
         }
@@ -124,7 +125,7 @@ class ResourceManageService {
             ar.getTemplates().values.filter { t-> RestResourceTemplateHandler.isNotSingleAction(t.template) }
                     .forEach {ct->
                         val call = ar.sampleRestResourceCalls(ct.template, randomness, config.maxTestSize)
-                        call.actions.forEach { if(it is RestCallAction) it.auth = auth }
+                        call.seeActions(ActionFilter.NO_SQL).forEach { if(it is RestCallAction) it.auth = auth }
                         adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
                     }
         }
@@ -331,7 +332,7 @@ class ResourceManageService {
              */
             call.bindCallWithDbActions(dbActions, bindingMap = paramToTables, cluster = cluster, forceBindParamBasedOnDB = false, dbRemovedDueToRepair = removed)
 
-            call.dbActions.addAll(dbActions)
+            call.addDbAction(actions = dbActions)
         }
         return paramToTables.isNotEmpty() && !failToGenDb
     }

@@ -11,7 +11,8 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Individual.GeneFilter
-import org.evomaster.core.search.Individual.ActionFilter
+import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
@@ -134,7 +135,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         individual.getResourceCalls().forEach { c->
             if (index < results.size){
                 list.add(
-                    c.dbActions to c.actions.subList(0, min(c.actions.size, results.size-index)).map {
+                    (c.seeActions(ONLY_SQL) as List<DbAction>) to c.seeActions(NO_SQL).subList(0, min(c.seeActionSize(NO_SQL), results.size-index)).map {
                             a-> EvaluatedAction(a, results[index]).also { index++ }
                     }.toList()
                 )
