@@ -61,7 +61,7 @@ class IndividualGeneImpactTest {
 
         assert(spec.mutatedIndividual != null)
         assert(spec.mutatedGenes.size == 1)
-        val mutatedGeneId = ImpactUtils.generateGeneId(spec.mutatedIndividual!!, spec.mutatedGenes.first().gene)
+        val mutatedGeneId = ImpactUtils.generateGeneId(spec.mutatedIndividual!!, spec.mutatedGenes.first().gene!!)
 
         val evaluatedTargets = mutableMapOf<Int, EvaluatedMutation>()
         evaluatedTargets[simulatedMutator.getNewTarget()] = EvaluatedMutation.BETTER_THAN
@@ -214,18 +214,24 @@ class IndividualGeneImpactTest {
             if (ind2.seeActions().size == 1 && remove)
                 throw IllegalArgumentException("action cannot be removed since there is only one action")
             if (remove){
-                val genes = ind2.seeActions()[mutatedIndex].seeGenes()
-                mutatedGeneSpecification.removedGene.addAll(genes)
-                genes.forEach { _ ->
-                    mutatedGeneSpecification.mutatedPosition.add(mutatedIndex)
-                }
+                val removedAction = ind2.seeActions()[mutatedIndex]
+
+                mutatedGeneSpecification.addRemovedOrAddedByAction(
+                    removedAction,
+                    mutatedIndex,
+                    true,mutatedIndex
+                )
                 ind2.actions.removeAt(mutatedIndex)
 
             }else{
                 val action = IndAction.getIndAction(1).first()
-                action.seeGenes().forEach { _ ->
-                    mutatedGeneSpecification.mutatedPosition.add(mutatedIndex)
-                }
+
+                mutatedGeneSpecification.addRemovedOrAddedByAction(
+                    action,
+                    mutatedIndex,
+                    false,mutatedIndex
+                )
+
                 ind2.actions.add(mutatedIndex, action)
             }
 
@@ -297,6 +303,7 @@ class IndividualGeneImpactTest {
                GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeGenes)
                GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
                GeneFilter.ALL -> seeInitializingActions().plus(seeActions()).flatMap(Action::seeGenes)
+               else -> throw IllegalArgumentException("$filter is not supported by ImpactTest Individual")
            }
         }
 

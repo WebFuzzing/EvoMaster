@@ -75,7 +75,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      */
     abstract fun doesStructureMutation(individual : T) : Boolean
 
-    open fun postActionAfterMutation(individual: T){}
+    open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
 
     open fun update(previous: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation){}
 
@@ -267,7 +267,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         return EvaluatedMutation.EQUAL_WITH
     }
 
-    private fun preHandlingTrackedIndividual(current: EvaluatedIndividual<T>){
+    fun preHandlingTrackedIndividual(current: EvaluatedIndividual<T>){
         if (config.trackingEnabled()){
             if (config.enableTrackEvaluatedIndividual && current.tracking == null){
                 current.wrapWithTracking(null, config.maxLengthOfTraces, mutableListOf())

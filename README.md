@@ -31,7 +31,10 @@ __Key features__:
 * At the moment, _EvoMaster_ targets RESTful APIs compiled to 
   JVM __8__ and __11__ bytecode. Might work on other JVM versions, but we provide __NO__ support for it.
 
-* The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
+* We provide installers for the main operating systems: Windows (`.msi`), 
+  OSX (`.dmg`) and Linux (`.deb`). We also provide an uber-fat JAR file.
+
+* The REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
   format (either _v2_ or _v3_).
 
 * The tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin.
@@ -111,13 +114,14 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 ### Documentation
 
 * [Example of generated tests](docs/example.md)
-* [Download EvoMaster](docs/download.md)
+* [Download and Install EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
 * [Console options](docs/options.md)
 * [OpenApi/Swagger Schema](docs/openapi.md)
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
     * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
+* [Console output](docs/console_output.md)  
 * [Library dependencies for the generated tests](docs/library_dependencies.md)
 * [How to contribute](docs/contribute.md)
     * [Technical notes for developers contributing to EvoMaster](docs/for_developers.md)

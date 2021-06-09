@@ -2,6 +2,7 @@ package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.Individual.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.impact.impactinfocollection.sql.*
@@ -95,7 +96,7 @@ class ImpactUtils {
             }?.let {
                 return generateGeneId(it, gene)
             }
-            individual.seeActions().find { a-> a.seeGenes().contains(gene) }?.let {
+            individual.seeActions(ActionFilter.NO_INIT).find { a-> a.seeGenes().contains(gene) }?.let {
                 return generateGeneId(action = it, gene = gene)
             }
             return generateGeneId(gene)
@@ -146,14 +147,14 @@ class ImpactUtils {
                                           fromInitialization : Boolean) : MutableList<MutatedGeneWithContext>{
             val num = mutatedGeneSpecification.numOfMutatedGeneInfo()
 
-            val actions = if (fromInitialization) individual.seeInitializingActions() else individual.seeActions()
+            val actions = if (fromInitialization) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)
             val list = mutableListOf<MutatedGeneWithContext>()
             if (actions.isEmpty()) return list
 
             if (actions.isNotEmpty()){
                 actions.forEach { a ->
                     val index = actions.indexOf(a)
-                    val manipulated = if (fromInitialization) mutatedGeneSpecification.mutatedDbActionPosition.contains(index) else mutatedGeneSpecification.mutatedPosition.contains(index)
+                    val manipulated = mutatedGeneSpecification.isActionMutated(index, !fromInitialization)
                     if (manipulated){
                         a.seeGenes().filter {
                             if (fromInitialization)
@@ -194,8 +195,8 @@ class ImpactUtils {
 
 
         private fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int, isDb : Boolean):Gene?{
-            if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions()).size) return null
-            val action = if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions()[indexOfAction]
+            if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)).size) return null
+            val action = if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions(ActionFilter.NO_INIT)[indexOfAction]
             if (action.getName() != actionName)
                 throw IllegalArgumentException("mismatched gene mutated info")
             return action.seeGenes().find { generateGeneId(action, it) == id }
@@ -247,7 +248,7 @@ class ImpactUtils {
                 g.name == template.name && g::class.java.simpleName == template::class.java.simpleName && (includeSameValue || !g.containsSameValueAs(template))
             }.also {
                 if (it.size > 1)
-                    log.warn("{} genes have been mutated with the name {},",it.size, gene.name)
+                    log.warn("{} genes have been mutated with the name {}",it.size, gene.name)
             }.firstOrNull()
         }
     }

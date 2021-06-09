@@ -24,8 +24,21 @@ class Randomness {
         updateSeed(configuration.seed)
     }
 
-    private val wordChars = "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
-            .map { it.toInt() }.sorted()
+    private val digitSet = "0123456789"
+    private val asciiLetterSet = "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+    private val norwegianLetterSet = "æøåÆØÅ"
+
+    private val wordSet = "_$digitSet$asciiLetterSet"
+    private val spaceSet = " \t\r\n"
+    private val punctuationSet = "!@#$%^&*()[]{}<>:;|"
+
+    private val allSet = "$wordSet$spaceSet$norwegianLetterSet$punctuationSet"
+
+    private val nonWordSet = allSet.replace(wordSet,"")
+    private val nonDigitSet = allSet.replace(digitSet, "")
+    private val nonSpaceSet = allSet.replace(spaceSet, "")
+
+    private val wordChars = wordSet.map { it.toInt() }.sorted()
 
     /**
      * A negative value means the current CPU time clock is used instead
@@ -138,21 +151,53 @@ class Randomness {
 
     fun nextLetter(): Char {
 
-        val characters = "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+        val characters = asciiLetterSet
 
         val k = characters[random.nextInt(characters.length)]
         log.trace("nextLetter(): {}", k)
         return k
     }
 
+    fun nextFromStringSet(set: String) : Char{
+        return set[random.nextInt(set.length)]
+    }
+
     fun nextWordChar(): Char {
-
-        val characters = "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
-
-        val k = characters[random.nextInt(characters.length)]
+        val k = nextFromStringSet(wordSet)
         log.trace("nextWordChar(): {}", k)
         return k
     }
+
+    fun nextNonWordChar() : Char{
+        val k = nextFromStringSet(nonWordSet)
+        log.trace("nextNonWordChar(): {}", k)
+        return k
+    }
+
+    fun nextDigitChar(): Char {
+        val k = nextFromStringSet(digitSet)
+        log.trace("nextDigitChar(): {}", k)
+        return k
+    }
+
+    fun nextNonDigitChar(): Char {
+        val k = nextFromStringSet(nonDigitSet)
+        log.trace("nextNonDigitChar(): {}", k)
+        return k
+    }
+
+    fun nextSpaceChar(): Char {
+        val k = nextFromStringSet(spaceSet)
+        log.trace("nextSpaceChar(): {}", k)
+        return k
+    }
+
+    fun nextNonSpaceChar(): Char {
+        val k = nextFromStringSet(nonSpaceSet)
+        log.trace("nextNonSpaceChar(): {}", k)
+        return k
+    }
+
 
     fun wordCharPool() = wordChars
 

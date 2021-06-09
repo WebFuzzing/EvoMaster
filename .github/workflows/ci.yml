@@ -2,6 +2,12 @@ name: CI
 
 on: [push]
 
+env:
+  evomaster-version: 1.2.1
+  release-jdk: 16
+  retention-days: 3
+
+
 # This build is quite expensive (1ish hour), so we run it whole only on 1 JVM version, and 1 OS.
 # Recall that we also build on CircleCI, with different configurations.
 # For the moment, we need to support JVM 8 and 11, with 17 when it comes out.
@@ -9,6 +15,7 @@ on: [push]
 # testing whole build with all E2E only on Linux should be fine.
 
 jobs:
+
   build:
     runs-on: ubuntu-latest
     # Currently does not like Docker...
@@ -63,6 +70,13 @@ jobs:
         env:
           CI_env: GithubAction
 
+      - name: Upload evomaster.jar
+        uses: actions/upload-artifact@v2
+        with:
+          name: evomaster.jar
+          path: core/target/evomaster.jar
+          retention-days: ${{env.retention-days}}
+          if-no-files-found: error
 
       # E2E for JS. Must be run AFTER the JS and Core builds
       - name: E2E for JavaScript
@@ -81,3 +95,79 @@ jobs:
           java-version: 11
       - name: Compile with JDK 11
         run: mvn clean verify -DskipTests
+
+
+  windows:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup JDK ${{env.release-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.release-jdk}}
+      - name: Download fat jar
+        uses: actions/download-artifact@v2
+        with:
+          name: evomaster.jar
+          path: core/target
+      - name: Build installation file
+        shell: bash
+        run: bash makeExecutable.sh WINDOWS
+      - name: Upload installation file
+        uses: actions/upload-artifact@v2
+        with:
+          name: evomaster.msi
+          path: release/evomaster-${{env.evomaster-version}}.msi
+          retention-days: ${{env.retention-days}}
+          if-no-files-found: error
+
+  osx:
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup JDK ${{env.release-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.release-jdk}}
+      - name: Download fat jar
+        uses: actions/download-artifact@v2
+        with:
+          name: evomaster.jar
+          path: core/target
+      - name: Build installation file
+        shell: bash
+        run: bash makeExecutable.sh OSX
+      - name: Upload installation file
+        uses: actions/upload-artifact@v2
+        with:
+          name: evomaster.dmg
+          path: release/evomaster-${{env.evomaster-version}}.dmg
+          retention-days: ${{env.retention-days}}
+          if-no-files-found: error
+
+  debian:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup JDK ${{env.release-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.release-jdk}}
+      - name: Download fat jar
+        uses: actions/download-artifact@v2
+        with:
+          name: evomaster.jar
+          path: core/target
+      - name: Build installation file
+        shell: bash
+        run: bash makeExecutable.sh DEBIAN
+      - name: Upload installation file
+        uses: actions/upload-artifact@v2
+        with:
+          name: evomaster.deb
+          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+          retention-days: ${{env.retention-days}}
+          if-no-files-found: error

@@ -99,7 +99,13 @@ public class MatcherClassReplacement implements MethodReplacementClass {
          */
 
 
-        String anyPositionRegexMatch = String.format("(.*)(%s)(.*)", regex);
+        /*
+            Bit tricky... (.*) before/after the regex would not work, as by default . does
+            not match line terminators. enabling DOTALL flag is risky, as the original could
+            use flags.
+            \s\S is just a way to covering everything
+         */
+        String anyPositionRegexMatch = String.format("([\\s\\S]*)(%s)([\\s\\S]*)", regex);
         TaintType taintType = ExecutionTracer.getTaintType(substring);
         if (taintType.isTainted()) {
             /*

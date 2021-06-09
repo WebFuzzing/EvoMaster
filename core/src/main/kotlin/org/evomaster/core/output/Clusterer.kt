@@ -49,6 +49,12 @@ object Clusterer {
         }.map { ac -> ac.result }
                 .filterIsInstance<HttpWsCallResult>()
 
+        //TODO: Check the clusterableActions here.
+        // if clusterableActions are comprised of results that are not HttpWsCallResult.
+        // Currently it throws an exception. But what would be the expected behaviour? Presumably, as clustering is
+        // not guaranteed, return without clusters? or introduce the checks earlier?
+
+        //BMR: Could it be that clusterableACtions are null here (I mean... it could).
         val clu = DBSCANClusterer<HttpWsCallResult>(
                 values = clusterableActions,
                 epsilon = epsilon,

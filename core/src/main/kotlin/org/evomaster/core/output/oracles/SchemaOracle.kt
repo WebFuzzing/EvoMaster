@@ -34,6 +34,7 @@ import javax.ws.rs.core.MediaType
 class SchemaOracle : ImplementedOracle() {
     private val variableName = "rso"
     private lateinit var objectGenerator: ObjectGenerator
+    private val basicTypes = arrayOf("string", "number", "integer", "boolean", "array", "object")
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SchemaOracle::class.java)
@@ -109,7 +110,8 @@ class SchemaOracle : ImplementedOracle() {
     fun writeExpectation(call: RestCallAction, lines: Lines,  json_ref: String, format: OutputFormat, expectedObject: String?){
         // if the contents are objects with a ref in the schema
         //val json_ref = "$name.extract().response().jsonPath()"
-        val referenceObject = objectGenerator.getNamedReference("$expectedObject")
+        //val referenceObject = objectGenerator.getNamedReference("$expectedObject")
+        val referenceObject = getReferenceObject(expectedObject)
 
 
         val referenceKeys = referenceObject.fields
@@ -154,34 +156,17 @@ class SchemaOracle : ImplementedOracle() {
      */
 
     fun supportedObject(obj: ObjectGene, call: RestCallAction): Boolean{
-        val supportedObjects = getSupportedResponse(call)
-        return supportedObjects.any { o ->
-            val refObject = objectGenerator.getNamedReference(o.value)
-            val refKeys = refObject.fields
-                    .filterNot { it is OptionalGene }
-                    .map { it.name }
-                    .toMutableSet()
-            val actualKeys = obj.fields
-                    .filterNot { it is OptionalGene }
-                    .map { it.name }
-                    .toMutableSet()
+        val actualKeys = obj.fields
+                .filterNot { it is OptionalGene }
+                .map { it.name }
+                .toMutableSet()
 
-            val compulsoryMatch = refKeys.containsAll(actualKeys) && actualKeys.containsAll(refKeys)
+        val actualOptionalKeys = obj.fields
+                .filter { it is OptionalGene }
+                .map { it.name }
+                .toMutableSet()
 
-            val refOptionalKeys = refObject.fields
-                    .filter { it is OptionalGene }
-                    .map { it.name }
-                    .toMutableSet()
-
-            val actualOptionalKeys = obj.fields
-                    .filter { it is OptionalGene }
-                    .map { it.name }
-                    .toMutableSet()
-
-            val optionalMatch = refOptionalKeys.containsAll(actualOptionalKeys)
-
-            return compulsoryMatch && optionalMatch
-        }
+        return supportStructure(actualKeys, actualOptionalKeys, call)
     }
 
     /**
@@ -196,42 +181,53 @@ class SchemaOracle : ImplementedOracle() {
      */
 
     fun supportedObject(obj: Map<*,*>, call: RestCallAction): Boolean{
-
-        // The obj is (presumably) obtained from the result. So little to no information is available
-        // about
-        val supportedObjects = getSupportedResponse(call)
-        return supportedObjects.any { o ->
-            val refObject = when {
-                objectGenerator.containsKey(o.value) -> {
-                    objectGenerator.getNamedReference(o.value)
-                }
-                // One might find objects that are not supported.
-                // an example: EscapeRest method trickyJson returns a HashMap that is neither explicitly nor implicitly supported.
-                else -> ObjectGene("default", listOf())
-            }
-            val refKeys = refObject.fields
-                .map { it.name }
+        val actualKeys = obj.keys
+                .filterNot { it is OptionalGene }
+                .map { it.toString() }
                 .toMutableSet()
+
+        val actualOptionalKeys = obj.keys
+                .filter { it is OptionalGene }
+                .map { it.toString() }
+                .toMutableSet()
+
+        return supportStructure(actualKeys, actualOptionalKeys, call)
+    }
+
+    private fun getReferenceObject(expectedKey: String?): ObjectGene{
+
+        val refObject =  when {
+            expectedKey == null -> ObjectGene("default", listOf())
+            objectGenerator.containsKey(expectedKey) -> {
+                objectGenerator.getNamedReference(expectedKey)
+            }
+            // One might find objects that are not supported.
+            // an example: EscapeRest method trickyJson returns a HashMap that is neither explicitly nor implicitly supported.
+            else -> ObjectGene("default", listOf())
+        }
+        return refObject
+    }
+
+    fun supportStructure(actualKeys: MutableSet<String>, actualOptionalKeys: MutableSet<String>, call: RestCallAction): Boolean {
+
+        val supportedObjects = getSupportedResponse(call)
+
+        return supportedObjects.any { o ->
+            val refObject = getReferenceObject(o.value)
+            val refKeys = refObject.fields
+                    .map { it.name }
+                    .toMutableSet()
             val refCompulsoryKeys = refObject.fields
                     .filterNot { it is OptionalGene }
                     .map { it.name }
                     .toMutableSet()
-            val actualKeys = obj.keys
-                .filterNot { it is OptionalGene }
-                .map { it }
-                .toMutableSet()
 
             val compulsoryMatch = refKeys.containsAll(actualKeys) && actualKeys.containsAll(refCompulsoryKeys)
 
             val refOptionalKeys = refObject.fields
-                .filter { it is OptionalGene }
-                .map { it.name }
-                .toMutableSet()
-
-            val actualOptionalKeys = obj.keys
-                .filter { it is OptionalGene }
-                .map { it }
-                .toMutableSet()
+                    .filter { it is OptionalGene }
+                    .map { it.name }
+                    .toMutableSet()
 
             val optionalMatch = refOptionalKeys.containsAll(actualOptionalKeys)
 
@@ -316,7 +312,6 @@ class SchemaOracle : ImplementedOracle() {
         if(!::objectGenerator.isInitialized) return false
         val supportedObjs = getSupportedResponse(call)
         val expectedObject = supportedObjs.get("${res.getStatusCode()}") ?: return false
-        val basicTypes = arrayOf("string", "number", "integer", "boolean", "array", "object")
 
         // Assess if the expected object is defined by the OpenAPI or if it's a basic type
         if(!objectGenerator.containsKey(expectedObject)
@@ -324,6 +319,8 @@ class SchemaOracle : ImplementedOracle() {
                 !basicTypes.contains(expectedObject)) {
             return true
         }
+        // If the expected object is of a basic type, no additional expectations are made on its structure.
+        if(basicTypes.contains(expectedObject)) return false
         var supported = true
 
         if (res.getBodyType()?.isCompatible(MediaType.APPLICATION_JSON_TYPE) == true){
@@ -347,16 +344,18 @@ class SchemaOracle : ImplementedOracle() {
         // A check should be made if this should be the case (i.e. if (any of) the object(s) contained break the schema.
         //return !(res.failedCall() || res.getStatusCode() == 500)
         if(individual.individual !is RestIndividual) return false
+
         if(!::objectGenerator.isInitialized) return false
 
         return individual.evaluatedActions().any {
             val call = it.action as RestCallAction
             val res = it.result as HttpWsCallResult
-            val supportedObjs = getSupportedResponse(call)
+            generatesExpectation(call, res)
+            /*val supportedObjs = getSupportedResponse(call)
             val expectedObject = supportedObjs.get("${res.getStatusCode()}") ?: return false
             if(!objectGenerator.containsKey(expectedObject)) return false
             val referenceObject = objectGenerator.getNamedReference(expectedObject)
-            !supportedObject(referenceObject, call)
+            !supportedObject(referenceObject, call)*/
         }
     }
 

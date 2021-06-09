@@ -523,8 +523,8 @@ class Archive<T> where T : Individual {
     fun findImpactInfo(other: Individual) : ImpactsOfIndividual?{
         return populations.values.find {
             it.any { i-> i.individual.sameActions(other) }
-        }.run {
-            if (this == null || this.isEmpty())
+        }?.run {
+            if (this.isEmpty())
                 null
             else
                 find{i -> i.individual.sameActions(other)}!!.impactInfo?.clone()

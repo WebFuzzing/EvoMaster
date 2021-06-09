@@ -45,20 +45,15 @@ class PartialOracles {
     private val oracles = mutableListOf<ImplementedOracle>()
     private val expectationsMasterSwitch = "ems"
 
-    @PostConstruct
-    private fun initialize(){
+    fun setupForRest(schema: OpenAPI){
 
-        if(config.problemType == EMConfig.ProblemType.REST) {
-            oracles.add(SupportedCodeOracle())
-            oracles.add(SchemaOracle())
-        }
+        oracles.add(SupportedCodeOracle())
+        oracles.add(SchemaOracle())
 
         oracles.forEach {
             it.setObjectGenerator(objectGenerator)
         }
-    }
 
-    fun setOpenApi(schema: OpenAPI){
         objectGenerator.setSwagger(schema)
     }
 
@@ -164,7 +159,7 @@ class PartialOracles {
         oracles.forEach { oracle ->
             active.put(oracle.getName(), individuals.any { individual ->
                 individual.evaluatedActions().any {
-                    oracle.generatesExpectation(
+                    it.action is RestCallAction && oracle.generatesExpectation(
                             (it.action as RestCallAction),
                             (it.result as HttpWsCallResult)
                     )

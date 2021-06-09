@@ -86,6 +86,14 @@ class DbAction(
         return genes
     }
 
+    fun seeGenesForInsertion(excludeColumn: List<String>) : List<out Gene>{
+        if (representExistingData) throw IllegalStateException("This action is representExistingData, and seeGenesForInsertion is not applicable")
+        return selectedColumns.mapIndexed { index, column ->
+            if (excludeColumn.any { c-> c.equals(column.name, ignoreCase = true) }) -1
+            else index
+        }.filterNot { it == -1 }.map { genes[it] }
+    }
+
     override fun copy(): Action {
         return DbAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
     }
