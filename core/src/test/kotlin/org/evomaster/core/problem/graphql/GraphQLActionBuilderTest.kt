@@ -514,7 +514,55 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Test
+    fun interfaceInternalEgTest() {
 
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/interfaceInternalEg.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(1, actionCluster.size)
+
+
+        val stores = actionCluster.get("stores") as GraphQLAction
+        assertEquals(1, stores.parameters.size)
+        assertTrue(stores.parameters[0] is GQReturnParam)
+
+        assertTrue(stores.parameters[0].gene is ObjectGene)
+        val objectStore1 = stores.parameters[0].gene as ObjectGene
+        assertEquals(1,objectStore1.fields.size)
+
+
+        assertTrue(objectStore1.fields[0] is OptionalGene)
+        assertTrue((objectStore1.fields[0] as OptionalGene).gene is ObjectGene)
+        val interfaceObjectStore = (objectStore1.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(3, interfaceObjectStore.fields.size)
+
+
+        assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
+        assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
+        val objFlowerStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objFlowerStore.fields.size)
+        assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "name" })
+
+
+        assertTrue(interfaceObjectStore.fields[1] is OptionalGene)
+        assertTrue((interfaceObjectStore.fields[1] as OptionalGene).gene is ObjectGene)
+        val objPotStore = (interfaceObjectStore.fields[1] as OptionalGene).gene as ObjectGene
+        assertEquals(3, objPotStore.fields.size)
+        assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "name" })
+        assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "address" })
+
+        assertTrue(interfaceObjectStore.fields[2] is OptionalGene)
+        assertTrue((interfaceObjectStore.fields[2] as OptionalGene).gene is ObjectGene)
+        val objStore = (interfaceObjectStore.fields[2] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objStore.fields.size)
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "name" })
+
+    }
 
     @Test
     fun unionInternalEgTest() {
