@@ -185,7 +185,9 @@ object GraphQLActionBuilder {
                     "table field Type: ${element?.tableFieldType}, " +
                     "KindOfTable field type : ${element?.kindOfTableFieldType} " +
                     "IsKindOfKindOfTableTypeOptional?: ${element?.isKindOfTableFieldTypeOptional} " +
-                    "UnionTypes: ${element?.unionTypes} ")
+                    "Enum?: ${element?.enumValues} " +
+                    "UnionTypes: ${element?.unionTypes} " +
+                    "InterfaceTypes: ${element?.interfaceTypes} ")
         }
         println(state.tables.size)
 
@@ -1147,10 +1149,7 @@ object GraphQLActionBuilder {
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes, interfaceTypes)
             "id" ->
                 return OptionalGene(tableType, StringGene(tableType))
-            "interface" -> {
-                LoggingUtil.uniqueWarn(log, "Kind Of Table Field not supported yet: $kindOfTableField")
-                return OptionalGene("TODO", StringGene("TODO"))
-            }
+
             else ->
                 return OptionalGene(tableType, StringGene(tableType))
         }
@@ -1177,7 +1176,7 @@ object GraphQLActionBuilder {
                         val field = element.tableField
                         val template = field?.let {
                             getReturnGene(state, tableType, element.tableFieldType, kindOfTableFieldType, it, history,
-                                    element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, interfaceTypes)
+                                    element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, element.interfaceTypes)
                         }
                         if (template != null)
                             fields.add(template)
@@ -1187,9 +1186,8 @@ object GraphQLActionBuilder {
                             val template =
                                     element.tableField?.let {
                                         getReturnGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(),
-                                                element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, element.unionTypes, interfaceTypes,unionHistory)
+                                                element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, element.unionTypes, element.interfaceTypes,unionHistory)
                                     }
-
 
                             if (template != null)
                                 fields.add(template)
@@ -1201,7 +1199,7 @@ object GraphQLActionBuilder {
                                     val template =
                                             element.tableField?.let {
                                                 getReturnGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
-                                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, element.unionTypes, interfaceTypes)
+                                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, element.unionTypes, element.interfaceTypes)
                                             }
 
                                     history.removeLast()
@@ -1218,7 +1216,7 @@ object GraphQLActionBuilder {
                                 val field = element.tableField
                                 val template = field?.let {
                                     getReturnGene(state, tableType, element.kindOfTableFieldType.toString(), kindOfTableFieldType, it, history,
-                                            element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, interfaceTypes)
+                                            element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, element.interfaceTypes)
                                 }
                                 if (template != null)
                                     fields.add(template)
@@ -1230,7 +1228,27 @@ object GraphQLActionBuilder {
                                     val template =
                                             element.tableField?.let {
                                                 getReturnGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
-                                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, element.unionTypes, interfaceTypes,unionHistory)
+                                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, element.unionTypes, element.interfaceTypes,unionHistory)
+                                            }
+
+                                    history.removeLast()
+                                    history.removeLast()
+                                    if (template != null) {
+                                        fields.add(template)
+                                    }
+                                } else {
+                                    fields.add(OptionalGene(element.tableField, CycleObjectGene(element.tableField)))
+                                    history.removeLast()
+
+                                }
+                            }else if (element.kindOfTableFieldType.toString().equals("INTERFACE", ignoreCase = true)) {
+                                history.addLast(element.tableType)
+                                history.addLast(element.tableFieldType)
+                                if (history.count { it == element.tableFieldType } == 1) {
+                                    val template =
+                                            element.tableField?.let {
+                                                getReturnGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
+                                                        element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, it, element.unionTypes, element.interfaceTypes,unionHistory)
                                             }
 
                                     history.removeLast()
