@@ -157,17 +157,4 @@ abstract class TestCaseWriter {
         }
     }
 
-    /**
-     * Some content may be lead to problems in the resultant test case.
-     * Null values, or content that is not yet handled are can lead to un-compilable generated tests.
-     * Removing strings that contain "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
-     * Such information can cause failures upon re-run, as object references and timestamps will differ.
-     */
-    protected fun printSuitable(printableContent: String): Boolean {
-        return (printableContent != "null"
-                && printableContent != NOT_COVERED_YET
-                && !printableContent.contains("logged")
-                // is this for IP host:port addresses?
-                && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
-    }
 }

@@ -1,5 +1,7 @@
 package org.evomaster.core.output.service
 
+import com.google.gson.Gson
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
@@ -11,13 +13,19 @@ import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.gene.GeneUtils
+import org.slf4j.LoggerFactory
+import javax.ws.rs.core.MediaType
 
-abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
+abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
+
+    companion object {
+        private val log = LoggerFactory.getLogger(HttpWsTestCaseWriter::class.java)
+    }
 
     abstract fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String
 
 
-    override fun shouldFailIfException(result: ActionResult) : Boolean{
+    override fun shouldFailIfException(result: ActionResult): Boolean {
         /*
             Fail test if exception is not thrown, but not if it was a timeout,
             otherwise the test would become flaky
@@ -33,14 +41,34 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
 
     /**
      * Some fields might lead to flackiness, eg assertions on timestamps.
-     *
-     * TODO: could be set in EMConfig
      */
     protected fun isFieldToSkip(fieldName: String) =
+            //TODO this should be from EMConfig
+            /*
+                There are some fields like "id" which are often non-deterministic,
+                which unfortunately would lead to flaky tests
+            */
             listOf(
+                    "id",
                     "timestamp", //needed since timestamps will change between runs
                     "self" //TODO: temporary hack. Needed since ports might change between runs.
             ).contains(fieldName.toLowerCase())
+
+    /**
+     * Some content may be lead to problems in the resultant test case.
+     * Null values, or content that is not yet handled are can lead to un-compilable generated tests.
+     * Removing strings that contain "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
+     * Such information can cause failures upon re-run, as object references and timestamps will differ.
+     */
+    protected fun isSuitableToPrint(printableContent: String): Boolean {
+        return (
+                printableContent != "null" //TODO not so sure about this one...
+                && printableContent != NOT_COVERED_YET
+                && !printableContent.contains("logged")
+                // is this for IP host:port addresses?
+                && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
+    }
+
 
     protected fun hasFieldToSkip(fieldNames: Collection<*>) = fieldNames.any { it is String && isFieldToSkip(it) }
 
@@ -53,7 +81,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
         return false;
     }
 
-    protected fun openAcceptHeader() : String{
+    protected fun openAcceptHeader(): String {
         return when {
             format.isJavaOrKotlin() -> ".accept("
             format.isJavaScript() -> ".set('Accept', "
@@ -92,7 +120,6 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
             lines.append(getAcceptHeader(call, res))
         }
     }
-
 
 
     open fun needsResponseVariable(call: HttpWsAction, res: HttpWsCallResult): Boolean {
@@ -144,45 +171,36 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
 
 
     protected fun handleFieldValues(resContentsItem: Any?): String {
+        /* BMR: the code above is due to a somewhat unfortunate problem:
+        - Gson parses all numbers as Double (NOTE: this is expected, as JSON/JS has only Double for numbers)
+        - Hamcrest has a hard time comparing double to int
+        The solution (for JVM) is to use an additional content matcher that can be found in NumberMatcher.
+        This can also be used as a template for adding more matchers, should such a step be needed.
+        * */
         if (resContentsItem == null) {
             return "nullValue()"
         } else {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${
-                    GeneUtils.applyEscapes(
-                            resContentsItem as String,
-                            mode = GeneUtils.EscapeMode.ASSERTION,
-                            format = format
-                    )
-                }\")"
+                String::class -> return "containsString(" +
+                        "\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}" +
+                        "\")"
                 Map::class -> return NOT_COVERED_YET
-                ArrayList::class -> if ((resContentsItem as ArrayList<*>).all { it is String } && resContentsItem.isNotEmpty()) {
-                    return "hasItems(${
-                        (resContentsItem as ArrayList<String>).joinToString {
-                            "\"${
-                                GeneUtils.applyEscapes(
-                                        it,
-                                        mode = GeneUtils.EscapeMode.ASSERTION,
-                                        format = format
-                                )
-                            }\""
-                        }
-                    })"
-                } else {
-                    return NOT_COVERED_YET
+                ArrayList::class -> {
+                    if ((resContentsItem as ArrayList<*>).all { it is String } && resContentsItem.isNotEmpty()) {
+                        return "hasItems(${
+                            (resContentsItem as ArrayList<String>).joinToString {
+                                "\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""
+                            }
+                        })"
+                    } else {
+                        return NOT_COVERED_YET
+                    }
                 }
                 else -> return NOT_COVERED_YET
             }
         }
-        /* BMR: the code above is due to a somewhat unfortunate problem:
-        - Gson parses all numbers as Double
-        - Hamcrest has a hard time comparing double to int
-        The solution is to use an additional content matcher that can be found in NumberMatcher. This can also
-        be used as a template for adding more matchers, should such a step be needed.
-        * */
     }
-
 
 
     protected fun handleMapLines(index: Int, map: Map<*, *>, lines: Lines) {
@@ -197,30 +215,38 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
         }
     }
 
-    protected fun addObjectAssertions(resContents: Map<*, *>, lines: Lines) {
+    protected fun addObjectAssertions(resContents: Map<*, *>, lines: Lines, responseVariableName: String?) {
         if (resContents.isEmpty()) {
-            if (format.isKotlin()) lines.add(".body(\"isEmpty()\", `is`(true))")
-            else lines.add(".body(\"isEmpty()\", is(true))")
+            val instruction = when {
+                //TODO would not this fail on recursive/nested calls???
+                format.isJava() -> ".body(\"isEmpty()\", is(true))"
+                format.isKotlin() -> ".body(\"isEmpty()\", `is`(true))" //'is' is a keyword in Kotlin
+                format.isJavaScript() -> "expect(Object.keys($responseVariableName.body).length).toBe(0);"
+                //TODO C#
+                else -> throw IllegalStateException("Format not supported yet: $format")
+            }
+
+            lines.add(instruction)
         }
 
         val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
+
         // Removed size checks for objects.
         flatContent.keys
-                .filter { !hasFieldToSkip(it)  }
+                .filter { !hasFieldToSkip(it) }
                 .forEach {
                     val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
+
                     val actualValue = flatContent[it]
                     val printableFieldValue = handleFieldValues(actualValue)
-                    if (printSuitable(printableFieldValue)) {
-                        /*
-                            There are some fields like "id" which are often non-deterministic,
-                            which unfortunately would lead to flaky tests
-                         */
-                        if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableFieldValue})")
+
+                    if (isSuitableToPrint(printableFieldValue)) {
+                        lines.add(".body(\"${stringKey}\", ${printableFieldValue})")
                     }
+
                     //handle additional properties for array
                     handleAdditionalFieldValues(stringKey, actualValue)?.forEach {
-                        if (printSuitable(it.second) && it.first != "\'id\'")
+                        if (isSuitableToPrint(it.second) && it.first != "\'id\'")
                             lines.add(".body(\"${it.first}\", ${it.second})")
                     }
                 }
@@ -245,6 +271,11 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
      * and assert that the value there is 20.
      */
     protected fun flattenForAssert(k: MutableList<*>, v: Any): Map<MutableList<*>, Any?> {
+
+        /*
+            TODO this does not seem to handle arrays
+         */
+
         val returnMap = mutableMapOf<MutableList<*>, Any?>()
         if (v is Map<*, *>) {
             v.forEach { key, value ->
@@ -253,8 +284,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
                     returnMap.putIfAbsent(k.plus(key) as MutableList<*>, null)
                     return@forEach
                 } else {
-                    val innerkey = k.plus(key) as MutableList
-                    val innerMap = flattenForAssert(innerkey, value)
+                    val innerKey = k.plus(key) as MutableList
+                    val innerMap = flattenForAssert(innerKey, value)
                     returnMap.putAll(innerMap)
                 }
             }
@@ -265,23 +296,22 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
     }
 
 
-
     /**
      * handle field which is array<Map> with additional assertions, e.g., size
      * @return a list of key of the field and value of the field to be asserted
      */
-    protected fun handleAdditionalFieldValues(stringKey: String, resContentsItem: Any?): List<Pair<String, String>>?{
-        resContentsItem?: return null
+    protected fun handleAdditionalFieldValues(stringKey: String, resContentsItem: Any?): List<Pair<String, String>>? {
+        resContentsItem ?: return null
         val list = mutableListOf<Pair<String, String>>()
         when (resContentsItem::class) {
             ArrayList::class -> {
                 list.add("$stringKey.size()" to "equalTo(${(resContentsItem as ArrayList<*>).size})")
                 resContentsItem.forEachIndexed { index, v ->
-                    if (v is Map<*, *>){
+                    if (v is Map<*, *>) {
                         val flatContent = flattenForAssert(mutableListOf<String>(), v)
                         flatContent.keys
-                                .filter { ! hasFieldToSkip(it)}
-                                .forEach {key->
+                                .filter { !hasFieldToSkip(it) }
+                                .forEach { key ->
                                     val fstringKey = key.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
                                     val factualValue = flatContent[key]
 
@@ -295,5 +325,250 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter(){
         }
 
         return list
+    }
+
+
+    /**
+     * This is done mainly for RestAssured
+     */
+    protected fun handleResponseDirectlyInTheCall(call: HttpWsAction, res: RestCallResult, lines: Lines) {
+        if (!res.failedCall()) {
+
+            val code = res.getStatusCode()
+
+            when {
+                format.isJavaOrKotlin() -> {
+                    lines.add(".then()")
+                    lines.add(".statusCode($code)")
+                }
+                else -> throw IllegalStateException("No assertion in calls for format: $format")
+                //format.isCsharp() -> lines.add("Assert.Equal($code, (int) response.StatusCode);")
+            }
+
+            if (code == 500) {
+                lines.append(" // " + res.getLastStatementWhen500())
+            }
+
+            if (config.enableBasicAssertions) {
+                handleResponseAssertions(lines, res, null)
+            }
+
+        }
+
+//        else if (partialOracles.generatesExpectation(call, res)
+//                && format.isJavaOrKotlin()){
+//            //FIXME what is this for???
+//            lines.add(".then()")
+//        }
+    }
+
+    protected fun handleResponseAfterTheCall(call: RestCallAction, res: RestCallResult, responseVariableName: String, lines: Lines) {
+
+        if (format.isJavaOrKotlin() //assertions handled in the call
+                || !needsResponseVariable(call, res)
+                || res.failedCall()
+        ) {
+            return
+        }
+
+        lines.addEmpty()
+
+        val code = res.getStatusCode()
+
+        when {
+            format.isJavaScript() -> {
+                lines.add("expect($responseVariableName.status).toBe($code);")
+            }
+            //TODO C#
+            else -> {
+                LoggingUtil.uniqueWarn(log, "No status assertion supported for format $format")
+            }
+        }
+
+        if (code == 500) {
+            lines.append(" // " + res.getLastStatementWhen500())
+        }
+
+        if (config.enableBasicAssertions) {
+            handleResponseAssertions(lines, res, responseVariableName)
+        }
+    }
+
+
+    protected fun emptyBodyCheck(responseVariableName: String?): String {
+        if (format.isJavaOrKotlin()) {
+            return ".body(isEmptyOrNullString())"
+        }
+
+        if (format.isJavaScript()) {
+            /*
+                This is super ugly... but there is no clean solution for this
+                in Jest nor SuperAgent... :(
+                TODO might want to put it in supplementary function
+             */
+            return "expect(" +
+                    "$responseVariableName.body===null " +
+                    "|| $responseVariableName.body===undefined " +
+                    "|| $responseVariableName.body===\"\" " +
+                    "|| Object.keys($responseVariableName.body).length === 0" +
+                    ").toBe(true);"
+        }
+
+        //TODO C#
+        return "TODO"
+    }
+
+    protected fun collectionSizeCheck(responseVariableName: String?, fieldPath: String, expectedSize: Int): String {
+
+        /*
+            TODO if size==0, maybe use something like isEmpty?
+         */
+
+        val instruction = when {
+            format.isJavaOrKotlin() -> ".body($fieldPath\"size()\", equalTo($expectedSize))"
+            format.isJavaScript() ->
+                "expect($responseVariableName.body$fieldPath.length).toBe($expectedSize);"
+            //TODO C#
+            else -> throw IllegalStateException("Not supported format $format")
+        }
+
+        return instruction
+    }
+
+    protected fun bodyIsString(bodyString: String, mode: GeneUtils.EscapeMode, responseVariableName: String?): String {
+
+        val content = GeneUtils.applyEscapes(bodyString, mode, format = format)
+
+        if (format.isJavaOrKotlin()) {
+            return ".body(containsString(\"$content\"))"
+        }
+
+        if (format.isJavaScript()) {
+            return "expect($responseVariableName.text).toBe(\"$content\");"
+        }
+
+        //TODO C#
+
+        LoggingUtil.uniqueWarn(log, "Not supported format $format")
+        return "TODO"
+    }
+
+    protected fun handleAssertionsOnList(list: List<*>, lines: Lines, fieldPath: String, responseVariableName: String?) {
+
+        lines.add(collectionSizeCheck(responseVariableName, fieldPath, list.size))
+
+        //assertions on contents
+        if (list.isEmpty()) {
+            return
+        }
+        var longArray = false
+        list.forEachIndexed { test_index, value ->
+            when {
+                /*
+                    TODO what was the reason behind this behavior?
+                 */
+                (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
+                (value is String) -> longArray = true
+                else -> {
+                    val printableFieldValue = handleFieldValues(value)
+                    if (isSuitableToPrint(printableFieldValue)) {
+                        //TODO JS/C#
+                        lines.add(".body(\"$fieldPath\", $printableFieldValue)")
+                    }
+                }
+            }
+        }
+
+        if (longArray) {
+            val printableContent = handleFieldValues(list)
+            if (isSuitableToPrint(printableContent)) {
+                //TODO JS/C#
+                lines.add(".body(\"\", $printableContent)")
+            }
+        }
+    }
+
+    protected fun handleResponseAssertions(lines: Lines, res: HttpWsCallResult, responseVariableName: String?) {
+
+        assert(responseVariableName != null || format.isJavaOrKotlin())
+
+        /*
+            there are 2 cases:
+            a) assertions directly as part of the HTTP call, eg, as done in RestAssured
+            b) assertions on response object, stored in a variable after the HTTP call
+
+            based on this, the code to add is quite different.
+            Note, in case of (b), we must have the name of the variable
+         */
+        val isInCall = responseVariableName == null
+
+        if (isInCall) {
+            lines.add(".assertThat()")
+        }
+
+        if (res.getBodyType() == null) {
+            lines.add(emptyBodyCheck(responseVariableName))
+        } else {
+
+            //TODO is there a better solution? where was this a problem?
+            val bodyTypeSimplified = res.getBodyType()
+                    .toString()
+                    .split(";") // remove all associated variables
+                    .first()
+
+            val instruction = when {
+                format.isJavaOrKotlin() -> ".contentType(\"$bodyTypeSimplified\")"
+                format.isJavaScript() ->
+                    "expect($responseVariableName.header[\"content-type\"].startsWith(\"$bodyTypeSimplified\")).toBe(true);"
+                else -> throw IllegalStateException("Unsupported format $format")
+            }
+            lines.add(instruction)
+        }
+
+        val bodyString = res.getBody()
+
+        if (res.getBodyType() != null) {
+            val type = res.getBodyType()!!
+            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
+                when (bodyString?.trim()?.first()) {
+                    //TODO this should be handled recursively, and not ad-hoc here...
+                    '[' -> {
+                        // This would be run if the JSON contains an array of objects.
+                        val list = Gson().fromJson(res.getBody(), ArrayList::class.java)
+                        handleAssertionsOnList(list, lines, "", responseVariableName)
+                    }
+                    '{' -> {
+                        // JSON contains an object
+                        val resContents = Gson().fromJson(res.getBody(), Map::class.java)
+                        addObjectAssertions(resContents, lines, responseVariableName)
+                    }
+                    else -> {
+                        /*
+                            This branch will be called if the JSON is null (or has a basic type)
+                            Currently, it converts the contents to String.
+
+                            TODO do we have tests for it? and if it is true for RestAssured, anyway
+                            it does not the seem the case for Jest/SuperAgent
+                         */
+                        when {
+                            res.getTooLargeBody() -> lines.add("/* very large body, which was not handled during the search */")
+
+                            bodyString.isNullOrBlank() -> lines.add(emptyBodyCheck(responseVariableName))
+
+                            else -> lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, responseVariableName))
+                        }
+                    }
+                }
+            } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
+                if (bodyString.isNullOrBlank()) {
+                    lines.add(emptyBodyCheck(responseVariableName))
+                } else {
+                    //TODO in the call above BODY was used... what's difference from TEXT?
+                    lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.TEXT, responseVariableName))
+                }
+            } else {
+                LoggingUtil.uniqueWarn(log, "Currently no assertions are generated for response type: $type")
+            }
+        }
     }
 }

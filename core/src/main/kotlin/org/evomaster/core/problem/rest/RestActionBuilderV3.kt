@@ -701,7 +701,7 @@ object RestActionBuilderV3 {
         refCache.clear()
         dtoCache.clear()
 
-        if (swagger.components.schemas != null) {
+        if (swagger.components?.schemas != null) {
             swagger.components.schemas
                     .forEach {
                         val model = createObjectFromReference(it.key,

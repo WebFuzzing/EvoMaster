@@ -1,6 +1,5 @@
 package org.evomaster.core.output.service
 
-import com.google.gson.Gson
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
@@ -16,7 +15,6 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
-import javax.ws.rs.core.MediaType
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
 
@@ -180,48 +178,19 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
         }
 
-        handleResponseDirectlyInTheCall(call, res, lines)
+        if(format.isJavaOrKotlin()) {
+            handleResponseDirectlyInTheCall(call, res, lines)
+        }
         handleLastLine(call, res, lines, responseVariableName)
 
         handleLocationHeader(call, res, responseVariableName, lines)
         handleResponseAfterTheCall(call, res, responseVariableName, lines)
 
-        //BMR should expectations be here?
-        // Having them at the end of a test makes some sense...
         if (shouldCheckExpectations()) {
             handleExpectationSpecificLines(call, lines, res, responseVariableName)
         }
     }
 
-    private fun handleResponseAfterTheCall(call: RestCallAction, res: RestCallResult, responseVariableName: String, lines: Lines) {
-
-        if(format.isJavaOrKotlin() //assertions handled in the call
-                || ! needsResponseVariable(call,res)
-                || res.failedCall()
-                ){
-            return
-        }
-
-        val code = res.getStatusCode()
-
-        when{
-            format.isJavaScript() ->{
-                lines.add("expect($responseVariableName.status).toBe($code);")
-            }
-            else ->{
-                LoggingUtil.uniqueWarn(log, "No status assertion supported for format $format")
-            }
-        }
-
-        if (code == 500) {
-            lines.append(" // " + res.getLastStatementWhen500())
-        }
-
-        if(config.enableBasicAssertions){
-            //TODO
-        }
-
-    }
 
     private fun shouldCheckExpectations() =
             //for now Expectations are only supported on the JVM
@@ -229,140 +198,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             config.expectationsActive && config.outputFormat.isJavaOrKotlin()
 
 
-    /**
-     * This is done mainly for RestAssured
-     */
-    private fun handleResponseDirectlyInTheCall(call: RestCallAction, res: RestCallResult, lines: Lines) {
-        if (!res.failedCall()) {
-
-            val code = res.getStatusCode()
-
-            when {
-                format.isJavaOrKotlin() -> {
-                    lines.add(".then()")
-                    lines.add(".statusCode($code)")
-                }
-                else -> throw IllegalStateException("No assertion in calls for format: $format")
-                //format.isCsharp() -> lines.add("Assert.Equal($code, (int) response.StatusCode);")
-                // This does not work in Superagent. TODO will need after the HTTP call
-                //format.isJavaScript() -> lines.add(".expect($code)")
-            }
-
-            if (code == 500) {
-                lines.append(" // " + res.getLastStatementWhen500())
-            }
-
-            if (config.enableBasicAssertions) {
-                handleResponseDirectlyInTheCallContents(lines, res)
-            }
-
-        } else if (partialOracles.generatesExpectation(call, res)
-                && format.isJavaOrKotlin()){
-                    //FIXME what is this for???
-                    lines.add(".then()")
-        }
-    }
-
-
-
-    private fun handleResponseDirectlyInTheCallContents(lines: Lines, res: RestCallResult) {
-
-        if (format.isJavaScript() || format.isCsharp()) {
-            /*
-                This is done only for RestAssured... for others, we extract the response object,
-                and do assertions on it after the call
-             */
-            return
-        }
-
-        lines.add(".assertThat()")
-
-        if (res.getBodyType() == null) {
-            lines.add(".body(isEmptyOrNullString())")
-        } else lines.add(
-                ".contentType(\"${
-                    res.getBodyType()
-                            .toString()
-                            .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
-                }\")"
-        )
-
-        val bodyString = res.getBody()
-
-        if (res.getBodyType() != null) {
-            val type = res.getBodyType()!!
-            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
-                when (bodyString?.trim()?.first()) {
-                    '[' -> {
-                        // This would be run if the JSON contains an array of objects.
-                        val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
-                        lines.add(".body(\"size()\", equalTo(${resContents.size}))")
-                        //assertions on contents
-                        if (resContents.size > 0) {
-                            var longArray = false
-                            resContents.forEachIndexed { test_index, value ->
-                                when {
-                                    (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
-                                    (value is String) -> longArray = true
-                                    else -> {
-                                        val printableFieldValue = handleFieldValues(value)
-                                        if (printSuitable(printableFieldValue)) {
-                                            lines.add(".body(\"\", $printableFieldValue)")
-                                        }
-                                    }
-                                }
-                            }
-                            if (longArray) {
-                                val printableContent = handleFieldValues(resContents)
-                                if (printSuitable(printableContent)) {
-                                    lines.add(".body(\"\", $printableContent)")
-                                }
-                            }
-                        } else {
-                            // the object is empty
-                            if (format.isKotlin()) lines.add(".body(\"isEmpty()\", `is`(true))")
-                            else lines.add(".body(\"isEmpty()\", is(true))")
-                        }
-                    }
-                    '{' -> {
-                        // JSON contains an object
-                        val resContents = Gson().fromJson(res.getBody(), Map::class.java)
-                        addObjectAssertions(resContents, lines)
-
-                    }
-                    else -> {
-                        // This branch will be called if the JSON is null (or has a basic type)
-                        // Currently, it converts the contents to String.
-                        when {
-                            res.getTooLargeBody() -> lines.add("/* very large body, which was not handled during the search */")
-
-                            bodyString.isNullOrBlank() -> lines.add(".body(isEmptyOrNullString())")
-
-                            else -> lines.add(
-                                    ".body(containsString(\"${
-                                        GeneUtils.applyEscapes(
-                                                bodyString,
-                                                mode = GeneUtils.EscapeMode.BODY,
-                                                format = format
-                                        )
-                                    }\"))"
-                            )
-                        }
-                    }
-                }
-            } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
-                if (bodyString.isNullOrBlank()) {
-                    lines.add(".body(isEmptyOrNullString())")
-                } else {
-                    lines.add(
-                            ".body(containsString(\"${
-                                GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
-                            }\"))"
-                    )
-                }
-            }
-        }
-    }
 
     //TODO: check again for C#, especially when not json
     private fun handleBody(call: RestCallAction, lines: Lines): Boolean {

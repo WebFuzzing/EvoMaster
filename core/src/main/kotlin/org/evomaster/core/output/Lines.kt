@@ -55,6 +55,9 @@ class Lines {
         buffer.add(padding(spaces * indentation) + line)
     }
 
+    /**
+     * Add n=[times] lines that are empty
+     */
     fun addEmpty(times: Int = 1) {
         if (times <= 0) {
             throw IllegalArgumentException("Invalid 'times' value: $times")
