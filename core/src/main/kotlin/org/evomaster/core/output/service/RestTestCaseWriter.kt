@@ -200,6 +200,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 //format.isJavaScript() -> lines.add(".expect($code)")
             }
 
+            if (!config.enableBasicAssertions) {
+                lines.appendSemicolon(format)
+            }
+
             if (code == 500) {
                 lines.append(" // " + res.getLastStatementWhen500())
             }
