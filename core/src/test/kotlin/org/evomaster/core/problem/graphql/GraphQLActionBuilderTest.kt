@@ -651,4 +651,15 @@ class GraphQLActionBuilderTest {
 
 
     }
+
+
+    @Test
+    fun enumInterfaceTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/enumInterface.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(1, actionCluster.size)
+
+    }
 }
