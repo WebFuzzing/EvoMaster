@@ -26,16 +26,18 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 ) : Traceable, StructuralElement(children){
 
     /**
-     * presents the evaluated results of the individual once the individual is tracked
+     * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
      *
-     * Note that if the evalutedIndividual is tracked, we do not recommend to track the individual
+     * Note that if the evalutedIndividual is tracked (i.e., [EMConfig.enableTrackEvaluatedIndividual]),
+     * e do not recommend to track the individual
      */
     override var evaluatedResult: EvaluatedMutation? = null
 
     /**
-     * presents the history of the individual once the individual is tracked.
+     * presents the history of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
      *
-     * Note that if the evalutedIndividual is tracked, we do not recommend to track the individual
+     * Note that if the evalutedIndividual is tracked (i.e., [EMConfig.enableTrackEvaluatedIndividual]),
+     * we do not recommend to track the individual
      */
     override var tracking: TrackingHistory<out Traceable>? = null
 
