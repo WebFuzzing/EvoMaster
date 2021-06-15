@@ -286,7 +286,7 @@ class GraphQLActionBuilderTest {
 
         assertTrue(node.parameters[1].gene is ObjectGene)
         val interfaceObjectNode = node.parameters[1].gene as ObjectGene
-        assertEquals(15, interfaceObjectNode.fields.size)
+        assertEquals(14, interfaceObjectNode.fields.size)
 
         assertTrue(interfaceObjectNode.fields[0] is OptionalGene)
         assertTrue((interfaceObjectNode.fields[0] as OptionalGene).gene is ObjectGene)
@@ -488,7 +488,8 @@ class GraphQLActionBuilderTest {
 
         assertTrue(stores.parameters[0].gene is ObjectGene)
         val interfaceObjectStore = stores.parameters[0].gene as ObjectGene
-        assertEquals(3, interfaceObjectStore.fields.size)
+        //assertEquals(3, interfaceObjectStore.fields.size)// basic interface removed
+        assertEquals(2, interfaceObjectStore.fields.size)
 
         assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
         assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
@@ -505,12 +506,12 @@ class GraphQLActionBuilderTest {
         assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "name" })
         assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "address" })
 
-        assertTrue(interfaceObjectStore.fields[2] is OptionalGene)
-        assertTrue((interfaceObjectStore.fields[2] as OptionalGene).gene is ObjectGene)
-        val objStore = (interfaceObjectStore.fields[2] as OptionalGene).gene as ObjectGene
-        assertEquals(2, objStore.fields.size)
-        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "name" })
+        //assertTrue(interfaceObjectStore.fields[2] is OptionalGene)
+        //assertTrue((interfaceObjectStore.fields[2] as OptionalGene).gene is ObjectGene)
+        //val objStore = (interfaceObjectStore.fields[2] as OptionalGene).gene as ObjectGene
+        //assertEquals(2, objStore.fields.size)
+        //assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
+        //assertTrue(objStore.fields.any { it is BooleanGene && it.name == "name" })
 
     }
 
@@ -530,14 +531,14 @@ class GraphQLActionBuilderTest {
 
         assertTrue(stores.parameters[0].gene is ObjectGene)
         val objectStore1 = stores.parameters[0].gene as ObjectGene
-        assertEquals(1,objectStore1.fields.size)
+        assertEquals(1, objectStore1.fields.size)
 
 
         assertTrue(objectStore1.fields[0] is OptionalGene)
         assertTrue((objectStore1.fields[0] as OptionalGene).gene is ObjectGene)
         val interfaceObjectStore = (objectStore1.fields[0] as OptionalGene).gene as ObjectGene
-        assertEquals(3, interfaceObjectStore.fields.size)
-
+      //  assertEquals(3, interfaceObjectStore.fields.size)
+        assertEquals(2, interfaceObjectStore.fields.size)
 
         assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
         assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
@@ -555,12 +556,12 @@ class GraphQLActionBuilderTest {
         assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "name" })
         assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "address" })
 
-        assertTrue(interfaceObjectStore.fields[2] is OptionalGene)
-        assertTrue((interfaceObjectStore.fields[2] as OptionalGene).gene is ObjectGene)
-        val objStore = (interfaceObjectStore.fields[2] as OptionalGene).gene as ObjectGene
-        assertEquals(2, objStore.fields.size)
-        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "name" })
+        //assertTrue(interfaceObjectStore.fields[2] is OptionalGene)
+        //assertTrue((interfaceObjectStore.fields[2] as OptionalGene).gene is ObjectGene)
+        //val objStore = (interfaceObjectStore.fields[2] as OptionalGene).gene as ObjectGene
+        //assertEquals(2, objStore.fields.size)
+        //assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
+        //assertTrue(objStore.fields.any { it is BooleanGene && it.name == "name" })
 
     }
 
