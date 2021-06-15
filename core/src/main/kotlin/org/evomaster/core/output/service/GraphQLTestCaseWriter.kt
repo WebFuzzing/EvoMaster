@@ -206,7 +206,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                                     (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
                                     (value is String) -> longArray = true
                                     else -> {
-                                        val printableFieldValue = handleFieldValues(value)
+                                        val printableFieldValue = handleFieldValues_getMatcher(value)
                                         if (isSuitableToPrint(printableFieldValue)) {
                                             lines.add(".body(\"\", $printableFieldValue)")
                                         }
@@ -214,7 +214,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                                 }
                             }
                             if (longArray) {
-                                val printableContent = handleFieldValues(resContents)
+                                val printableContent = handleFieldValues_getMatcher(resContents)
                                 if (isSuitableToPrint(printableContent)) {
                                     lines.add(".body(\"\", $printableContent)")
                                 }
@@ -228,7 +228,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                     '{' -> {
                         // JSON contains an object
                         val resContents = Gson().fromJson(bodyString, Map::class.java)
-                        addObjectAssertions(resContents, lines, null)
+                        handleAssertionsOnObject(resContents, lines, null)
 
                     }
                     else -> {
