@@ -1112,15 +1112,15 @@ object GraphQLActionBuilder {
             }
             "interface" -> {
                 //will contain basic interface fields, and had as name the methode name
-                val interfaceBaseOptObjGene = createObjectGene(state, tableType, kindOfTableFieldType, history,
-                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes, interfaceTypes,unionHistory,interfaceHistory)
+              //  val interfaceBaseOptObjGene = createObjectGene(state, tableType, kindOfTableFieldType, history,
+               //         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes, interfaceTypes,unionHistory,interfaceHistory)
 
                 //will contain additional interface fields, and had as name the name of the objects
                 val interfaceAdditionalOptObjGene = createInterfaceObjectGene(state, tableType, kindOfTableFieldType, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes,interfaceTypes,unionHistory,interfaceHistory )
 
                 //merge basic interface fields with additional interface fields
-                interfaceAdditionalOptObjGene.add(OptionalGene(methodName, interfaceBaseOptObjGene))
+               // interfaceAdditionalOptObjGene.add(OptionalGene(methodName, interfaceBaseOptObjGene))
 
                 //will return a single optional object gene with optional basic interface fields and optional additional interface fields
                 return OptionalGene("$methodName#INTERFACE#", ObjectGene("$methodName#INTERFACE#", interfaceAdditionalOptObjGene))
