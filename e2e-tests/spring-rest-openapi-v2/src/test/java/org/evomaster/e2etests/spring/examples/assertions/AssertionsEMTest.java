@@ -12,10 +12,13 @@ import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -65,6 +68,13 @@ public class AssertionsEMTest extends SpringTestBase {
                     }
             );
         });
+
+        try(Stream<String> lines = Files.lines(Paths.get(outputFolderPath(outputFolderName)
+                + "/"
+                + className.getBytecodeName()
+                + ".java"))) {
+            assertTrue( lines.anyMatch(l -> l.contains(".assertThat()")) );
+        }
     }
 
     @Test
@@ -106,5 +116,12 @@ public class AssertionsEMTest extends SpringTestBase {
                     }
             );
         });
+
+        try(Stream<String> lines = Files.lines(Paths.get(outputFolderPath(outputFolderName)
+                + "/"
+                + className.getBytecodeName()
+                + ".java"))) {
+            assertTrue( lines.noneMatch(l -> l.contains(".assertThat()")) );
+        }
     }
 }
