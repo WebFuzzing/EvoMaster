@@ -1,11 +1,9 @@
 package org.evomaster.core.search.tracer
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import kotlin.math.max
 
 /**
- * TraceableElement represents an element whose history can be tracked.
+ * Traceable represents an element whose history can be tracked.
  * @property trackOperator is used to attach additional information regarding how it evolved, e.g., structure mutator or standard mutator. it is only nullable when tracking is disabled.
  * @property index indicates when the element is created. with mio algorithm, it can be assigned as evaluated actions/individuals
  * @property evaluatedResult represents a result of the element evaluated based on eg Archive when it is created. it is nullable if it is not necessary to collect such info, eg, only tracking individual
@@ -13,27 +11,19 @@ import kotlin.math.max
  *
  * Note that [this] element might be not the last one in this history because the evolution is not always towards optimal direction.
  */
+interface Traceable {
 
-abstract class TraceableElement {
-    var trackOperator: TrackOperator? = null
-        private set(value) { field = value }
+    var trackOperator: TrackOperator?
 
-    var index : Int = DEFAULT_INDEX
-        private set(value) {field = value}
+    var index : Int
+
+    var evaluatedResult: EvaluatedMutation?
+
+    var tracking: TrackingHistory<out Traceable>?
 
     fun tagOperator(operator: TrackOperator?, index: Int){
         trackOperator = operator
         this.index = index
-    }
-
-    var evaluatedResult: EvaluatedMutation? = null
-        private set(value) { field = value }
-
-    var tracking: TrackingHistory<out TraceableElement>? = null
-        private set(value) { field = value }
-
-    constructor(trackOperator: TrackOperator?, index: Int){
-        tagOperator(trackOperator, index)
     }
 
     companion object{
@@ -41,13 +31,13 @@ abstract class TraceableElement {
     }
 
 
-    fun <T: TraceableElement> wrapWithTracking(evaluatedResult: EvaluatedMutation?, maxLength: Int, history: MutableList<T>){
+    fun <T: Traceable> wrapWithTracking(evaluatedResult: EvaluatedMutation?, maxLength: Int, history: MutableList<T>){
         wrapped()
         this.evaluatedResult = evaluatedResult
         this.tracking = TrackingHistory(maxLength, history)
     }
 
-    fun <T: TraceableElement> wrapWithTracking(evaluatedResult: EvaluatedMutation?, trackingHistory: TrackingHistory<T>?){
+    fun <T: Traceable> wrapWithTracking(evaluatedResult: EvaluatedMutation?, trackingHistory: TrackingHistory<T>?){
         wrapped()
         if (this.evaluatedResult == null || evaluatedResult!=null)
             this.evaluatedResult = evaluatedResult
@@ -71,23 +61,23 @@ abstract class TraceableElement {
      *
      * @return an newly created TraceableElement regarding [next]
      */
-    abstract fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation) : TraceableElement?
+    abstract fun next(next: Traceable, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation) : Traceable?
 
     /**
      * @param options indicates the option to copy the element in the tracking
      */
-    abstract fun copy(options: TraceableElementCopyFilter) : TraceableElement
+    abstract fun copy(options: TraceableElementCopyFilter) : Traceable
 
 
     /**
      * push latest element the tracking
      */
-    fun <T : TraceableElement> pushLatest(next: T){
+    fun <T : Traceable> pushLatest(next: T){
         (tracking as? TrackingHistory<T>)?.update(next)
                 ?: throw IllegalStateException("tracking history should not be null")
     }
 
-    fun <T : TraceableElement> getLast(n : Int, resultRange: IntRange? = null) : List<T>{
+    fun <T : Traceable> getLast(n : Int, resultRange: IntRange? = null) : List<T>{
         return (tracking as? TrackingHistory<T>)?.history?.filter { resultRange == null ||  (it.evaluatedResult?.run { this.value in resultRange } ?: true)}?.
                 run {
             if (size < n)
@@ -97,7 +87,7 @@ abstract class TraceableElement {
         } ?: throw IllegalStateException("the element is not tracked")
     }
 
-    fun <T: TraceableElement> getByIndex(index : Int) : T?{
+    fun <T: Traceable> getByIndex(index : Int) : T?{
         return ((tracking as? TrackingHistory<T>)?: throw IllegalStateException("tracking should not be null")).history?.find {
             it.index == index
         }
@@ -105,7 +95,7 @@ abstract class TraceableElement {
 
 }
 
-data class TrackingHistory<T : TraceableElement>(
+data class TrackingHistory<T : Traceable>(
         val maxLength: Int,
         val history : MutableList<T> = mutableListOf()
 ){

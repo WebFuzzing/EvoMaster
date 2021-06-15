@@ -1,9 +1,10 @@
-package org.evomaster.core.problem.rest.util
+package org.evomaster.core.problem.util
 
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.resource.CallsTemplate
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.service.Randomness
 
 
@@ -36,8 +37,8 @@ class RestResourceTemplateHandler{
         }
 
         fun getStringTemplateByCalls(calls: RestResourceCalls) : String{
-            val verbs = mutableListOf((calls.actions.last() as RestCallAction).verb)
-            if (calls.dbActions.isNotEmpty() || calls.actions.size > 1)
+            val verbs = mutableListOf((calls.seeActions(ActionFilter.NO_SQL).last() as RestCallAction).verb)
+            if (calls.seeActions(ActionFilter.ONLY_SQL).isNotEmpty() || calls.seeActions(ActionFilter.NO_SQL).size > 1)
                 verbs.add(0, HttpVerb.POST)
             return  formatTemplate(verbs.toTypedArray())
         }
@@ -64,7 +65,7 @@ class RestResourceTemplateHandler{
             return result
         }
         fun initSampleSpaceOnlyPOST(_space : Array<Boolean>, maps : MutableMap<String , CallsTemplate>) {
-            val space = arrayHttpVerbs.filterIndexed{index, _ ->  _space[index]}
+            val space = arrayHttpVerbs.filterIndexed{ index, _ ->  _space[index]}
             (if(_space.first() && !_space.last()) space.subList(1, space.size) else space).forEach {v->
                 maps.getOrPut(v.toString()){ CallsTemplate(v.toString(), v != HttpVerb.POST, 1) }
             }
@@ -86,7 +87,7 @@ class RestResourceTemplateHandler{
 
 
         fun sample(_space : Array<Boolean>, randomness: Randomness, slen : Int = 0) : String{
-            val space = arrayHttpVerbs.filterIndexed{index, _ ->  _space[index]}
+            val space = arrayHttpVerbs.filterIndexed{ index, _ ->  _space[index]}
             val len = if(slen != 0) slen else randomness.nextInt(1,space.size)
             if(len == 1){
                 return randomness.choose(if(_space.first() && !_space.last())space.subList(1, space.size) else space).toString()

@@ -1,14 +1,14 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -22,14 +22,14 @@ import java.time.format.DateTimeParseException
  * https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
  */
 class DateGene(
-        name: String,
+    name: String,
         //note: ranges deliberately include wrong values.
-        val year: IntegerGene = IntegerGene("year", 2016, MIN_YEAR, MAX_YEAR),
-        val month: IntegerGene = IntegerGene("month", 3, MIN_MONTH, MAX_MONTH),
-        val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
-        val onlyValidDates: Boolean = false,
-        val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
-) : Gene(name) {
+    val year: IntegerGene = IntegerGene("year", 2016, MIN_YEAR, MAX_YEAR),
+    val month: IntegerGene = IntegerGene("month", 3, MIN_MONTH, MAX_MONTH),
+    val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
+    val onlyValidDates: Boolean = false,
+    val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
+) : Gene(name, mutableListOf(year, month, day)) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(DateGene::class.java)
@@ -45,17 +45,12 @@ class DateGene(
         ISO_LOCAL_DATE_FORMAT
     }
 
-    init {
-        year.parent = this
-        month.parent = this
-        day.parent = this
-    }
+    override fun getChildren(): MutableList<Gene> = mutableListOf(year, month, day)
 
-
-    override fun copy(): Gene = DateGene(name,
-            year.copy() as IntegerGene,
-            month.copy() as IntegerGene,
-            day.copy() as IntegerGene,
+    override fun copyContent(): Gene = DateGene(name,
+            year.copyContent() as IntegerGene,
+            month.copyContent() as IntegerGene,
+            day.copyContent() as IntegerGene,
             dateGeneFormat = this.dateGeneFormat,
             onlyValidDates = this.onlyValidDates)
 
@@ -147,4 +142,44 @@ class DateGene(
     */
 
     override fun innerGene(): List<Gene> = listOf(year, month, day)
+
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return when{
+            gene is DateGene -> {
+                day.bindValueBasedOn(gene.day) &&
+                        month.bindValueBasedOn(gene.month) &&
+                        year.bindValueBasedOn(gene.year)
+            }
+            gene is DateTimeGene -> bindValueBasedOn(gene.date)
+            gene is StringGene && gene.getSpecializationGene() != null-> bindValueBasedOn(gene.getSpecializationGene()!!)
+            // Man: convert to string based on the format?
+            else-> {
+                LoggingUtil.uniqueWarn(log, "cannot bind DateGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
+
+    override fun repair() {
+        if (month.value < 1) {
+            month.value = 1
+        } else if (month.value > 12) {
+            month.value = 12
+        }
+
+        if (day.value < 1) {
+            day.value = 1
+        }
+
+        //February
+        if (month.value == 2 && day.value > 28) {
+            //for simplicity, let's not consider cases in which 29...
+            day.value = 28
+        } else if (day.value > 30 && (month.value.let { it == 11 || it == 4 || it == 6 || it == 9 })) {
+            day.value = 30
+        } else if (day.value > 31) {
+            day.value = 31
+        }
+    }
 }

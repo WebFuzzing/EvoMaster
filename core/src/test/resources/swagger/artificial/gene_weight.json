@@ -1,9 +1,10 @@
 {
   "swagger": "2.0",
   "info": {
-    "version": "0.0.1"
+    "version": "v1",
+    "title": ""
   },
-  "basePath": "/",
+  "basePath": "/gw",
   "schemes": [
     "http"
   ],
@@ -25,8 +26,7 @@
             "description": "foo",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Foo",
-              "originalRef": "Foo"
+              "$ref": "#/definitions/Foo"
             }
           }
         ],
@@ -104,8 +104,7 @@
             "description": "efoo",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/EFoo",
-              "originalRef": "EFoo"
+              "$ref": "#/definitions/EFoo"
             }
           }
         ],

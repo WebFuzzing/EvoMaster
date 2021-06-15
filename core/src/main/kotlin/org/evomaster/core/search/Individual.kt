@@ -3,9 +3,10 @@ package org.evomaster.core.search
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
+import org.evomaster.core.search.tracer.TrackingHistory
 
 /**
  * An individual for the search.
@@ -14,13 +15,45 @@ import org.evomaster.core.search.tracer.TrackOperator
  * a single test case, composed by 1 or more "actions" (eg, calls
  * to a RESTful API, SQL operations on a database or WireMock setup)
  *
+ * @property trackOperator presents which operator creates the individual, e.g., sampler
+ * @property index presents when the individual is created
+ * @param children specify the children of the individual with the constructor
+ *
  */
-abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DEFAULT_INDEX) : TraceableElement(trackOperator, index){
+abstract class Individual(override var trackOperator: TrackOperator? = null,
+                          override var index: Int = Traceable.DEFAULT_INDEX,
+                          children: List<out StructuralElement>
+) : Traceable, StructuralElement(children){
+
+    /**
+     * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
+     *
+     * Note that if the evalutedIndividual is tracked (i.e., [EMConfig.enableTrackEvaluatedIndividual]),
+     * e do not recommend to track the individual
+     */
+    override var evaluatedResult: EvaluatedMutation? = null
+
+    /**
+     * presents the history of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
+     *
+     * Note that if the evalutedIndividual is tracked (i.e., [EMConfig.enableTrackEvaluatedIndividual]),
+     * we do not recommend to track the individual
+     */
+    override var tracking: TrackingHistory<out Traceable>? = null
 
     /**
      * Make a deep copy of this individual
      */
-    abstract fun copy(): Individual
+    final override fun copy(): Individual{
+        val copy = super.copy()
+        if (copy !is Individual)
+            throw IllegalStateException("mismatched type: the type should be Individual, but it is ${this::class.java.simpleName}")
+        return copy
+    }
+
+    override fun copyContent(): Individual {
+        throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
+    }
 
     enum class GeneFilter { ALL, NO_SQL, ONLY_SQL }
 
@@ -36,32 +69,7 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      */
     abstract fun size(): Int
 
-    enum class ActionFilter {
-        /**
-         * all actions
-         */
-        ALL,
 
-        /**
-         * actions which are in initialization, e.g., HttpWsIndividual
-         */
-        INIT,
-
-        /**
-         * actions which are not in initialization
-         */
-        NO_INIT,
-
-        /**
-         * actions which are SQL-related actions
-         */
-        ONLY_SQL,
-
-        /**
-         * actions which are not SQL-related actions
-         */
-        NO_SQL
-    }
 
     /**
      * @return actions based on the specified [filter]
@@ -117,7 +125,7 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      */
     abstract fun repairInitializationActions(randomness: Randomness)
 
-    override fun copy(options: TraceableElementCopyFilter): TraceableElement {
+    override fun copy(options: TraceableElementCopyFilter): Traceable {
         val copy = copy()
         when(options){
             TraceableElementCopyFilter.NONE -> return copy
@@ -133,7 +141,7 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
         }
     }
 
-    override fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): TraceableElement? {
+    override fun next(next: Traceable, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): Traceable? {
         tracking?: throw IllegalStateException("cannot create next due to unavailable tracking info")
 
         val nextInTracking = (next.copy(copyFilter) as Individual).also { this.wrapWithEvaluatedResults(evaluatedResult) }
@@ -172,5 +180,38 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
      *  e.g., if false, the individual might be composed of a sequence of genes.
      */
     open fun hasAnyAction()  = seeActions().isNotEmpty()
-}
 
+
+    open fun cleanBrokenBindingReference(){
+        val all = seeGenes(GeneFilter.ALL).flatMap { it.flatView() }
+        all.filter { it.isBoundGene() }.forEach { b->
+            b.cleanBrokenReference(all)
+        }
+    }
+
+
+    /**
+     * @return a gene in [this] based on the [gene] in [individual]
+     */
+    open fun findGene(individual: Individual, gene: Gene): Gene?{
+        // individuals should be same type
+        if (individual::class.java.name != this::class.java.name) return null
+
+        val allgenes = individual.seeGenes().flatMap { it.flatView() }
+        val all = seeGenes().flatMap { it.flatView() }
+
+        if (allgenes.size != all.size) return null
+
+        val index = allgenes.indexOf(gene)
+        if (index == -1){
+            throw IllegalArgumentException("given gene (${gene.name}) does not belong to the individual which contains ${allgenes.joinToString(","){it.name}}")
+        }
+
+        val found = all[index]
+        if (!gene.possiblySame(found))
+            return null
+
+        return found
+    }
+
+}

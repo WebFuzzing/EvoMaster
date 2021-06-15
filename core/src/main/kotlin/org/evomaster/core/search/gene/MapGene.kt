@@ -1,6 +1,8 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -23,7 +25,7 @@ class MapGene<T>(
         val template: T,
         var maxSize: Int = MAX_SIZE,
         var elements: MutableList<T> = mutableListOf()
-) : CollectionGene, Gene(name)
+) : CollectionGene, Gene(name, elements)
         where T : Gene {
 
     private var keyCounter = 0
@@ -33,10 +35,6 @@ class MapGene<T>(
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
-
-        for(e in elements){
-            e.parent = this
-        }
     }
 
     companion object{
@@ -44,11 +42,15 @@ class MapGene<T>(
         const val MAX_SIZE = 5
     }
 
-    override fun copy(): Gene {
+    override fun getChildren(): MutableList<T> {
+        return elements
+    }
+
+    override fun copyContent(): Gene {
         return MapGene<T>(name,
-                template.copy() as T,
+                template.copyContent() as T,
                 maxSize,
-                elements.map { e -> e.copy() as T }.toMutableList()
+                elements.map { e -> e.copyContent() as T }.toMutableList()
         )
     }
 
@@ -57,6 +59,7 @@ class MapGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
+        addChildren(this.elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -79,11 +82,12 @@ class MapGene<T>(
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
             val gene = template.copy() as T
-            gene.parent = this
+//            gene.parent = this
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
             elements.add(gene)
         }
+        addChildren(elements)
     }
 
     override fun isMutable(): Boolean {
@@ -121,7 +125,7 @@ class MapGene<T>(
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
             val gene = template.copy() as T
-            gene.parent = this
+//            gene.parent = this
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
             elements.add(gene)
@@ -158,5 +162,18 @@ class MapGene<T>(
     }
 
     override fun innerGene(): List<Gene> = elements
+
+
+    /*
+        Note that value binding cannot be performed on the [elements]
+     */
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if(gene is MapGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
+            elements = gene.elements.mapNotNull { it.copy() as? T }.toMutableList()
+            return true
+        }
+        LoggingUtil.uniqueWarn(log, "cannot bind the MapGene with the template (${template::class.java.simpleName}) with the gene ${gene::class.java.simpleName}")
+        return false
+    }
 
 }

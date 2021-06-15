@@ -10,7 +10,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Created by arcuri82 on 06-Sep-19.
@@ -25,6 +24,9 @@ public class TaintMultiEMTest extends SpringTestBase {
 
     @Test
     public void testDeterminism(){
+
+        // CI: Java HotSpot(TM) 64-Bit Server VM warning: INFO: os::commit_memory(0x0000000616680000, 1243611136, 0) failed; error='Cannot allocate memory' (errno=12)
+        CIUtils.skipIfOnCircleCI();
 
         defaultSeed = 15;
 

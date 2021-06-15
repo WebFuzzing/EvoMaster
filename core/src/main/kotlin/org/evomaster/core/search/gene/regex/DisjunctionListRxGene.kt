@@ -1,6 +1,8 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionListRxGeneImpact
@@ -15,24 +17,19 @@ import org.slf4j.LoggerFactory
 
 class DisjunctionListRxGene(
         val disjunctions: List<DisjunctionRxGene>
-) : RxAtom("disjunction_list") {
+) : RxAtom("disjunction_list", disjunctions) {
 
     var activeDisjunction: Int = 0
-
-    init {
-        for(d in disjunctions){
-            d.parent = this
-        }
-    }
 
     companion object{
         private const val PROB_NEXT = 0.1
         private val log: Logger = LoggerFactory.getLogger(DisjunctionListRxGene::class.java)
     }
 
+    override fun getChildren(): List<DisjunctionRxGene> = disjunctions
 
-    override fun copy(): Gene {
-        val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
+    override fun copyContent(): Gene {
+        val copy = DisjunctionListRxGene(disjunctions.map { it.copyContent() as DisjunctionRxGene })
         copy.activeDisjunction = this.activeDisjunction
         return copy
     }
@@ -130,6 +127,8 @@ class DisjunctionListRxGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
+        //TODO: Man, shall we check the size of [disjunctions]
+
         this.activeDisjunction = other.activeDisjunction
         for (i in 0 until disjunctions.size) {
             this.disjunctions[i].copyValueFrom(other.disjunctions[i])
@@ -157,5 +156,23 @@ class DisjunctionListRxGene(
     override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() + 1
 
     override fun innerGene(): List<Gene> = disjunctions
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is DisjunctionListRxGene && gene.disjunctions.size == disjunctions.size){
+            var result = true
+            disjunctions.indices.forEach { i->
+                val r = disjunctions[i].bindValueBasedOn(gene.disjunctions[i])
+                if (!r)
+                    LoggingUtil.uniqueWarn(log, "cannot bind disjunctions (name: ${disjunctions[i].name}) at index $i")
+                result = result && r
+            }
+
+            activeDisjunction = gene.activeDisjunction
+            return result
+        }
+
+        LoggingUtil.uniqueWarn(log, "cannot bind DisjunctionListRxGene with ${gene::class.java.simpleName}")
+        return false
+    }
 
 }
