@@ -344,6 +344,61 @@
           }
         }
       }
+    },
+    "/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}": {
+      "get": {
+        "tags": [
+          "Xyz"
+        ],
+        "description": "get a Xyz",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rfooId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            }
+          },
+          {
+            "in": "path",
+            "name": "rbarId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            }
+          },
+          {
+            "in": "path",
+            "name": "rxyzId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RXyz"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
     }
   },
   "components": {

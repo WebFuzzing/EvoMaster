@@ -156,6 +156,15 @@ class RestCallAction(
     }
 
     /**
+     * bind [parameters] based on [other]
+     */
+    fun bindBasedOn(other: RestCallAction){
+        parameters.forEach { p->
+            BindingBuilder.bindRestAction(p, path, other.path, other.parameters, doBuildBindingGene = true)
+        }
+    }
+
+    /**
      * it is used to bind [this] action regarding values of [params]
      */
     fun bindBasedOn(otherPath : RestPath, params : List<Param>) {

@@ -47,7 +47,7 @@ class RestPostCallStructureTest : StructuralElementBaseTest(){
 
 class RestGetCallStructureTest : StructuralElementBaseTest(){
     override fun getStructuralElement(): RestCallAction{
-        return RestActionCluster.getRestCallAction("GET:/v3/api/rfoo/{id}")?:throw IllegalStateException("cannot get the expected the action")
+        return RestActionCluster.getRestCallAction("GET:/v3/api/rfoo/{rfooId}")?:throw IllegalStateException("cannot get the expected the action")
     }
 
     override fun getExpectedChildrenSize(): Int = 2

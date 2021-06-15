@@ -437,6 +437,87 @@ class RestResourceNode(
         return createRestResourceCall(template.template, randomness, maxTestSize)
     }
 
+
+    private fun handleHeadLocation(actions: List<RestCallAction>){
+        if (actions.size == 1) return
+        (1 until actions.size).reversed().forEach { i->
+            handleHeaderLocation(actions[i-1], actions[i])
+        }
+    }
+
+    private fun handleHeaderLocation(post: RestCallAction, target: RestCallAction){
+        /*
+            Once the POST is fully initialized, need to fix
+            links with target
+         */
+        if (!post.path.isEquivalent(target.path)) {
+            /*
+                eg
+                POST /x
+                GET  /x/{id}
+             */
+            post.saveLocation = true
+            target.locationId = post.path.lastElement()
+        } else {
+            /*
+                eg
+                POST /x
+                POST /x/{id}/y
+                GET  /x/{id}/y
+             */
+            //not going to save the position of last POST, as same as target
+            post.saveLocation = false
+
+            // the target (eg GET) needs to use the location of first POST, or more correctly
+            // the same location used for the last POST (in case there is a deeper chain)
+            target.locationId = post.locationId
+        }
+    }
+
+
+    fun createRestResourceCall(template: String, randomness: Randomness, maxTestSize: Int): RestResourceCalls{
+        if(!templates.containsKey(template))
+            throw IllegalArgumentException("$template does not exist in $path")
+        val ats = RestResourceTemplateHandler.parseTemplate(template)
+        // POST-*, *
+        val results = mutableListOf<RestCallAction>()
+        val first = ats.first()
+        if (first == HttpVerb.POST){
+            val post = getPostChain()
+            Lazy.assert { post != null }
+            results.addAll(post!!.createPostChain(randomness))
+        }else{
+            results.add(createActionByVerb(first, randomness))
+        }
+
+        if (ats.size == 2){
+            results.add(createActionByVerb(ats[1], randomness))
+        }else if (actions.size > 2){
+            throw IllegalStateException("the size of action with $template should be less than 2, but it is ${ats.size}")
+        }
+
+        // handle header location
+        handleHeadLocation(results)
+
+        //append extra patch
+        if (ats.last() == HttpVerb.PATCH && results.size +1 <= maxTestSize && randomness.nextBoolean(PROB_EXTRA_PATCH)){
+            results.add(results.last().copy() as RestCallAction)
+        }
+
+
+        if (results.size > maxTestSize)
+            throw IllegalStateException("the size (${results.size}) of actions exceeds the max size ($maxTestSize)")
+
+        // TODO add resource status
+        return RestResourceCalls(templates[template]!!, null, results)
+    }
+
+    private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction{
+        val action = (getActionByHttpVerb(actions, verb)?:throw IllegalStateException("cannot get $verb action in the resource $path")).copy() as RestCallAction
+        action.randomize(randomness, false)
+        return action
+    }
+
     /**
      * create a RestResourceCall based on the [template]
      */
@@ -523,7 +604,7 @@ class RestResourceNode(
         assert(result.isNotEmpty())
 
         if(additionalPatch && randomness.nextBoolean(PROB_EXTRA_PATCH) &&!templates.getValue(template).independent && template.contains(HttpVerb.PATCH.toString()) && result.size + 1 <= maxTestSize){
-            val index = result.indexOfFirst { (it is RestCallAction) && it.verb == HttpVerb.PATCH }
+            val index = result.indexOfFirst { it.verb == HttpVerb.PATCH }
             val copy = result.get(index).copy() as RestCallAction
             result.add(index, copy)
         }

@@ -2,14 +2,22 @@ package org.evomaster.core.problem.rest.resource
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestActionBuilderV3
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.gene.DisruptiveGene
+import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
-import org.junit.jupiter.params.provider.ValueSource
 
 class ResourceNodeTest {
 
@@ -17,6 +25,7 @@ class ResourceNodeTest {
 
        val actionCluster: MutableMap<String, Action> = mutableMapOf()
        val cluster = ResourceCluster()
+       val randomness = Randomness()
 
        @BeforeAll
        @JvmStatic
@@ -34,7 +43,7 @@ class ResourceNodeTest {
     fun testInit(){
 
         //rfoo, rfoo/{id}, rbar, rbar/{id}, rxyz
-        assertEquals(5, cluster.getCluster().size)
+        assertEquals(6, cluster.getCluster().size)
 
         val postFoo = "/v3/api/rfoo"
         val fooNode = cluster.getResourceNode(postFoo)
@@ -101,17 +110,66 @@ class ResourceNodeTest {
 
     }
 
-
+    // test post creation for resource node
     @ParameterizedTest
-    @CsvSource(value = ["/v3/api/rfoo/{rfooId},1","/v3/api/rfoo/{rfooId}/rbar/{rbarId},2", "/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz,3"])
+    @CsvSource(value = ["/v3/api/rfoo/{rfooId},1","/v3/api/rfoo/{rfooId}/rbar/{rbarId},2", "/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId},3"])
     fun testCompletePostCreation(path: String, expected: Int){
 
-        val rfooIdNode = cluster.getResourceNode(path)
-        assertNotNull(rfooIdNode)
-        rfooIdNode!!.getPostChain().apply {
+        val node = cluster.getResourceNode(path)
+        assertNotNull(node)
+        node!!.getPostChain().apply {
             assertNotNull(this)
             assertEquals(expected, this!!.actions.size)
             assertTrue(isComplete())
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = [
+        "/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz,POST,3",
+        "/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz,POST-POST,4",
+        "/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId},GET,1",
+        "/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId},POST-GET,4"])
+    fun testCallCreation(path:String, template: String, actionSize: Int){
+        val node = cluster.getResourceNode(path)
+        assertNotNull(node)
+        val call = node!!.createRestResourceCall(template, randomness, 10)
+
+        call.apply {
+            assertEquals(actionSize, seeActionSize(ActionFilter.NO_SQL))
+        }
+    }
+
+    @Test
+    fun testGeneBinding(){
+        val node = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")
+        assertNotNull(node)
+        val call = node!!.createRestResourceCall("POST-GET", randomness, 10)
+        call.seeActions(ActionFilter.NO_SQL).apply {
+            assertEquals(4, size)
+            val get = last() as RestCallAction
+            assertEquals(HttpVerb.GET, get.verb)
+            val getXyzId = get.parameters.find { it.name == "rxyzId" }
+            assertNotNull(getXyzId)
+            val getXyzIdGene = (getXyzId!!.gene as? DisruptiveGene<*>)?.gene
+            assertNotNull(getXyzIdGene)
+            val getBarId = get.parameters.find { it.name == "rbarId" }
+            assertNotNull(getBarId)
+            val getBarIdGene = (getBarId!!.gene as? DisruptiveGene<*>)?.gene
+            assertNotNull(getBarIdGene)
+            val getFooId = get.parameters.find { it.name == "rfooId" }
+            assertNotNull(getFooId)
+            val getFooIdGene = (getFooId!!.gene as? DisruptiveGene<*>)?.gene
+            assertNotNull(getFooIdGene)
+
+            val postXyz = get(2) as RestCallAction
+            val postXyzId = postXyz.parameters.find { it is BodyParam }
+            assertNotNull(postXyzId)
+            val postXyzIdGene = ((postXyzId as BodyParam).gene as? ObjectGene)?.fields?.find { it.name == "id" }
+            assertNotNull(postXyzIdGene)
+
+
+            //TODO
         }
     }
 }

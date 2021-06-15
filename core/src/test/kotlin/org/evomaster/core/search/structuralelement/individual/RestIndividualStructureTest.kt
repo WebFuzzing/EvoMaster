@@ -58,8 +58,8 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
         val action1 = DbAction(bar, setOf(barIdColumn, fkColumn), insertId1, listOf(pkGeneBar, fkGene))
 
 
-        val fooNode = ResourceNodeCluster.cluster.getResourceNode("/v3/api/rfoo/{id}")
-        val barNode = ResourceNodeCluster.cluster.getResourceNode("/v3/api/rbar/{id}")
+        val fooNode = ResourceNodeCluster.cluster.getResourceNode("/v3/api/rfoo/{rfooId}")
+        val barNode = ResourceNodeCluster.cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}")
 
         val call1 = fooNode?.sampleRestResourceCalls("POST-GET", ResourceNodeCluster.randomness, 10) ?: throw IllegalStateException()
         val call2 = barNode?.sampleRestResourceCalls("GET", ResourceNodeCluster.randomness, 10) ?: throw IllegalStateException()

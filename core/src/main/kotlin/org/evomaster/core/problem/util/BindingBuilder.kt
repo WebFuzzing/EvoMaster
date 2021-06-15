@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory
 object BindingBuilder {
 
     private val log = LoggerFactory.getLogger(BindingBuilder::class.java)
+
     
     fun bindParamsInRestAction(restAction: RestCallAction){
         val params = restAction.parameters
@@ -38,9 +39,14 @@ object BindingBuilder {
         }
     }
 
-    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false){
-        buildBindBetweenParams(target, targetPath, sourcePath, params, inner).forEach { p->
+    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false, doBuildBindingGene: Boolean = false){
+        val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, inner)
+        pairs.forEach { p->
             p.first.bindValueBasedOn(p.second)
+            if (doBuildBindingGene){
+                p.first.addBindingGene(p.second)
+                p.second.addBindingGene(p.first)
+            }
         }
     }
 

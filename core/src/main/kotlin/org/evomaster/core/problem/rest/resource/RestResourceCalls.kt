@@ -36,6 +36,27 @@ class RestResourceCalls(
         private val  log : Logger = LoggerFactory.getLogger(RestResourceCalls::class.java)
     }
 
+    init {
+        buildBindingGene()
+    }
+
+    /**
+     * build gene binding among rest actions, ie, [actions]
+     * e.g., a sequence of actions
+     *     0, POST /A
+     *     1, POST /A/{a}
+     *     2, POST /A/{a}/B
+     *     3, GET /A/{a}/B/{b}
+     * (0-2) actions bind values based on the action at 3
+     */
+    private fun buildBindingGene(){
+        if (actions.size == 1) return
+        (0 until actions.size-1).forEach {
+            actions[it].bindBasedOn(actions.last())
+        }
+
+    }
+
     /**
      * presents whether the SQL is
      *      1) for creating missing resources for POST or
@@ -54,6 +75,7 @@ class RestResourceCalls(
      * this call should be before [shouldBefore]
      */
     var shouldBefore = mutableListOf<String>()
+
 
     final override fun copy(): RestResourceCalls {
         val copy = super.copy()

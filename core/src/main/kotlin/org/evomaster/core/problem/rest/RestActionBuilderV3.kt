@@ -601,7 +601,7 @@ object RestActionBuilderV3 {
 
         if (schema == null) {
             //token after last /
-            val classDef = reference.substring(reference.lastIndexOf("/") + 1)
+            val classDef = getClassDef(reference)
 
             LoggingUtil.uniqueWarn(log, "No $classDef among the object definitions in the OpenApi file")
 
@@ -621,6 +621,8 @@ object RestActionBuilderV3 {
 
         return gene
     }
+
+    private fun getClassDef(reference: String): String = reference.substring(reference.lastIndexOf("/") + 1)
 
     private fun getLocalParameter(swagger: OpenAPI, reference: String) : Parameter?{
         val name = extractReferenceName(reference)
