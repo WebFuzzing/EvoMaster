@@ -4,7 +4,6 @@ import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
@@ -167,7 +166,7 @@ class RestActionBuilderV3Test{
     fun testNews() {
         val map = loadAndAssertActions("/swagger/sut/news.json", 7)
 
-        val create = map["POST:/news"] as RestAction
+        val create = map["POST:/news"] as RestCallAction
         assertEquals(2, create.seeGenes().size)
         val bodyNews = create.seeGenes().find { it.name == "body" }
         assertNotNull(bodyNews)
@@ -183,7 +182,7 @@ class RestActionBuilderV3Test{
     fun testCatWatch() {
         val map = loadAndAssertActions("/swagger/sut/catwatch.json", 23)
 
-        val postScoring = map["POST:/config/scoring.project"] as RestAction
+        val postScoring = map["POST:/config/scoring.project"] as RestCallAction
         assertEquals(3, postScoring.seeGenes().size)
         val bodyPostScoring = postScoring.seeGenes().find { it.name == "body" }
         assertNotNull(bodyPostScoring)

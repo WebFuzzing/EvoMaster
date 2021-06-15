@@ -395,13 +395,13 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
     open fun doInitializingActions(ind: HttpWsIndividual) {
 
         if (log.isTraceEnabled){
-            log.trace("do {} InitializingActions: {}", ind.dbInitialization.size,
-                ind.dbInitialization.joinToString(","){
+            log.trace("do {} InitializingActions: {}", ind.seeInitializingActions().size,
+                ind.seeInitializingActions().joinToString(","){
                     it.getResolvedName()
                 })
         }
 
-        if (ind.dbInitialization.none { !it.representExistingData }) {
+        if (ind.seeInitializingActions().none { !it.representExistingData }) {
             /*
                 We are going to do an initialization of database only if there
                 is data to add.
@@ -411,7 +411,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
             return
         }
 
-        val dto = DbActionTransformer.transform(ind.dbInitialization)
+        val dto = DbActionTransformer.transform(ind.seeInitializingActions())
         dto.idCounter = StaticCounter.getAndIncrease()
 
         val ok = rc.executeDatabaseCommand(dto)

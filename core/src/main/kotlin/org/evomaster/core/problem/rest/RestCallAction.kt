@@ -7,8 +7,9 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.resource.ActionRToken
-import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
+import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
@@ -44,7 +45,7 @@ class RestCallAction(
         var locationId: String? = null,
         val produces: List<String> = listOf(),
         val responseRefs : MutableMap<String, String> = mutableMapOf()
-) : HttpWsAction(auth, parameters), RestAction {
+) : HttpWsAction(auth, parameters) {
 
     /**
      * collect info of description and summary from swagger
@@ -63,8 +64,8 @@ class RestCallAction(
 
     fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
 
-    override fun copy(): Action {
-        val p = parameters.asSequence().map(Param::copy).toMutableList()
+    override fun copyContent(): Action {
+        val p = parameters.asSequence().map(Param::copyContent).toMutableList()
         return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs)
     }
 
@@ -169,12 +170,12 @@ class RestCallAction(
            the body parameter will be bound by "repair" process to ensure the same attribute of path and body parameter have same value.
          */
         if(!ParamUtil.isAllBodyParam(parameters)){
-            parameters.filter { param -> !(param is BodyParam) }.forEach { param->
-                ParamUtil.bindParam(param, this.path, otherPath, params)
+            parameters.filterNot { param -> param is BodyParam }.forEach { param->
+                BindingBuilder.bindRestAction(param, this.path, otherPath, params)
             }
         }else{
             parameters.forEach {param->
-                ParamUtil.bindParam(param, this.path, otherPath, params)
+                BindingBuilder.bindRestAction(param, this.path, otherPath, params)
             }
         }
     }

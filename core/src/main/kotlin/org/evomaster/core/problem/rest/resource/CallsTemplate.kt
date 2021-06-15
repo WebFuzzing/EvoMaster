@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.resource
 
-import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
+import org.evomaster.core.problem.util.RestResourceTemplateHandler
 
 /**
  * this contains a template info for [RestResourceCalls], and the info includes

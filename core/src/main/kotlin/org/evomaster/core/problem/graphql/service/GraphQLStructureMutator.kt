@@ -9,7 +9,6 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -95,7 +94,7 @@ class GraphQLStructureMutator : HttpWsStructureMutator() {
             //save mutated genes
             mutatedGenes?.addRemovedOrAddedByAction(sampledAction, ind.seeActions().size, false, ind.seeActions().size)
 
-            ind.actions.add(sampledAction)
+            ind.addGQLAction(action= sampledAction)
 
             return
         }
@@ -107,10 +106,10 @@ class GraphQLStructureMutator : HttpWsStructureMutator() {
             val chosen = randomness.nextInt(ind.seeActions().size)
 
             //save mutated genes
-            val removedActions = ind.actions[chosen]
+            val removedActions = ind.seeActions()[chosen]
             mutatedGenes?.addRemovedOrAddedByAction(removedActions, chosen, true, chosen)
 
-            ind.actions.removeAt(chosen)
+            ind.removeGQLActionAt(chosen)
 
         } else {
 
@@ -119,7 +118,7 @@ class GraphQLStructureMutator : HttpWsStructureMutator() {
             val sampledAction = sampler.sampleRandomAction(0.05) as GraphQLAction
 
             val chosen = randomness.nextInt(ind.seeActions().size)
-            ind.actions.add(chosen, sampledAction)
+            ind.addGQLAction(chosen, sampledAction)
 
             //save mutated genes
             mutatedGenes?.addRemovedOrAddedByAction(sampledAction, chosen, false, chosen)

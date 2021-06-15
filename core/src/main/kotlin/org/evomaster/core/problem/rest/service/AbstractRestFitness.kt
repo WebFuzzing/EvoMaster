@@ -5,7 +5,6 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
@@ -187,7 +186,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
      */
     fun handleResponseTargets(
             fv: FitnessValue,
-            actions: List<RestAction>,
+            actions: List<RestCallAction>,
             actionResults: List<ActionResult>,
             additionalInfoList: List<AdditionalInfoDto>) {
 
@@ -213,7 +212,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
 
-    fun handleAdditionalOracleTargetDescription(fv: FitnessValue, actions: List<RestAction>, result : RestCallResult, name: String, indexOfAction : Int){
+    fun handleAdditionalOracleTargetDescription(fv: FitnessValue, actions: List<RestCallAction>, result : RestCallResult, name: String, indexOfAction : Int){
         /*
            Objectives for the two partial oracles implemented thus far.
         */

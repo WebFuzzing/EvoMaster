@@ -4,15 +4,17 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Individual.GeneFilter
-import org.evomaster.core.search.Individual.ActionFilter
+import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.min
@@ -31,11 +33,17 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                              val results: List<out ActionResult>,
 
                              // for tracking its history
-                             trackOperator: TrackOperator? = null,
-                             index: Int = -1,
+                             override var trackOperator: TrackOperator? = null,
+                             override var index: Int = Traceable.DEFAULT_INDEX,
+
+                             // for impact
                              val impactInfo : ImpactsOfIndividual ?= null
 
-) : TraceableElement(trackOperator, index) where T : Individual {
+) : Traceable where T : Individual {
+
+    override var evaluatedResult: EvaluatedMutation? = null
+
+    override var tracking: TrackingHistory<out Traceable>? = null
 
     companion object{
         const val ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED = "ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED"
@@ -127,7 +135,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         individual.getResourceCalls().forEach { c->
             if (index < results.size){
                 list.add(
-                    c.dbActions to c.actions.subList(0, min(c.actions.size, results.size-index)).map {
+                    (c.seeActions(ONLY_SQL) as List<DbAction>) to c.seeActions(NO_SQL).subList(0, min(c.seeActionSize(NO_SQL), results.size-index)).map {
                             a-> EvaluatedAction(a, results[index]).also { index++ }
                     }.toList()
                 )
@@ -206,7 +214,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
     }
 
-    fun nextForIndividual(next: TraceableElement, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
+    fun nextForIndividual(next: Traceable, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
         (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
 
         val nextIndividual = individual.next(next.individual, TraceableElementCopyFilter.WITH_TRACK, evaluatedResult)!!
@@ -221,7 +229,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         )
     }
 
-    override fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
+    override fun next(next: Traceable, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
 
         tracking?: throw IllegalStateException("cannot create next due to unavailable tracking info")
         (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
@@ -468,9 +476,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 impact.syncImpact(p, sg)
             }
         }
-
-
-
     }
 
     //**************** for impact *******************//
