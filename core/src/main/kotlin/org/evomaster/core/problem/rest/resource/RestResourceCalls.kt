@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory
  * @property resourceInstance presents a resource that [actions] perform on. [resourceInstance] is an instance of [RestResourceNode]
  * @property actions is a sequence of actions in the [RestResourceCalls] that follows [template]
  * @property dbActions are used to initialize data for rest actions, either select from db or insert new data into db
+ *
+ * TODO remove [resourceInstance]
  */
 class RestResourceCalls(
         val template: CallsTemplate? = null,
@@ -145,7 +147,7 @@ class RestResourceCalls(
                     ?:throw IllegalStateException("${g.name} cannot be found in rest action ${target.getName()}")
                 // bind actions with target
                 actions.filter { it != target }
-                    .forEach{a-> (a as RestCallAction).bindToSamePathResolution(target.path, listOf(param))}
+                    .forEach{a-> a.bindBasedOn(target.path, listOf(param))}
             }
         }
         if (anyMutated && dbActions.isNotEmpty()){
@@ -168,7 +170,7 @@ class RestResourceCalls(
                               forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
         var paramToTables = bindingMap
         if (paramToTables == null){
-            val paramInfo = getResourceNode().getMissingParams(template!!.template, false)
+            val paramInfo = getResourceNode().getPossiblyBoundParams(template!!.template, false)
             paramToTables = SimpleDeriveResourceBinding.generateRelatedTables(paramInfo, this, dbActions)
         }
 
@@ -193,7 +195,7 @@ class RestResourceCalls(
         val params = restResourceCalls.resourceInstance?.params?:restResourceCalls.actions.filterIsInstance<RestCallAction>().flatMap { it.parameters }
         actions.forEach { ac ->
             if(ac.parameters.isNotEmpty()){
-                ac.bindToSamePathResolution(ac.path, params)
+                ac.bindBasedOn(ac.path, params)
             }
         }
     }

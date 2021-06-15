@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
 object BindingBuilder {
 
     private val log = LoggerFactory.getLogger(BindingBuilder::class.java)
-
+    
     fun bindParamsInRestAction(restAction: RestCallAction){
         val params = restAction.parameters
         val path = restAction.path

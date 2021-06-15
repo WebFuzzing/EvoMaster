@@ -199,7 +199,7 @@ class ResourceManageService {
         }
 
 
-        val call = ar.genCalls(candidate, randomness, size,true, true)
+        val call = ar.createRestResourceCall(candidate, randomness, size,true, true)
         calls.add(call)
 
         if(hasDBHandler() && config.probOfApplySQLActionToCreateResources > 0){

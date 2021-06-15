@@ -77,7 +77,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
 
         if(reftypes.isNotEmpty()){
             reftypes.forEach { type->
-                if(!resourceNode.isPartOfStaticTokens(type)){
+                if(!resourceNode.isPartOfStaticTokens(type) && allTables.isNotEmpty()){
                     val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, type)) }.asSequence().sortedBy { e->e.second }
                     if(matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedMap.filter { it.second == matchedMap.last().second }.forEach {

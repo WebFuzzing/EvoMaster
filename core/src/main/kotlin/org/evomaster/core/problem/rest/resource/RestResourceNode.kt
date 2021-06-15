@@ -120,6 +120,9 @@ class RestResourceNode(
         }
     }
 
+    /**
+     * init ancestors of [this] resource node
+     */
     fun initAncestors(resources : List<RestResourceNode>){
         resources.forEach {r ->
             if(!r.path.isEquivalent(this.path) && r.path.isAncestorOf(this.path))
@@ -127,6 +130,9 @@ class RestResourceNode(
         }
     }
 
+    /**
+     * @return resource node based on [path]
+     */
     fun getResourceNode(path: RestPath) : RestResourceNode?{
         if (path.toString() == path.toString()) return this
         return ancestors.find { it.path.toString() == path.toString() }
@@ -138,7 +144,7 @@ class RestResourceNode(
      */
     fun getMutableSQLGenes(dbactions: MutableList<DbAction>, template: String, is2POST : Boolean) : List<out Gene>{
 
-        val related = getMissingParams(template, is2POST).map {
+        val related = getPossiblyBoundParams(template, is2POST).map {
             resourceToTable.paramToTable[it.key]
         }
 
@@ -156,23 +162,19 @@ class RestResourceNode(
 
         if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestCallAction::seeGenes).filter(Gene::isMutable)
 
-        val missing = getMissingParams(template, false)
+        val missing = getPossiblyBoundParams(template, false)
         val params = mutableListOf<Param>()
         (actions.indices).forEach { i ->
             val a = actions[i]
-            if (a is RestCallAction){
-                if (i != actions.size-1 && (i == 0 || a.verb == HttpVerb.POST)) {
-                    params.addAll(a.parameters)
-                } else{
-                    //add the parameters which does not bind with POST if exist
-                    params.addAll(a.parameters.filter { p->
-                        missing.none { m->
-                            m.key == getParamId(a.parameters, p)
-                        }
-                    })
-                }
-            }else{
-                throw IllegalStateException("Rest action at index $i is not a RestCallAction")
+            if (i != actions.size-1 && (i == 0 || a.verb == HttpVerb.POST)) {
+                params.addAll(a.parameters)
+            } else{
+                //add the parameters which does not bind with POST if exist
+                params.addAll(a.parameters.filter { p->
+                    missing.none { m->
+                        m.key == getParamId(a.parameters, p)
+                    }
+                })
             }
         }
         return params.flatMap(Param::seeGenes).filter(Gene::isMutable)
@@ -180,19 +182,17 @@ class RestResourceNode(
 
     private fun initVerbs(){
         actions.forEach { a->
-            if(a is RestCallAction){
-                RestResourceTemplateHandler.getIndexOfHttpVerb(a.verb).let {
-                    if(it == -1)
-                        throw IllegalArgumentException("cannot handle the action with ${a.verb}")
-                    else
-                        verbs[it] = true
-                }
+            RestResourceTemplateHandler.getIndexOfHttpVerb(a.verb).let {
+                if(it == -1)
+                    throw IllegalArgumentException("cannot handle the action with ${a.verb}")
+                else
+                    verbs[it] = true
             }
         }
         verbs[verbs.size - 1] = verbs[RestResourceTemplateHandler.getIndexOfHttpVerb(HttpVerb.POST)]
         if (!verbs[verbs.size - 1]){
             if(ancestors.isNotEmpty())
-                verbs[verbs.size - 1] = ancestors.any { a -> a.actions.any { ia-> ia is RestCallAction && ia.verb == HttpVerb.POST } }
+                verbs[verbs.size - 1] = ancestors.any { a -> a.actions.any { ia->  ia.verb == HttpVerb.POST } }
         }
 
         RestResourceTemplateHandler.initSampleSpaceOnlyPOST(verbs, templates)
@@ -226,12 +226,16 @@ class RestResourceNode(
     private fun initCreationPoints(){
 
         val postCreation = PostCreationChain(mutableListOf())
-        val posts = actions.filter { it is RestCallAction && it.verb == HttpVerb.POST}
-        val post : RestCallAction? = if(posts.isEmpty()){
-            chooseClosestAncestor(path, listOf(HttpVerb.POST))
-        }else if(posts.size == 1){
-            posts[0] as RestCallAction
-        }else null
+        val posts = actions.filter { it.verb == HttpVerb.POST}
+        val post : RestCallAction? = when {
+            posts.isEmpty() -> {
+                chooseClosestAncestor(path, listOf(HttpVerb.POST))
+            }
+            posts.size == 1 -> {
+                posts[0]
+            }
+            else -> null
+        }
 
         if(post != null){
             postCreation.actions.add(0, post)
@@ -266,7 +270,7 @@ class RestResourceNode(
         }
     }
 
-    fun checkDifferenceOrInit(dbactions : MutableList<DbAction> = mutableListOf(), postactions: MutableList<RestCallAction> = mutableListOf()) : Pair<Boolean, CreationChain>{
+    private fun checkDifferenceOrInit(dbactions : MutableList<DbAction> = mutableListOf(), postactions: MutableList<RestCallAction> = mutableListOf()) : Pair<Boolean, CreationChain>{
         when{
             dbactions.isNotEmpty() && postactions.isNotEmpty() ->{
                 creations.find { it is CompositeCreationChain }?.let {
@@ -311,7 +315,7 @@ class RestResourceNode(
         }
     }
 
-    fun getCreation(predicate: (CreationChain) -> Boolean) : CreationChain?{
+    private fun getCreation(predicate: (CreationChain) -> Boolean) : CreationChain?{
         return creations.find(predicate)
     }
 
@@ -341,7 +345,7 @@ class RestResourceNode(
         val rest = templates.filter { it.value.template != current}
         if(rest.isEmpty()) return null
         val selected = randomness.choose(rest.keys)
-        return genCalls(selected,randomness, maxTestSize)
+        return createRestResourceCall(selected,randomness, maxTestSize)
 
     }
 
@@ -366,14 +370,14 @@ class RestResourceNode(
             e.value.size in 1..maxTestSize
         }.map { it.key }
         if(randomTemplates.isEmpty()) return sampleOneAction(null, randomness)
-        return genCalls(randomness.choose(randomTemplates), randomness, maxTestSize)
+        return createRestResourceCall(randomness.choose(randomTemplates), randomness, maxTestSize)
     }
 
     fun sampleIndResourceCall(randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
         selectTemplate({ call : CallsTemplate -> call.independent || (call.template == HttpVerb.POST.toString() && call.size > 1)}, randomness)?.let {
-            return genCalls(it.template, randomness, maxTestSize, false, false)
+            return createRestResourceCall(it.template, randomness, maxTestSize, false, false)
         }
-        return genCalls(HttpVerb.POST.toString(), randomness,maxTestSize)
+        return createRestResourceCall(HttpVerb.POST.toString(), randomness,maxTestSize)
     }
 
 
@@ -390,7 +394,7 @@ class RestResourceNode(
                 ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${this.path}")
         val call =  RestResourceCalls(template, RestResourceInstance(this, copy.parameters), mutableListOf(copy))
 
-        if(action is RestCallAction && action.verb == HttpVerb.POST){
+        if(action.verb == HttpVerb.POST){
             getCreation { c : CreationChain -> (c is PostCreationChain) }.let {
                 if(it != null && (it as PostCreationChain).actions.size == 1 && it.isComplete()){
                     call.status = ResourceStatus.CREATED_REST
@@ -416,36 +420,27 @@ class RestResourceNode(
             else if (prioriIndependent) fchosen.filter { it.value.independent }
             else fchosen
         if (chosen.isEmpty())
-            return genCalls(randomness.choose(fchosen).template,randomness, maxTestSize)
-        return genCalls(randomness.choose(chosen).template,randomness, maxTestSize)
+            return createRestResourceCall(randomness.choose(fchosen).template,randomness, maxTestSize)
+        return createRestResourceCall(randomness.choose(chosen).template,randomness, maxTestSize)
     }
 
 
     fun sampleRestResourceCalls(template: String, randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
         assert(maxTestSize > 0)
-        return genCalls(template,randomness, maxTestSize)
+        return createRestResourceCall(template,randomness, maxTestSize)
     }
 
     fun genPostChain(randomness: Randomness, maxTestSize: Int) : RestResourceCalls?{
         val template = templates["POST"]?:
             return null
 
-        return genCalls(template.template, randomness, maxTestSize)
+        return createRestResourceCall(template.template, randomness, maxTestSize)
     }
 
-    fun createResourceCall(template: String, randomness: Randomness, maxTestSize: Int, doCreateResource: Boolean, additionalPatch: Boolean, checkActionSize : Boolean){
-        if(!templates.containsKey(template))
-            throw IllegalArgumentException("$template does not exist in the resource node ($path)")
-        val verbs = RestResourceTemplateHandler.parseTemplate(template)
-        val restActions = verbs.mapNotNull {
-            (getActionByHttpVerb(actions, it)?.copy() as? RestCallAction)?.also {a->
-                randomizeActionGenes(a, randomness)
-            }
-        }
-    }
-
-    //TODO update postCreation accordingly
-    fun genCalls(
+    /**
+     * create a RestResourceCall based on the [template]
+     */
+    fun createRestResourceCall(
             template : String,
             randomness: Randomness,
             maxTestSize : Int = 1,
@@ -483,7 +478,7 @@ class RestResourceNode(
             }
 
             val lastPost = result.last()
-            resource = RestResourceInstance(this, (lastPost as RestCallAction).parameters)
+            resource = RestResourceInstance(this, lastPost.parameters)
             skipBind.addAll(result)
             if(nonPostIndex == -1){
                 (1 until ats.size).forEach{
@@ -520,8 +515,8 @@ class RestResourceNode(
 
         if(result.size > 1)
             result.filterNot { ac -> skipBind.contains(ac) }.forEach { ac ->
-                if((ac as RestCallAction).parameters.isNotEmpty()){
-                    ac.bindToSamePathResolution(ac.path, resource.params)
+                if(ac.parameters.isNotEmpty()){
+                    ac.bindBasedOn(ac.path, resource.params)
                 }
             }
 
@@ -563,7 +558,7 @@ class RestResourceNode(
         val ts = if(chosen == null) templates.filter { predicate(it.value) } else chosen.filter { predicate(it.value) }
         if(ts.isEmpty())
             return null
-        var template =  if(chooseLessVisit) ts.asSequence().sortedBy { it.value.times }.first().value
+        val template =  if(chooseLessVisit) ts.asSequence().sortedBy { it.value.times }.first().value
                     else randomness.choose(ts.values)
         templateSelected(template)
         return template
@@ -571,7 +566,7 @@ class RestResourceNode(
 
 
     private fun getActionByHttpVerb(actions : List<RestCallAction>, verb : HttpVerb) : RestCallAction? {
-        return actions.find { a -> a is RestCallAction && a.verb == verb }
+        return actions.find { a -> a.verb == verb }
     }
 
     private fun chooseLongestPath(actions: List<RestCallAction>, randomness: Randomness? = null): RestCallAction {
@@ -583,7 +578,7 @@ class RestResourceNode(
         val candidates = ParamUtil.selectLongestPathAction(actions)
 
         if(randomness == null){
-            return candidates.first() as RestCallAction
+            return candidates.first()
         }else
             return randomness.choose(candidates).copy() as RestCallAction
     }
@@ -609,13 +604,13 @@ class RestResourceNode(
         return null
     }
 
-    private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
+    fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
         return actions.filter { a ->
             verbs.contains(a.verb)
         }
     }
 
-    private fun sameOrAncestorEndpoints(target: RestCallAction): List<RestCallAction> {
+    fun sameOrAncestorEndpoints(target: RestCallAction): List<RestCallAction> {
         if(target.path.toString() == this.path.toString()) return ancestors.flatMap { a -> a.actions }.plus(actions).filterIsInstance<RestCallAction>()
         else {
             ancestors.find { it.path.toString() == target.path.toString() }?.let {
@@ -630,7 +625,7 @@ class RestResourceNode(
         val restAction = template.copy() as RestCallAction
         randomizeActionGenes(restAction, randomness)
         restAction.auth = target.auth
-        restAction.bindToSamePathResolution(restAction.path, target.parameters)
+        restAction.bindBasedOn(restAction.path, target.parameters)
         return restAction
     }
 
@@ -828,13 +823,10 @@ class RestResourceNode(
          3) other parameter, it is not necessary to bind, but it helps if it is bound.
                 e.g., Request to get a list of data whose value is less than "parameter", if bind with an existing data, the requests make more sentence than a random data
          */
-
         if (tokens.isEmpty()) return
         actions.forEach { a ->
-            if(a is RestCallAction){
-                a.parameters.forEach{p->
-                    initParamInfo(a.verb, a.parameters, p)
-                }
+            a.parameters.forEach{p->
+                initParamInfo(a.verb, a.parameters, p)
             }
         }
     }
@@ -845,7 +837,7 @@ class RestResourceNode(
 
         val segment = getSegment(flatten = true, params = params,param = param)
         val level = getAllSegments(true).indexOf(segment)
-        val missing = when(param){
+        val doesReferToOther = when(param){
             /*
             if has POST, ignore the last path param, otherwise all path param
              */
@@ -857,7 +849,7 @@ class RestResourceNode(
         }
 
         val paramInfo = paramsInfo.getOrPut(key){
-            ParamInfo(param.name, key, segment, level, param, missing)
+            ParamInfo(param.name, key, segment, level, param, doesReferToOther)
         }
 
         paramInfo.involvedAction.add(verb)
@@ -868,7 +860,7 @@ class RestResourceNode(
      * @return params in a [RestResourceCalls] that are not bounded with POST actions if there exist based on the template [actionTemplate]
      *
      */
-    fun getMissingParams(actionTemplate: String, withSql : Boolean) : List<ParamInfo>{
+    fun getPossiblyBoundParams(actionTemplate: String, withSql : Boolean) : List<ParamInfo>{
         val actions = RestResourceTemplateHandler.parseTemplate(actionTemplate)
         Lazy.assert {
             actions.isNotEmpty()
@@ -877,7 +869,7 @@ class RestResourceNode(
         when(actions[0]){
             HttpVerb.POST->{
                 if (withSql) return paramsInfo.values.toList()
-                return paramsInfo.values.filter { it.missing }
+                return paramsInfo.values.filter { it.doesReferToOther }
             }
             HttpVerb.PATCH, HttpVerb.PUT->{
                 return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) && (it.referParam is PathParam || it.name.toLowerCase().contains("id"))}
@@ -926,14 +918,26 @@ enum class InitMode{
 
 /**
  * extract info for a parm
+ *
+ * @property name a name of param
+ * @property key is generated based on [getParamId]
+ * @property preSegment refers to the segment of the param in the path
+ * @property segmentLevel refers to the level of param
+ * @property referParam refers to the instance of Param in the cluster
+ * @property doesReferToOther indicates whether the param is required to refer to a resource,
+ *              e.g., GET /foo/{id}, with GET, {id} refers to a resource which cannot be created by the current action
+ * @property involvedAction indicates the actions which exists such param,
+ *              e.g., GET, PATCH might have the same param named id
+ * @property fromAdditionInfo indicates whether the param is added later,
+ *              e.g., during the search
  */
 data class ParamInfo(
-        val name : String,
-        val key : String,
-        val preSegment : String, //by default is flatten segment
-        val segmentLevel : Int,
-        val referParam : Param,
-        val missing : Boolean,
-        val involvedAction : MutableSet<HttpVerb> = mutableSetOf(),
-        var fromAdditionInfo : Boolean = false
+    val name : String,
+    val key : String,
+    val preSegment : String, //by default is flatten segment
+    val segmentLevel : Int,
+    val referParam : Param,
+    val doesReferToOther : Boolean,
+    val involvedAction : MutableSet<HttpVerb> = mutableSetOf(),
+    var fromAdditionInfo : Boolean = false
 )

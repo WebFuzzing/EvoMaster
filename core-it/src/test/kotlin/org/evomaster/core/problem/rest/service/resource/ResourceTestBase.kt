@@ -240,7 +240,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     ) {
         val resourceNode = rm.getResourceCluster().getValue(resource)
 
-        val call = resourceNode.genCalls(template, randomness, config.maxTestSize, true, true)
+        val call = resourceNode.createRestResourceCall(template, randomness, config.maxTestSize, true, true)
 
         call.apply {
             val paramsRequiredToBind = seeActions(ActionFilter.NO_SQL).filterIsInstance<RestCallAction>()
@@ -360,7 +360,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
     fun testResourceStructureMutatorWithDependencyWithSpecified(resource: String, expectedRelated : String?){
         val callA = rm.getResourceNodeFromCluster(resource).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            createRestResourceCall(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
         val ind = RestIndividual(mutableListOf(callA), SampleType.SMART_RESOURCE)
 
@@ -388,19 +388,19 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     fun simulateDerivationOfDependencyRegardingFitness(resourceA: String, resourceB:String, resourceC:String) {
         assertTrue(!dm.getRelatedResource(resourceC).contains(resourceA))
         val callA = rm.getResourceNodeFromCluster(resourceA).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            createRestResourceCall(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
 
         val targetsOfA = callA.seeActions(ActionFilter.NO_SQL).mapIndexed { index, _ -> index + 1}
 
         val callB = rm.getResourceNodeFromCluster(resourceB).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            createRestResourceCall(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
 
         val targetsOfB = callB.seeActions(ActionFilter.NO_SQL).mapIndexed { index, _ -> targetsOfA.last() + 1 + index }
 
         val callC = rm.getResourceNodeFromCluster(resourceC).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            createRestResourceCall(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
 
         val targetsOfC = callC.seeActions(ActionFilter.NO_SQL).mapIndexed { index, _ -> targetsOfB.last() + 1 + index  }
