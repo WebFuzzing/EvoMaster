@@ -157,10 +157,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     private fun handleUnionFieldSelection(includedFields: List<Gene>, buffer: StringBuffer, previousGenes: List<Gene>, targetFormat: OutputFormat?) {
         /*For GraphQL we need UNION OBJECT FIELDS MODE to print out object`s fields in the union type eg:
                ... on UnionObject1 {
-                fields
+                fields<----
            }
                ... on UnionObjectN {
-                fields
+                fields<----
            }
        */
         val selection = includedFields.filter {
@@ -172,7 +172,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             }
         }
 
-        selection.map {
+        buffer.append(selection.map {
             val s: String = when (it) {
                 is OptionalGene -> {
                     assert(it.gene is ObjectGene)
@@ -184,6 +184,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                     it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
                 }
                 is BooleanGene -> {
+                   // buffer.append( "${it.name}").toString()
                     it.name
                 }
                 else -> {
@@ -191,7 +192,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 }
             }
             s
-        }.joinToString()
+        }.joinToString(","))
+
     }
 
     private fun handleUnionObjectSelection(includedFields: List<Gene>, buffer: StringBuffer, previousGenes: List<Gene>, targetFormat: OutputFormat?) {
@@ -213,10 +215,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         buffer.append(selection.map {
             val s: String = when (it) {
                 is OptionalGene -> {
-                    // buffer.append("... on ${it.gene.name.replace(union, "")} {")
+                     buffer.append("... on ${it.gene.name.replace(unionTag, "")} {")
                     assert(it.gene is ObjectGene)
-                    it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_OBJECT_FIELDS_MODE, targetFormat)
-                    //buffer.append("}").toString()
+                    buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_OBJECT_FIELDS_MODE, targetFormat)}")
+                    buffer.append("}").toString()
                 }
                 is ObjectGene -> {//TODO check
                     buffer.append("... on ${it.name} {")
@@ -234,13 +236,13 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
     private fun handleBooleanSelectionMode(includedFields: List<Gene>, buffer: StringBuffer, previousGenes: List<Gene>, targetFormat: OutputFormat?, mode: GeneUtils.EscapeMode?) {
 
-        if (includedFields.isEmpty()) {
-            buffer.append("$name")
-            return
-        }
+      //  if (includedFields.isEmpty()) {
+      //      buffer.append("$name")
+      //      return
+      //  }
 
         if(name.endsWith(unionTag)){
-            buffer.append("{")
+            buffer.append("${name.replace(unionTag, " ")} {")
             buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_OBJECT_MODE, targetFormat))
             buffer.append("}")
             return

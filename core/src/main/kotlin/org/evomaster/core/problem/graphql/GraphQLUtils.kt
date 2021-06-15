@@ -59,14 +59,14 @@ object GraphQLUtils {
 
                 }
 
-                /*else if (returnGene.name.contains("#UNION#")) {//for the first one
+                else if (returnGene.name.contains("#UNION#")) {//for the first one
 
-                    var query = getUnionQuery(returnGene, a)
+                    var query = getQuery(returnGene, a)
                     Entity.json("""
-                   {"query" : " {  ${a.methodName} { $query }  }   ","variables":null}
+                   {"query" : "    { $query }     ","variables":null}
                 """.trimIndent())
 
-                }*/
+                }
 
                     else {
                     var query = getQuery(returnGene, a)
