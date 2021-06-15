@@ -1338,7 +1338,7 @@ object GraphQLActionBuilder {
 
         if (interfaceHistory.count { it == tableType } <= 1) {
             for (elementInInterfaceTypes in interfaceTypes) {//Browse all additional objects in the interface
-
+                interfaceHistory.addLast(elementInInterfaceTypes)
                 //if (interfaceHistory.count { it == elementInInterfaceTypes } <= 1) {
                 val objGeneTemplate = createObjectGene(state, elementInInterfaceTypes, kindOfTableFieldType, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, elementInInterfaceTypes, unionTypes, interfaceTypes, unionHistory,interfaceHistory)
@@ -1346,7 +1346,7 @@ object GraphQLActionBuilder {
 
                 if (objGeneTemplate != null)
                     fields.add(OptionalGene(objGeneTemplate.name, objGeneTemplate))
-                   return fields
+
             }
 
         }else {
