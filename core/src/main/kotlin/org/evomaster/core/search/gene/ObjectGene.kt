@@ -21,6 +21,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
 
         val unionTag = "#UNION#"
+        val interfaceTag = "#INTERFACE#"
     }
 
     init {
@@ -113,9 +114,9 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
         } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE || mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
             handleBooleanSelectionMode(includedFields, buffer, previousGenes, targetFormat, mode)
-        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_OBJECT_MODE) {
+        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE) {
             handleUnionObjectSelection(includedFields, buffer, previousGenes, targetFormat)
-        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_OBJECT_FIELDS_MODE) {
+        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE) {
             handleUnionFieldSelection(includedFields, buffer, previousGenes, targetFormat)
         } else if (mode == GeneUtils.EscapeMode.GQL_INPUT_MODE) {
             handleInputSelection(buffer, includedFields, previousGenes, mode, targetFormat)
@@ -213,7 +214,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 is OptionalGene -> {
                      buffer.append("... on ${it.gene.name.replace(unionTag, "")} {")
                     assert(it.gene is ObjectGene)
-                    buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_OBJECT_FIELDS_MODE, targetFormat)}")
+                    buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE, targetFormat)}")
                     buffer.append("}").toString()
                 }
 
@@ -234,7 +235,14 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
         if(name.endsWith(unionTag)){
             buffer.append("${name.replace(unionTag, " ")} {")
-            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_OBJECT_MODE, targetFormat))
+            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat))
+            buffer.append("}")
+            return
+        }
+
+        if(name.endsWith(interfaceTag)){
+            buffer.append("${name.replace(interfaceTag, " ")} {")
+            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat))
             buffer.append("}")
             return
         }

@@ -37,9 +37,9 @@ object GraphQLUtils {
                     {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
                 """.trimIndent())
 
-                } else if (returnGene.name.endsWith(ObjectGene.unionTag)) {
+                } else if (returnGene.name.endsWith(ObjectGene.unionTag)) {//The first is a union type
 
-                    var query = getUnionQuery(returnGene, a)
+                    var query = getQuery(returnGene, a)//todo remove the name for the first union
                     Entity.json("""
                    {"query" : " {  ${a.methodName} ($printableInputGenes)  { $query }  }   ","variables":null}
                 """.trimIndent())
@@ -51,24 +51,20 @@ object GraphQLUtils {
                 """.trimIndent())
 
                 }
-            } else {//request without arguments and primitive type
-                bodyEntity = if (returnGene == null) {
+            } else {//request without arguments
+                bodyEntity = if (returnGene == null) { //primitive type
                     Entity.json("""
                     {"query" : "  { ${a.methodName}       } ","variables":null}
                 """.trimIndent())
 
-                }
-
-                else if (returnGene.name.contains("#UNION#")) {//for the first one
+                } else if (returnGene.name.endsWith(ObjectGene.unionTag)|| returnGene.name.endsWith(ObjectGene.interfaceTag)) {//The first one is a union
 
                     var query = getQuery(returnGene, a)
                     Entity.json("""
                    {"query" : "    { $query }     ","variables":null}
                 """.trimIndent())
 
-                }
-
-                    else {
+                } else {
                     var query = getQuery(returnGene, a)
                     Entity.json("""
                    {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
@@ -118,9 +114,6 @@ object GraphQLUtils {
         return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
     }
 
-    fun getUnionQuery(returnGene: Gene, a: GraphQLAction): String {
-        return returnGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_OBJECT_MODE)
-    }
 
     fun getPrintableInputGenes(printableInputGene: MutableList<String>): String {
         // Man: is the fun to handle " in printable
