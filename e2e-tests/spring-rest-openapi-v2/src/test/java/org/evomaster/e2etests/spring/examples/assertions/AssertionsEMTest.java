@@ -27,9 +27,9 @@ public class AssertionsEMTest extends SpringTestBase {
     }
 
     @Test
-    public void testRunEM() throws Throwable{
+    public void testRunEMAssertionsOn() throws Throwable{
         String outputFolderName = "AssertionsEM";
-        ClassName className = new ClassName("org.AssertionsEMTest");
+        ClassName className = new ClassName("org.AssertionsEM");
         clearGeneratedFiles(outputFolderName, className);
         int iterations = 10_000;
 
@@ -41,6 +41,53 @@ public class AssertionsEMTest extends SpringTestBase {
         String split = em.getTestSuiteSplitType().toString();
 
         Consumer<List<String>> lambda = (args) -> {
+
+            args.add("--enableBasicAssertions");
+            args.add("true");
+
+            //args.set(15, "JAVA_JUNIT_5");
+            args.replaceAll( s -> s.replace("KOTLIN_JUNIT_5", "JAVA_JUNIT_5"));
+
+            Solution<RestIndividual> solution = initAndRun(args);
+            assertTrue(solution.getIndividuals().size() >= 1);
+            SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);
+            assertTrue(splits.splitOutcome.size() >= 1);
+        };
+
+        assertTimeoutPreemptively(Duration.ofMinutes(3), ()->{
+            clearGeneratedFiles(outputFolderName, className);
+
+            handleFlaky(
+                    () -> {
+                        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, true, split, "true");
+                        defaultSeed++;
+                        lambda.accept(new ArrayList<>(args));
+                    }
+            );
+        });
+    }
+
+    @Test
+    public void testRunEMAssertionsOff() throws Throwable{
+        String outputFolderName = "AssertionsEM";
+        ClassName className = new ClassName("org.AssertionsEM");
+        clearGeneratedFiles(outputFolderName, className);
+        int iterations = 10_000;
+
+        EMConfig em = new EMConfig();
+        em.setOutputFormat(OutputFormat.JAVA_JUNIT_5);
+        em.setEnableBasicAssertions(false);
+        em.setTestSuiteSplitType(EMConfig.TestSuiteSplitType.NONE);
+
+        String split = em.getTestSuiteSplitType().toString();
+
+        Consumer<List<String>> lambda = (args) -> {
+
+            args.add("--enableBasicAssertions");
+            args.add("false");
+
+            //args.set(15, "JAVA_JUNIT_5");
+            args.replaceAll( s -> s.replace("KOTLIN_JUNIT_5", "JAVA_JUNIT_5"));
 
             Solution<RestIndividual> solution = initAndRun(args);
             assertTrue(solution.getIndividuals().size() >= 1);

@@ -563,7 +563,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, resVarName: String) {
 
-        lines.appendSemicolon(format)
+        if (config.enableBasicAssertions) {
+            lines.appendSemicolon(format)
+        }
+
         lines.deindent(2)
 
         if (call.saveLocation && !res.stopping) {
