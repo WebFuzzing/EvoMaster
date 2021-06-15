@@ -212,7 +212,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
             }
         }
-        buffer.append(selection.map {
+        selection.map {
             val s: String = when (it) {
                 is OptionalGene -> {
                      buffer.append("... on ${it.gene.name.replace(unionTag, "")} {")
@@ -231,7 +231,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 }
             }
             s
-        }.joinToString())
+        }.joinToString()
     }
 
     private fun handleBooleanSelectionMode(includedFields: List<Gene>, buffer: StringBuffer, previousGenes: List<Gene>, targetFormat: OutputFormat?, mode: GeneUtils.EscapeMode?) {
