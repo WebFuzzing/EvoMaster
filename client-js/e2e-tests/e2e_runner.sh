@@ -4,6 +4,7 @@ SUT_FOLDER=$1
 DRIVER_NAME=$2
 CONTROLLER_NAME=$3
 AT_LEAST_EXPECTED=$4
+NPARAMS=4
 
 echo Executing E2E for $SUT_FOLDER
 
@@ -85,3 +86,23 @@ else
     echo "ERROR. Achieved not enough target coverage: $COVERED"
     exit 1
 fi
+
+# check for text in file
+N=$#
+
+if [ $N -gt $NPARAMS ]; then
+  Z=("$@")
+  A=${Z[@]:$NPARAMS}
+
+  for K in $A; do
+    echo "Checking for text $K"
+    FOUND=`cat $TEST_LOCATION | grep "$K"`
+    if [ -z FOUND]; then
+      echo "ERROR. Not found text: $K"
+      exit 1
+    fi
+  done
+fi
+
+
+

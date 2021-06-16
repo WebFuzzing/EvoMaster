@@ -347,7 +347,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
         if (call.locationId != null) {
             if (format.isJavaScript()) {
-                lines.append("${TestSuiteWriter.jsImport}")
+                lines.append("${TestSuiteWriter.jsImport}.")
             }
 
             //TODO aren't those exactly the same???
@@ -458,11 +458,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
             if (!res.getHeuristicsForChainedLocation()) {
 
-                //TODO JS and C#
-                val extract = "$resVarName.extract().header(\"location\")"
-
-                lines.add("${locationVar(call.path.lastElement())} = $extract")
-                lines.appendSemicolon(format)
+                val location = locationVar(call.path.lastElement())
 
                 /*
                     If there is a "location" header, then it must be either empty or a valid URI.
@@ -476,15 +472,19 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
                 when {
                     format.isJavaOrKotlin() -> {
-                        lines.add("assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
+                        val extract = "$resVarName.extract().header(\"location\")"
+                        lines.add("$location = $extract")
+                        lines.appendSemicolon(format)
+                        lines.add("assertTrue(isValidURIorEmpty($location));")
                     }
                     format.isJavaScript() -> {
-                        val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty(${locationVar(call.path.lastElement())})"
+                        lines.add("$location = $resVarName.header['location'];")
+                        val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty($location)"
                         lines.add("expect($validCheck).toBe(true);")
                     }
                     format.isCsharp() -> {
                         //TODO
-                        lines.add("Assert.True(IsValidURIorEmpty(${locationVar(call.path.lastElement())}));")
+                        lines.add("Assert.True(IsValidURIorEmpty($location));")
                     }
                 }
             } else {
