@@ -23,22 +23,39 @@ object BindingBuilder {
     private val log = LoggerFactory.getLogger(BindingBuilder::class.java)
 
     /**
-     * bind value within a rest action, e.g., PathParam with BodyParam
+     * bind value within a rest action [restAction], e.g., PathParam with BodyParam
+     * @param doBuildBindingGene specifies whether to build the binding gene
      */
-    fun bindParamsInRestAction(restAction: RestCallAction){
+    fun bindParamsInRestAction(restAction: RestCallAction, doBuildBindingGene: Boolean = false){
+        val pairs = buildBindingPairsInRestAction(restAction)
+        pairs.forEach {
+            it.first.bindValueBasedOn(it.second)
+            if (doBuildBindingGene){
+                it.first.addBindingGene(it.second)
+                it.second.addBindingGene(it.first)
+            }
+        }
+    }
+
+    /**
+     * @return a list of pairs of genes to be bound within a [restAction]
+     */
+    fun buildBindingPairsInRestAction(restAction: RestCallAction): List<Pair<Gene, Gene>>{
+        val pair = mutableListOf<Pair<Gene, Gene>>()
         val params = restAction.parameters
         val path = restAction.path
 
         if(ParamUtil.existBodyParam(params)){
             params.filterIsInstance<BodyParam>().forEach { bp->
-                buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true)
+                pair.addAll(buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true))
             }
         }
         params.forEach { p->
             params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.also {sp->
-                buildBindBetweenParams(sp, path, path, mutableListOf(p))
+                pair.addAll(buildBindBetweenParams(sp, path, path, mutableListOf(p)))
             }
         }
+        return pair
     }
 
     fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false, doBuildBindingGene: Boolean = false){

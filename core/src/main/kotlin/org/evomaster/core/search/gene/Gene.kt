@@ -311,6 +311,13 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     }
 
     /**
+     * @return whether [this] gene has same binding gene as [genes]
+     *
+     * it is useful for debugging/unit tests
+     */
+    fun isSameBinding(genes: Set<Gene>) = (genes.size == bindingGenes.size) && genes.containsAll(bindingGenes)
+
+    /**
      * add [gene] as the binding gene
      */
     fun addBindingGene(gene: Gene) {

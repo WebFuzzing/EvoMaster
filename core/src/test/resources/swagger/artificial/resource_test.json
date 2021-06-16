@@ -327,7 +327,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RBar"
+                "$ref": "#/components/schemas/RXyz"
               }
             }
           }
