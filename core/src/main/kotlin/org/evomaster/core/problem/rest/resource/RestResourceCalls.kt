@@ -29,7 +29,8 @@ class RestResourceCalls(
         val template: CallsTemplate? = null,
         val resourceInstance: RestResourceInstance?=null,
         private val actions: MutableList<RestCallAction>,
-        private val dbActions : MutableList<DbAction> = mutableListOf()
+        private val dbActions : MutableList<DbAction> = mutableListOf(),
+        withBinding : Boolean = false
 ): StructuralElement(mutableListOf<StructuralElement>().apply { addAll(dbActions); addAll(actions) }){
 
     companion object{
@@ -37,7 +38,8 @@ class RestResourceCalls(
     }
 
     init {
-        buildBindingGene()
+        if (withBinding)
+            buildBindingGene()
     }
 
     /**
