@@ -68,7 +68,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         return fields.filter { it.isMutable() }
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         val buffer = StringBuffer()
 
