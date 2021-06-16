@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.problem.rest.param.Param
 
+@Deprecated("no need for a RestResourceCall")
 class RestResourceInstance (val referResourceNode : RestResourceNode, val params: List<Param>){
 
     fun equals(others : List<Param>) : Boolean{

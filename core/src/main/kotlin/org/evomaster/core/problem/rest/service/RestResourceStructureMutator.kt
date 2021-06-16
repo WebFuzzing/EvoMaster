@@ -76,7 +76,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
                 (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
                         //if the individual includes all resources, ADD and REPLACE are not applicable
                         (ind.getResourceCalls().map {
-                            it.resourceInstance?.getKey()
+                            it.getResolvedKey()
                         }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
                         //if the size of deletable individual is less 2, Delete and SWAP are not applicable
                         (ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size < 2 && (it == MutationType.DELETE || it == MutationType.SWAP))

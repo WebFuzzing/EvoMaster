@@ -271,12 +271,12 @@ class RestIndividual(
 
     private fun validateSwap(first : Int, second : Int) : Boolean{
         val position = getResourceCalls()[first].shouldBefore.map { r ->
-            getResourceCalls().indexOfFirst { it.resourceInstance?.getAResourceKey() == r }
+            getResourceCalls().indexOfFirst { it.getAResourceKey() == r }
         }
 
         if(!position.none { it > second }) return false
 
-        getResourceCalls().subList(0, second).find { it.shouldBefore.contains(getResourceCalls()[second].resourceInstance?.getAResourceKey()) }?.let {
+        getResourceCalls().subList(0, second).find { it.shouldBefore.contains(getResourceCalls()[second].getAResourceKey()) }?.let {
             return getResourceCalls().indexOf(it) < first
         }
         return true

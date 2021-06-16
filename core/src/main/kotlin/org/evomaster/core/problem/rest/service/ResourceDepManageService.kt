@@ -434,7 +434,7 @@ class ResourceDepManageService {
         val swapsloc = mutableListOf<Int>()
 
         seqCur.forEachIndexed { index, restResourceCalls ->
-            if (restResourceCalls.resourceInstance!!.getKey() != seqPre[index].resourceInstance!!.getKey())
+            if (restResourceCalls.getResolvedKey() != seqPre[index].getResolvedKey())
                 swapsloc.add(index)
         }
         if (swapsloc.size != 2) throw IllegalArgumentException("detect wrong mutator!")
@@ -585,7 +585,7 @@ class ResourceDepManageService {
 
          */
 
-        val mutatedIndex = (0 until seqCur.size).find { seqCur[it].resourceInstance!!.getKey() != seqPre[it].resourceInstance!!.getKey() }!!
+        val mutatedIndex = (0 until seqCur.size).find { seqCur[it].getResolvedKey() != seqPre[it].getResolvedKey() }!!
 
         val replaced = seqCur[mutatedIndex]
         val replace = seqPre[mutatedIndex]
@@ -660,7 +660,7 @@ class ResourceDepManageService {
              For instance, ABCDEFG, if we add H at 3nd position, become ABHCDEFG, then check CDEFG.
              if C is better, C rely on H; else if C is worse, C rely on H ? ;else C may not rely on H
         */
-        val added = seqCur.find { cur -> seqPre.find { pre -> pre.resourceInstance!!.getKey() == cur.resourceInstance!!.getKey() } == null }
+        val added = seqCur.find { cur -> seqPre.find { pre -> pre.getResolvedKey() == cur.getResolvedKey() } == null }
                 ?: return
         val addedKey = added.getResourceNodeKey()
 
@@ -723,7 +723,7 @@ class ResourceDepManageService {
          there is another case regarding duplicated resources calls (i.e., same resource and same actions) in a test, for instance, ABCB* (B* denotes the 2nd B), if B is deleted, become ACB*, then check CB* as before,
          when comparing B*, B* probability achieves better performance by taking target from previous first B, so we need to compare with merged targets, i.e., B and B*.
         */
-        val delete = seqPre.find { pre -> seqCur.find { cur -> pre.resourceInstance!!.getKey() == cur.resourceInstance!!.getKey() } == null }
+        val delete = seqPre.find { pre -> seqCur.find { cur -> pre.getResolvedKey() == cur.getResolvedKey() } == null }
                 ?: return
         val deleteKey = delete.getResourceNodeKey()
 
@@ -790,7 +790,7 @@ class ResourceDepManageService {
                     detectAfterModify(previous, current, isBetter)
                 } else if (seqCur.size > 1
                         && seqCur
-                                .filterIndexed { index, restResourceCalls -> restResourceCalls.resourceInstance!!.getKey() != seqPre[index].resourceInstance!!.getKey() }.size == 2) {
+                                .filterIndexed { index, restResourceCalls -> restResourceCalls.getResolvedKey() != seqPre[index].getResolvedKey() }.size == 2) {
                     //SWAP
                     detectAfterSwap(previous, current, isBetter)
                 } else {

@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.Param
@@ -392,7 +393,7 @@ class RestResourceNode(
 
         val template = templates[copy.verb.toString()]
                 ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${this.path}")
-        val call =  RestResourceCalls(template, RestResourceInstance(this, copy.parameters), mutableListOf(copy))
+        val call =  RestResourceCalls(template, this, mutableListOf(copy))
 
         if(action.verb == HttpVerb.POST){
             getCreation { c : CreationChain -> (c is PostCreationChain) }.let {
@@ -403,7 +404,7 @@ class RestResourceNode(
                 }
             }
         }else
-            call.status = ResourceStatus.NOT_EXISTING
+            call.status = ResourceStatus.NOT_NEEDED
 
         return call
     }
@@ -481,11 +482,20 @@ class RestResourceNode(
         val ats = RestResourceTemplateHandler.parseTemplate(template)
         // POST-*, *
         val results = mutableListOf<RestCallAction>()
+        var status = ResourceStatus.NOT_NEEDED
         val first = ats.first()
         if (first == HttpVerb.POST){
             val post = getPostChain()
-            Lazy.assert { post != null }
-            results.addAll(post!!.createPostChain(randomness))
+            if (post == null)
+                status = ResourceStatus.NOT_FOUND
+            else{
+                results.addAll(post.createPostChain(randomness))
+                if (!post.isComplete())
+                    status = ResourceStatus.NOT_FOUND_DEPENDENT
+                else{
+                    status = ResourceStatus.CREATED_REST
+                }
+            }
         }else{
             results.add(createActionByVerb(first, randomness))
         }
@@ -504,13 +514,16 @@ class RestResourceNode(
             results.add(results.last().copy() as RestCallAction)
         }
 
+        if (results.size > maxTestSize){
+            LoggingUtil.uniqueWarn(log, "the size (${results.size}) of actions exceeds the max size ($maxTestSize) in resource node $path")
+            val removeFirst = results.size - maxTestSize
+            results.drop(removeFirst)
+            status = ResourceStatus.NOT_ENOUGH_LENGTH
+        }
 
-        if (results.size > maxTestSize)
-            throw IllegalStateException("the size (${results.size}) of actions exceeds the max size ($maxTestSize)")
-
-        // TODO add resource status
-        return RestResourceCalls(templates[template]!!, RestResourceInstance(this, listOf()), results, withBinding= true)
+        return RestResourceCalls(templates[template]!!, this, results, withBinding= true).apply { this.status = status }
     }
+
 
     private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction{
         val action = (getActionByHttpVerb(actions, verb)?:throw IllegalStateException("cannot get $verb action in the resource $path")).copy() as RestCallAction
@@ -609,11 +622,11 @@ class RestResourceNode(
             val copy = result.get(index).copy() as RestCallAction
             result.add(index, copy)
         }
-        val calls = RestResourceCalls(templates[template]!!, resource, result)
+        val calls = RestResourceCalls(templates[template]!!, this, result)
 
         when(isCreated){
             1 ->{
-                calls.status = ResourceStatus.NOT_EXISTING
+                calls.status = ResourceStatus.NOT_NEEDED
             }
             0 ->{
                 calls.status = ResourceStatus.CREATED_REST

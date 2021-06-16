@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
@@ -27,7 +28,7 @@ import org.slf4j.LoggerFactory
  */
 class RestResourceCalls(
     val template: CallsTemplate? = null,
-    val resourceInstance: RestResourceInstance? = null,
+    val node: RestResourceNode? = null,
     private val actions: MutableList<RestCallAction>,
     private val dbActions: MutableList<DbAction> = mutableListOf(),
     withBinding: Boolean = false
@@ -91,7 +92,7 @@ class RestResourceCalls(
     override fun copyContent() : RestResourceCalls{
         val copy = RestResourceCalls(
             template,
-            resourceInstance?.copy(),
+            node,
             actions.map { a -> a.copyContent() as RestCallAction}.toMutableList(),
             dbActions.map { db-> db.copyContent() as DbAction }.toMutableList(),
             withBinding = false
@@ -217,7 +218,7 @@ class RestResourceCalls(
     fun bindRestActionsWith(restResourceCalls: RestResourceCalls){
         if (restResourceCalls.getResourceNode().path != getResourceNode().path)
             throw IllegalArgumentException("target to bind refers to a different resource node, i.e., target (${restResourceCalls.getResourceNode().path}) vs. this (${getResourceNode().path})")
-        val params = restResourceCalls.resourceInstance?.params?:restResourceCalls.actions.filterIsInstance<RestCallAction>().flatMap { it.parameters }
+        val params = restResourceCalls.actions.flatMap { it.parameters }
         actions.forEach { ac ->
             if(ac.parameters.isNotEmpty()){
                 ac.bindBasedOn(ac.path, params)
@@ -245,10 +246,17 @@ class RestResourceCalls(
         return RestResourceTemplateHandler.getStringTemplateByCalls(this)
     }
 
+    private fun getParamsInCall() : List<Param>  = actions.flatMap { it.parameters }
+
+    fun getResolvedKey() : String{
+        return node?.path?.resolve(getParamsInCall())?: throw IllegalStateException("node is null")
+    }
+
+    fun getAResourceKey() : String = node?.path.toString()?: throw IllegalStateException("node is null")
 
     fun getRestTemplate() = template?.template?: RestResourceTemplateHandler.getStringTemplateByActions(actions as MutableList<RestCallAction>)
 
-    fun getResourceNode() : RestResourceNode = resourceInstance?.referResourceNode?:throw IllegalArgumentException("the individual does not have resource structure")
+    fun getResourceNode() : RestResourceNode = node?:throw IllegalArgumentException("the individual does not have resource structure")
 
     fun getResourceNodeKey() : String = getResourceNode().getName()
 
@@ -264,7 +272,7 @@ enum class ResourceStatus(val value: Int){
     /**
      * DO NOT require resource
      */
-    NOT_EXISTING(1),
+    NOT_NEEDED(1),
     /**
      * resource is created
      */
