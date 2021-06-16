@@ -109,6 +109,7 @@ object RestActionBuilderV3 {
     /**
      * Create an [ObjectGene] based on schema info of a DTO, given in the format
      * "name: {...}"
+     * @param referenceTypeName specifies refType (i.e., [ObjectGene.refType]]) of the [ObjectGene] to be created that could be same with [name]
      */
     fun createObjectGeneForDTO(name: String, dtoSchema: String, referenceTypeName: String?) : Gene{
 
@@ -505,6 +506,9 @@ object RestActionBuilderV3 {
         throw IllegalArgumentException("Cannot handle combination $type/$format")
     }
 
+    /**
+     * @param referenceTypeName is the name of object type
+     */
     private fun createObjectGene(name: String, schema: Schema<*>, swagger: OpenAPI, history: Deque<String>, referenceTypeName: String?): Gene {
 
         val fields = schema.properties?.entries?.map {
