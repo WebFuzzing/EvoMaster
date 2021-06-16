@@ -1,10 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.individual
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.Individual
+import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
@@ -284,7 +281,7 @@ class IndividualGeneImpactTest {
 
     }
 
-    class Ind(val actions : MutableList<IndAction>, val initialization : MutableList<IndAction> = mutableListOf()) : Individual(){
+    class Ind(val actions : MutableList<IndAction>, val initialization : MutableList<IndAction> = mutableListOf()) : Individual(children = initialization.plus(actions)){
         companion object{
             fun getInd() : Ind{
                 return Ind(IndAction.getIndAction(2).toMutableList())
@@ -294,9 +291,11 @@ class IndividualGeneImpactTest {
                 return Ind(IndAction.getIndAction(2).toMutableList(), IndAction.getSeqIndAction(initializationSize).toMutableList())
             }
         }
-        override fun copy(): Individual {
-            return Ind(actions.map { it.copy() as IndAction }.toMutableList())
+        override fun copyContent(): Individual {
+            return Ind(actions.map { it.copyContent() as IndAction }.toMutableList())
         }
+
+        override fun getChildren(): List<Action> = initialization.plus(actions)
 
         override fun seeGenes(filter: GeneFilter): List<out Gene> {
            return when(filter){
@@ -324,7 +323,9 @@ class IndividualGeneImpactTest {
         override fun repairInitializationActions(randomness: Randomness) {}
     }
 
-    class IndAction(private val genes : List<out Gene>) : Action{
+    class IndAction(private val genes : List<out Gene>) : Action(genes){
+
+        override fun getChildren(): List<Gene> = genes
 
         companion object{
             fun getIndAction(size: Int = 1): List<IndAction>{
@@ -368,11 +369,15 @@ class IndividualGeneImpactTest {
             return genes
         }
 
-        override fun copy(): Action {
-            return IndAction(genes.map { it.copy() })
+        override fun copyContent(): Action {
+            return IndAction(genes.map { it.copyContent() })
         }
 
         override fun shouldCountForFitnessEvaluations(): Boolean = true
+
+        override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
+            seeGenes().forEach { it.randomize(randomness, forceNewValue) }
+        }
 
     }
 }

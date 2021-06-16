@@ -17,8 +17,7 @@ class EvaluatedIndividualBuilder {
 
             val sampleType = SampleType.RANDOM
 
-            val restActions = emptyList<RestAction>().toMutableList()
-
+            val restActions = emptyList<RestCallAction>().toMutableList()
 
             val individual = RestIndividual(restActions, sampleType, dbInitialization)
 
@@ -32,7 +31,7 @@ class EvaluatedIndividualBuilder {
 
         fun buildResourceEvaluatedIndividual(
             dbInitialization: MutableList<DbAction>,
-            groups: MutableList<Pair<MutableList<DbAction>, MutableList<RestAction>>>
+            groups: MutableList<Pair<MutableList<DbAction>, MutableList<RestCallAction>>>
         ): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
 
             val format = OutputFormat.JAVA_JUNIT_4

@@ -13,7 +13,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Individual.ActionFilter
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
@@ -116,6 +116,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 log.trace("structure mutator will be applied")
             }
             structureMutator.mutateStructure(copy, mutatedGene)
+            copy.cleanBrokenBindingReference()
             return copy
         }
 
@@ -219,7 +220,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         val isFromInit = individual.seeInitializingActions().any { it.seeGenes().contains(gene) }
         val isDbInResourceCall = (individual as? RestIndividual)?.getResourceCalls()?.any {
-            it.dbActions.any { d-> d.seeGenes().contains(gene) }
+            it.seeActions(ActionFilter.ONLY_SQL).any { d-> d.seeGenes().contains(gene) }
         }?:false
 
         val filter = if (isFromInit) ActionFilter.INIT else ActionFilter.NO_INIT
@@ -236,7 +237,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         val resourcePosition = (individual as? RestIndividual)?.getResourceCalls()?.indexOfFirst {
-            it.seeActions().any { d-> d.seeGenes().contains(gene) }
+            it.seeActions(ActionFilter.ALL).any { d-> d.seeGenes().contains(gene) }
         }
 
         mutatedGene?.addMutatedGene(isFromInit || isDbInResourceCall, valueBeforeMutation = value, gene = gene, position = position, resourcePosition = resourcePosition)

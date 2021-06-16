@@ -2,11 +2,10 @@ package org.evomaster.core.search.algorithms.onemax
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.tracer.TraceableElement
-import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 
 
@@ -14,7 +13,7 @@ class OneMaxIndividual(
         val n : Int,
         trackOperator: TrackOperator? = null,
         index : Int = -1)
-    : Individual (trackOperator, index) {
+    : Individual (trackOperator, index, listOf()) {
 
     private val list : MutableList<EnumGene<Double>> = mutableListOf()
 
@@ -22,11 +21,14 @@ class OneMaxIndividual(
         (0 until n).forEach {
             list.add(EnumGene<Double>("$it", listOf(0.0, 0.25, 0.5, 0.75, 1.0), 0))
         }
+        addChildren(list)
     }
 
-    override fun copy(): Individual {
+    override fun getChildren(): List<Gene> = list
 
-        var copy = OneMaxIndividual(n, trackOperator)
+    override fun copyContent(): Individual {
+
+        val copy = OneMaxIndividual(n, trackOperator)
         (0 until n).forEach {
             copy.list[it].index = this.list[it].index
         }

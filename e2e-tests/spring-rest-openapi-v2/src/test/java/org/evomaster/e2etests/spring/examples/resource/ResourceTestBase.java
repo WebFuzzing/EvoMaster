@@ -30,19 +30,17 @@ public class ResourceTestBase extends SpringTestBase {
 
         boolean[] matched = new boolean[verbs.length];
         Arrays.fill(matched, false);
-        List<RestAction> actions = ind.getIndividual().seeActions();
+        List<RestCallAction> actions = ind.getIndividual().seeActions();
 
         Loop:
         for (int i = 0; i < actions.size(); i++) {
-            RestAction action = actions.get(i);
-            if (action instanceof RestCallAction){
-                int index = getIndexOfFT(matched) + 1;
-                if (index == matched.length) break Loop;
-                if (((RestCallAction) action).getVerb() == verbs[index]
-                        && ((RestCallAction) action).getPath().isEquivalent(new RestPath(paths[index]))
-                        && ((RestCallResult) ind.getResults().get(i)).getStatusCode() == expectedStatusCodes[index]){
-                    matched[index] = true;
-                }
+            RestCallAction action = actions.get(i);
+            int index = getIndexOfFT(matched) + 1;
+            if (index == matched.length) break Loop;
+            if (action.getVerb() == verbs[index]
+                    && action.getPath().isEquivalent(new RestPath(paths[index]))
+                    && ((RestCallResult) ind.getResults().get(i)).getStatusCode() == expectedStatusCodes[index]){
+                matched[index] = true;
             }
         }
 

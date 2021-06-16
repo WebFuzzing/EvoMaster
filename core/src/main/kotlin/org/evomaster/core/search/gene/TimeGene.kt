@@ -1,14 +1,14 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -19,13 +19,13 @@ import org.slf4j.LoggerFactory
  * https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
  */
 class TimeGene(
-        name: String,
+    name: String,
         //note: ranges deliberately include wrong values.
-        val hour: IntegerGene = IntegerGene("hour", 0, MIN_HOUR, MAX_HOUR),
-        val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
-        val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
-        val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
-) : Gene(name) {
+    val hour: IntegerGene = IntegerGene("hour", 0, MIN_HOUR, MAX_HOUR),
+    val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
+    val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
+    val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
+) : Gene(name, mutableListOf<Gene>(hour, minute, second)) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(TimeGene::class.java)
@@ -45,23 +45,18 @@ class TimeGene(
         TIME_WITH_MILLISECONDS
     }
 
-    init {
-        hour.parent = this
-        minute.parent = this
-        second.parent = this
-    }
-
+    override fun getChildren(): MutableList<Gene> = mutableListOf(hour, minute, second)
 
     /*
         Note: would need to handle timezone and second fractions,
         but not sure how important for testing purposes
      */
 
-    override fun copy(): Gene = TimeGene(
+    override fun copyContent(): Gene = TimeGene(
             name,
-            hour.copy() as IntegerGene,
-            minute.copy() as IntegerGene,
-            second.copy() as IntegerGene,
+            hour.copyContent() as IntegerGene,
+            minute.copyContent() as IntegerGene,
+            second.copyContent() as IntegerGene,
             timeGeneFormat = this.timeGeneFormat
     )
 
@@ -163,4 +158,39 @@ class TimeGene(
 
     override fun innerGene(): List<Gene> = listOf(hour, minute, second)
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return when{
+            gene is TimeGene->{
+                hour.bindValueBasedOn(gene.hour) &&
+                        second.bindValueBasedOn(gene.minute) &&
+                        minute.bindValueBasedOn(gene.second)
+            }
+            gene is DateTimeGene -> bindValueBasedOn(gene.time)
+            gene is StringGene && gene.getSpecializationGene() != null-> bindValueBasedOn(gene.getSpecializationGene()!!)
+            else ->{
+                LoggingUtil.uniqueWarn(log, "cannot bind TimeGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
+
+    override fun repair() {
+        if (hour.value < 0) {
+            hour.value = 0
+        } else if (hour.value > 23) {
+            hour.value = 23
+        }
+
+        if (minute.value < 0) {
+            minute.value = 0
+        } else if (minute.value > 59) {
+            minute.value = 59
+        }
+
+        if (second.value < 0) {
+            second.value = 0
+        } else if (second.value > 59) {
+            second.value = 59
+        }
+    }
 }
