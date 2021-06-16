@@ -20,7 +20,7 @@ Such website provides an API itself to query info on existing APIs.
 Such small API (only 2 endpoints) can be easily tested by running the following on a command-line: 
 
 ```
-java -jar core/target/evomaster.jar  --blackBox true --bbSwaggerUrl https://api.apis.guru/v2/specs/apis.guru/2.0.1/swagger.json  --outputFormat JAVA_JUNIT_4 --maxTime 30s
+java -jar core/target/evomaster.jar  --blackBox true --bbSwaggerUrl https://api.apis.guru/v2/swagger.yaml  --outputFormat JAVA_JUNIT_4 --maxTime 30s
 ```
 
 The command is doing the following:
@@ -30,7 +30,7 @@ The command is doing the following:
   or [built from source](build.md).
 * `--blackBox true`: by default, _EvoMaster_ does white-box testing. Here, we specify that
   we do black-box testing instead.
-* `--bbSwaggerUrl ...`: URL of where the Swagger schema is. If it the API is running on a different
+* `--bbSwaggerUrl ...`: URL of where the Swagger schema is. If the API is running on a different
   host, then such different host would need to be specified with `--bbTargetUrl`.   
 * `--outputFormat JAVA_JUNIT_4`: must specify how the tests will be generated, e.g., in Java
   using JUnit 4 in this case. Note: the language of the generated tests is not necessarily related

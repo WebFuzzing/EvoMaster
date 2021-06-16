@@ -17,6 +17,10 @@ abstract class StructuralElement (
         private val log = LoggerFactory.getLogger(StructuralElement::class.java)
     }
 
+    /**
+     * parent of the element, which contains current the element
+     * Note that [parent] can be null when the element is root
+     */
     var parent : StructuralElement? = null
         private set
 
@@ -33,16 +37,27 @@ abstract class StructuralElement (
      */
     abstract fun getChildren(): List<out StructuralElement>
 
+    /**
+     * add a child of the element
+     * Note that the default method is only to build the parent/children relationship
+     */
     open fun addChild(child: StructuralElement){
         child.parent = this
     }
 
+    /**
+     * add children of the element
+     * Note that the default method is only to build the parent/children relationship
+     */
     open fun addChildren(children : List<StructuralElement>){
         initChildren(children)
     }
 
     /**
      * make a deep copy on the content
+     *
+     * Noet that here we only copy the content the element,
+     * do not further build relationship (e.g., binding) among the elements
      */
     abstract fun copyContent(): StructuralElement
 
@@ -69,6 +84,10 @@ abstract class StructuralElement (
         return copy
     }
 
+    /**
+     * @return root of the element which can not be null
+     * if [this] is the root, return [this]
+     */
     fun getRoot() : StructuralElement {
         if (parent!=null) return parent!!.getRoot()
         return this

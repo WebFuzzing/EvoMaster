@@ -15,14 +15,30 @@ import org.evomaster.core.search.tracer.TrackingHistory
  * a single test case, composed by 1 or more "actions" (eg, calls
  * to a RESTful API, SQL operations on a database or WireMock setup)
  *
+ * @property trackOperator presents which operator creates the individual, e.g., sampler
+ * @property index presents when the individual is created
+ * @param children specify the children of the individual with the constructor
+ *
  */
 abstract class Individual(override var trackOperator: TrackOperator? = null,
                           override var index: Int = Traceable.DEFAULT_INDEX,
                           children: List<out StructuralElement>
 ) : Traceable, StructuralElement(children){
 
+    /**
+     * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
+     *
+     * Note that if the evalutedIndividual is tracked (i.e., [EMConfig.enableTrackEvaluatedIndividual]),
+     * e do not recommend to track the individual
+     */
     override var evaluatedResult: EvaluatedMutation? = null
 
+    /**
+     * presents the history of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
+     *
+     * Note that if the evalutedIndividual is tracked (i.e., [EMConfig.enableTrackEvaluatedIndividual]),
+     * we do not recommend to track the individual
+     */
     override var tracking: TrackingHistory<out Traceable>? = null
 
     /**

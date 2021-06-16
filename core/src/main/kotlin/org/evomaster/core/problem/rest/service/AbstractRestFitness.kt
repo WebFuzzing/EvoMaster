@@ -176,8 +176,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         }
 
         val schema : String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
-
-        return RestActionBuilderV3.createObjectGeneForDTO(name, schema)
+        //TODO neeed to check: referType is same with the name?
+        return RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
     }
 
     /**

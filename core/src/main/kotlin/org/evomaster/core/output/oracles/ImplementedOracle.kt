@@ -8,11 +8,14 @@ import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
+import java.net.URISyntaxException
 
 abstract class ImplementedOracle {
 
@@ -85,8 +88,11 @@ abstract class ImplementedOracle {
      */
 
     fun retrievePath(objectGenerator: ObjectGenerator, call: RestCallAction): PathItem? {
+        val swagger = objectGenerator.getSwagger()
+        val basePath = RestActionBuilderV3.getBasePathFromURL(swagger)
+
         val possibleItems = objectGenerator.getSwagger().paths.filter{ e ->
-            call.path.toString().contains(e.key)
+            call.path.toString().contentEquals(basePath+e.key)
         }
 
         val result = when (possibleItems.size){
