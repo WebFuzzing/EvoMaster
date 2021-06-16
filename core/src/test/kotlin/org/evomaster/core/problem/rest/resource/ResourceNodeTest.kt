@@ -144,7 +144,7 @@ class ResourceNodeTest {
     fun testGeneBinding(){
         val node = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")
         assertNotNull(node)
-        val call = node!!.createRestResourceCall("POST-GET", randomness, 10)
+        val call = node!!.createRestResourceCallBasedOnTemplate("POST-GET", randomness, 10)
         call.seeActions(ActionFilter.NO_SQL).apply {
             assertEquals(4, size)
             val get = last() as RestCallAction

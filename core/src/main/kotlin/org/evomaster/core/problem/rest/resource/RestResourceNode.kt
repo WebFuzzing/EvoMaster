@@ -475,7 +475,7 @@ class RestResourceNode(
     }
 
 
-    fun createRestResourceCall(template: String, randomness: Randomness, maxTestSize: Int): RestResourceCalls{
+    fun createRestResourceCallBasedOnTemplate(template: String, randomness: Randomness, maxTestSize: Int): RestResourceCalls{
         if(!templates.containsKey(template))
             throw IllegalArgumentException("$template does not exist in $path")
         val ats = RestResourceTemplateHandler.parseTemplate(template)
@@ -492,7 +492,7 @@ class RestResourceNode(
 
         if (ats.size == 2){
             results.add(createActionByVerb(ats[1], randomness))
-        }else if (actions.size > 2){
+        }else if (ats.size > 2){
             throw IllegalStateException("the size of action with $template should be less than 2, but it is ${ats.size}")
         }
 
@@ -509,7 +509,7 @@ class RestResourceNode(
             throw IllegalStateException("the size (${results.size}) of actions exceeds the max size ($maxTestSize)")
 
         // TODO add resource status
-        return RestResourceCalls(templates[template]!!, null, results)
+        return RestResourceCalls(templates[template]!!, RestResourceInstance(this, results.flatMap { it.parameters }), results)
     }
 
     private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction{
