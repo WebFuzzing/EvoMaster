@@ -57,14 +57,17 @@ object GraphQLUtils {
                     {"query" : "  { ${a.methodName}       } ","variables":null}
                 """.trimIndent())
 
-                } else if (returnGene.name.endsWith(ObjectGene.unionTag)|| returnGene.name.endsWith(ObjectGene.interfaceTag)) {//The first one is a union
+                }
+              /*  else if (returnGene.name.endsWith(ObjectGene.unionTag)|| returnGene.name.endsWith(ObjectGene.interfaceTag)) {//The first one is a union
 
                     var query = getQuery(returnGene, a)
                     Entity.json("""
                    {"query" : "    { $query }     ","variables":null}
                 """.trimIndent())
 
-                } else {
+                } */
+
+                else {
                     var query = getQuery(returnGene, a)
                     Entity.json("""
                    {"query" : " {  ${a.methodName}  $query   }   ","variables":null}
