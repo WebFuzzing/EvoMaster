@@ -22,6 +22,8 @@ test("Test get data", async () => {
     expect(response.body.d.g.h.length).toBe(2);
     expect(response.body.d.g.h[0]).toBe("xvalue");
     expect(response.body.d.g.h[1]).toBe("yvalue");
+    expect(response.body.i).toBe(true);
+    expect(response.body.l).toBe(false);
 });
 
 test("Test post data", async () => {

@@ -16,7 +16,9 @@ app.get("/data", (req, res) => {
             g: {
                 h: ["xvalue", "yvalue"]
             }
-        }
+        },
+        i: true,
+        l: false
     };
 
     res.status(200);

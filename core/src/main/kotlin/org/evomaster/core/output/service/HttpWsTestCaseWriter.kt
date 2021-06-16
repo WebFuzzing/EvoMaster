@@ -348,6 +348,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     handleAssertionsOnField(tf, lines, fieldPath, responseVariableName)
                     return
                 }
+
+                throw IllegalStateException("Cannot parse: $s")
             }
             //TODO C#
             else -> throw IllegalStateException("Format not supported yet: $format")
@@ -410,6 +412,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
         if(format.isJavaOrKotlin()) {
             val  left = when (value) {
+                is Boolean -> "equalTo($value)"
                 is Number -> "numberMatches($value)"
                 is String -> "containsString(" +
                         "\"${GeneUtils.applyEscapes(value as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}" +
