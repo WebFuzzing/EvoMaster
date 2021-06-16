@@ -20,11 +20,11 @@ import org.slf4j.LoggerFactory
 /**
  * the class is used to structure actions regarding resources.
  * @property template is a resource template, e.g., POST-GET
- * @property resourceInstance presents a resource that [actions] perform on. [resourceInstance] is an instance of [RestResourceNode]
+ * @property node is a resource node which creates [this] call
  * @property actions is a sequence of actions in the [RestResourceCalls] that follows [template]
  * @property dbActions are used to initialize data for rest actions, either select from db or insert new data into db
+ * @param withBinding specifies whether to build binding between rest genes
  *
- * TODO remove [resourceInstance]
  */
 class RestResourceCalls(
     val template: CallsTemplate? = null,
@@ -150,13 +150,14 @@ class RestResourceCalls(
         }
     }
 
-
     /**
      * @return the mutable SQL genes and they do not bind with any of Rest Actions
      *
      * */
     private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
 
+
+    @Deprecated("not required if we handle bound gene")
     fun repairGenesAfterMutation(mutatedGene: MutatedGeneSpecification?, cluster: ResourceCluster){
 
         mutatedGene?: log.warn("repair genes of resource call ({}) with null mutated genes", getResourceNode().getName())
@@ -177,7 +178,7 @@ class RestResourceCalls(
             }
         }
         if (anyMutated && dbActions.isNotEmpty()){
-            bindCallWithDbActions(dbActions,null, cluster, false, false)
+            buildBindingWithDbActions(dbActions,null, cluster, false, false)
         }
     }
 
@@ -191,9 +192,9 @@ class RestResourceCalls(
      * @param forceBindParamBasedOnDB specifies whether to bind params based on [dbActions] or reversed
      * @param dbRemovedDueToRepair indicates whether the dbactions are removed due to repair.
      */
-    fun bindCallWithDbActions(dbActions: MutableList<DbAction>, bindingMap: Map<RestCallAction, MutableList<ParamGeneBindMap>>? = null,
-                              cluster : ResourceCluster,
-                              forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
+    fun buildBindingWithDbActions(dbActions: MutableList<DbAction>, bindingMap: Map<RestCallAction, MutableList<ParamGeneBindMap>>? = null,
+                                  cluster : ResourceCluster,
+                                  forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
         var paramToTables = bindingMap
         if (paramToTables == null){
             val paramInfo = getResourceNode().getPossiblyBoundParams(template!!.template, false)
@@ -206,7 +207,7 @@ class RestResourceCalls(
                 if (this.isEmpty()) null else this.first()
             }
             if (list != null && list.isNotEmpty()) {
-                BindingBuilder.bindRestAndDbAction(a, cluster.getResourceNode(a, true)!!, list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair)
+                BindingBuilder.bindRestAndDbAction(a, cluster.getResourceNode(a, true)!!, list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair, true)
             }
         }
     }
@@ -232,14 +233,6 @@ class RestResourceCalls(
     private fun longestPath() : RestCallAction{
         val candidates = ParamUtil.selectLongestPathAction(actions)
         return candidates.first()
-    }
-
-    private fun repairGenePerAction(gene: Gene, action : RestCallAction){
-        val genes = action.seeGenes().flatMap { g->g.flatView() }
-        if(genes.contains(gene))
-            genes.filter { ig-> ig != gene && ig.name == gene.name && ig::class.java.simpleName == gene::class.java.simpleName }.forEach {cg->
-                cg.copyValueFrom(gene)
-            }
     }
 
     fun extractTemplate() : String{

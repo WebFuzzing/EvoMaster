@@ -157,4 +157,18 @@ class BindingBuilderTest {
 
     }
 
+    @Test
+    fun testBindingRestActionDbAction(){
+        val getXyz = (actionCluster.getValue("GET:/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}") as? RestCallAction)?.copy() as? RestCallAction
+        assertNotNull(getXyz)
+        getXyz!!.randomize(randomness, false)
+        val getXyzId = ((getXyz.parameters.find { it is PathParam && it.name == "rxyzId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        assertNotNull(getXyzId)
+        val getXyzBarId = ((getXyz.parameters.find { it is PathParam && it.name == "rbarId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        assertNotNull(getXyzBarId)
+        val getXyzFooId = ((getXyz.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
+        assertNotNull(getXyzFooId)
+
+    }
+
 }

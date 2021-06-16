@@ -330,7 +330,7 @@ class ResourceManageService {
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
 
              */
-            call.bindCallWithDbActions(dbActions, bindingMap = paramToTables, cluster = cluster, forceBindParamBasedOnDB = false, dbRemovedDueToRepair = removed)
+            call.buildBindingWithDbActions(dbActions, bindingMap = paramToTables, cluster = cluster, forceBindParamBasedOnDB = false, dbRemovedDueToRepair = removed)
 
             call.addDbAction(actions = dbActions)
         }

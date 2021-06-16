@@ -74,9 +74,14 @@ object BindingBuilder {
                             paramGeneBindMap: List<ParamGeneBindMap>,
                             dbActions: MutableList<DbAction>,
                             forceBindParamBasedOnDB: Boolean = false,
-                            dbRemovedDueToRepair : Boolean){
+                            dbRemovedDueToRepair : Boolean,
+                            doBuildBindingGene: Boolean){
         buildBindRestActionBasedOnDbActions(restAction, restNode, paramGeneBindMap, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair).forEach { p->
             p.first.bindValueBasedOn(p.second)
+            if (doBuildBindingGene){
+                p.first.addBindingGene(p.second)
+                p.second.addBindingGene(p.first)
+            }
         }
     }
 

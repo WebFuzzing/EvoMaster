@@ -1147,7 +1147,7 @@ class ResourceDepManageService {
 
         val dbActions = dbActions.plus(call.seeActions(ONLY_SQL).filterIsInstance<DbAction>()).toMutableList()
         extractRelatedTablesForCall(call, dbActions, false).let {
-            call.bindCallWithDbActions(dbActions, bindingMap = it, cluster = rm.cluster, forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
+            call.buildBindingWithDbActions(dbActions, bindingMap = it, cluster = rm.cluster, forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
         }
     }
 
@@ -1192,7 +1192,7 @@ class ResourceDepManageService {
                 .forEach { a ->
                     a.parameters.forEach { p ->
                         targets.forEach { ta ->
-                            BindingBuilder.bindRestAction(p, a.path, (ta as RestCallAction).path, ta.parameters)
+                            BindingBuilder.bindRestAction(p, a.path, (ta as RestCallAction).path, ta.parameters, doBuildBindingGene = true)
                         }
                     }
                 }
@@ -1211,7 +1211,7 @@ class ResourceDepManageService {
             db.table.foreignKeys.map { it.targetTable }.let { ftables ->
                 frontTables.filter { entry ->
                     entry.value.intersect(ftables).isNotEmpty()
-                }.forEach { t, _ ->
+                }.forEach { (t, _) ->
                     t.isDeletable = false
                     t.shouldBefore.add(call.getResourceNodeKey())
                 }

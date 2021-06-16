@@ -167,9 +167,11 @@ class ResourceNodeTest {
             assertNotNull(postXyzId)
             val postXyzIdGene = ((postXyzId as BodyParam).gene as? ObjectGene)?.fields?.find { it.name == "id" }
             assertNotNull(postXyzIdGene)
+            //binding
+            assertTrue(postXyzIdGene!!.isBoundWith(getXyzIdGene!!))
+            assertTrue(getXyzIdGene.isBoundWith(postXyzIdGene))
 
 
-            //TODO
         }
     }
 }
