@@ -228,7 +228,8 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                     '{' -> {
                         // JSON contains an object
                         val resContents = Gson().fromJson(bodyString, Map::class.java)
-                        handleAssertionsOnObject(resContents, lines, null)
+                    //FIXME
+                    //handleAssertionsOnObject(resContents, lines, null)
 
                     }
                     else -> {

@@ -14,6 +14,7 @@ import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
+import java.lang.NumberFormatException
 import javax.ws.rs.core.MediaType
 
 abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
@@ -285,13 +286,16 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     //TODO this should be handled recursively, and not ad-hoc here...
                     '[' -> {
                         // This would be run if the JSON contains an array of objects.
-                        val list = Gson().fromJson(res.getBody(), ArrayList::class.java)
+                        val list = Gson().fromJson(res.getBody(), List::class.java)
                         handleAssertionsOnList(list, lines, "", responseVariableName)
                     }
                     '{' -> {
                         // JSON contains an object
                         val resContents = Gson().fromJson(res.getBody(), Map::class.java)
-                        handleAssertionsOnObject(resContents, lines, responseVariableName)
+                        handleAssertionsOnObject(resContents as Map<String, *>, lines, "", responseVariableName)
+                    }
+                    '"' -> {
+                        lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, responseVariableName))
                     }
                     else -> {
                         /*
@@ -306,7 +310,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
                             bodyString.isNullOrBlank() -> lines.add(emptyBodyCheck(responseVariableName))
 
-                            else -> lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, responseVariableName))
+                            else -> handlePrimitive(lines, bodyString, "", responseVariableName)
                         }
                     }
                 }
@@ -323,13 +327,48 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         }
     }
 
-    protected fun handleAssertionsOnObject(resContents: Map<*, *>, lines: Lines, responseVariableName: String?) {
+    private fun handlePrimitive(lines: Lines, bodyString: String, fieldPath: String, responseVariableName: String?) {
+
+        val s = bodyString.trim()
+
+        when{
+            format.isJavaOrKotlin() -> {
+                lines.add(bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName))
+            }
+            format.isJavaScript() -> {
+                try {
+                    val number = s.toDouble()
+                    handleAssertionsOnField(number, lines, fieldPath, responseVariableName)
+                    return
+                } catch (e: NumberFormatException){
+                }
+
+                if(s.equals("true", true) || s.equals("false", true)) {
+                    val tf = bodyString.toBoolean()
+                    handleAssertionsOnField(tf, lines, fieldPath, responseVariableName)
+                    return
+                }
+            }
+            //TODO C#
+            else -> throw IllegalStateException("Format not supported yet: $format")
+        }
+    }
+
+    protected fun handleAssertionsOnObject(resContents: Map<String, *>, lines: Lines, fieldPath: String, responseVariableName: String?) {
         if (resContents.isEmpty()) {
+
+            val k = when{
+                format.isJavaOrKotlin() -> if(fieldPath.isEmpty()) "" else "$fieldPath."
+                format.isJavaScript() -> if(fieldPath.isEmpty()) "" else ".$fieldPath"
+                //TODO C#
+                else -> throw IllegalStateException("Format not supported yet: $format")
+            }
+
             val instruction = when {
                 //TODO would not this fail on recursive/nested calls???
-                format.isJava() -> ".body(\"isEmpty()\", is(true))"
-                format.isKotlin() -> ".body(\"isEmpty()\", `is`(true))" //'is' is a keyword in Kotlin
-                format.isJavaScript() -> "expect(Object.keys($responseVariableName.body).length).toBe(0);"
+                format.isJava() -> ".body(\"${k}isEmpty()\", is(true))"
+                format.isKotlin() -> ".body(\"${k}isEmpty()\", `is`(true))" //'is' is a keyword in Kotlin
+                format.isJavaScript() -> "expect(Object.keys($responseVariableName.body${k}).length).toBe(0);"
                 //TODO C#
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
@@ -337,37 +376,64 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             lines.add(instruction)
         }
 
-        val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
-
-        // Removed size checks for objects.
-        flatContent.keys
-                .filter { !hasFieldToSkip(it) }
+        resContents.entries
+                .filter { !isFieldToSkip(it.key) }
                 .forEach {
-                    val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
-
-                    val actualValue = flatContent[it]
-                    val printableFieldValue = handleFieldValues_getMatcher(actualValue)
-
-                    if (isSuitableToPrint(printableFieldValue)) {
-                        lines.add(".body(\"${stringKey}\", ${printableFieldValue})")
-                    }
-
-                    //handle additional properties for array
-                    handleAdditionalFieldValues(stringKey, actualValue)?.forEach {
-                        if (isSuitableToPrint(it.second) && it.first != "\'id\'")
-                            lines.add(".body(\"${it.first}\", ${it.second})")
-                    }
+                    //TODO should in JavaKotlin have the new fields inside ''? what was old reason for that?
+                    handleAssertionsOnField(it.value, lines, "$fieldPath.${it.key}", responseVariableName)
                 }
+    }
 
+    private fun handleAssertionsOnField(value: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
 
-        /* TODO: BMR - We want to avoid time-based fields (timestamps and the like) as they could lead to flaky tests.
-        * Even relatively minor timing changes (one second either way) could cause tests to fail
-        * as a result, we are now avoiding generating assertions for fields explicitly labeled as "timestamp"
-        * Note that this is a temporary (and somewhat hacky) solution.
-        * A more elegant and permanent solution could be handled via the flaky test handling (when that will be ready).
-        *
-        * NOTE: if we have chained locations, then the "id" should be taken from the chained id rather than the test case?
-        */
+        if (value == null) {
+            val instruction = when {
+                format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue)"
+                format.isJavaScript() -> "expect($responseVariableName$fieldPath).toBe(null);"
+                //TODO C#
+                else -> throw IllegalStateException("Format not supported yet: $format")
+            }
+            lines.add(instruction)
+            return
+        }
+
+        when (value) {
+            is Map<*, *> -> {
+                handleAssertionsOnObject(value as Map<String, *>, lines, fieldPath, responseVariableName)
+                return
+            }
+            is List<*> -> {
+                handleAssertionsOnList(value, lines, fieldPath, responseVariableName)
+                return
+            }
+        }
+
+        if(format.isJavaOrKotlin()) {
+            val  left = when (value) {
+                is Number -> "numberMatches($value)"
+                is String -> "containsString(" +
+                        "\"${GeneUtils.applyEscapes(value as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}" +
+                        "\")"
+                else -> throw IllegalStateException("Unsupported type: ${value::class}")
+            }
+            if(isSuitableToPrint(left)){
+                lines.add(".body(\"$fieldPath\", $left)")
+            }
+        }
+
+        if(format.isJavaScript()){
+            val toPrint = if(value is String){
+                "\""+GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format)+"\""
+            } else {
+                value.toString()
+            }
+            if(isSuitableToPrint(toPrint)) {
+                lines.add("expect($responseVariableName.body$fieldPath).toBe($toPrint);")
+            }
+            return
+        }
+
+        throw IllegalStateException("Not supported format $format")
     }
 
 
@@ -379,30 +445,21 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         if (list.isEmpty()) {
             return
         }
-        var longArray = false
-        list.forEachIndexed { test_index, value ->
-            when {
-                /*
-                    TODO what was the reason behind this behavior?
-                 */
-                (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
-                (value is String) -> longArray = true
-                else -> {
-                    val printableFieldValue = handleFieldValues_getMatcher(value)
-                    if (isSuitableToPrint(printableFieldValue)) {
-                        //TODO JS/C#
-                        lines.add(".body(\"$fieldPath\", $printableFieldValue)")
-                    }
+
+        /*
+             TODO could do the same for numbers
+         */
+        if (format.isJavaOrKotlin() && (list as List<*>).all { it is String } && list.isNotEmpty()) {
+            lines.add(".body(\"$fieldPath\", hasItems(${
+                (list as List<String>).joinToString {
+                    "\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""
                 }
-            }
+            }))")
+            return
         }
 
-        if (longArray) {
-            val printableContent = handleFieldValues_getMatcher(list)
-            if (isSuitableToPrint(printableContent)) {
-                //TODO JS/C#
-                lines.add(".body(\"\", $printableContent)")
-            }
+        list.forEachIndexed {  index, value ->
+            handleAssertionsOnField(value, lines, "$fieldPath[$index]", responseVariableName)
         }
     }
 
@@ -458,62 +515,62 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
      * For example, .body("page.size", numberMatches(20.0)) -> in the payload, access the page field, the size field,
      * and assert that the value there is 20.
      */
-    protected fun flattenForAssert(k: MutableList<*>, v: Any): Map<MutableList<*>, Any?> {
-
-        /*
-            TODO this does not seem to handle arrays
-         */
-
-        val returnMap = mutableMapOf<MutableList<*>, Any?>()
-        if (v is Map<*, *>) {
-            v.forEach { key, value ->
-                if (value == null) {
-                    //Man: we might also add key with null here
-                    returnMap.putIfAbsent(k.plus(key) as MutableList<*>, null)
-                    return@forEach
-                } else {
-                    val innerKey = k.plus(key) as MutableList
-                    val innerMap = flattenForAssert(innerKey, value)
-                    returnMap.putAll(innerMap)
-                }
-            }
-        } else {
-            returnMap[k] = v
-        }
-        return returnMap
-    }
+//    protected fun flattenForAssert(k: MutableList<*>, v: Any): Map<MutableList<*>, Any?> {
+//
+//        /*
+//            TODO this does not seem to handle arrays
+//         */
+//
+//        val returnMap = mutableMapOf<MutableList<*>, Any?>()
+//        if (v is Map<*, *>) {
+//            v.forEach { key, value ->
+//                if (value == null) {
+//                    //Man: we might also add key with null here
+//                    returnMap.putIfAbsent(k.plus(key) as MutableList<*>, null)
+//                    return@forEach
+//                } else {
+//                    val innerKey = k.plus(key) as MutableList
+//                    val innerMap = flattenForAssert(innerKey, value)
+//                    returnMap.putAll(innerMap)
+//                }
+//            }
+//        } else {
+//            returnMap[k] = v
+//        }
+//        return returnMap
+//    }
 
 
     /**
      * handle field which is array<Map> with additional assertions, e.g., size
      * @return a list of key of the field and value of the field to be asserted
      */
-    protected fun handleAdditionalFieldValues(stringKey: String, resContentsItem: Any?): List<Pair<String, String>>? {
-        resContentsItem ?: return null
-        val list = mutableListOf<Pair<String, String>>()
-        when (resContentsItem::class) {
-            ArrayList::class -> {
-                list.add("$stringKey.size()" to "equalTo(${(resContentsItem as ArrayList<*>).size})")
-                resContentsItem.forEachIndexed { index, v ->
-                    if (v is Map<*, *>) {
-                        val flatContent = flattenForAssert(mutableListOf<String>(), v)
-                        flatContent.keys
-                                .filter { !hasFieldToSkip(it) }
-                                .forEach { key ->
-                                    val fstringKey = key.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
-                                    val factualValue = flatContent[key]
-
-                                    val key = "$stringKey.get($index).$fstringKey"
-                                    list.add(key to handleFieldValues_getMatcher(factualValue))
-                                    handleAdditionalFieldValues(key, factualValue)?.let { list.addAll(it) }
-                                }
-                    }
-                }
-            }
-        }
-
-        return list
-    }
+//    protected fun handleAdditionalFieldValues(stringKey: String, resContentsItem: Any?): List<Pair<String, String>>? {
+//        resContentsItem ?: return null
+//        val list = mutableListOf<Pair<String, String>>()
+//        when (resContentsItem::class) {
+//            ArrayList::class -> {
+//                list.add("$stringKey.size()" to "equalTo(${(resContentsItem as ArrayList<*>).size})")
+//                resContentsItem.forEachIndexed { index, v ->
+//                    if (v is Map<*, *>) {
+//                        val flatContent = flattenForAssert(mutableListOf<String>(), v)
+//                        flatContent.keys
+//                                .filter { !hasFieldToSkip(it) }
+//                                .forEach { key ->
+//                                    val fstringKey = key.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
+//                                    val factualValue = flatContent[key]
+//
+//                                    val key = "$stringKey.get($index).$fstringKey"
+//                                    list.add(key to handleFieldValues_getMatcher(factualValue))
+//                                    handleAdditionalFieldValues(key, factualValue)?.let { list.addAll(it) }
+//                                }
+//                    }
+//                }
+//            }
+//        }
+//
+//        return list
+//    }
 
 
 

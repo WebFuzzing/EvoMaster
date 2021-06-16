@@ -85,7 +85,7 @@ test("Test object array", async () =>{
     expect(response.body[1].x).toBe(888);
 });
 
-test("Test emoty object", async () =>{
+test("Test empty object", async () =>{
 
     const response = await request(app).get("/objectEmpty");
 
