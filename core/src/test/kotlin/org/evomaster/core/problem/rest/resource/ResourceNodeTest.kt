@@ -133,7 +133,7 @@ class ResourceNodeTest {
     fun testCallCreation(path:String, template: String, actionSize: Int){
         val node = cluster.getResourceNode(path)
         assertNotNull(node)
-        val call = node!!.createRestResourceCall(template, randomness, 10)
+        val call = node!!.createRestResourceCallBasedOnTemplate(template, randomness, 10)
 
         call.apply {
             assertEquals(actionSize, seeActionSize(ActionFilter.NO_SQL))

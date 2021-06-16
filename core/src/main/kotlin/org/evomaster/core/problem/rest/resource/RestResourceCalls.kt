@@ -26,11 +26,11 @@ import org.slf4j.LoggerFactory
  * TODO remove [resourceInstance]
  */
 class RestResourceCalls(
-        val template: CallsTemplate? = null,
-        val resourceInstance: RestResourceInstance?=null,
-        private val actions: MutableList<RestCallAction>,
-        private val dbActions : MutableList<DbAction> = mutableListOf(),
-        withBinding : Boolean = false
+    val template: CallsTemplate? = null,
+    val resourceInstance: RestResourceInstance? = null,
+    private val actions: MutableList<RestCallAction>,
+    private val dbActions: MutableList<DbAction> = mutableListOf(),
+    withBinding: Boolean = false
 ): StructuralElement(mutableListOf<StructuralElement>().apply { addAll(dbActions); addAll(actions) }){
 
     companion object{
@@ -93,7 +93,8 @@ class RestResourceCalls(
             template,
             resourceInstance?.copy(),
             actions.map { a -> a.copyContent() as RestCallAction}.toMutableList(),
-            dbActions.map { db-> db.copyContent() as DbAction }.toMutableList()
+            dbActions.map { db-> db.copyContent() as DbAction }.toMutableList(),
+            withBinding = false
         )
 
         copy.isDeletable = isDeletable

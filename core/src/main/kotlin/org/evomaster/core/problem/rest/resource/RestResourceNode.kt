@@ -345,7 +345,7 @@ class RestResourceNode(
         val rest = templates.filter { it.value.template != current}
         if(rest.isEmpty()) return null
         val selected = randomness.choose(rest.keys)
-        return createRestResourceCall(selected,randomness, maxTestSize)
+        return createRestResourceCallBasedOnTemplate(selected,randomness, maxTestSize)
 
     }
 
@@ -370,14 +370,14 @@ class RestResourceNode(
             e.value.size in 1..maxTestSize
         }.map { it.key }
         if(randomTemplates.isEmpty()) return sampleOneAction(null, randomness)
-        return createRestResourceCall(randomness.choose(randomTemplates), randomness, maxTestSize)
+        return createRestResourceCallBasedOnTemplate(randomness.choose(randomTemplates), randomness, maxTestSize)
     }
 
     fun sampleIndResourceCall(randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
         selectTemplate({ call : CallsTemplate -> call.independent || (call.template == HttpVerb.POST.toString() && call.size > 1)}, randomness)?.let {
-            return createRestResourceCall(it.template, randomness, maxTestSize, false, false)
+            return createRestResourceCallBasedOnTemplate(it.template, randomness, maxTestSize)
         }
-        return createRestResourceCall(HttpVerb.POST.toString(), randomness,maxTestSize)
+        return createRestResourceCallBasedOnTemplate(HttpVerb.POST.toString(), randomness,maxTestSize)
     }
 
 
@@ -420,21 +420,21 @@ class RestResourceNode(
             else if (prioriIndependent) fchosen.filter { it.value.independent }
             else fchosen
         if (chosen.isEmpty())
-            return createRestResourceCall(randomness.choose(fchosen).template,randomness, maxTestSize)
-        return createRestResourceCall(randomness.choose(chosen).template,randomness, maxTestSize)
+            return createRestResourceCallBasedOnTemplate(randomness.choose(fchosen).template,randomness, maxTestSize)
+        return createRestResourceCallBasedOnTemplate(randomness.choose(chosen).template,randomness, maxTestSize)
     }
 
 
     fun sampleRestResourceCalls(template: String, randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
         assert(maxTestSize > 0)
-        return createRestResourceCall(template,randomness, maxTestSize)
+        return createRestResourceCallBasedOnTemplate(template,randomness, maxTestSize)
     }
 
     fun genPostChain(randomness: Randomness, maxTestSize: Int) : RestResourceCalls?{
         val template = templates["POST"]?:
             return null
 
-        return createRestResourceCall(template.template, randomness, maxTestSize)
+        return createRestResourceCallBasedOnTemplate(template.template, randomness, maxTestSize)
     }
 
 
@@ -509,7 +509,7 @@ class RestResourceNode(
             throw IllegalStateException("the size (${results.size}) of actions exceeds the max size ($maxTestSize)")
 
         // TODO add resource status
-        return RestResourceCalls(templates[template]!!, null, results, withBinding= true)
+        return RestResourceCalls(templates[template]!!, RestResourceInstance(this, listOf()), results, withBinding= true)
     }
 
     private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction{
@@ -521,6 +521,7 @@ class RestResourceNode(
     /**
      * create a RestResourceCall based on the [template]
      */
+    @Deprecated("replace with createRestResourceCallBasedOnTemplate")
     fun createRestResourceCall(
             template : String,
             randomness: Randomness,
