@@ -22,7 +22,9 @@ object BindingBuilder {
 
     private val log = LoggerFactory.getLogger(BindingBuilder::class.java)
 
-    
+    /**
+     * bind value within a rest action, e.g., PathParam with BodyParam
+     */
     fun bindParamsInRestAction(restAction: RestCallAction){
         val params = restAction.parameters
         val path = restAction.path

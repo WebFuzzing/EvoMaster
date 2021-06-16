@@ -509,7 +509,7 @@ class RestResourceNode(
             throw IllegalStateException("the size (${results.size}) of actions exceeds the max size ($maxTestSize)")
 
         // TODO add resource status
-        return RestResourceCalls(templates[template]!!, RestResourceInstance(this, results.flatMap { it.parameters }), results)
+        return RestResourceCalls(templates[template]!!, null, results, withBinding= true)
     }
 
     private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction{
