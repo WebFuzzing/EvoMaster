@@ -1122,7 +1122,8 @@ class EMConfig {
     var doesApplyNameMatching = false
 
     @Experimental
-    @Cfg("Whether to employ nlp parser to process text")
+    @Cfg("Whether to employ NLP parser to process text. " +
+            "Note that to enable this parser, it is required to build the EvoMaster with the resource profile, i.e., mvn clean install -Presourceexp -DskipTests")
     var enableNLPParser = false
 
     @Experimental
