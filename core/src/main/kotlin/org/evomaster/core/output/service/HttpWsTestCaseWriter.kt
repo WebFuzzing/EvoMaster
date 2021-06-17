@@ -382,7 +382,12 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                 .filter { !isFieldToSkip(it.key) }
                 .forEach {
                     //TODO should in JavaKotlin have the new fields inside ''? what was old reason for that?
-                    handleAssertionsOnField(it.value, lines, "$fieldPath.${it.key}", responseVariableName)
+                    val extendedPath = if(format.isJavaOrKotlin() && fieldPath.isEmpty()){
+                        it.key
+                    } else {
+                        "$fieldPath.${it.key}"
+                    }
+                    handleAssertionsOnField(it.value, lines, extendedPath, responseVariableName)
                 }
     }
 
@@ -390,7 +395,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
         if (value == null) {
             val instruction = when {
-                format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue)"
+                format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
                 format.isJavaScript() -> "expect($responseVariableName$fieldPath).toBe(null);"
                 //TODO C#
                 else -> throw IllegalStateException("Format not supported yet: $format")
@@ -422,6 +427,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             if(isSuitableToPrint(left)){
                 lines.add(".body(\"$fieldPath\", $left)")
             }
+            return
         }
 
         if(format.isJavaScript()){
