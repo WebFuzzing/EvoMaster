@@ -1,6 +1,8 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
@@ -10,6 +12,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class DisjunctionRxGene(
@@ -19,7 +23,7 @@ class DisjunctionRxGene(
         var matchStart: Boolean,
         /** does this disjunction match the end of the string, or could it be at any position? */
         var matchEnd: Boolean
-) : RxAtom(name) {
+) : RxAtom(name, terms.toMutableList()) {
 
     /**
      * whether we should append a prefix.
@@ -33,18 +37,15 @@ class DisjunctionRxGene(
      */
     var extraPostfix = false
 
-    init {
-        for(t in terms){
-            t.parent = this
-        }
-    }
-
     companion object{
         private const val APPEND = 0.05
+        private val log : Logger = LoggerFactory.getLogger(DisjunctionRxGene::class.java)
     }
 
-    override fun copy(): Gene {
-        val copy = DisjunctionRxGene(name, terms.map { it.copy() as RxTerm }, matchStart, matchEnd)
+    override fun getChildren(): List<RxTerm> = terms
+
+    override fun copyContent(): Gene {
+        val copy = DisjunctionRxGene(name, terms.map { it.copyContent() as RxTerm }, matchStart, matchEnd)
         copy.extraPrefix = this.extraPrefix
         copy.extraPostfix = this.extraPostfix
         return copy
@@ -160,4 +161,28 @@ class DisjunctionRxGene(
     }
 
     override fun innerGene(): List<Gene> = terms
+
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is DisjunctionRxGene && terms.size == gene.terms.size){
+            var result = true
+            terms.indices.forEach { i->
+                val r = terms[i].bindValueBasedOn(gene.terms[i])
+                if (!r)
+                    LoggingUtil.uniqueWarn(log, "cannot bind the term (name: ${terms[i].name}) at index $i")
+                result = result && r
+            }
+
+            extraPostfix = gene.extraPrefix
+            extraPrefix = gene.extraPrefix
+
+            if (!result){
+                LoggingUtil.uniqueWarn(log, "not fully completely bind DisjunctionRxGene")
+            }
+            return result
+        }
+
+        LoggingUtil.uniqueWarn(log, "cannot bind DisjunctionRxGene with ${gene::class.java.simpleName}")
+        return false
+    }
 }

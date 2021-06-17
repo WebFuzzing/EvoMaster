@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.Randomness
 
 
@@ -12,9 +13,9 @@ import org.evomaster.core.search.service.Randomness
  *  A typical example is a Primary Key in a database, and we want
  *  a Foreign Key pointing to it
  */
-class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boolean) : Gene(name){
+class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boolean) : Gene(name, mutableListOf()){
 
-    override fun copy(): Gene {
+    override fun copyContent(): Gene {
         return this // recall it is immutable
     }
 
@@ -22,6 +23,7 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
 
     override fun isPrintable() = true
 
+    override fun getChildren(): MutableList<Gene> = mutableListOf()
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         throw IllegalStateException("Not supposed to modify an immutable gene")
@@ -49,5 +51,10 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
     override fun mutationWeight(): Double = 0.0
 
     override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing
+        return true
+    }
 
 }

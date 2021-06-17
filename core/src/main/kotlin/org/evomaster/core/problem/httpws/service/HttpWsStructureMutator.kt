@@ -27,7 +27,7 @@ abstract class HttpWsStructureMutator : StructureMutator(){
             || ! ind.seeDbActions().any { it is DbAction && it.representExistingData }) {
 
             //add existing data only once
-            ind.dbInitialization.addAll(0, sampler.existingSqlData)
+            ind.addInitializingActions(0, sampler.existingSqlData)
 
             //record newly added existing sql data
             mutatedGenes?.addedExistingDataInitialization?.addAll(0, sampler.existingSqlData)
@@ -38,7 +38,7 @@ abstract class HttpWsStructureMutator : StructureMutator(){
 
         // add fw into dbInitialization
         val max = config.maxSqlInitActionsPerMissingData
-        val initializingActions = ind.seeInitializingActions().filterIsInstance<DbAction>()
+        val initializingActions = ind.seeInitializingActions()
 
         var missing = findMissing(fw, initializingActions)
 
@@ -58,7 +58,7 @@ abstract class HttpWsStructureMutator : StructureMutator(){
                  */
 //                val position = sampler.existingSqlData.size
                 val position = ind.seeInitializingActions().indexOfLast { it is DbAction && it.representExistingData } + 1
-                ind.dbInitialization.addAll(position, insertions)
+                ind.addInitializingActions(position, insertions)
 
                 if (log.isTraceEnabled)
                     log.trace("{} insertions are added", insertions.size)

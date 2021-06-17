@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -35,7 +36,7 @@ class SqlForeignKeyGene(
          */
         var uniqueIdOfPrimaryKey: Long = -1
 
-) : SqlWrapperGene(sourceColumn) {
+) : SqlWrapperGene(sourceColumn, listOf()) {
 
     init {
         if (uniqueId < 0) {
@@ -48,7 +49,9 @@ class SqlForeignKeyGene(
     }
 
 
-    override fun copy() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
+    override fun getChildren(): List<Gene> = listOf()
+
+    override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
@@ -193,4 +196,8 @@ class SqlForeignKeyGene(
 
     override fun innerGene(): List<Gene> = listOf()
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing
+        return true
+    }
 }

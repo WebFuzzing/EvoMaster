@@ -4,7 +4,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Individual.ActionFilter
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger

@@ -1,25 +1,25 @@
-package org.evomaster.core.problem.rest.util.inference
+package org.evomaster.core.problem.util.inference
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.resource.ParamInfo
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.resource.dependency.*
-import org.evomaster.core.problem.rest.util.ParamUtil
-import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
-import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
+import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.problem.util.inference.model.MatchedInfo
+import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.gene.ObjectGene
 
 /**
  * process inference related to resource
  */
-object SimpleDeriveResourceBinding : DeriveResourceBinding{
+object SimpleDeriveResourceBinding : DeriveResourceBinding {
 
     /*************************** resource to table and param to table *****************************/
 
@@ -214,9 +214,9 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding{
     /**
      * @return a binding map between rest actions (key) in [calls] and dbactions in [dbActions]
      */
-    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, dbActions : MutableList<DbAction>): MutableMap<RestAction, MutableList<ParamGeneBindMap>> {
+    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, dbActions : MutableList<DbAction>): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
 
-        val result = mutableMapOf<RestAction, MutableList<ParamGeneBindMap>>()
+        val result = mutableMapOf<RestCallAction, MutableList<ParamGeneBindMap>>()
 
         val missingParams = paramsInfo.map { it.key }
         val resource = calls.getResourceNode()
@@ -229,8 +229,8 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding{
             list.forEach { p->
                 if(!cleanList.any { e->e.equalWith(p)}) cleanList.add(p)
             }
-            calls.actions.filter { it is RestCallAction  && it.path.toString() == resource.getName()}.forEach { a->
-                result.put(a, cleanList.filter { p-> (a is RestCallAction) && (paramsInfo.any { m-> m.key == p.paramId && m.involvedAction.contains(a.verb) })}.toMutableList())
+            calls.seeActions(ActionFilter.NO_SQL).filter { it is RestCallAction  && it.path.toString() == resource.getName()}.forEach { a->
+                result.put(a as RestCallAction, cleanList.filter { p-> (a is RestCallAction) && (paramsInfo.any { m-> m.key == p.paramId && m.involvedAction.contains(a.verb) })}.toMutableList())
             }
         }
 

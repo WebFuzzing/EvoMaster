@@ -10,7 +10,7 @@ import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
-import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -31,11 +31,11 @@ class RestSampler : AbstractRestSampler(){
 
     override fun sampleAtRandom(): RestIndividual {
 
-        val actions = mutableListOf<RestAction>()
+        val actions = mutableListOf<RestCallAction>()
         val n = randomness.nextInt(1, config.maxTestSize)
 
         (0 until n).forEach {
-            actions.add(sampleRandomAction(0.05) as RestAction)
+            actions.add(sampleRandomAction(0.05) as RestCallAction)
         }
         return RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
     }
@@ -76,7 +76,7 @@ class RestSampler : AbstractRestSampler(){
         }
 
 
-        val test = mutableListOf<RestAction>()
+        val test = mutableListOf<RestCallAction>()
 
         val action = sampleRandomCallAction(0.0)
 
@@ -101,7 +101,7 @@ class RestSampler : AbstractRestSampler(){
 
         if (!test.isEmpty()) {
             val objInd = RestIndividual(test, sampleType, mutableListOf()//, usedObjects.copy()
-                    ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+                    ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
 
             //usedObjects.clear()
             return objInd
@@ -110,7 +110,7 @@ class RestSampler : AbstractRestSampler(){
         return sampleAtRandom()
     }
 
-    private fun handleSmartPost(post: RestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPost(post: RestCallAction, test: MutableList<RestCallAction>): SampleType {
 
         Lazy.assert{post.verb == HttpVerb.POST}
 
@@ -119,7 +119,7 @@ class RestSampler : AbstractRestSampler(){
         return SampleType.SMART
     }
 
-    private fun handleSmartDelete(delete: RestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartDelete(delete: RestCallAction, test: MutableList<RestCallAction>): SampleType {
 
         Lazy.assert{delete.verb == HttpVerb.DELETE}
 
@@ -128,7 +128,7 @@ class RestSampler : AbstractRestSampler(){
         return SampleType.SMART
     }
 
-    private fun handleSmartPatch(patch: RestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPatch(patch: RestCallAction, test: MutableList<RestCallAction>): SampleType {
 
         Lazy.assert{patch.verb == HttpVerb.PATCH}
 
@@ -137,7 +137,7 @@ class RestSampler : AbstractRestSampler(){
         return SampleType.SMART
     }
 
-    private fun handleSmartPut(put: RestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPut(put: RestCallAction, test: MutableList<RestCallAction>): SampleType {
 
         Lazy.assert{put.verb == HttpVerb.PUT}
 
@@ -160,7 +160,7 @@ class RestSampler : AbstractRestSampler(){
     /**
      *    Only for PUT, DELETE, PATCH
      */
-    private fun createWriteOperationAfterAPost(write: RestCallAction, test: MutableList<RestAction>) {
+    private fun createWriteOperationAfterAPost(write: RestCallAction, test: MutableList<RestCallAction>) {
 
         Lazy.assert{write.verb == HttpVerb.PUT || write.verb == HttpVerb.DELETE || write.verb == HttpVerb.PATCH}
 
@@ -186,7 +186,7 @@ class RestSampler : AbstractRestSampler(){
         }
     }
 
-    private fun handleSmartGet(get: RestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartGet(get: RestCallAction, test: MutableList<RestCallAction>): SampleType {
 
         Lazy.assert{get.verb == HttpVerb.GET}
 
@@ -269,7 +269,7 @@ class RestSampler : AbstractRestSampler(){
     }
 
 
-    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestAction>)
+    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestCallAction>)
             : Boolean {
 
         if (test.size >= config.maxTestSize) {
@@ -425,7 +425,7 @@ class RestSampler : AbstractRestSampler(){
 
     private fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
         return RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
-                ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+                ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
     }
 
     private fun getParser(): Parser {

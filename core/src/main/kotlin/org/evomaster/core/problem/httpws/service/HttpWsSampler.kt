@@ -5,7 +5,6 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.httpws.service.auth.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
@@ -37,7 +36,8 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
      * So, once all genes are created, we force their initialization, which will also randomize their values.
      */
     fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
-        action.seeGenes().forEach { it.randomize(randomness, false) }
+        //action.seeGenes().forEach { it.randomize(randomness, false) }
+        action.randomize(randomness, false)
     }
 
     /**
