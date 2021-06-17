@@ -113,7 +113,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             }.joinToString("&"))
 
         } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE || mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
-            handleBooleanSelectionMode(includedFields, buffer, previousGenes, targetFormat, mode)
+            handleBooleanSelectionMode(includedFields, buffer, previousGenes, targetFormat, mode, extraCheck)
         } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE) {
             handleUnionObjectSelection(includedFields, buffer, previousGenes, targetFormat)
         } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE) {
@@ -212,7 +212,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         selection.map {
             val s: String = when (it) {
                 is OptionalGene -> {
-                     buffer.append("... on ${it.gene.name.replace(unionTag, "")} {")
+                    buffer.append("... on ${it.gene.name.replace(unionTag, "")} {")
                     assert(it.gene is ObjectGene)
                     buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE, targetFormat)}")
                     buffer.append("}").toString()
@@ -226,23 +226,25 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         }.joinToString()
     }
 
-    private fun handleBooleanSelectionMode(includedFields: List<Gene>, buffer: StringBuffer, previousGenes: List<Gene>, targetFormat: OutputFormat?, mode: GeneUtils.EscapeMode?) {
+    private fun handleBooleanSelectionMode(includedFields: List<Gene>, buffer: StringBuffer, previousGenes: List<Gene>, targetFormat: OutputFormat?, mode: GeneUtils.EscapeMode?, extraCheck: Boolean) {
 
-      //  if (includedFields.isEmpty()) {
-      //      buffer.append("$name")
-      //      return
-      //  }
+        //  if (includedFields.isEmpty()) {
+        //      buffer.append("$name")
+        //      return
+        //  }
 
-        if(name.endsWith(unionTag)){
-            buffer.append("${name.replace(unionTag, " ")} {")
-            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat))
+        if (name.endsWith(unionTag)) {
+            if (!extraCheck)
+                buffer.append("{") else buffer.append("${name.replace(unionTag, " ")} {")
+            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat,extraCheck=true))
             buffer.append("}")
             return
         }
 
-        if(name.endsWith(interfaceTag)){
-            buffer.append("${name.replace(interfaceTag, " ")} {")
-            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat))
+        if (name.endsWith(interfaceTag)) {
+            if (!extraCheck)
+                buffer.append("{") else buffer.append("${name.replace(interfaceTag, " ")} {")
+            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat, extraCheck = true))
             buffer.append("}")
             return
         }
@@ -266,10 +268,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             val s: String = when (it) {
                 is OptionalGene -> {
                     assert(it.gene is ObjectGene)
-                    it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
+                    it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat, extraCheck = true)
                 }
                 is ObjectGene -> {
-                    it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
+                    it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat, extraCheck = true)
                 }
                 is BooleanGene -> {
                     it.name
@@ -282,8 +284,6 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         }.joinToString(","))
         buffer.append("}")
     }
-//        }
-    // }
 
     private fun openXml(tagName: String) = "<$tagName>"
 
