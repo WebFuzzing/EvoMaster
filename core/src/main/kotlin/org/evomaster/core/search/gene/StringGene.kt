@@ -521,7 +521,7 @@ class StringGene(
         }
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         val specializationGene = getSpecializationGene()
 

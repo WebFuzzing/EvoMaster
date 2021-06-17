@@ -56,7 +56,7 @@ class RegexGene(
         return disjunctions.getValueAsPrintableString(targetFormat = null)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         val rawValue = getValueAsRawString()
         when {
             // TODO Should refactor since this code block is equivalent to StringGene.getValueAsPrintableString()

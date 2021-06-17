@@ -107,7 +107,7 @@ class DisjunctionRxGene(
         return true
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         val prefix = if (extraPrefix) "prefix_" else ""
         val postfix = if (extraPostfix) "_postfix" else ""

@@ -166,7 +166,7 @@ class QuantifierRxGene(
         atoms.add(base)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         return atoms.map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
                 .joinToString("")

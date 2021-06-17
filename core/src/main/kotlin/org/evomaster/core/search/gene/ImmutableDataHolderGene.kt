@@ -27,7 +27,7 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
         throw IllegalStateException("Not supposed to modify an immutable gene")
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         if(inQuotes){
             return "\"$value\""
