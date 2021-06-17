@@ -360,7 +360,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         if (resContents.isEmpty()) {
 
             val k = when{
-                format.isJavaOrKotlin() -> if(fieldPath.isEmpty()) "" else "$fieldPath."
+                format.isJavaOrKotlin() -> if(fieldPath.isEmpty()) "" else "'$fieldPath'."
                 format.isJavaScript() -> if(fieldPath.isEmpty()) "" else ".$fieldPath"
                 //TODO C#
                 else -> throw IllegalStateException("Format not supported yet: $format")
@@ -382,10 +382,17 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                 .filter { !isFieldToSkip(it.key) }
                 .forEach {
                     //TODO should in JavaKotlin have the new fields inside ''? what was old reason for that?
-                    val extendedPath = if(format.isJavaOrKotlin() && fieldPath.isEmpty()){
-                        it.key
+                    val fieldName = if(format.isJavaOrKotlin()){
+                        "'${it.key}'"
+                        //TODO need to deal with '' as well in JS/C#? see EscapeRest
                     } else {
-                        "$fieldPath.${it.key}"
+                        it.key
+                    }
+
+                    val extendedPath = if(format.isJavaOrKotlin() && fieldPath.isEmpty()){
+                        fieldName
+                    } else {
+                        "$fieldPath.${fieldName}"
                     }
                     handleAssertionsOnField(it.value, lines, extendedPath, responseVariableName)
                 }
@@ -514,75 +521,6 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             }
         }
     }
-
-
-    /**
-     * The purpose of the [flattenForAssert] method is to prepare an object for assertion generation.
-     * Objects in Responses may be somewhat complex in structure. The goal is to make a map that contains all the
-     * leaves of the object, along with the path of keys to get to them.
-     *
-     * For example, .body("page.size", numberMatches(20.0)) -> in the payload, access the page field, the size field,
-     * and assert that the value there is 20.
-     */
-//    protected fun flattenForAssert(k: MutableList<*>, v: Any): Map<MutableList<*>, Any?> {
-//
-//        /*
-//            TODO this does not seem to handle arrays
-//         */
-//
-//        val returnMap = mutableMapOf<MutableList<*>, Any?>()
-//        if (v is Map<*, *>) {
-//            v.forEach { key, value ->
-//                if (value == null) {
-//                    //Man: we might also add key with null here
-//                    returnMap.putIfAbsent(k.plus(key) as MutableList<*>, null)
-//                    return@forEach
-//                } else {
-//                    val innerKey = k.plus(key) as MutableList
-//                    val innerMap = flattenForAssert(innerKey, value)
-//                    returnMap.putAll(innerMap)
-//                }
-//            }
-//        } else {
-//            returnMap[k] = v
-//        }
-//        return returnMap
-//    }
-
-
-    /**
-     * handle field which is array<Map> with additional assertions, e.g., size
-     * @return a list of key of the field and value of the field to be asserted
-     */
-//    protected fun handleAdditionalFieldValues(stringKey: String, resContentsItem: Any?): List<Pair<String, String>>? {
-//        resContentsItem ?: return null
-//        val list = mutableListOf<Pair<String, String>>()
-//        when (resContentsItem::class) {
-//            ArrayList::class -> {
-//                list.add("$stringKey.size()" to "equalTo(${(resContentsItem as ArrayList<*>).size})")
-//                resContentsItem.forEachIndexed { index, v ->
-//                    if (v is Map<*, *>) {
-//                        val flatContent = flattenForAssert(mutableListOf<String>(), v)
-//                        flatContent.keys
-//                                .filter { !hasFieldToSkip(it) }
-//                                .forEach { key ->
-//                                    val fstringKey = key.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
-//                                    val factualValue = flatContent[key]
-//
-//                                    val key = "$stringKey.get($index).$fstringKey"
-//                                    list.add(key to handleFieldValues_getMatcher(factualValue))
-//                                    handleAdditionalFieldValues(key, factualValue)?.let { list.addAll(it) }
-//                                }
-//                    }
-//                }
-//            }
-//        }
-//
-//        return list
-//    }
-
-
-
 
 
     protected fun emptyBodyCheck(responseVariableName: String?): String {
