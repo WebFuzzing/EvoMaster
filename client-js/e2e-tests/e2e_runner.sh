@@ -96,8 +96,8 @@ if [ $N -gt $NPARAMS ]; then
 
   for K in $A; do
     echo "Checking for text $K"
-    FOUND=`cat $TEST_LOCATION | grep "$K"`
-    if [ -z FOUND]; then
+    FOUND=`cat $TEST_LOCATION | grep "$K" | wc -l`
+    if [ $FOUND -eq 0 ]; then
       echo "ERROR. Not found text: $K"
       exit 1
     fi

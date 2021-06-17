@@ -3,6 +3,8 @@
  * languages, eg, Java, JavaScript and C#.
  */
 
+import URI from "urijs";
+
 export default class EMTestUtils {
 
     /**
@@ -21,20 +23,21 @@ export default class EMTestUtils {
             return expectedTemplate;
         }
 
-        let locationURI: URL;
+        let locationURI: URI;
         try {
-            locationURI = new URL(locationHeader);
+            locationURI = new URI(locationHeader);
+            //FIXME this never throws an exception
         } catch (e){
             return locationHeader;
         }
 
-        const locationPath = locationURI.pathname;
+        const locationPath = locationURI.pathname();
         const locationTokens = locationPath.split("/");
 
         //the template is not a valid URL, due to {}
         const normalizedTemplate = expectedTemplate.replace("{", "").replace("}", "");
-        const templateURI = new URL(normalizedTemplate);
-        const templatePath = templateURI.pathname;
+        const templateURI = new URI(normalizedTemplate);
+        const templatePath = templateURI.pathname();
         const templateTokens = templatePath.split("/");
 
         let targetPath = locationPath;
@@ -58,16 +61,16 @@ export default class EMTestUtils {
             }
         }
 
-        let targetURI: URL;
+        let targetURI: URI;
 
         try {
             //TODO how to check for locationURI.isAbsolute() ???
-            if (locationURI.hostname) {
+            if (locationURI.hostname()) {
                 targetURI =  locationURI;
-                targetURI.pathname = targetPath;
+                targetURI.pathname( targetPath);
             } else {
                 targetURI = templateURI;
-                targetURI.pathname = targetPath;
+                targetURI.pathname(targetPath);
             }
         } catch (e) {
             //shouldn't really happen
@@ -81,6 +84,8 @@ export default class EMTestUtils {
     /**
      * @param uri a string representing a URI
      * @return whether the given input string is either empty or a valid URI
+     *
+     * FIXME this currently always returns true...
      */
     public static isValidURIorEmpty(uri: string): boolean {
 
@@ -89,7 +94,10 @@ export default class EMTestUtils {
         }
 
         try {
-            new URL(uri);
+            new URI(uri);
+            /*
+                FIXME: this does not fucking work... the library just ignores malformed URIs...
+             */
             return true;
         } catch (e) {
             return false;
