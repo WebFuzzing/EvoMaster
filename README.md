@@ -101,6 +101,8 @@ case studies in [EMB](https://github.com/EMResearch/EMB).
 * This [13-minute video](https://youtu.be/ORxZoYw7LnM)
   shows how to write a white-box driver for EvoMaster, for the
   [rest-api-example](https://github.com/EMResearch/rest-api-example). 
+
+* How to [Download and Install EvoMaster on Windows 10](https://youtu.be/uh_XzGxws9o), using its _.msi_ installer. 
  
 <!---
 ### Hiring
