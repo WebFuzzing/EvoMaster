@@ -553,7 +553,10 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
          */
 
         val instruction = when {
-            format.isJavaOrKotlin() -> ".body(\"${fieldPath}.size()\", equalTo($expectedSize))"
+            format.isJavaOrKotlin() -> {
+                val path = if(fieldPath.isEmpty()) "" else "$fieldPath."
+                ".body(\"${path}size()\", equalTo($expectedSize))"
+            }
             format.isJavaScript() ->
                 "expect($responseVariableName.body$fieldPath.length).toBe($expectedSize);"
             //TODO C#
