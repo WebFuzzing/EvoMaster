@@ -44,6 +44,7 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     public void testRunMIO() {
 
         CIUtils.skipIfOnCircleCI();
+        CIUtils.skipIfOnGA();
 
         defaultSeed = SEED;
 
@@ -102,6 +103,7 @@ public class AHypermutationAWHTest extends AHypermuationTestBase {
     public void testRunMIOAWH() throws Throwable {
 
         CIUtils.skipIfOnCircleCI();
+        CIUtils.skipIfOnGA();
 
         defaultSeed = SEED;
 
