@@ -15,7 +15,7 @@ import InjectedFunctions from "./instrumentation/InjectedFunctions";
 import ExecutionTracer from "./instrumentation/staticstate/ExecutionTracer";
 import ObjectiveRecorder from "./instrumentation/staticstate/ObjectiveRecorder";
 import ObjectiveNaming from "./instrumentation/ObjectiveNaming";
-
+import EMTestUtils from "./EMTestUtils";
 
 import {Visitor} from "@babel/traverse";
 
@@ -39,7 +39,8 @@ interface EM {
         ObjectiveRecorder: typeof ObjectiveRecorder,
         ObjectiveNaming: typeof ObjectiveNaming,
         ControllerConstants: typeof ControllerConstants
-    }
+    },
+    EMTestUtils: typeof  EMTestUtils
 }
 
 //@ts-ignore
@@ -61,28 +62,6 @@ f.internal = {
     ObjectiveNaming: ObjectiveNaming,
     ControllerConstants: ControllerConstants
 };
+f.EMTestUtils = EMTestUtils;
 
 export = f;
-
-
-// module.exports = plugin;
-// const ex = module.exports;
-//
-// ex.SutController = SutController;
-// ex.EMController = EMController;
-// ex.ControllerConstants = ControllerConstants;
-//
-// ex.dto = {};
-// ex.dto.AuthenticationDto = AuthenticationDto;
-// ex.dto.ProblemInfo = ProblemInfo;
-// ex.dto.RestProblemDto = RestProblemDto;
-// ex.dto.OutputFormat = OutputFormat;
-// ex.dto.SutRunDto = SutRunDto;
-//
-// //used by the instrumented SUT
-// ex.InjectedFunctions = InjectedFunctions;
-//
-// //only needed for testing the instrumentation
-// ex.internal.ExecutionTracer = ExecutionTracer;
-// ex.internal.ObjectiveRecorder = ObjectiveRecorder;
-

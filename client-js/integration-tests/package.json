@@ -34,7 +34,7 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "testRegex": "tests/.*-test\\.(js|jsx|ts|tsx)$",
+    "testRegex": "(tests|build)/.*-test\\.(js|jsx|ts|tsx)$",
     "//TODO": "should be fixed to point to other module, if possible...",
     "collectCoverageFrom": [
       "src/**/.*(js|jsx|ts|tsx)"

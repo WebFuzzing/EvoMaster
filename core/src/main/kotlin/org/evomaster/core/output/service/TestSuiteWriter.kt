@@ -279,7 +279,7 @@ class TestSuiteWriter {
 
         if (format.isJavaScript()) {
             lines.add("const superagent = require(\"superagent\");")
-            lines.add("const $jsImport = require(\"evomaster-client-js\");")
+            lines.add("const $jsImport = require(\"evomaster-client-js\").EMTestUtils;")
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }

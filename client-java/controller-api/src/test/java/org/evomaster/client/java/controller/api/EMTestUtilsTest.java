@@ -48,7 +48,7 @@ public class EMTestUtilsTest {
     }
 
     @Test
-    public void givenAnInvalidLocationHeaderWhenResolveLocationThenTheExpectedTemplateIsReturned() {
+    public void testGivenAnInvalidLocationHeaderWhenResolveLocationThenTheExpectedTemplateIsReturned() {
         String expectedTemplate = "http://localhost:12345/a/x";
         String locationHeader = "/a/\"52\"";
 
