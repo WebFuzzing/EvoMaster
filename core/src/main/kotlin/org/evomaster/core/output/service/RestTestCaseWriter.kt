@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import com.google.gson.Gson
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
@@ -191,9 +192,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
     }
 
-
     private fun shouldCheckExpectations() =
-            //for now Expectations are only supported on the JVM
+    //for now Expectations are only supported on the JVM
             //TODO C# (and maybe JS as well???)
             config.expectationsActive && config.outputFormat.isJavaOrKotlin()
 
@@ -449,7 +449,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             lines.add(".ok(res => res.status)")
         }
 
-        lines.appendSemicolon(format)
+        if (config.enableBasicAssertions) {
+            lines.appendSemicolon(format)
+        }
         lines.deindent(2)
     }
 
