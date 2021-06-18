@@ -109,8 +109,9 @@ object RestActionBuilderV3 {
     /**
      * Create an [ObjectGene] based on schema info of a DTO, given in the format
      * "name: {...}"
+     * @param referenceTypeName specifies refType (i.e., [ObjectGene.refType]]) of the [ObjectGene] to be created that could be same with [name]
      */
-    fun createObjectGeneForDTO(name: String, dtoSchema: String) : Gene{
+    fun createObjectGeneForDTO(name: String, dtoSchema: String, referenceTypeName: String?) : Gene{
 
         if(! dtoSchema.startsWith("\"$name\"")){
             throw IllegalArgumentException("Invalid name $name for schema $dtoSchema")
@@ -133,7 +134,7 @@ object RestActionBuilderV3 {
         """.trimIndent()
 
         val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
-        val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque())
+        val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque(), referenceTypeName)
         dtoCache[dtoSchema] = gene
         return gene.copy()
     }
@@ -218,7 +219,7 @@ object RestActionBuilderV3 {
     private fun handleParam(p: Parameter, swagger: OpenAPI, params: MutableList<Param>) {
         val name = p.name ?: "undefined"
 
-        var gene = getGene(name, p.schema, swagger)
+        var gene = getGene(name, p.schema, swagger, referenceClassDef = null)
 
         if (p.`in` == "path" && gene is StringGene) {
             /*
@@ -324,7 +325,7 @@ object RestActionBuilderV3 {
             This should refactored to enable possibility of different BodyParams
         */
         val obj: MediaType = bodies.values.first()
-        var gene = getGene("body", obj.schema, swagger)
+        var gene = getGene("body", obj.schema, swagger, referenceClassDef = null)
 
 
         if (body.required != true && gene !is OptionalGene) {
@@ -349,7 +350,8 @@ object RestActionBuilderV3 {
             name: String,
             schema: Schema<*>,
             swagger: OpenAPI,
-            history: Deque<String> = ArrayDeque<String>()
+            history: Deque<String> = ArrayDeque<String>(),
+            referenceClassDef: String?
     ): Gene {
 
         if (!schema.`$ref`.isNullOrBlank()) {
@@ -470,8 +472,7 @@ object RestActionBuilderV3 {
                     } else {
                         schema.items
                     }
-
-                    val template = getGene(name + "_item", arrayType, swagger, history)
+                    val template = getGene(name + "_item", arrayType, swagger, history, referenceClassDef = null)
 
                     //Could still have an empty []
 //                    if (template is CycleObjectGene) {
@@ -484,7 +485,7 @@ object RestActionBuilderV3 {
             }
 
             "object" -> {
-                return createObjectGene(name, schema, swagger, history)
+                return createObjectGene(name, schema, swagger, history, referenceClassDef)
             }
 
             "file" -> return StringGene(name) //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
@@ -494,7 +495,7 @@ object RestActionBuilderV3 {
             /*
                 This could happen when parsing a body-payload as formData
             */
-            return createObjectGene(name, schema, swagger, history)
+            return createObjectGene(name, schema, swagger, history, referenceClassDef)
         }
 
         if (type == null && format == null) {
@@ -505,11 +506,14 @@ object RestActionBuilderV3 {
         throw IllegalArgumentException("Cannot handle combination $type/$format")
     }
 
-    private fun createObjectGene(name: String, schema: Schema<*>, swagger: OpenAPI, history: Deque<String>): Gene {
+    /**
+     * @param referenceTypeName is the name of object type
+     */
+    private fun createObjectGene(name: String, schema: Schema<*>, swagger: OpenAPI, history: Deque<String>, referenceTypeName: String?): Gene {
 
         val fields = schema.properties?.entries?.map {
             possiblyOptional(
-                    getGene(it.key, it.value, swagger, history),
+                    getGene(it.key, it.value, swagger, history, referenceClassDef = null),
                     schema.required?.contains(it.key)
             )
         } ?: listOf()
@@ -538,7 +542,7 @@ object RestActionBuilderV3 {
              */
 
             if (fields.isEmpty()) {
-                return MapGene(name, getGene(name + "_field", additional, swagger, history))
+                return MapGene(name, getGene(name + "_field", additional, swagger, history, null))
             }
         }
 
@@ -553,7 +557,7 @@ object RestActionBuilderV3 {
             add refClass with title of SchemaObject
             Man: shall we pop history here?
          */
-        return ObjectGene(name, fields, if(schema is ObjectSchema) schema.title else null)
+        return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
     }
 
 
@@ -591,7 +595,7 @@ object RestActionBuilderV3 {
 
         if (schema == null) {
             //token after last /
-            val classDef = reference.substring(reference.lastIndexOf("/") + 1)
+            val classDef = getClassDef(reference)
 
             LoggingUtil.uniqueWarn(log, "No $classDef among the object definitions in the OpenApi file")
 
@@ -600,7 +604,7 @@ object RestActionBuilderV3 {
 
         history.push(reference)
 
-        val gene = getGene(name, schema, swagger, history)
+        val gene = getGene(name, schema, swagger, history, getClassDef(reference))
 
         if(isRoot) {
             GeneUtils.preventCycles(gene)
@@ -611,6 +615,8 @@ object RestActionBuilderV3 {
 
         return gene
     }
+
+    private fun getClassDef(reference: String) = reference.substring(reference.lastIndexOf("/") + 1)
 
     private fun getLocalParameter(swagger: OpenAPI, reference: String) : Parameter?{
         val name = extractReferenceName(reference)
@@ -703,7 +709,7 @@ object RestActionBuilderV3 {
         refCache.clear()
         dtoCache.clear()
 
-        if (swagger.components.schemas != null) {
+        if (swagger.components?.schemas != null) {
             swagger.components.schemas
                     .forEach {
                         val model = createObjectFromReference(it.key,

@@ -9,8 +9,6 @@ import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
-import org.evomaster.core.problem.graphql.param.GQInputParam
-import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.search.Action
@@ -208,16 +206,16 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                                     (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
                                     (value is String) -> longArray = true
                                     else -> {
-                                        val printableFieldValue = handleFieldValues(value)
-                                        if (printSuitable(printableFieldValue)) {
+                                        val printableFieldValue = handleFieldValues_getMatcher(value)
+                                        if (isSuitableToPrint(printableFieldValue)) {
                                             lines.add(".body(\"\", $printableFieldValue)")
                                         }
                                     }
                                 }
                             }
                             if (longArray) {
-                                val printableContent = handleFieldValues(resContents)
-                                if (printSuitable(printableContent)) {
+                                val printableContent = handleFieldValues_getMatcher(resContents)
+                                if (isSuitableToPrint(printableContent)) {
                                     lines.add(".body(\"\", $printableContent)")
                                 }
                             }
@@ -230,7 +228,8 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                     '{' -> {
                         // JSON contains an object
                         val resContents = Gson().fromJson(bodyString, Map::class.java)
-                        addObjectAssertions(resContents, lines)
+                    //FIXME
+                    //handleAssertionsOnObject(resContents, lines, null)
 
                     }
                     else -> {
