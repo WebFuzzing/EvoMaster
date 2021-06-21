@@ -66,7 +66,7 @@ class ResourceManageService {
         cluster.initResourceCluster(actionCluster, sqlInsertBuilder, config)
 
         if(config.extractSqlExecutionInfo && config.doesApplyNameMatching){
-            dm.initRelatedTables(resourceCluster = cluster)
+            cluster.initRelatedTables()
 
             if(config.probOfEnablingResourceDependencyHeuristics > 0.0)
                 dm.initDependencyBasedOnDerivedTables(resourceCluster = cluster)
@@ -210,9 +210,9 @@ class ResourceManageService {
                 /*
                     derive possible db, and bind value according to db
                 */
-                val is2Post = candidate == "POST" && employSQL && (randomness.nextBoolean(0.1) || forceSQLInsert)
-                call.is2POST = is2Post
-                val created = handleDbActionForCall(call, forceSQLInsert, false, is2Post)
+                call.is2POST = candidate == "POST" && employSQL //&& (randomness.nextBoolean(0.1) || forceSQLInsert)
+
+                val created = handleDbActionForCall(call, forceSQLInsert, false, call.is2POST)
                 if(!created){
                     LoggingUtil.uniqueWarn(log, "resource creation for $resourceKey fails")
                 }else{
@@ -235,7 +235,7 @@ class ResourceManageService {
         relatedTables.forEach { tableName->
             val dataInDb = cluster.getDataInDb(tableName)
             if(forceInsert){
-                generateInserSql(tableName, dbActions)
+                generateInsertSql(tableName, dbActions, true)
             }else if(forceSelect){
                 if(dataInDb?.isNotEmpty() == true) generateSelectSql(tableName, dbActions)
                 else failToGenDB = true
@@ -243,14 +243,14 @@ class ResourceManageService {
                 if(dataInDb!= null ){
                     val size = dataInDb.size
                     when{
-                        size < config.minRowOfTable -> generateInserSql(tableName, dbActions).apply {
+                        size < config.minRowOfTable -> generateInsertSql(tableName, dbActions, true).apply {
                             failToGenDB = failToGenDB || !this
                         }
                         else ->{
                             if(randomness.nextBoolean(config.probOfSelectFromDatabase)){
                                 generateSelectSql(tableName, dbActions)
                             }else{
-                                generateInserSql(tableName, dbActions).apply {
+                                generateInsertSql(tableName, dbActions, true).apply {
                                     failToGenDB = failToGenDB || !this
                                 }
                             }
@@ -307,7 +307,6 @@ class ResourceManageService {
         val paramToTables = dm.extractRelatedTablesForCall(call, withSql = employSQL)
         if(paramToTables.isEmpty()) return false
 
-        //val relatedTables = removeDuplicatedTables(paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet())
         val relatedTables = paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet()
 
         val dbActions = mutableListOf<DbAction>()
@@ -330,9 +329,10 @@ class ResourceManageService {
              Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
 
              */
-            call.buildBindingWithDbActions(dbActions, bindingMap = paramToTables, cluster = cluster, forceBindParamBasedOnDB = false, dbRemovedDueToRepair = removed)
+            //call.buildBindingWithDbActions(dbActions, bindingMap = paramToTables, cluster = cluster, forceBindParamBasedOnDB = false, dbRemovedDueToRepair = removed)
+            //call.addDbAction(actions = dbActions)
+            call.initDbActions(dbActions, cluster, false, removed)
 
-            call.addDbAction(actions = dbActions)
         }
         return paramToTables.isNotEmpty() && !failToGenDb
     }
@@ -415,7 +415,13 @@ class ResourceManageService {
         dbActions.add(selectDbAction)
     }
 
-    private fun generateInserSql(tableName : String, dbActions: MutableList<DbAction>) : Boolean{
+    @Deprecated("will be removed")
+    private fun generateInsertSql(
+        tableName: String,
+        dbActions: MutableList<DbAction>,
+        doNotCreateDuplicatedTable: Boolean = true
+    ) : Boolean{
+
         val insertDbAction =
                 sqlInsertBuilder!!
                         .createSqlInsertionAction(tableName, forceAll = true)
@@ -423,11 +429,16 @@ class ResourceManageService {
         if (log.isTraceEnabled){
             log.trace("at generateInserSql, {} insertions are added, and they are {}", insertDbAction.size,
                 insertDbAction.joinToString(",") {
-                    if (it is DbAction) it.getResolvedName() else it.getName()
+                    it.getResolvedName()
                 })
         }
 
         if(insertDbAction.isEmpty()) return false
+
+        if (!doNotCreateDuplicatedTable){
+            dbActions.addAll(insertDbAction)
+            return true
+        }
 
         val pasted = mutableListOf<DbAction>()
         insertDbAction.reversed().forEach {ndb->
@@ -458,20 +469,25 @@ class ResourceManageService {
 
     fun getTableInfo() = cluster.getTableInfo()
 
+    /**
+     * @return SqlBuilder
+     */
     fun getSqlBuilder() : SqlInsertBuilder?{
         if(!hasDBHandler()) return null
         return sqlInsertBuilder
     }
 
-
-
-    fun getTableByName(name : String) = cluster.getTableByName(name)
+    /**
+     * @return table class based on the specified [name]
+     */
+    private fun getTableByName(name : String) = cluster.getTableByName(name)
 
 
     /**
      * @return sorted [tables] based on their relationships
      * for instance, Table A refer to Table B, then in the returned list, A should be before B.
      */
+    @Deprecated("will be removed")
     fun sortTableBasedOnFK(tables : Set<String>) : List<Table>{
         return tables.mapNotNull { getTableByName(it) }.sortedWith(
             Comparator { o1, o2 ->
@@ -484,6 +500,7 @@ class ResourceManageService {
         )
     }
 
+    @Deprecated("will be removed")
     fun removeDuplicatedTables(tables: Set<String>) : List<String>{
         val sorted = sortTableBasedOnFK(tables)
         sorted.toMutableList().removeIf { t->

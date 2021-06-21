@@ -72,7 +72,7 @@ object BindingBuilder {
     fun bindRestAndDbAction(restAction: RestCallAction,
                             restNode: RestResourceNode,
                             paramGeneBindMap: List<ParamGeneBindMap>,
-                            dbActions: MutableList<DbAction>,
+                            dbActions: List<DbAction>,
                             forceBindParamBasedOnDB: Boolean = false,
                             dbRemovedDueToRepair : Boolean,
                             doBuildBindingGene: Boolean){
@@ -255,7 +255,7 @@ object BindingBuilder {
     fun buildBindRestActionBasedOnDbActions(restAction: RestCallAction,
                                             restNode: RestResourceNode,
                                             paramGeneBindMap: List<ParamGeneBindMap>,
-                                            dbActions: MutableList<DbAction>,
+                                            dbActions: List<DbAction>,
                                             forceBindParamBasedOnDB: Boolean = false,
                                             dbRemovedDueToRepair : Boolean) : List<Pair<Gene, Gene>>{
 

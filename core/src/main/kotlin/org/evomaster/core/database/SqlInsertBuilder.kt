@@ -574,6 +574,9 @@ class SqlInsertBuilder(
 
     }
 
+
+
+
     /**
      * get table info
      */
@@ -583,7 +586,6 @@ class SqlInsertBuilder(
             tablesMap.clear()
             tablesMap.putAll(tables)
         }
-
 
     }
 }

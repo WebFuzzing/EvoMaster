@@ -1,7 +1,6 @@
 package org.evomaster.core.database
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -9,6 +8,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.evomaster.core.database.schema.Table
 
 object DbActionUtils {
 
@@ -374,6 +374,53 @@ object DbActionUtils {
                     The current version performs no escaping of characters by default (i.e. when the target format is null).
             */
         }
+    }
+
+    /**
+     * repair fk of [dbAction] based on primary keys of [previous] dbactions
+     * @return whether fk is fixed
+     */
+    fun repairFk(dbAction: DbAction, previous: MutableList<DbAction>) : Boolean{
+        val pks = previous.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
+
+        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().forEach {fk->
+
+            val needToFix = pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey && p.tableName == fk.targetTable }
+            if (needToFix){
+                val found = pks.find { fk.targetTable == it.tableName }
+                if (found != null){
+                    fk.uniqueIdOfPrimaryKey = found.uniqueId
+                }else
+                    return false
+            }
+        }
+
+        return true
+    }
+
+
+    /**
+     * @return sorted tables based on its fk
+     * @param table to be sorted
+     * @param reversed specifies how to sort the tables
+     *
+     * for instance, table A contains foreign key to table B
+     * with inputs setOf(A, B), the return list would be
+     *      1) [reversed] is false, listOf(A, B)
+     *      2) [reversed] is true, listOf(B, A)
+     */
+    fun sortTable(table : Set<Table>, reversed: Boolean = false) : List<Table>{
+
+        val sorted = table.sortedWith(
+            Comparator { o1, o2 ->
+                when {
+                    o1.foreignKeys.any { t-> t.targetTable.equals(o2.name,ignoreCase = true) } -> -1
+                    o2.foreignKeys.any { t-> t.targetTable.equals(o1.name,ignoreCase = true) } -> 1
+                    else -> 0
+                }
+            }
+        )
+        return if (reversed) sorted.reversed() else sorted
     }
 
     /**

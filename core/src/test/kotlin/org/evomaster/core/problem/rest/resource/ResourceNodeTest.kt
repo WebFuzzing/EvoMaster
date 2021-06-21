@@ -170,8 +170,7 @@ class ResourceNodeTest {
             //binding
             assertTrue(postXyzIdGene!!.isBoundWith(getXyzIdGene!!))
             assertTrue(getXyzIdGene.isBoundWith(postXyzIdGene))
-
-
         }
     }
+
 }

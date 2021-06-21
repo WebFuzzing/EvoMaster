@@ -311,6 +311,13 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     }
 
     /**
+     * remove genes which has been removed from the root
+     */
+    fun cleanRemovedGenes(removed: List<Gene>): Boolean{
+        return bindingGenes.removeIf{removed.contains(it)}
+    }
+
+    /**
      * @return whether [this] gene has same binding gene as [genes]
      *
      * it is useful for debugging/unit tests

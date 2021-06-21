@@ -19,7 +19,7 @@ interface DeriveResourceBinding {
      */
     fun deriveResourceToTable(resourceNode : RestResourceNode, allTables : Map<String, Table>)
 
-    fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, dbActions : MutableList<DbAction>) :  MutableMap<RestCallAction, MutableList<ParamGeneBindMap>>? = null
+    fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, dbActions : List<DbAction>) :  MutableMap<RestCallAction, MutableList<ParamGeneBindMap>>? = null
 
     fun generateRelatedTables(ar: RestResourceNode) :  MutableMap<String, MutableSet<String>>? = null
 }

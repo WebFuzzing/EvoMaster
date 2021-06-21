@@ -1102,11 +1102,14 @@ class ResourceDepManageService {
     /**
      * init related tables for all [RestResourceNode] in [resourceCluster] based on [tables]
      */
+    @Deprecated("replaced by initRelatedTables() of ResourceCluster")
     fun initRelatedTables(resourceCluster: ResourceCluster) {
         resourceCluster.getCluster().values.forEach {
             SimpleDeriveResourceBinding.deriveResourceToTable(it, resourceCluster.getTableInfo())
         }
     }
+
+
     /**
      * @return extracted related tables for [call] regarding [dbActions]
      * if [dbActions] is not empty, return related table from tables in [dbActions]
@@ -1157,32 +1160,6 @@ class ResourceDepManageService {
     fun bindCallWithFront(call: RestResourceCalls, front: MutableList<RestResourceCalls>) {
 
         val targets = front.flatMap { it.seeActions(NO_SQL).filter { a -> a is RestCallAction } }
-
-        /*
-        TODO
-
-         e.g., A/{a}, A/{a}/B/{b}, A/{a}/C/{c}
-         if there are A/{a} and A/{a}/B/{b} that exists in the test,
-         1) when appending A/{a}/C/{c}, A/{a} should not be created again;
-         2) But when appending A/{a} in the test, A/{a} with new values should be created.
-        */
-//        if(call.actions.size > 1){
-//            call.actions.removeIf {action->
-//                action is RestCallAction &&
-//                        //(action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT) &&
-//                        action.verb == HttpVerb.POST &&
-//                        action != call.actions.last() &&
-//                        targets.find {it is RestCallAction && it.getName() == action.getName()}.also {
-//                            it?.let {ra->
-//                                front.find { call-> call.actions.contains(ra) }?.let { call -> call.isStructureMutable = false }
-//                                if(action.saveLocation) (ra as RestCallAction).saveLocation = true
-//                                action.locationId?.let {
-//                                    (ra as RestCallAction).saveLocation = action.saveLocation
-//                                }
-//                            }
-//                        }!=null
-//            }
-//        }
 
         /*
          bind values based front actions,
