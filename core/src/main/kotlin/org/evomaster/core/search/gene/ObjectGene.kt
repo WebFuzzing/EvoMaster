@@ -22,6 +22,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
         val unionTag = "#UNION#"
         val interfaceTag = "#INTERFACE#"
+        val interfaceBaseTag = "#BASE#"
     }
 
     init {
@@ -42,6 +43,26 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         for (i in 0 until fields.size) {
             this.fields[i].copyValueFrom(other.fields[i])
         }
+    }
+
+    fun copyFields(filterGene: ObjectGene): ObjectGene {
+
+        val fields: MutableList<Gene> = mutableListOf()
+        var k = 0
+        for (i in this.fields.indices) {
+            var exist = false
+            for (element in filterGene.fields) {
+                if (this.fields[i].name == element.name) {
+                    exist = true
+                    break
+                }
+            }
+            if (!exist) {
+                fields.add(this.fields[i].copy())
+                k++
+            }
+        }
+        return ObjectGene(this.name, fields)
     }
 
     override fun isMutable(): Boolean {
@@ -212,10 +233,15 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         selection.map {
             val s: String = when (it) {
                 is OptionalGene -> {
-                    buffer.append("... on ${it.gene.name.replace(unionTag, "")} {")
-                    assert(it.gene is ObjectGene)
-                    buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE, targetFormat)}")
-                    buffer.append("}").toString()
+                    if (it.name.endsWith(interfaceBaseTag)) {
+                        assert(it.gene is ObjectGene)
+                        buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)}").toString()
+                    } else {
+                        buffer.append("... on ${it.gene.name.replace(unionTag, "")} {")
+                        assert(it.gene is ObjectGene)
+                        buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE, targetFormat)}")
+                        buffer.append("}").toString()
+                    }
                 }
 
                 else -> {
@@ -236,7 +262,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         if (name.endsWith(unionTag)) {
             if (!extraCheck)
                 buffer.append("{") else buffer.append("${name.replace(unionTag, " ")} {")
-            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat,extraCheck=true))
+            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat, extraCheck = true))
             buffer.append("}")
             return
         }
@@ -253,7 +279,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             //we do not do it for the first object, but we must do it for all the nested ones
             buffer.append("$name")
         }
-        buffer.append("{")
+
+        if (!name.endsWith(interfaceBaseTag)) {
+            buffer.append("{")
+        }
 
         val selection = includedFields.filter {
             when (it) {
@@ -282,7 +311,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             }
             s
         }.joinToString(","))
-        buffer.append("}")
+
+        if (!name.endsWith(interfaceBaseTag)) {
+            buffer.append("}")
+        }
     }
 
     private fun openXml(tagName: String) = "<$tagName>"
