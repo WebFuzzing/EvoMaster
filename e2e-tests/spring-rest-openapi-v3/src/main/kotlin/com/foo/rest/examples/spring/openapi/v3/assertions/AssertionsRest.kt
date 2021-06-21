@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 
 @Controller
-@RequestMapping(path = ["/api/assertions"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping(path = ["/api/assertions"])
 class AssertionsRest {
 
     @GetMapping(path = ["/data"])
-    open fun getData() : ResponseEntity<AssertionDto> {
+    open fun getData() : ResponseEntity<String> {
 
-        val assertionDto = AssertionDto()
+        val assertionDto = Gson().toJson(AssertionDto())
         return ResponseEntity.status(200).body(assertionDto)
     }
 
@@ -27,14 +27,12 @@ class AssertionsRest {
 
     @GetMapping(path = ["/simpleNumber"])
     open fun getSimpleNumber() : ResponseEntity<String> {
-        return ResponseEntity.status(200)
-                .body(Gson().toJson(42))
+        return ResponseEntity.ok("42")
     }
 
     @GetMapping(path = ["/simpleString"])
     open fun getSimpleString() : ResponseEntity<String> {
-        return ResponseEntity.status(200)
-                .body(Gson().toJson("simple-string"))
+        return ResponseEntity.ok("simple-string")
     }
 
     @GetMapping(path = ["/simpleText"])

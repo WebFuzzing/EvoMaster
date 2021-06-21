@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 /**
  *
  */
-class AssertionsEMTest : SpringTestBase() {
+class AssertionDoubleApiEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -32,8 +32,8 @@ class AssertionsEMTest : SpringTestBase() {
         defaultSeed = 43
 
         runTestHandlingFlakyAndCompilation(
-                "AssertionsEM",
-                "org.foo.AssertionsEM",
+                "AssertionEM",
+                "org.foo.AssertionEM_Double",
                 1_000
         ) { args: MutableList<String> ->
 
