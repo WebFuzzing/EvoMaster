@@ -344,7 +344,10 @@ class RestResourceNode(
         return sampleOneAction(al!!, randomness)
     }
 
-    private fun sampleOneAction(action : RestCallAction, randomness: Randomness) : RestResourceCalls{
+    /**
+     * sample a rest resource call with given [action]
+     */
+    fun sampleOneAction(action : RestCallAction, randomness: Randomness) : RestResourceCalls{
         val copy = action.copy() as RestCallAction
         copy.randomize(randomness, false)
 

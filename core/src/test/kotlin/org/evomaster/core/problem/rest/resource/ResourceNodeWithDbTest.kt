@@ -69,7 +69,7 @@ class ResourceNodeWithDbTest {
         assertEquals(6, cluster.getCluster().size)
 
         // table in db
-        assertEquals(setOf("RFOO", "RBAR", "RXYZ"), cluster.getTableInfo().keys)
+        assertTrue(cluster.getTableInfo().keys.containsAll(setOf("RFOO", "RBAR", "RXYZ")))
 
         // data in db
         assertEquals(2, cluster.getDataInDb("RFOO")?.size)

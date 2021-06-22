@@ -185,69 +185,12 @@ class RestResourceCalls(
     private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
 
 
-    @Deprecated("not required if we handle bound gene")
-    fun repairGenesAfterMutation(mutatedGene: MutatedGeneSpecification?, cluster: ResourceCluster){
-
-        mutatedGene?: log.warn("repair genes of resource call ({}) with null mutated genes", getResourceNode().getName())
-
-        val boundBaseGenes = if (mutatedGene?.didStructureMutation() == true) longestPath().seeGenes() else mutatedGene?.getMutated(true)?.mapNotNull { it.gene } ?: longestPath().seeGenes()
-
-        var anyMutated = false
-
-        boundBaseGenes.filter(Gene::isMutable).map { g->
-            val target = actions.find { it.seeGenes().contains(g) }
-            if (target != null){
-                anyMutated = true
-                val param = (target as? RestCallAction)?.parameters?.find { it.seeGenes().contains(g) }
-                    ?:throw IllegalStateException("${g.name} cannot be found in rest action ${target.getName()}")
-                // bind actions with target
-                actions.filter { it != target }
-                    .forEach{a-> a.bindBasedOn(target.path, listOf(param))}
-            }
-        }
-        if (anyMutated && dbActions.isNotEmpty()){
-            buildBindingWithDbActions(dbActions,null, cluster, false, false)
-        }
-    }
-
-
-    /**
-     * bind [actions] in this call based on the given [dbActions] using a map [bindingMap] if there exists
-     * @param dbActions are bound with [actions] in this call.
-     * @param bindingMap is a map to bind [actions] and [dbActions] at gene-level, and it is nullable.
-     *          if it is null, [SimpleDeriveResourceBinding] will be employed to derive the binding map based on the params of rest actions.
-     * @param cluster records all existing resource node in the sut, here we need this because the [actions] might employ action from other resource node.
-     * @param forceBindParamBasedOnDB specifies whether to bind params based on [dbActions] or reversed
-     * @param dbRemovedDueToRepair indicates whether the dbactions are removed due to repair.
-     */
-    @Deprecated("removed")
-    fun buildBindingWithDbActions(dbActions: MutableList<DbAction>, bindingMap: Map<RestCallAction, MutableList<ParamGeneBindMap>>? = null,
-                                  cluster : ResourceCluster,
-                                  forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
-        var paramToTables = bindingMap
-        if (paramToTables == null){
-            val paramInfo = getResourceNode().getPossiblyBoundParams(template!!.template, is2POST)
-            paramToTables = SimpleDeriveResourceBinding.generateRelatedTables(paramInfo, this, dbActions)
-        }
-
-        for (a in actions) {
-            var list = paramToTables[a]
-            if (list == null) list = paramToTables.filter { a.getName() == it.key.getName() }.values.run {
-                if (this.isEmpty()) null else this.first()
-            }
-            if (list != null && list.isNotEmpty()) {
-                BindingBuilder.bindRestAndDbAction(a, cluster.getResourceNode(a, true)!!, list, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair, true)
-            }
-        }
-    }
-
     /**
      * bind this with other [relatedResourceCalls]
      * @param relatedResourceCalls to be bound with [this]
      * @param doRemoveDuplicatedTable specifies whether to remove duplicated db actions on this
      *      e.g., for resource C, table C is created, in addition, A and B are also created since B refers to them,
      *      in this case, if the following handling is related to A and B, we do not further create A and B once [doRemoveDuplicatedTable] is true
-     * @param cluster specifies all resource nodes in this sut
      */
     fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, doRemoveDuplicatedTable: Boolean){
         // handling [this.dbActions]
