@@ -105,7 +105,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
     private fun handleAddSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
         if (config.maxSqlInitActionsPerResource == 0)
             throw IllegalStateException("this method should not be invoked when config.maxSqlInitActionsPerResource is 0")
-        val numOfResource = randomness.nextInt(1, rm.getResourceNum())
+        val numOfResource = randomness.nextInt(1, rm.getSqlMaxNumOfResource())
         val added = if (doesApplyDependencyHeuristics()) dm.addRelatedSQL(ind, numOfResource)
                     else dm.createDbActions(randomness.choose(rm.getTableInfo().keys),numOfResource)
 
@@ -126,7 +126,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         if (candidates.isEmpty())
             candidates = ind.seeInitializingActions()
 
-        val num = randomness.nextInt(1, max(1, min(rm.getResourceNum(), candidates.size -1)))
+        val num = randomness.nextInt(1, max(1, min(rm.getSqlMaxNumOfResource(), candidates.size -1)))
         val remove = randomness.choose(candidates, num)
         val relatedRemove = mutableListOf<DbAction>()
         relatedRemove.addAll(remove)
@@ -267,7 +267,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             var addPos : Int? = null
             if(pair.first != null){
                 val pos = ind.getResourceCalls().indexOf(pair.first!!)
-                dm.bindCallWithFront(pair.first!!, mutableListOf(pair.second))
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), true)
                 addPos = randomness.nextInt(0, pos)
             }
             if (addPos == null) addPos = randomness.nextInt(0, ind.getResourceCalls().size)
@@ -325,7 +325,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             call =  rm.handleAddResource(ind, max)
         }else{
             if(pair.first != null){
-                dm.bindCallWithFront(pair.first!!, mutableListOf(pair.second))
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), true)
             }
         }
 

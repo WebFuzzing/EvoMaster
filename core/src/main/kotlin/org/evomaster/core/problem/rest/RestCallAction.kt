@@ -157,11 +157,14 @@ class RestCallAction(
 
     /**
      * bind [parameters] based on [other]
+     * @return whether any of param is bound with [other]
      */
-    fun bindBasedOn(other: RestCallAction){
+    fun bindBasedOn(other: RestCallAction) : Boolean{
+        var dependent = false
         parameters.forEach { p->
-            BindingBuilder.bindRestAction(p, path, other.path, other.parameters, doBuildBindingGene = true)
+            dependent = BindingBuilder.bindRestAction(p, path, other.path, other.parameters, doBuildBindingGene = true) || dependent
         }
+        return dependent
     }
 
     /**

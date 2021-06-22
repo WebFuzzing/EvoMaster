@@ -58,7 +58,10 @@ object BindingBuilder {
         return pair
     }
 
-    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false, doBuildBindingGene: Boolean = false){
+    /**
+     * TODO add comment
+     */
+    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false, doBuildBindingGene: Boolean = false): Boolean{
         val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, inner)
         pairs.forEach { p->
             p.first.bindValueBasedOn(p.second)
@@ -67,6 +70,7 @@ object BindingBuilder {
                 p.second.addBindingGene(p.first)
             }
         }
+        return pairs.isNotEmpty()
     }
 
     fun bindRestAndDbAction(restAction: RestCallAction,

@@ -1010,7 +1010,7 @@ class ResourceDepManageService {
         if (log.isTraceEnabled){
             log.trace("at createDbActions, {} insertions are added, and they are {}", list.size,
                 list.flatten().joinToString(",") {
-                    if (it is DbAction) it.getResolvedName() else it.getName()
+                    it.getResolvedName()
                 })
         }
 
@@ -1051,26 +1051,17 @@ class ResourceDepManageService {
 
     /**
      * add related resource with SQL as its initialization of [ind], i.e., [RestIndividual.dbInitialization]
-     * [maxPerResource] is a maximum resources to be added per resource
+     * @param ind to be handled by adding resources in its initialization with sql
+     * @param maxPerResource is a maximum resources to be added per resource
      */
     fun sampleResourceWithRelatedDbActions(ind: RestIndividual, maxPerResource : Int) {
         if (maxPerResource == 0) return
         rm.getSqlBuilder()?:return
 
-        val added = mutableListOf<DbAction>()
+        val relatedTables = getAllRelatedTables(ind).flatMap { t->  (0 until randomness.nextInt(1, maxPerResource)).map { t } }
 
-        val relatedTables = getAllRelatedTables(ind)
+        val added = rm.cluster.createSqlAction(relatedTables, rm.getSqlBuilder()!!, mutableListOf(), false, true, randomness)
 
-        rm.sortTableBasedOnFK(relatedTables).forEach { t->
-            val num = randomness.nextInt(1, maxPerResource) - added.filter { it.table.name.equals(t.name, ignoreCase = true) }.size
-            if (num > 0){
-                added.addAll((0 until num).flatMap {
-                    rm.getSqlBuilder()!!.createSqlInsertionAction(t.name, setOf())
-                })
-            }
-        }
-
-        DbActionUtils.randomizeDbActionGenes(added, randomness)
         DbActionUtils.repairBrokenDbActionsList(added,randomness)
 
         ind.addInitializingActions(actions = added)
@@ -1098,18 +1089,6 @@ class ResourceDepManageService {
         return false
     }
 
-
-    /**
-     * init related tables for all [RestResourceNode] in [resourceCluster] based on [tables]
-     */
-    @Deprecated("replaced by initRelatedTables() of ResourceCluster")
-    fun initRelatedTables(resourceCluster: ResourceCluster) {
-        resourceCluster.getCluster().values.forEach {
-            SimpleDeriveResourceBinding.deriveResourceToTable(it, resourceCluster.getTableInfo())
-        }
-    }
-
-
     /**
      * @return extracted related tables for [call] regarding [dbActions]
      * if [dbActions] is not empty, return related table from tables in [dbActions]
@@ -1119,83 +1098,6 @@ class ResourceDepManageService {
         val paramsInfo = call.getResourceNode().getPossiblyBoundParams(call.template!!.template, withSql)
         return SimpleDeriveResourceBinding.generateRelatedTables(paramsInfo, call, dbActions)
     }
-
-    private fun bindCallWithOtherDBAction(call: RestResourceCalls, dbActions: MutableList<DbAction>) {
-        val dbRelatedToTables = dbActions.map { it.table.name }.toMutableList()
-        val dbTables = call.seeActions(ONLY_SQL).filterIsInstance<DbAction>().map { it.table.name }.toMutableList()
-
-        var remove = false
-        if (dbRelatedToTables.containsAll(dbTables)) {
-            call.resetDbAction(listOf<DbAction>())
-        } else {
-            //call.dbActions.removeIf { dbRelatedToTables.contains(it.table.name) }
-            call.removeDbActionIf { dbAction: DbAction -> dbRelatedToTables.contains(dbAction.table.name) }
-            /*
-             TODO Man there may need to add selection in order to ensure the reference pk exists
-             */
-            //val selections = mutableListOf<DbAction>()
-            val previous = mutableListOf<DbAction>()
-            val created = mutableListOf<DbAction>()
-            call.seeActions(ONLY_SQL).filterIsInstance<DbAction>().forEach { dbaction ->
-                if (dbaction.table.foreignKeys.find { dbRelatedToTables.contains(it.targetTable) } != null) {
-                    val refers = DbActionUtils.repairFK(dbaction, dbActions.plus(previous).toMutableList(), created, rm.getSqlBuilder(), randomness)
-                    //selections.addAll( (sampler as ResourceRestSampler).sqlInsertBuilder!!.generateSelect(refers) )
-                }
-                previous.add(dbaction)
-            }
-            call.addDbAction(0, created)
-            val removed = rm.repairDbActionsForResource(dbActions.plus(call.seeActions(ONLY_SQL).filterIsInstance<DbAction>()).toMutableList())
-            remove = remove || removed
-        }
-
-        val dbActions = dbActions.plus(call.seeActions(ONLY_SQL).filterIsInstance<DbAction>()).toMutableList()
-        extractRelatedTablesForCall(call, dbActions, false).let {
-            call.buildBindingWithDbActions(dbActions, bindingMap = it, cluster = rm.cluster, forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
-        }
-    }
-
-    /**
-     * bind a call based on its front including resource call and dbactions
-     */
-    fun bindCallWithFront(call: RestResourceCalls, front: MutableList<RestResourceCalls>) {
-
-        val targets = front.flatMap { it.seeActions(NO_SQL).filter { a -> a is RestCallAction } }
-
-        /*
-         bind values based front actions,
-         */
-        call.seeActions(NO_SQL)
-                .filterIsInstance<RestCallAction>()
-                .forEach { a ->
-                    a.parameters.forEach { p ->
-                        targets.forEach { ta ->
-                            BindingBuilder.bindRestAction(p, a.path, (ta as RestCallAction).path, ta.parameters, doBuildBindingGene = true)
-                        }
-                    }
-                }
-
-        /*
-         bind values of dbactions based front dbactions
-         */
-        front.flatMap { it.seeActions(ONLY_SQL) }.filterIsInstance<DbAction>().apply {
-            if (isNotEmpty()) {
-                bindCallWithOtherDBAction(call, this.toMutableList())
-            }
-        }
-
-        val frontTables = front.map { Pair(it, it.seeActions(ONLY_SQL).filterIsInstance<DbAction>().map { it.table.name }) }.toMap()
-        call.seeActions(ONLY_SQL).filterIsInstance<DbAction>().forEach { db ->
-            db.table.foreignKeys.map { it.targetTable }.let { ftables ->
-                frontTables.filter { entry ->
-                    entry.value.intersect(ftables).isNotEmpty()
-                }.forEach { (t, _) ->
-                    t.isDeletable = false
-                    t.shouldBefore.add(call.getResourceNodeKey())
-                }
-            }
-        }
-    }
-
 
     /**
      * @return whether all resources in SUT are independent

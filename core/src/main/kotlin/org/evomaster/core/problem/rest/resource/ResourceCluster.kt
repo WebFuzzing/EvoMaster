@@ -133,29 +133,29 @@ class ResourceCluster {
 
 
     /**
-     * create db actions based on specified tables, i.e., [set]
-     * @param set specifies tables
+     * create db actions based on specified tables, i.e., [tables]
+     * @param tables specifies tables
      * @param sqlInsertBuilder is used to create dbactions
      * @param previous specifies the previous dbactions
-     * @param doToCreateDuplicatedAction specifies whether it is allowed to create duplicate db actions
+     * @param doNotCreateDuplicatedAction specifies whether it is allowed to create duplicate db actions
      * @param isInsertion specifies that db actions are SELECT or INSERT
      *          note that if there does not exist data for the table, we will employ INSERT instead of SELECT
      * @param randomness is employed to randomize the created actions or select an existing data
      * @param forceSynDataInDb specified whether to force synchronizing data. By default, we disable it since it is quite time-consuming.
      *
      * for instance, set could be A and B, and B refers to A
-     * if [doToCreateDuplicatedAction], the returned list would be A and B
+     * if [doNotCreateDuplicatedAction], the returned list would be A and B
      * else the return list would be A, A and B. the additional A is created for B
      */
-    fun createSqlAction(set: Set<String>,
+    fun createSqlAction(tables: List<String>,
                         sqlInsertBuilder: SqlInsertBuilder,
                         previous: List<DbAction>,
-                        doToCreateDuplicatedAction: Boolean,
+                        doNotCreateDuplicatedAction: Boolean,
                         isInsertion: Boolean = true,
                         randomness: Randomness,
                         forceSynDataInDb: Boolean = false
-    ) : List<DbAction>{
-        val sorted = DbActionUtils.sortTable(set.mapNotNull { getTableByName(it) }.toSet())
+    ) : MutableList<DbAction>{
+        val sorted = DbActionUtils.sortTable(tables.mapNotNull { getTableByName(it) }.run { if (doNotCreateDuplicatedAction) this.distinct() else this })
         val added = mutableListOf<DbAction>()
         val preTables = previous.filter { !isInsertion || !it.representExistingData }.map { it.table.name }.toMutableList()
 
@@ -163,7 +163,7 @@ class ResourceCluster {
             syncDataInDb(sqlInsertBuilder)
 
         sorted.forEach { t->
-            if (!doToCreateDuplicatedAction || preTables.none { p-> p.equals(t.name, ignoreCase = true) }){
+            if (!doNotCreateDuplicatedAction || preTables.none { p-> p.equals(t.name, ignoreCase = true) }){
                 val select = !isInsertion && getDataInDb(t.name)?.size?:0 > 0
                 val action = if (select){
                     val candidates = getDataInDb(t.name)!!

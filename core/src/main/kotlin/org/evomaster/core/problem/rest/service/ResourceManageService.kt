@@ -84,7 +84,7 @@ class ResourceManageService {
 
         //GET, PATCH, DELETE
         sortedResources.forEach { ar->
-            ar.actions.filter { it is RestCallAction && it.verb != HttpVerb.POST && it.verb != HttpVerb.PUT }.forEach {a->
+            ar.actions.filter { it.verb != HttpVerb.POST && it.verb != HttpVerb.PUT }.forEach {a->
                 val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
                 call.seeActions(ActionFilter.NO_SQL).forEach { a->
                     if(a is RestCallAction) a.auth = auth
@@ -95,7 +95,7 @@ class ResourceManageService {
 
         //all POST with one post action
         sortedResources.forEach { ar->
-            ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST}.forEach { a->
+            ar.actions.filter { it.verb == HttpVerb.POST}.forEach { a->
                 val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
                 (call.seeActions(ActionFilter.NO_SQL) as List<RestCallAction>).forEach { it.auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
@@ -103,7 +103,7 @@ class ResourceManageService {
         }
 
         sortedResources
-                .filter { it.actions.find { a -> a is RestCallAction && a.verb == HttpVerb.POST } != null && it.getPostChain()?.actions?.run { this.size > 1 }?:false  }
+                .filter { it.actions.find { a -> a.verb == HttpVerb.POST } != null && it.getPostChain()?.actions?.run { this.size > 1 }?:false  }
                 .forEach { ar->
                     ar.genPostChain(randomness, config.maxTestSize)?.let {call->
                         call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
@@ -113,7 +113,7 @@ class ResourceManageService {
 
         //PUT
         sortedResources.forEach { ar->
-            ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.PUT }.forEach {a->
+            ar.actions.filter { it.verb == HttpVerb.PUT }.forEach {a->
                 val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
                 call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
@@ -212,7 +212,10 @@ class ResourceManageService {
                 */
                 call.is2POST = candidate == "POST" && employSQL //&& (randomness.nextBoolean(0.1) || forceSQLInsert)
 
-                val created = handleDbActionForCall(call, forceSQLInsert, false, call.is2POST)
+                val created = handleDbActionForCall(
+                    call, forceSQLInsert, false, call.is2POST,
+                    previousDbActions = bindWith?.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction> } ?: listOf())
+
                 if(!created){
                     LoggingUtil.uniqueWarn(log, "resource creation for $resourceKey fails")
                 }else{
@@ -222,47 +225,10 @@ class ResourceManageService {
         }
 
         if(bindWith != null){
-            dm.bindCallWithFront(call, bindWith)
+            call.bindWithOtherRestResourceCalls(bindWith, true)
         }
     }
 
-
-    private fun generateDbActionForCall(forceInsert: Boolean, forceSelect: Boolean, dbActions: MutableList<DbAction>, relatedTables : List<String>) : Boolean{
-        var failToGenDB = false
-
-        snapshotDB()
-
-        relatedTables.forEach { tableName->
-            val dataInDb = cluster.getDataInDb(tableName)
-            if(forceInsert){
-                generateInsertSql(tableName, dbActions, true)
-            }else if(forceSelect){
-                if(dataInDb?.isNotEmpty() == true) generateSelectSql(tableName, dbActions)
-                else failToGenDB = true
-            }else{
-                if(dataInDb!= null ){
-                    val size = dataInDb.size
-                    when{
-                        size < config.minRowOfTable -> generateInsertSql(tableName, dbActions, true).apply {
-                            failToGenDB = failToGenDB || !this
-                        }
-                        else ->{
-                            if(randomness.nextBoolean(config.probOfSelectFromDatabase)){
-                                generateSelectSql(tableName, dbActions)
-                            }else{
-                                generateInsertSql(tableName, dbActions, true).apply {
-                                    failToGenDB = failToGenDB || !this
-                                }
-                            }
-                        }
-                    }
-                }else
-                    failToGenDB = true
-            }
-        }
-
-        return failToGenDB
-    }
 
     /**
      * regarding resource call handling, if there exist two resource calls in an individual
@@ -299,44 +265,39 @@ class ResourceManageService {
 
     private fun handleDbActionForCall(
         call: RestResourceCalls,
-        forceInsert: Boolean,
-        forceSelect: Boolean,
-        employSQL: Boolean
+        forceInsert: Boolean = false,
+        forceSelect: Boolean = false,
+        employSQL: Boolean,
+        previousDbActions: List<DbAction> = listOf()
     ) : Boolean{
 
         val paramToTables = dm.extractRelatedTablesForCall(call, withSql = employSQL)
         if(paramToTables.isEmpty()) return false
 
-        val relatedTables = paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet()
+        val relatedTables = paramToTables.values.flatMap { it.map { g->g.tableName } }
 
-        val dbActions = mutableListOf<DbAction>()
-        val failToGenDb = generateDbActionForCall( forceInsert = forceInsert, forceSelect = forceSelect, dbActions = dbActions, relatedTables = relatedTables.toList())
+        val employSQLSelect = (!forceInsert) && (forceSelect || employSelect(relatedTables))
 
-        if(failToGenDb) return false
-
-        containTables(dbActions, relatedTables)
+        val dbActions = cluster.createSqlAction(
+            relatedTables, getSqlBuilder()!!, previousDbActions,
+            doNotCreateDuplicatedAction = true, isInsertion = !employSQLSelect,
+            randomness = randomness)
 
         if(dbActions.isNotEmpty()){
 
-            DbActionUtils.randomizeDbActionGenes(dbActions, randomness)
             val removed = repairDbActionsForResource(dbActions)
-
-            //shrinkDbActions(dbActions)
-
-            /*
-             TODO bind data according to action or dbaction?
-
-             Note that since we prepare data for rest actions, we bind values of dbaction based on rest actions.
-
-             */
-            //call.buildBindingWithDbActions(dbActions, bindingMap = paramToTables, cluster = cluster, forceBindParamBasedOnDB = false, dbRemovedDueToRepair = removed)
-            //call.addDbAction(actions = dbActions)
             call.initDbActions(dbActions, cluster, false, removed)
 
         }
-        return paramToTables.isNotEmpty() && !failToGenDb
+        return paramToTables.isNotEmpty()
     }
 
+
+    private fun employSelect(tables : List<String>) : Boolean{
+        return randomness.nextBoolean(config.probOfSelectFromDatabase) && tables.any {
+            cluster.getDataInDb(it)?.size?:0 >= config.minRowOfTable
+        }
+    }
 
     private fun containTables(dbActions: MutableList<DbAction>, tables: Set<String>) : Boolean{
 
@@ -346,30 +307,6 @@ class ResourceManageService {
         return missing.isEmpty()
     }
 
-
-    /**
-     *  repair dbaction of resource call after standard mutation
-     *  Since standard mutation does not change structure of a test, the involved tables
-     *  should be same with previous.
-     */
-//    fun repairRestResourceCalls(call: RestResourceCalls) {
-//        call.repairGenesAfterMutation(resourceCluster)
-//
-//        if(hasDBHandler() && call.dbActions.isNotEmpty()){
-//
-//            val previous = call.dbActions.map { it.table.name }
-//            call.dbActions.clear()
-//            //handleCallWithDBAction(referResource, call, true, false)
-//            handleDbActionForCall(call, forceInsert = true, forceSelect = false)
-//
-//            if(call.dbActions.size != previous.size){
-//                //remove additions
-//                call.dbActions.removeIf {
-//                    !previous.contains(it.table.name)
-//                }
-//            }
-//        }
-//    }
     /*********************************** database ***********************************/
 
     private fun selectToDataRowDto(dbAction : DbAction, tableName : String) : DataRowDto{
@@ -380,12 +317,6 @@ class ResourceManageService {
 
     private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null
 
-    private fun snapshotDB(){
-        if(hasDBHandler()){
-            cluster.syncDataInDb(sqlInsertBuilder)
-        }
-    }
-
     fun repairDbActionsForResource(dbActions: MutableList<DbAction>) : Boolean{
         /**
          * First repair SQL Genes (i.e. SQL Timestamps)
@@ -393,73 +324,8 @@ class ResourceManageService {
         GeneUtils.repairGenes(dbActions.flatMap { it.seeGenes() })
 
         return DbActionUtils.repairBrokenDbActionsList(dbActions, randomness)
-        //DbActionUtils.repairFkForInsertions(dbActions)
     }
 
-
-    private fun generateSelectSql(tableName : String, dbActions: MutableList<DbAction>, forceDifferent: Boolean = false, withDbAction: DbAction?=null){
-        if(dbActions.map { it.table.name }.contains(tableName)) return
-
-        val info = cluster.getDataInDb(tableName)
-
-        Lazy.assert {
-            info?.isNotEmpty() == true && (!forceDifferent || withDbAction == null)
-        }
-        val columns = if(forceDifferent && withDbAction!!.representExistingData){
-            selectToDataRowDto(withDbAction, tableName)
-        }else {
-            randomness.choose(info!!)
-        }
-
-        val selectDbAction = sqlInsertBuilder!!.extractExistingByCols(tableName, columns)
-        dbActions.add(selectDbAction)
-    }
-
-    @Deprecated("will be removed")
-    private fun generateInsertSql(
-        tableName: String,
-        dbActions: MutableList<DbAction>,
-        doNotCreateDuplicatedTable: Boolean = true
-    ) : Boolean{
-
-        val insertDbAction =
-                sqlInsertBuilder!!
-                        .createSqlInsertionAction(tableName, forceAll = true)
-
-        if (log.isTraceEnabled){
-            log.trace("at generateInserSql, {} insertions are added, and they are {}", insertDbAction.size,
-                insertDbAction.joinToString(",") {
-                    it.getResolvedName()
-                })
-        }
-
-        if(insertDbAction.isEmpty()) return false
-
-        if (!doNotCreateDuplicatedTable){
-            dbActions.addAll(insertDbAction)
-            return true
-        }
-
-        val pasted = mutableListOf<DbAction>()
-        insertDbAction.reversed().forEach {ndb->
-            val index = dbActions.indexOfFirst { it.table.name == ndb.table.name && !it.representExistingData}
-            if(index == -1) pasted.add(0, ndb)
-            else{
-                if(pasted.isNotEmpty()){
-                    dbActions.addAll(index+1, pasted)
-                    pasted.clear()
-                }
-            }
-        }
-
-        if(pasted.isNotEmpty()){
-            if(pasted.size == insertDbAction.size)
-                dbActions.addAll(pasted)
-            else
-                dbActions.addAll(0, pasted)
-        }
-        return true
-    }
 
     /*********************************** utility ***********************************/
 
@@ -477,40 +343,12 @@ class ResourceManageService {
         return sqlInsertBuilder
     }
 
-    /**
-     * @return table class based on the specified [name]
-     */
-    private fun getTableByName(name : String) = cluster.getTableByName(name)
-
 
     /**
-     * @return sorted [tables] based on their relationships
-     * for instance, Table A refer to Table B, then in the returned list, A should be before B.
+     * @return a maximum number of resources to be manipulated in the initialization with SQL
+     *          e.g., we can add N resource or delete N resource in the initialization per time with e.g., structure mutator
      */
-    @Deprecated("will be removed")
-    fun sortTableBasedOnFK(tables : Set<String>) : List<Table>{
-        return tables.mapNotNull { getTableByName(it) }.sortedWith(
-            Comparator { o1, o2 ->
-                when {
-                    o1.foreignKeys.any { t-> t.targetTable.equals(o2.name,ignoreCase = true) } -> 1
-                    o2.foreignKeys.any { t-> t.targetTable.equals(o1.name,ignoreCase = true) } -> -1
-                    else -> 0
-                }
-            }
-        )
-    }
-
-    @Deprecated("will be removed")
-    fun removeDuplicatedTables(tables: Set<String>) : List<String>{
-        val sorted = sortTableBasedOnFK(tables)
-        sorted.toMutableList().removeIf { t->
-            sorted.any { s-> s!= t && s.foreignKeys.any { fk-> fk.targetTable.equals(t.name, ignoreCase = true) } }
-        }
-
-        return sorted.map { it.name }
-    }
-
-    fun getResourceNum() : Int {
+    fun getSqlMaxNumOfResource() : Int {
         if (config.maxSqlInitActionsPerResource == 0) return 0
         return when(config.employSqlNumResourceStrategy){
             SqlInitResourceStrategy.NONE -> 0

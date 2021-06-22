@@ -555,11 +555,11 @@ class DbActionUtilsTest {
         val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTable = table0.name)
         val table1 = Table("Table1", setOf(fkColumn), setOf(foreignKey))
 
-        val set = setOf(table0, table1)
+        val set = listOf(table0, table0, table1)
         val sorted = DbActionUtils.sortTable(set)
-        assertEquals(listOf(table1, table0), sorted)
+        assertEquals(listOf(table1, table0, table0), sorted)
 
-        val rsorted = DbActionUtils.sortTable(set, true)
+        val rsorted = DbActionUtils.sortTable(set.distinct(), true)
         assertEquals(listOf(table0, table1), rsorted)
     }
 }

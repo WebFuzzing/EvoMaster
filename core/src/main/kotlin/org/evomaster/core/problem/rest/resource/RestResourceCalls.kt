@@ -252,15 +252,19 @@ class RestResourceCalls(
     fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, doRemoveDuplicatedTable: Boolean){
         // handling [this.dbActions]
         if (this.dbActions.isNotEmpty() && doRemoveDuplicatedTable){
-            val frontDbActions = relatedResourceCalls.flatMap { it.seeActions(ActionFilter.ONLY_SQL).filterIsInstance<DbAction>()}.toMutableList()
-            removeDuplicatedDbActions(frontDbActions, doRemoveDuplicatedTable)
+            removeDuplicatedDbActions(relatedResourceCalls, doRemoveDuplicatedTable)
         }
 
         // bind with rest actions
-        val frontRestActions = relatedResourceCalls.flatMap { it.seeActions(ActionFilter.NO_INIT) }.filterIsInstance<RestCallAction>().toMutableList()
-        actions.forEach { c->
-            frontRestActions.forEach { p->
-                c.bindBasedOn(p)
+        actions.forEach { current->
+            relatedResourceCalls.forEach { call->
+                call.seeActions(ActionFilter.NO_SQL).forEach { previous->
+                    if (previous is RestCallAction){
+                        val dependent = current.bindBasedOn(previous)
+                        if (dependent)
+                            setDependentCall(call)
+                    }
+                }
             }
         }
 
@@ -280,9 +284,9 @@ class RestResourceCalls(
         }
     }
 
-    private fun removeDuplicatedDbActions(dbActions: MutableList<DbAction>, doRemoveDuplicatedTable: Boolean){
+    private fun removeDuplicatedDbActions(calls: List<RestResourceCalls>, doRemoveDuplicatedTable: Boolean){
 
-        val dbRelatedToTables = dbActions.map { it.table.name }.toHashSet()
+        val dbRelatedToTables = calls.flatMap {  it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction> }.map { it.table.name }.toHashSet()
 
         // remove duplicated dbactions
         if (doRemoveDuplicatedTable){
@@ -294,14 +298,22 @@ class RestResourceCalls(
                     .forEach {db->
                         // fix fk with front dbactions
                         val ok = DbActionUtils.repairFk(db, frontDbActions)
-                        if (!ok){
+                        if (!ok.first){
                             throw IllegalStateException("cannot fix the fk of ${db.getResolvedName()}")
+                        }
+                        ok.second?.forEach { db->
+                            val call = calls.find { it.seeActions(ActionFilter.ONLY_SQL).contains(db) }!!
+                            setDependentCall(call)
                         }
                         frontDbActions.add(db)
                     }
             }
         }
+    }
 
+    private fun setDependentCall(calls: RestResourceCalls){
+        calls.isDeletable = false
+        calls.shouldBefore.add(getResourceNodeKey())
     }
 
 

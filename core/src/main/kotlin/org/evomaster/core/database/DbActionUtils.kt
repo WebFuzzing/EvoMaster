@@ -380,8 +380,9 @@ object DbActionUtils {
      * repair fk of [dbAction] based on primary keys of [previous] dbactions
      * @return whether fk is fixed
      */
-    fun repairFk(dbAction: DbAction, previous: MutableList<DbAction>) : Boolean{
+    fun repairFk(dbAction: DbAction, previous: MutableList<DbAction>) : Pair<Boolean, List<DbAction>?>{
         val pks = previous.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
+        val referDbActions = mutableListOf<DbAction>()
 
         dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().forEach {fk->
 
@@ -390,12 +391,13 @@ object DbActionUtils {
                 val found = pks.find { fk.targetTable == it.tableName }
                 if (found != null){
                     fk.uniqueIdOfPrimaryKey = found.uniqueId
+                    referDbActions.add(previous.find { it.seeGenes().contains(found) }!!)
                 }else
-                    return false
+                    return Pair(false, null)
             }
         }
 
-        return true
+        return Pair(true, referDbActions)
     }
 
 
@@ -409,7 +411,7 @@ object DbActionUtils {
      *      1) [reversed] is false, listOf(A, B)
      *      2) [reversed] is true, listOf(B, A)
      */
-    fun sortTable(table : Set<Table>, reversed: Boolean = false) : List<Table>{
+    fun sortTable(table : List<Table>, reversed: Boolean = false) : List<Table>{
 
         val sorted = table.sortedWith(
             Comparator { o1, o2 ->
