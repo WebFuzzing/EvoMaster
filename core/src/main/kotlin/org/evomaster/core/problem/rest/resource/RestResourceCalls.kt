@@ -249,7 +249,7 @@ class RestResourceCalls(
      *      in this case, if the following handling is related to A and B, we do not further create A and B once [doRemoveDuplicatedTable] is true
      * @param cluster specifies all resource nodes in this sut
      */
-    fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, doRemoveDuplicatedTable: Boolean, cluster: ResourceCluster){
+    fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, doRemoveDuplicatedTable: Boolean){
         // handling [this.dbActions]
         if (this.dbActions.isNotEmpty() && doRemoveDuplicatedTable){
             val frontDbActions = relatedResourceCalls.flatMap { it.seeActions(ActionFilter.ONLY_SQL).filterIsInstance<DbAction>()}.toMutableList()

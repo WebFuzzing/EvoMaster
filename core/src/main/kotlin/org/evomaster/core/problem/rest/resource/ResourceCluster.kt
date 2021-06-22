@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
@@ -121,7 +122,7 @@ class ResourceCluster {
     fun getDataInDb(tableName: String) : MutableList<DataRowDto>?{
         val found = dataInDB.filterKeys { k-> k.equals(tableName, ignoreCase = true) }.keys
         if (found.isEmpty()) return null
-        assert(found.size == 1)
+        Lazy.assert{found.size == 1}
         return dataInDB.getValue(found.first())
     }
 
@@ -165,7 +166,8 @@ class ResourceCluster {
             if (!doToCreateDuplicatedAction || preTables.none { p-> p.equals(t.name, ignoreCase = true) }){
                 val select = !isInsertion && getDataInDb(t.name)?.size?:0 > 0
                 val action = if (select){
-                    val row = randomness.choose(getDataInDb(t.name)!!)
+                    val candidates = getDataInDb(t.name)!!
+                    val row = randomness.choose(candidates)
                     listOf(sqlInsertBuilder.extractExistingByCols(t.name, row))
                 } else{
                     sqlInsertBuilder.createSqlInsertionAction(t.name).also {

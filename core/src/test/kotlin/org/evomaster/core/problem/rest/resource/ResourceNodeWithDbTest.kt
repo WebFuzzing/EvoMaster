@@ -3,17 +3,13 @@ package org.evomaster.core.problem.rest.resource
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
-import org.evomaster.client.java.controller.db.DbCleaner
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.database.SqlInsertBuilderTest
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.resource.dependency.BodyParamRelatedToTable
-import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.gene.Gene
@@ -21,7 +17,6 @@ import org.evomaster.core.search.gene.LongGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.sql.Connection
 import java.sql.DriverManager
@@ -68,17 +63,12 @@ class ResourceNodeWithDbTest {
         }
     }
 
-    @BeforeEach
-    fun initTest() {
-        DbCleaner.clearDatabase_H2(connection)
-    }
-
     @Test
     fun testClusterWithDbInit(){
         //rfoo, rfoo/{id}, rbar, rbar/{id}, rxyz
         assertEquals(6, cluster.getCluster().size)
 
-        // tabe in db
+        // table in db
         assertEquals(setOf("RFOO", "RBAR", "RXYZ"), cluster.getTableInfo().keys)
 
         // data in db
@@ -103,8 +93,41 @@ class ResourceNodeWithDbTest {
                 }
             }
         }
+
+        val rbarNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}")
+        assertNotNull(rbarNode)
+        rbarNode!!.resourceToTable.apply {
+            assertTrue(derivedMap.keys.contains("RFOO"))
+            assertTrue(derivedMap.keys.contains("RBAR"))
+        }
+
+        val rxyzNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")
+        assertNotNull(rxyzNode)
+        rxyzNode!!.resourceToTable.apply {
+            assertTrue(derivedMap.keys.contains("RFOO"))
+            assertTrue(derivedMap.keys.contains("RBAR"))
+            assertTrue(derivedMap.keys.contains("RXYZ"))
+        }
     }
 
+    @Test
+    fun testDbActionCreation(){
+
+        val fooAndBar = cluster.createSqlAction(setOf("RFOO","RBAR"), sqlInsertBuilder, mutableListOf(), true, randomness= randomness)
+        assertEquals(2, fooAndBar.size)
+
+        val fooAndBar2 =  cluster.createSqlAction(setOf("RFOO","RBAR"), sqlInsertBuilder, fooAndBar, true, randomness= randomness)
+        assertEquals(0, fooAndBar2.size)
+
+        val xyz = cluster.createSqlAction(setOf("RXYZ"), sqlInsertBuilder, mutableListOf(), true, randomness= randomness)
+        assertEquals(3, xyz.size)
+
+        val xyz2 = cluster.createSqlAction(setOf("RFOO","RBAR"), sqlInsertBuilder, xyz, true, randomness= randomness)
+        assertEquals(0, xyz2.size)
+
+        val xyzSelect = cluster.createSqlAction(setOf("RXYZ"), sqlInsertBuilder, mutableListOf(), true, isInsertion = false, randomness = randomness)
+        assertEquals(1, xyzSelect.size)
+    }
 
     @Test
     fun testBindingWithDbInOneCall(){
@@ -143,41 +166,94 @@ class ResourceNodeWithDbTest {
         // /v3/api/rfoo/{rfooId}/rbar/{rbarId}
         val getBarNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}")!!
         val getBar = getBarNode.sampleRestResourceCalls("GET", randomness, maxTestSize = 10)
-        val paramInfo = getBarNode.getPossiblyBoundParams("GET", true)
-        val bindingMap = SimpleDeriveResourceBinding.generateRelatedTables(paramInfo, getBar, listOf())
+        val fooBarDbActionToCreate = cluster.createSqlAction(setOf("RFOO", "RBAR"), sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
+        assertEquals(2, fooBarDbActionToCreate.size)
+        getBar.initDbActions(fooBarDbActionToCreate, cluster, false, false)
+        val barFooId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){g: Gene-> g is LongGene}
+        val barId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rbarId"){g: Gene-> g is LongGene}
+        val dbFooIdInGetBar = getGenePredict(getBar.seeActions(ActionFilter.ONLY_SQL).first(), "id"){g: Gene -> g is LongGene}
+        val dbBarIdInGetBar = getGenePredict(getBar.seeActions(ActionFilter.ONLY_SQL)[1], "id"){g: Gene -> g is LongGene}
+        assertEquals((barFooId as LongGene).value, (dbFooIdInGetBar as LongGene).value)
+        assertTrue(dbFooIdInGetBar.isBoundWith(barFooId))
+        assertEquals((barId as LongGene).value, (dbBarIdInGetBar as LongGene).value)
+        assertTrue(barId.isBoundWith(dbBarIdInGetBar))
 
-        val relatedTables = bindingMap.values.flatMap { it.map { g->g.tableName } }.toSet()
-        assertEquals(setOf("RFOO","RBAR"), relatedTables)
+        // /v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}
+        val xYZNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")!!
+        val getXYZ = xYZNode.sampleRestResourceCalls("GET", randomness, 10)
+        val xyzDbActions = cluster.createSqlAction(setOf("RXYZ", "RBAR", "RFOO"), sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
+        getGenePredict(xyzDbActions[0], "id"){g: Gene-> g is LongGene}.apply {
+            (this as? LongGene)?.value = 42
+        }
+        getGenePredict(xyzDbActions[1], "id"){g: Gene-> g is LongGene}.apply {
+            (this as? LongGene)?.value = 43
+        }
+        getGenePredict(xyzDbActions[2], "id"){g: Gene-> g is LongGene}.apply {
+            (this as? LongGene)?.value = 44
+        }
+        assertEquals(3, xyzDbActions.size)
+        getXYZ.initDbActions(xyzDbActions, cluster, false, false)
+        val xyzFooId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rfooId"){g: Gene-> g is LongGene}
+        val xyzBarId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rbarId"){g: Gene-> g is LongGene}
+        val xyzId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rxyzId"){g: Gene-> g is LongGene}
+        val dbXYZFooId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[0], "id"){g: Gene-> g is LongGene}
+        val dbXYZBarId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[1], "id"){g: Gene-> g is LongGene}
+        val dbXYZId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[2], "id"){g: Gene-> g is LongGene}
 
-        val sorted = DbActionUtils.sortTable(relatedTables.mapNotNull { cluster.getTableByName(it) }.toSet()).map { t-> t.name }
-        assertEquals(listOf("RBAR", "RFOO"), sorted)
+        assertEquals((xyzFooId as LongGene).value, (dbXYZFooId as LongGene).value)
+        assertEquals(42, xyzFooId.value)
+        assertTrue(xyzFooId.isBoundWith(dbXYZFooId))
+        assertEquals((xyzBarId as LongGene).value, (dbXYZBarId as LongGene).value)
+        assertEquals(43, xyzBarId.value)
+        assertTrue(xyzBarId.isBoundWith(dbXYZBarId))
+        assertEquals((xyzId as LongGene).value, (dbXYZId as LongGene).value)
+        assertEquals(44, xyzId.value)
+        assertTrue(xyzId.isBoundWith(dbXYZId))
+    }
 
-        val dbActionsToCreate = cluster.createSqlAction(setOf("RFOO","RBAR"), sqlInsertBuilder, mutableListOf(), true, randomness= randomness)
-        assertEquals(2, dbActionsToCreate.size)
+    @Test
+    fun testBindingWithOtherCall(){
+
+        val xYZNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")!!
+        val getXYZ = xYZNode.sampleRestResourceCalls("GET", randomness, 10)
+        val dbXYZ = cluster.createSqlAction(setOf("RFOO", "RBAR", "RXYZ"), sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
+        getGenePredict(dbXYZ[0], "id"){g: Gene-> g is LongGene}.apply {
+            (this as? LongGene)?.value = 42
+        }
+        getGenePredict(dbXYZ[1], "id"){g: Gene-> g is LongGene}.apply {
+            (this as? LongGene)?.value = 43
+        }
+        getGenePredict(dbXYZ[2], "id"){g: Gene-> g is LongGene}.apply {
+            (this as? LongGene)?.value = 44
+        }
+        getXYZ.initDbActions(dbXYZ, cluster, false, false)
+
+        val xyzFooId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rfooId"){g: Gene-> g is LongGene}
+        val xyzBarId = getGenePredict(getXYZ.seeActions(ActionFilter.NO_SQL)[0], "rbarId"){g: Gene-> g is LongGene}
+        val dbXYZFooId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[0], "id"){g: Gene-> g is LongGene}
+        val dbXYZBarId = getGenePredict(getXYZ.seeActions(ActionFilter.ONLY_SQL)[1], "id"){g: Gene-> g is LongGene}
+
+
+        val getBarNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}")!!
+        val getBar = getBarNode.sampleRestResourceCalls("GET", randomness, maxTestSize = 10)
+        val dbBar = cluster.createSqlAction(setOf("RFOO", "RBAR"), sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
+        getBar.initDbActions(dbBar, cluster, false, false)
+        assertEquals(2, getBar.seeActionSize(ActionFilter.ONLY_SQL))
+
+        getBar.bindWithOtherRestResourceCalls(mutableListOf(getXYZ), true)
+        assertEquals(0, getBar.seeActionSize(ActionFilter.ONLY_SQL))
 
         val barFooId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){g: Gene-> g is LongGene}
         val barId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rbarId"){g: Gene-> g is LongGene}
 
+        assertEquals((xyzBarId as LongGene).value, (barId as LongGene).value)
+        assertEquals((dbXYZBarId as LongGene).value, barId.value)
+        assertEquals(43, barId.value)
+        assertEquals((xyzFooId as LongGene).value, (barFooId as LongGene).value)
+        assertEquals(42, barFooId.value)
+        assertEquals((dbXYZFooId as LongGene).value, barFooId.value)
 
     }
-
-    @Test
-    fun testDbActionCreation(){
-
-        val fooAndBar = cluster.createSqlAction(setOf("RFOO","RBAR"), sqlInsertBuilder, mutableListOf(), true, randomness= randomness)
-        assertEquals(2, fooAndBar.size)
-
-
-        val fooAndBar2 =  cluster.createSqlAction(setOf("RFOO","RBAR"), sqlInsertBuilder, fooAndBar, true, randomness= randomness)
-        assertEquals(0, fooAndBar2.size)
-
-        val xyz = cluster.createSqlAction(setOf("RXYZ"), sqlInsertBuilder, mutableListOf(), true, randomness= randomness)
-        assertEquals(3, xyz.size)
-
-        val xyz2 = cluster.createSqlAction(setOf("RFOO","RBAR"), sqlInsertBuilder, xyz, true, randomness= randomness)
-        assertEquals(0, xyz2.size)
-    }
-
 
     private fun getGenePredict(action: Action, name: String, predict: (Gene) -> Boolean) : Gene?{
         return action.seeGenes().flatMap { it.flatView() }.find { g-> predict(g) && g.name.equals(name, ignoreCase = true) }

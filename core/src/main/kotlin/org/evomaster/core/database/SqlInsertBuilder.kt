@@ -472,13 +472,20 @@ class SqlInsertBuilder(
         return list
     }
 
+
     /**
-     * the function is used to execute a select sql constrained by specified [pkValues]
+     * the method is used to create a select sql based on the specified [pkValues] on [tableName]
+     *
+     * @param tableName specified the data of table to extract
+     * @param pkValues specified the values
+     * @param columnIds specified the columns for the [pkValues].
+     *          for the table, there might exist more than one pks, here we allow to define the specific columns for values.
+     *          Note that the specified [columnIds] can be empty, then we take all pks by default
+     *
      * @return DbAction has all values of columns in the row regarding [pkValues]
      *
-     * Note that [pkValues] only points to one row.
      */
-    fun extractExistingByCols(tableName: String, pkValues: DataRowDto): DbAction {
+    fun extractExistingByCols(tableName: String, pkValues: DataRowDto, columnIds: List<String> = mutableListOf()): DbAction {
 
         if (dbExecutor == null) {
             throw IllegalStateException("No Database Executor registered for this object")
@@ -488,7 +495,7 @@ class SqlInsertBuilder(
                 ?: throw  IllegalArgumentException("cannot find the table by name $tableName")
 
 
-        val pks = table.columns.filter { it.primaryKey }
+        val pks = if (columnIds.isNotEmpty()) table.columns.filter { columnIds.contains(it.name) } else table.columns.filter { it.primaryKey }
         val cols = table.columns.toList()
 
         var row: DataRowDto? = null
@@ -570,22 +577,16 @@ class SqlInsertBuilder(
                     ?: continue
             dataInDB.getOrPut(table.name) { result.rows.map { it }.toMutableList() }
         }
-
-
     }
-
-
 
 
     /**
      * get table info
      */
     fun extractExistingTables(tablesMap: MutableMap<String, Table>? = null) {
-
         if (tablesMap != null) {
             tablesMap.clear()
             tablesMap.putAll(tables)
         }
-
     }
 }
