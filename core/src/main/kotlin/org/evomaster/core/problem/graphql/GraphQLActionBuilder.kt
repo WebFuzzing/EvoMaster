@@ -175,6 +175,21 @@ object GraphQLActionBuilder {
         state.argsTables.addAll(state.tempArgsTables)
         state.tables = state.tables.distinctBy { Pair(it.tableType, it.tableField) }.toMutableList()//remove redundant elements
 
+        println("I am the table:////////////////////////////////////////////////////////////////////// ")
+        for (element in state.tables) {
+            println("{Table Name: ${element?.tableType}, " +
+                    "Field: ${element?.tableField}, " +
+                    "KindOfTableField: ${element?.kindOfTableField}, " +
+                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfTableFieldOptional}, " +
+                    "table field Type: ${element?.tableFieldType}, " +
+                    "KindOfTable field type : ${element?.kindOfTableFieldType} " +
+                    "IsKindOfKindOfTableTypeOptional?: ${element?.isKindOfTableFieldTypeOptional} " +
+                    "Enum?: ${element?.enumValues} " +
+                    "UnionTypes: ${element?.unionTypes} " +
+                    "InterfaceTypes: ${element?.interfaceTypes} ")
+        }
+        println(state.tables.size)
+
     }
 
     /*
@@ -1085,7 +1100,7 @@ object GraphQLActionBuilder {
             }
             "object" -> {
                 val optObjGene = createObjectGene(state, tableType, kindOfTableFieldType, history,
-                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes, interfaceTypes)
+                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes, interfaceTypes,unionHistory,interfaceHistory)
                 return OptionalGene(methodName, optObjGene)
 
             }
@@ -1096,15 +1111,20 @@ object GraphQLActionBuilder {
             }
             "interface" -> {
                 //will contain basic interface fields, and had as name the methode name
-              //  val interfaceBaseOptObjGene = createObjectGene(state, tableType, kindOfTableFieldType, history,
-               //         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes, interfaceTypes,unionHistory,interfaceHistory)
+                var interfaceBaseOptObjGene = createObjectGene(state, tableType, kindOfTableFieldType, history,
+                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes, interfaceTypes,unionHistory,interfaceHistory)
+
+                interfaceBaseOptObjGene =interfaceBaseOptObjGene as ObjectGene
+
+                interfaceBaseOptObjGene.name=interfaceBaseOptObjGene.name.plus("#BASE#")
 
                 //will contain additional interface fields, and had as name the name of the objects
                 val interfaceAdditionalOptObjGene = createInterfaceObjectGene(state, tableType, kindOfTableFieldType, history,
-                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes,interfaceTypes,unionHistory,interfaceHistory )
+                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName, unionTypes,interfaceTypes,unionHistory,interfaceHistory,interfaceBaseOptObjGene )
+
 
                 //merge basic interface fields with additional interface fields
-               // interfaceAdditionalOptObjGene.add(OptionalGene(methodName, interfaceBaseOptObjGene))
+                interfaceAdditionalOptObjGene.add(OptionalGene("$methodName#BASE#", interfaceBaseOptObjGene))
 
                 //will return a single optional object gene with optional basic interface fields and optional additional interface fields
                 return OptionalGene("$methodName#INTERFACE#", ObjectGene("$methodName#INTERFACE#", interfaceAdditionalOptObjGene))
@@ -1196,6 +1216,7 @@ object GraphQLActionBuilder {
                                     }
                                 } else {
                                     fields.add(OptionalGene(element.tableFieldType, CycleObjectGene(element.tableFieldType)))
+                                    history.removeLast()
                                     history.removeLast()
 
                                 }
@@ -1314,8 +1335,9 @@ object GraphQLActionBuilder {
             unionTypes: MutableList<String>,
             interfaceTypes: MutableList<String>,
             unionHistory: Deque<String> = ArrayDeque<String>(),
-            interfaceHistory: Deque<String> = ArrayDeque<String>()
-    ): MutableList<Gene> {
+            interfaceHistory: Deque<String> = ArrayDeque<String>(),
+            interfaceBaseOptObjGene: Gene
+            ): MutableList<Gene> {
 
         val fields: MutableList<Gene> = mutableListOf()
         interfaceHistory.addLast(tableType)
@@ -1327,9 +1349,14 @@ object GraphQLActionBuilder {
                 val objGeneTemplate = createObjectGene(state, elementInInterfaceTypes, kindOfTableFieldType, history,
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, elementInInterfaceTypes, unionTypes, interfaceTypes, unionHistory,interfaceHistory)
                 interfaceHistory.removeLast()
+                //history.clear()
 
-                if (objGeneTemplate != null)
-                    fields.add(OptionalGene(objGeneTemplate.name, objGeneTemplate))
+               var myObjGne= objGeneTemplate as ObjectGene//to object
+
+                myObjGne = myObjGne.copyFields(interfaceBaseOptObjGene as ObjectGene)//remove useless fields
+
+                if (myObjGne.fields.isNotEmpty())
+                    fields.add(OptionalGene(myObjGne.name, myObjGne))
 
             }
 
