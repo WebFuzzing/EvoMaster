@@ -133,7 +133,7 @@ class RestIndividual(
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeDbActions())
+        return DbActionUtils.verifyActions(seeInitializingActions())
     }
 
 

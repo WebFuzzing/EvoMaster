@@ -243,7 +243,7 @@ class ResourceNodeWithDbTest {
         getBar.initDbActions(dbBar, cluster, false, false)
         assertEquals(2, getBar.seeActionSize(ActionFilter.ONLY_SQL))
 
-        getBar.bindWithOtherRestResourceCalls(mutableListOf(getXYZ), true)
+        getBar.bindWithOtherRestResourceCalls(mutableListOf(getXYZ), cluster,true)
         assertEquals(0, getBar.seeActionSize(ActionFilter.ONLY_SQL))
 
         assertFalse(getXYZ.isDeletable)

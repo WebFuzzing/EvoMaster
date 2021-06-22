@@ -9,13 +9,11 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
-import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -192,10 +190,10 @@ class RestResourceCalls(
      *      e.g., for resource C, table C is created, in addition, A and B are also created since B refers to them,
      *      in this case, if the following handling is related to A and B, we do not further create A and B once [doRemoveDuplicatedTable] is true
      */
-    fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, doRemoveDuplicatedTable: Boolean){
+    fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, cluster: ResourceCluster, doRemoveDuplicatedTable: Boolean){
         // handling [this.dbActions]
         if (this.dbActions.isNotEmpty() && doRemoveDuplicatedTable){
-            removeDuplicatedDbActions(relatedResourceCalls, doRemoveDuplicatedTable)
+            removeDuplicatedDbActions(relatedResourceCalls, cluster, doRemoveDuplicatedTable)
         }
 
         // bind with rest actions
@@ -227,16 +225,17 @@ class RestResourceCalls(
         }
     }
 
-    private fun removeDuplicatedDbActions(calls: List<RestResourceCalls>, doRemoveDuplicatedTable: Boolean){
+    private fun removeDuplicatedDbActions(calls: List<RestResourceCalls>, cluster: ResourceCluster, doRemoveDuplicatedTable: Boolean){
 
         val dbRelatedToTables = calls.flatMap {  it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction> }.map { it.table.name }.toHashSet()
 
+        val dbactionInOtherCalls = calls.flatMap {  it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction> }
         // remove duplicated dbactions
         if (doRemoveDuplicatedTable){
             val dbActionsToRemove = this.dbActions.filter { dbRelatedToTables.contains(it.table.name) }
             if (dbActionsToRemove.isNotEmpty()){
                 removeDbActions(dbActionsToRemove)
-                val frontDbActions = dbActions.toMutableList()
+                val frontDbActions = dbactionInOtherCalls.toMutableList()
                 this.dbActions
                     .forEach {db->
                         // fix fk with front dbactions
@@ -247,6 +246,9 @@ class RestResourceCalls(
                         ok.second?.forEach { db->
                             val call = calls.find { it.seeActions(ActionFilter.ONLY_SQL).contains(db) }!!
                             setDependentCall(call)
+                            // handling rest action binding with the fixed db which is in a different call
+                            if (dbactionInOtherCalls.contains(db))
+                                bindRestActionBasedOnDbActions(listOf(db), cluster, false, false)
                         }
                         frontDbActions.add(db)
                     }
@@ -267,19 +269,30 @@ class RestResourceCalls(
      *  @param forceBindParamBasedOnDB specified whether to force to bind values of params in rest actions based on dbactions
      *  @param dbRemovedDueToRepair specified whether any db action is removed due to repair process.
      *          Note that dbactions might be truncated in the db repair process, thus the table related to rest actions might be removed.
+     *  @param bindWith specified a list of resource call which might be bound with [this]
      */
-    fun initDbActions(dbActions: List<DbAction>, cluster: ResourceCluster, forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
+    fun initDbActions(dbActions: List<DbAction>, cluster: ResourceCluster, forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean, bindWith: List<RestResourceCalls>? = null){
+        bindWith?.forEach { p->
+            val dependent = p.seeActions(ActionFilter.ONLY_SQL).any { dbActions.contains(it) }
+            if (dependent){
+                setDependentCall(p)
+            }
+        }
+
         if (this.dbActions.isNotEmpty()) throw IllegalStateException("dbactions of this RestResourceCall is not empty")
         this.dbActions.addAll(dbActions)
         addChildren(dbActions)
 
         bindRestActionBasedOnDbActions(dbActions, cluster, forceBindParamBasedOnDB, dbRemovedDueToRepair)
+
     }
 
     private fun bindRestActionBasedOnDbActions(dbActions: List<DbAction>, cluster: ResourceCluster, forceBindParamBasedOnDB: Boolean, dbRemovedDueToRepair : Boolean){
 
         val paramInfo = getResourceNode().getPossiblyBoundParams(template!!.template, is2POST)
         val paramToTables = SimpleDeriveResourceBinding.generateRelatedTables(paramInfo, this, dbActions)
+
+        if (paramToTables.isEmpty()) return
 
         for (restaction in actions) {
             var list = paramToTables[restaction]

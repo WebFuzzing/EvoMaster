@@ -207,7 +207,8 @@ class ResourceManageService {
                 call.is2POST = candidate == "POST" && employSQL //&& (randomness.nextBoolean(0.1) || forceSQLInsert)
 
                 val created = handleDbActionForCall(
-                    call, forceSQLInsert, false, call.is2POST, listOf())
+                    call, forceSQLInsert, false, call.is2POST,
+                    previousDbActions = bindWith?.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>} ?: listOf())
 
                 if(!created){
                     LoggingUtil.uniqueWarn(log, "resource creation for $resourceKey fails")
@@ -218,7 +219,7 @@ class ResourceManageService {
         }
 
         if(bindWith != null){
-            call.bindWithOtherRestResourceCalls(bindWith, true)
+            call.bindWithOtherRestResourceCalls(bindWith, cluster,true)
         }
     }
 
@@ -245,7 +246,7 @@ class ResourceManageService {
         if(dbActions.isNotEmpty()){
 
             val removed = repairDbActionsForResource(dbActions)
-            call.initDbActions(dbActions, cluster, false, removed)
+            call.initDbActions(dbActions, cluster, false, removed, bindWith = null)
 
         }
         return paramToTables.isNotEmpty()

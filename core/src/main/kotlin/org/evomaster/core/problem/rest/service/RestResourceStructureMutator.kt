@@ -267,7 +267,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             var addPos : Int? = null
             if(pair.first != null){
                 val pos = ind.getResourceCalls().indexOf(pair.first!!)
-                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), true)
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true)
                 addPos = randomness.nextInt(0, pos)
             }
             if (addPos == null) addPos = randomness.nextInt(0, ind.getResourceCalls().size)
@@ -325,14 +325,14 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             call =  rm.handleAddResource(ind, max)
         }else{
             if(pair.first != null){
-                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), true)
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true)
             }
         }
 
        ind.getResourceCalls()[pos].seeActions(ALL).forEach {
            mutatedGenes?.addRemovedOrAddedByAction(
                it,
-               ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
+               ind.seeActions(NO_INIT).indexOf(it),
                true,
                resourcePosition = pos
            )
