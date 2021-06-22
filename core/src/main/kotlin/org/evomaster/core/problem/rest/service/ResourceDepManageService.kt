@@ -13,12 +13,10 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.resource.dependency.MutualResourcesRelations
 import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToResources
 import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToTable
 import org.evomaster.core.problem.rest.resource.dependency.SelfResourcesRelation
-import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
@@ -86,7 +84,7 @@ class ResourceDepManageService {
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
             if (index < dto.extraHeuristics.size) {
                 val dbDto = dto.extraHeuristics[index].databaseExecutionDto
-                if (action is RestCallAction && dbDto != null)
+                if (dbDto != null)
                     updateResourceToTable(action, dbDto, tables, addedMap, removedMap)
             }
         }
@@ -96,12 +94,10 @@ class ResourceDepManageService {
     }
 
     private fun updateParamInfo(action: RestCallAction, tables: Map<String, Table>) {
-        if (action is RestCallAction) {
-            val r = rm.getResourceNodeFromCluster(action.path.toString())
-            val additionalInfo = r.updateAdditionalParams(action)
-            if (!additionalInfo.isNullOrEmpty()) {
-                SimpleDeriveResourceBinding.deriveParamsToTable(additionalInfo, r, allTables = tables)
-            }
+        val r = rm.getResourceNodeFromCluster(action.path.toString())
+        val additionalInfo = r.updateAdditionalParams(action)
+        if (!additionalInfo.isNullOrEmpty()) {
+            SimpleDeriveResourceBinding.deriveParamsToTable(additionalInfo, r, allTables = tables)
         }
     }
 
@@ -271,12 +267,12 @@ class ResourceDepManageService {
      */
     fun deriveDependencyBasedOnSchema(resourceCluster: ResourceCluster) {
         resourceCluster.getCluster().values
-                .filter { it.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST }.isNotEmpty() }
+                .filter { it.actions.filter { it.verb == HttpVerb.POST }.isNotEmpty() }
                 .forEach { r ->
                     /*
                      TODO Man should only apply on POST Action? how about others?
                      */
-                    val post = r.actions.first { it is RestCallAction && it.verb == HttpVerb.POST } as RestCallAction
+                    val post = r.actions.first { it.verb == HttpVerb.POST } as RestCallAction
                     post.tokens.forEach { _, u ->
                         resourceCluster.getCluster().values.forEach { or ->
                             if (or != r) {
@@ -1106,6 +1102,10 @@ class ResourceDepManageService {
         return rm.getResourceCluster().values.none { r -> !r.isIndependent() }
     }
 
+    /**
+     * @return whether the [ind] can be mutated with resource-based solution
+     *      e.g., the [ind] does not have any related resource, then the resource-based solution will not be employed
+     */
     fun canMutateResource(ind: RestIndividual) : Boolean{
         return ind.getResourceCalls().size > 1 ||
                 getAllRelatedTables(ind).isNotEmpty() ||
@@ -1117,9 +1117,15 @@ class ResourceDepManageService {
                 }.size > 1)
     }
 
+    /**
+     * @return related resource of [resource]
+     */
     fun getRelatedResource(resource : String) : Set<String> = dependencies[resource]?.flatMap { it.targets }?.toSet()?: setOf()
 
 
+    /**
+     * export derived dependency info as outputs of EM
+     */
     fun exportDependencies(){
         val path = Paths.get(config.dependencyFile)
         Files.createDirectories(path.parent)
