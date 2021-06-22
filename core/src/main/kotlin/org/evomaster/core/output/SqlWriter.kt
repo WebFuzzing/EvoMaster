@@ -16,50 +16,62 @@ import org.evomaster.core.search.gene.sql.SqlWrapperGene
  */
 object SqlWriter {
 
-    fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines, allDbInitialization: List<DbAction> = dbInitialization, groupIndex: String ="") {
+    fun handleDbInitialization(
+        format: OutputFormat,
+        dbInitialization: List<DbAction>, lines: Lines,
+        allDbInitialization: List<DbAction> = dbInitialization,
+        groupIndex: String ="", surroundedWithTryCatch: Boolean) {
 
         if (dbInitialization.isEmpty() || dbInitialization.none { !it.representExistingData }) {
             return
         }
 
         dbInitialization
-                .filter { !it.representExistingData }
-                .forEachIndexed { index, dbAction ->
+            .filter { !it.representExistingData }
+            .forEachIndexed { index, dbAction ->
+                if (surroundedWithTryCatch && index == 0){
+                    lines.add(
+                        when {
+                            index == 0 && (format.isJava() || format.isKotlin()) -> "try{"
+                            else -> throw IllegalStateException("do not support to add try-catch for SQL handling with the $format")
+                        }
+                    )
+                    lines.indent()
+                }
 
-                    lines.add(when {
-                        index == 0 && format.isJava() -> "List<InsertionDto> insertions${groupIndex} = sql()"
-                        index == 0 && format.isKotlin() -> "val insertions${groupIndex} = sql()"
-                        else -> ".and()"
-                    } + ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)")
+                lines.add(when {
+                    index == 0 && format.isJava() -> "List<InsertionDto> insertions${groupIndex} = sql()"
+                    index == 0 && format.isKotlin() -> "val insertions${groupIndex} = sql()"
+                    else -> ".and()"
+                } + ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)")
 
-                    if (index == 0) {
-                        lines.indent()
-                    }
+                if (index == 0) {
+                    lines.indent()
+                }
 
-                    lines.indented {
-                        dbAction.seeGenes()
-                                .filter { it.isPrintable() }
-                                .forEach { g ->
-                                    when {
-                                        g is SqlWrapperGene && g.getForeignKey() != null -> {
-                                            val line = handleFK(format, g.getForeignKey()!!, dbAction, allDbInitialization)
-                                            lines.add(line)
-                                        }
-                                        g is ObjectGene -> {
-                                            val variableName = g.getVariableName()
-                                            val printableValue = getPrintableValue(format, g)
-                                            lines.add(".d(\"$variableName\", \"'$printableValue'\")")
-                                        }
-                                        else -> {
-                                            val variableName = g.getVariableName()
-                                            val printableValue = getPrintableValue(format, g)
-                                            lines.add(".d(\"$variableName\", \"$printableValue\")")
-                                        }
+                lines.indented {
+                    dbAction.seeGenes()
+                            .filter { it.isPrintable() }
+                            .forEach { g ->
+                                when {
+                                    g is SqlWrapperGene && g.getForeignKey() != null -> {
+                                        val line = handleFK(format, g.getForeignKey()!!, dbAction, allDbInitialization)
+                                        lines.add(line)
+                                    }
+                                    g is ObjectGene -> {
+                                        val variableName = g.getVariableName()
+                                        val printableValue = getPrintableValue(format, g)
+                                        lines.add(".d(\"$variableName\", \"'$printableValue'\")")
+                                    }
+                                    else -> {
+                                        val variableName = g.getVariableName()
+                                        val printableValue = getPrintableValue(format, g)
+                                        lines.add(".d(\"$variableName\", \"$printableValue\")")
                                     }
                                 }
-
-                    }
+                            }
                 }
+            }
 
         lines.add(".dtos()")
         lines.appendSemicolon(format)
@@ -68,6 +80,17 @@ object SqlWriter {
 
         lines.add("controller.execInsertionsIntoDatabase(insertions${groupIndex})")
         lines.appendSemicolon(format)
+
+        if (surroundedWithTryCatch){
+            lines.deindent()
+            lines.add(
+                when {
+                    format.isJava() -> "}catch(Exception e){}"
+                    format.isKotlin() -> "}catch(e: Exception){}"
+                    else -> throw IllegalStateException("do not support to add try-catch for SQL handling with the $format")
+                }
+            )
+        }
     }
 
     private fun getPrintableValue(format: OutputFormat, g: Gene): String {

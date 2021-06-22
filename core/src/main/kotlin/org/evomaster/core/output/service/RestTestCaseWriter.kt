@@ -94,7 +94,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             ind.evaluatedResourceActions().forEachIndexed { index, c ->
                 // db
                 if (c.first.isNotEmpty())
-                    SqlWriter.handleDbInitialization(format, c.first, lines, ind.individual.seeDbActions(), groupIndex = index.toString())
+                    SqlWriter.handleDbInitialization(format, c.first, lines, ind.individual.seeDbActions(), groupIndex = index.toString(), surroundedWithTryCatch = true)
                 //actions
                 c.second.forEach { a ->
                     handleRestCall(a, lines, baseUrlOfSut)
