@@ -111,7 +111,7 @@ class PostmanParserTest {
         assertTrue(optArrayQueryParam.isActive)
         assertEquals(6, (optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).maxSize)
         assertTrue((optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).template.values.containsAll(listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)))
-        assertTrue((optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).elements.map { it.values[it.index] }.containsAll(listOf(1, 2, 3, 4, 5, 6)))
+        assertTrue((optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).getAllElements().map { it.values[it.index] }.containsAll(listOf(1, 2, 3, 4, 5, 6)))
     }
 
     @Test
@@ -308,8 +308,8 @@ class PostmanParserTest {
         assertEquals(9, (optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).maxSize)
         assertEquals(11, (optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).template.values.size)
         assertTrue((optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).template.values.containsAll(listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)))
-        assertEquals(4, (optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).elements.size)
-        assertTrue((optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).elements.map { it.values[it.index] }.containsAll(listOf(1, 2, 5, 10)))
+        assertEquals(4, (optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).getAllElements().size)
+        assertTrue((optArrayQueryParam.gene as ArrayGene<EnumGene<*>>).getAllElements().map { it.values[it.index] }.containsAll(listOf(1, 2, 5, 10)))
     }
 
     @Test
@@ -396,7 +396,7 @@ class PostmanParserTest {
 
         val arrProp = bodyObj.fields.find { it.name == "arrProp" } as ArrayGene<*>
         assertEquals(7, arrProp.maxSize)
-        assertEquals(7, arrProp.elements.size)
+        assertEquals(7, arrProp.getAllElements().size)
         assertEquals("[1, 2, 3, 2, 6, 1, 3]", arrProp.getValueAsRawString())
 
         val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene
@@ -419,19 +419,19 @@ class PostmanParserTest {
 
         val objArrProp = optObjArrProp.gene as ArrayGene<*>
 
-        val objArrPropElem1 = objArrProp.elements[0] as MapGene<*>
-        assertEquals(2, objArrPropElem1.elements.size)
-        assertEquals("prop1", objArrPropElem1.elements[0].name)
-        assertEquals("val1", (objArrPropElem1.elements[0] as StringGene).value)
-        assertEquals("prop2", objArrPropElem1.elements[1].name)
-        assertEquals("val2", (objArrPropElem1.elements[1] as StringGene).value)
+        val objArrPropElem1 = objArrProp.getAllElements()[0] as MapGene<*>
+        assertEquals(2, objArrPropElem1.getAllElements().size)
+        assertEquals("prop1", objArrPropElem1.getAllElements()[0].name)
+        assertEquals("val1", (objArrPropElem1.getAllElements()[0] as StringGene).value)
+        assertEquals("prop2", objArrPropElem1.getAllElements()[1].name)
+        assertEquals("val2", (objArrPropElem1.getAllElements()[1] as StringGene).value)
 
-        val objArrPropElem2 = objArrProp.elements[1] as MapGene<*>
-        assertEquals(2, objArrPropElem2.elements.size)
-        assertEquals("prop3", objArrPropElem2.elements[0].name)
-        assertEquals("val3", (objArrPropElem2.elements[0] as StringGene).value)
-        assertEquals("prop4", objArrPropElem2.elements[1].name)
-        assertEquals("val4", (objArrPropElem2.elements[1] as StringGene).value)
+        val objArrPropElem2 = objArrProp.getAllElements()[1] as MapGene<*>
+        assertEquals(2, objArrPropElem2.getAllElements().size)
+        assertEquals("prop3", objArrPropElem2.getAllElements()[0].name)
+        assertEquals("val3", (objArrPropElem2.getAllElements()[0] as StringGene).value)
+        assertEquals("prop4", objArrPropElem2.getAllElements()[1].name)
+        assertEquals("val4", (objArrPropElem2.getAllElements()[1] as StringGene).value)
     }
 
     @Test
@@ -462,7 +462,7 @@ class PostmanParserTest {
 
         val arrProp = bodyObj.fields.find { it.name == "arrProp" } as ArrayGene<*>
         assertEquals(7, arrProp.maxSize)
-        assertEquals(3, arrProp.elements.size)
+        assertEquals(3, arrProp.getAllElements().size)
         assertEquals("[1, 2, 3]", arrProp.getValueAsRawString())
 
         val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene
@@ -488,13 +488,13 @@ class PostmanParserTest {
 
         val objArrProp = optObjArrProp.gene as ArrayGene<*>
 
-        val objArrPropElem1 = objArrProp.elements[0] as MapGene<*>
-        assertEquals(0, objArrPropElem1.elements.size)
+        val objArrPropElem1 = objArrProp.getAllElements()[0] as MapGene<*>
+        assertEquals(0, objArrPropElem1.getAllElements().size)
 
-        val objArrPropElem2 = objArrProp.elements[1] as MapGene<*>
-        assertEquals(1, objArrPropElem2.elements.size)
-        assertEquals("prop1", objArrPropElem2.elements[0].name)
-        assertEquals("val1", (objArrPropElem2.elements[0] as StringGene).value)
+        val objArrPropElem2 = objArrProp.getAllElements()[1] as MapGene<*>
+        assertEquals(1, objArrPropElem2.getAllElements().size)
+        assertEquals("prop1", objArrPropElem2.getAllElements()[0].name)
+        assertEquals("val1", (objArrPropElem2.getAllElements()[0] as StringGene).value)
     }
 
     @Test
@@ -529,7 +529,7 @@ class PostmanParserTest {
 
         val arrProp = bodyObj.fields.find { it.name == "arrProp" } as ArrayGene<*>
         assertEquals(9, arrProp.maxSize)
-        assertEquals(9, arrProp.elements.size)
+        assertEquals(9, arrProp.getAllElements().size)
         assertEquals("[6, 2, 6, 1, 3, 2, 6, 1, 1]", arrProp.getValueAsRawString())
 
         val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene
@@ -578,7 +578,7 @@ class PostmanParserTest {
 
         val arrProp = bodyObj.fields.find { it.name == "arrProp" } as ArrayGene<*>
         assertEquals(8, arrProp.maxSize)
-        assertEquals(6, arrProp.elements.size)
+        assertEquals(6, arrProp.getAllElements().size)
         assertEquals("[1, 2, 3, 4, 5, 6]", arrProp.getValueAsRawString())
 
         val optIntProp = bodyObj.fields.find { it.name == "intProp" } as OptionalGene

@@ -19,4 +19,7 @@ interface CollectionGene {
     }
 
     fun timesProbToModifySize() : Int = 3
+
+    fun clearElements()
+
 }

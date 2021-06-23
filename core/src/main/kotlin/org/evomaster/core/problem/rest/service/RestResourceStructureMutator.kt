@@ -57,8 +57,6 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             MutationType.SQL_REMOVE -> handleRemoveSQL(ind, mutatedGenes)
             MutationType.SQL_ADD -> handleAddSQL(ind, mutatedGenes)
         }
-
-        ind.repairDBActions(rm.getSqlBuilder(), randomness)
     }
 
     private fun getAvailableMutator(ind: RestIndividual) : List<MutationType>{

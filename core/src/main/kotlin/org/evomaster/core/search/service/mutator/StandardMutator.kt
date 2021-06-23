@@ -117,6 +117,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             }
             structureMutator.mutateStructure(copy, mutatedGene)
             copy.cleanBrokenBindingReference()
+            Lazy.assert { copy.verifyBindingGenes() }
             return copy
         }
 
@@ -169,6 +170,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         postActionAfterMutation(mutatedIndividual, mutatedGenes)
 
         if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
+
         return mutatedIndividual
     }
 
@@ -199,6 +201,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
          */
         if(mutatedIndividual is GraphQLIndividual) {
             GraphQLUtils.repairIndividual(mutatedIndividual)
+        }
+
+        if (!mutatedIndividual.verifyBindingGenes()){
+            mutatedIndividual.cleanBrokenBindingReference()
+            Lazy.assert { mutatedIndividual.verifyBindingGenes() }
         }
     }
 

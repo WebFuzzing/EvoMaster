@@ -24,7 +24,6 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
 
     override fun postActionAfterMutation(mutatedIndividual: RestIndividual, mutated: MutatedGeneSpecification?) {
         // repair db among dbactions
-        mutatedIndividual.repairDBActions(rm.getSqlBuilder(), randomness)
         super.postActionAfterMutation(mutatedIndividual, null)
     }
 

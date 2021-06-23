@@ -189,7 +189,7 @@ class ParamUtil {
         }
 
         fun handle(comGene: ArrayGene<*>, gene: Gene, names: MutableList<String>): Boolean {
-            comGene.elements.forEach {
+            comGene.getAllElements().forEach {
                 if (handle(it, gene, names)) {
                     return true
                 }
@@ -198,7 +198,7 @@ class ParamUtil {
         }
 
         fun handle(comGene: MapGene<*>, gene: Gene, names: MutableList<String>): Boolean {
-            comGene.elements.forEach {
+            comGene.getAllElements().forEach {
                 if (handle(it, gene, names)) {
                     names.add(it.name)
                     return true

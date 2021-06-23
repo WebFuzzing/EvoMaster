@@ -245,30 +245,6 @@ class RestIndividual(
         seeActions(actionFilter).indexOf(it)
     }
 
-    fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?, randomness: Randomness){
-        val previousDbActions = mutableListOf<DbAction>()
-
-        getResourceCalls().filter { it.seeActions(ALL).isNotEmpty() }.forEach {
-            val result = DbActionUtils.verifyForeignKeys( previousDbActions.plus(it.seeActions(ONLY_SQL) as List<DbAction>))
-            if(!result){
-                val created = mutableListOf<DbAction>()
-                (it.seeActions(ONLY_SQL) as List<DbAction>).forEach { db->
-                    DbActionUtils.repairFK(db, previousDbActions, created, sqlInsertBuilder, randomness)
-                    previousDbActions.add(db)
-                }
-                it.addDbAction(0, created)
-
-            }else{
-                previousDbActions.addAll(it.seeActions(ONLY_SQL) as List<DbAction>)
-            }
-        }
-
-        if(!DbActionUtils.verifyForeignKeys(getResourceCalls().flatMap { it.seeActions(ONLY_SQL) as List<DbAction> })){
-            throw IllegalStateException("after a FK repair, there still exist invalid FKs")
-        }
-
-    }
-
     private fun validateSwap(first : Int, second : Int) : Boolean{
         val position = getResourceCalls()[first].shouldBefore.map { r ->
             getResourceCalls().indexOfFirst { it.getAResourceKey() == r }

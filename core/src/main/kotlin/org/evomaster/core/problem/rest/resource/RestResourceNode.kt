@@ -490,7 +490,7 @@ class RestResourceNode(
         }
 
         if (results.size > maxTestSize){
-            LoggingUtil.uniqueWarn(log, "the size (${results.size}) of actions exceeds the max size ($maxTestSize) in resource node $path")
+            log.info("the size (${results.size}) of actions exceeds the max size ($maxTestSize) in resource node $path")
             val removeFirst = results.size - maxTestSize
             results.drop(removeFirst)
             status = ResourceStatus.NOT_ENOUGH_LENGTH

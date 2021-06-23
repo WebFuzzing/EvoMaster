@@ -29,8 +29,8 @@ object BindingBuilder {
     fun bindParamsInRestAction(restAction: RestCallAction, doBuildBindingGene: Boolean = false){
         val pairs = buildBindingPairsInRestAction(restAction)
         pairs.forEach {
-            it.first.bindValueBasedOn(it.second)
-            if (doBuildBindingGene){
+            val ok = it.first.bindValueBasedOn(it.second)
+            if (ok && doBuildBindingGene){
                 it.first.addBindingGene(it.second)
                 it.second.addBindingGene(it.first)
             }
@@ -64,8 +64,8 @@ object BindingBuilder {
     fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false, doBuildBindingGene: Boolean = false): Boolean{
         val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, inner)
         pairs.forEach { p->
-            p.first.bindValueBasedOn(p.second)
-            if (doBuildBindingGene){
+            val ok = p.first.bindValueBasedOn(p.second)
+            if (ok && doBuildBindingGene){
                 p.first.addBindingGene(p.second)
                 p.second.addBindingGene(p.first)
             }
@@ -81,8 +81,8 @@ object BindingBuilder {
                             dbRemovedDueToRepair : Boolean,
                             doBuildBindingGene: Boolean){
         buildBindRestActionBasedOnDbActions(restAction, restNode, paramGeneBindMap, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair).forEach { p->
-            p.first.bindValueBasedOn(p.second)
-            if (doBuildBindingGene){
+            val ok = p.first.bindValueBasedOn(p.second)
+            if (ok && doBuildBindingGene){
                 p.first.addBindingGene(p.second)
                 p.second.addBindingGene(p.first)
             }
