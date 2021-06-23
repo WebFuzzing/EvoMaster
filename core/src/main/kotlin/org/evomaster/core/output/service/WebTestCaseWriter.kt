@@ -18,7 +18,7 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
             SqlWriter.handleDbInitialization(
                     format,
                     ind.individual.seeInitializingActions().filterIsInstance<DbAction>(),
-                    lines, surroundedWithTryCatch = false)
+                    lines)
         }
     }
 }

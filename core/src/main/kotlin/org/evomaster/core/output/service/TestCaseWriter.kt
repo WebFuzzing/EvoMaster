@@ -98,21 +98,37 @@ abstract class TestCaseWriter {
         return "location_${id.trim().replace(" ", "_")}"
     }
 
-
-    protected fun addActionInTryCatch(call: Action,
-                                      lines: Lines,
-                                      res: ActionResult,
-                                      baseUrlOfSut: String) {
+    protected fun addLinesInTryCatch(lines: Lines, errorMessage: String?, addedLines: () -> Any){
         when {
-            /*
-                TODO do we need to handle differently in JS due to Promises?
-             */
             format.isJavaOrKotlin() -> lines.add("try{")
             format.isJavaScript() -> lines.add("try{")
             format.isCsharp() -> lines.add("try{")
         }
 
-        lines.indented {
+        lines.indented{
+            addedLines.invoke()
+        }
+
+        when {
+            format.isJavaOrKotlin() -> lines.add("} catch(Exception e){")
+            format.isJavaScript() -> lines.add("} catch(e){")
+            format.isCsharp() -> lines.add("} catch(Exception e){")
+        }
+
+        errorMessage?.let {
+            lines.indented {
+                lines.add("//${it.replace('\n', ' ').replace('\r',' ')}")
+            }
+        }
+        lines.add("}")
+    }
+
+    protected fun addActionInTryCatch(call: Action,
+                                      lines: Lines,
+                                      res: ActionResult,
+                                      baseUrlOfSut: String) {
+
+        addLinesInTryCatch(lines, res.getErrorMessage()){
             addActionLines(call, lines, res, baseUrlOfSut)
 
             if (shouldFailIfException(res)) {
@@ -126,23 +142,7 @@ abstract class TestCaseWriter {
                 }
             }
         }
-
-        when {
-            format.isJavaOrKotlin() -> lines.add("} catch(Exception e){")
-            format.isJavaScript() -> lines.add("} catch(e){")
-            format.isCsharp() -> lines.add("} catch(Exception e){")
-        }
-
-        res.getErrorMessage()?.let {
-            lines.indented {
-                lines.add("//${it.replace('\n', ' ').replace('\r',' ')}")
-            }
-        }
-        lines.add("}")
     }
-
-
-
 
     protected fun capitalizeFirstChar(name: String): String {
         return name[0].toUpperCase() + name.substring(1)

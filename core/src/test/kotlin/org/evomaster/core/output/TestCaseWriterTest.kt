@@ -1086,7 +1086,8 @@ public void test() throws Exception {
                 .d("Id", "42")
             .dtos();
         controller.execInsertionsIntoDatabase(insertions0);
-    }catch(Exception e){}
+    } catch(Exception e){
+    }
     
     try{
         given().accept("*/*")
@@ -1099,7 +1100,8 @@ public void test() throws Exception {
                 .d("fkId", "42")
             .dtos();
         controller.execInsertionsIntoDatabase(insertions1);
-    }catch(Exception e){}
+    } catch(Exception e){
+    }
     
     try{
         given().accept("*/*")
