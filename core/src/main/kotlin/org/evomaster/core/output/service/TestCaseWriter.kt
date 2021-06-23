@@ -110,7 +110,8 @@ abstract class TestCaseWriter {
         }
 
         when {
-            format.isJavaOrKotlin() -> lines.add("} catch(Exception e){")
+            format.isJava() -> lines.add("} catch(Exception e){")
+            format.isKotlin() -> lines.add("} catch(e: Exception){")
             format.isJavaScript() -> lines.add("} catch(e){")
             format.isCsharp() -> lines.add("} catch(Exception e){")
         }
