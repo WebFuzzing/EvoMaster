@@ -26,4 +26,5 @@ class GraphQlCallResult : HttpWsCallResult {
 
     fun getLastStatementWhenGQLErrors() : String? = getResultValue(LAST_STATEMENT_WHEN_GQL_ERRORS)
 
+    fun hasLastStatementWhenGQLError() = ! getLastStatementWhenGQLErrors().isNullOrBlank()
 }

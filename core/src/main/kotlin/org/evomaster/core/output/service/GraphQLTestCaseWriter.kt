@@ -74,8 +74,11 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         /*
             if last line has already been added due to 500, no point in adding again
          */
-        if (code != 500) {
-            lines.append(" // " + (res as GraphQlCallResult).getLastStatementWhenGQLErrors())
+
+        val gql = res as GraphQlCallResult
+
+        if (code != 500 && gql.hasLastStatementWhenGQLError()) {
+            lines.append(" // " + gql.getLastStatementWhenGQLErrors())
         }
     }
 
@@ -94,6 +97,8 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         val path = "/graphql"  //FIXME not hardcoded
         lines.append("${GeneUtils.applyEscapes(path, mode = GeneUtils.EscapeMode.NONE, format = format)}\"")
         lines.append(")")
+
+        lines.add(".set('Content-Type','application/json')")
     }
 
 }

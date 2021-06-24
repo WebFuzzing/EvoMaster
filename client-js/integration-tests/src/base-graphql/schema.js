@@ -8,7 +8,7 @@ const typeDefs = gql`
     }
     
     type Item{
-        id: String!
+        name: String!
     }
 `;
 

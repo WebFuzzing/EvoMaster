@@ -7,6 +7,7 @@ import AuthenticationDto from "./controller/api/dto/AuthenticationDto";
 import HeaderDto from "./controller/api/dto/HeaderDto";
 import ProblemInfo from "./controller/api/dto/problem/ProblemInfo";
 import RestProblemDto from "./controller/api/dto/problem/RestProblemDto";
+import GraphQLProblemDto from "./controller/api/dto/problem/GraphQLProblemDto";
 import {OutputFormat} from "./controller/api/dto/SutInfoDto";
 import SutRunDto from "./controller/api/dto/SutRunDto";
 import ControllerConstants from "./controller/api/ControllerConstants";
@@ -30,6 +31,7 @@ interface EM {
         HeaderDto: typeof HeaderDto,
         ProblemInfo: typeof ProblemInfo,
         RestProblemDto: typeof RestProblemDto,
+        GraphQLProblemDto: typeof GraphQLProblemDto,
         OutputFormat: typeof OutputFormat,
         SutRunDto: typeof SutRunDto
     },
@@ -52,6 +54,7 @@ f.dto = {
     HeaderDto: HeaderDto,
     ProblemInfo: ProblemInfo,
     RestProblemDto: RestProblemDto,
+    GraphQLProblemDto: GraphQLProblemDto,
     OutputFormat: OutputFormat,
     SutRunDto: SutRunDto
 };
