@@ -1400,6 +1400,11 @@ class EMConfig {
     var killSwitch = false
 
 
+    @Experimental
+    @Cfg("Whether to skip failed SQL commands in the generated test files")
+    var skipFailureSQLInTestFile = false
+
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
