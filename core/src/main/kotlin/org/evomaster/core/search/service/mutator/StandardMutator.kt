@@ -42,7 +42,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
          */
         if (config.disableStructureMutationDuringFocusSearch && apc.doesFocusSearch()){return false}
 
-        return individual.canMutateStructure() &&
+        return structureMutator.canApplyStructureMutator(individual) &&
                 config.maxTestSize > 1 && // if the maxTestSize is 1, there is no point to do structure mutation
                 randomness.nextBoolean(config.structureMutationProbability)
     }

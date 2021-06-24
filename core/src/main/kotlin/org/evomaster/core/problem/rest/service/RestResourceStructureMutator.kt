@@ -43,6 +43,13 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         if (config.trackingEnabled()) tag(individual, time.evaluatedIndividuals)
     }
 
+    override fun canApplyStructureMutator(individual: Individual): Boolean {
+        if(individual !is RestIndividual)
+            throw IllegalArgumentException("Invalid individual type")
+
+        return super.canApplyStructureMutator(individual) && getAvailableMutator(individual).isNotEmpty()
+    }
+
     fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null, mutatedGenes: MutatedGeneSpecification? = null) {
 
         val executedStructureMutator = specified?:
