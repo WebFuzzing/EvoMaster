@@ -887,17 +887,14 @@ class ResourceDepManageService {
      * @return a candidate, if none of a resource is deletable, return null
      */
     fun handleDelNonDepResource(ind: RestIndividual): RestResourceCalls? {
-        val candidates = ind.getResourceCalls().filter { cur ->
-            !existsDependentResources(ind, cur) && cur.isDeletable
+        val candidates = ind.getResourceCalls().filter { it.isDeletable }.filter { cur ->
+            !existsDependentResources(ind, cur)
         }
         if (candidates.isEmpty()) return null
 
-        candidates.filter { isNonDepResources(ind, it) && it.isDeletable}.apply {
-            if (isNotEmpty())
-                return randomness.choose(this)
-            else
-                return randomness.choose(candidates)
-        }
+        val nodep = candidates.filter { isNonDepResources(ind, it)}
+        if (nodep.isNotEmpty()) return randomness.choose(nodep)
+        return randomness.choose(candidates)
     }
 
 
@@ -961,10 +958,11 @@ class ResourceDepManageService {
             existsDependentResources(ind, it, maxProbability = StringSimilarityComparator.SimilarityThreshold) }
         if (probCandidates.isEmpty()) return null
         val valid = probCandidates.map { ind.getResourceCalls().indexOf(it) }.filter { all.containsKey(it) }
+        if (valid.isEmpty()) return null
         val select = randomness.choose(valid)
         val ex = findDependentResources(ind, ind.getResourceCalls()[select], maxProbability = StringSimilarityComparator.SimilarityThreshold)
         val validEx = ex.map { ind.getResourceCalls().indexOf(it) }.filter { all[select]!!.contains(it) }
-        if (valid.isNotEmpty())
+        if (validEx.isNotEmpty())
             return  select to randomness.choose(validEx)
         return null
     }

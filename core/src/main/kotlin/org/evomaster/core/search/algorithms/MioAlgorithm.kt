@@ -35,7 +35,6 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                     sampler.sample()
                 }
 
-                ind.verifyBindingGenes()
                 ff.calculateCoverage(ind)?.run {
 
                     archive.addIfNeeded(this)

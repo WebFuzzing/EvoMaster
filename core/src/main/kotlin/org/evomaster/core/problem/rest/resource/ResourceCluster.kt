@@ -8,6 +8,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.service.Randomness
@@ -180,6 +181,12 @@ class ResourceCluster {
         }
 
         return added
+    }
+
+    fun doesCoverAll(individual: RestIndividual): Boolean{
+        return individual.getResourceCalls().map {
+            it.getResolvedKey()
+        }.toSet().size >= resourceCluster.size
     }
 
 }

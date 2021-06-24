@@ -192,6 +192,8 @@ class ArrayGene<T>(
 
     /*
         Note that value binding cannot be performed on the [elements]
+
+        TODO might bind based on value instead of replacing them
      */
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){

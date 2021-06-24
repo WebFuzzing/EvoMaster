@@ -63,23 +63,21 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         val num = ind.getResourceCalls().size
         val sqlNum = ind.seeResource(RestIndividual.ResourceFilter.ONLY_SQL_INSERTION).size
         return MutationType.values()
-            .filter {  num >= it.minSize && sqlNum >= it.minSQLSize}
-            .filterNot {
-                // if there is no db or sql resource handling is not enabled, SQL_REMOVE and SQL_ALL are not applicable
-                ((config.maxSqlInitActionsPerResource == 0 || rm.getTableInfo().isEmpty()) && (it == MutationType.SQL_ADD || it == MutationType.SQL_REMOVE) ) ||
-                        // if there is no dbInitialization, SQL_REMOVE is not applicable
-                        (ind.seeInitializingActions().isEmpty() && it == MutationType.SQL_REMOVE)
-            }
-            .filterNot{
-                (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
-                        //if the individual includes all resources, ADD and REPLACE are not applicable
-                        (ind.getResourceCalls().map {
-                            it.getResolvedKey()
-                        }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
-                        //if the size of deletable individual is less 2, Delete and SWAP are not applicable
-                        (ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size < 2 && (it == MutationType.DELETE || it == MutationType.SWAP)) ||
-                        (ind.extractSwapCandidates().isEmpty() && it == MutationType.SWAP)
-            }
+            .filter {  num >= it.minSize && sqlNum >= it.minSQLSize && isMutationTypeApplicable(it, ind)}
+
+    }
+
+    private fun isMutationTypeApplicable(type: MutationType, ind : RestIndividual): Boolean{
+        val delSize = ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size
+        return when(type){
+            MutationType.ADD -> ind.seeActions().size < config.maxTestSize && !rm.cluster.doesCoverAll(ind)
+            MutationType.SWAP -> ind.extractSwapCandidates().isNotEmpty()
+            MutationType.REPLACE -> !rm.cluster.doesCoverAll(ind) && delSize > 0
+            MutationType.DELETE -> delSize > 0 && ind.getResourceCalls().size >=2
+            MutationType.SQL_ADD -> config.maxSqlInitActionsPerResource != 0 && rm.getTableInfo().isNotEmpty()
+            MutationType.SQL_REMOVE -> config.maxSqlInitActionsPerResource != 0 && rm.getTableInfo().isNotEmpty() && ind.seeInitializingActions().isNotEmpty()
+            MutationType.MODIFY -> delSize > 0
+        }
     }
 
     /**
@@ -310,6 +308,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         }else{
             null
         }
+
         if(pos == null)
             pos = ind.getResourceCalls().indexOf(randomness.choose(ind.getResourceCalls().filter(RestResourceCalls::isDeletable)))
 
@@ -345,7 +344,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         call.seeActions(ALL).forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
-                ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
+                ind.seeActions(NO_INIT).indexOf(it),
                 false,
                 resourcePosition = pos
             )
@@ -356,12 +355,13 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      *  modify one of resource call with other template
      */
     private fun handleModify(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
-        val auth = ind.seeActions().filterIsInstance<RestCallAction>().map { it.auth }.run {
+        val auth = ind.seeActions().map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)
         }
 
-        val pos = randomness.nextInt(0, ind.getResourceCalls().size-1)
+        val pos = randomness.choose(ind.getResourceCalls().filter { it.isDeletable }.map { ind.getResourceCalls().indexOf(it) })
+
         val old = ind.getResourceCalls()[pos]
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.seeActionSize(NO_SQL)}

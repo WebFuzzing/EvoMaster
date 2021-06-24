@@ -362,6 +362,16 @@ class RestResourceCalls(
         }
     }
 
+    fun removeThisFromItsBindingGenes(){
+        (dbActions.plus(actions)).forEach { a->
+            a.seeGenes().forEach { g->
+                g.flatView().forEach { r->
+                    r.removeThisFromItsBindingGenes()
+                }
+            }
+        }
+    }
+
     /**
      * employing the longest action to represent a group of calls on a resource
      */

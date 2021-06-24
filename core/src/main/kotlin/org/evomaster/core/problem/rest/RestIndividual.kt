@@ -136,7 +136,6 @@ class RestIndividual(
         return DbActionUtils.verifyActions(seeInitializingActions())
     }
 
-
     override fun copy(copyFilter: TraceableElementCopyFilter): RestIndividual {
         val copy = copy() as RestIndividual
         when(copyFilter){
@@ -215,7 +214,8 @@ class RestIndividual(
     fun removeResourceCall(position : Int) {
         if(position >= resourceCalls.size)
             throw IllegalArgumentException("position is out of range of list")
-        resourceCalls.removeAt(position)
+        val removed = resourceCalls.removeAt(position)
+        removed.removeThisFromItsBindingGenes()
     }
 
     /**
@@ -238,8 +238,9 @@ class RestIndividual(
     fun replaceResourceCall(position: Int, restCalls: RestResourceCalls){
         if(position > resourceCalls.size)
             throw IllegalArgumentException("position is out of range of list")
-        resourceCalls[position] = restCalls
-        addChild(restCalls)
+
+        removeResourceCall(position)
+        addResourceCall(position, restCalls)
     }
 
     /**
@@ -310,8 +311,9 @@ class RestIndividual(
     fun extractSwapCandidates(): Map<Int, Set<Int>>{
         return getResourceCalls().mapIndexed { index, _ ->
             val shouldBefore = handleSwapCandidates(this, index)
-            index to (0 until shouldBefore).filter { it == index }.toSet()
-        }.filter { it.second.isEmpty() }.toMap()
+            index to (0 until shouldBefore)
+                .filter { it != index && index < handleSwapCandidates(this, it) }.toSet()
+        }.filterNot { it.second.isEmpty() }.toMap()
     }
 
     private fun handleSwapCandidates(ind: RestIndividual, indexToSwap: Int): Int{
