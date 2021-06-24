@@ -21,3 +21,8 @@ if [ $? -ne 0 ] ; then
    exit 1
 fi
 
+$RUN /client-js/integration-tests/build/src/base-graphql   em-main.js   app-driver.js  1 FOO
+if [ $? -ne 0 ] ; then
+   echo "ERROR: Test failed for base-graphql. Exist status " $?
+   exit 1
+fi

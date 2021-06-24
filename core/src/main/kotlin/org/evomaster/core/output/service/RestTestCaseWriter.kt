@@ -1,6 +1,5 @@
 package org.evomaster.core.output.service
 
-import com.google.gson.Gson
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
@@ -97,13 +96,13 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     SqlWriter.handleDbInitialization(format, c.first, lines, ind.individual.seeDbActions(), groupIndex = index.toString())
                 //actions
                 c.second.forEach { a ->
-                    handleRestCall(a, lines, baseUrlOfSut)
+                    handleSingleCall(a, lines, baseUrlOfSut)
                 }
             }
         } else {
             if (ind.individual is RestIndividual) {
                 ind.evaluatedActions().forEach { a ->
-                    handleRestCall(a, lines, baseUrlOfSut)
+                    handleSingleCall(a, lines, baseUrlOfSut)
                 }
             }
         }
@@ -131,58 +130,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         addRestCallLines(action as RestCallAction, lines, result as RestCallResult, baseUrlOfSut)
     }
 
-    private fun handleRestCall(
-            evaluatedAction: EvaluatedAction,
-            lines: Lines,
-            baseUrlOfSut: String
-    ) {
-        lines.addEmpty()
-
-        val call = evaluatedAction.action as RestCallAction
-        val res = evaluatedAction.result as RestCallResult
-
-        if (res.failedCall()) {
-            addActionInTryCatch(call, lines, res, baseUrlOfSut)
-        } else {
-            addActionLines(call, lines, res, baseUrlOfSut)
-        }
-    }
-
     private fun addRestCallLines(call: RestCallAction,
                                  lines: Lines,
                                  res: RestCallResult,
                                  baseUrlOfSut: String) {
 
-        //first handle the first line
-        val responseVariableName = createUniqueResponseVariableName()
-
-        handleFirstLine(call, lines, res, responseVariableName)
-
-        lines.indent(2)
-
-        when {
-            format.isJavaOrKotlin() -> {
-                handleHeaders(call, lines)
-                handleBody(call, lines)
-                handleVerb(baseUrlOfSut, call, lines)
-            }
-            format.isJavaScript() -> {
-                //in SuperAgent, verb must be first
-                handleVerb(baseUrlOfSut, call, lines)
-                lines.append(getRestAcceptHeader(call, res))
-                handleHeaders(call, lines)
-                handleBody(call, lines)
-            }
-            format.isCsharp() -> {
-                val hasBody = handleBody(call, lines)
-                handleVerb(baseUrlOfSut, call, lines, hasBody)
-            }
-        }
-
-        if(format.isJavaOrKotlin()) {
-            handleResponseDirectlyInTheCall(call, res, lines)
-        }
-        handleLastLine(call, res, lines, responseVariableName)
+        val responseVariableName = makeHttpCall(call, lines, res, baseUrlOfSut)
 
         handleLocationHeader(call, res, responseVariableName, lines)
         handleResponseAfterTheCall(call, res, responseVariableName, lines)
@@ -192,151 +145,17 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
     }
 
+
+
     private fun shouldCheckExpectations() =
     //for now Expectations are only supported on the JVM
             //TODO C# (and maybe JS as well???)
             config.expectationsActive && config.outputFormat.isJavaOrKotlin()
 
 
+    override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines, hasBody: Boolean) {
 
-    //TODO: check again for C#, especially when not json
-    private fun handleBody(call: RestCallAction, lines: Lines): Boolean {
-
-        var hasBody = false
-        val bodyParam = call.parameters.find { p -> p is BodyParam }
-        val form = call.getBodyFormData()
-
-        if (bodyParam != null && form != null) {
-            throw IllegalStateException("Issue: both Body and FormData present")
-        }
-
-        val send = when {
-            format.isJavaOrKotlin() -> "body"
-            format.isJavaScript() -> "send"
-            format.isCsharp() -> ""
-            else -> throw IllegalArgumentException("Format not supported $format")
-        }
-
-        if (bodyParam != null && bodyParam is BodyParam) {
-
-            when {
-                format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
-                format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
-                format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"${bodyParam.contentType()}\"));")
-            }
-
-            if (bodyParam.isJson()) {
-
-                val json = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
-
-                val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted(json)
-                } else {
-                    json
-                }
-
-                //needed as JSON uses ""
-                val bodyLines = body.split("\n").map { s ->
-                    "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
-                }
-
-                if (bodyLines.size == 1) {
-                    if (!format.isCsharp()) {
-                        lines.add(".$send(${bodyLines.first()})")
-                        hasBody = true
-                    } else {
-                        lines.add("body = ${bodyLines.first()};")
-                        lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
-                        hasBody = true
-                    }
-                } else {
-                    if (!format.isCsharp()) {
-                        lines.add(".$send(${bodyLines.first()} + ")
-                        lines.indented {
-                            (1 until bodyLines.lastIndex).forEach { i ->
-                                lines.add("${bodyLines[i]} + ")
-                            }
-                            lines.add("${bodyLines.last()})")
-                        }
-                    } else {
-                        lines.add("body = ${bodyLines.first()} +")
-                        lines.indented {
-                            (1 until bodyLines.lastIndex).forEach { i ->
-                                lines.add("${bodyLines[i]} + ")
-                            }
-                            lines.add("${bodyLines.last()};")
-                        }
-                        lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
-                    }
-                    hasBody = true
-                }
-
-            } else if (bodyParam.isTextPlain()) {
-                val body =
-                        bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
-                if (body != "\"\"") {
-                    if (!format.isCsharp())
-                        lines.add(".$send($body)")
-                    else {
-                        lines.add("body = \"$body\";")
-                        lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
-                    }
-
-                    hasBody = true
-                } else {
-                    if (!format.isCsharp())
-                        lines.add(".$send(\"${"""\"\""""}\")")
-                    else {
-                        lines.add("body = \"${"""\"\""""}\";")
-                        lines.add("httpContent = new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
-                    }
-                    hasBody = true
-                }
-
-                //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
-                // inserting \"\" should prevent that problem
-                // TODO: get some tests done of this
-
-            } else if (bodyParam.isForm()) {
-                val body = bodyParam.gene.getValueAsPrintableString(
-                        mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED,
-                        targetFormat = format
-                )
-                if (!format.isCsharp())
-                    lines.add(".$send(\"$body\")")
-                else {
-                    lines.add("body = \"$body\";")
-                    lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
-                }
-
-                hasBody = true
-            } else {
-                //TODO XML
-
-                LoggingUtil.uniqueWarn(log, "Unrecognized type: " + bodyParam.contentType())
-            }
-        }
-
-        if (form != null) {
-            when {
-                format.isJavaOrKotlin() -> lines.add(".contentType(\"application/x-www-form-urlencoded\")")
-                format.isJavaScript() -> lines.add(".set('Content-Type','application/x-www-form-urlencoded')")
-                format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"application/x-www-form-urlencoded\"));")
-            }
-            if (!format.isCsharp())
-                lines.add(".$send(\"$form\")")
-            else {
-                lines.add("body = \"$form\";")
-                lines.add("httpContent = new StringContent(form, Encoding.UTF8, \"application/x-www-form-urlencoded\");")
-            }
-
-            hasBody = true
-        }
-        return hasBody
-    }
-
-    private fun handleVerb(baseUrlOfSut: String, call: RestCallAction, lines: Lines, hasBody: Boolean = true) {
-
+        val call = _call as RestCallAction
         val verb = call.verb.name.toLowerCase()
 
         if (format.isCsharp()) {
@@ -438,22 +257,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
 
-    private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, resVarName: String) {
 
-        if(format.isJavaScript()){
-            /*
-                This is to deal with very weird behavior in SuperAgent that crashes the tests
-                for status codes different from 2xx...
-                so, here we make it passes as long as a status was present
-             */
-            lines.add(".ok(res => res.status)")
-        }
-
-        if (config.enableBasicAssertions) {
-            lines.appendSemicolon(format)
-        }
-        lines.deindent(2)
-    }
 
     private fun handleLocationHeader(call: RestCallAction, res: RestCallResult, resVarName: String, lines: Lines) {
         if (call.saveLocation && !res.stopping) {
@@ -510,7 +314,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
     }
 
-    fun addDeclarationsForExpectations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>){
+    private fun addDeclarationsForExpectations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>){
         if(!partialOracles.generatesExpectation(individual)){
             return
         }
@@ -528,7 +332,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         lines.appendSemicolon(format)
     }
 
-    fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
+    private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
         lines.addEmpty()
         if( partialOracles.generatesExpectation(call, res)){
             partialOracles.addExpectations(call, lines, res, name, format)
