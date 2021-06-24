@@ -6,8 +6,8 @@ test("Test base query", async ()=> {
 
     const response = await request(app)
         .post("/graphql")
-        .send('{\"query\": "{getItem{name}}"}')
         .set("Content-Type", "application/json")
+        .send('{\"query\": "{getItem{name}}"}')
     ;
 
     expect(response.status).toBe(200);

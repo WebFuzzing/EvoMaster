@@ -44,6 +44,13 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
             TODO: when/if we are going to deal with GET, then we will need to update/refactor this code
          */
 
+        when {
+            format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
+            format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
+            format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"application/json\"));")
+        }
+
+
         val gql = call as GraphQLAction
 
         val body = GraphQLUtils.generateGQLBodyEntity(gql, format)
@@ -97,8 +104,6 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         val path = "/graphql"  //FIXME not hardcoded
         lines.append("${GeneUtils.applyEscapes(path, mode = GeneUtils.EscapeMode.NONE, format = format)}\"")
         lines.append(")")
-
-        lines.add(".set('Content-Type','application/json')")
     }
 
 }
