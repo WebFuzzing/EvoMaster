@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
@@ -367,15 +368,15 @@ class RemoteController() : DatabaseExecutor {
         return true
     }
 
-    override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): Pair<Boolean, QueryResultDto?> {
+    override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {
         return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<QueryResultDto>>() {})
     }
 
-    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Pair<Boolean,Map<Long, Long>?> {
-        return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<Map<Long, Long>>>() {})
+    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
+        return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<InsertionResultsDto>>() {})
     }
 
-    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): Pair<Boolean, T?>{
+    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
 
         val response = makeHttpCall {
             getWebTarget()
@@ -386,13 +387,11 @@ class RemoteController() : DatabaseExecutor {
 
         val dto = getDtoFromResponse(response, type)
 
-        val failure = !checkResponse(response, dto, "Failed to execute database command")
-
-        if (failure) {
-            return false to null
+        if (!checkResponse(response, dto, "Failed to execute database command")) {
+            return null
         }
 
-        return true to dto?.data
+        return dto?.data
     }
 
 

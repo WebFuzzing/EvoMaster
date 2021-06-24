@@ -161,10 +161,18 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         dto.idCounter = StaticCounter.getAndIncrease()
 
         val sqlResults = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
-        val map = sqlResults.second
+        val map = sqlResults?.idMapping
+        val executedResults = sqlResults?.executionResults
+
+        if (executedResults?.size?:0 > allDbActions.size)
+            throw IllegalStateException("incorrect insertion execution results (${executedResults!!.size}) which is more than the size of insertions (${allDbActions.size}).")
+        executedResults?.forEachIndexed { index, b ->
+            allDbActions[index].insertExecutedSuccessfully = b
+        }
         previous.addAll(allDbActions)
 
-        if (!sqlResults.first || map == null) {
+
+        if (map == null) {
             LoggingUtil.uniqueWarn(log, "Failed in executing database command")
             return false
         }else{

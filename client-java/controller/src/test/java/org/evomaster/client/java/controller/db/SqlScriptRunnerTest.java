@@ -375,7 +375,7 @@ public class SqlScriptRunnerTest extends DatabaseTestTemplate {
                 .insertInto("Bar", 100L).d("id", "default").d("x", "42").and()
                 .insertInto("Bar", 101L).d("id", "default").d("x", "66").dtos();
 
-        Map<Long, Long> map = SqlScriptRunner.execInsert(getConnection(), insertion1);
+        Map<Long, Long> map = SqlScriptRunner.execInsert(getConnection(), insertion1).idMapping;
 
 
         List<InsertionDto> insertion2 = sql()

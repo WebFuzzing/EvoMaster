@@ -447,7 +447,7 @@ class SqlInsertBuilder(
             val dto = DatabaseCommandDto()
             dto.command = sql
 
-            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto).second
+            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
                     ?: continue
 
             result.rows.forEach { r ->
@@ -514,7 +514,7 @@ class SqlInsertBuilder(
             val dto = DatabaseCommandDto()
             dto.command = sql
 
-            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto).second
+            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
                     ?: throw IllegalArgumentException("rows regarding pks can not be found")
             if (result.rows.size != 1) {
                 log.warn("there exist more than one rows (${result.rows.size}) with pkValues $condition")
@@ -573,7 +573,7 @@ class SqlInsertBuilder(
             val dto = DatabaseCommandDto()
             dto.command = sql
 
-            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto).second
+            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
                     ?: continue
             dataInDB.getOrPut(table.name) { result.rows.map { it }.toMutableList() }
         }
