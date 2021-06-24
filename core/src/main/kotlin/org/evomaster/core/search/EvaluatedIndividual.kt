@@ -11,7 +11,6 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Individual.GeneFilter
-import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
@@ -442,11 +441,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     private fun syncImpact(previous : Individual, mutated : Individual) {
 
         // rest action
-        mutated.seeActions(ActionFilter.NO_INIT).forEachIndexed { index, action ->
+        mutated.seeActions(NO_INIT).forEachIndexed { index, action ->
             action.seeGenes().filter { it.isMutable() }.forEach { sg->
                 val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
 
-                val p = previous.seeActions(ActionFilter.NO_INIT)[index].seeGenes().find {
+                val p = previous.seeActions(NO_INIT)[index].seeGenes().find {
                     rootGeneId == ImpactUtils.generateGeneId(previous, it)
                 }
                 val impact = impactInfo!!.getGene(
@@ -473,7 +472,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *  this is to handle unclassified, eg, a gene might be empty gson or a gene constrained with some class
      */
     fun addGeneImpact(individual: Individual, gene: Gene) : GeneImpact?{
-        val actions = if (individual is RestIndividual)  individual.seeActions(ActionFilter.NO_INIT) else individual.seeActions()
+        val actions = if (individual is RestIndividual)  individual.seeActions(NO_INIT) else individual.seeActions()
 
         val action = actions.find {
             it.seeGenes().contains(gene)
@@ -497,11 +496,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         impactInfo?:return null
 
         val id = ImpactUtils.generateGeneId(individual, gene)
-        var action = individual.seeActions(ActionFilter.NO_INIT).find { it.seeGenes().contains(gene) }
+        var action = individual.seeActions(NO_INIT).find { it.seeGenes().contains(gene) }
         if (action != null){
             return impactInfo.getGene(
                     actionName = action.getName(),
-                    actionIndex = individual.seeActions(ActionFilter.NO_INIT).indexOf(action),
+                    actionIndex = individual.seeActions(NO_INIT).indexOf(action),
                     geneId = id,
                     fromInitialization = false
             )
