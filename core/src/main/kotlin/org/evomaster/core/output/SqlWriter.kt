@@ -23,7 +23,7 @@ object SqlWriter {
         }
 
         dbInitialization
-                .filter { !it.representExistingData }
+                .filter { !it.representExistingData && it.insertExecutedSuccessfully}
                 .forEachIndexed { index, dbAction ->
 
                     lines.add(when {
