@@ -127,15 +127,15 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
     override fun copy(options: TraceableElementCopyFilter): Traceable {
         val copy = copy()
-        when(options){
-            TraceableElementCopyFilter.NONE -> return copy
+        return when(options){
+            TraceableElementCopyFilter.NONE -> copy
             TraceableElementCopyFilter.WITH_TRACK->{
                 copy.wrapWithTracking(evaluatedResult, tracking?.copy())
-                return copy
+                copy
             }
             TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT ->{
                 copy.wrapWithEvaluatedResults(evaluatedResult)
-                return copy
+                copy
             }
             else -> throw IllegalArgumentException("NOT support $options")
         }

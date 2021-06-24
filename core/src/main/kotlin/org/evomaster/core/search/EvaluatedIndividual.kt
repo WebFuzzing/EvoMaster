@@ -170,44 +170,26 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 return copy().also { it.wrapWithTracking(evaluatedResult, trackingHistory = tracking) }
             }
             else -> {
-                when {
-                    copyFilter.name == ONLY_WITH_COPY_IMPACT -> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
+                return EvaluatedIndividual(
+                    fitness.copy(),
+                    individual.copy() as T,
+                    results.map(ActionResult::copy),
+                    trackOperator,
+                    index,
+                    when (copyFilter.name) {
+                        ONLY_WITH_COPY_IMPACT, WITH_TRACK_WITH_COPY_IMPACT -> {
                             impactInfo?.copy()
-                    )
-                    copyFilter.name == ONLY_WITH_CLONE_IMPACT-> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
+                        }
+                        ONLY_WITH_CLONE_IMPACT, WITH_TRACK_WITH_CLONE_IMPACT -> {
                             impactInfo?.clone()
-                    )
-                    copyFilter.name == WITH_TRACK_WITH_COPY_IMPACT -> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
-                            impactInfo?.copy()
-                    ).also {
+                        }
+                        else -> throw IllegalStateException("${copyFilter.name} is not available")
+                    }
+                ).also {
+                    if (copyFilter.name == WITH_TRACK_WITH_COPY_IMPACT
+                        || copyFilter.name == WITH_TRACK_WITH_CLONE_IMPACT){
                         it.wrapWithTracking(evaluatedResult, trackingHistory = tracking)
                     }
-                    copyFilter.name == WITH_TRACK_WITH_CLONE_IMPACT -> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
-                            impactInfo?.clone()
-                    ).also {
-                        it.wrapWithTracking(evaluatedResult, trackingHistory = tracking)
-                    }
-                    else -> throw IllegalStateException("${copyFilter.name} is not available")
                 }
             }
         }
