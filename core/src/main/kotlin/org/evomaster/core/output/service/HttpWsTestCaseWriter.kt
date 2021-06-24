@@ -267,6 +267,15 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
     abstract fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines, hasBody: Boolean = true)
 
+    protected fun sendBodyCommand() : String{
+        return when {
+            format.isJavaOrKotlin() -> "body"
+            format.isJavaScript() -> "send"
+            format.isCsharp() -> ""
+            else -> throw IllegalArgumentException("Format not supported $format")
+        }
+    }
+
     //TODO: check again for C#, especially when not json
     protected open fun handleBody(call: HttpWsAction, lines: Lines): Boolean {
 
@@ -279,12 +288,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 //            throw IllegalStateException("Issue: both Body and FormData present")
 //        }
 
-        val send = when {
-            format.isJavaOrKotlin() -> "body"
-            format.isJavaScript() -> "send"
-            format.isCsharp() -> ""
-            else -> throw IllegalArgumentException("Format not supported $format")
-        }
+        val send = sendBodyCommand()
 
         if (bodyParam != null && bodyParam is BodyParam) {
 
@@ -298,47 +302,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
                 val json = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
 
-                val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted(json)
-                } else {
-                    json
-                }
-
-                //needed as JSON uses ""
-                val bodyLines = body.split("\n").map { s ->
-                    "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
-                }
-
-                if (bodyLines.size == 1) {
-                    if (!format.isCsharp()) {
-                        lines.add(".$send(${bodyLines.first()})")
-                        hasBody = true
-                    } else {
-                        lines.add("body = ${bodyLines.first()};")
-                        lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
-                        hasBody = true
-                    }
-                } else {
-                    if (!format.isCsharp()) {
-                        lines.add(".$send(${bodyLines.first()} + ")
-                        lines.indented {
-                            (1 until bodyLines.lastIndex).forEach { i ->
-                                lines.add("${bodyLines[i]} + ")
-                            }
-                            lines.add("${bodyLines.last()})")
-                        }
-                    } else {
-                        lines.add("body = ${bodyLines.first()} +")
-                        lines.indented {
-                            (1 until bodyLines.lastIndex).forEach { i ->
-                                lines.add("${bodyLines[i]} + ")
-                            }
-                            lines.add("${bodyLines.last()};")
-                        }
-                        lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
-                    }
-                    hasBody = true
-                }
+                hasBody = printSendJsonBody(json, lines)
 
             } else if (bodyParam.isTextPlain()) {
                 val body =
@@ -401,6 +365,55 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 //
 //            hasBody = true
 //        }
+        return hasBody
+    }
+
+    protected fun printSendJsonBody(json: String, lines: Lines): Boolean {
+
+        val send = sendBodyCommand()
+        var hasBody = false
+
+        val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
+            OutputFormatter.JSON_FORMATTER.getFormatted(json)
+        } else {
+            json
+        }
+
+        //needed as JSON uses ""
+        val bodyLines = body.split("\n").map { s ->
+            "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
+        }
+
+        if (bodyLines.size == 1) {
+            if (!format.isCsharp()) {
+                lines.add(".$send(${bodyLines.first()})")
+                hasBody = true
+            } else {
+                lines.add("body = ${bodyLines.first()};")
+                lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"application/json\");")
+                hasBody = true
+            }
+        } else {
+            if (!format.isCsharp()) {
+                lines.add(".$send(${bodyLines.first()} + ")
+                lines.indented {
+                    (1 until bodyLines.lastIndex).forEach { i ->
+                        lines.add("${bodyLines[i]} + ")
+                    }
+                    lines.add("${bodyLines.last()})")
+                }
+            } else {
+                lines.add("body = ${bodyLines.first()} +")
+                lines.indented {
+                    (1 until bodyLines.lastIndex).forEach { i ->
+                        lines.add("${bodyLines[i]} + ")
+                    }
+                    lines.add("${bodyLines.last()};")
+                }
+                lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"application/json\");")
+            }
+            hasBody = true
+        }
         return hasBody
     }
 

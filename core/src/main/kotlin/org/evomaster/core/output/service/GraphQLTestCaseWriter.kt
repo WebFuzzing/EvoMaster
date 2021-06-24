@@ -3,6 +3,7 @@ package org.evomaster.core.output.service
 import org.evomaster.core.output.Lines
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
@@ -40,20 +41,15 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     override fun handleBody(call: HttpWsAction, lines: Lines): Boolean {
 
         /*
-            Here we just make sure to check that the body is ALWAYS present, and that it
-            is JSON.
-
-            TODO: when/if we are going to deal with GET, then we will need to update this code
+            TODO: when/if we are going to deal with GET, then we will need to update/refactor this code
          */
 
-        val bodyParam = call.parameters.filterIsInstance<BodyParam>().firstOrNull()
-                ?: throw IllegalStateException("GQL request without body payload")
+        val gql = call as GraphQLAction
 
-        if(!bodyParam.isJson()){
-            throw IllegalStateException("Body payload for GQL request is not in JSON: ${bodyParam.contentType()}")
-        }
+        val body = GraphQLUtils.generateGQLBodyEntity(gql, format)
+        printSendJsonBody(body!!.entity, lines)
 
-        return super.handleBody(call, lines)
+        return true
     }
 
     override fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String {
