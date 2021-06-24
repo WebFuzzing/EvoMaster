@@ -55,7 +55,7 @@ class DbAction(
     /**
      * whether the insertion was executed successfully
      */
-    var insertExecutedSuccessfully = representExistingData
+    var insertExecutedSuccessfully = false
 
     private
     val genes: List<Gene> = (computedGenes ?: selectedColumns.map {
