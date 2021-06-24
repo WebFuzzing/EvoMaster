@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.openapi.v3.assertions
 
 import com.foo.rest.examples.spring.openapi.v3.assertions.AssertionController
 import org.evomaster.client.java.instrumentation.shared.ClassName
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -35,10 +36,7 @@ class AssertionEMTest : SpringTestBase() {
 
         testRunEMGeneric(false, className)
 
-        val assertion = Files.lines(Paths.get(outputFolderPath(outputFolderName)
-                + "/"
-                + className.getBytecodeName()
-                + ".kt")).noneMatch { l: String -> l.contains(".assertThat()") }
+        val assertion = generatedCodeAssertion(outputFolderName, className, OutputFormat.KOTLIN_JUNIT_5, false)
 
         assertTrue(assertion)
     }
@@ -50,10 +48,7 @@ class AssertionEMTest : SpringTestBase() {
 
         testRunEMGeneric(true, className)
 
-        val assertion = Files.lines(Paths.get(outputFolderPath(outputFolderName)
-                + "/"
-                + className.getBytecodeName()
-                + ".kt")).anyMatch { l: String -> l.contains(".assertThat()") }
+        val assertion = generatedCodeAssertion(outputFolderName, className, OutputFormat.KOTLIN_JUNIT_5, true)
 
         assertTrue(assertion)
     }
@@ -63,12 +58,9 @@ class AssertionEMTest : SpringTestBase() {
         val outputFolderName = "AssertionEM"
         val className = ClassName("org.foo.AssertionJavaEMOn")
 
-        testRunEMGeneric(true, className, "JAVA_JUNIT_5")
+        testRunEMGeneric(true, className, OutputFormat.JAVA_JUNIT_5)
 
-        val assertion = Files.lines(Paths.get(outputFolderPath(outputFolderName)
-                + "/"
-                + className.getBytecodeName()
-                + ".java")).anyMatch { l: String -> l.contains(".assertThat()") }
+        val assertion = generatedCodeAssertion(outputFolderName, className, OutputFormat.JAVA_JUNIT_5, true)
 
         assertTrue(assertion)
     }
@@ -78,17 +70,29 @@ class AssertionEMTest : SpringTestBase() {
         val outputFolderName = "AssertionEM"
         val className = ClassName("org.foo.AssertionJavaEMOff")
 
-        testRunEMGeneric(false, className, "JAVA_JUNIT_5")
+        testRunEMGeneric(false, className, OutputFormat.JAVA_JUNIT_5)
 
-        val assertion = Files.lines(Paths.get(outputFolderPath(outputFolderName)
-                + "/"
-                + className.getBytecodeName()
-                + ".java")).noneMatch { l: String -> l.contains(".assertThat()") }
+        val assertion = generatedCodeAssertion(outputFolderName, className, OutputFormat.JAVA_JUNIT_5, false)
 
         assertTrue(assertion)
     }
 
-    fun testRunEMGeneric(basicAssertions: Boolean, className: ClassName, outputFormat: String? = null){
+    fun generatedCodeAssertion(outputFolderName: String, className: ClassName, outputFormat: OutputFormat, basicAssertions: Boolean): Boolean {
+        val extension = when {
+            outputFormat.isJava() -> ".java"
+            outputFormat.isKotlin() -> ".kt"
+            else -> return false
+        }
+        val assertion = Files.lines(Paths.get(outputFolderPath(outputFolderName)
+                + "/"
+                + className.getBytecodeName()
+                + extension))
+
+        return if(basicAssertions) assertion.anyMatch { l: String -> l.contains(".assertThat()") }
+            else assertion.noneMatch { l: String -> l.contains(".assertThat()") }
+    }
+
+    fun testRunEMGeneric(basicAssertions: Boolean, className: ClassName, outputFormat: OutputFormat? = OutputFormat.KOTLIN_JUNIT_5){
         val outputFolderName = "AssertionEM"
         val iterations = 10_000
 
@@ -97,7 +101,7 @@ class AssertionEMTest : SpringTestBase() {
             args.add(basicAssertions.toString())
 
             if (outputFormat != null) {
-                args.replaceAll { s -> s.replace("KOTLIN_JUNIT_5", outputFormat) }
+                args.replaceAll { s -> s.replace(OutputFormat.KOTLIN_JUNIT_5.name, outputFormat.name) }
             }
 
             val solution = initAndRun(args)
