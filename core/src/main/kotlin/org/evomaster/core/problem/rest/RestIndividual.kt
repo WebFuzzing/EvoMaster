@@ -190,6 +190,20 @@ class RestIndividual(
      */
 
 
+    /**
+     * for each call, there exist db actions for preparing resources.
+     * however, the db action might refer to a db action which is not in the same call.
+     * In this case, we need to repair the fk of db actions among calls.
+     *
+     * TODO not sure whether build binding between fk and pk
+     */
+    fun repairDbActionsInCalls(){
+        val previous = mutableListOf<DbAction>()
+        resourceCalls.forEach { c->
+            c.repairFK(previous)
+            previous.addAll(c.seeActions(ONLY_SQL) as List<DbAction>)
+        }
+    }
 
     fun getResourceCalls() : List<RestResourceCalls> = resourceCalls.toList()
 
@@ -290,4 +304,21 @@ class RestIndividual(
     }
 
 
+    /**
+     * @return possible swap positions of calls in this individual
+     */
+    fun extractSwapCandidates(): Map<Int, Set<Int>>{
+        return getResourceCalls().mapIndexed { index, _ ->
+            val shouldBefore = handleSwapCandidates(this, index)
+            index to (0 until shouldBefore).filter { it == index }.toSet()
+        }.filter { it.second.isEmpty() }.toMap()
+    }
+
+    private fun handleSwapCandidates(ind: RestIndividual, indexToSwap: Int): Int{
+        return ind.getResourceCalls()[indexToSwap].shouldBefore.map { t->
+            ind.getResourceCalls().indexOfFirst { f->
+                f.getResolvedKey() == t
+            }
+        }.min()?:ind.getResourceCalls().size
+    }
 }

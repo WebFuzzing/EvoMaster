@@ -267,12 +267,12 @@ class ResourceNodeWithDbTest {
 
     private class DbExecutor : DatabaseExecutor {
 
-        override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long, Long>? {
-            return null
+        override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Pair<Boolean, Map<Long, Long>?> {
+            return true to null
         }
 
-        override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {
-            return SqlScriptRunner.execCommand(connection, dto.command).toDto()
+        override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): Pair<Boolean, QueryResultDto?> {
+            return true to SqlScriptRunner.execCommand(connection, dto.command).toDto()
         }
 
         override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {

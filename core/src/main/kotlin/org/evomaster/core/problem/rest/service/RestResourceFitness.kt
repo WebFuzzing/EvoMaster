@@ -152,17 +152,19 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             DbActionTransformer.transform(allDbActions, sqlIdMap, previous)
         }catch (e : IllegalArgumentException){
             // the failure might be due to previous failure
-            if (!allSuccessBefore)
+            if (!allSuccessBefore){
+                previous.addAll(allDbActions)
                 return false
-            else
+            } else
                 throw e
         }
         dto.idCounter = StaticCounter.getAndIncrease()
 
-        val map = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
+        val sqlResults = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
+        val map = sqlResults.second
         previous.addAll(allDbActions)
 
-        if (map == null) {
+        if (!sqlResults.first || map == null) {
             LoggingUtil.uniqueWarn(log, "Failed in executing database command")
             return false
         }else{

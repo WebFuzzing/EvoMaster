@@ -14,9 +14,13 @@ interface DatabaseExecutor {
 
     /**
      * Execute a the given SQL command (in DTO format).
-     * Return the result of such command, if any
+     * Return the result of whether it success (first) and such command (second), if any
      */
-    fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto?
+    fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): Pair<Boolean, QueryResultDto?>
 
-    fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long,Long>?
+    /**
+     * Execute a the given INSERT SQL command (in DTO format).
+     * Return the result of whether it success (first) and new pks in such insertions (second), if any
+     */
+    fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Pair<Boolean, Map<Long,Long>?>
 }

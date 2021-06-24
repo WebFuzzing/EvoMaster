@@ -150,7 +150,8 @@ class RemoteController() : DatabaseExecutor {
 
     private fun checkResponse(response: Response, dto: WrappedResponseDto<*>?, msg: String) : Boolean{
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL  || dto?.error != null) {
-            log.warn("{}. HTTP status {}. Error: '{}'", msg, response.status, dto?.error)
+            LoggingUtil.uniqueWarn(log, "$msg. HTTP status ${response.status}. Error: '${dto?.error}")
+//            log.warn("{}. HTTP status {}. Error: '{}'", msg, response.status, dto?.error)
             return false
         }
 
@@ -366,15 +367,15 @@ class RemoteController() : DatabaseExecutor {
         return true
     }
 
-    override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {
+    override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): Pair<Boolean, QueryResultDto?> {
         return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<QueryResultDto>>() {})
     }
 
-    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long, Long>? {
+    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Pair<Boolean,Map<Long, Long>?> {
         return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<Map<Long, Long>>>() {})
     }
 
-    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T? {
+    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): Pair<Boolean, T?>{
 
         val response = makeHttpCall {
             getWebTarget()
@@ -385,11 +386,13 @@ class RemoteController() : DatabaseExecutor {
 
         val dto = getDtoFromResponse(response, type)
 
-        if (!checkResponse(response, dto, "Failed to execute database command")) {
-            return null
+        val failure = !checkResponse(response, dto, "Failed to execute database command")
+
+        if (failure) {
+            return false to null
         }
 
-        return dto?.data
+        return true to dto?.data
     }
 
 

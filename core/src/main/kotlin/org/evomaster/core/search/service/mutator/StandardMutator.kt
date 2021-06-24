@@ -116,8 +116,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 log.trace("structure mutator will be applied")
             }
             structureMutator.mutateStructure(copy, mutatedGene)
-            copy.cleanBrokenBindingReference()
-            Lazy.assert { copy.verifyBindingGenes() }
             return copy
         }
 
@@ -207,6 +205,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             mutatedIndividual.cleanBrokenBindingReference()
             Lazy.assert { mutatedIndividual.verifyBindingGenes() }
         }
+
+        if (mutatedIndividual is RestIndividual)
+            mutatedIndividual.repairDbActionsInCalls()
     }
 
     /**

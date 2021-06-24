@@ -77,7 +77,8 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
                             it.getResolvedKey()
                         }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
                         //if the size of deletable individual is less 2, Delete and SWAP are not applicable
-                        (ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size < 2 && (it == MutationType.DELETE || it == MutationType.SWAP))
+                        (ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size < 2 && (it == MutationType.DELETE || it == MutationType.SWAP)) ||
+                        (ind.extractSwapCandidates().isEmpty() && it == MutationType.SWAP)
             }
     }
 
@@ -186,35 +187,35 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      * swap two resource calls
      */
     private fun handleSwap(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
+        val candidates = ind.extractSwapCandidates()
+
+        if (candidates.isEmpty()){
+            throw IllegalStateException("the individual cannot apply swap mutator!")
+        }
+
         val fromDependency = doesApplyDependencyHeuristics()
 
         if(fromDependency){
-            val pair = dm.handleSwapDepResource(ind)
+            val pair = dm.handleSwapDepResource(ind, candidates)
             if(pair!=null){
-                mutatedGenes?.swapAction(pair.first, ind.getActionIndexes(ActionFilter.NO_INIT, pair.first), ind.getActionIndexes(ActionFilter.NO_INIT, pair.second))
+                mutatedGenes?.swapAction(pair.first, ind.getActionIndexes(NO_INIT, pair.first), ind.getActionIndexes(NO_INIT, pair.second))
                 ind.swapResourceCall(pair.first, pair.second)
                 return
             }
         }
 
-        if(config.probOfEnablingResourceDependencyHeuristics > 0.0){
-            val position = (ind.getResourceCalls().indices).toMutableList()
-            while (position.isNotEmpty()){
-                val chosen = randomness.choose(position)
-                if(ind.isMovable(chosen)) {
-                    val moveTo = randomness.choose(ind.getMovablePosition(chosen))
-                    mutatedGenes?.swapAction(moveTo, ind.getActionIndexes(ActionFilter.NO_INIT, chosen), ind.getActionIndexes(ActionFilter.NO_INIT, moveTo))
-                    if(chosen < moveTo) ind.swapResourceCall(chosen, moveTo)
-                    else ind.swapResourceCall(moveTo, chosen)
-                    return
-                }
-                position.remove(chosen)
-            }
-            throw IllegalStateException("the individual cannot apply swap mutator!")
-        }else{
-            val candidates = randomness.choose(Array(ind.getResourceCalls().size){i -> i}.toList(), 2)
-            mutatedGenes?.swapAction(candidates[0], ind.getActionIndexes(ActionFilter.NO_INIT, candidates[0]), ind.getActionIndexes(ActionFilter.NO_INIT, candidates[1]))
-            ind.swapResourceCall(candidates[0], candidates[1])
+        val randPair = randomizeSwapCandidates(candidates)
+        val chosen = randPair.first
+        val moveTo = randPair.second
+        mutatedGenes?.swapAction(moveTo, ind.getActionIndexes(NO_INIT, chosen), ind.getActionIndexes(NO_INIT, moveTo))
+        if(chosen < moveTo) ind.swapResourceCall(chosen, moveTo)
+        else ind.swapResourceCall(moveTo, chosen)
+
+    }
+
+    private fun randomizeSwapCandidates(candidates: Map<Int, Set<Int>>): Pair<Int, Int>{
+        return randomness.choose(candidates.keys).run {
+            this to randomness.choose(candidates[this]!!)
         }
     }
 
@@ -292,7 +293,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      * replace one of resource call with other resource
      */
     private fun handleReplace(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
-        val auth = ind.seeActions().filterIsInstance<RestCallAction>().map { it.auth }.run {
+        val auth = ind.seeActions().map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)
         }

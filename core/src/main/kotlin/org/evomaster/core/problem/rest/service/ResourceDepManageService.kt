@@ -892,7 +892,7 @@ class ResourceDepManageService {
         }
         if (candidates.isEmpty()) return null
 
-        candidates.filter { isNonDepResources(ind, it) }.apply {
+        candidates.filter { isNonDepResources(ind, it) && it.isDeletable}.apply {
             if (isNotEmpty())
                 return randomness.choose(this)
             else
@@ -900,52 +900,76 @@ class ResourceDepManageService {
         }
     }
 
+
     /**
      * handle to select two related resources for swap
      * @return a pair of position to swap, if none of a pair resource is movable, return null
      */
-    fun handleSwapDepResource(ind: RestIndividual): Pair<Int, Int>? {
+    fun handleSwapDepResource(ind: RestIndividual, candidates: Map<Int, Set<Int>>): Pair<Int, Int>? {
+
+        if (candidates.isEmpty()) return null
+
         val options = mutableListOf(1, 2, 3)
         while (options.isNotEmpty()) {
             val option = randomness.choose(options)
             val pair = when (option) {
-                1 -> adjustDepResource(ind)
+                1 -> adjustDepResource(ind, candidates)
                 2 -> {
-                    swapNotConfirmedDepResource(ind)?:adjustDepResource(ind)
+                    swapNotConfirmedDepResource(ind, candidates)?:adjustDepResource(ind, candidates)
                 }
                 3 -> {
-                    swapNotCheckedResource(ind)?:adjustDepResource(ind)
+                    swapNotCheckedResource(ind, candidates)?:adjustDepResource(ind, candidates)
                 }
                 else -> null
             }
             if (pair != null) return pair
             options.remove(option)
         }
+
         return null
     }
 
-    private fun adjustDepResource(ind: RestIndividual): Pair<Int, Int>? {
+
+
+    private fun adjustDepResource(ind: RestIndividual, all : Map<Int, Set<Int>>): Pair<Int, Int>? {
         val candidates = mutableMapOf<Int, MutableSet<Int>>()
         ind.getResourceCalls().forEachIndexed { index, cur ->
             findDependentResources(ind, cur, minProbability = StringSimilarityComparator.SimilarityThreshold).map { ind.getResourceCalls().indexOf(it) }.filter { second -> index < second }.apply {
                 if (isNotEmpty()) candidates.getOrPut(index) { mutableSetOf() }.addAll(this.toHashSet())
             }
         }
-        if (candidates.isNotEmpty()) randomness.choose(candidates.keys).let {
-            return Pair(it, randomness.choose(candidates.getValue(it)))
+
+        return selectSwap(candidates, all)
+    }
+
+    private fun selectSwap(candidates: Map<Int, Set<Int>>, all: Map<Int, Set<Int>>) : Pair<Int, Int>?{
+        val valid = candidates.filter { e->
+            all.containsKey(e.key) && e.value.any { all[e.key]!!.contains(it) }
+        }
+
+        if (valid.isNotEmpty()) {
+            val select = randomness.choose(valid.keys)
+            val ex = valid.getValue(select).filter { v-> all[select]!!.contains(v) }
+            return select to randomness.choose(ex)
         }
         return null
     }
 
-    private fun swapNotConfirmedDepResource(ind: RestIndividual): Pair<Int, Int>? {
-        val probCandidates = ind.getResourceCalls().filter { existsDependentResources(ind, it, maxProbability = StringSimilarityComparator.SimilarityThreshold) }
+
+    private fun swapNotConfirmedDepResource(ind: RestIndividual, all : Map<Int, Set<Int>>): Pair<Int, Int>? {
+        val probCandidates = ind.getResourceCalls().filter {
+            existsDependentResources(ind, it, maxProbability = StringSimilarityComparator.SimilarityThreshold) }
         if (probCandidates.isEmpty()) return null
-        val first = randomness.choose(probCandidates)
-        val second = randomness.choose(findDependentResources(ind, first, maxProbability = StringSimilarityComparator.SimilarityThreshold))
-        return Pair(ind.getResourceCalls().indexOf(first), ind.getResourceCalls().indexOf(second))
+        val valid = probCandidates.map { ind.getResourceCalls().indexOf(it) }.filter { all.containsKey(it) }
+        val select = randomness.choose(valid)
+        val ex = findDependentResources(ind, ind.getResourceCalls()[select], maxProbability = StringSimilarityComparator.SimilarityThreshold)
+        val validEx = ex.map { ind.getResourceCalls().indexOf(it) }.filter { all[select]!!.contains(it) }
+        if (valid.isNotEmpty())
+            return  select to randomness.choose(validEx)
+        return null
     }
 
-    private fun swapNotCheckedResource(ind: RestIndividual): Pair<Int, Int>? {
+    private fun swapNotCheckedResource(ind: RestIndividual, all : Map<Int, Set<Int>>): Pair<Int, Int>? {
         val candidates = mutableMapOf<Int, MutableSet<Int>>()
         ind.getResourceCalls().forEachIndexed { index, cur ->
             val checked = findDependentResources(ind, cur).plus(findNonDependentResources(ind, cur))
@@ -953,10 +977,8 @@ class ResourceDepManageService {
                 if (isNotEmpty()) candidates.getOrPut(index) { mutableSetOf() }.addAll(this)
             }
         }
-        if (candidates.isNotEmpty()) randomness.choose(candidates.keys).let {
-            return Pair(it, randomness.choose(candidates.getValue(it)))
-        }
-        return null
+
+        return selectSwap(candidates, all)
     }
 
     /**
@@ -1040,6 +1062,7 @@ class ResourceDepManageService {
 
             excluded.add(related)
             rm.sampleCall(related, true, calls, size, false, if (related.isEmpty()) null else relatedResources)
+//            calls.last().verifyBindingGenes(calls)
             relatedResources.add(calls.last())
             size = calls.sumBy { it.seeActionSize(NO_SQL) } + start
         }

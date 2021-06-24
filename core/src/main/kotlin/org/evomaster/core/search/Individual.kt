@@ -221,7 +221,8 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         val all = seeGenes(GeneFilter.ALL).flatMap{it.flatView()}
         all.forEach { g->
             val inside = g.bindingGeneIsSubsetOf(all)
-            if (!inside) return false
+            if (!inside)
+                return false
         }
         return true
     }

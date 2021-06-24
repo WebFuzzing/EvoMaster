@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.resource
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestCallAction
@@ -171,7 +172,7 @@ class RestResourceCalls(
     private fun removeDbActions(remove: List<DbAction>){
         val removedGenes = remove.flatMap { it.seeGenes() }.flatMap { it.flatView() }
         dbActions.removeAll(remove)
-        seeGenes(GeneFilter.ALL).flatMap { it.flatView() }.filter { it.isBoundGene() }.forEach {
+        (dbActions.plus(actions).flatMap { it.seeGenes() }).flatMap { it.flatView() }.filter { it.isBoundGene() }.forEach {
             it.cleanRemovedGenes(removedGenes)
         }
     }
@@ -211,6 +212,46 @@ class RestResourceCalls(
 
         // synchronize values based on rest actions
         syncValues(true)
+    }
+
+
+    /*
+        verify the binding which is only useful for debugging
+     */
+    fun verifyBindingGenes(other : List<RestResourceCalls>): Boolean{
+        val currentAll = seeActions(ActionFilter.ALL).flatMap { it.seeGenes() }.flatMap { it.flatView() }
+        val otherAll = other.flatMap { it.seeActions(ActionFilter.ALL) }.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+
+        currentAll.forEach { g->
+            val root = g.getRoot()
+            val ok = root is RestResourceCalls || root is RestIndividual
+            if (!ok)
+                return false
+
+            if (g.isBoundGene()){
+                val inside = g.bindingGeneIsSubsetOf(currentAll.plus(otherAll))
+                if (!inside)
+                    return false
+            }
+        }
+
+        return true
+    }
+
+    fun repairFK(previous: List<DbAction>){
+
+        if (!DbActionUtils.verifyForeignKeys(previous.plus(dbActions))){
+            val current = previous.toMutableList()
+            dbActions.forEach { d->
+                val ok = DbActionUtils.repairFk(d, current)
+                if (!ok.first){
+                    throw IllegalStateException("fail to find pk in the previous dbactions")
+                }
+                current.add(d)
+            }
+
+            Lazy.assert { DbActionUtils.verifyForeignKeys(previous.plus(dbActions)) }
+        }
     }
 
     /**

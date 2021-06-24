@@ -58,7 +58,8 @@ class MapGene<T>(
         if (other !is MapGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
+        clearElements()
+        this.elements = other.elements.map { e -> e.copyContent() as T }.toMutableList()
         addChildren(this.elements)
     }
 
@@ -171,7 +172,8 @@ class MapGene<T>(
      */
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is MapGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
-            elements = gene.elements.mapNotNull { it.copy() as? T }.toMutableList()
+            clearElements()
+            elements = gene.elements.mapNotNull { it.copyContent() as? T }.toMutableList()
             addChildren(elements)
             return true
         }

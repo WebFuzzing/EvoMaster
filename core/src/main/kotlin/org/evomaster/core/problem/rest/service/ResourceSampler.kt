@@ -140,6 +140,8 @@ open class ResourceSampler : AbstractRestSampler() {
                     trackOperator = if(config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1)
             if (withDependency)
                 dm.sampleResourceWithRelatedDbActions(individual, rm.getSqlMaxNumOfResource())
+
+            individual.cleanBrokenBindingReference()
             return individual
         }
         return null
