@@ -1,25 +1,18 @@
 package org.evomaster.core.output.service
 
-import com.google.gson.Gson
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
-import org.evomaster.core.output.formatter.MismatchedFormatException
-import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
-import org.evomaster.core.problem.graphql.param.GQInputParam
-import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
-import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
-import javax.ws.rs.core.MediaType
 
 class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
 
@@ -30,7 +23,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>){
         if (ind.individual is GraphQLIndividual) {
             ind.evaluatedActions().forEach { a ->
-                handleGraphQlCall(a, lines, baseUrlOfSut)
+                handleSingleCall(a, lines, baseUrlOfSut)
             }
         }
     }
@@ -39,6 +32,32 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         addGraphQlCallLines(action as GraphQLAction, lines, result as GraphQlCallResult, baseUrlOfSut)
     }
 
+    private fun addGraphQlCallLines(call: GraphQLAction, lines: Lines, result: GraphQlCallResult, baseUrlOfSut: String) {
+
+        val responseVariableName = makeHttpCall(call, lines, result, baseUrlOfSut)
+        handleResponseAfterTheCall(call, result, responseVariableName, lines)
+    }
+
+    override fun handleBody(call: HttpWsAction, lines: Lines): Boolean {
+
+        /*
+            TODO: when/if we are going to deal with GET, then we will need to update/refactor this code
+         */
+
+        when {
+            format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
+            format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
+            format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"application/json\"));")
+        }
+
+
+        val gql = call as GraphQLAction
+
+        val body = GraphQLUtils.generateGQLBodyEntity(gql, format)
+        printSendJsonBody(body!!.entity, lines)
+
+        return true
+    }
 
     override fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String {
 
@@ -53,104 +72,24 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     }
 
 
-    private fun handleGQLFirstLine(call: GraphQLAction, lines: Lines, res: GraphQlCallResult) {
+    override fun handleLastStatementComment(res: HttpWsCallResult, lines: Lines){
 
-        lines.addEmpty()
+        super.handleLastStatementComment(res, lines)
 
-        when {
-            format.isJavaOrKotlin() -> lines.append("given()")
-            format.isJavaScript() -> lines.append("await superagent")
-        }
+        val code = res.getStatusCode()
 
-        if (!format.isJavaScript()) {
-            lines.append(getAcceptHeader(call, res))
-        }
-    }
+        /*
+            if last line has already been added due to 500, no point in adding again
+         */
 
-    private fun handleGQLLastLine(lines: Lines) {
+        val gql = res as GraphQlCallResult
 
-        lines.appendSemicolon(format)
-        lines.deindent(2)
-    }
-
-    private fun handleGQLResponse(call: GraphQLAction, res: GraphQlCallResult, lines: Lines) {
-        if (!res.failedCall()) {
-
-            val code = res.getStatusCode()
-
-            when {
-                format.isJavaOrKotlin() -> {
-                    lines.add(".then()")
-                    lines.add(".statusCode($code)")
-                }
-                // This does not work in Superagent. TODO will need after the HTTP call
-                //format.isJavaScript() -> lines.add(".expect($code)")
-            }
-
-            var commented = false
-            if (code == 500) {
-                commented = true
-                lines.append(" // " + res.getLastStatementWhen500())
-            }
-
-            //TODO Man: shall we add lastStatement with errors here?
-            if (res.getLastStatementWhenGQLErrors() != null) {
-                lines.append("${if (!commented) "//" else ","} errors:${res.getLastStatementWhenGQLErrors()}")
-            }
-
-            if (config.enableBasicAssertions) {
-                handleGQLResponseContents(lines, res)
-            }
+        if (code != 500 && gql.hasLastStatementWhenGQLError()) {
+            lines.append(" // " + gql.getLastStatementWhenGQLErrors())
         }
     }
 
-    private fun handleGraphQlCall(
-            evaluatedAction: EvaluatedAction,
-            lines: Lines,
-            baseUrlOfSut: String
-    ) {
-        lines.addEmpty()
-        val call = evaluatedAction.action as GraphQLAction
-        val res = evaluatedAction.result as GraphQlCallResult
-
-        if (res.failedCall() || format.isJavaScript() //looks like even 400 throws exception with SuperAgent... :(
-        ) {
-            addActionInTryCatch(call, lines, res, baseUrlOfSut)
-        } else {
-            addGraphQlCallLines(call, lines, res, baseUrlOfSut)
-        }
-    }
-
-
-    private fun addGraphQlCallLines(call: GraphQLAction,
-                                    lines: Lines,
-                                    res: GraphQlCallResult,
-                                    baseUrlOfSut: String) {
-
-        handleGQLFirstLine(call, lines, res)
-
-        lines.indent(2)
-
-        when {
-            format.isJavaOrKotlin() -> {
-                handleHeaders(call, lines)
-                handleGQLBody(call, lines)
-                handleGQLVerb(baseUrlOfSut, call, lines)
-            }
-            format.isJavaScript() -> {
-                //in SuperAgent, verb must be first
-                handleGQLVerb(baseUrlOfSut, call, lines)
-                lines.append(getAcceptHeader(call, res))
-                handleHeaders(call, lines)
-                handleGQLBody(call, lines)
-            }
-        }
-
-        handleGQLResponse(call, res, lines)
-        handleGQLLastLine(lines)
-    }
-
-    private fun handleGQLVerb(baseUrlOfSut: String, call: GraphQLAction, lines: Lines) {
+    override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines, hasBody: Boolean) {
 
         // TODO maybe in future might want to have GET for QUERY types
         val verb = "post"
@@ -161,139 +100,10 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         } else {
             lines.append("$baseUrlOfSut + \"")
         }
-        val path = "/graphql"
+
+        val path = "/graphql"  //FIXME not hardcoded
         lines.append("${GeneUtils.applyEscapes(path, mode = GeneUtils.EscapeMode.NONE, format = format)}\"")
         lines.append(")")
     }
 
-    /**
-     * response are handled with 'data'
-     */
-    private fun handleGQLResponseContents(lines: Lines, res: GraphQlCallResult) {
-
-        if (format.isJavaScript()) {
-            //TODO
-            return
-        }
-
-        lines.add(".assertThat()")
-
-        if (res.getBodyType() == null) {
-//            lines.add(".contentType(\"\")")
-//            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
-            lines.add(".body(isEmptyOrNullString())")
-        } else lines.add(".contentType(\"${res.getBodyType()
-                .toString()
-                .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
-        }\")")
-
-
-        if (res.getBodyType() != null) {
-            val bodyString = res.getBody()
-
-            val type = res.getBodyType()!!
-            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json"))
-            {
-                when (bodyString?.trim()?.first()) {
-                    //TODO, Man: need a check with Asma or Anrea, it seems never be true in GraphQL, shall we delete this option?
-                    '[' -> {
-                        // This would be run if the JSON contains an array of objects.
-                        val resContents = Gson().fromJson(bodyString, ArrayList::class.java)
-                        lines.add(".body(\"size()\", equalTo(${resContents.size}))")
-                        //assertions on contents
-                        if (resContents.size > 0) {
-                            var longArray = false
-                            resContents.forEachIndexed { test_index, value ->
-                                when {
-                                    (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
-                                    (value is String) -> longArray = true
-                                    else -> {
-                                        val printableFieldValue = handleFieldValues(value)
-                                        if (printSuitable(printableFieldValue)) {
-                                            lines.add(".body(\"\", $printableFieldValue)")
-                                        }
-                                    }
-                                }
-                            }
-                            if (longArray) {
-                                val printableContent = handleFieldValues(resContents)
-                                if (printSuitable(printableContent)) {
-                                    lines.add(".body(\"\", $printableContent)")
-                                }
-                            }
-                        } else {
-                            // the object is empty
-                            if (format.isKotlin()) lines.add(".body(\"isEmpty()\", `is`(true))")
-                            else lines.add(".body(\"isEmpty()\", is(true))")
-                        }
-                    }
-                    '{' -> {
-                        // JSON contains an object
-                        val resContents = Gson().fromJson(bodyString, Map::class.java)
-                        addObjectAssertions(resContents, lines)
-
-                    }
-                    else -> {
-                        // This branch will be called if the JSON is null (or has a basic type)
-                        // Currently, it converts the contents to String.
-                        when {
-                            res.getTooLargeBody() -> lines.add("/* very large body, which was not handled during the search */")
-
-                            bodyString.isNullOrBlank() -> lines.add(".body(isEmptyOrNullString())")
-
-                            else -> lines.add(".body(containsString(\"${
-                                GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
-                            }\"))")
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun handleGQLBody(call: GraphQLAction, lines: Lines) {
-
-        val send = when {
-            format.isJavaOrKotlin() -> "body"
-            format.isJavaScript() -> "send"
-            else -> throw IllegalArgumentException("Format not supported $format")
-        }
-
-        when {
-            format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
-            format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
-
-        }
-
-        val bodyEntity = GraphQLUtils.generateGQLBodyEntity(call, format)
-
-        val body = if (bodyEntity!=null) {
-            try{
-                OutputFormatter.JSON_FORMATTER.getFormatted(bodyEntity.entity)
-            }catch (e: MismatchedFormatException){
-                LoggingUtil.uniqueWarn(log, e.message?:"failed to format ${bodyEntity.entity}")
-                bodyEntity.entity
-            }
-        } else {
-            LoggingUtil.uniqueWarn(log, " method type not supported yet : ${call.methodType}").toString()
-        }
-
-
-        //needed as JSON uses ""
-        val bodyLines = body.split("\n").map { s ->
-            "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
-        }
-
-        if (bodyLines.size == 1) {
-            lines.add(".$send(${bodyLines.first()})")
-        } else {
-            lines.add(".$send(${bodyLines.first()} + ")
-            lines.indented {
-                (1 until bodyLines.lastIndex).forEach { i ->
-                    lines.add("${bodyLines[i]} + ")
-                }
-                lines.add("${bodyLines.last()})")
-            }
-        }
-    }
 }
