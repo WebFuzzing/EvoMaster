@@ -161,7 +161,7 @@ class ResourceManageService {
             val call = ar.sampleIndResourceCall(randomness,size)
             calls.add(call)
             //TODO shall we control the probability to sample GET with an existing resource.
-            if(hasDBHandler() && call.template?.template == HttpVerb.GET.toString() && randomness.nextBoolean(0.5)){
+            if(hasDBHandler() && config.probOfApplySQLActionToCreateResources > 0 && call.template?.template == HttpVerb.GET.toString() && randomness.nextBoolean(0.5)){
                 val created = handleDbActionForCall(call, false, true, false)
             }
             return
@@ -204,7 +204,11 @@ class ResourceManageService {
                 /*
                     derive possible db, and bind value according to db
                 */
-                call.is2POST = candidate == "POST" && employSQL //&& (randomness.nextBoolean(0.1) || forceSQLInsert)
+                call.is2POST = candidate == "POST" && employSQL
+                        && (forceSQLInsert
+                            || randomness.nextBoolean(0.1)  // here we provide a low chance to employ SQL, since the rest creation might be false
+                            || (call.status != ResourceStatus.CREATED_REST && randomness.nextBoolean(0.5)) // here we provide a further chance to employ SQL
+                        )
 
                 val created = handleDbActionForCall(
                     call, forceSQLInsert, false, call.is2POST,
