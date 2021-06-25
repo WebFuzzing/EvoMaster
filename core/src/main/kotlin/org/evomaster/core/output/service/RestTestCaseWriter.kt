@@ -89,7 +89,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>){
         //SQL actions are generated in between
-        if (ind.individual is RestIndividual && config.isEnabledSQLInBetween()) {
+        if (ind.individual is RestIndividual) {
 
             ind.evaluatedResourceActions().forEachIndexed { index, c ->
                 // db
@@ -97,12 +97,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     SqlWriter.handleDbInitialization(format, c.first, lines, ind.individual.seeDbActions(), groupIndex = index.toString(), skipFailure = config.skipFailureSQLInTestFile)
                 //actions
                 c.second.forEach { a ->
-                    handleRestCall(a, lines, baseUrlOfSut)
-                }
-            }
-        } else {
-            if (ind.individual is RestIndividual) {
-                ind.evaluatedActions().forEach { a ->
                     handleRestCall(a, lines, baseUrlOfSut)
                 }
             }

@@ -310,17 +310,25 @@ class RestIndividual(
      */
     fun extractSwapCandidates(): Map<Int, Set<Int>>{
         return getResourceCalls().mapIndexed { index, _ ->
-            val shouldBefore = handleSwapCandidates(this, index)
-            index to (0 until shouldBefore)
-                .filter { it != index && index < handleSwapCandidates(this, it) }.toSet()
+            val range = handleSwapCandidates(this, index)
+            index to range
         }.filterNot { it.second.isEmpty() }.toMap()
     }
 
-    private fun handleSwapCandidates(ind: RestIndividual, indexToSwap: Int): Int{
-        return ind.getResourceCalls()[indexToSwap].shouldBefore.map { t->
+    private fun handleSwapCandidates(ind: RestIndividual, indexToSwap: Int): Set<Int>{
+        val before =  ind.getResourceCalls()[indexToSwap].shouldBefore.map { t->
             ind.getResourceCalls().indexOfFirst { f->
                 f.getResolvedKey() == t
             }
         }.min()?:ind.getResourceCalls().size
+
+        val after = ind.getResourceCalls()[indexToSwap].depends.map { t->
+            ind.getResourceCalls().indexOfFirst { f->
+                f.getResolvedKey() == t
+            }
+        }.min()?:0
+
+        if (after >= before) return emptySet()
+        return (after until before).filter { it != indexToSwap }.toSet()
     }
 }

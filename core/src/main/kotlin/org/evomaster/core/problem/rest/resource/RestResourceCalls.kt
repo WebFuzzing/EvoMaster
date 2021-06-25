@@ -80,8 +80,13 @@ class RestResourceCalls(
     /**
      * this call should be before [shouldBefore]
      */
-    var shouldBefore = mutableListOf<String>()
+    val shouldBefore = mutableListOf<String>()
 
+    /**
+     *  the dependency is built between [this] and [depends] in this individual
+     *  the dependency here means that there exist binding genes among the calls.
+     */
+    val depends = mutableSetOf<String>()
 
     final override fun copy(): RestResourceCalls {
         val copy = super.copy()
@@ -107,6 +112,7 @@ class RestResourceCalls(
         copy.isDeletable = isDeletable
         copy.shouldBefore.addAll(shouldBefore)
         copy.is2POST = is2POST
+        copy.depends.addAll(depends)
 
         return copy
     }
@@ -203,8 +209,10 @@ class RestResourceCalls(
                 call.seeActions(ActionFilter.NO_SQL).forEach { previous->
                     if (previous is RestCallAction){
                         val dependent = current.bindBasedOn(previous)
-                        if (dependent)
+                        if (dependent){
                             setDependentCall(call)
+                        }
+
                     }
                 }
             }
@@ -288,8 +296,9 @@ class RestResourceCalls(
                             val call = calls.find { it.seeActions(ActionFilter.ONLY_SQL).contains(db) }!!
                             setDependentCall(call)
                             // handling rest action binding with the fixed db which is in a different call
-                            if (dbactionInOtherCalls.contains(db))
+                            if (dbactionInOtherCalls.contains(db)){
                                 bindRestActionBasedOnDbActions(listOf(db), cluster, false, false)
+                            }
                         }
                         frontDbActions.add(db)
                     }
@@ -300,6 +309,7 @@ class RestResourceCalls(
     private fun setDependentCall(calls: RestResourceCalls){
         calls.isDeletable = false
         calls.shouldBefore.add(getResourceNodeKey())
+        depends.add(getResourceNodeKey())
     }
 
 
