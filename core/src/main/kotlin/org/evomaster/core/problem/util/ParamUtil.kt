@@ -7,8 +7,6 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * this class used to handle binding values among params
@@ -27,44 +25,69 @@ class ParamUtil {
          */
         private val GENERAL_NAMES = mutableListOf("id", "name", "value")
 
-        private val log: Logger = LoggerFactory.getLogger(ParamUtil::class.java)
 
-
+        /**
+         * @return the actions which have the longest path in [actions]
+         */
         fun selectLongestPathAction(actions: List<RestCallAction>): List<RestCallAction> {
             val max =
-                actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }
+                actions.asSequence().map { a -> (a as RestCallAction).path.levels() }
                     .max()!!
-            return actions.filter { a -> a is RestCallAction && a.path.levels() == max }
+            return actions.filter { a ->  a.path.levels() == max }
         }
 
+        /**
+         * append param i.e., [paramToAppend] with additional info [paramsText]
+         */
         fun appendParam(paramsText: String, paramToAppend: String): String =
             if (paramsText.isBlank()) paramToAppend else "$paramsText$separator$paramToAppend"
 
+        /**
+         * @return extracted params
+         */
         fun parseParams(params: String): List<String> = params.split(separator)
 
+        /**
+         * @return a field name with info of its object
+         */
         fun modifyFieldName(obj: ObjectGene, field: Gene): String {
             return if (isGeneralName(field.name)) (obj.refType ?: "") + field.name else field.name
         }
 
-        fun findField(fieldName: String, refType: String?, name: String): Boolean {
+        /**
+         * @return whether [name] is possibly matched with a field [fieldName] of [refType]
+         */
+        fun compareField(fieldName: String, refType: String?, name: String): Boolean {
             if (!isGeneralName(fieldName) || refType == null) return fieldName.equals(name, ignoreCase = true)
             val prefix = "$refType$fieldName".equals(name, ignoreCase = true)
             if (prefix) return true
             return "$fieldName$refType".equals(name, ignoreCase = true)
         }
 
+        /**
+         * @return are all [params] BodyParam?
+         */
         fun isAllBodyParam(params: List<Param>): Boolean {
             return numOfBodyParam(params) == params.size
         }
 
+        /**
+         * @return a number of BodyParam in [params]
+         */
         fun numOfBodyParam(params: List<Param>): Int {
             return params.count { it is BodyParam }
         }
 
+        /**
+         * @return do [params] contain any BodyParam?
+         */
         fun existBodyParam(params: List<Param>): Boolean {
             return numOfBodyParam(params) > 0
         }
 
+        /**
+         * @return whether [geneA] and [geneB] have same value.
+         */
         fun compareGenesWithValue(geneA: Gene, geneB: Gene): Boolean {
             val geneAWithGeneBType = geneB.copyContent()
             geneAWithGeneBType.bindValueBasedOn(geneA)
@@ -80,10 +103,14 @@ class ParamUtil {
             }
         }
 
-        fun scoreOfMatch(target: String, source: String, inner: Boolean): Int {
+        /**
+         * @return the score of match between [target] and [source] which represents two genes respectively. Note that 0 means matched.
+         * @param doContain indicates whether 'contains' can be considered as match. i.e., target contains every token of sources.
+         */
+        fun scoreOfMatch(target: String, source: String, doContain: Boolean): Int {
             val targets = target.split(separator).filter { it != DISRUPTIVE_NAME }.toMutableList()
             val sources = source.split(separator).filter { it != DISRUPTIVE_NAME }.toMutableList()
-            if (inner) {
+            if (doContain) {
                 if (sources.toHashSet().map { s -> if (target.toLowerCase().contains(s.toLowerCase())) 1 else 0 }
                         .sum() == sources.toHashSet().size)
                     return 0
@@ -104,6 +131,11 @@ class ParamUtil {
 
         }
 
+        /**
+         *  @return a map of a path of gene to gene
+         *  @param parameters specifies the params which contains genes to be extracted
+         *  @param tokensInPath specified the tokens of the path which refers to [parameters]
+         */
         fun geneNameMaps(parameters: List<Param>, tokensInPath: List<String>?): MutableMap<String, Gene> {
             val maps = mutableMapOf<String, Gene>()
             val pred = { gene: Gene -> (gene is DateTimeGene) }
@@ -126,6 +158,9 @@ class ParamUtil {
         }
 
 
+        /**
+         * @return whether [text] is a general name, e.g., 'id' or 'name'
+         */
         fun isGeneralName(text: String): Boolean {
             return GENERAL_NAMES.any { it.equals(text, ignoreCase = true) }
         }
@@ -140,7 +175,7 @@ class ParamUtil {
         private fun getGeneNamesInPath(parameters: List<Param>, gene: Gene): MutableList<String>? {
             parameters.forEach { p ->
                 val names = mutableListOf<String>()
-                if (handle(p.gene, gene, names)) {
+                if (extractPathFromRoot(p.gene, gene, names)) {
                     return names
                 }
             }
@@ -148,13 +183,19 @@ class ParamUtil {
             return null
         }
 
-        fun handle(comGene: Gene, gene: Gene, names: MutableList<String>): Boolean {
+        /**
+         * extract a path from [comGene] to [gene]
+         * @param names contains the name of genes in the path
+         *
+         * @return can find [gene] in [comGene]?
+         */
+        private fun extractPathFromRoot(comGene: Gene, gene: Gene, names: MutableList<String>): Boolean {
             when (comGene) {
-                is ObjectGene -> return handle(comGene, gene, names)
-                is DisruptiveGene<*> -> return handle(comGene, gene, names)
-                is OptionalGene -> return handle(comGene, gene, names)
-                is ArrayGene<*> -> return handle(comGene, gene, names)
-                is MapGene<*> -> return handle(comGene, gene, names)
+                is ObjectGene -> return extractPathFromRoot(comGene, gene, names)
+                is DisruptiveGene<*> -> return extractPathFromRoot(comGene, gene, names)
+                is OptionalGene -> return extractPathFromRoot(comGene, gene, names)
+                is ArrayGene<*> -> return extractPathFromRoot(comGene, gene, names)
+                is MapGene<*> -> return extractPathFromRoot(comGene, gene, names)
                 else -> if (comGene == gene) {
                     names.add(comGene.name)
                     return true
@@ -162,9 +203,9 @@ class ParamUtil {
             }
         }
 
-        fun handle(comGene: ObjectGene, gene: Gene, names: MutableList<String>): Boolean {
+        private fun extractPathFromRoot(comGene: ObjectGene, gene: Gene, names: MutableList<String>): Boolean {
             comGene.fields.forEach {
-                if (handle(it, gene, names)) {
+                if (extractPathFromRoot(it, gene, names)) {
                     names.add(it.name)
                     return true
                 }
@@ -172,34 +213,34 @@ class ParamUtil {
             return false
         }
 
-        fun handle(comGene: DisruptiveGene<*>, gene: Gene, names: MutableList<String>): Boolean {
-            if (handle(comGene.gene, gene, names)) {
+        private fun extractPathFromRoot(comGene: DisruptiveGene<*>, gene: Gene, names: MutableList<String>): Boolean {
+            if (extractPathFromRoot(comGene.gene, gene, names)) {
                 names.add(comGene.name)
                 return true
             }
             return false
         }
 
-        fun handle(comGene: OptionalGene, gene: Gene, names: MutableList<String>): Boolean {
-            if (handle(comGene.gene, gene, names)) {
+        private fun extractPathFromRoot(comGene: OptionalGene, gene: Gene, names: MutableList<String>): Boolean {
+            if (extractPathFromRoot(comGene.gene, gene, names)) {
                 names.add(comGene.name)
                 return true
             }
             return false
         }
 
-        fun handle(comGene: ArrayGene<*>, gene: Gene, names: MutableList<String>): Boolean {
+        private fun extractPathFromRoot(comGene: ArrayGene<*>, gene: Gene, names: MutableList<String>): Boolean {
             comGene.getAllElements().forEach {
-                if (handle(it, gene, names)) {
+                if (extractPathFromRoot(it, gene, names)) {
                     return true
                 }
             }
             return false
         }
 
-        fun handle(comGene: MapGene<*>, gene: Gene, names: MutableList<String>): Boolean {
+        private fun extractPathFromRoot(comGene: MapGene<*>, gene: Gene, names: MutableList<String>): Boolean {
             comGene.getAllElements().forEach {
-                if (handle(it, gene, names)) {
+                if (extractPathFromRoot(it, gene, names)) {
                     names.add(it.name)
                     return true
                 }

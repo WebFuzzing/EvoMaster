@@ -316,17 +316,22 @@ class RestIndividual(
     }
 
     private fun handleSwapCandidates(ind: RestIndividual, indexToSwap: Int): Set<Int>{
+        val swapTo = handleSwapTo(ind, indexToSwap)
+        return swapTo.filter { t -> handleSwapTo(ind, t).contains(indexToSwap) }.toSet()
+    }
+
+    private fun handleSwapTo(ind: RestIndividual, indexToSwap: Int): Set<Int>{
         val before =  ind.getResourceCalls()[indexToSwap].shouldBefore.map { t->
             ind.getResourceCalls().indexOfFirst { f->
-                f.getResolvedKey() == t
+                f.getResourceNodeKey() == t
             }
-        }.min()?:ind.getResourceCalls().size
+        }.filter { it >=0 }.min()?:ind.getResourceCalls().size
 
         val after = ind.getResourceCalls()[indexToSwap].depends.map { t->
             ind.getResourceCalls().indexOfFirst { f->
-                f.getResolvedKey() == t
+                f.getResourceNodeKey() == t
             }
-        }.min()?:0
+        }.filter { it >=0 }.max()?:0
 
         if (after >= before) return emptySet()
         return (after until before).filter { it != indexToSwap }.toSet()

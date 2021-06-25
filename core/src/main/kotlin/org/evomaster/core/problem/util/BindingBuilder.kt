@@ -59,10 +59,15 @@ object BindingBuilder {
     }
 
     /**
-     * TODO add comment
+     * bind param of rest action based on [params] on the [sourcePath]
+     * @param target is the param to be bound
+     * @param targetPath is the path of the rest action
+     * @param params is the source of binding
+     * @param sourcePath is the source path of the rest action which contains [params]
+     * @param doBuildBindingGene specified whether to build binding genes
      */
-    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false, doBuildBindingGene: Boolean = false): Boolean{
-        val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, inner)
+    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doBuildBindingGene: Boolean = false): Boolean{
+        val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, false)
         pairs.forEach { p->
             val ok = p.first.bindValueBasedOn(p.second)
             if (ok && doBuildBindingGene){
@@ -73,6 +78,15 @@ object BindingBuilder {
         return pairs.isNotEmpty()
     }
 
+    /**
+     *  bind [restAction] with [dbActions]
+     *  @param restAction is the action
+     *  @param dbActions specified the dbactions
+     *  @param forceBindParamBasedOnDB specified whether to force to bind values of params in rest actions based on dbactions
+     *  @param dbRemovedDueToRepair specified whether any db action is removed due to repair process.
+     *          Note that dbactions might be truncated in the db repair process, thus the table related to rest actions might be removed.
+     *  @param bindWith specified a list of resource call which might be bound with [this]
+     */
     fun bindRestAndDbAction(restAction: RestCallAction,
                             restNode: RestResourceNode,
                             paramGeneBindMap: List<ParamGeneBindMap>,
@@ -90,16 +104,18 @@ object BindingBuilder {
     }
 
     /**
+     * @return possible a list of pair genes which might be bounded with each other.
+     *      Note that for each pair, the value of first is bound based on the value of second
      * @param target bind [target] based on other params, i.e., [params]
      * @param targetPath is the path of [target]
-     * @param sourcePath
-     * @param params
+     * @param sourcePath of the [params]
+     * @param params are used to bind with [target]
      */
-    fun buildBindBetweenParams(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false) : List<Pair<Gene, Gene>>{
+    fun buildBindBetweenParams(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doContain : Boolean = false) : List<Pair<Gene, Gene>>{
         return when(target){
-            is BodyParam -> buildBindBodyParam(target, targetPath, sourcePath, params, inner)
-            is PathParam -> buildBindPathParm(target, targetPath, sourcePath, params, inner)
-            is QueryParam -> buildBindQueryParm(target, targetPath, sourcePath, params, inner)
+            is BodyParam -> buildBindBodyParam(target, targetPath, sourcePath, params, doContain)
+            is PathParam -> buildBindPathParm(target, targetPath, sourcePath, params, doContain)
+            is QueryParam -> buildBindQueryParm(target, targetPath, sourcePath, params, doContain)
             is FormParam -> buildBindFormParam(target, params)?.run { listOf(this) }?: listOf()
             is HeaderParam -> buildBindHeaderParam(target, params)?.run { listOf(this) }?: listOf()
             else -> {
@@ -219,7 +235,7 @@ object BindingBuilder {
             val f = ParamUtil.getValueGene(body.gene).run {
                 if (this is ObjectGene){
                     fields.find { f->
-                        ParamUtil.findField(f.name, refType, otherGene.name)
+                        ParamUtil.compareField(f.name, refType, otherGene.name)
                     }
                 }else
                     null

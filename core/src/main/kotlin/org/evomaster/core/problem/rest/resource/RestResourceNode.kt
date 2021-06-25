@@ -501,7 +501,7 @@ class RestResourceNode(
 
 
     private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction{
-        val action = (getActionByHttpVerb(actions, verb)?:throw IllegalStateException("cannot get $verb action in the resource $path")).copy() as RestCallAction
+        val action = (getActionByHttpVerb(actions, verb)?:throw IllegalStateException("cannot get $verb action in the resource $path")).copyContent() as RestCallAction
         action.randomize(randomness, false)
         return action
     }
