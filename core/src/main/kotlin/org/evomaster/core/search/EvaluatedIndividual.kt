@@ -294,7 +294,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             improvedTargets: Set<Int>
     ){
         Lazy.assert { impactInfo != null }
-        val sizeChanged = (mutatedGenes.mutatedIndividual!!.seeActions(ActionFilter.NO_INIT).size != previous.seeActions(ActionFilter.NO_INIT).size)
+        val sizeChanged = (mutatedGenes.mutatedIndividual!!.seeActions(NO_INIT).size != previous.seeActions(NO_INIT).size)
 
         //we update genes impact regarding structure only if structure mutated individual is 'next'
         if(this.index == next.index){
