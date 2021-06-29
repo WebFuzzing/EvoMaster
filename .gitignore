@@ -95,3 +95,5 @@ Migrations/
 /client-js/e2e-tests/coverage/
 /client-js/e2e-tests/generated/
 /release/
+/e2e-tests/dotnet-rest/src/RestApis.ForAssertions/bin/
+/e2e-tests/dotnet-rest/src/RestApis.ForAssertions/obj/
