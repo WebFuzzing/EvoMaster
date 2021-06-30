@@ -112,7 +112,7 @@ class GraphQLActionBuilderTest {
     }
 
     @Test
-    fun aniListSchemaTest() {
+    fun anigListSchemaTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
         val json = PetClinicCheckMain::class.java.getResource("/graphql/AniList.json").readText()
@@ -687,6 +687,39 @@ class GraphQLActionBuilderTest {
         val objAgency = (interfaceObjectNode.fields[0] as OptionalGene).gene as ObjectGene
         assertEquals(1, objAgency.fields.size)
         assertTrue(objAgency.fields.any { it is OptionalGene && it.name == "routes" })
+    }
+
+
+    @Test
+    fun noInterfaceHisObjTest() {//there is no interface, with/without list here, made to check
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/noInterfaceHisObj.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(1, actionCluster.size)
+
+        val node = actionCluster.get("node") as GraphQLAction
+        assertEquals(1, node.parameters.size)
+        assertTrue(node.parameters[0] is GQReturnParam)
+
+        assertTrue(node.parameters[0].gene is ObjectGene)
+        val objectNode = node.parameters[0].gene as ObjectGene
+        assertEquals(1, objectNode.fields.size)
+
+        assertTrue(objectNode.fields[0] is OptionalGene)
+        assertTrue((objectNode.fields[0] as OptionalGene).gene is ObjectGene)
+        val objAgency = (objectNode.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(1, objAgency.fields.size)
+        assertTrue(objAgency.fields.any { it is OptionalGene && it.name == "routes" })
+    }
+
+    @Test
+    fun recEgTest2() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/recEg2.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(1, actionCluster.size)
     }
 
 
