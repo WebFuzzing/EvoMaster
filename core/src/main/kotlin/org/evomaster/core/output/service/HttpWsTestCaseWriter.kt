@@ -207,7 +207,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
     protected open fun handleLastStatementComment(res: HttpWsCallResult, lines: Lines){
         val code = res.getStatusCode()
-        if (code == 500) {
+        if (code == 500 && ! config.blackBox) {
             lines.append(" // " + res.getLastStatementWhen500())
         }
     }
@@ -434,9 +434,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                 //format.isCsharp() -> lines.add("Assert.Equal($code, (int) response.StatusCode);")
             }
 
-            if (code == 500) {
-                lines.append(" // " + res.getLastStatementWhen500())
-            }
+            handleLastStatementComment(res, lines)
 
             if (config.enableBasicAssertions) {
                 handleResponseAssertions(lines, res, null)
