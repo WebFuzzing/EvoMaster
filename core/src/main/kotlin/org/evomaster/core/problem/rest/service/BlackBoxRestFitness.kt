@@ -61,6 +61,9 @@ class BlackBoxRestFitness : RestFitness() {
     }
 
     override fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: HttpWsCallResult, name: String): String? {
-            return null
+        /*
+            In Black-Box testing, there is no info from the source/bytecode
+         */
+        return null
     }
 }
