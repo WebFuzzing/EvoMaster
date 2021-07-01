@@ -250,16 +250,19 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         }
 
         if (status == 500){
-            Lazy.assert {
-                location5xx != null
-            }
             /*
                 500 codes "might" be bugs. To distinguish between different bugs
                 that crash the same endpoint, we need to know what was the last
                 executed statement in the SUT.
                 So, we create new targets for it.
+
+                However, such info is missing in black-box testing
             */
-            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
+            Lazy.assert {
+                location5xx != null || config.blackBox
+            }
+            val postfix = if(location5xx==null) name else "${location5xx!!} $name"
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500(postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }
