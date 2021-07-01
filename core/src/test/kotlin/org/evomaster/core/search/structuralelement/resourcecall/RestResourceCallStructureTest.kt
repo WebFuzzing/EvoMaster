@@ -30,7 +30,7 @@ object ResourceNodeCluster{
 
 class RestResourceCallPostGetStructureTest : StructuralElementBaseTest(){
     override fun getStructuralElement(): RestResourceCalls {
-        val foo = "/v3/api/rfoo/{id}"
+        val foo = "/v3/api/rfoo/{rfooId}"
         val fooNode = ResourceNodeCluster.cluster.getResourceNode(foo)
         return fooNode?.sampleRestResourceCalls("POST-GET", ResourceNodeCluster.randomness, 10)?: throw IllegalStateException("cannot sample resource call with the template")
     }

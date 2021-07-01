@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
@@ -150,7 +151,8 @@ class RemoteController() : DatabaseExecutor {
 
     private fun checkResponse(response: Response, dto: WrappedResponseDto<*>?, msg: String) : Boolean{
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL  || dto?.error != null) {
-            log.warn("{}. HTTP status {}. Error: '{}'", msg, response.status, dto?.error)
+            LoggingUtil.uniqueWarn(log, "$msg. HTTP status ${response.status}. Error: '${dto?.error}")
+//            log.warn("{}. HTTP status {}. Error: '{}'", msg, response.status, dto?.error)
             return false
         }
 
@@ -370,11 +372,11 @@ class RemoteController() : DatabaseExecutor {
         return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<QueryResultDto>>() {})
     }
 
-    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long, Long>? {
-        return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<Map<Long, Long>>>() {})
+    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
+        return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<InsertionResultsDto>>() {})
     }
 
-    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T? {
+    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
 
         val response = makeHttpCall {
             getWebTarget()

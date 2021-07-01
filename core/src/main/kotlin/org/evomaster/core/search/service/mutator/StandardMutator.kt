@@ -42,7 +42,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
          */
         if (config.disableStructureMutationDuringFocusSearch && apc.doesFocusSearch()){return false}
 
-        return individual.canMutateStructure() &&
+        return structureMutator.canApplyStructureMutator(individual) &&
                 config.maxTestSize > 1 && // if the maxTestSize is 1, there is no point to do structure mutation
                 randomness.nextBoolean(config.structureMutationProbability)
     }
@@ -116,7 +116,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 log.trace("structure mutator will be applied")
             }
             structureMutator.mutateStructure(copy, mutatedGene)
-            copy.cleanBrokenBindingReference()
             return copy
         }
 
@@ -169,6 +168,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         postActionAfterMutation(mutatedIndividual, mutatedGenes)
 
         if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
+
         return mutatedIndividual
     }
 
@@ -200,6 +200,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         if(mutatedIndividual is GraphQLIndividual) {
             GraphQLUtils.repairIndividual(mutatedIndividual)
         }
+
+        if (!mutatedIndividual.verifyBindingGenes()){
+            mutatedIndividual.cleanBrokenBindingReference()
+            Lazy.assert { mutatedIndividual.verifyBindingGenes() }
+        }
+
+        if (mutatedIndividual is RestIndividual)
+            mutatedIndividual.repairDbActionsInCalls()
     }
 
     /**

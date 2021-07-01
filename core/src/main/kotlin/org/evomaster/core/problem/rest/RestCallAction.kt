@@ -6,6 +6,7 @@ import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
@@ -13,6 +14,7 @@ import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.service.Randomness
 import java.net.URLEncoder
 
 
@@ -89,21 +91,19 @@ class RestCallAction(
      * Make sure that the path params are resolved to the same concrete values of "other".
      * Note: "this" can be just an ancestor of "other"
      *
-     * Man: extend bind other types of params, e.g., body param
      **/
     fun bindToSamePathResolution(other: RestCallAction) {
         if (!this.path.isAncestorOf(other.path)) {
             throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
                     "${this.path} vs ${other.path}")
         }
-//        for (i in 0 until parameters.size) {
-//            val target = parameters[i]
-//            if (target is PathParam) {
-//                val k = other.parameters.find { p -> p is PathParam && p.name == target.name }!!
-//                parameters[i].gene.copyValueFrom(k.gene)
-//            }
-//        }
-        bindToSamePathResolution(other.path, other.parameters)
+        for (i in 0 until parameters.size) {
+            val target = parameters[i]
+            if (target is PathParam) {
+                val k = other.parameters.find { p -> p is PathParam && p.name == target.name }!!
+                parameters[i].gene.copyValueFrom(k.gene)
+            }
+        }
     }
 
     /**
@@ -156,9 +156,21 @@ class RestCallAction(
     }
 
     /**
+     * bind [parameters] based on [other]
+     * @return whether any of param is bound with [other]
+     */
+    fun bindBasedOn(other: RestCallAction) : Boolean{
+        var dependent = false
+        parameters.forEach { p->
+            dependent = BindingBuilder.bindRestAction(p, path, other.path, other.parameters, doBuildBindingGene = true) || dependent
+        }
+        return dependent
+    }
+
+    /**
      * it is used to bind [this] action regarding values of [params]
      */
-    fun bindToSamePathResolution(otherPath : RestPath, params : List<Param>) {
+    fun bindBasedOn(otherPath : RestPath, params : List<Param>) {
 
         if(params.isEmpty()){
             //no param is required to bind
@@ -188,4 +200,12 @@ class RestCallAction(
         responseRefs[key] = ref
     }
 
+
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
+        // random genes
+        super.randomize(randomness, forceNewValue, all)
+        // binding params in this action, e.g., path param with body param if there exists
+        BindingBuilder.bindParamsInRestAction(this)
+
+    }
 }

@@ -1,10 +1,8 @@
 package org.evomaster.core.database
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.StringGene
@@ -52,6 +50,13 @@ class DbAction(
         }
     }
 
+    /**
+     * whether the insertion was executed successfully
+     *
+     * TODO this will be removed once evaluated individual
+     *  is refactored with execution results for dbaction
+     */
+    var insertExecutedSuccessfully = false
 
     private
     val genes: List<Gene> = (computedGenes ?: selectedColumns.map {

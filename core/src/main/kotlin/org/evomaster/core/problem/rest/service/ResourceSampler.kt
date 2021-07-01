@@ -76,7 +76,6 @@ open class ResourceSampler : AbstractRestSampler() {
 
         val ind = RestIndividual(
                 resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
-        ind.repairDBActions(sqlInsertBuilder, randomness)
         return ind
     }
 
@@ -139,9 +138,10 @@ open class ResourceSampler : AbstractRestSampler() {
         if (restCalls.isNotEmpty()) {
             val individual =  RestIndividual(restCalls, SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency),
                     trackOperator = if(config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1)
-            individual.repairDBActions(sqlInsertBuilder, randomness)
             if (withDependency)
-                dm.sampleResourceWithRelatedDbActions(individual, rm.getResourceNum())
+                dm.sampleResourceWithRelatedDbActions(individual, rm.getSqlMaxNumOfResource())
+
+            individual.cleanBrokenBindingReference()
             return individual
         }
         return null

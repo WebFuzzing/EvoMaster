@@ -43,6 +43,13 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         if (config.trackingEnabled()) tag(individual, time.evaluatedIndividuals)
     }
 
+    override fun canApplyStructureMutator(individual: Individual): Boolean {
+        if(individual !is RestIndividual)
+            throw IllegalArgumentException("Invalid individual type")
+
+        return super.canApplyStructureMutator(individual) && getAvailableMutator(individual).isNotEmpty()
+    }
+
     fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null, mutatedGenes: MutatedGeneSpecification? = null) {
 
         val executedStructureMutator = specified?:
@@ -57,30 +64,27 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             MutationType.SQL_REMOVE -> handleRemoveSQL(ind, mutatedGenes)
             MutationType.SQL_ADD -> handleAddSQL(ind, mutatedGenes)
         }
-
-        ind.repairDBActions(rm.getSqlBuilder(), randomness)
     }
 
     private fun getAvailableMutator(ind: RestIndividual) : List<MutationType>{
         val num = ind.getResourceCalls().size
         val sqlNum = ind.seeResource(RestIndividual.ResourceFilter.ONLY_SQL_INSERTION).size
         return MutationType.values()
-            .filter {  num >= it.minSize && sqlNum >= it.minSQLSize}
-            .filterNot {
-                // if there is no db or sql resource handling is not enabled, SQL_REMOVE and SQL_ALL are not applicable
-                ((config.maxSqlInitActionsPerResource == 0 || rm.getTableInfo().isEmpty()) && (it == MutationType.SQL_ADD || it == MutationType.SQL_REMOVE) ) ||
-                        // if there is no dbInitialization, SQL_REMOVE is not applicable
-                        (ind.seeInitializingActions().isEmpty() && it == MutationType.SQL_REMOVE)
-            }
-            .filterNot{
-                (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
-                        //if the individual includes all resources, ADD and REPLACE are not applicable
-                        (ind.getResourceCalls().map {
-                            it.resourceInstance?.getKey()
-                        }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
-                        //if the size of deletable individual is less 2, Delete and SWAP are not applicable
-                        (ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size < 2 && (it == MutationType.DELETE || it == MutationType.SWAP))
-            }
+            .filter {  num >= it.minSize && sqlNum >= it.minSQLSize && isMutationTypeApplicable(it, ind)}
+
+    }
+
+    private fun isMutationTypeApplicable(type: MutationType, ind : RestIndividual): Boolean{
+        val delSize = ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size
+        return when(type){
+            MutationType.ADD -> ind.seeActions().size < config.maxTestSize && !rm.cluster.doesCoverAll(ind)
+            MutationType.SWAP -> ind.extractSwapCandidates().isNotEmpty()
+            MutationType.REPLACE -> !rm.cluster.doesCoverAll(ind) && delSize > 0
+            MutationType.DELETE -> delSize > 0 && ind.getResourceCalls().size >=2
+            MutationType.SQL_ADD -> config.maxSqlInitActionsPerResource != 0 && rm.getTableInfo().isNotEmpty()
+            MutationType.SQL_REMOVE -> config.maxSqlInitActionsPerResource != 0 && rm.getTableInfo().isNotEmpty() && ind.seeInitializingActions().isNotEmpty()
+            MutationType.MODIFY -> delSize > 0
+        }
     }
 
     /**
@@ -105,7 +109,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
     private fun handleAddSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
         if (config.maxSqlInitActionsPerResource == 0)
             throw IllegalStateException("this method should not be invoked when config.maxSqlInitActionsPerResource is 0")
-        val numOfResource = randomness.nextInt(1, rm.getResourceNum())
+        val numOfResource = randomness.nextInt(1, rm.getSqlMaxNumOfResource())
         val added = if (doesApplyDependencyHeuristics()) dm.addRelatedSQL(ind, numOfResource)
                     else dm.createDbActions(randomness.choose(rm.getTableInfo().keys),numOfResource)
 
@@ -126,7 +130,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         if (candidates.isEmpty())
             candidates = ind.seeInitializingActions()
 
-        val num = randomness.nextInt(1, max(1, min(rm.getResourceNum(), candidates.size -1)))
+        val num = randomness.nextInt(1, max(1, min(rm.getSqlMaxNumOfResource(), candidates.size -1)))
         val remove = randomness.choose(candidates, num)
         val relatedRemove = mutableListOf<DbAction>()
         relatedRemove.addAll(remove)
@@ -188,35 +192,35 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      * swap two resource calls
      */
     private fun handleSwap(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
+        val candidates = ind.extractSwapCandidates()
+
+        if (candidates.isEmpty()){
+            throw IllegalStateException("the individual cannot apply swap mutator!")
+        }
+
         val fromDependency = doesApplyDependencyHeuristics()
 
         if(fromDependency){
-            val pair = dm.handleSwapDepResource(ind)
+            val pair = dm.handleSwapDepResource(ind, candidates)
             if(pair!=null){
-                mutatedGenes?.swapAction(pair.first, ind.getActionIndexes(ActionFilter.NO_INIT, pair.first), ind.getActionIndexes(ActionFilter.NO_INIT, pair.second))
+                mutatedGenes?.swapAction(pair.first, ind.getActionIndexes(NO_INIT, pair.first), ind.getActionIndexes(NO_INIT, pair.second))
                 ind.swapResourceCall(pair.first, pair.second)
                 return
             }
         }
 
-        if(config.probOfEnablingResourceDependencyHeuristics > 0.0){
-            val position = (ind.getResourceCalls().indices).toMutableList()
-            while (position.isNotEmpty()){
-                val chosen = randomness.choose(position)
-                if(ind.isMovable(chosen)) {
-                    val moveTo = randomness.choose(ind.getMovablePosition(chosen))
-                    mutatedGenes?.swapAction(moveTo, ind.getActionIndexes(ActionFilter.NO_INIT, chosen), ind.getActionIndexes(ActionFilter.NO_INIT, moveTo))
-                    if(chosen < moveTo) ind.swapResourceCall(chosen, moveTo)
-                    else ind.swapResourceCall(moveTo, chosen)
-                    return
-                }
-                position.remove(chosen)
-            }
-            throw IllegalStateException("the individual cannot apply swap mutator!")
-        }else{
-            val candidates = randomness.choose(Array(ind.getResourceCalls().size){i -> i}.toList(), 2)
-            mutatedGenes?.swapAction(candidates[0], ind.getActionIndexes(ActionFilter.NO_INIT, candidates[0]), ind.getActionIndexes(ActionFilter.NO_INIT, candidates[1]))
-            ind.swapResourceCall(candidates[0], candidates[1])
+        val randPair = randomizeSwapCandidates(candidates)
+        val chosen = randPair.first
+        val moveTo = randPair.second
+        mutatedGenes?.swapAction(moveTo, ind.getActionIndexes(NO_INIT, chosen), ind.getActionIndexes(NO_INIT, moveTo))
+        if(chosen < moveTo) ind.swapResourceCall(chosen, moveTo)
+        else ind.swapResourceCall(moveTo, chosen)
+
+    }
+
+    private fun randomizeSwapCandidates(candidates: Map<Int, Set<Int>>): Pair<Int, Int>{
+        return randomness.choose(candidates.keys).run {
+            this to randomness.choose(candidates[this]!!)
         }
     }
 
@@ -267,7 +271,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             var addPos : Int? = null
             if(pair.first != null){
                 val pos = ind.getResourceCalls().indexOf(pair.first!!)
-                dm.bindCallWithFront(pair.first!!, mutableListOf(pair.second))
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true)
                 addPos = randomness.nextInt(0, pos)
             }
             if (addPos == null) addPos = randomness.nextInt(0, ind.getResourceCalls().size)
@@ -294,7 +298,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      * replace one of resource call with other resource
      */
     private fun handleReplace(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
-        val auth = ind.seeActions().filterIsInstance<RestCallAction>().map { it.auth }.run {
+        val auth = ind.seeActions().map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)
         }
@@ -311,6 +315,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         }else{
             null
         }
+
         if(pos == null)
             pos = ind.getResourceCalls().indexOf(randomness.choose(ind.getResourceCalls().filter(RestResourceCalls::isDeletable)))
 
@@ -325,14 +330,14 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             call =  rm.handleAddResource(ind, max)
         }else{
             if(pair.first != null){
-                dm.bindCallWithFront(pair.first!!, mutableListOf(pair.second))
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true)
             }
         }
 
        ind.getResourceCalls()[pos].seeActions(ALL).forEach {
            mutatedGenes?.addRemovedOrAddedByAction(
                it,
-               ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
+               ind.seeActions(NO_INIT).indexOf(it),
                true,
                resourcePosition = pos
            )
@@ -346,7 +351,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         call.seeActions(ALL).forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
-                ind.seeActions(ActionFilter.NO_INIT).indexOf(it),
+                ind.seeActions(NO_INIT).indexOf(it),
                 false,
                 resourcePosition = pos
             )
@@ -357,12 +362,13 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      *  modify one of resource call with other template
      */
     private fun handleModify(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
-        val auth = ind.seeActions().filterIsInstance<RestCallAction>().map { it.auth }.run {
+        val auth = ind.seeActions().map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)
         }
 
-        val pos = randomness.nextInt(0, ind.getResourceCalls().size-1)
+        val pos = randomness.choose(ind.getResourceCalls().filter { it.isDeletable }.map { ind.getResourceCalls().indexOf(it) })
+
         val old = ind.getResourceCalls()[pos]
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.seeActionSize(NO_SQL)}

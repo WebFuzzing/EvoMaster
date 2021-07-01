@@ -42,7 +42,7 @@ class BindingBuildTest {
         assert(map.map { "${it.first.name}${it.second.name}" }.contains("${f1.name}${f1.name}"))
         assert(map.map { "${it.first.name}${it.second.name}" }.contains("${f2.name}${f2.name}"))
 
-        post.bindToSamePathResolution(get.path, get.parameters)
+        post.bindBasedOn(get.path, get.parameters)
         val idfield = ((post.parameters.first() as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == f1.name }
         assertNotNull(idfield)
         assertEquals(5L, (idfield as LongGene).value)

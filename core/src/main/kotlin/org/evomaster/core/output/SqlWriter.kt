@@ -16,14 +16,20 @@ import org.evomaster.core.search.gene.sql.SqlWrapperGene
  */
 object SqlWriter {
 
-    fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines, allDbInitialization: List<DbAction> = dbInitialization, groupIndex: String ="") {
+    fun handleDbInitialization(
+        format: OutputFormat,
+        dbInitialization: List<DbAction>,
+        lines: Lines,
+        allDbInitialization: List<DbAction> = dbInitialization,
+        groupIndex: String ="",
+        skipFailure : Boolean) {
 
-        if (dbInitialization.isEmpty() || dbInitialization.none { !it.representExistingData }) {
+        if (dbInitialization.isEmpty() || dbInitialization.none { !it.representExistingData && (!skipFailure || it.insertExecutedSuccessfully)}) {
             return
         }
 
         dbInitialization
-                .filter { !it.representExistingData }
+                .filter { !it.representExistingData && (!skipFailure || it.insertExecutedSuccessfully)}
                 .forEachIndexed { index, dbAction ->
 
                     lines.add(when {

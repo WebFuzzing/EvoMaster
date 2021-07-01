@@ -15,8 +15,13 @@ import org.evomaster.core.search.service.Randomness
  */
 class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boolean) : Gene(name, mutableListOf()){
 
+    /*
+        Note that instead of returning itself, here we create a copy for it since it might be bound with other genes.
+        if we directly return as it is, the binding with genes in previous individual will be remained.
+        Since the value is not mutable, it should not have further side-effect
+     */
     override fun copyContent(): Gene {
-        return this // recall it is immutable
+        return ImmutableDataHolderGene(name, value, inQuotes) // recall it is immutable
     }
 
     override fun isMutable() = false
