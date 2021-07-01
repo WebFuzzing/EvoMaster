@@ -1,12 +1,16 @@
 #!/bin/bash
 
-SUT_FOLDER=$1
-DRIVER_NAME=$2
-CONTROLLER_NAME=$3
-AT_LEAST_EXPECTED=$4
-NPARAMS=4
+# WARNING: BB tests have to be simple, eg, basic static data, as they do not reset the SUT...
+# Even if we were to disable assertions, still we could end up with different status codes...
 
-echo Executing E2E for $SUT_FOLDER
+# where the SUT is located
+SUT_FOLDER=$1
+# the main entry point for the SUT. it assumes it reads the environment variable PORT
+SUT_MAIN=$2
+
+NPARAMS=2
+
+echo Executing Black-Box E2E for $SUT_FOLDER
 
 # Make sure to kill all sub-processes on exit
 trap 'kill $(jobs -p)' EXIT
@@ -25,14 +29,14 @@ else
     exit 1
 fi
 
-DRIVER=$PROJECT_ROOT$SUT_FOLDER/$DRIVER_NAME
-CONTROLLER_LOCATION=$PROJECT_ROOT$SUT_FOLDER/$CONTROLLER_NAME
+
+MAIN_LOCATION=$PROJECT_ROOT$SUT_FOLDER/$SUT_MAIN
 
 
-if [ -f "$DRIVER" ]; then
-    echo "Located Driver file at: $DRIVER"
+if [ -f "$MAIN_LOCATION" ]; then
+    echo "Located Main SUT entry file at: $MAIN_LOCATION"
 else
-    echo "ERROR. Driver file not found at: $DRIVER"
+    echo "ERROR. Main SUT entry not found at: $MAIN_LOCATION"
     exit 1
 fi
 
@@ -45,26 +49,29 @@ rm -f $OUTPUT_FOLDER/*-test.js
 mkdir -p $OUTPUT_FOLDER
 
 
-#  Bit tricky... it has happened sometimes that 40100 gives issues on CI...
+#  Bit tricky... it has happened sometimes that hardcoded ports like 40100 and 8080 give issues on CI...
 #  Ideally should get an ephemeral port, but hard to extract it from NodeJS (eg, could
 #  print it on console, and then read it back here).
 #  As workaround, we can use a random port, "hoping" it is available (with should be 99.99% of
 #  the times)
 PORT=$((20000 + $RANDOM % 40000))
 
-echo Using Controller Port $PORT
+echo Using SUT Port $PORT
 
 # Starting  NodeJS Driver in the background
-PORT=$PORT node $DRIVER &
+PORT=$PORT node $MAIN_LOCATION &
 PID=$!
+
+#TODO update/improve once we will support BB for other types besides REST (eg GraphQL)
+OPENAPI=http://localhost:$PORT/swagger.json
 
 # give enough time to start
 sleep 10
 
-java -jar $JAR --seed 42 --maxActionEvaluations 20000  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME --jsControllerPath $CONTROLLER_LOCATION -sutControllerPort $PORT
+java -jar $JAR --seed 42 --maxActionEvaluations 1000  --stoppingCriterion FITNESS_EVALUATIONS \
+       --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME \
+       --blackBox true --bbSwaggerUrl $OPENAPI --outputFormat JS_JEST
 
-# stop driver, which was run in background
-kill $PID
 
 if [ -f "$TEST_LOCATION" ]; then
     echo "Test suite correctly generated at: $TEST_LOCATION"
@@ -78,14 +85,10 @@ cd $SCRIPT_FOLDER_LOCATION || exit 1
 npm i
 npm run test
 
-COVERED=` cat $TEST_LOCATION | grep "Covered targets" | cut -c 20-`
+# stop SUT, which was run in background, but only AFTER we run the generated tests... as those do not
+# start the SUT by themselves in BB.
+kill $PID
 
-if [ $COVERED -ge $AT_LEAST_EXPECTED ]; then
-    echo "Target coverage: $COVERED"
-else
-    echo "ERROR. Achieved not enough target coverage: $COVERED"
-    exit 1
-fi
 
 # check for text in file
 N=$#
@@ -104,5 +107,6 @@ if [ $N -gt $NPARAMS ]; then
   done
 fi
 
+echo All checks have successfuly completed for this test
 
 
