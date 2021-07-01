@@ -1,10 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 
 namespace RestApis.ForAssertions.Controllers {
     
     [ApiController]
-    [Route ("[controller]")]
-    public class ForAssertionsController {
-        
+    public class ForAssertionsController : ControllerBase {
+
+        [HttpGet]
+        [Route("/simpleNumber")]
+        [Produces("application/json")]
+        public IActionResult GetSimpleNumber() {
+            return Ok(42);
+        } 
     }
 }

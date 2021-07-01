@@ -97,3 +97,5 @@ Migrations/
 /release/
 /e2e-tests/dotnet-rest/src/RestApis.ForAssertions/bin/
 /e2e-tests/dotnet-rest/src/RestApis.ForAssertions/obj/
+/e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions/bin/
+/e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions/obj/
