@@ -3,7 +3,7 @@ name: CI
 on: [push]
 
 env:
-  evomaster-version: 1.2.1
+  evomaster-version: 1.2.2
   release-jdk: 16
   retention-days: 3
 
