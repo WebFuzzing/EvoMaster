@@ -83,8 +83,9 @@ class ResourceRelatedToTable(val key: String) {
     }
 
     fun getConfirmedDirectTables() : Set<String>{
-        return derivedMap.keys.filter { t-> confirmedSet[t] != null && confirmedSet[t]!! }.toHashSet()
+        return derivedMap.keys.filter { t-> confirmedSet.any { it.key.equals(t, ignoreCase = true) && it.value } }.toHashSet()
     }
+
 
     fun findBestTableForParam(tables: Set<String>, simpleP2Table : SimpleParamRelatedToTable, onlyConfirmedColumn : Boolean = false) : Pair<Set<String>, Double>? {
         val map = simpleP2Table.derivedMap.filter { tables.any { t-> t.equals(it.key, ignoreCase = true) } }

@@ -299,6 +299,30 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     }
 
     /**
+     * get all binding genes of [this]
+     */
+    private fun getBindingGenes(all : MutableSet<Gene>){
+        if (bindingGenes.isEmpty()) return
+        all.add(this)
+        bindingGenes.filterNot { all.contains(it) }.forEach { b->
+            all.add(b)
+            b.getBindingGenes(all)
+        }
+        innerGene().filterNot { all.contains(it) }.forEach { it.getBindingGenes(all) }
+    }
+
+    /**
+     * remove [this] from its binding genes
+     */
+    fun removeThisFromItsBindingGenes(){
+        val all = mutableSetOf<Gene>()
+        getBindingGenes(all)
+        all.forEach { b->
+            b.removeBindingGene(this)
+        }
+    }
+
+    /**
      * @return whether [this] gene is bound with any other gene
      */
     fun isBoundGene() = bindingGenes.isNotEmpty()
@@ -311,11 +335,37 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     }
 
     /**
+     * remove genes which has been removed from the root
+     */
+    fun cleanRemovedGenes(removed: List<Gene>): Boolean{
+        return bindingGenes.removeIf{removed.contains(it)}
+    }
+
+    /**
+     * @return whether [this] gene has same binding gene as [genes]
+     *
+     * it is useful for debugging/unit tests
+     */
+    fun isSameBinding(genes: Set<Gene>) = (genes.size == bindingGenes.size) && genes.containsAll(bindingGenes)
+
+    /**
      * add [gene] as the binding gene
      */
     fun addBindingGene(gene: Gene) {
         bindingGenes.add(gene)
     }
+
+    /**
+     * remove [gene] as the binding gene
+     */
+    private fun removeBindingGene(gene: Gene): Boolean {
+        return bindingGenes.remove(gene)
+    }
+
+    /**
+     * @return whether the bindingGene is subset of the [set]
+     */
+    fun bindingGeneIsSubsetOf(set: List<Gene>) = set.containsAll(bindingGenes)
 
     /**
      * reset binding based on [genes]
@@ -342,7 +392,8 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
         //rebuild the binding genes
         val root = getRoot()
         val postBinding = (template as Gene).bindingGenes.map {b->
-            root.find(b) as? Gene?:throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (Gene)")
+            val found = root.find(b)
+            found as? Gene?:throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (${found::class.java.simpleName})")
         }
         bindingGenes.clear()
         bindingGenes.addAll(postBinding)

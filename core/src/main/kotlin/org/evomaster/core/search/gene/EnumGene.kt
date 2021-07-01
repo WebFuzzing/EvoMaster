@@ -163,7 +163,8 @@ class EnumGene<T : Comparable<T>>(
             gene is EnumGene<*> -> index == gene.index
             gene is StringGene && gene.getSpecializationGene() != null -> return bindValueBasedOn(gene.getSpecializationGene()!!)
             else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind EnumGene with ${gene::class.java.simpleName}")
+                // since the binding is derived, it is not always true.
+                log.info("cannot bind EnumGene with ${gene::class.java.simpleName}")
                 return false
             }
         }

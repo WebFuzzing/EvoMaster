@@ -310,6 +310,7 @@ class Archive<T> where T : Individual {
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
 
         val copy = ei.copy(tracker.getCopyFilterForEvalInd(ei))
+
         var added = false
         var anyBetter = false
 

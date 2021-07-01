@@ -97,6 +97,13 @@ abstract class StructuralElement (
      * @return a copy in [this] based on the [template] in [parent]
      */
     fun find(template: StructuralElement): StructuralElement {
+        // check if the root has same type
+        val targetRoot = getRoot()
+        val templateRoot = template.getRoot()
+        if (targetRoot::class.java.simpleName != templateRoot::class.java.simpleName){
+            throw IllegalStateException("mismatched root type: target (${targetRoot::class.java.simpleName}) vs. template (${templateRoot::class.java.simpleName})")
+        }
+
         val traverseBack = mutableListOf<Int>()
         traverseBackIndex(traverseBack)
         val start = traverseBack.size

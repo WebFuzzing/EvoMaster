@@ -72,12 +72,12 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         }
 
         //1.2 derive resource to tables based on type
-        val reftypes = resourceNode.actions.filter { (it is RestCallAction) && it.parameters.any{ p-> p is BodyParam && p.gene is ObjectGene && p.gene.refType != null}}
+        val reftypes = resourceNode.actions.filter { it.parameters.any{ p-> p is BodyParam && p.gene is ObjectGene && p.gene.refType != null}}
                 .flatMap { (it as RestCallAction ).parameters.filter{p-> p is BodyParam && p.gene is ObjectGene && p.gene.refType != null}.map { p-> (p.gene as ObjectGene).refType!!}}
 
         if(reftypes.isNotEmpty()){
             reftypes.forEach { type->
-                if(!resourceNode.isPartOfStaticTokens(type)){
+                if(!resourceNode.isPartOfStaticTokens(type) && allTables.isNotEmpty()){
                     val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, type)) }.asSequence().sortedBy { e->e.second }
                     if(matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedMap.filter { it.second == matchedMap.last().second }.forEach {
@@ -90,8 +90,8 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
             }
         }
         //1.3 derive resource to tables based on tokens on POST action
-        resourceNode.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST }.forEach { post->
-            (post as RestCallAction).tokens.values.filter { !resourceNode.getName().toLowerCase().contains(it.getKey().toLowerCase()) }.forEach { atoken->
+        resourceNode.actions.filter {it.verb == HttpVerb.POST }.forEach { post->
+            post.tokens.values.filter { !resourceNode.getName().toLowerCase().contains(it.getKey().toLowerCase()) }.forEach { atoken->
                 val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, atoken.getKey())) }.asSequence().sortedBy { e->e.second }
                 matchedMap.last().apply {
                     if(second >= StringSimilarityComparator.SimilarityThreshold){
@@ -109,7 +109,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
 
 
     fun deriveParamsToTable(mapParamInfo : Map<String, ParamInfo>, r: RestResourceNode, allTables : Map<String, Table>){
-        mapParamInfo.forEach { paramId, paramInfo ->
+        mapParamInfo.forEach { (paramId, paramInfo) ->
             deriveParamsToTable(paramId, paramInfo, r, allTables)
         }
     }
@@ -142,7 +142,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
 
     fun deriveRelatedTable(r : RestResourceNode, paramId: String, paramInfo: ParamInfo, relatedToTables: Set<String>, isBodyParam : Boolean, inputIndicator: Int, alltables : Map<String, Table>) : Boolean{
         if(isBodyParam){
-            var pToTable = BodyParamRelatedToTable(paramId, paramInfo.referParam)
+            val pToTable = BodyParamRelatedToTable(paramId, paramInfo.referParam)
             ParamUtil.getObjectGene(paramInfo.referParam.gene)?.fields?.forEach { f->
                 val matchedMap : MutableMap<String, MatchedInfo> = mutableMapOf()
                 deriveParamWithTable(f.name, relatedToTables, matchedMap, inputIndicator, alltables)
@@ -212,9 +212,14 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
     }
 
     /**
-     * @return a binding map between rest actions (key) in [calls] and dbactions in [dbActions]
+     * @return a bining map between [calls] and its related tables
+     *
+     * @param paramsInfo of calls to be bound
+     * @param calls to be bound
+     * @param dbActions specifies the tables to be analyzed.
+     *          if [dbActions] is empty, the tables would be all related tables extracted from its resource node
      */
-    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, dbActions : MutableList<DbAction>): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
+    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, dbActions : List<DbAction>): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
 
         val result = mutableMapOf<RestCallAction, MutableList<ParamGeneBindMap>>()
 
@@ -223,18 +228,20 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
 
         val relatedTables = dbActions.map { it.table.name }.toHashSet()
 
-        val list = if(relatedTables.isEmpty()) getBindMap(missingParams.toSet(), resource.resourceToTable) else getBindMap(missingParams.toSet(), resource.resourceToTable, relatedTables)
+        val list = if(relatedTables.isEmpty())
+            getBindMap(missingParams.toSet(), resource.resourceToTable)
+        else
+            getBindMap(missingParams.toSet(), resource.resourceToTable, relatedTables)
+
         if(list.isNotEmpty()){
             val cleanList = mutableListOf<ParamGeneBindMap>()
             list.forEach { p->
                 if(!cleanList.any { e->e.equalWith(p)}) cleanList.add(p)
             }
             calls.seeActions(ActionFilter.NO_SQL).filter { it is RestCallAction  && it.path.toString() == resource.getName()}.forEach { a->
-                result.put(a as RestCallAction, cleanList.filter { p-> (a is RestCallAction) && (paramsInfo.any { m-> m.key == p.paramId && m.involvedAction.contains(a.verb) })}.toMutableList())
+                result[a as RestCallAction] = cleanList.filter { p-> (paramsInfo.any { m-> m.key == p.paramId && m.involvedAction.contains(a.verb) })}.toMutableList()
             }
         }
-
-
         return result
     }
 
@@ -273,7 +280,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
     private fun getBindMap(paramId: String, pToTable : ParamRelatedToTable, tables : Set<String>, resourceToTable: ResourceRelatedToTable, result :  MutableList<ParamGeneBindMap>) : Boolean{
         if(pToTable is SimpleParamRelatedToTable){
             resourceToTable.findBestTableForParam(tables, pToTable)?.let {pair->
-                var target = pair.first.toList()[(0..(pair.first.size-1)).shuffled().first()]//
+                val target = pair.first.toList()[(0..(pair.first.size-1)).shuffled().first()]
                 val column = resourceToTable.getSimpleParamToSpecifiedTable(target, pToTable)!!.second
                 result.add(ParamGeneBindMap(paramId, false, pToTable.referParam.name, tableName = target, column = column))
                 return true
@@ -282,13 +289,13 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
             resourceToTable.findBestTableForParam(tables, pToTable)?.let {pair->
                 val vote = pair.values.flatMap { it.first }.toMutableSet().map { Pair(it, 0) }.toMap().toMutableMap()
 
-                pair.forEach { f, bestSet ->
+                pair.forEach { (f, bestSet) ->
                     bestSet.first.forEach { t->
                         vote.replace(t, vote[t]!!+1)
                     }
                 }
 
-                pair.forEach { f, bestSet ->
+                pair.forEach { (f, bestSet) ->
                     val target = if (bestSet.first.size == 1) bestSet.first.first() else bestSet.first.asSequence().sortedBy { vote[it] }.last()
                     val column = resourceToTable.getBodyParamToSpecifiedTable(target, pToTable, f)!!.second.second
                     result.add(ParamGeneBindMap(paramId, true, f, tableName = target, column = column))

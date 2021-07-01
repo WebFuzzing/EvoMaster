@@ -23,10 +23,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     private lateinit var dm : ResourceDepManageService
 
     override fun postActionAfterMutation(mutatedIndividual: RestIndividual, mutated: MutatedGeneSpecification?) {
-        //repair genes within a call
-        mutatedIndividual.getResourceCalls().forEach { it.repairGenesAfterMutation(mutated, rm.cluster)}
         // repair db among dbactions
-        mutatedIndividual.repairDBActions(rm.getSqlBuilder(), randomness)
         super.postActionAfterMutation(mutatedIndividual, null)
     }
 

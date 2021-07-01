@@ -107,7 +107,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         /*
             TODO: Man shall we update the action cluster based on expanded action?
          */
-        individual.seeActions().filterIsInstance<RestCallAction>().forEach {
+        individual.seeActions().forEach {
             val node = rm.getResourceNodeFromCluster(it.path.toString())
             node.updateActionsWithAdditionalParams(it)
         }
@@ -152,15 +152,25 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             DbActionTransformer.transform(allDbActions, sqlIdMap, previous)
         }catch (e : IllegalArgumentException){
             // the failure might be due to previous failure
-            if (!allSuccessBefore)
+            if (!allSuccessBefore){
+                previous.addAll(allDbActions)
                 return false
-            else
+            } else
                 throw e
         }
         dto.idCounter = StaticCounter.getAndIncrease()
 
-        val map = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
+        val sqlResults = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
+        val map = sqlResults?.idMapping
+        val executedResults = sqlResults?.executionResults
+
+        if (executedResults?.size?:0 > allDbActions.size)
+            throw IllegalStateException("incorrect insertion execution results (${executedResults!!.size}) which is more than the size of insertions (${allDbActions.size}).")
+        executedResults?.forEachIndexed { index, b ->
+            allDbActions[index].insertExecutedSuccessfully = b
+        }
         previous.addAll(allDbActions)
+
 
         if (map == null) {
             LoggingUtil.uniqueWarn(log, "Failed in executing database command")

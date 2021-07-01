@@ -38,17 +38,17 @@ class ArrayGeneImpactTest : GeneImpactTest(){
 
         when{
             mutationTag == 1 || (mutationTag == 0 && p)->{
-                val index = Random.nextInt(0, geneToMutate.elements.size)
-                geneToMutate.elements[index].apply {
+                val index = Random.nextInt(0, geneToMutate.getAllElements().size)
+                geneToMutate.getAllElements()[index].apply {
                     value += if (value + 1> max) -1 else 1
                 }
             }
             mutationTag == 2 || (mutationTag == 0 && !p)->{
-                if (geneToMutate.elements.size + 1 > geneToMutate.maxSize)
-                    geneToMutate.elements.removeAt(0)
+                if (geneToMutate.getAllElements().size + 1 > geneToMutate.maxSize)
+                    geneToMutate.getAllElements().removeAt(0)
                 else{
                     val key = generateKey()
-                    geneToMutate.elements.add(IntegerGene(key.toString(), key))
+                    geneToMutate.getAllElements().add(IntegerGene(key.toString(), key))
                 }
             }
         }

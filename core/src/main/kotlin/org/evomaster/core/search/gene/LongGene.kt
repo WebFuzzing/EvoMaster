@@ -109,7 +109,7 @@ class LongGene(
                 value = gene.uniqueId
             }
             else -> {
-                LoggingUtil.uniqueWarn(log, "Do not support to bind long gene with the type: ${gene::class.java.simpleName}")
+                log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")
                 return false
             }
         }

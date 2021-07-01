@@ -29,7 +29,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
     @Test
     public void testResourceHypermutation(){
 
-        List<String> args = generalArgs(3, 42);
+        List<String> args = generalArgs(3, 0);
         hypmutation(args, true);
         adaptiveMutation(args, 0.0);
         defaultResourceConfig(args, false);

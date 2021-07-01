@@ -61,7 +61,7 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
         val projectId = (insertions[0].seeGenes().filterIsInstance<SqlPrimaryKeyGene>()).first().uniqueId
 
         val dtoForPersons = DbActionTransformer.transform(listOf(insertions[0]), execSqlIdMaps)
-        val responseForPersons = SqlScriptRunner.execInsert(connection, dtoForPersons.insertions)
+        val responseForPersons = SqlScriptRunner.execInsert(connection, dtoForPersons.insertions).idMapping
 
         assertNotNull(responseForPersons)
         assert(responseForPersons.containsValue(projectId))

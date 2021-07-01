@@ -24,7 +24,7 @@ class MapGene<T>(
         name: String,
         val template: T,
         var maxSize: Int = MAX_SIZE,
-        var elements: MutableList<T> = mutableListOf()
+        private var elements: MutableList<T> = mutableListOf()
 ) : CollectionGene, Gene(name, elements)
         where T : Gene {
 
@@ -58,7 +58,8 @@ class MapGene<T>(
         if (other !is MapGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
+        clearElements()
+        this.elements = other.elements.map { e -> e.copyContent() as T }.toMutableList()
         addChildren(this.elements)
     }
 
@@ -129,9 +130,11 @@ class MapGene<T>(
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
             elements.add(gene)
+            addChild(gene)
         } else {
             log.trace("Removing gene in mutation")
-            elements.removeAt(randomness.nextInt(elements.size))
+            val removed = elements.removeAt(randomness.nextInt(elements.size))
+            removed.removeThisFromItsBindingGenes()
         }
         return true
     }
@@ -169,11 +172,29 @@ class MapGene<T>(
      */
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is MapGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
-            elements = gene.elements.mapNotNull { it.copy() as? T }.toMutableList()
+            clearElements()
+            elements = gene.elements.mapNotNull { it.copyContent() as? T }.toMutableList()
+            addChildren(elements)
             return true
         }
         LoggingUtil.uniqueWarn(log, "cannot bind the MapGene with the template (${template::class.java.simpleName}) with the gene ${gene::class.java.simpleName}")
         return false
     }
 
+    override fun clearElements() {
+        elements.forEach { it.removeThisFromItsBindingGenes() }
+        elements.clear()
+    }
+
+    fun removeElements(element: T){
+        elements.remove(element)
+        element.removeThisFromItsBindingGenes()
+    }
+
+    fun addElements(element: T){
+        elements.add(element)
+        addChild(element)
+    }
+
+    fun getAllElements() = elements
 }

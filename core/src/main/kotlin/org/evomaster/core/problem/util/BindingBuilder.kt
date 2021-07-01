@@ -22,50 +22,100 @@ object BindingBuilder {
 
     private val log = LoggerFactory.getLogger(BindingBuilder::class.java)
 
-    fun bindParamsInRestAction(restAction: RestCallAction){
+    /**
+     * bind value within a rest action [restAction], e.g., PathParam with BodyParam
+     * @param doBuildBindingGene specifies whether to build the binding gene
+     */
+    fun bindParamsInRestAction(restAction: RestCallAction, doBuildBindingGene: Boolean = false){
+        val pairs = buildBindingPairsInRestAction(restAction)
+        pairs.forEach {
+            val ok = it.first.bindValueBasedOn(it.second)
+            if (ok && doBuildBindingGene){
+                it.first.addBindingGene(it.second)
+                it.second.addBindingGene(it.first)
+            }
+        }
+    }
+
+    /**
+     * @return a list of pairs of genes to be bound within a [restAction]
+     */
+    fun buildBindingPairsInRestAction(restAction: RestCallAction): List<Pair<Gene, Gene>>{
+        val pair = mutableListOf<Pair<Gene, Gene>>()
         val params = restAction.parameters
         val path = restAction.path
 
         if(ParamUtil.existBodyParam(params)){
             params.filterIsInstance<BodyParam>().forEach { bp->
-                buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true)
+                pair.addAll(buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true))
             }
         }
         params.forEach { p->
             params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.also {sp->
-                buildBindBetweenParams(sp, path, path, mutableListOf(p))
+                pair.addAll(buildBindBetweenParams(sp, path, path, mutableListOf(p)))
+            }
+        }
+        return pair
+    }
+
+    /**
+     * bind param of rest action based on [params] on the [sourcePath]
+     * @param target is the param to be bound
+     * @param targetPath is the path of the rest action
+     * @param params is the source of binding
+     * @param sourcePath is the source path of the rest action which contains [params]
+     * @param doBuildBindingGene specified whether to build binding genes
+     */
+    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doBuildBindingGene: Boolean = false): Boolean{
+        val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, false)
+        pairs.forEach { p->
+            val ok = p.first.bindValueBasedOn(p.second)
+            if (ok && doBuildBindingGene){
+                p.first.addBindingGene(p.second)
+                p.second.addBindingGene(p.first)
+            }
+        }
+        return pairs.isNotEmpty()
+    }
+
+    /**
+     *  bind [restAction] with [dbActions]
+     *  @param restAction is the action
+     *  @param dbActions specified the dbactions
+     *  @param forceBindParamBasedOnDB specified whether to force to bind values of params in rest actions based on dbactions
+     *  @param dbRemovedDueToRepair specified whether any db action is removed due to repair process.
+     *          Note that dbactions might be truncated in the db repair process, thus the table related to rest actions might be removed.
+     *  @param bindWith specified a list of resource call which might be bound with [this]
+     */
+    fun bindRestAndDbAction(restAction: RestCallAction,
+                            restNode: RestResourceNode,
+                            paramGeneBindMap: List<ParamGeneBindMap>,
+                            dbActions: List<DbAction>,
+                            forceBindParamBasedOnDB: Boolean = false,
+                            dbRemovedDueToRepair : Boolean,
+                            doBuildBindingGene: Boolean){
+        buildBindRestActionBasedOnDbActions(restAction, restNode, paramGeneBindMap, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair).forEach { p->
+            val ok = p.first.bindValueBasedOn(p.second)
+            if (ok && doBuildBindingGene){
+                p.first.addBindingGene(p.second)
+                p.second.addBindingGene(p.first)
             }
         }
     }
 
-    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false){
-        buildBindBetweenParams(target, targetPath, sourcePath, params, inner).forEach { p->
-            p.first.bindValueBasedOn(p.second)
-        }
-    }
-
-    fun bindRestAndDbAction(restAction: RestCallAction,
-                            restNode: RestResourceNode,
-                            paramGeneBindMap: List<ParamGeneBindMap>,
-                            dbActions: MutableList<DbAction>,
-                            forceBindParamBasedOnDB: Boolean = false,
-                            dbRemovedDueToRepair : Boolean){
-        buildBindRestActionBasedOnDbActions(restAction, restNode, paramGeneBindMap, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair).forEach { p->
-            p.first.bindValueBasedOn(p.second)
-        }
-    }
-
     /**
+     * @return possible a list of pair genes which might be bounded with each other.
+     *      Note that for each pair, the value of first is bound based on the value of second
      * @param target bind [target] based on other params, i.e., [params]
      * @param targetPath is the path of [target]
-     * @param sourcePath
-     * @param params
+     * @param sourcePath of the [params]
+     * @param params are used to bind with [target]
      */
-    fun buildBindBetweenParams(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false) : List<Pair<Gene, Gene>>{
+    fun buildBindBetweenParams(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doContain : Boolean = false) : List<Pair<Gene, Gene>>{
         return when(target){
-            is BodyParam -> buildBindBodyParam(target, targetPath, sourcePath, params, inner)
-            is PathParam -> buildBindPathParm(target, targetPath, sourcePath, params, inner)
-            is QueryParam -> buildBindQueryParm(target, targetPath, sourcePath, params, inner)
+            is BodyParam -> buildBindBodyParam(target, targetPath, sourcePath, params, doContain)
+            is PathParam -> buildBindPathParm(target, targetPath, sourcePath, params, doContain)
+            is QueryParam -> buildBindQueryParm(target, targetPath, sourcePath, params, doContain)
             is FormParam -> buildBindFormParam(target, params)?.run { listOf(this) }?: listOf()
             is HeaderParam -> buildBindHeaderParam(target, params)?.run { listOf(this) }?: listOf()
             else -> {
@@ -185,7 +235,7 @@ object BindingBuilder {
             val f = ParamUtil.getValueGene(body.gene).run {
                 if (this is ObjectGene){
                     fields.find { f->
-                        ParamUtil.findField(f.name, refType, otherGene.name)
+                        ParamUtil.compareField(f.name, refType, otherGene.name)
                     }
                 }else
                     null
@@ -225,7 +275,7 @@ object BindingBuilder {
     fun buildBindRestActionBasedOnDbActions(restAction: RestCallAction,
                                             restNode: RestResourceNode,
                                             paramGeneBindMap: List<ParamGeneBindMap>,
-                                            dbActions: MutableList<DbAction>,
+                                            dbActions: List<DbAction>,
                                             forceBindParamBasedOnDB: Boolean = false,
                                             dbRemovedDueToRepair : Boolean) : List<Pair<Gene, Gene>>{
 

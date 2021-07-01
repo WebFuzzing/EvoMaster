@@ -10,6 +10,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.max
 
 abstract class HttpWsIndividual (
     private val dbInitialization: MutableList<DbAction> = mutableListOf(),
@@ -65,7 +66,7 @@ abstract class HttpWsIndividual (
         addChildren(actions)
     }
 
-    fun resetInitializingActions(actions: List<DbAction>){
+    private fun resetInitializingActions(actions: List<DbAction>){
         dbInitialization.clear()
         dbInitialization.addAll(actions)
         addChildren(actions)

@@ -11,7 +11,6 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Individual.GeneFilter
-import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
@@ -170,44 +169,26 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 return copy().also { it.wrapWithTracking(evaluatedResult, trackingHistory = tracking) }
             }
             else -> {
-                when {
-                    copyFilter.name == ONLY_WITH_COPY_IMPACT -> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
+                return EvaluatedIndividual(
+                    fitness.copy(),
+                    individual.copy() as T,
+                    results.map(ActionResult::copy),
+                    trackOperator,
+                    index,
+                    when (copyFilter.name) {
+                        ONLY_WITH_COPY_IMPACT, WITH_TRACK_WITH_COPY_IMPACT -> {
                             impactInfo?.copy()
-                    )
-                    copyFilter.name == ONLY_WITH_CLONE_IMPACT-> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
+                        }
+                        ONLY_WITH_CLONE_IMPACT, WITH_TRACK_WITH_CLONE_IMPACT -> {
                             impactInfo?.clone()
-                    )
-                    copyFilter.name == WITH_TRACK_WITH_COPY_IMPACT -> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
-                            impactInfo?.copy()
-                    ).also {
+                        }
+                        else -> throw IllegalStateException("${copyFilter.name} is not available")
+                    }
+                ).also {
+                    if (copyFilter.name == WITH_TRACK_WITH_COPY_IMPACT
+                        || copyFilter.name == WITH_TRACK_WITH_CLONE_IMPACT){
                         it.wrapWithTracking(evaluatedResult, trackingHistory = tracking)
                     }
-                    copyFilter.name == WITH_TRACK_WITH_CLONE_IMPACT -> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
-                            impactInfo?.clone()
-                    ).also {
-                        it.wrapWithTracking(evaluatedResult, trackingHistory = tracking)
-                    }
-                    else -> throw IllegalStateException("${copyFilter.name} is not available")
                 }
             }
         }
@@ -313,7 +294,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             improvedTargets: Set<Int>
     ){
         Lazy.assert { impactInfo != null }
-        val sizeChanged = (mutatedGenes.mutatedIndividual!!.seeActions(ActionFilter.NO_INIT).size != previous.seeActions(ActionFilter.NO_INIT).size)
+        val sizeChanged = (mutatedGenes.mutatedIndividual!!.seeActions(NO_INIT).size != previous.seeActions(NO_INIT).size)
 
         //we update genes impact regarding structure only if structure mutated individual is 'next'
         if(this.index == next.index){
@@ -460,11 +441,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     private fun syncImpact(previous : Individual, mutated : Individual) {
 
         // rest action
-        mutated.seeActions(ActionFilter.NO_INIT).forEachIndexed { index, action ->
+        mutated.seeActions(NO_INIT).forEachIndexed { index, action ->
             action.seeGenes().filter { it.isMutable() }.forEach { sg->
                 val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
 
-                val p = previous.seeActions(ActionFilter.NO_INIT)[index].seeGenes().find {
+                val p = previous.seeActions(NO_INIT)[index].seeGenes().find {
                     rootGeneId == ImpactUtils.generateGeneId(previous, it)
                 }
                 val impact = impactInfo!!.getGene(
@@ -491,7 +472,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *  this is to handle unclassified, eg, a gene might be empty gson or a gene constrained with some class
      */
     fun addGeneImpact(individual: Individual, gene: Gene) : GeneImpact?{
-        val actions = if (individual is RestIndividual)  individual.seeActions(ActionFilter.NO_INIT) else individual.seeActions()
+        val actions = if (individual is RestIndividual)  individual.seeActions(NO_INIT) else individual.seeActions()
 
         val action = actions.find {
             it.seeGenes().contains(gene)
@@ -515,11 +496,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         impactInfo?:return null
 
         val id = ImpactUtils.generateGeneId(individual, gene)
-        var action = individual.seeActions(ActionFilter.NO_INIT).find { it.seeGenes().contains(gene) }
+        var action = individual.seeActions(NO_INIT).find { it.seeGenes().contains(gene) }
         if (action != null){
             return impactInfo.getGene(
                     actionName = action.getName(),
-                    actionIndex = individual.seeActions(ActionFilter.NO_INIT).indexOf(action),
+                    actionIndex = individual.seeActions(NO_INIT).indexOf(action),
                     geneId = id,
                     fromInitialization = false
             )
