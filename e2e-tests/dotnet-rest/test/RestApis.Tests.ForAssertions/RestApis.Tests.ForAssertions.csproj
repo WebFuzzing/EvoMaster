@@ -5,7 +5,7 @@
 
     <IsPackable>false</IsPackable>
 
-<!--    <StartupObject>RestApis.Tests.ForAssertions.Controller.EmbeddedEvoMasterController</StartupObject>-->
+    <StartupObject>RestApis.Tests.ForAssertions.EmbeddedEvoMasterController</StartupObject>
   </PropertyGroup>
 
 <!--  <Target Name="htmlWarning" AfterTargets="AfterBuild">-->

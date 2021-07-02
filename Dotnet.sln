@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.DatabaseControlle
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestApis.ForAssertions", "e2e-tests\dotnet-rest\src\RestApis.ForAssertions\RestApis.ForAssertions.csproj", "{F4185BAB-0B0C-4061-B697-9A7CE7731A14}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestApis.Tests.ForAssertions", "e2e-tests\dotnet-rest\test\RestApis.Tests.ForAssertions\RestApis.Tests.ForAssertions.csproj", "{24AEA586-3C16-494E-8C4D-61FEC22D38DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -186,6 +188,18 @@ Global
 		{F4185BAB-0B0C-4061-B697-9A7CE7731A14}.Release|x64.Build.0 = Release|Any CPU
 		{F4185BAB-0B0C-4061-B697-9A7CE7731A14}.Release|x86.ActiveCfg = Release|Any CPU
 		{F4185BAB-0B0C-4061-B697-9A7CE7731A14}.Release|x86.Build.0 = Release|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Debug|x64.Build.0 = Debug|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Debug|x86.Build.0 = Debug|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Release|x64.ActiveCfg = Release|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Release|x64.Build.0 = Release|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Release|x86.ActiveCfg = Release|Any CPU
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A4DD5E57-91EE-44F4-87F7-69F4B9053DDF} = {C7482DD5-AD81-49FE-9395-80C952893534}
@@ -193,5 +207,6 @@ Global
 		{C5132231-89EF-4481-873D-5AF5CE48A0B8} = {C7482DD5-AD81-49FE-9395-80C952893534}
 		{4EC9ECBF-27E7-4691-ADBC-6A300F84CA67} = {C7482DD5-AD81-49FE-9395-80C952893534}
 		{F4185BAB-0B0C-4061-B697-9A7CE7731A14} = {C7482DD5-AD81-49FE-9395-80C952893534}
+		{24AEA586-3C16-494E-8C4D-61FEC22D38DE} = {C7482DD5-AD81-49FE-9395-80C952893534}
 	EndGlobalSection
 EndGlobal
