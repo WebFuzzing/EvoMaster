@@ -7,6 +7,7 @@ package org.evomaster.core.database.schema
  */
 enum class ColumnDataType(dataTypeName: String) {
 
+    BIT("BIT"),
     /**
      * A Boolean value (true/false)
      */
@@ -24,6 +25,7 @@ enum class ColumnDataType(dataTypeName: String) {
      * The unsigned range is 0 to 4294967295.
      */
     INTEGER("INTEGER"),
+    INT("INT"),
     INT4("INT4"),
     /**
      * A large integer.

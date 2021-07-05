@@ -34,6 +34,10 @@ class DbActionGeneBuilder {
                 SqlForeignKeyGene(column.name, id, fk.targetTable, column.nullable)
 
             else -> when (column.type) {
+                // Man: TODO need to check
+                ColumnDataType.BIT->
+                    handleBitColumn(column)
+
                 /**
                  * BOOLEAN(1) is assumed to be a boolean/Boolean field
                  */
@@ -63,7 +67,7 @@ class DbActionGeneBuilder {
                 /**
                  * INT4/INTEGER(10) is a int/Integer field
                  */
-                ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL ->
+                ColumnDataType.INT, ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL ->
                     handleIntegerColumn(column)
 
                 /**
@@ -372,6 +376,11 @@ class DbActionGeneBuilder {
         } else {
             BooleanGene(column.name)
         }
+    }
+
+    private fun handleBitColumn(column: Column): Gene{
+
+        return IntegerGene(column.name,  min= 0, max = 1)
     }
 
     companion object {

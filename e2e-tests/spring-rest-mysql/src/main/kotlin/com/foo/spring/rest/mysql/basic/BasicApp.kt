@@ -1,4 +1,4 @@
-package com.foo.spring.rest.mysql.baseFK
+package com.foo.spring.rest.mysql.basic
 
 import com.foo.spring.rest.mysql.SwaggerConfiguration
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,12 +14,12 @@ import javax.persistence.EntityManager
 @EnableSwagger2
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api/basefk"])
-open class BaseFKApp : SwaggerConfiguration() {
+open class BasicApp : SwaggerConfiguration() {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(BaseFKApp::class.java, *args)
+            SpringApplication.run(BasicApp::class.java, *args)
         }
     }
 
@@ -30,7 +30,7 @@ open class BaseFKApp : SwaggerConfiguration() {
     @GetMapping
     open fun get() : ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select * from shirt")
+        val query = em.createNativeQuery("select * from X where id>0")
         val res = query.resultList
 
         val status = if(res.isEmpty()) 400 else 200
