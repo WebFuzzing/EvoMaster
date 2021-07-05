@@ -21,9 +21,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Created by arcuri82 on 24-Apr-19.
  */
-public class SqlHandlerInDBTest extends DatabaseTestTemplate {
+public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
 
-    private ExecutionDto getSqlExecutionDto(int index, String url) {
+    default ExecutionDto getSqlExecutionDto(int index, String url) {
 
         TestResultsDto dto = given().accept(ContentType.JSON)
                 .get(url + TEST_RESULTS)
@@ -37,7 +37,7 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public void testDeleteTable() throws Exception {
+    public default void testDeleteTable() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
@@ -59,7 +59,7 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public void testInsertTable() throws Exception {
+    public default void testInsertTable() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
@@ -80,7 +80,7 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
 
 
     @Test
-    public void testUpdateTable() throws Exception {
+    public default void testUpdateTable() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
@@ -100,33 +100,7 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
     }
 
 
-    /**
-     * When creating an object in a table which includes an auto-incremental id,
-     * then the select currval is used to calculate the id for the new object
-     * @throws Exception
-     */
-    @Test
-    public void givenASelectNextValueInASequenceThenTheQueryIsIgnoredToCalculateHeuristics() throws Exception {
-
-        SqlScriptRunner.execCommand(getConnection(), "CREATE SEQUENCE foo_id_seq;");
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE foo (id integer NOT NULL DEFAULT nextval('foo_id_seq'));");
-
-        InstrumentedSutStarter starter = getInstrumentedSutStarter();
-
-        try {
-
-            ExecutionDto dto = executeCommand(starter, "SELECT currval('foo_id_seq')");
-
-            assertNotNull(dto);
-            assertNotNull(dto.queriedData);
-            assertEquals(0, dto.queriedData.size());
-
-        } finally {
-            starter.stop();
-        }
-    }
-
-    private ExecutionDto executeCommand(InstrumentedSutStarter starter, String sqlCommand) throws SQLException {
+    default ExecutionDto executeCommand(InstrumentedSutStarter starter, String sqlCommand) throws SQLException {
         String url = startInstrumentedSutStarterAndNewTest(starter);
         ExecutionDto dto = getSqlExecutionDto(0, url);
 
@@ -139,29 +113,29 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
         return getSqlExecutionDto(1, url);
     }
 
-    private void assertDataIsEmpty(ExecutionDto dto) {
+    default void assertDataIsEmpty(ExecutionDto dto) {
         assertUpdatedDataIsEmpty(dto);
         assertDeletedDataIsEmpty(dto);
         assertInsertedDataIsEmpty(dto);
     }
 
     @NotNull
-    private String startInstrumentedSutStarterAndNewTest(InstrumentedSutStarter starter) {
+    default String startInstrumentedSutStarterAndNewTest(InstrumentedSutStarter starter) {
         String url = start(starter);
         url += BASE_PATH;
         startNewTest(url);
         return url;
     }
 
-    private void assertUpdatedDataIsEmpty(ExecutionDto dto) {
+    default void assertUpdatedDataIsEmpty(ExecutionDto dto) {
         assertTrue(dto == null || dto.updatedData == null || dto.updatedData.isEmpty());
     }
 
-    private void assertDeletedDataIsEmpty(ExecutionDto dto) {
+    default void assertDeletedDataIsEmpty(ExecutionDto dto) {
         assertTrue(dto == null || dto.deletedData == null || dto.deletedData.isEmpty());
     }
 
-    private void assertInsertedDataIsEmpty(ExecutionDto dto) {
+    default void assertInsertedDataIsEmpty(ExecutionDto dto) {
         assertTrue(dto == null || dto.insertedData == null || dto.insertedData.isEmpty());
     }
 }
