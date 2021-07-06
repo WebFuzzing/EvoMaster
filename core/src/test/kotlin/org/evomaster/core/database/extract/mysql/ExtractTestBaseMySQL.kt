@@ -63,7 +63,7 @@ abstract class ExtractTestBaseMySQL {
             sqlSchemaCommand = this::class.java.getResource(getSchemaLocation()).readText()
         }
 
-        SqlScriptRunner.execCommand(connection, sqlSchemaCommand)
+        SqlScriptRunner.execScript(connection, sqlSchemaCommand)
     }
 
     @AfterEach

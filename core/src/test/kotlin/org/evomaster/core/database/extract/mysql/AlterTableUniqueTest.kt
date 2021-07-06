@@ -5,8 +5,8 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class CreateTableSuppliersTest : ExtractTestBaseMySQL() {
-    override fun getSchemaLocation(): String  = "/sql_schema/mysql_create_table_suppliers.sql"
+class AlterTableUniqueTest : ExtractTestBaseMySQL() {
+    override fun getSchemaLocation(): String  = "/sql_schema/mysql_create_table_unique.sql"
 
 
     @Test

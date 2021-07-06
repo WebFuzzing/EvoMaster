@@ -5,9 +5,9 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class CreateTableCheckTest : ExtractTestBaseMySQL() {
-    override fun getSchemaLocation(): String  = "/sql_schema/create_table_check.sql"
+class AlterTableExtractCheckTest : ExtractTestBaseMySQL() {
 
+    override fun getSchemaLocation() = "/sql_schema/alter_table_check.sql"
 
     @Test
     fun testCreateAndExtract() {
@@ -22,12 +22,25 @@ class CreateTableCheckTest : ExtractTestBaseMySQL() {
 
         assertEquals(2, schema.tables.first { it.name.equals("people", ignoreCase = true) }.columns.size)
 
-        assertTrue(schema.tables.first { it.name.equals("people", ignoreCase = true) }.columns.any { it.name == "age" });
+        assertTrue(schema.tables.first {
+            it.name.equals(
+                "people",
+                ignoreCase = true
+            )
+        }.columns.any { it.name == "age" });
 
-        assertEquals(1, schema.tables.first { it.name.equals("people", ignoreCase = true) }.tableCheckExpressions.size)
+        assertEquals(
+            1,
+            schema.tables.first { it.name.equals("people", ignoreCase = true) }.tableCheckExpressions.size
+        )
         assertEquals(
             "(age <= 100)",
-            schema.tables.first { it.name.equals("people", ignoreCase = true) }.tableCheckExpressions[0].sqlCheckExpression
+            schema.tables.first {
+                it.name.equals(
+                    "people",
+                    ignoreCase = true
+                )
+            }.tableCheckExpressions[0].sqlCheckExpression
         )
 
     }

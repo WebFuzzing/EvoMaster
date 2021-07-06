@@ -4,7 +4,10 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.utils.SimpleLogger;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -102,9 +105,16 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
                 if (!hasChecks) {
                     throw new IllegalStateException("Unexpected missing check scripts");
                 }
-                String check_clause = check.getString(MYSQL_CHECK_CLAUSE);
+                String check_clause = postCheckConstraintHandling(check.getString(MYSQL_CHECK_CLAUSE));
                 return new DbTableCheckExpression(tableName, check_clause);
             }
         }
+    }
+
+    private String postCheckConstraintHandling(String check_exp){
+        return check_exp
+                .replaceAll("`", "")
+                .replaceAll("_utf8mb4", "")
+                .replaceAll("\\\\'","'");
     }
 }
