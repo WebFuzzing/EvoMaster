@@ -11,6 +11,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
+import kotlin.math.pow
 
 class DbActionGeneBuilder {
 
@@ -258,14 +259,14 @@ class DbActionGeneBuilder {
      * The resulting gene is a disjunction of the given patterns
      */
     fun buildLikeRegexGene(geneName: String, likePatterns: List<String>, databaseType: DatabaseType): RegexGene {
-        return when {
-            databaseType == DatabaseType.POSTGRES -> buildPostgresLikeRegexGene(geneName, likePatterns)
+        return when(databaseType) {
+            DatabaseType.POSTGRES, DatabaseType.MYSQL -> buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException("Must implement LIKE expressions for database %s".format(databaseType))
         }
     }
 
-    private fun buildPostgresLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
+    private fun buildPostgresMySQLLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
         val disjunctionRxGenes = likePatterns
                 .map { createGeneForPostgresLike(it) }
                 .map { it.disjunctions }
@@ -378,9 +379,13 @@ class DbActionGeneBuilder {
         }
     }
 
+    /**
+     * handle bit for mysql
+     * https://dev.mysql.com/doc/refman/8.0/en/bit-value-literals.html
+     */
     private fun handleBitColumn(column: Column): Gene{
 
-        return IntegerGene(column.name,  min= 0, max = 1)
+        return IntegerGene(column.name,  min= 0, max = (2.0).pow(column.size).toInt() -1 )
     }
 
     companion object {

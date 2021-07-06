@@ -111,10 +111,11 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
         }
     }
 
+    // Man: Shall I move this into TableCheckExpressionDto e.g., formatCheckExpression
     private String postCheckConstraintHandling(String check_exp){
         return check_exp
                 .replaceAll("`", "")
-                .replaceAll("_utf8mb4", "")
+                .replaceAll("_utf8mb4", "") // mysql https://dev.mysql.com/doc/refman/8.0/en/charset-unicode-utf8mb4.html
                 .replaceAll("\\\\'","'");
     }
 }

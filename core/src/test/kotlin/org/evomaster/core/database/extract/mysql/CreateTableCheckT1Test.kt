@@ -34,14 +34,12 @@ class CreateTableCheckT1Test : ExtractTestBaseMySQL() {
                 CONSTRAINT `t1_chk_3` CHECK ((`c3` < 100)),
                 CONSTRAINT `t1_chk_4` CHECK ((`c1` > `c3`))
              */
-            assertTrue(any { it.sqlCheckExpression == "(`c1` <> 0)" })
-            assertTrue(any { it.sqlCheckExpression == "(`c2` > 0)" })
-            assertTrue(any { it.sqlCheckExpression == "(`c1` <> `c2`)" })
-            assertTrue(any { it.sqlCheckExpression == "(`c1` > 10)" })
-            assertTrue(any { it.sqlCheckExpression == "(`c3` < 100)" })
-            assertTrue(any { it.sqlCheckExpression == "(`c1` > `c3`)" })
+            assertTrue(any { it.sqlCheckExpression == "(c1 <> 0)" })
+            assertTrue(any { it.sqlCheckExpression == "(c2 > 0)" })
+            assertTrue(any { it.sqlCheckExpression == "(c1 <> c2)" })
+            assertTrue(any { it.sqlCheckExpression == "(c1 > 10)" })
+            assertTrue(any { it.sqlCheckExpression == "(c3 < 100)" })
+            assertTrue(any { it.sqlCheckExpression == "(c1 > c3)" })
         }
-
-
     }
 }
