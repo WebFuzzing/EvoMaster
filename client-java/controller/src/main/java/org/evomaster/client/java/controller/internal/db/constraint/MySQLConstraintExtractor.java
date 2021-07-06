@@ -20,12 +20,10 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
     private static final String MYSQL_CONSTRAINT_TYPE_PRIMARY_KEY = "PRIMARY KEY";
 
     private static final String MYSQL_CONSTRAINT_TYPE_UNIQUE = "UNIQUE";
-
-    private static final String MYSQL_CONSTRAINT_TYPE_NOT_NULL = "NOT NULL";
-
     private static final String MYSQL_CONSTRAINT_NAME = "CONSTRAINT_NAME";
     private static final String MYSQL_CONSTRAINT_TYPE = "CONSTRAINT_TYPE";
     private static final String MYSQL_CHECK_CLAUSE = "CHECK_CLAUSE";
+    private static final String MYSQL_COLUMN_NAME = "COLUMN_NAME";
 
 
     private static void cannotHandle(String constraintType) {
@@ -56,12 +54,11 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
                                 DbTableCheckExpression check = getCheckConstraint(connectionToMySQL, tableName, constraintName);
                                 constraints.add(check);
                                 break;
-                            case MYSQL_CONSTRAINT_TYPE_NOT_NULL:
-                                //TODO
-                                cannotHandle(type);
                             case MYSQL_CONSTRAINT_TYPE_UNIQUE:
-                                //TODO
-                                cannotHandle(type);
+                                String uniqueConstraintName = columns.getString(MYSQL_CONSTRAINT_NAME);
+                                DbTableUniqueConstraint uniqueConstraint = getUniqueConstraint(connectionToMySQL, tableSchema, tableName, uniqueConstraintName);
+                                constraints.add(uniqueConstraint);
+                                break;
                             default:
                                 cannotHandle("Unknown constraint type " + type);
                         }
@@ -73,6 +70,27 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
         return constraints;
     }
 
+    private DbTableUniqueConstraint getUniqueConstraint(Connection connectionToMySQL, String tableSchema, String tableName, String constraintName) throws SQLException{
+        String query = String.format("SELECT %s \n" +
+                "   FROM information_schema.KEY_COLUMN_USAGE\n" +
+                "   WHERE TABLE_SCHEMA = '%s'\n" +
+                "       AND TABLE_NAME = '%s'\n" +
+                "       AND CONSTRAINT_NAME='%s';\n", MYSQL_COLUMN_NAME, tableSchema, tableName, constraintName);
+
+        try (Statement stmt = connectionToMySQL.createStatement()) {
+            try (ResultSet columns = stmt.executeQuery(query)) {
+                List<String> uniqueColumnNames = new ArrayList<>();
+                while(columns.next()){
+                    uniqueColumnNames.add(columns.getString(MYSQL_COLUMN_NAME));
+                }
+                if (uniqueColumnNames.isEmpty()) {
+                    throw new IllegalStateException("Unexpected missing column names");
+                }
+                return new DbTableUniqueConstraint(tableName, uniqueColumnNames);
+            }
+        }
+    }
+
     private DbTableCheckExpression getCheckConstraint(Connection connectionToMySQL, String tableName, String constraintName) throws SQLException{
         String query = String.format("SELECT %s \n" +
                 "FROM information_schema.CHECK_CONSTRAINTS\n" +
@@ -82,7 +100,7 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
             try (ResultSet check = stmt.executeQuery(query)) {
                 boolean hasChecks = check.next();
                 if (!hasChecks) {
-                    throw new IllegalStateException("Unexpected missing pg_catalog.pg_attribute data");
+                    throw new IllegalStateException("Unexpected missing check scripts");
                 }
                 String check_clause = check.getString(MYSQL_CHECK_CLAUSE);
                 return new DbTableCheckExpression(tableName, check_clause);
