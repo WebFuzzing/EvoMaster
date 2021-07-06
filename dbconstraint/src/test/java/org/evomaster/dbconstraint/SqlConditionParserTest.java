@@ -52,7 +52,7 @@ class SqlConditionParserTest {
 
     private static SqlCondition parse(String conditionSqlStr) throws SqlConditionParserException {
         JSqlConditionParser parser = new JSqlConditionParser();
-        return parser.parse(conditionSqlStr);
+        return parser.parse(conditionSqlStr, ConstraintDatabaseType.H2);
     }
 
     private static SqlSimilarToCondition similarTo(SqlColumn columnName, SqlStringLiteralValue pattern) {

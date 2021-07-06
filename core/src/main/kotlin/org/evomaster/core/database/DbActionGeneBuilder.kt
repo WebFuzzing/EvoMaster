@@ -146,6 +146,9 @@ class DbActionGeneBuilder {
                 ColumnDataType.XML ->
                     SqlXMLGene(column.name)
 
+                ColumnDataType.ENUM ->
+                    handleEnumColumn(column)
+
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
 
@@ -161,6 +164,10 @@ class DbActionGeneBuilder {
         }
 
         return gene
+    }
+
+    private fun handleEnumColumn(column: Column): Gene{
+        return EnumGene(name = column.name, data = column.enumValuesAsStrings?: listOf())
     }
 
     private fun handleBigIntColumn(column: Column): Gene {

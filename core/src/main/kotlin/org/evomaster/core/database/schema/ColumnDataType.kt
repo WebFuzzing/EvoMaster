@@ -7,6 +7,10 @@ package org.evomaster.core.database.schema
  */
 enum class ColumnDataType(dataTypeName: String) {
 
+//    https://dev.mysql.com/doc/refman/8.0/en/enum.html
+    ENUM("ENUM"),
+
+//    https://dev.mysql.com/doc/refman/8.0/en/bit-type.html
     BIT("BIT"),
     /**
      * A Boolean value (true/false)

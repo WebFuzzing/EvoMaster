@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.constraint;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -28,6 +29,8 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
     private static final String MYSQL_CHECK_CLAUSE = "CHECK_CLAUSE";
     private static final String MYSQL_COLUMN_NAME = "COLUMN_NAME";
 
+    private static final String MYSQL_ENUM_COLUMN_TYPE = "COLUMN_TYPE";
+
 
     private static void cannotHandle(String constraintType) {
         SimpleLogger.uniqueWarn("WARNING, EvoMaster cannot extract MySQL constraints with type '" + constraintType);
@@ -39,8 +42,8 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
         List<DbTableConstraint> constraints = new ArrayList<>();
 
         for (TableDto tableDto : schemaDto.tables){
+            String tableName = tableDto.name;
             try (Statement statement = connectionToMySQL.createStatement()) {
-                String tableName = tableDto.name;
                 String query = String.format("SELECT *\n" +
                         "       FROM information_schema.table_constraints\n" +
                         "       WHERE table_schema = '%s'\n" +
@@ -66,6 +69,14 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
                                 cannotHandle("Unknown constraint type " + type);
                         }
                     }
+                }
+            }
+
+            // handle enum column
+            for (ColumnDto column: tableDto.columns){
+                if (column.type.equalsIgnoreCase("enum")){
+                    DbTableCheckExpression enumConstraint = handleEnum(connectionToMySQL, tableSchema, tableName, column.name);
+                    constraints.add(enumConstraint);
                 }
             }
         }
@@ -117,5 +128,27 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
                 .replaceAll("`", "")
                 .replaceAll("_utf8mb4", "") // mysql https://dev.mysql.com/doc/refman/8.0/en/charset-unicode-utf8mb4.html
                 .replaceAll("\\\\'","'");
+    }
+
+    private DbTableCheckExpression handleEnum(Connection connectionToMySQL, String schemaName, String tableName, String columnName) throws SQLException{
+        String query = String.format("SELECT %s\n" +
+                "       FROM information_schema.COLUMNS\n" +
+                "       WHERE TABLE_SCHEMA='%s'\n" +
+                "           AND TABLE_NAME='%s'\n" +
+                "           AND COLUMN_NAME='%s';", MYSQL_ENUM_COLUMN_TYPE, schemaName, tableName, columnName);
+
+        try (Statement stmt = connectionToMySQL.createStatement()) {
+            try (ResultSet literals = stmt.executeQuery(query)) {
+                boolean hasLiterals = literals.next();
+                if (!hasLiterals) {
+                    throw new IllegalStateException("Unexpected missing literals of enum");
+                }
+                String literalsValue = literals.getString(MYSQL_ENUM_COLUMN_TYPE);
+                return new DbTableCheckExpression(tableName, String.format(
+                        "%s %s", columnName, literalsValue
+                ));
+            }
+        }
+
     }
 }
