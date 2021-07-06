@@ -6,6 +6,9 @@ package org.evomaster.core.database.schema
  * and https://www.postgresql.org/docs/9.1/datatype.html
  */
 enum class ColumnDataType(dataTypeName: String) {
+//    https://dev.mysql.com/doc/refman/8.0/en/date-and-time-type-syntax.html
+    DATETIME("DATETIME"),
+    TIME("TIME"),
 
 //    https://dev.mysql.com/doc/refman/8.0/en/enum.html
     ENUM("ENUM"),

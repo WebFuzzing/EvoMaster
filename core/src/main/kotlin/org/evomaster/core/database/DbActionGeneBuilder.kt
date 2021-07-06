@@ -94,7 +94,7 @@ class DbActionGeneBuilder {
                     handleTextColumn(column)
 
                 //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
-                ColumnDataType.TIMETZ ->
+                ColumnDataType.TIMETZ, ColumnDataType.TIME ->
                     TimeGene(column.name)
 
 
@@ -109,6 +109,14 @@ class DbActionGeneBuilder {
                  */
                 ColumnDataType.DATE ->
                     DateGene(column.name)
+
+                /**
+                 * TODO need to check with Andrea regarding fsp which is the fractional seconds precision
+                 *
+                 * see https://dev.mysql.com/doc/refman/8.0/en/date-and-time-type-syntax.html
+                 */
+                ColumnDataType.DATETIME ->
+                    DateTimeGene(column.name)
 
                 //column.type.equals("VARBINARY", ignoreCase = true) ->
                 //handleVarBinary(it)
