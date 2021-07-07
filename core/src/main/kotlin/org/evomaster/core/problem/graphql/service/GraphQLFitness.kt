@@ -40,11 +40,11 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val cookies = getCookies(individual)
         val tokens = getTokens(individual)
 
-        doInitializingActions(individual)
+        val actionResults: MutableList<ActionResult> = mutableListOf()
+
+        doDbCalls(individual.seeInitializingActions(), actionResults = actionResults)
 
         val fv = FitnessValue(individual.size().toDouble())
-
-        val actionResults: MutableList<ActionResult> = mutableListOf()
 
 
         //run the test, one action at a time

@@ -4,9 +4,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.ActionResult
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.*
 
 class EvaluatedIndividualBuilder {
 
@@ -24,10 +22,13 @@ class EvaluatedIndividualBuilder {
 
             val fitnessVal = FitnessValue(0.0)
 
-            val results = emptyList<ActionResult>().toMutableList()
-
-            val ei = EvaluatedIndividual(fitnessVal, individual, results)
+            val ei = EvaluatedIndividual(fitnessVal, individual, generateIndividualResults(individual))
             return Triple(format, baseUrlOfSut, ei)
+        }
+
+        fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(ActionFilter.ALL).map {
+            if (it is DbAction) DbActionResult().also { it.setInsertExecutionResult(true) }
+            else ActionResult()
         }
 
         fun buildResourceEvaluatedIndividual(

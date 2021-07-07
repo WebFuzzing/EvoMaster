@@ -1,6 +1,9 @@
 package org.evomaster.core.search.impact.impactinfocollection.individual
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.generateIndividualResults
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.IntegerGene
@@ -203,7 +206,7 @@ class IndividualGeneImpactTest {
             fv2.updateTarget(getNewTarget(), 0.5, mutatedIndex)
             fv2.updateTarget(getExistingImprovedTarget(), 0.5, mutatedIndex)
 
-            return EvaluatedIndividual(fv2, ind2, listOf(), index = index)
+            return EvaluatedIndividual(fv2, ind2, generateIndividualResults(ind2), index = index)
         }
 
         fun fakeStructureMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, remove: Boolean, mutatedGeneSpecification: MutatedGeneSpecification, index : Int) : EvaluatedIndividual<Ind>{
@@ -246,8 +249,11 @@ class IndividualGeneImpactTest {
 
             fv2.updateTarget(getNewTarget(), 0.5, actionIndex)
             fv2.updateTarget(getExistingImprovedTarget(), 0.5, actionIndex)
-            return EvaluatedIndividual(fv2, ind2, listOf(), index = index)
+
+            return EvaluatedIndividual(fv2, ind2, generateIndividualResults(ind2), index = index)
         }
+
+
 
         fun getNewTarget() = 3
         fun getExistingImprovedTarget() = 2
@@ -256,18 +262,20 @@ class IndividualGeneImpactTest {
 
         fun getFakeEvaluatedIndividual() : EvaluatedIndividual<Ind>{
             val ind1 = Ind.getInd()
+
             val fv1 = FitnessValue(ind1.seeActions().size.toDouble())
 
             fv1.updateTarget(id = 1, value = 0.1, actionIndex = 0)
             fv1.updateTarget(id = 2, value = 0.1, actionIndex = 1)
 
             return EvaluatedIndividual(
-                    fitness = fv1, individual = ind1, results = listOf(),
+                    fitness = fv1, individual = ind1, results = generateIndividualResults(ind1),
                     trackOperator = this, config = config)
         }
 
         fun getFakeEvaluatedIndividualWithInitialization(actionSize: Int = 2, initActionSize: Int) : EvaluatedIndividual<Ind>{
             val ind1 = Ind.getIndWithInitialization(actionSize, initActionSize)
+
 
             val fv1 = FitnessValue(actionSize.toDouble())
 
@@ -275,7 +283,7 @@ class IndividualGeneImpactTest {
             fv1.updateTarget(id = 2, value = 0.1, actionIndex = 1)
 
             return EvaluatedIndividual(
-                    fitness = fv1, individual = ind1, results = listOf(),
+                    fitness = fv1, individual = ind1, results = generateIndividualResults(ind1),
                     trackOperator = this, config = config)
         }
 
