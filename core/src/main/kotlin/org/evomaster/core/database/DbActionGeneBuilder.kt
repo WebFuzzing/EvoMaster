@@ -118,6 +118,9 @@ class DbActionGeneBuilder {
                 ColumnDataType.DATETIME ->
                     DateTimeGene(column.name)
 
+                ColumnDataType.YEAR ->
+                    handleYearColumn(column)
+
                 //column.type.equals("VARBINARY", ignoreCase = true) ->
                 //handleVarBinary(it)
 
@@ -172,6 +175,17 @@ class DbActionGeneBuilder {
         }
 
         return gene
+    }
+
+    /*
+        https://dev.mysql.com/doc/refman/8.0/en/year.html
+     */
+    private fun handleYearColumn(column: Column): Gene{
+        // Year(2) is not supported by mysql 8.0
+        if (column.size == 2)
+            return IntegerGene(column.name,16 ,min =0, max = 99)
+
+        return IntegerGene(column.name, 2016, min = 1901, max = 2155)
     }
 
     private fun handleEnumColumn(column: Column): Gene{
