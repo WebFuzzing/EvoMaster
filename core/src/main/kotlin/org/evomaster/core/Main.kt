@@ -224,17 +224,19 @@ class Main {
 
                 val rc = RemoteController(base.getEMConfig())
 
+                rc.checkConnection()
+
                 /*
                     Note: we need to start the SUT, because the sutInfo might depend on its dynamic
                     state, eg the ephemeral port of the server
                  */
                 val started = rc.startSUT()
                 if(! started){
-                    throw IllegalStateException("Failed to start the SUT")
+                    throw SutProblemException("Failed to start the SUT")
                 }
 
                 val info = rc.getSutInfo()
-                        ?: throw IllegalStateException("No 'problemType' was defined, but failed to retried the needed" +
+                        ?: throw SutProblemException("No 'problemType' was defined, but failed to retried the needed" +
                                 " info from the EM Driver.")
 
                 if(info.restProblem != null){
