@@ -13,6 +13,8 @@ object GraphQLUtils {
 
     private val log = LoggerFactory.getLogger(GraphQLUtils::class.java)
 
+    val history: MutableList<String> = mutableListOf()
+
     fun generateGQLBodyEntity(a: GraphQLAction, targetFormat: OutputFormat): Entity<String>? {
 
         //TOdo check empty return type
@@ -58,15 +60,14 @@ object GraphQLUtils {
                 """.trimIndent())
 
                 }
-              /*  else if (returnGene.name.endsWith(ObjectGene.unionTag)|| returnGene.name.endsWith(ObjectGene.interfaceTag)) {//The first one is a union
+                /*  else if (returnGene.name.endsWith(ObjectGene.unionTag)|| returnGene.name.endsWith(ObjectGene.interfaceTag)) {//The first one is a union
 
-                    var query = getQuery(returnGene, a)
-                    Entity.json("""
-                   {"query" : "    { $query }     ","variables":null}
-                """.trimIndent())
+                      var query = getQuery(returnGene, a)
+                      Entity.json("""
+                     {"query" : "    { $query }     ","variables":null}
+                  """.trimIndent())
 
-                } */
-
+                  } */
                 else {
                     var query = getQuery(returnGene, a)
                     Entity.json("""
@@ -164,5 +165,56 @@ object GraphQLUtils {
             }
         }
     }
+
+
+    fun constructGraph(state: GraphQLActionBuilder.TempState, entryPoint: String, source: String, graph: MutableMap<String, MutableSet<String>>, history: MutableList<String>): MutableMap<String, MutableSet<String>> {
+
+        for (element in state.tables) {
+            if (element.tableType?.toLowerCase() != entryPoint.toLowerCase()) {
+                continue
+            }
+
+            if (entryPoint.toLowerCase() == "query" || entryPoint.toLowerCase() == "querytype" || entryPoint.toLowerCase() == "root" || entryPoint.toLowerCase() == "mutation") {
+                addEdge(element.tableType!!, element.tableField, graph)
+
+                if (element.kindOfTableFieldType.toString().toLowerCase() == "object") {
+                    history.add(element.tableField)
+                    constructGraph(state, element.tableFieldType, element.tableField, graph, history)
+                }
+            } else {
+
+                if (history.count { it == source } <= 1) {
+                    addEdge(source, element.tableField, graph)
+                    history.add(element.tableField)
+                    if (element.kindOfTableFieldType.toString().toLowerCase() == "object") {
+                        constructGraph(state, element.tableFieldType, element.tableField, graph, history)
+                    }
+
+                }
+
+            }
+        }
+        return graph
+    }
+
+    private fun addNode(node: String, graph: MutableMap<String, MutableSet<String>>): MutableSet<String>? {
+        return graph.putIfAbsent(node, mutableSetOf())
+    }
+
+    private fun addEdge(source: String, destination: String, graph: MutableMap<String, MutableSet<String>>): Boolean? {
+        addNode(source, graph)
+        addNode(destination, graph)
+        return graph[source]?.add(destination)
+    }
+
+    fun getGraphSize(graph: MutableMap<String, MutableSet<String>>): Int {
+        return graph.size
+    }
+
+
+    fun getNbrOfEdges(graph: MutableMap<String, MutableSet<String>>): Int {
+        return graph.values.stream().mapToInt { it.size }.sum()
+    }
+
 
 }
