@@ -23,7 +23,7 @@ object GraphQLActionBuilder {
             "__Field", "__InputValue", "__Type", "__TypeKind")
 
 
-    private data class TempState(
+    data class TempState(
             var tables: MutableList<Table> = mutableListOf(),
             val argsTables: MutableList<Table> = mutableListOf(),
             val tempArgsTables: MutableList<Table> = mutableListOf(),
@@ -115,7 +115,7 @@ object GraphQLActionBuilder {
             LoggingUtil.uniqueWarn(log, "No entrance for the schema")
     }
 
-    private fun initTablesInfo(schemaObj: SchemaObj, state: TempState) {
+    fun initTablesInfo(schemaObj: SchemaObj, state: TempState) {
 
         for (elementIntypes in schemaObj.data.__schema.types) {
             if (systemTypes.contains(elementIntypes.name)) {
