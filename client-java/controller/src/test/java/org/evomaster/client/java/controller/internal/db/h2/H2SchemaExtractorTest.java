@@ -1,11 +1,15 @@
-package org.evomaster.client.java.controller.internal.db;
+package org.evomaster.client.java.controller.internal.db.h2;
 
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.internal.SutController;
+import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.junit.jupiter.api.Test;
+
+import java.sql.Connection;
 
 import static io.restassured.RestAssured.given;
 import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
@@ -13,7 +17,7 @@ import static org.evomaster.client.java.controller.api.ControllerConstants.INFO_
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SchemaExtractorTest extends DatabaseTestTemplate {
+public class H2SchemaExtractorTest extends DatabaseH2TestInit implements DatabaseTestTemplate {
 
 
     @Test
@@ -475,5 +479,15 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
         assertEquals("(STATUS IN('A', 'B'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
 
+    }
+
+    @Override
+    public Connection getConnection() {
+        return connection;
+    }
+
+    @Override
+    public SutController getSutController() {
+        return new DatabaseFakeH2SutController(connection);
     }
 }

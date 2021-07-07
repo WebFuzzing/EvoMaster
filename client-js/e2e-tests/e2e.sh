@@ -41,3 +41,9 @@ if [ $? -ne 0 ] ; then
    exit 1
 fi
 
+$BB /client-js/integration-tests/src/status-api  main.js   ".status).toBe(200)"  ".status).toBe(400)"  ".status).toBe(404)"  ".status).toBe(500)"
+if [ $? -ne 0 ] ; then
+   echo "ERROR: Test failed for status-api. Exist status " $?
+   exit 1
+fi
+
