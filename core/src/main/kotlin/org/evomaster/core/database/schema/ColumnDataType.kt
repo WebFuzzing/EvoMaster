@@ -4,9 +4,47 @@ package org.evomaster.core.database.schema
  * SQL Data types from databases
  * See http://www.h2database.com/html/datatypes.html
  * and https://www.postgresql.org/docs/9.1/datatype.html
+ * and https://dev.mysql.com/doc/refman/8.0/en/data-types.html
  */
 enum class ColumnDataType(dataTypeName: String) {
 
+    /*
+        TODO
+        Spatial Data Types
+        https://dev.mysql.com/doc/refman/8.0/en/spatial-types.html
+     */
+
+    /**
+     * TODO
+     * String - set
+     * https://dev.mysql.com/doc/refman/8.0/en/set.html
+     */
+    SET("SET"),
+
+    /**
+     * date time type
+     * https://dev.mysql.com/doc/refman/8.0/en/date-and-time-type-syntax.html
+     */
+    DATETIME("DATETIME"),
+    TIME("TIME"),
+
+    /**
+     * year (1 or 2) or 4
+     * https://dev.mysql.com/doc/refman/8.0/en/year.html
+     */
+    YEAR("YEAR"),
+
+    /**
+     * enum type
+     * https://dev.mysql.com/doc/refman/8.0/en/enum.html
+     */
+    ENUM("ENUM"),
+
+    /**
+     * bit type
+     * https://dev.mysql.com/doc/refman/8.0/en/bit-type.html
+     */
+    BIT("BIT"),
     /**
      * A Boolean value (true/false)
      */
@@ -24,6 +62,7 @@ enum class ColumnDataType(dataTypeName: String) {
      * The unsigned range is 0 to 4294967295.
      */
     INTEGER("INTEGER"),
+    INT("INT"),
     INT4("INT4"),
     /**
      * A large integer.

@@ -2,12 +2,16 @@ package org.evomaster.client.java.controller.db;
 
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
+import org.evomaster.client.java.controller.internal.SutController;
+import org.evomaster.client.java.controller.internal.db.h2.DatabaseFakeH2SutController;
+import org.evomaster.client.java.controller.internal.db.h2.DatabaseH2TestInit;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +22,7 @@ import static org.evomaster.client.java.controller.api.ControllerConstants.DATAB
 import static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SqlScriptRunnerTest extends DatabaseTestTemplate {
+public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseTestTemplate {
 
 
     @Test
@@ -465,4 +469,13 @@ public class SqlScriptRunnerTest extends DatabaseTestTemplate {
         assertEquals(2, res.size());
     }
 
+    @Override
+    public Connection getConnection() {
+        return connection;
+    }
+
+    @Override
+    public SutController getSutController() {
+        return new DatabaseFakeH2SutController(connection);
+    }
 }

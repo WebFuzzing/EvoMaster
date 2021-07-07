@@ -11,6 +11,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
+import kotlin.math.pow
 
 class DbActionGeneBuilder {
 
@@ -34,6 +35,10 @@ class DbActionGeneBuilder {
                 SqlForeignKeyGene(column.name, id, fk.targetTable, column.nullable)
 
             else -> when (column.type) {
+                // Man: TODO need to check
+                ColumnDataType.BIT->
+                    handleBitColumn(column)
+
                 /**
                  * BOOLEAN(1) is assumed to be a boolean/Boolean field
                  */
@@ -63,7 +68,7 @@ class DbActionGeneBuilder {
                 /**
                  * INT4/INTEGER(10) is a int/Integer field
                  */
-                ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL ->
+                ColumnDataType.INT, ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL ->
                     handleIntegerColumn(column)
 
                 /**
@@ -89,7 +94,7 @@ class DbActionGeneBuilder {
                     handleTextColumn(column)
 
                 //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
-                ColumnDataType.TIMETZ ->
+                ColumnDataType.TIMETZ, ColumnDataType.TIME ->
                     TimeGene(column.name)
 
 
@@ -104,6 +109,17 @@ class DbActionGeneBuilder {
                  */
                 ColumnDataType.DATE ->
                     DateGene(column.name)
+
+                /**
+                 * TODO need to check with Andrea regarding fsp which is the fractional seconds precision
+                 *
+                 * see https://dev.mysql.com/doc/refman/8.0/en/date-and-time-type-syntax.html
+                 */
+                ColumnDataType.DATETIME ->
+                    DateTimeGene(column.name)
+
+                ColumnDataType.YEAR ->
+                    handleYearColumn(column)
 
                 //column.type.equals("VARBINARY", ignoreCase = true) ->
                 //handleVarBinary(it)
@@ -141,6 +157,9 @@ class DbActionGeneBuilder {
                 ColumnDataType.XML ->
                     SqlXMLGene(column.name)
 
+                ColumnDataType.ENUM ->
+                    handleEnumColumn(column)
+
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
 
@@ -156,6 +175,21 @@ class DbActionGeneBuilder {
         }
 
         return gene
+    }
+
+    /*
+        https://dev.mysql.com/doc/refman/8.0/en/year.html
+     */
+    private fun handleYearColumn(column: Column): Gene{
+        // Year(2) is not supported by mysql 8.0
+        if (column.size == 2)
+            return IntegerGene(column.name,16 ,min =0, max = 99)
+
+        return IntegerGene(column.name, 2016, min = 1901, max = 2155)
+    }
+
+    private fun handleEnumColumn(column: Column): Gene{
+        return EnumGene(name = column.name, data = column.enumValuesAsStrings?: listOf())
     }
 
     private fun handleBigIntColumn(column: Column): Gene {
@@ -254,14 +288,14 @@ class DbActionGeneBuilder {
      * The resulting gene is a disjunction of the given patterns
      */
     fun buildLikeRegexGene(geneName: String, likePatterns: List<String>, databaseType: DatabaseType): RegexGene {
-        return when {
-            databaseType == DatabaseType.POSTGRES -> buildPostgresLikeRegexGene(geneName, likePatterns)
+        return when(databaseType) {
+            DatabaseType.POSTGRES, DatabaseType.MYSQL -> buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException("Must implement LIKE expressions for database %s".format(databaseType))
         }
     }
 
-    private fun buildPostgresLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
+    private fun buildPostgresMySQLLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
         val disjunctionRxGenes = likePatterns
                 .map { createGeneForPostgresLike(it) }
                 .map { it.disjunctions }
@@ -372,6 +406,15 @@ class DbActionGeneBuilder {
         } else {
             BooleanGene(column.name)
         }
+    }
+
+    /**
+     * handle bit for mysql
+     * https://dev.mysql.com/doc/refman/8.0/en/bit-value-literals.html
+     */
+    private fun handleBitColumn(column: Column): Gene{
+
+        return IntegerGene(column.name,  min= 0, max = (2.0).pow(column.size).toInt() -1 )
     }
 
     companion object {

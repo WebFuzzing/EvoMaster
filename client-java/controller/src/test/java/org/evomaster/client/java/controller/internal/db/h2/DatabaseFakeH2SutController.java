@@ -1,19 +1,19 @@
-package org.evomaster.client.java.controller.db;
+package org.evomaster.client.java.controller.internal.db.h2;
 
 import org.evomaster.client.java.controller.EmbeddedSutController;
-import org.evomaster.client.java.controller.problem.ProblemInfo;
-import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.controller.problem.RestProblem;
 
 import java.sql.Connection;
 import java.util.List;
 
-public class DatabaseFakeSutController extends EmbeddedSutController {
+public class DatabaseFakeH2SutController extends EmbeddedSutController {
 
     private final Connection connection;
 
-    public DatabaseFakeSutController(Connection connection) {
+    public DatabaseFakeH2SutController(Connection connection) {
         this.connection = connection;
     }
 
