@@ -103,6 +103,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return ei
     }
 
+    /**
+     * @return action results based on the specified [actions].
+     *      Note that if [actions] is null, then we employ individual.seeActions() as default
+     */
     fun seeResults(actions: List<Action>? = null): List<ActionResult>{
         val list = actions?:individual.seeActions()
         val all = individual.seeActions(ALL)
@@ -127,7 +131,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
 
         Lazy.assert {
-            actions.size == results.size
+            actions.size == actionResults.size
         }
 
         (0 until actionResults.size).forEach { i ->

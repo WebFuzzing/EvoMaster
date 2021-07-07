@@ -87,7 +87,8 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             log.trace("evaluation ends")
         }
 
-        restActionResultHandling(individual, targets, actionResults, fv)?:return null
+        val restActionResults = actionResults.filterIsInstance<RestCallResult>()
+        restActionResultHandling(individual, targets, restActionResults, fv)?:return null
 
         if (log.isTraceEnabled){
             log.trace("restActionResult are handled")
