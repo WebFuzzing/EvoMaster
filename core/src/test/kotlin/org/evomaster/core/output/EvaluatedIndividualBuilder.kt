@@ -1,6 +1,7 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.ActionResult
@@ -25,13 +26,18 @@ class EvaluatedIndividualBuilder {
 
             val results = emptyList<ActionResult>().toMutableList()
 
-            val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
+            val ei = EvaluatedIndividual(fitnessVal, individual, results)
             return Triple(format, baseUrlOfSut, ei)
         }
 
         fun buildResourceEvaluatedIndividual(
             dbInitialization: MutableList<DbAction>,
-            groups: MutableList<Pair<MutableList<DbAction>, MutableList<RestCallAction>>>
+            groups: MutableList<Pair<MutableList<DbAction>, MutableList<RestCallAction>>>,
+            results: List<ActionResult> = dbInitialization.map { DbActionResult().also { it.setInsertExecutionResult(true) } }.plus(
+                groups.flatMap { g->
+                    g.first.map { DbActionResult().also { it.setInsertExecutionResult(true) } }.plus(g.second.map { RestCallResult().also { it.setTimedout(true) } })
+                }
+            )
         ): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
 
             val format = OutputFormat.JAVA_JUNIT_4
@@ -46,9 +52,7 @@ class EvaluatedIndividualBuilder {
 
             val fitnessVal = FitnessValue(0.0)
 
-            val results = (0 until individual.size()).map { RestCallResult().also { it.setTimedout(true) } }
-
-            val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
+            val ei = EvaluatedIndividual(fitnessVal, individual, results)
             return Triple(format, baseUrlOfSut, ei)
         }
 

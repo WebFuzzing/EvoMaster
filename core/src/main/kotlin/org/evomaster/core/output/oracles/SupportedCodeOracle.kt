@@ -120,7 +120,7 @@ class SupportedCodeOracle : ImplementedOracle() {
         return if (action.result is HttpWsCallResult
                 && action.action is RestCallAction
                 &&this::objectGenerator.isInitialized)
-            !supportedCode(action.action, action.result)
+            !supportedCode(action.action as RestCallAction, action.result as HttpWsCallResult)
         else false
     }
 

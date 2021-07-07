@@ -103,7 +103,7 @@ public abstract class RestTestBase  extends WsTestBase{
 
         List<Integer> index = getIndexOfHttpCalls(ind.getIndividual(), verb);
         for (int i : index) {
-            String statusCode = ind.getResults().get(i).getResultValue(
+            String statusCode = ind.seeResults(null).get(i).getResultValue(
                     RestCallResult.STATUS_CODE);
             if (statusCode.equals("" + expectedStatusCode)) {
                 return true;
@@ -124,7 +124,7 @@ public abstract class RestTestBase  extends WsTestBase{
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            RestCallResult res = (RestCallResult) ind.getResults().get(i);
+            RestCallResult res = (RestCallResult) ind.seeResults(null).get(i);
             stopped = res.getStopping();
 
             RestCallAction action = actions.get(i);

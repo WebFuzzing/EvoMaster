@@ -9,6 +9,7 @@ import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.ActionFilter.*
@@ -29,7 +30,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                               * prematurely stopped, there might be less
                               * results than actions
                               */
-                             val results: List<out ActionResult>,
+                             private val results: List<out ActionResult>,
 
                              // for tracking its history
                              override var trackOperator: TrackOperator? = null,
@@ -73,7 +74,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         set(value) { fitness.executionTimeMs = value}
 
     init{
-        if(individual.seeActions().size < results.size){
+        if(individual.seeActions().size < seeResults().size){
             throw IllegalArgumentException("Less actions than results")
         }
     }
@@ -102,6 +103,14 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return ei
     }
 
+    fun seeResults(actions: List<Action>? = null): List<ActionResult>{
+        val list = actions?:individual.seeActions()
+        val all = individual.seeActions(ALL)
+        return list.map {
+            results[all.indexOf(it)]
+        }
+    }
+
     /**
      * Note: if a test execution was prematurely stopped,
      * the number of evaluated actions would be lower than
@@ -112,36 +121,48 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val list: MutableList<EvaluatedAction> = mutableListOf()
 
         val actions = individual.seeActions()
+        val all = individual.seeActions(ALL)
+        val actionResults = actions.map {
+            results[all.indexOf(it)]
+        }
 
-        (0 until results.size).forEach { i ->
-            list.add(EvaluatedAction(actions[i], results[i]))
+        Lazy.assert {
+            actions.size == results.size
+        }
+
+        (0 until actionResults.size).forEach { i ->
+            list.add(EvaluatedAction(actions[i], actionResults[i]))
         }
 
         return list
     }
 
     /**
-     * @return grouped db and evaluated actions based on its resource structure
+     * @return grouped evaluated actions based on its resource structure
+     *      first are db actions and their results
+     *      second are rest actions and their results
      */
-    fun evaluatedResourceActions() : List<Pair<List<DbAction>, List<EvaluatedAction>>>{
+    fun evaluatedResourceActions() : List<Pair<List<EvaluatedDbAction>, List<EvaluatedAction>>>{
         if (individual !is RestIndividual)
             throw IllegalStateException("the method do not support the individual with the type: ${individual::class.java.simpleName}");
 
-        val list = mutableListOf<Pair<List<DbAction>, List<EvaluatedAction>>>();
+        val list = mutableListOf<Pair<List<EvaluatedDbAction>, List<EvaluatedAction>>>();
 
-        var index = 0;
+        val all= individual.seeActions(ALL)
 
         individual.getResourceCalls().forEach { c->
-            if (index < results.size){
-                list.add(
-                    (c.seeActions(ONLY_SQL) as List<DbAction>) to c.seeActions(NO_SQL).subList(0, min(c.seeActionSize(NO_SQL), results.size-index)).map {
-                            a-> EvaluatedAction(a, results[index]).also { index++ }
-                    }.toList()
-                )
-            }
-        }
-        Lazy.assert {
-            index == results.size
+            list.add(
+                c.seeActions(ONLY_SQL).map {
+                    val i = all.indexOf(it)
+                    EvaluatedDbAction(
+                        (it as? DbAction)?:throw IllegalStateException("mismatched action type, expected is DbAction but it is ${it::class.java.simpleName}"),
+                        (results[i] as? DbActionResult)?:throw IllegalStateException("mismatched action result type, expected is DbActionResult but it is ${results[i]::class.java.simpleName}")
+                    )
+                } to c.seeActions(NO_SQL).map {
+                            val i = all.indexOf(it)
+                            EvaluatedAction(it, results[i])
+                        }
+            )
         }
         return list
     }
