@@ -15,6 +15,8 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.IllegalArgumentException
+import java.security.InvalidParameterException
 import javax.ws.rs.core.MediaType
 
 
@@ -57,16 +59,10 @@ class SchemaOracle : ImplementedOracle() {
     override fun addExpectations(call: RestCallAction, lines: Lines, res: HttpWsCallResult, name: String, format: OutputFormat) {
         if (res.failedCall()
                 || res.getStatusCode() == 500
-                || !generatesExpectation(call, res)) {
+                || !generatesExpectation(call, res)
+                || !format.isJavaOrKotlin()) {
             return
         }
-
-        //try {
-            //getSupportedResponse(call)
-        //}
-        //catch (e: Exception){
-
-        //}
 
         val supportedRes = getSupportedResponse(call)
         val bodyString = res.getBody()
@@ -81,7 +77,12 @@ class SchemaOracle : ImplementedOracle() {
                     else -> {
                         responseObject
                             .forEachIndexed { index, obj ->
-                                val json_ref = "$name.extract().response().jsonPath().getJsonObject<Any>(\"\") as ArrayList<*>"
+                                val json_ref = when {
+                                    format.isKotlin() -> "$name.extract().response().jsonPath().getJsonObject<Any>(\"\") as ArrayList<*>"
+                                    format.isJava() -> "(List) $name.extract().response().jsonPath().getJsonObject(\"\")"
+                                    else -> return
+                                        //throw IllegalArgumentException("Expectations are currently only supported for Java and Kotlin")
+                                }
                                 val moreRef = "($json_ref).get($index)"
                                 writeExpectation(call, lines, moreRef, format, expectedObject)
                         }
@@ -99,7 +100,13 @@ class SchemaOracle : ImplementedOracle() {
                     // handling single values appears to be a known problem with RestAssured and Groovy
                     // see https://github.com/rest-assured/rest-assured/issues/949
                     else -> {
-                        val json_ref = "$name.extract().response().jsonPath().getJsonObject<Any>(\"\")"
+                        val json_ref = when {
+                            format.isKotlin() -> "$name.extract().response().jsonPath().getJsonObject<Any>(\"\")"
+                            format.isJava() -> "$name.extract().response().jsonPath().getJsonObject(\"\")"
+                            else -> return
+                                //throw IllegalArgumentException("Expectations are currently only supported for Java and Kotlin")
+                        }
+
                         writeExpectation(call, lines, json_ref, format, expectedObject)
                     }
                 }
@@ -121,7 +128,7 @@ class SchemaOracle : ImplementedOracle() {
 
         //this differs between kotlin and java
         when{
-            format.isJava() ->lines.add(".that($variableName, ($json_ref as Map<*,*>).keys.containsAll(Arrays.asList($referenceKeys)))")
+            format.isJava() ->lines.add(".that($variableName, ((Map) $json_ref).keySet().containsAll(Arrays.asList($referenceKeys)))")
             format.isKotlin() -> lines.add(".that($variableName, ($json_ref as Map<*,*>).keys.containsAll(Arrays.asList($referenceKeys)))")
         }
         val referenceOptionalKeys = referenceObject.fields
@@ -133,7 +140,7 @@ class SchemaOracle : ImplementedOracle() {
             format.isJava() -> {
                 lines.add(".that($variableName, Arrays.asList($referenceOptionalKeys)")
                 lines.indented {
-                    lines.add(".containsAll(($json_ref as Map<*,*>).keys))")
+                    lines.add(".containsAll(((Map) $json_ref).keySet()))")
                 }
             }
             format.isKotlin() -> {
