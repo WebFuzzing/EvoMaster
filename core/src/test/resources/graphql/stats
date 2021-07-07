@@ -1,0 +1,150 @@
+************* QueryTypeGlobalPetsClinic:
+Number Of Node In The Query : 19
+Number Of Edges In The Query : 44
+Number Of Node In The Mutation : 28
+Number Of Edges In The Mutation : 47
+************* AniList:
+Number Of Node In The Query : 262
+Number Of Edges In The Query : 1165
+Number Of Node In The Mutation : 251
+Number Of Edges In The Mutation : 991
+************* Bitquery:
+Number Of Node In The Query : 230
+Number Of Edges In The Query : 580
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* CatalysisHub:
+Number Of Node In The Query : 23
+Number Of Edges In The Query : 50
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* Contentful:
+Number Of Node In The Query : 71
+Number Of Edges In The Query : 191
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* Countries:
+Number Of Node In The Query : 17
+Number Of Edges In The Query : 39
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* DeutscheBahn:
+Number Of Node In The Query : 199
+Number Of Edges In The Query : 512
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* EHRI:
+Number Of Node In The Query : 97
+Number Of Edges In The Query : 354
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* EtMDB:
+Number Of Node In The Query : 83
+Number Of Edges In The Query : 197
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* Everbase:
+Number Of Node In The Query : 70
+Number Of Edges In The Query : 173
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* GitLab04022021:
+Number Of Node In The Query : 528
+Number Of Edges In The Query : 1438
+Number Of Node In The Mutation : 783
+Number Of Edges In The Mutation : 2489
+************* GraphQLJobs:
+Number Of Node In The Query : 34
+Number Of Edges In The Query : 119
+Number Of Node In The Mutation : 33
+Number Of Edges In The Mutation : 108
+************* HIVDB:
+Number Of Node In The Query : 170
+Number Of Edges In The Query : 368
+Number Of Node In The Mutation : 41
+Number Of Edges In The Mutation : 55
+************* MelodyRepo:
+Number Of Node In The Query : 16
+Number Of Edges In The Query : 30
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* MelodyRepo2:
+Number Of Node In The Query : 5
+Number Of Edges In The Query : 6
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* ReactFinland:
+Number Of Node In The Query : 103
+Number Of Edges In The Query : 505
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* TravelgateX:
+Number Of Node In The Query : 236
+Number Of Edges In The Query : 604
+Number Of Node In The Mutation : 289
+Number Of Edges In The Mutation : 992
+************* Universe:
+Number Of Node In The Query : 370
+Number Of Edges In The Query : 937
+Number Of Node In The Mutation : 395
+Number Of Edges In The Mutation : 1019
+************* recEg:
+Number Of Node In The Query : 6
+Number Of Edges In The Query : 7
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* SpaceX:
+Number Of Node In The Query : 241
+Number Of Edges In The Query : 622
+Number Of Node In The Mutation : 11
+Number Of Edges In The Mutation : 14
+************* Book:
+Number Of Node In The Query : 17
+Number Of Edges In The Query : 37
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* interfaceEg:
+Number Of Node In The Query : 2
+Number Of Edges In The Query : 1
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* interfaceInternalEg:
+Number Of Node In The Query : 3
+Number Of Edges In The Query : 2
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* unionInternalEg:
+Number Of Node In The Query : 4
+Number Of Edges In The Query : 3
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* unionInternalRecEg:
+Number Of Node In The Query : 4
+Number Of Edges In The Query : 3
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* unionInternalRecEg2:
+Number Of Node In The Query : 4
+Number Of Edges In The Query : 3
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* enumInterface:
+Number Of Node In The Query : 4
+Number Of Edges In The Query : 3
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* interfaceHis:
+Number Of Node In The Query : 2
+Number Of Edges In The Query : 1
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* noInterfaceHisObj:
+Number Of Node In The Query : 8
+Number Of Edges In The Query : 9
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
+************* recEg2:
+Number Of Node In The Query : 3
+Number Of Edges In The Query : 3
+Number Of Node In The Mutation : 0
+Number Of Edges In The Mutation : 0
