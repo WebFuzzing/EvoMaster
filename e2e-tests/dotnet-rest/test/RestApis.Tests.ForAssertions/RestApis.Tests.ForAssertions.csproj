@@ -29,5 +29,9 @@
     <ProjectReference Include="..\..\..\..\client-dotnet\src\EvoMaster.Controller\EvoMaster.Controller.csproj" />
     <ProjectReference Include="..\..\src\RestApis.ForAssertions\RestApis.ForAssertions.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="generated" />
+  </ItemGroup>
   
 </Project>
