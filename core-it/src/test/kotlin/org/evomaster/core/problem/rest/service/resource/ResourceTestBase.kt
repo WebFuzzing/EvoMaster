@@ -13,6 +13,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.extract.h2.ExtractTestBaseH2
 import org.evomaster.core.problem.rest.RestCallAction
@@ -24,9 +25,7 @@ import org.evomaster.core.problem.rest.service.resource.model.ResourceBasedTestI
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceModule
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceSampler
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -309,7 +308,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         assertNotNull(individual)
         assertEquals(1, individual!!.getResourceCalls().size)
         val addSpec = MutatedGeneSpecification()
-        val evaluatedIndividual = EvaluatedIndividual(FitnessValue(0.0), individual, listOf())
+        val evaluatedIndividual = EvaluatedIndividual(FitnessValue(0.0), individual, generateIndividualResults(individual))
         structureMutator.mutateRestResourceCalls(individual,  RestResourceStructureMutator.MutationType.ADD, addSpec)
         assertEquals(1, addSpec.mutatedGenes.distinctBy { it.resourcePosition }.size)
         assertTrue(addSpec.getAdded(true).isNotEmpty())
@@ -412,18 +411,23 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         targetsOfB.plus(targetsOfA).forEachIndexed { index, i ->
             fake1fitnessValue.updateTarget(i, 0.2, index)
         }
-        val fakeEvalInd1 = EvaluatedIndividual(fake1fitnessValue, ind1With2Resources, mutableListOf())
+        val fakeEvalInd1 = EvaluatedIndividual(fake1fitnessValue, ind1With2Resources, generateIndividualResults(ind1With2Resources))
 
         val ind2With2Resources = RestIndividual(mutableListOf(callC, callA), SampleType.SMART_RESOURCE)
         val fake2fitnessValue = FitnessValue(ind2With2Resources!!.seeActions().size.toDouble())
         targetsOfC.plus(targetsOfA).forEachIndexed { index, i ->
             fake2fitnessValue.updateTarget(i, 0.3, index)
         }
-        val fakeEvalInd2 = EvaluatedIndividual(fake2fitnessValue, ind2With2Resources, mutableListOf())
+        val fakeEvalInd2 = EvaluatedIndividual(fake2fitnessValue, ind2With2Resources, generateIndividualResults(ind1With2Resources))
 
         dm.detectDependencyAfterStructureMutation(fakeEvalInd1, fakeEvalInd2, EvaluatedMutation.BETTER_THAN)
         assertTrue(dm.getRelatedResource(resourceA).contains(resourceC))
     }
 
+
+    private fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(ActionFilter.ALL).map {
+        if (it is DbAction) DbActionResult().also { it.setInsertExecutionResult(true) }
+        else ActionResult()
+    }
 }
 

@@ -74,7 +74,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         set(value) { fitness.executionTimeMs = value}
 
     init{
-        if(individual.seeActions().size < seeResults().size){
+        if (individual.seeActions(ALL).size < results.size){
             throw IllegalArgumentException("Less actions than results")
         }
     }
@@ -110,8 +110,12 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     fun seeResults(actions: List<Action>? = null): List<ActionResult>{
         val list = actions?:individual.seeActions()
         val all = individual.seeActions(ALL)
-        return list.map {
-            results[all.indexOf(it)]
+        val last = results.indexOfFirst { it.stopping }
+        return list.mapNotNull {
+            val index = all.indexOf(it)
+            if (last == -1 || index < last)
+                results[index]
+            else null
         }
     }
 
@@ -125,14 +129,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val list: MutableList<EvaluatedAction> = mutableListOf()
 
         val actions = individual.seeActions()
-        val all = individual.seeActions(ALL)
-        val actionResults = actions.map {
-            results[all.indexOf(it)]
-        }
-
-        Lazy.assert {
-            actions.size == actionResults.size
-        }
+        val actionResults = seeResults(actions)
 
         (0 until actionResults.size).forEach { i ->
             list.add(EvaluatedAction(actions[i], actionResults[i]))

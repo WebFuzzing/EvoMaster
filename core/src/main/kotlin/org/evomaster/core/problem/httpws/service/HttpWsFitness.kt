@@ -417,8 +417,8 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
             return true
         }
 
-
         val dbresults = (allDbActions.indices).map { DbActionResult() }
+        actionResults.addAll(dbresults)
 
         if (allDbActions.none { !it.representExistingData }) {
             /*
@@ -432,7 +432,6 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
                 sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
             }
             previous.addAll(allDbActions)
-            actionResults.addAll(dbresults)
             return true
         }
 
@@ -457,7 +456,6 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
         executedResults?.forEachIndexed { index, b ->
             dbresults[index].setInsertExecutionResult(b)
         }
-        actionResults.addAll(dbresults)
         previous.addAll(allDbActions)
 
 
