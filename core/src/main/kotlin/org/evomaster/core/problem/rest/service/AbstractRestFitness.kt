@@ -465,6 +465,17 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 when objects like WebRequest are used. So we default to urlencoded
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+        } else if(a.verb == HttpVerb.POST && body == null){
+            /*
+                POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
+                411 if  Content-Length is missing...
+             */
+            //builder.header("Content-Length", 0)
+            // null
+            /*
+                yet another critical bug in Jersey that it ignores that header (verified with WireShark)
+             */
+            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
         } else {
             null
         }

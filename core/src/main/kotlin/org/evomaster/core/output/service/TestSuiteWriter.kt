@@ -74,12 +74,14 @@ class TestSuiteWriter {
 
         header(solution, testSuiteFileName, lines, controllerName)
 
-        if (config.outputFormat.isJavaOrKotlin()) {
+        if (! config.outputFormat.isJavaScript()) {
             /*
-                In Java/Kotlin the tests are inside a class, but not in JS
+                In Java/Kotlin/C# the tests are inside a class, but not in JS
              */
             lines.indent()
         }
+
+        classFields(lines, config.outputFormat)
 
         beforeAfterMethods(controllerName, lines, config.outputFormat, testSuiteFileName)
 
@@ -116,7 +118,7 @@ class TestSuiteWriter {
             lines.add(testLines)
         }
 
-        if (config.outputFormat.isJavaOrKotlin()) {
+        if (! config.outputFormat.isJavaScript()) {
             lines.deindent()
         }
 
@@ -124,6 +126,7 @@ class TestSuiteWriter {
 
         return lines.toString()
     }
+
 
 
     private fun saveToDisk(
@@ -181,6 +184,9 @@ class TestSuiteWriter {
 
     }
 
+    /**
+     * This is needed for C#, in particular XUnit
+     */
     private fun defineFixture(lines: Lines, controllerName: String?) {
         lines.add("public class $fixtureClass : IDisposable")
 
@@ -288,6 +294,7 @@ class TestSuiteWriter {
         if (format.isCsharp()) {
             addUsing("System", lines)
             addUsing("System.Text", lines)
+            addUsing("System.Linq", lines)
             addUsing("Xunit", lines)
             addUsing("System.Net.Http", lines)
             addUsing("System.Net.Http.Headers", lines)
@@ -301,13 +308,29 @@ class TestSuiteWriter {
         classDescriptionComment(solution, lines)
 
         if (format.isCsharp()) {
+
+            //TODO configured from EMConfig. possibly with termination rather in the fixture class name
+            lines.add("namespace EvoMasterTests${solution.termination.suffix}{")
+
+            lines.indent()
+
             defineFixture(lines, controllerName)
         }
+
         if (format.isJavaOrKotlin() || format.isCsharp()) {
             defineClass(name, lines)
             lines.addEmpty()
         }
     }
+
+    private fun classFields(lines: Lines, format: OutputFormat) {
+        if(format.isCsharp()){
+            lines.addEmpty()
+            addStatement("private $fixtureClass $fixture", lines)
+            lines.addEmpty()
+        }
+    }
+
 
     private fun staticVariables(controllerName: String?, lines: Lines) {
 
@@ -334,14 +357,12 @@ class TestSuiteWriter {
                 lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
             }
         } else if (config.outputFormat.isCsharp()) {
-            if (!config.blackBox || config.bbExperiments) {
-                lines.add("private static readonly HttpClient Client = new HttpClient ();")
-            }
+            lines.add("private static readonly HttpClient Client = new HttpClient ();")
         }
 
         if (config.expectationsActive) {
             if (config.outputFormat.isJavaOrKotlin()) {
-                //TODO JS
+                //TODO JS and C#
                 if (activePartialOracles.any { it.value }) {
                     lines.add(
                         "/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
@@ -363,6 +384,8 @@ class TestSuiteWriter {
     }
 
     private fun initClassMethod(lines: Lines) {
+
+        // Note: for C#, this is done in the Fixture class
 
         val format = config.outputFormat
 
@@ -476,6 +499,7 @@ class TestSuiteWriter {
                 lines.add("fun initTest()")
             }
             format.isJavaScript() -> lines.add("beforeEach(async () => ")
+            //for C# we are actually setting up the constructor for the test class
             format.isCsharp() -> lines.add("public ${name.getClassName()} ($fixtureClass fixture)")
         }
 
@@ -515,12 +539,6 @@ class TestSuiteWriter {
                 lines.addEmpty(2)
 
                 tearDownMethod(lines)
-            } else {
-                addStatement("private $fixtureClass $fixture", lines)
-                addStatement("private HttpResponseMessage response", lines)
-                addStatement("private string responseBody", lines)
-                addStatement("private string body", lines)
-                addStatement("private StringContent httpContent", lines)
             }
         }
 
@@ -539,6 +557,14 @@ class TestSuiteWriter {
 
     private fun footer(lines: Lines) {
         if (config.outputFormat.isJavaOrKotlin() || config.outputFormat.isCsharp()) {
+            //due to opening of class
+            lines.addEmpty(2)
+            lines.add("}")
+        }
+
+        if (config.outputFormat.isCsharp()) {
+            //due to opening of namespace
+            lines.deindent()
             lines.addEmpty(2)
             lines.add("}")
         }
