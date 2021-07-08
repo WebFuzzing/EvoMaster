@@ -1,24 +1,24 @@
 package org.evomaster.client.java.controller.internal.db;
 
 import io.restassured.http.ContentType;
-import org.evomaster.client.java.controller.db.DataRow;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
-import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
-import org.evomaster.client.java.controller.db.QueryResult;
+import org.evomaster.client.java.controller.InstrumentedSutStarter;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.evomaster.client.java.controller.api.ControllerConstants.*;
+import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
+import static org.evomaster.client.java.controller.api.ControllerConstants.TEST_RESULTS;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
+public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
 
 
     @Test
-    public void testHeuristic() throws Exception {
+    public default void testHeuristic() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (10)");
@@ -72,7 +72,7 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public void testMultiline() throws Exception {
+    public default void testMultiline() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)");
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)");
@@ -107,7 +107,7 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public void testVarNotInSelect() throws Exception {
+    public default void testVarNotInSelect() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)");
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)");
@@ -142,7 +142,7 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public void testInnerJoin() throws Exception {
+    public default void testInnerJoin() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, value INT)");
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, value INT, bar_id INT, " +
@@ -197,7 +197,7 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
 
-    private Double getFirstAndStartNew(String url) {
+    default Double getFirstAndStartNew(String url) {
 
         double value = Double.parseDouble(given().accept(ContentType.JSON)
                 .get(url + TEST_RESULTS)

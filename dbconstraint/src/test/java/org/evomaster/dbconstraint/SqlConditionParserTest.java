@@ -52,7 +52,7 @@ class SqlConditionParserTest {
 
     private static SqlCondition parse(String conditionSqlStr) throws SqlConditionParserException {
         JSqlConditionParser parser = new JSqlConditionParser();
-        return parser.parse(conditionSqlStr);
+        return parser.parse(conditionSqlStr, ConstraintDatabaseType.H2);
     }
 
     private static SqlSimilarToCondition similarTo(SqlColumn columnName, SqlStringLiteralValue pattern) {
@@ -223,6 +223,19 @@ class SqlConditionParserTest {
     @Test
     void testPostgresLike() throws SqlConditionParserException {
         SqlCondition actual = parse("((f_id ~~ 'hi'::text) OR (f_id ~~ '%foo%'::text) OR (f_id ~~ '%foo%x%'::text) OR (f_id ~~ '%bar%'::text) OR (f_id ~~ '%bar%y%'::text) OR (f_id ~~ '%hello%'::text))");
+        SqlOrCondition expected = or(or(or(or(or(like(column("f_id"), "hi"),
+                like(column("f_id"), "%foo%")),
+                like(column("f_id"), "%foo%x%")),
+                like(column("f_id"), "%bar%")),
+                like(column("f_id"), "%bar%y%")),
+                like(column("f_id"), "%hello%")
+        );
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testMySQLLike() throws SqlConditionParserException {
+        SqlCondition actual = parse("((f_id like 'hi') or (f_id like '%foo%') or (f_id like '%foo%x%') or (f_id like '%bar%') or (f_id like '%bar%y%') or (f_id like '%hello%'))");
         SqlOrCondition expected = or(or(or(or(or(like(column("f_id"), "hi"),
                 like(column("f_id"), "%foo%")),
                 like(column("f_id"), "%foo%x%")),

@@ -15,7 +15,7 @@ public class TableConstraintBuilder {
         SqlConditionParser sqlParser = SqlConditionParserFactory.buildParser();
         SqlCondition expr;
         try {
-            expr = sqlParser.parse(condExpression);
+            expr = sqlParser.parse(condExpression, databaseType);
         } catch (SqlConditionParserException ex) {
             return new UnsupportedTableConstraint(tableName, condExpression);
         }
