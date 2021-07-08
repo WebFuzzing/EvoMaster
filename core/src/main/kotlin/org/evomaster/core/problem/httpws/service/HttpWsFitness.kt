@@ -399,6 +399,36 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
         return dto
     }
 
+    @Deprecated("replaced by doDbCalls()")
+    open fun doInitializingActions(ind: HttpWsIndividual) {
+
+        if (log.isTraceEnabled){
+            log.trace("do {} InitializingActions: {}", ind.seeInitializingActions().size,
+                ind.seeInitializingActions().joinToString(","){
+                    it.getResolvedName()
+                })
+        }
+
+        if (ind.seeInitializingActions().none { !it.representExistingData }) {
+            /*
+                We are going to do an initialization of database only if there
+                is data to add.
+                Note that current data structure also keeps info on already
+                existing data (which of course should not be re-inserted...)
+             */
+            return
+        }
+
+        val dto = DbActionTransformer.transform(ind.seeInitializingActions())
+        dto.idCounter = StaticCounter.getAndIncrease()
+
+        val ok = rc.executeDatabaseCommand(dto)
+        if (!ok) {
+            //this can happen if we do not handle all constraints
+            LoggingUtil.uniqueWarn(log, "Failed in executing database command")
+        }
+    }
+
     /**
      * @param allDbActions specified the db actions to be executed
      * @param sqlIdMap indicates the map id of pk to generated id

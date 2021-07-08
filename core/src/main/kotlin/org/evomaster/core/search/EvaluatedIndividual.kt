@@ -113,7 +113,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val last = results.indexOfFirst { it.stopping }
         return list.mapNotNull {
             val index = all.indexOf(it)
-            if (last == -1 || index < last)
+            if (last == -1 || index <= last)
                 results[index]
             else null
         }
