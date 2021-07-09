@@ -9,8 +9,6 @@ import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.ActionResult
@@ -43,6 +41,12 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         return name
     }
 
+    protected fun createUniqueBodyVariableName(): String {
+        val name = "body_$counter"
+        counter++
+        return name
+    }
+
     /**
      * Some fields might lead to flackiness, eg assertions on timestamps.
      */
@@ -67,33 +71,50 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
     protected fun isSuitableToPrint(printableContent: String): Boolean {
         return (
                 printableContent != "null" //TODO not so sure about this one... need to double-check
-                && printableContent != NOT_COVERED_YET
                 && !printableContent.contains("logged")
                 // is this for IP host:port addresses?
                 && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
     }
 
 
+    protected fun handlePreCallSetup(call: HttpWsAction, lines: Lines, res: HttpWsCallResult){
+        /*
+            This is needed when we need to execute some code before each HTTP call.
+            Cannot be in @Before/Fixture, as it must be done for each HTTP call , and not
+            just once for test
+         */
+
+        if(format.isCsharp()){
+            lines.add("Client.DefaultRequestHeaders.Clear();")
+            lines.add(getAcceptHeader(call, res))
+            lines.addEmpty()
+        }
+    }
+
     protected fun handleFirstLine(call: HttpWsAction, lines: Lines, res: HttpWsCallResult, resVarName: String) {
 
         lines.addEmpty()
+
+        handlePreCallSetup(call, lines, res)
+
         if (needsResponseVariable(call, res)) {
             when {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
                 format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
                 format.isJavaScript() -> lines.append("const $resVarName = ")
-                //TODO C#
+                format.isCsharp() -> lines.append("var $resVarName = ")
             }
         }
 
         when {
             format.isJavaOrKotlin() -> lines.append("given()")
             format.isJavaScript() -> lines.append("await superagent")
-            format.isCsharp() -> lines.append("Client.DefaultRequestHeaders.Clear();\n")
+            format.isCsharp() -> lines.append("await Client")
         }
 
-        if (!format.isJavaScript()) {
+        if (!format.isJavaScript() && ! format.isCsharp()) {
             // in JS, the Accept must be after the verb
+            // in C#, must be before the call
             lines.append(getAcceptHeader(call, res))
         }
     }
@@ -136,6 +157,12 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
     }
 
     protected fun handleHeaders(call: HttpWsAction, lines: Lines) {
+
+        if(format.isCsharp()){
+            //FIXME
+            log.warn("Currently not handling headers in C#")
+            return
+        }
 
         val prechosenAuthHeaders = call.auth.headers.map { it.name }
 
@@ -192,7 +219,9 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             format.isJavaScript() -> {
                 lines.add("expect($responseVariableName.status).toBe($code);")
             }
-            //TODO C#
+            format.isCsharp() ->{
+                lines.add("Assert.Equal($code, (int) $responseVariableName.StatusCode);")
+            }
             else -> {
                 LoggingUtil.uniqueWarn(log, "No status assertion supported for format $format")
             }
@@ -235,15 +264,15 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
         handleFirstLine(call, lines, res, responseVariableName)
 
-        lines.indent(2)
-
         when {
             format.isJavaOrKotlin() -> {
+                lines.indent(2)
                 handleHeaders(call, lines)
                 handleBody(call, lines)
                 handleVerbEndpoint(baseUrlOfSut, call, lines)
             }
             format.isJavaScript() -> {
+                lines.indent(2)
                 //in SuperAgent, verb must be first
                 handleVerbEndpoint(baseUrlOfSut, call, lines)
                 lines.append(getAcceptHeader(call, res))
@@ -251,8 +280,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                 handleBody(call, lines)
             }
             format.isCsharp() -> {
-                val hasBody = handleBody(call, lines)
-                handleVerbEndpoint(baseUrlOfSut, call, lines, hasBody)
+                handleVerbEndpoint(baseUrlOfSut, call, lines)
+                //TODO headers
             }
         }
 
@@ -265,7 +294,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
 
 
-    abstract fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines, hasBody: Boolean = true)
+    abstract fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines)
 
     protected fun sendBodyCommand() : String{
         return when {
@@ -277,32 +306,32 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
     }
 
     //TODO: check again for C#, especially when not json
-    protected open fun handleBody(call: HttpWsAction, lines: Lines): Boolean {
+    protected open fun handleBody(call: HttpWsAction, lines: Lines) {
 
-        var hasBody = false
-        val bodyParam = call.parameters.find { p -> p is BodyParam }
-        //'Form' not longer used in OpenAPI v3 parser
-//        val form = call.getBodyFormData()
+        val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
 
-//        if (bodyParam != null && form != null) {
-//            throw IllegalStateException("Issue: both Body and FormData present")
-//        }
 
-        val send = sendBodyCommand()
+        if(format.isCsharp() && bodyParam == null){
+            lines.append("null")
+            return
+        }
 
-        if (bodyParam != null && bodyParam is BodyParam) {
+        if (bodyParam != null) {
+
+            val send = sendBodyCommand()
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
                 format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
-                format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"${bodyParam.contentType()}\"));")
+                //FIXME
+            //format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"${bodyParam.contentType()}\"));")
             }
 
             if (bodyParam.isJson()) {
 
                 val json = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
 
-                hasBody = printSendJsonBody(json, lines)
+                 printSendJsonBody(json, lines)
 
             } else if (bodyParam.isTextPlain()) {
                 val body =
@@ -311,19 +340,14 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     if (!format.isCsharp())
                         lines.add(".$send($body)")
                     else {
-                        lines.add("body = \"$body\";")
-                        lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                        lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
                     }
-
-                    hasBody = true
                 } else {
                     if (!format.isCsharp())
                         lines.add(".$send(\"${"""\"\""""}\")")
                     else {
-                        lines.add("body = \"${"""\"\""""}\";")
-                        lines.add("httpContent = new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                        lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
                     }
-                    hasBody = true
                 }
 
                 //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
@@ -338,40 +362,19 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                 if (!format.isCsharp())
                     lines.add(".$send(\"$body\")")
                 else {
-                    lines.add("body = \"$body\";")
-                    lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                    lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
                 }
 
-                hasBody = true
             } else {
                 //TODO XML
-
-                LoggingUtil.uniqueWarn(log, "Unrecognized type: " + bodyParam.contentType())
+                LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType())
             }
         }
-
-//        if (form != null) {
-//            when {
-//                format.isJavaOrKotlin() -> lines.add(".contentType(\"application/x-www-form-urlencoded\")")
-//                format.isJavaScript() -> lines.add(".set('Content-Type','application/x-www-form-urlencoded')")
-//                format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"application/x-www-form-urlencoded\"));")
-//            }
-//            if (!format.isCsharp())
-//                lines.add(".$send(\"$form\")")
-//            else {
-//                lines.add("body = \"$form\";")
-//                lines.add("httpContent = new StringContent(form, Encoding.UTF8, \"application/x-www-form-urlencoded\");")
-//            }
-//
-//            hasBody = true
-//        }
-        return hasBody
     }
 
-    protected fun printSendJsonBody(json: String, lines: Lines): Boolean {
+    protected fun printSendJsonBody(json: String, lines: Lines) {
 
         val send = sendBodyCommand()
-        var hasBody = false
 
         val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
             OutputFormatter.JSON_FORMATTER.getFormatted(json)
@@ -387,11 +390,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         if (bodyLines.size == 1) {
             if (!format.isCsharp()) {
                 lines.add(".$send(${bodyLines.first()})")
-                hasBody = true
             } else {
-                lines.add("body = ${bodyLines.first()};")
-                lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"application/json\");")
-                hasBody = true
+                lines.add("new StringContent(${bodyLines.first()}, Encoding.UTF8, \"application/json\");")
             }
         } else {
             if (!format.isCsharp()) {
@@ -403,18 +403,17 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     lines.add("${bodyLines.last()})")
                 }
             } else {
-                lines.add("body = ${bodyLines.first()} +")
+                lines.add("new StringContent(")
+                lines.add("${bodyLines.first()} +")
                 lines.indented {
                     (1 until bodyLines.lastIndex).forEach { i ->
                         lines.add("${bodyLines[i]} + ")
                     }
-                    lines.add("${bodyLines.last()};")
+                    lines.add("${bodyLines.last()}")
                 }
-                lines.add("httpContent = new StringContent(body, Encoding.UTF8, \"application/json\");")
+                lines.add(", Encoding.UTF8, \"application/json\");")
             }
-            hasBody = true
         }
-        return hasBody
     }
 
     /**
@@ -431,7 +430,6 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     lines.add(".statusCode($code)")
                 }
                 else -> throw IllegalStateException("No assertion in calls for format: $format")
-                //format.isCsharp() -> lines.add("Assert.Equal($code, (int) response.StatusCode);")
             }
 
             handleLastStatementComment(res, lines)
@@ -484,6 +482,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                 format.isJavaOrKotlin() -> ".contentType(\"$bodyTypeSimplified\")"
                 format.isJavaScript() ->
                     "expect($responseVariableName.header[\"content-type\"].startsWith(\"$bodyTypeSimplified\")).toBe(true);"
+                format.isCsharp() -> "Assert.Contains(\"$bodyTypeSimplified\", $responseVariableName.Content.Headers.GetValues(\"Content-Type\").First());"
                 else -> throw IllegalStateException("Unsupported format $format")
             }
             lines.add(instruction)
@@ -493,21 +492,35 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
         if (res.getBodyType() != null) {
             val type = res.getBodyType()!!
+
+            var bodyVarName = responseVariableName
+
+            if(format.isCsharp()){
+                //cannot use response object directly, as need to unmarshall the body payload manually
+                bodyVarName = createUniqueBodyVariableName()
+                lines.add("dynamic $bodyVarName = ")
+            }
+
             if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
+
+                if(format.isCsharp()){
+                    lines.append("JsonConvert.DeserializeObject(await $responseVariableName.Content.ReadAsStringAsync());")
+                }
+
                 when (bodyString?.trim()?.first()) {
                     //TODO this should be handled recursively, and not ad-hoc here...
                     '[' -> {
                         // This would be run if the JSON contains an array of objects.
                         val list = Gson().fromJson(res.getBody(), List::class.java)
-                        handleAssertionsOnList(list, lines, "", responseVariableName)
+                        handleAssertionsOnList(list, lines, "", bodyVarName)
                     }
                     '{' -> {
                         // JSON contains an object
                         val resContents = Gson().fromJson(res.getBody(), Map::class.java)
-                        handleAssertionsOnObject(resContents as Map<String, *>, lines, "", responseVariableName)
+                        handleAssertionsOnObject(resContents as Map<String, *>, lines, "", bodyVarName)
                     }
                     '"' -> {
-                        lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, responseVariableName))
+                        lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.BODY, bodyVarName))
                     }
                     else -> {
                         /*
@@ -520,20 +533,28 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                         when {
                             res.getTooLargeBody() -> lines.add("/* very large body, which was not handled during the search */")
 
-                            bodyString.isNullOrBlank() -> lines.add(emptyBodyCheck(responseVariableName))
+                            bodyString.isNullOrBlank() -> lines.add(emptyBodyCheck(bodyVarName))
 
-                            else -> handlePrimitive(lines, bodyString, "", responseVariableName)
+                            else -> handlePrimitive(lines, bodyString, "", bodyVarName)
                         }
                     }
                 }
             } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
+
+                if(format.isCsharp()){
+                    lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
+                }
+
                 if (bodyString.isNullOrBlank()) {
-                    lines.add(emptyBodyCheck(responseVariableName))
+                    lines.add(emptyBodyCheck(bodyVarName))
                 } else {
                     //TODO in the call above BODY was used... what's difference from TEXT?
-                    lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.TEXT, responseVariableName))
+                    lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.TEXT, bodyVarName))
                 }
             } else {
+                if(format.isCsharp()){
+                    lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
+                }
                 LoggingUtil.uniqueWarn(log, "Currently no assertions are generated for response type: $type")
             }
         }
@@ -547,7 +568,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             format.isJavaOrKotlin() -> {
                 lines.add(bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName))
             }
-            format.isJavaScript() -> {
+            format.isJavaScript() || format.isCsharp() -> {
                 try {
                     val number = s.toDouble()
                     handleAssertionsOnField(number, lines, fieldPath, responseVariableName)
@@ -563,7 +584,6 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
                 throw IllegalStateException("Cannot parse: $s")
             }
-            //TODO C#
             else -> throw IllegalStateException("Format not supported yet: $format")
         }
     }
@@ -572,9 +592,10 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         if (resContents.isEmpty()) {
 
             val k = when{
+                //TODO should do check for when there are spaces in the field name
                 format.isJavaOrKotlin() -> if(fieldPath.isEmpty()) "" else "'$fieldPath'."
                 format.isJavaScript() -> if(fieldPath.isEmpty()) "" else ".$fieldPath"
-                //TODO C#
+                format.isCsharp()  -> if(fieldPath.isEmpty()) "" else ".$fieldPath"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
 
@@ -583,7 +604,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                 format.isJava() -> ".body(\"${k}isEmpty()\", is(true))"
                 format.isKotlin() -> ".body(\"${k}isEmpty()\", `is`(true))" //'is' is a keyword in Kotlin
                 format.isJavaScript() -> "expect(Object.keys($responseVariableName.body${k}).length).toBe(0);"
-                //TODO C#
+                format.isCsharp() -> "Assert.True($responseVariableName${k}.ToString() == \"{}\");"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
 
@@ -615,7 +636,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             val instruction = when {
                 format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
                 format.isJavaScript() -> "expect($responseVariableName$fieldPath).toBe(null);"
-                //TODO C#
+                format.isCsharp() -> "Assert.True($responseVariableName$fieldPath == null);"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
             lines.add(instruction)
@@ -648,14 +669,20 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             return
         }
 
-        if(format.isJavaScript()){
+        if(format.isJavaScript() || format.isCsharp()){
             val toPrint = if(value is String){
                 "\""+GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format)+"\""
             } else {
                 value.toString()
             }
+
             if(isSuitableToPrint(toPrint)) {
-                lines.add("expect($responseVariableName.body$fieldPath).toBe($toPrint);")
+                if(format.isJavaScript()) {
+                    lines.add("expect($responseVariableName.body$fieldPath).toBe($toPrint);")
+                } else {
+                    assert(format.isCsharp())
+                    lines.add("Assert.True($responseVariableName$fieldPath == $toPrint);")
+                }
             }
             return
         }
@@ -676,7 +703,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         /*
              TODO could do the same for numbers
          */
-        if (format.isJavaOrKotlin() && (list as List<*>).all { it is String } && list.isNotEmpty()) {
+        if (format.isJavaOrKotlin() && list.all { it is String } && list.isNotEmpty()) {
             lines.add(".body(\"$fieldPath\", hasItems(${
                 (list as List<String>).joinToString {
                     "\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""
@@ -710,8 +737,11 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     ").toBe(true);"
         }
 
-        //TODO C#
-        return "TODO"
+        if(format.isCsharp()){
+            return "Assert.True(await $responseVariableName.Content.ReadAsStringAsync() == \"\" );"
+        }
+
+       throw IllegalStateException("Unsupported format $format")
     }
 
     protected fun collectionSizeCheck(responseVariableName: String?, fieldPath: String, expectedSize: Int): String {
@@ -727,7 +757,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             }
             format.isJavaScript() ->
                 "expect($responseVariableName.body$fieldPath.length).toBe($expectedSize);"
-            //TODO C#
+            format.isCsharp() ->
+                "Assert.True($responseVariableName$fieldPath.Count == $expectedSize);"
             else -> throw IllegalStateException("Not supported format $format")
         }
 
@@ -746,10 +777,16 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             return "expect($responseVariableName.text).toBe(\"$content\");"
         }
 
-        //TODO C#
+        if(format.isCsharp()){
+            val k = when {
+                content.startsWith("\"") -> content.substring(1, content.length-1)
+                content.startsWith("\\\"") -> content.substring(2, content.length-2)
+                else -> content
+            }
+            return "Assert.True($responseVariableName == \"$k\");"
+        }
 
-        LoggingUtil.uniqueWarn(log, "Not supported format $format")
-        return "TODO"
+        throw IllegalStateException("Not supported format $format")
     }
 
     protected fun handleLastLine(call: HttpWsAction, res: HttpWsCallResult, lines: Lines, resVarName: String) {
@@ -766,6 +803,9 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         if (config.enableBasicAssertions) {
             lines.appendSemicolon(format)
         }
-        lines.deindent(2)
+
+        if(!format.isCsharp()) {
+            lines.deindent(2)
+        }
     }
 }

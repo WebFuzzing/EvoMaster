@@ -57,6 +57,10 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpWsFitness::class.java)
         const val DEFAULT_FAULT_CODE = "framework_code"
+
+        init{
+            System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+        }
     }
 
     @Inject(optional = true)
@@ -78,6 +82,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
             //workaround bug in Jersey client
             .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
             .property(ClientProperties.FOLLOW_REDIRECTS, false)
+
 
 
     protected var client: Client = ClientBuilder.newClient(clientConfiguration)
