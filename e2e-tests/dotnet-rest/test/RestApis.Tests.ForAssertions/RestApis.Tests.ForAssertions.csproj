@@ -8,13 +8,10 @@
     <StartupObject>RestApis.Tests.ForAssertions.EmbeddedEvoMasterController</StartupObject>
   </PropertyGroup>
 
-<!--  <Target Name="htmlWarning" AfterTargets="AfterBuild">-->
-<!--    <Copy SourceFiles="../../../../client-dotnet/src/EvoMaster.Controller/Resources/warning.html" DestinationFolder="$(OutDir)" />-->
-<!--  </Target>-->
 
-<!--  <Target Name="appsettings" AfterTargets="AfterBuild">-->
-<!--    <Copy SourceFiles="../../src/RestApis.Animals/appsettings.json" DestinationFolder="$(MSBuildProjectDirectory)" />-->
-<!--  </Target>-->
+  <Target Name="appsettings" AfterTargets="AfterBuild">
+    <Copy SourceFiles="../../src/RestApis.ForAssertions/appsettings.json" DestinationFolder="$(MSBuildProjectDirectory)" />
+  </Target>
   
   <ItemGroup>
     <PackageReference Include="DotNet.Testcontainers" Version="1.4.0" />
@@ -32,6 +29,14 @@
 
   <ItemGroup>
     <Folder Include="generated" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
   
 </Project>
