@@ -141,7 +141,7 @@ class Archive<T> where T : Individual {
         sortAndShrinkIfNeeded(candidates, chosenTarget)
 
         val notTimedout = candidates.filter {
-            !it.results.any { res -> res is RestCallResult && res.getTimedout() }
+            !it.seeResults().any { res -> res is RestCallResult && res.getTimedout() }
         }
 
         /*

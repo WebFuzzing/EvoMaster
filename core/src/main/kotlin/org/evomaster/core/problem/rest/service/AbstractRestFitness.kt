@@ -531,7 +531,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     protected fun restActionResultHandling(
-        individual: RestIndividual, targets: Set<Int>, actionResults: MutableList<ActionResult>, fv: FitnessValue) : TestResultsDto?{
+        individual: RestIndividual, targets: Set<Int>, actionResults: List<ActionResult>, fv: FitnessValue) : TestResultsDto?{
 
         if(actionResults.any { it is RestCallResult && it.getTcpProblem() }){
             /*

@@ -4,6 +4,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
@@ -52,15 +53,15 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         val sqlIdMap = mutableMapOf<Long, Long>()
         val executedDbActions = mutableListOf<DbAction>()
 
+        val actionResults: MutableList<ActionResult> = mutableListOf()
+
         //whether there exist some SQL execution failure
-        var failureBefore = doDbCalls(individual.seeInitializingActions(), sqlIdMap, false, executedDbActions)
+        var failureBefore = doDbCalls(individual.seeInitializingActions(), sqlIdMap, false, executedDbActions, actionResults)
 
         val cookies = getCookies(individual)
         val tokens = getTokens(individual)
 
         val fv = FitnessValue(individual.size().toDouble())
-
-        val actionResults: MutableList<ActionResult> = mutableListOf()
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
@@ -70,7 +71,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            val result = doDbCalls(call.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>, sqlIdMap, failureBefore, executedDbActions)
+            val result = doDbCalls(call.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>, sqlIdMap, failureBefore, executedDbActions, actionResults)
             failureBefore = failureBefore || result
 
             var terminated = false
@@ -85,7 +86,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 if (a is RestCallAction) {
                     ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
                     // update creation of resources regarding response status
-                    call.getResourceNode().confirmFailureCreationByPost(call, a, actionResults[indexOfAction])
+                    val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
+                    call.getResourceNode().confirmFailureCreationByPost(call, a, restActionResult)
 
                 } else {
                     throw IllegalStateException("Cannot handle: ${a.javaClass}")
@@ -102,7 +104,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 break
         }
 
-        val dto = restActionResultHandling(individual, targets, actionResults, fv)?:return null
+        val allRestResults = actionResults.filterIsInstance<RestCallResult>()
+        val dto = restActionResultHandling(individual, targets, allRestResults, fv)?:return null
 
         /*
             TODO: Man shall we update the action cluster based on expanded action?
@@ -123,75 +126,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
     }
 
-    /**
-     * @param allSuccessBefore indicates whether all SQL before this [allDbActions] are executed successfully
-     * @return whether [allDbActions] execute successfully
-     */
-    private fun doDbCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>, allSuccessBefore : Boolean, previous: MutableList<DbAction>) : Boolean {
 
-        if (allDbActions.isEmpty()) {
-            return true
-        }
-
-        if (allDbActions.none { !it.representExistingData }) {
-            /*
-                We are going to do an initialization of database only if there
-                is data to add.
-                Note that current data structure also keeps info on already
-                existing data (which of course should not be re-inserted...)
-             */
-            // other dbactions might bind with the representExistingData, so we still need to record sqlId here.
-            allDbActions.filter { it.representExistingData }.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().forEach {
-                sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
-            }
-            previous.addAll(allDbActions)
-            return true
-        }
-
-        val dto = try {
-            DbActionTransformer.transform(allDbActions, sqlIdMap, previous)
-        }catch (e : IllegalArgumentException){
-            // the failure might be due to previous failure
-            if (!allSuccessBefore){
-                previous.addAll(allDbActions)
-                return false
-            } else
-                throw e
-        }
-        dto.idCounter = StaticCounter.getAndIncrease()
-
-        val sqlResults = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
-        val map = sqlResults?.idMapping
-        val executedResults = sqlResults?.executionResults
-
-        if (executedResults?.size?:0 > allDbActions.size)
-            throw IllegalStateException("incorrect insertion execution results (${executedResults!!.size}) which is more than the size of insertions (${allDbActions.size}).")
-        executedResults?.forEachIndexed { index, b ->
-            allDbActions[index].insertExecutedSuccessfully = b
-        }
-        previous.addAll(allDbActions)
-
-
-        if (map == null) {
-            LoggingUtil.uniqueWarn(log, "Failed in executing database command")
-            return false
-        }else{
-            val expected = allDbActions.filter { !it.representExistingData }
-                .flatMap { it.seeGenes() }.flatMap { it.flatView() }
-                .filterIsInstance<SqlPrimaryKeyGene>()
-                .filter { it.gene is SqlAutoIncrementGene }
-                .filterNot { it.gene is SqlForeignKeyGene }
-            val missing = expected.filterNot {
-                map.containsKey(it.uniqueId)
-            }
-            sqlIdMap.putAll(map)
-            if (missing.isNotEmpty()){
-                log.warn("can not get sql ids for {} from sut", missing.map { "${it.uniqueId} of ${it.tableName}" }.toSet().joinToString(","))
-                return false
-            }
-        }
-        return true
-    }
 
     override fun hasParameterChild(a: RestCallAction): Boolean {
         return sampler.seeAvailableActions()

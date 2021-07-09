@@ -50,14 +50,6 @@ class DbAction(
         }
     }
 
-    /**
-     * whether the insertion was executed successfully
-     *
-     * TODO this will be removed once evaluated individual
-     *  is refactored with execution results for dbaction
-     */
-    var insertExecutedSuccessfully = false
-
     private
     val genes: List<Gene> = (computedGenes ?: selectedColumns.map {
         DbActionGeneBuilder().buildGene(id, table, it)
