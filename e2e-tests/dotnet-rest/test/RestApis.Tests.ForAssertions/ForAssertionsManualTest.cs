@@ -30,7 +30,7 @@ namespace RestApis.Tests.ForAssertions {
     
         private static readonly HttpClient Client = new HttpClient();
 
-        private EMFixture fixture;
+        private  EMFixture fixture;
         
         public ForAssertionsManualTest(EMFixture fixture) {
             this.fixture = fixture;

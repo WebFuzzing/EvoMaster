@@ -344,9 +344,9 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     }
                 } else {
                     if (!format.isCsharp())
-                        lines.add(".$send(\"${"\"\""}\")")
+                        lines.add(".$send(\"${"""\"\""""}\")")
                     else {
-                        lines.append("new StringContent(\"${"\"\""}\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                        lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
                     }
                 }
 
