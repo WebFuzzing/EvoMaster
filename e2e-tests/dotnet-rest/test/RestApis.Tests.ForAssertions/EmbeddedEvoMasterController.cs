@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using EvoMaster.Controller;
 using EvoMaster.Controller.Api;
@@ -13,11 +14,17 @@ namespace RestApis.Tests.ForAssertions {
 
         public static void Main (string[] args) {
 
+            var controllerPort = 40100;
+            if (args.Length > 0) {
+                controllerPort = Int32.Parse(args[0]);
+            }
+            
             var embeddedEvoMasterController = new EmbeddedEvoMasterController ();
-
+            embeddedEvoMasterController.SetControllerPort(controllerPort);
+            
             var instrumentedSutStarter = new InstrumentedSutStarter (embeddedEvoMasterController);
 
-            System.Console.WriteLine ("Driver is starting...\n");
+            System.Console.WriteLine ($"Driver is starting on port {controllerPort}...\n");
 
             instrumentedSutStarter.Start ();
         }
