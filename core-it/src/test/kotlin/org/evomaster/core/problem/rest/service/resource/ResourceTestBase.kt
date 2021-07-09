@@ -418,7 +418,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         targetsOfC.plus(targetsOfA).forEachIndexed { index, i ->
             fake2fitnessValue.updateTarget(i, 0.3, index)
         }
-        val fakeEvalInd2 = EvaluatedIndividual(fake2fitnessValue, ind2With2Resources, generateIndividualResults(ind1With2Resources))
+        val fakeEvalInd2 = EvaluatedIndividual(fake2fitnessValue, ind2With2Resources, generateIndividualResults(ind2With2Resources))
 
         dm.detectDependencyAfterStructureMutation(fakeEvalInd1, fakeEvalInd2, EvaluatedMutation.BETTER_THAN)
         assertTrue(dm.getRelatedResource(resourceA).contains(resourceC))
