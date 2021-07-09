@@ -100,3 +100,4 @@ Migrations/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions/bin/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions/obj/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions/generated/
+/e2e-tests/spring-rest-mysql/target/
