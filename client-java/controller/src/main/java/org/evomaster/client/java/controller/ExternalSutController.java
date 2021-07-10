@@ -228,9 +228,13 @@ public abstract class ExternalSutController extends SutController {
         startExternalProcessPrinter();
 
         if (instrumentation && serverController != null) {
-            boolean connected = serverController.waitForIncomingConnection();
+            boolean connected = serverController.waitForIncomingConnection(getWaitingSecondsForIncomingConnection());
             if (!connected) {
                 SimpleLogger.error("Could not establish connection to retrieve code metrics");
+                if(errorBuffer != null) {
+                    SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
+                }
+                stopSut();
                 return null;
             }
         }
@@ -465,5 +469,9 @@ public abstract class ExternalSutController extends SutController {
 
             outputPrinter.start();
         }
+    }
+
+    public int getWaitingSecondsForIncomingConnection() {
+        return 20_000;
     }
 }
