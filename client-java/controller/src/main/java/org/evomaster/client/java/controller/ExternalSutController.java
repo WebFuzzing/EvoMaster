@@ -472,6 +472,6 @@ public abstract class ExternalSutController extends SutController {
     }
 
     public int getWaitingSecondsForIncomingConnection() {
-        return 20_000;
+        return 30_000;
     }
 }
