@@ -166,7 +166,7 @@ export default function evomasterPlugin(
 
         if (t.isStringLiteral(node)
             || t.isNumericLiteral(node) || t.isNullLiteral(node) || t.isBooleanLiteral(node) || t.isBigIntLiteral(node)
-            || t.isRegexLiteral(node)
+            || t.isRegExpLiteral(node)
             // || t.isDecimalLiteral(node) //TODO do not find this lib, but it exists https://babeljs.io/docs/en/babel-types#decimalliteral
             || t.isAssignmentExpression(node)
             || t.isArrayExpression(node)

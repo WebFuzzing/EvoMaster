@@ -245,7 +245,7 @@ test("|| branch distance", () => {
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
-        const x = __EM__.or(() => true, () => false, false, "test.ts", 1, 0);
+        const x = __EM__.or(() => true, () => false, true, "test.ts", 1, 0);
         
         __EM__.completedStatement("test.ts", 1, 0);        
     `);
