@@ -213,3 +213,108 @@ test("ternary throw", () => {
     const alt = ET.getValue("Statement_test.ts_00002_3")
     expect(alt).toBe(1);
 });
+
+
+test("purity analysis 'and' and 'or' with literal/binary expression", () => {
+
+    expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(0);
+
+    let bar;
+    const code = dedent`
+        foo = function(x){
+            return x;
+        };
+        bar = function(x){
+            if (x === "and")
+                return false && 5 < 2 && "foo" < 1 && foo(x);
+            else
+                return true || 5 > 2 || "foo" !== 1 || foo(x)
+        }
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let res = bar("and");
+
+    /*
+        return __EM__.completingStatement(
+            __EM__.and(
+                () => __EM__.and(
+                    () => __EM__.and(
+                        () => false,
+                        () => __EM__.cmp(5, "<", 2, "test.ts", 6, 4),
+                        true, "test.ts", 6, 3),
+                    () => __EM__.cmp("foo", "<", 1, "test.ts", 6, 5),
+                    true, "test.ts", 6, 2),
+                () => __EM__.callBase(() => foo(x)),
+                false, "test.ts", 6, 1),
+            "test.ts", 6, 4);
+
+        Branch_at_test.ts_at_line_00006_position_1_falseBranch
+        Branch_at_test.ts_at_line_00006_position_2_falseBranch
+        Branch_at_test.ts_at_line_00006_position_3_falseBranch
+        Branch_at_test.ts_at_line_00006_position_4_falseBranch
+        Branch_at_test.ts_at_line_00006_position_5_falseBranch
+
+        Statement_test.ts_00006_4
+     */
+    const branch_6_boolean_int_str_fun = ET.getValue("Branch_at_test.ts_at_line_00006_position_1_falseBranch")
+    expect(branch_6_boolean_int_str_fun).toBe(1);
+    const branch_6_boolean_int_str = ET.getValue("Branch_at_test.ts_at_line_00006_position_2_falseBranch")
+    expect(branch_6_boolean_int_str).toBe(1);
+    const branch_6_boolean_int = ET.getValue("Branch_at_test.ts_at_line_00006_position_3_falseBranch")
+    expect(branch_6_boolean_int).toBe(1);
+    const branch_6_int = ET.getValue("Branch_at_test.ts_at_line_00006_position_4_falseBranch")
+    expect(branch_6_int).toBe(1);
+    const branch_6_str = ET.getValue("Branch_at_test.ts_at_line_00006_position_5_falseBranch")
+    expect(branch_6_str).toBe(1);
+
+    expect(ET.getValue("Statement_test.ts_00006_4")).toBe(1);
+    expect(res).toBe(false);
+
+    // foo() was not executed
+    expect(ET.isTargetReached("Statement_test.ts_00002_1")).toBe(false);
+
+    res = bar("or");
+
+    /*
+    return __EM__.completingStatement(
+        __EM__.or(
+            () => __EM__.or(
+                () => __EM__.or(
+                    () => true, () => __EM__.cmp(5, ">", 2, "test.ts", 8, 9),
+                    true, "test.ts", 8, 8),
+                () => __EM__.cmp("foo", "!==", 1, "test.ts", 8, 10),
+                true, "test.ts", 8, 7),
+            () => __EM__.callBase(() => foo(x)),
+            false, "test.ts", 8, 6),
+        "test.ts", 8, 5);
+
+        Branch_at_test.ts_at_line_00008_position_6_trueBranch
+        Branch_at_test.ts_at_line_00008_position_7_trueBranch
+        Branch_at_test.ts_at_line_00008_position_8_trueBranch
+        Branch_at_test.ts_at_line_00008_position_9_trueBranch
+        Branch_at_test.ts_at_line_00008_position_10_trueBranch
+
+        Statement_test.ts_00008_5
+     */
+
+    const branch_8_boolean_int_str_fun = ET.getValue("Branch_at_test.ts_at_line_00008_position_6_trueBranch")
+    expect(branch_8_boolean_int_str_fun).toBe(1);
+    const branch_8_boolean_int_str = ET.getValue("Branch_at_test.ts_at_line_00008_position_7_trueBranch")
+    expect(branch_8_boolean_int_str).toBe(1);
+    const branch_8_boolean_int = ET.getValue("Branch_at_test.ts_at_line_00008_position_8_trueBranch")
+    expect(branch_8_boolean_int).toBe(1);
+    const branch_8_int = ET.getValue("Branch_at_test.ts_at_line_00008_position_9_trueBranch")
+    expect(branch_8_int).toBe(1);
+    const branch_8_str = ET.getValue("Branch_at_test.ts_at_line_00008_position_10_trueBranch")
+    expect(branch_8_str).toBe(1);
+
+    expect(ET.getValue("Statement_test.ts_00008_5")).toBe(1);
+    expect(res).toBe(true);
+
+    // foo() was not executed
+    expect(ET.isTargetReached("Statement_test.ts_00002_1")).toBe(false);
+
+});

@@ -201,13 +201,15 @@ export default function evomasterPlugin(
         } else if (t.isUpdateExpression(node)){
             // https://babeljs.io/docs/en/babel-types#updateexpression
             pure = isPureExpression(node.argument)
+        } else if (t.isBinaryExpression(node)){
+            // https://babeljs.io/docs/en/babel-types#binaryexpression
+            pure = isPureExpression(node.right) && isPureExpression(node.left)
         }
         else if (t.isArrowFunctionExpression(node)
             || t.isAwaitExpression(node) // await expression which might lead to some expression
             || t.isCallExpression(node)
             || t.isThisExpression(node)
             // || t.isModuleExpression(node) //TODO do not find this lib, but it exists https://babeljs.io/docs/en/babel-types#moduleexpression
-            || t.isBinaryExpression(node) // TODO https://babeljs.io/docs/en/babel-types#binaryexpression
             || t.isConditionalExpression(node) // TODO https://babeljs.io/docs/en/babel-types#conditionalexpression
             || t.isDoExpression(node) //TODO https://babeljs.io/docs/en/babel-types#doexpression
             || t.isFunctionExpression(node) // TODO check if it is supertype https://babeljs.io/docs/en/babel-types#functionexpression

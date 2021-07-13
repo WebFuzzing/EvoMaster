@@ -400,5 +400,60 @@ test("ternary throw", () => {
 });
 
 
+test("purity analysis 'and' and 'or' with literal/binary expression", () => {
+
+    const code = dedent`
+        foo = function(x){
+            return x;
+        };
+        bar = function(x){
+            if (x === "and")
+                return false && 5 < 2 && "foo" < 1 && foo(x);
+            else
+                return true || 5 > 2 || "foo" !== 1 || foo(x)
+        }
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00005_position_0_falseBranch", "Branch_at_test.ts_at_line_00005_position_0_trueBranch", "Branch_at_test.ts_at_line_00006_position_1_falseBranch", "Branch_at_test.ts_at_line_00006_position_1_trueBranch", "Branch_at_test.ts_at_line_00006_position_2_falseBranch", "Branch_at_test.ts_at_line_00006_position_2_trueBranch", "Branch_at_test.ts_at_line_00006_position_3_falseBranch", "Branch_at_test.ts_at_line_00006_position_3_trueBranch", "Branch_at_test.ts_at_line_00006_position_4_falseBranch", "Branch_at_test.ts_at_line_00006_position_4_trueBranch", "Branch_at_test.ts_at_line_00006_position_5_falseBranch", "Branch_at_test.ts_at_line_00006_position_5_trueBranch", "Branch_at_test.ts_at_line_00008_position_10_falseBranch", "Branch_at_test.ts_at_line_00008_position_10_trueBranch", "Branch_at_test.ts_at_line_00008_position_6_falseBranch", "Branch_at_test.ts_at_line_00008_position_6_trueBranch", "Branch_at_test.ts_at_line_00008_position_7_falseBranch", "Branch_at_test.ts_at_line_00008_position_7_trueBranch", "Branch_at_test.ts_at_line_00008_position_8_falseBranch", "Branch_at_test.ts_at_line_00008_position_8_trueBranch", "Branch_at_test.ts_at_line_00008_position_9_falseBranch", "Branch_at_test.ts_at_line_00008_position_9_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00004", "Line_test.ts_00005", "Line_test.ts_00006", "Line_test.ts_00008", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00004_2", "Statement_test.ts_00005_3", "Statement_test.ts_00006_4", "Statement_test.ts_00008_5"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        foo = function (x) {
+          __EM__.enteringStatement("test.ts", 2, 1);
+        
+          return __EM__.completingStatement(x, "test.ts", 2, 1);
+        };
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 4, 2);
+        
+        bar = function (x) {
+          __EM__.markStatementForCompletion("test.ts", 5, 3);
+        
+          if (__EM__.cmp(x, "===", "and", "test.ts", 5, 0)) {
+            __EM__.enteringStatement("test.ts", 6, 4);
+        
+            return __EM__.completingStatement(__EM__.and(() => __EM__.and(() => __EM__.and(() => false, () => __EM__.cmp(5, "<", 2, "test.ts", 6, 4), true, "test.ts", 6, 3), () => __EM__.cmp("foo", "<", 1, "test.ts", 6, 5), true, "test.ts", 6, 2), () => __EM__.callBase(() => foo(x)), false, "test.ts", 6, 1), "test.ts", 6, 4);
+          } else {
+            __EM__.enteringStatement("test.ts", 8, 5);
+        
+            return __EM__.completingStatement(__EM__.or(() => __EM__.or(() => __EM__.or(() => true, () => __EM__.cmp(5, ">", 2, "test.ts", 8, 9), true, "test.ts", 8, 8), () => __EM__.cmp("foo", "!==", 1, "test.ts", 8, 10), true, "test.ts", 8, 7), () => __EM__.callBase(() => foo(x)), false, "test.ts", 8, 6), "test.ts", 8, 5);
+          }
+        };
+        
+        __EM__.completedStatement("test.ts", 4, 2);
+    `);
+
+});
+
+
 
 
