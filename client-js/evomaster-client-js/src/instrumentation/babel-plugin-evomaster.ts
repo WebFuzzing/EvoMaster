@@ -167,6 +167,7 @@ export default function evomasterPlugin(
         if (t.isStringLiteral(node)
             || t.isNumericLiteral(node) || t.isNullLiteral(node) || t.isBooleanLiteral(node) || t.isBigIntLiteral(node)
             || t.isRegExpLiteral(node)
+            || t.isIdentifier(node) // e.g., 'x'
             // || t.isDecimalLiteral(node) //TODO do not find this lib, but it exists https://babeljs.io/docs/en/babel-types#decimalliteral
             || t.isAssignmentExpression(node)
             || t.isArrayExpression(node)
@@ -213,7 +214,7 @@ export default function evomasterPlugin(
             || t.isConditionalExpression(node) // TODO https://babeljs.io/docs/en/babel-types#conditionalexpression
             || t.isDoExpression(node) //TODO https://babeljs.io/docs/en/babel-types#doexpression
             || t.isFunctionExpression(node) // TODO check if it is supertype https://babeljs.io/docs/en/babel-types#functionexpression
-            || t.isIdentifier(node) // TODO unsure https://babeljs.io/docs/en/babel-types#identifier
+
             || t.isLogicalExpression(node) // TODO need to check whether it should be here
             || t.isMemberExpression(node) // TODO need to check
             || t.isMetaProperty(node) || t.isNewExpression(node) // need to discuss, it might not be invoked unless it satisfies the condition as specified
