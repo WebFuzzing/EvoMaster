@@ -491,5 +491,42 @@ test("purity analysis identifier", () => {
 });
 
 
+test("purity analysis member function", () => {
+    const code = dedent`
+        const x = foo();
+        const y1 = 42 < 0 && x.y;
+        const y2 = 42 > 0 || x.y;
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "Branch_at_test.ts_at_line_00002_position_1_falseBranch", "Branch_at_test.ts_at_line_00002_position_1_trueBranch", "Branch_at_test.ts_at_line_00003_position_2_falseBranch", "Branch_at_test.ts_at_line_00003_position_2_trueBranch", "Branch_at_test.ts_at_line_00003_position_3_falseBranch", "Branch_at_test.ts_at_line_00003_position_3_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const x = __EM__.callBase(() => foo());
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        const y1 = __EM__.and(() => __EM__.cmp(42, "<", 0, "test.ts", 2, 1), () => x.y, false, "test.ts", 2, 0);
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+        
+        __EM__.enteringStatement("test.ts", 3, 2);
+        
+        const y2 = __EM__.or(() => __EM__.cmp(42, ">", 0, "test.ts", 3, 3), () => x.y, false, "test.ts", 3, 2);
+        
+        __EM__.completedStatement("test.ts", 3, 2);
+    `);
+});
+
+
 
 

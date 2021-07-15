@@ -195,7 +195,6 @@ export default function evomasterPlugin(
                 https://babeljs.io/docs/en/babel-types#unaryexpression
                 "void" | "throw" | "delete" | "!" | "+" | "-" | "~" | "typeof"
              */
-
             const excludeOp= ["throw", "delete"] // Man: not sure whether to include "void"
             pure = !excludeOp.includes(node.operator) && isPureExpression(node.argument)
 
@@ -205,23 +204,30 @@ export default function evomasterPlugin(
         } else if (t.isBinaryExpression(node)){
             // https://babeljs.io/docs/en/babel-types#binaryexpression
             pure = isPureExpression(node.right) && isPureExpression(node.left)
-        }
-        else if (t.isArrowFunctionExpression(node)
+        } else if (t.isConditionalExpression(node)){
+            // https://babeljs.io/docs/en/babel-types#conditionalexpression
+            pure = isPureExpression(node.test) && isPureExpression(node.consequent) && isPureExpression(node.alternate)
+        } else if (t.isMemberExpression(node)){
+            /*
+                https://babeljs.io/docs/en/babel-types#memberexpression
+                TODO
+                if the object exists in the 'and' expression (e.g., x && x.y), it is false.
+                else it is probably true.
+             */
+            return false
+        } else if (t.isArrowFunctionExpression(node)
             || t.isAwaitExpression(node) // await expression which might lead to some expression
             || t.isCallExpression(node)
             || t.isThisExpression(node)
             // || t.isModuleExpression(node) //TODO do not find this lib, but it exists https://babeljs.io/docs/en/babel-types#moduleexpression
-            || t.isConditionalExpression(node) // TODO https://babeljs.io/docs/en/babel-types#conditionalexpression
-            || t.isDoExpression(node) //TODO https://babeljs.io/docs/en/babel-types#doexpression
+            // || t.isRecordExpression(node) // TODO do not find it in this lib
+            // || t.isTupleExpression(node) // TODO do not find it in this lib
+            || t.isDoExpression(node) // https://babeljs.io/docs/en/babel-types#doexpression
             || t.isFunctionExpression(node) // TODO check if it is supertype https://babeljs.io/docs/en/babel-types#functionexpression
-
-            || t.isLogicalExpression(node) // TODO need to check whether it should be here
-            || t.isMemberExpression(node) // TODO need to check
+            || t.isLogicalExpression(node)
             || t.isMetaProperty(node) || t.isNewExpression(node) // need to discuss, it might not be invoked unless it satisfies the condition as specified
             || t.isOptionalCallExpression(node) || t.isOptionalMemberExpression(node) // TODO need to check https://babeljs.io/docs/en/babel-types#optionalcallexpression
             || t.isPipelinePrimaryTopicReference(node) //TODO need a further check
-            // || t.isRecordExpression(node) // TODO do not find it in this lib
-            // || t.isTupleExpression(node) // TODO do not find it in this lib
             || t.isSuper(node) // need a further check
             || t.isTSAsExpression(node) || t.isTSNonNullExpression(node) || t.isTSTypeAssertion(node) // TODO
             || t.isTypeCastExpression(node) //TODO
