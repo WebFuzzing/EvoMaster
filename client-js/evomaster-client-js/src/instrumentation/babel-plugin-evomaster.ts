@@ -154,10 +154,13 @@ export default function evomasterPlugin(
     }
 
     /**
-     * here, we analyze whether the expression in LogicalExpression (from right to left) is pure,
-     *      i.e., the expression can be evaluated without any possible exception
+     * @param node to be analyzed
+     * @return whether the node is pure
      *
-     * see all available expression with https://babeljs.io/docs/en/babel-types#expression
+     * we analyze whether the expression in LogicalExpression (from right to left) is pure,
+     *      i.e., the expression can be evaluated without any possible exception.
+     * here we consider all types listed in https://babeljs.io/docs/en/babel-types#expression
+     * Additional info: pureish in babel type https://babeljs.io/docs/en/babel-types#pureish
      *
      */
     function isPureExpression(node: Expression): boolean{
@@ -175,71 +178,98 @@ export default function evomasterPlugin(
             || t.isObjectExpression(node) // need a check
             || t.isImport(node) || t.isJSXElement(node) || t.isJSXFragment(node) // need to discuss
         )
-            pure = true
+            pure = true;
         else if (t.isParenthesizedExpression(node)){
-            pure = isPureExpression(node.expression)
+            pure = isPureExpression(node.expression);
         }else if (t.isSequenceExpression(node)){
             for (let exp of node.expressions){
-                pure = pure && isPureExpression(exp)
+                pure = pure && isPureExpression(exp);
             }
         } else if (t.isTemplateLiteral(node)){
             // https://babeljs.io/docs/en/babel-types#templateliteral
             for (let exp of node.expressions){
-                pure = pure && isPureExpression(exp)
+                pure = pure && isPureExpression(exp);
             }
         } else if (t.isTaggedTemplateExpression(node)){
             // https://babeljs.io/docs/en/babel-types#taggedtemplateexpression
-            pure = isPureExpression(node.tag)  && isPureExpression(node.quasi)
+            pure = isPureExpression(node.tag)  && isPureExpression(node.quasi);
         } else if (t.isUnaryExpression(node)){
             /*
                 https://babeljs.io/docs/en/babel-types#unaryexpression
                 "void" | "throw" | "delete" | "!" | "+" | "-" | "~" | "typeof"
              */
             const excludeOp= ["throw", "delete"] // Man: not sure whether to include "void"
-            pure = !excludeOp.includes(node.operator) && isPureExpression(node.argument)
+            pure = !excludeOp.includes(node.operator) && isPureExpression(node.argument);
 
         } else if (t.isUpdateExpression(node)){
             // https://babeljs.io/docs/en/babel-types#updateexpression
-            pure = isPureExpression(node.argument)
+            pure = isPureExpression(node.argument);
         } else if (t.isBinaryExpression(node)){
-            // https://babeljs.io/docs/en/babel-types#binaryexpression
-            pure = isPureExpression(node.right) && isPureExpression(node.left)
+            /*
+                https://babeljs.io/docs/en/babel-types#binaryexpression
+                operator: "+" | "-" | "/" | "%" | "*" | "**" | "&" | "|" | ">>" | ">>>" | "<<" | "^" | "==" | "===" | "!=" | "!==" | "in" | "instanceof" | ">" | "<" | ">=" | "<="
+
+             */
+            pure = isPureExpression(node.right) && isPureExpression(node.left);
         } else if (t.isConditionalExpression(node)){
             // https://babeljs.io/docs/en/babel-types#conditionalexpression
-            pure = isPureExpression(node.test) && isPureExpression(node.consequent) && isPureExpression(node.alternate)
+            pure = isPureExpression(node.test) && isPureExpression(node.consequent) && isPureExpression(node.alternate);
         } else if (t.isMemberExpression(node)){
             /*
                 https://babeljs.io/docs/en/babel-types#memberexpression
+                currently, we only identify 'this.x' as pure
                 TODO
                 if the object exists in the 'and' expression (e.g., x && x.y), it is false.
                 else it is probably true.
              */
-            return false
+            return t.isThisExpression(node.object);
+        } else if (t.isOptionalMemberExpression(node)) {
+            /*
+                https://babeljs.io/docs/en/babel-types#optionalmemberexpression
+                since the object is checked, here the pureish depends on its property
+             */
+            return isPureExpression(node.property);
+        } else if (t.isFunctionExpression(node)){
+            /*
+                https://babeljs.io/docs/en/babel-types#functionexpression
+                TODO this needs a further discussion
+                var foo = function() { return 5; }
+                since this is kind of fun declaration, it may be pure.
+             */
+            return true;
+        } else if (t.isThisExpression(node)){
+            /*
+                here we identify 'this' pure since it would not be null
+             */
+            return true;
         } else if (t.isArrowFunctionExpression(node)
-            || t.isAwaitExpression(node) // await expression which might lead to some expression
-            || t.isCallExpression(node)
-            || t.isThisExpression(node)
-            // || t.isModuleExpression(node) //TODO do not find this lib, but it exists https://babeljs.io/docs/en/babel-types#moduleexpression
-            // || t.isRecordExpression(node) // TODO do not find it in this lib
-            // || t.isTupleExpression(node) // TODO do not find it in this lib
+            || t.isAwaitExpression(node) // executing it might lead to some side-effect
+            || t.isCallExpression(node) || t.isOptionalCallExpression(node) // there might exist throw inside call. without a deep check, we set it false for the moment
             || t.isDoExpression(node) // https://babeljs.io/docs/en/babel-types#doexpression
-            || t.isFunctionExpression(node) // TODO check if it is supertype https://babeljs.io/docs/en/babel-types#functionexpression
-            || t.isLogicalExpression(node)
-            || t.isMetaProperty(node) || t.isNewExpression(node) // need to discuss, it might not be invoked unless it satisfies the condition as specified
-            || t.isOptionalCallExpression(node) || t.isOptionalMemberExpression(node) // TODO need to check https://babeljs.io/docs/en/babel-types#optionalcallexpression
-            || t.isPipelinePrimaryTopicReference(node) //TODO need a further check
+            || t.isMetaProperty(node) || t.isNewExpression(node) // executing it might lead to some side-effect
+            || t.isPipelinePrimaryTopicReference(node) // i.e., |>, we set it false for the moment
             || t.isSuper(node) // need a further check
-            || t.isTSAsExpression(node) || t.isTSNonNullExpression(node) || t.isTSTypeAssertion(node) // TODO
-            || t.isTypeCastExpression(node) //TODO
-            || t.isYieldExpression(node) // TODO need a further check, e.g., whether executing such experssion will lead to any side-effect
-
+            /*
+                executing following might lead to some side-effect
+             */
+            || t.isTSAsExpression(node) || t.isTSTypeAssertion(node) ||t.isTSNonNullExpression(node)  || t.isTypeCastExpression(node)
+            /*
+                executing it might lead to some side-effect, e.g., con1 && con2 && yield x
+             */
+            || t.isYieldExpression(node)
+            // do not find following expression in the lib, but they exist in the list https://babeljs.io/docs/en/babel-types#expression
+            // || t.isModuleExpression(node)
+            // || t.isRecordExpression(node)
+            // || t.isTupleExpression(node)
         ){
-            pure = false
-        }else{
+            pure = false;
+        } else if (t.isLogicalExpression(node)){
+            throw Error("LogicalExpression should not appear in the pure analysis, and the expression is: loc ("+ node.loc +
+                "), left("+ node.left + "), operator(" + node.operator+ "), right(" +node.right +")");
+        } else{
             throw Error("Missing expression type in the pure analysis: " + node.type);
         }
         return pure;
-
     }
 
     function replaceBinaryExpression(path: NodePath){

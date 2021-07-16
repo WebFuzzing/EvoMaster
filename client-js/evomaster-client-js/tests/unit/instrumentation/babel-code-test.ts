@@ -527,6 +527,36 @@ test("purity analysis member function", () => {
     `);
 });
 
+test("purity analysis this and member function", () => {
+    const code = dedent`
+        const y1 = 42 < 0 && this.x;
+        const y2 = 42 > 0 || this.x;
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "Branch_at_test.ts_at_line_00001_position_1_falseBranch", "Branch_at_test.ts_at_line_00001_position_1_trueBranch", "Branch_at_test.ts_at_line_00002_position_2_falseBranch", "Branch_at_test.ts_at_line_00002_position_2_trueBranch", "Branch_at_test.ts_at_line_00002_position_3_falseBranch", "Branch_at_test.ts_at_line_00002_position_3_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const y1 = __EM__.and(() => __EM__.cmp(42, "<", 0, "test.ts", 1, 1), () => this.x, true, "test.ts", 1, 0);
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        const y2 = __EM__.or(() => __EM__.cmp(42, ">", 0, "test.ts", 2, 3), () => this.x, true, "test.ts", 2, 2);
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+    `);
+});
+
+
 
 
 
