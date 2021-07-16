@@ -172,11 +172,10 @@ export default function evomasterPlugin(
             || t.isRegExpLiteral(node)
             || t.isIdentifier(node) // e.g., 'x'
             // || t.isDecimalLiteral(node) //TODO do not find this lib, but it exists https://babeljs.io/docs/en/babel-types#decimalliteral
-            || t.isAssignmentExpression(node)
             || t.isArrayExpression(node)
             || t.isClassExpression(node)
-            || t.isObjectExpression(node) // need a check
-            || t.isImport(node) || t.isJSXElement(node) || t.isJSXFragment(node) // need to discuss
+            || t.isObjectExpression(node)
+            || t.isJSXElement(node) || t.isJSXFragment(node) // need to discuss
         )
             pure = true;
         else if (t.isParenthesizedExpression(node)){
@@ -201,14 +200,15 @@ export default function evomasterPlugin(
             const excludeOp= ["throw", "delete"] // Man: not sure whether to include "void"
             pure = !excludeOp.includes(node.operator) && isPureExpression(node.argument);
 
-        } else if (t.isUpdateExpression(node)){
-            // https://babeljs.io/docs/en/babel-types#updateexpression
-            pure = isPureExpression(node.argument);
         } else if (t.isBinaryExpression(node)){
             /*
                 https://babeljs.io/docs/en/babel-types#binaryexpression
-                operator: "+" | "-" | "/" | "%" | "*" | "**" | "&" | "|" | ">>" | ">>>" | "<<" | "^" | "==" | "===" | "!=" | "!==" | "in" | "instanceof" | ">" | "<" | ">=" | "<="
+                operator: "+" | "-" | "/" | "%" | "*" | "**" | "&" | "|" | ">>" | ">>>" | "<<" | "^"
+                        | "==" | "===" | "!=" | "!==" | "in" | "instanceof" | ">" | "<" | ">=" | "<="
 
+                shall we need a further handling based on the operator? maybe not since it will not lead to any exception,
+                e.g., for "/", even for instance 5 / 0, it just returns "Infinity".
+                As checked, a result of '(5 / 0) && true' is true, a result of 'a / b || false' is Infinity
              */
             pure = isPureExpression(node.right) && isPureExpression(node.left);
         } else if (t.isConditionalExpression(node)){
@@ -245,10 +245,12 @@ export default function evomasterPlugin(
         } else if (t.isArrowFunctionExpression(node)
             || t.isAwaitExpression(node) // executing it might lead to some side-effect
             || t.isCallExpression(node) || t.isOptionalCallExpression(node) // there might exist throw inside call. without a deep check, we set it false for the moment
+            || t.isUpdateExpression(node) // "++" | "--"
+            || t.isAssignmentExpression(node)
             || t.isDoExpression(node) // https://babeljs.io/docs/en/babel-types#doexpression
             || t.isMetaProperty(node) || t.isNewExpression(node) // executing it might lead to some side-effect
             || t.isPipelinePrimaryTopicReference(node) // i.e., |>, we set it false for the moment
-            || t.isSuper(node) // need a further check
+            || t.isSuper(node) || t.isImport(node)  // need a further check
             /*
                 executing following might lead to some side-effect
              */
