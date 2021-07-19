@@ -85,6 +85,13 @@ cd $SCRIPT_FOLDER_LOCATION || exit 1
 npm i
 npm run test
 
+if [ $? -ne 0 ] ; then
+   echo "ERROR: failed to run the generated tests."
+   kill $PID
+   exit 1
+fi
+
+
 # stop SUT, which was run in background, but only AFTER we run the generated tests... as those do not
 # start the SUT by themselves in BB.
 kill $PID

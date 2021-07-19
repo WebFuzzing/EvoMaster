@@ -82,6 +82,11 @@ cd $SCRIPT_FOLDER_LOCATION || exit 1
 npm i
 npm run test
 
+if [ $? -ne 0 ] ; then
+   echo "ERROR: failed to run the generated tests."
+   exit 1
+fi
+
 COVERED=` cat $TEST_LOCATION | grep "Covered targets" | cut -c 20-`
 
 if [ $COVERED -ge $AT_LEAST_EXPECTED ]; then

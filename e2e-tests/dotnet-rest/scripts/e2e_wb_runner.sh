@@ -7,7 +7,10 @@ SUT_FOLDER=$1
 # are using the right folder)
 DRIVER_NAME=$2
 
-NPARAMS=2
+# How many fitness evaluations for the search
+BUDGET=$3
+
+NPARAMS=3
 
 echo Executing White-Box E2E for $SUT_FOLDER
 
@@ -65,7 +68,7 @@ PID=$!
 # give enough time to start
 sleep 20
 
-java -jar $JAR --seed 42 --maxActionEvaluations 20000  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME  --sutControllerPort $PORT
+java -jar $JAR --seed 42 --maxActionEvaluations $BUDGET  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME  --sutControllerPort $PORT
 
 # stop driver, which was run in background
 kill $PID
@@ -79,6 +82,11 @@ fi
 
 # run the tests
 dotnet test
+
+if [ $? -ne 0 ] ; then
+   echo "ERROR: failed to run the generated tests."
+   exit 1
+fi
 
 
 # check for text in file
