@@ -74,6 +74,12 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
             if (a is RestCallAction) {
                 ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
+                /*
+                    the action might be stopped due to e.g., timeout (see [handleRestCall]),
+                    but the property of [stopping] is not handle.
+                    we can also handle the property inside [handleRestCall]
+                 */
+                actionResults[i].stopping = !ok
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }

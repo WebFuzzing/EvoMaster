@@ -58,6 +58,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             if (a is GraphQLAction) {
                 ok = handleGraphQLCall(a, actionResults, cookies, tokens)
+                actionResults[i].stopping = !ok
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
