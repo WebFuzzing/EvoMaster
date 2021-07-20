@@ -12,7 +12,6 @@ import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
-import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -59,7 +58,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             if (a is GraphQLAction) {
                 ok = handleGraphQLCall(a, actionResults, cookies, tokens)
-                actionResults.filterIsInstance<RestCallResult>()[i].stopping = !ok
+                actionResults.filterIsInstance<GraphQlCallResult>()[i].stopping = !ok
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
