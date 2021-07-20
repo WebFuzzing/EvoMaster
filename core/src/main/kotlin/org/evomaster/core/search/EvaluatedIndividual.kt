@@ -10,6 +10,8 @@ import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.ActionFilter.*
@@ -17,7 +19,6 @@ import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.math.min
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -149,20 +150,26 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         val list = mutableListOf<Pair<List<EvaluatedDbAction>, List<EvaluatedAction>>>();
 
-        val all= individual.seeActions(ALL)
-
         individual.getResourceCalls().forEach { c->
+            val dbActions = c.seeActions(ONLY_SQL)
+            val dbResults = seeResults(dbActions)
+
+            val restActions = c.seeActions(NO_SQL)
+            val restResult = seeResults(restActions)
+
+            // get evaluated action based on the list of action results
             list.add(
-                c.seeActions(ONLY_SQL).map {
-                    val i = all.indexOf(it)
+                dbResults.mapIndexed { index, actionResult ->
                     EvaluatedDbAction(
-                        (it as? DbAction)?:throw IllegalStateException("mismatched action type, expected is DbAction but it is ${it::class.java.simpleName}"),
-                        (results[i] as? DbActionResult)?:throw IllegalStateException("mismatched action result type, expected is DbActionResult but it is ${results[i]::class.java.simpleName}")
+                        (dbActions[index] as? DbAction) ?:throw IllegalStateException("mismatched action type, expected is DbAction but it is ${dbActions[index]::class.java.simpleName}"),
+                        (actionResult as? DbActionResult)?:throw IllegalStateException("mismatched action result type, expected is DbActionResult but it is ${actionResult::class.java.simpleName}")
                     )
-                } to c.seeActions(NO_SQL).map {
-                            val i = all.indexOf(it)
-                            EvaluatedAction(it, results[i])
-                        }
+                } to restResult.mapIndexed { index, actionResult ->
+                    EvaluatedAction(
+                        (restActions[index] as? RestCallAction) ?:throw IllegalStateException("mismatched action type, expected is RestCallAction but it is ${restActions[index]::class.java.simpleName}"),
+                        (actionResult as? RestCallResult)?:throw IllegalStateException("mismatched action result type, expected is RestCallResult but it is ${actionResult::class.java.simpleName}")
+                    )
+                }
             )
         }
         return list
@@ -277,7 +284,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     }
 
     private fun verifyImpacts(){
-        impactInfo?.verifyActionGeneImpacts(individual.seeActions(ActionFilter.NO_INIT))
+        impactInfo?.verifyActionGeneImpacts(individual.seeActions(NO_INIT))
     }
 
     private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, targetsInfo: Map<Int, EvaluatedMutation>, mutatedGenes: MutatedGeneSpecification){
