@@ -79,7 +79,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
                     but the property of [stopping] is not handle.
                     we can also handle the property inside [handleRestCall]
                  */
-                actionResults[i].stopping = !ok
+                actionResults.filterIsInstance<RestCallResult>()[i].stopping = !ok
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
