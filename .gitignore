@@ -101,3 +101,8 @@ Migrations/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions/obj/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions/generated/
 /e2e-tests/spring-rest-mysql/target/
+/e2e-tests/dotnet-rest/src/RestApis.Crud/obj/
+/e2e-tests/dotnet-rest/src/RestApis.Crud/bin/
+/e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/bin/
+/e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/obj/
+/e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/generated/

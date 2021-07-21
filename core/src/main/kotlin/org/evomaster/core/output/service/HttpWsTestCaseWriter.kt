@@ -340,13 +340,13 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     if (!format.isCsharp())
                         lines.add(".$send($body)")
                     else {
-                        lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                        lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                     }
                 } else {
                     if (!format.isCsharp())
                         lines.add(".$send(\"${"""\"\""""}\")")
                     else {
-                        lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                        lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                     }
                 }
 
@@ -362,7 +362,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                 if (!format.isCsharp())
                     lines.add(".$send(\"$body\")")
                 else {
-                    lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                    lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                 }
 
             } else {
@@ -391,7 +391,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             if (!format.isCsharp()) {
                 lines.add(".$send(${bodyLines.first()})")
             } else {
-                lines.add("new StringContent(${bodyLines.first()}, Encoding.UTF8, \"application/json\");")
+                lines.add("new StringContent(${bodyLines.first()}, Encoding.UTF8, \"application/json\")")
             }
         } else {
             if (!format.isCsharp()) {
@@ -411,7 +411,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     }
                     lines.add("${bodyLines.last()}")
                 }
-                lines.add(", Encoding.UTF8, \"application/json\");")
+                lines.add(", Encoding.UTF8, \"application/json\")")
             }
         }
     }

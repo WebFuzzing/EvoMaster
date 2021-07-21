@@ -13,19 +13,19 @@ WB="bash ./e2e_wb_runner.sh"
 
 $WB /client-js/integration-tests/build/src/books-api            em-main.js   app-driver.js  50
 if [ $? -ne 0 ] ; then
-   echo "ERROR: Test failed for books-api. Exist status " $?
+   echo "ERROR: Test failed for books-api."
    exit 1
 fi
 
 $WB /client-js/integration-tests/build/src/for-assertions-api   em-main.js   app-driver.js  50  42 hello 1000 2000 3000 66 bar xvalue yvalue true false simple-string simple-text 123 456 777 888
 if [ $? -ne 0 ] ; then
-   echo "ERROR: Test failed for for-assertions-api. Exist status " $?
+   echo "ERROR: Test failed for for-assertions-api."
    exit 1
 fi
 
 $WB /client-js/integration-tests/build/src/base-graphql   em-main.js   app-driver.js  1 FOO
 if [ $? -ne 0 ] ; then
-   echo "ERROR: Test failed for base-graphql. Exist status " $?
+   echo "ERROR: Test failed for base-graphql."
    exit 1
 fi
 
@@ -37,13 +37,13 @@ BB="bash ./e2e_bb_runner.sh"
 
 $BB /client-js/integration-tests/src/for-assertions-api  main.js    42 hello 1000 2000 3000 66 bar xvalue yvalue true false simple-string simple-text 123 456 777 888
 if [ $? -ne 0 ] ; then
-   echo "ERROR: Test failed for for-assertions-api. Exist status " $?
+   echo "ERROR: Test failed for for-assertions-api."
    exit 1
 fi
 
 $BB /client-js/integration-tests/src/status-api  main.js   ".status).toBe(200)"  ".status).toBe(400)"  ".status).toBe(404)"  ".status).toBe(500)"
 if [ $? -ne 0 ] ; then
-   echo "ERROR: Test failed for status-api. Exist status " $?
+   echo "ERROR: Test failed for status-api."
    exit 1
 fi
 
