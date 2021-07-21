@@ -285,7 +285,7 @@ class RemoteController() : DatabaseExecutor {
         return readAndCheckResponse(response, "Failed to inform SUT of new search")
     }
 
-    fun getTestResults(ids: Set<Int> = setOf()): TestResultsDto? {
+    fun getTestResults(ids: Set<Int> = setOf(), ignoreKillSwitch: Boolean = false): TestResultsDto? {
 
         val queryParam = ids.joinToString(",")
 
@@ -293,7 +293,7 @@ class RemoteController() : DatabaseExecutor {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
                     .queryParam("ids", queryParam)
-                    .queryParam("killSwitch", config.killSwitch)
+                    .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
