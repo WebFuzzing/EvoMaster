@@ -39,7 +39,7 @@ public class ResourceTestBase extends SpringTestBase {
             if (index == matched.length) break Loop;
             if (action.getVerb() == verbs[index]
                     && action.getPath().isEquivalent(new RestPath(paths[index]))
-                    && ((RestCallResult) ind.getResults().get(i)).getStatusCode() == expectedStatusCodes[index]){
+                    && ((RestCallResult) ind.seeResults(null).get(i)).getStatusCode() == expectedStatusCodes[index]){
                 matched[index] = true;
             }
         }

@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.httpws.service.HttpWsIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -41,7 +42,14 @@ class GraphQLIndividual(
 
     override fun seeActions(): List<GraphQLAction> {
         return actions
+    }
 
+    override fun seeActions(filter: ActionFilter): List<out Action> {
+        return when(filter){
+            ActionFilter.ALL -> seeInitializingActions().plus(actions)
+            ActionFilter.ONLY_SQL, ActionFilter.INIT -> seeInitializingActions()
+            ActionFilter.NO_INIT, ActionFilter.NO_SQL -> actions
+        }
     }
 
     override fun verifyInitializationActions(): Boolean {

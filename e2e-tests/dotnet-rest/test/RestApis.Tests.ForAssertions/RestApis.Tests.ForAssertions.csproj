@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+
+    <StartupObject>RestApis.Tests.ForAssertions.EmbeddedEvoMasterController</StartupObject>
+  </PropertyGroup>
+
+
+  <Target Name="appsettings" AfterTargets="AfterBuild">
+    <Copy SourceFiles="../../src/RestApis.ForAssertions/appsettings.json" DestinationFolder="$(MSBuildProjectDirectory)" />
+  </Target>
+  
+  <ItemGroup>
+    <PackageReference Include="DotNet.Testcontainers" Version="1.4.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="xunit" Version="2.4.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
+    <PackageReference Include="coverlet.collector" Version="1.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\client-dotnet\src\EvoMaster.Controller\EvoMaster.Controller.csproj" />
+    <ProjectReference Include="..\..\src\RestApis.ForAssertions\RestApis.ForAssertions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="generated" />
+  </ItemGroup>
+  
+  
+</Project>

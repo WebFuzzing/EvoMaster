@@ -31,11 +31,6 @@ abstract class TestCaseWriter {
 
     companion object {
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
-
-        /**
-         *   Internal flag to mark cases which do not support yet
-         */
-        const val NOT_COVERED_YET = "NotCoveredYet"
     }
 
 

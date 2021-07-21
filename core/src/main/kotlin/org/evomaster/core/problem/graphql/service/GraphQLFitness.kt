@@ -40,11 +40,11 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val cookies = getCookies(individual)
         val tokens = getTokens(individual)
 
-        doInitializingActions(individual)
+        val actionResults: MutableList<ActionResult> = mutableListOf()
+
+        doDbCalls(individual.seeInitializingActions(), actionResults = actionResults)
 
         val fv = FitnessValue(individual.size().toDouble())
-
-        val actionResults: MutableList<ActionResult> = mutableListOf()
 
 
         //run the test, one action at a time
@@ -86,11 +86,12 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         handleExtra(dto, fv)
 
-        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
+        val graphQLActionResults = actionResults.filterIsInstance<GraphQlCallResult>()
+        handleResponseTargets(fv, individual.seeActions(), graphQLActionResults, dto.additionalInfoList)
 
 
         if (config.baseTaintAnalysisProbability > 0) {
-            assert(actionResults.size == dto.additionalInfoList.size)
+            assert(graphQLActionResults.size == dto.additionalInfoList.size)
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }
 

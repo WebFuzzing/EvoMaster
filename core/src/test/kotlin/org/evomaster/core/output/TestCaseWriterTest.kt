@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionGeneBuilder
+import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType.*
 import org.evomaster.core.database.schema.ForeignKey
@@ -21,6 +22,7 @@ import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlUUIDGene
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class TestCaseWriterTest {
@@ -109,7 +111,7 @@ class TestCaseWriterTest {
 
         val fitnessVal = FitnessValue(0.0)
 
-        val results = emptyList<ActionResult>().toMutableList()
+        val results = dbInitialization.map { DbActionResult().also { it.setInsertExecutionResult(true) } }
 
         val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
         return Triple(format, baseUrlOfSut, ei)
@@ -1125,11 +1127,9 @@ public void test() throws Exception {
         val pkBar = SqlPrimaryKeyGene(fooId.name, "Bar", integerGene, 10)
         val fooInsertionId = 1001L
         val fooInsertion = DbAction(foo, setOf(fooId), fooInsertionId, listOf(pkFoo))
-        fooInsertion.insertExecutedSuccessfully = false
         val barInsertionId = 1002L
         val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
         val barInsertion = DbAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
-        barInsertion.insertExecutedSuccessfully = true
 
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
         val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
@@ -1137,10 +1137,15 @@ public void test() throws Exception {
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
             groups = mutableListOf(
-                (mutableListOf(fooInsertion) to mutableListOf(fooAction as RestCallAction)),
-                (mutableListOf(barInsertion) to mutableListOf(barAction as RestCallAction))
+                (mutableListOf(fooInsertion) to mutableListOf(fooAction)),
+                (mutableListOf(barInsertion) to mutableListOf(barAction))
             )
         )
+
+        val fooInsertionResult = ei.seeResults(listOf(fooInsertion))
+        assertEquals(1, fooInsertionResult.size)
+        assertTrue(fooInsertionResult[0] is DbActionResult)
+        (fooInsertionResult[0] as DbActionResult).setInsertExecutionResult(false)
 
         val config = EMConfig()
         config.outputFormat = format

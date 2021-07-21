@@ -82,6 +82,10 @@ jobs:
       - name: E2E for JavaScript
         run:  bash ./client-js/e2e-tests/e2e.sh
 
+      # E2E for C#. Must be run AFTER the C# and Core builds
+      - name: E2E for C#
+        run:  bash ./e2e-tests/dotnet-rest/scripts/e2e.sh
+
 
       # Upload coverage results
       - name: Upload coverage to CodeCov

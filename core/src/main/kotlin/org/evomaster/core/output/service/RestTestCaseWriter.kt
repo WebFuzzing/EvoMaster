@@ -147,13 +147,13 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             config.expectationsActive && config.outputFormat.isJavaOrKotlin()
 
 
-    override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines, hasBody: Boolean) {
+    override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
 
         val call = _call as RestCallAction
         val verb = call.verb.name.toLowerCase()
 
         if (format.isCsharp()) {
-            lines.add("response = await Client.${capitalizeFirstChar(verb)}Async(")
+            lines.append(".${capitalizeFirstChar(verb)}Async(")
         } else {
             lines.add(".$verb(")
         }
@@ -163,11 +163,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 lines.append("${TestSuiteWriter.jsImport}.")
             }
 
-            //TODO aren't those exactly the same???
-            if (format.isCsharp())
-                lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
-            else
-                lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+            lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
 
         } else {
 
@@ -197,21 +193,14 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
 
         if (format.isCsharp()) {
-            if (hasBody) {
-                if (isVerbWithPossibleBodyPayload(verb))
-                    lines.append(", httpContent);")
-                else
-                    lines.append(");")
-
-            } else {
-                if (isVerbWithPossibleBodyPayload(verb))
-                    lines.append(", null);")
-                else
-                    lines.append(");")
+            if (isVerbWithPossibleBodyPayload(verb)) {
+                lines.append(", ")
+                handleBody(call, lines)
             }
-            lines.add("responseBody = await response.Content.ReadAsStringAsync();")
-        } else
+            lines.append(");")
+        } else {
             lines.append(")")
+        }
     }
 
     override fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String {

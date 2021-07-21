@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using EvoMaster.Client.Util;
 using EvoMaster.Controller.Api;
 using EvoMaster.Controller.Problem;
@@ -30,11 +32,21 @@ namespace EvoMaster.Controller.Controllers
         private static readonly SemaphoreLocker _locker = new SemaphoreLocker();
 
         //The html file gets copied inside the SUT's bin folder after build
-        private static readonly string htmlWarning =
-            System.IO.File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "warning.html"));
+        private static readonly string htmlWarning;// =
+           // System.IO.File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "warning.html"));
+           
 
         private readonly object syncLock = new object();
 
+        static EmController() {
+
+            var assembly = Assembly.GetAssembly(typeof(EmController));
+            var resourceStream = assembly.GetManifestResourceStream("EvoMaster.Controller.Resources.warning.html");
+            using var reader = new StreamReader(resourceStream, Encoding.UTF8);
+            htmlWarning =  reader.ReadToEnd();
+        }
+        
+        
         public EmController(SutController sutController)
         {
             if (!sutController.Equals(null))

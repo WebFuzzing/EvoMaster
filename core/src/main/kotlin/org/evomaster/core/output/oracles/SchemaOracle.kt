@@ -368,7 +368,7 @@ class SchemaOracle : ImplementedOracle() {
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
         if (action.action is RestCallAction && action.result is HttpWsCallResult){
-            return generatesExpectation(action.action, action.result)
+            return generatesExpectation(action.action as RestCallAction, action.result as HttpWsCallResult)
         }
         else return false
     }
