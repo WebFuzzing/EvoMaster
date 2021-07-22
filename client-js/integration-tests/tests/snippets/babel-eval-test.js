@@ -318,3 +318,43 @@ test("purity analysis 'and' and 'or' with literal/binary expression", () => {
     expect(ET.isTargetReached("Statement_test.ts_00002_1")).toBe(false);
 
 });
+
+
+test("purity analysis 'and' and 'or' with update and assignement", () => {
+
+    expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(0);
+
+    let x = 0;
+    let y = 0;
+    const code = dedent`
+        if (true || x < 2) x = 1;
+        if (true || x++) y=1;
+        if (false && (y=42)) x=42;
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    /*
+        if (__EM__.or(() => true, () => __EM__.cmp(x, "<", 2, "test.ts", 1, 1), true, "test.ts", 1, 0)) {
+          __EM__.enteringStatement("test.ts", 1, 1);
+
+          x = 1;
+
+          __EM__.completedStatement("test.ts", 1, 1);
+        }
+
+        "Branch_at_test.ts_at_line_00001_position_0_falseBranch",
+        "Branch_at_test.ts_at_line_00001_position_0_trueBranch",
+        "Branch_at_test.ts_at_line_00001_position_1_falseBranch",
+        "Branch_at_test.ts_at_line_00001_position_1_trueBranch"
+     */
+
+    expect(ET.getNumberOfObjectives("Branch_at_test.ts_at_line_00001_position_0_trueBranch")).toBe(1);
+    // x< 2 is evaluated even it is in shortcircuits
+    expect(ET.getNumberOfObjectives("Branch_at_test.ts_at_line_00001_position_1_trueBranch")).toBe(1);
+    // x++ was not executed, but y is set to 1
+    expect(x).toBe(1);
+    // y=42 was not executed
+    expect(y).toBe(1);
+});
