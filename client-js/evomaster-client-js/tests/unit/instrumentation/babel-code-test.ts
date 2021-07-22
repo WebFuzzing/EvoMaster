@@ -245,7 +245,7 @@ test("|| branch distance", () => {
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
-        const x = __EM__.or(() => true, () => false, false, "test.ts", 1, 0);
+        const x = __EM__.or(() => true, () => false, true, "test.ts", 1, 0);
         
         __EM__.completedStatement("test.ts", 1, 0);        
     `);
@@ -398,6 +398,343 @@ test("ternary throw", () => {
     `);
 
 });
+
+
+test("purity analysis 'and' and 'or' with literal/binary expression", () => {
+
+    const code = dedent`
+        foo = function(x){
+            return x;
+        };
+        bar = function(x){
+            if (x === "and")
+                return false && 5 < 2 && "foo" < 1 && foo(x);
+            else
+                return true || 5 > 2 || "foo" !== 1 || foo(x)
+        }
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00005_position_0_falseBranch", "Branch_at_test.ts_at_line_00005_position_0_trueBranch", "Branch_at_test.ts_at_line_00006_position_1_falseBranch", "Branch_at_test.ts_at_line_00006_position_1_trueBranch", "Branch_at_test.ts_at_line_00006_position_2_falseBranch", "Branch_at_test.ts_at_line_00006_position_2_trueBranch", "Branch_at_test.ts_at_line_00006_position_3_falseBranch", "Branch_at_test.ts_at_line_00006_position_3_trueBranch", "Branch_at_test.ts_at_line_00006_position_4_falseBranch", "Branch_at_test.ts_at_line_00006_position_4_trueBranch", "Branch_at_test.ts_at_line_00006_position_5_falseBranch", "Branch_at_test.ts_at_line_00006_position_5_trueBranch", "Branch_at_test.ts_at_line_00008_position_10_falseBranch", "Branch_at_test.ts_at_line_00008_position_10_trueBranch", "Branch_at_test.ts_at_line_00008_position_6_falseBranch", "Branch_at_test.ts_at_line_00008_position_6_trueBranch", "Branch_at_test.ts_at_line_00008_position_7_falseBranch", "Branch_at_test.ts_at_line_00008_position_7_trueBranch", "Branch_at_test.ts_at_line_00008_position_8_falseBranch", "Branch_at_test.ts_at_line_00008_position_8_trueBranch", "Branch_at_test.ts_at_line_00008_position_9_falseBranch", "Branch_at_test.ts_at_line_00008_position_9_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00004", "Line_test.ts_00005", "Line_test.ts_00006", "Line_test.ts_00008", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00004_2", "Statement_test.ts_00005_3", "Statement_test.ts_00006_4", "Statement_test.ts_00008_5"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        foo = function (x) {
+          __EM__.enteringStatement("test.ts", 2, 1);
+        
+          return __EM__.completingStatement(x, "test.ts", 2, 1);
+        };
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 4, 2);
+        
+        bar = function (x) {
+          __EM__.markStatementForCompletion("test.ts", 5, 3);
+        
+          if (__EM__.cmp(x, "===", "and", "test.ts", 5, 0)) {
+            __EM__.enteringStatement("test.ts", 6, 4);
+        
+            return __EM__.completingStatement(__EM__.and(() => __EM__.and(() => __EM__.and(() => false, () => __EM__.cmp(5, "<", 2, "test.ts", 6, 4), true, "test.ts", 6, 3), () => __EM__.cmp("foo", "<", 1, "test.ts", 6, 5), true, "test.ts", 6, 2), () => __EM__.callBase(() => foo(x)), false, "test.ts", 6, 1), "test.ts", 6, 4);
+          } else {
+            __EM__.enteringStatement("test.ts", 8, 5);
+        
+            return __EM__.completingStatement(__EM__.or(() => __EM__.or(() => __EM__.or(() => true, () => __EM__.cmp(5, ">", 2, "test.ts", 8, 9), true, "test.ts", 8, 8), () => __EM__.cmp("foo", "!==", 1, "test.ts", 8, 10), true, "test.ts", 8, 7), () => __EM__.callBase(() => foo(x)), false, "test.ts", 8, 6), "test.ts", 8, 5);
+          }
+        };
+        
+        __EM__.completedStatement("test.ts", 4, 2);
+    `);
+
+});
+
+test("purity analysis identifier", () => {
+    const code = dedent`
+        const x = foo();
+        const y1 = 42 < 0 && x;
+        const y2 = 42 > 0 || x;
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "Branch_at_test.ts_at_line_00002_position_1_falseBranch", "Branch_at_test.ts_at_line_00002_position_1_trueBranch", "Branch_at_test.ts_at_line_00003_position_2_falseBranch", "Branch_at_test.ts_at_line_00003_position_2_trueBranch", "Branch_at_test.ts_at_line_00003_position_3_falseBranch", "Branch_at_test.ts_at_line_00003_position_3_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const x = __EM__.callBase(() => foo());
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        const y1 = __EM__.and(() => __EM__.cmp(42, "<", 0, "test.ts", 2, 1), () => x, true, "test.ts", 2, 0);
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+        
+        __EM__.enteringStatement("test.ts", 3, 2);
+        
+        const y2 = __EM__.or(() => __EM__.cmp(42, ">", 0, "test.ts", 3, 3), () => x, true, "test.ts", 3, 2);
+        
+        __EM__.completedStatement("test.ts", 3, 2);
+    `);
+});
+
+
+test("purity analysis member function", () => {
+    const code = dedent`
+        const x = foo();
+        const y1 = 42 < 0 && x.y;
+        const y2 = 42 > 0 || x.y;
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "Branch_at_test.ts_at_line_00002_position_1_falseBranch", "Branch_at_test.ts_at_line_00002_position_1_trueBranch", "Branch_at_test.ts_at_line_00003_position_2_falseBranch", "Branch_at_test.ts_at_line_00003_position_2_trueBranch", "Branch_at_test.ts_at_line_00003_position_3_falseBranch", "Branch_at_test.ts_at_line_00003_position_3_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const x = __EM__.callBase(() => foo());
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        const y1 = __EM__.and(() => __EM__.cmp(42, "<", 0, "test.ts", 2, 1), () => x.y, false, "test.ts", 2, 0);
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+        
+        __EM__.enteringStatement("test.ts", 3, 2);
+        
+        const y2 = __EM__.or(() => __EM__.cmp(42, ">", 0, "test.ts", 3, 3), () => x.y, false, "test.ts", 3, 2);
+        
+        __EM__.completedStatement("test.ts", 3, 2);
+    `);
+});
+
+test("purity analysis this and member function", () => {
+    const code = dedent`
+        const y1 = 42 < 0 && this.x;
+        const y2 = 42 > 0 || this.x;
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "Branch_at_test.ts_at_line_00001_position_1_falseBranch", "Branch_at_test.ts_at_line_00001_position_1_trueBranch", "Branch_at_test.ts_at_line_00002_position_2_falseBranch", "Branch_at_test.ts_at_line_00002_position_2_trueBranch", "Branch_at_test.ts_at_line_00002_position_3_falseBranch", "Branch_at_test.ts_at_line_00002_position_3_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const y1 = __EM__.and(() => __EM__.cmp(42, "<", 0, "test.ts", 1, 1), () => this.x, true, "test.ts", 1, 0);
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        const y2 = __EM__.or(() => __EM__.cmp(42, ">", 0, "test.ts", 2, 3), () => this.x, true, "test.ts", 2, 2);
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+    `);
+});
+
+test("update and assigment statement in if()", () => {
+    const code = dedent`
+        let x = 0;
+        let y = 0;
+        if (x++) y=1;
+        if (y=42) x=42;
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Line_test.ts_00004", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2", "Statement_test.ts_00003_3", "Statement_test.ts_00004_4", "Statement_test.ts_00004_5"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        let x = 0;
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        let y = 0;
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+        
+        __EM__.markStatementForCompletion("test.ts", 3, 2);
+        
+        if (x++) {
+          __EM__.enteringStatement("test.ts", 3, 3);
+        
+          y = 1;
+        
+          __EM__.completedStatement("test.ts", 3, 3);
+        }
+        
+        __EM__.markStatementForCompletion("test.ts", 4, 4);
+        
+        if (y = 42) {
+          __EM__.enteringStatement("test.ts", 4, 5);
+        
+          x = 42;
+        
+          __EM__.completedStatement("test.ts", 4, 5);
+        }
+    `);
+});
+
+test("purity analysis non-pure: update, assigment", () => {
+    const code = dedent`
+        let x = 0;
+        let y = 0;
+        if (true && x++) y=1;
+        if (false && (y=42)) x=42;
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00003_position_0_falseBranch", "Branch_at_test.ts_at_line_00003_position_0_trueBranch", "Branch_at_test.ts_at_line_00004_position_1_falseBranch", "Branch_at_test.ts_at_line_00004_position_1_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Line_test.ts_00004", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2", "Statement_test.ts_00003_3", "Statement_test.ts_00004_4", "Statement_test.ts_00004_5"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        let x = 0;
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        let y = 0;
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+        
+        __EM__.markStatementForCompletion("test.ts", 3, 2);
+        
+        if (__EM__.and(() => true, () => x++, false, "test.ts", 3, 0)) {
+          __EM__.enteringStatement("test.ts", 3, 3);
+        
+          y = 1;
+        
+          __EM__.completedStatement("test.ts", 3, 3);
+        }
+        
+        __EM__.markStatementForCompletion("test.ts", 4, 4);
+        
+        if (__EM__.and(() => false, () => y = 42, false, "test.ts", 4, 1)) {
+          __EM__.enteringStatement("test.ts", 4, 5);
+        
+          x = 42;
+        
+          __EM__.completedStatement("test.ts", 4, 5);
+        }
+    `);
+});
+
+
+test("purity analysis non-pure: new object, yield, type cast", () => {
+    const code = dedent`
+        function* foo(index) {
+            while (index < 10){
+                if ( (index < 2) || (yield index))
+                    index++;
+                else if ((index < 5) && (new Object())){
+                    index = 6;
+                }
+                else if ((index > 5) && (String(new Date('2019-01-22')))){
+                    index--;
+                }else
+                    index=0;
+            }
+        }
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "Branch_at_test.ts_at_line_00003_position_1_falseBranch", "Branch_at_test.ts_at_line_00003_position_1_trueBranch", "Branch_at_test.ts_at_line_00003_position_2_falseBranch", "Branch_at_test.ts_at_line_00003_position_2_trueBranch", "Branch_at_test.ts_at_line_00005_position_3_falseBranch", "Branch_at_test.ts_at_line_00005_position_3_trueBranch", "Branch_at_test.ts_at_line_00005_position_4_falseBranch", "Branch_at_test.ts_at_line_00005_position_4_trueBranch", "Branch_at_test.ts_at_line_00008_position_5_falseBranch", "Branch_at_test.ts_at_line_00008_position_5_trueBranch", "Branch_at_test.ts_at_line_00008_position_6_falseBranch", "Branch_at_test.ts_at_line_00008_position_6_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Line_test.ts_00004", "Line_test.ts_00005", "Line_test.ts_00006", "Line_test.ts_00008", "Line_test.ts_00009", "Line_test.ts_00011", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2", "Statement_test.ts_00004_3", "Statement_test.ts_00005_4", "Statement_test.ts_00006_5", "Statement_test.ts_00008_6", "Statement_test.ts_00009_7", "Statement_test.ts_00011_8"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        function* foo(index) {
+          __EM__.markStatementForCompletion("test.ts", 2, 1);
+        
+          while (__EM__.cmp(index, "<", 10, "test.ts", 2, 0)) {
+            __EM__.markStatementForCompletion("test.ts", 3, 2);
+        
+            if (__EM__.or(() => __EM__.cmp(index, "<", 2, "test.ts", 3, 2), () => yield index, false, "test.ts", 3, 1)) {
+              __EM__.enteringStatement("test.ts", 4, 3);
+        
+              index++;
+        
+              __EM__.completedStatement("test.ts", 4, 3);
+            } else {
+              __EM__.markStatementForCompletion("test.ts", 5, 4);
+        
+              if (__EM__.and(() => __EM__.cmp(index, "<", 5, "test.ts", 5, 4), () => new Object(), false, "test.ts", 5, 3)) {
+                __EM__.enteringStatement("test.ts", 6, 5);
+        
+                index = 6;
+        
+                __EM__.completedStatement("test.ts", 6, 5);
+              } else {
+                __EM__.markStatementForCompletion("test.ts", 8, 6);
+        
+                if (__EM__.and(() => __EM__.cmp(index, ">", 5, "test.ts", 8, 6), () => __EM__.callBase(() => String(new Date('2019-01-22'))), false, "test.ts", 8, 5)) {
+                  __EM__.enteringStatement("test.ts", 9, 7);
+        
+                  index--;
+        
+                  __EM__.completedStatement("test.ts", 9, 7);
+                } else {
+                  __EM__.enteringStatement("test.ts", 11, 8);
+        
+                  index = 0;
+        
+                  __EM__.completedStatement("test.ts", 11, 8);
+                }
+              }
+            }
+          }
+        }
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+});
+
+
+
 
 
 
