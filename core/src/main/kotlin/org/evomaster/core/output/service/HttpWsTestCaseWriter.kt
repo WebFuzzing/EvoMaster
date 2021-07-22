@@ -635,7 +635,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         if (value == null) {
             val instruction = when {
                 format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
-                format.isJavaScript() -> "expect($responseVariableName$fieldPath).toBe(null);"
+                format.isJavaScript() -> "expect($responseVariableName.body$fieldPath).toBe(null);"
                 format.isCsharp() -> "Assert.True($responseVariableName$fieldPath == null);"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
