@@ -230,6 +230,19 @@ public class EMController {
 
         assert trackRequestSource(httpServletRequest);
 
+        /*
+            If start/stop the SUT, we want to disable the killSwitch.
+            The reason is it might be on from previous run, and, in such case,
+            until we run a first test it would crash the SUT... eg when retrieving
+            OpenAPI/GraphQL schema.
+
+            TODO: likely all the noKillSwitch calls here are redundant
+         */
+        ExecutionTracer.setKillSwitch(false);
+        if(sutController.isSutRunning()) {
+            sutController.setKillSwitch(false);
+        }
+
         try {
             if (dto.run == null) {
                 String msg = "Invalid JSON: 'run' field is required";
