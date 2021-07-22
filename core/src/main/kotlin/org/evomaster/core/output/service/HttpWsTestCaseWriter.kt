@@ -594,8 +594,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             val k = when{
                 //TODO should do check for when there are spaces in the field name
                 format.isJavaOrKotlin() -> if(fieldPath.isEmpty()) "" else "'$fieldPath'."
-                format.isJavaScript() -> if(fieldPath.isEmpty()) "" else ".$fieldPath"
-                format.isCsharp()  -> if(fieldPath.isEmpty()) "" else ".$fieldPath"
+                format.isJavaScript() -> if(fieldPath.isEmpty()) "" else "${if(fieldPath.startsWith("["))"" else "."}$fieldPath"
+                format.isCsharp()  -> if(fieldPath.isEmpty()) "" else "${if(fieldPath.startsWith("["))"" else "."}$fieldPath"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
 

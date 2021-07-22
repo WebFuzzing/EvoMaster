@@ -46,6 +46,7 @@ class BlackBoxRestFitness : RestFitness() {
 
             if (a is RestCallAction) {
                 ok = handleRestCall(a, actionResults, chainState, mapOf(), mapOf())
+                actionResults[i].stopping = !ok
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
