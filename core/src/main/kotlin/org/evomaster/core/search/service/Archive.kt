@@ -89,14 +89,14 @@ class Archive<T> where T : Individual {
 
         val uniques = getUniquePopulation()
 
-        return Solution(uniques.toMutableList(), config.testSuiteFileName, Termination.NONE)
+        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
     }
 
     fun extractPartialSolution(): Solution<T> {
 
         val uniques = getUniquePopulation()
 
-        return Solution(uniques.toMutableList(), config.testSuiteFileName, Termination.IN_PROGRESS)
+        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.IN_PROGRESS)
     }
 
     private fun getUniquePopulation(): MutableSet<EvaluatedIndividual<T>> {
@@ -116,7 +116,8 @@ class Archive<T> where T : Individual {
                 uniques.add(ind)
             }
         }
-        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
+
+        return uniques
     }
 
 

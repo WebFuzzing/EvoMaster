@@ -146,10 +146,7 @@ class Main {
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)
 
-            val writer = setupPartialOracles(injector, config)
-
             val solution = run(injector, controllerInfo)
-
             val faults = solution.overall.potentialFoundFaults(idMapper)
 
             writeOverallProcessData(injector)
@@ -303,9 +300,31 @@ class Main {
         }
 
 
-        fun run(injector: Injector, controllerInfo: ControllerInfoDto?): Solution<*> {
+        //Unfortunately Guice does not like this solution... :( so, we end up with copy&paste
+//        private  fun <T : Individual> getAlgorithmKey(config: EMConfig) : Key<out SearchAlgorithm<T>>{
+//
+//            return  when {
+//                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+//                    Key.get(object : TypeLiteral<RandomAlgorithm<T>>() {})
+//
+//                config.algorithm == EMConfig.Algorithm.MIO ->
+//                    Key.get(object : TypeLiteral<MioAlgorithm<T>>() {})
+//
+//                config.algorithm == EMConfig.Algorithm.WTS ->
+//                    Key.get(object : TypeLiteral<WtsAlgorithm<T>>() {})
+//
+//                config.algorithm == EMConfig.Algorithm.MOSA ->
+//                    Key.get(object : TypeLiteral<MosaAlgorithm<T>>() {})
+//
+//                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
+//            }
+//        }
 
-            val config = getEmConfig(injector)
+        private fun getAlgorithmKeyGraphQL(config: EMConfig): Key<out SearchAlgorithm<GraphQLIndividual>> {
+
+            return when {
+                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+                    Key.get(object : TypeLiteral<RandomAlgorithm<GraphQLIndividual>>() {})
 
                 config.algorithm == EMConfig.Algorithm.MIO ->
                     Key.get(object : TypeLiteral<MioAlgorithm<GraphQLIndividual>>() {})
@@ -339,7 +358,7 @@ class Main {
             }
         }
 
-        fun run(injector: Injector): Solution<*> {
+        fun run(injector: Injector, controllerInfo: ControllerInfoDto?): Solution<*> {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -358,7 +377,8 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Starting to generate test cases")
 
-            return imp.search { solution: Solution<*>, snapshotTimestamp: String -> writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp) }
+            return imp.search { solution: Solution<*>,
+                                snapshotTimestamp: String -> writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp) }
         }
 
         private fun checkExperimentalSettings(injector: Injector) {
@@ -407,7 +427,43 @@ class Main {
 
         private fun writeTestsAsSnapshots(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshotTimestamp: String="") {
 
-         fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.createTests) {
+                return
+            }
+
+            val n = solution.individuals.size
+            val tests = if (n == 1) "1 test" else "$n tests"
+
+            LoggingUtil.getInfoLogger().info("Going to save snapshot $tests to ${config.outputFolder}")
+
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+
+
+            if (config.problemType == EMConfig.ProblemType.REST) {
+
+                val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
+
+                solution.clusteringTime = splitResult.clusteringTime.toInt()
+                splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
+                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshotTimestamp) }
+
+                if (config.executiveSummary) {
+                    writeExecSummary(injector, controllerInfoDto, splitResult)
+                    //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
+                }
+            } else {
+                /*
+                    TODO refactor all the PartialOracle stuff that is meant for only REST
+                 */
+
+                writer.writeTests(solution, controllerInfoDto?.fullName, snapshotTimestamp)
+            }
+        }
+
+
+         fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshot: String="") {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -415,29 +471,8 @@ class Main {
                 return
             }
 
-            val tests = getAmountOfTestsAsString(solution)
-            LoggingUtil.getInfoLogger().info("Going to save snapshot $tests to ${config.outputFolder}")
-
-            val writer = setupPartialOracles(injector, config)
-
-            writer.writeTests(solution, controllerInfoDto?.fullName, snapshotTimestamp)
-        }
-
-        private fun getAmountOfTestsAsString(solution: Solution<*>): String {
             val n = solution.individuals.size
-            return if (n == 1) "1 test" else "$n tests"
-        }
-
-
-        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshot: String="") {
-
-            val config = getEmConfig(injector)
-
-            if (!config.createTests) {
-                return
-            }
-
-            val tests = getAmountOfTestsAsString(solution)
+            val tests = if (n == 1) "1 test" else "$n tests"
 
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
@@ -447,10 +482,9 @@ class Main {
 
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
-
-            solution.clusteringTime = splitResult.clusteringTime.toInt()
-            splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshot) }
+                solution.clusteringTime = splitResult.clusteringTime.toInt()
+                splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
+                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshot) }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult)
@@ -463,6 +497,9 @@ class Main {
 
                 writer.writeTests(solution, controllerInfoDto?.fullName)
             }
+
+             // If snapshots of the generated tests were stored to disk, then they must be removed
+             writer.removeSnapshotTests(solution)
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
@@ -544,8 +581,8 @@ class Main {
 
         private fun writeExecSummary(injector: Injector,
                                      controllerInfoDto: ControllerInfoDto?,
-                                     splitResult: SplitResult){
-            val config = getEmConfig(injector)
+                                     splitResult: SplitResult) {
+            val config = injector.getInstance(EMConfig::class.java)
 
             if (!config.createTests) {
                 return
@@ -555,9 +592,6 @@ class Main {
             assert(controllerInfoDto == null || controllerInfoDto.fullName != null)
             writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName)
         }
-
-        private fun getEmConfig(injector: Injector) = injector.getInstance(EMConfig::class.java)
-
     }
 }
 

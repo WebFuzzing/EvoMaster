@@ -21,11 +21,11 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         val randomP = apc.getProbRandomSampling()
 
-        if (archive.isEmpty()
-                || sampler.hasSpecialInit()
-                || randomness.nextBoolean(randomP)) {
+        if(archive.isEmpty()
+            || sampler.hasSpecialInit()
+            || randomness.nextBoolean(randomP)) {
 
-            val ind = if (sampler.hasSpecialInit()) {
+            val ind = if(sampler.hasSpecialInit()){
                 // If there is still special init set, sample from that
                 sampler.smartSample()
             } else {
@@ -46,7 +46,7 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         val nMutations = apc.getNumberOfMutations()
 
-        getMutator().mutateAndSave(nMutations, ei, archive)
+        getMutatator().mutateAndSave(nMutations, ei, archive)
 
 
     }

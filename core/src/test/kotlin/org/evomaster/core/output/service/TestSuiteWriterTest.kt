@@ -59,6 +59,7 @@ class TestSuiteWriterTest{
         )
 
 
+
         //make sure we delete any existing folder from previous test runs
         val srcFolder = File(config.outputFolder)
         srcFolder.deleteRecursively()
@@ -73,7 +74,6 @@ class TestSuiteWriterTest{
 
 
         val writer = injector.getInstance(TestSuiteWriter::class.java)
-
 
         //write the test suite
         writer.writeTests(solution, FakeController::class.qualifiedName!!)

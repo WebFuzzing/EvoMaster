@@ -5,9 +5,6 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.rest.BlackBoxUtils
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.service.RestSampler
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
@@ -15,7 +12,6 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.ZonedDateTime
-import javax.annotation.PostConstruct
 
 
 /**
@@ -52,34 +48,29 @@ class TestSuiteWriter {
 
 
     fun writeTests(
-            solution: Solution<*>,
-            controllerName: String?,
-            timestamp : String = ""
+        solution: Solution<*>,
+        controllerName: String?,
+        timestamp : String = ""
     ) {
-
-        if(!::partialOracles.isInitialized) partialOracles = PartialOracles()
-
-        val name = TestSuiteFileName(calculateClassName(solution))
-
+        val name = TestSuiteFileName(solution.getFileName())
         val content = convertToCompilableTestCode(solution, name, timestamp, controllerName)
         saveToDisk(content, config, name)
     }
 
-    private fun calculateClassName(solution: Solution<*>): String {
-        return "${solution.testSuiteName}${solution.termination.suffix}"
+    fun removeSnapshotTests(solution: Solution<*>) {
+        val name = TestSuiteFileName("${solution.getFileName()}${Termination.IN_PROGRESS.suffix}" )
+        removeFromDisk(config, name)
     }
 
     private fun isAnSnapshot(solution: Solution<*>) =
-            Termination.IN_PROGRESS == solution.termination
+        Termination.IN_PROGRESS == solution.termination
 
-
-    private fun convertToCompilableTestCode(
-            solution: Solution<*>,
-            testSuiteFileName: TestSuiteFileName,
-            timestamp : String = "",
-            controllerName: String?
-    )
-            : String {
+    fun convertToCompilableTestCode(
+        solution: Solution<*>,
+        testSuiteFileName: TestSuiteFileName,
+        timestamp : String = "",
+        controllerName: String?
+    ): String {
 
         val lines = Lines()
         val testSuiteOrganizer = TestSuiteOrganizer()
@@ -158,6 +149,16 @@ class TestSuiteWriter {
         path.toFile().appendText(testFileContent)
     }
 
+    private fun removeFromDisk(
+        config: EMConfig,
+        testSuiteFileName: TestSuiteFileName
+    ) {
+
+        val path = Paths.get(config.outputFolder, testSuiteFileName.getAsPath(config.outputFormat))
+
+        Files.deleteIfExists(path)
+    }
+
     private fun classDescriptionEmptyLine(lines: Lines) {
         if (config.outputFormat.isJava()) {
             lines.add(" * <br>")
@@ -185,12 +186,14 @@ class TestSuiteWriter {
             }"
         )
         classDescriptionEmptyLine(lines)
+
         if (isAnSnapshot(solution)) {
             lines.add(" ************************************ WARNING ************************************ ")
             lines.add(" * This is an snapshot of the generated tests after $timestamp seconds elapsed. *")
-            lines.add(" * The execution of Evomaster have not finished. *")
+            lines.add(" * The execution of Evomaster has not finished.                                 *")
             lines.add(" ********************************************************************************* ")
         }
+
         lines.add(" * The generated test suite contains ${solution.individuals.size} tests")
         classDescriptionEmptyLine(lines)
         lines.add(" * Covered targets: ${solution.overall.coveredTargets()}")
@@ -242,6 +245,7 @@ class TestSuiteWriter {
         solution: Solution<*>,
         name: TestSuiteFileName,
         lines: Lines,
+        timestamp : String = "",
         controllerName: String?
     ) {
 
