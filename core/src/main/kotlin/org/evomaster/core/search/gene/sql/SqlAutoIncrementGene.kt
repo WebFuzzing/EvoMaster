@@ -4,13 +4,13 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 
 
-class SqlAutoIncrementGene(name: String) : Gene(name) {
+class SqlAutoIncrementGene(name: String) : Gene(name, mutableListOf()) {
 
-    override fun copy(): Gene {
+    override fun getChildren(): MutableList<Gene> = mutableListOf()
+
+    override fun copyContent(): Gene {
         return SqlAutoIncrementGene(name)
     }
 
@@ -25,6 +25,8 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
 
     /**
      * TODO Shouldn't this method throw an IllegalStateException ?
+     *
+     * Man: need to check with Andrea, copyValueFrom of [ImmutableDataHolderGene] throw an exception
      */
     override fun copyValueFrom(other: Gene) {
         if (other !is SqlAutoIncrementGene) {
@@ -53,4 +55,8 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
 
     override fun innerGene(): List<Gene> = listOf()
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing, cannot bind with others
+        return true
+    }
 }

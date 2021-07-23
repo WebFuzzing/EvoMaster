@@ -6,6 +6,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -135,12 +136,16 @@ class RestStructureMutator : HttpWsStructureMutator() {
             val chosen = randomness.choose(indices)
 
             //save mutated genes
-            val removedActions = ind.getResourceCalls()[chosen].actions
-            assert(removedActions.size == 1)
-            mutatedGenes?.removedGene?.addAll(removedActions.first().seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            val removedActions = ind.getResourceCalls()[chosen].seeActions(ActionFilter.NO_SQL)
+            Lazy.assert { removedActions.size == 1 }
 
-            //ind.seeActions().removeAt(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                removedActions.first(),
+                chosen,
+                true,
+                chosen
+            )
+
             ind.removeResourceCall(chosen)
 
         } else {
@@ -153,8 +158,12 @@ class RestStructureMutator : HttpWsStructureMutator() {
             val post = sampler.createActionFor(postTemplate, ind.seeActions().last() as RestCallAction)
 
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(post.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(idx)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                post,
+                idx,
+                false,
+                idx
+            )
 
             /*
                 where it is inserted should not matter, as long as
@@ -169,14 +178,19 @@ class RestStructureMutator : HttpWsStructureMutator() {
     private fun mutateForRandomType(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?) {
 
         if (ind.seeActions().size == 1) {
-            val sampledAction = sampler.sampleRandomAction(0.05) as RestAction
+            val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
 
+            val pos = ind.seeActions().size
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(ind.seeActions().size)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                sampledAction,
+                pos,
+                false,
+                pos
+            )
 
             //ind.seeActions().add(sampledAction)
-            ind.addResourceCall(RestResourceCalls(actions = mutableListOf(sampledAction)))
+            ind.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(sampledAction)))
 
             //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             return
@@ -189,10 +203,14 @@ class RestStructureMutator : HttpWsStructureMutator() {
             val chosen = randomness.nextInt(ind.seeActions().size)
 
             //save mutated genes
-            val removedActions = ind.getResourceCalls()[chosen].actions
-            assert(removedActions.size == 1)
-            mutatedGenes?.removedGene?.addAll(removedActions.first().seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            val removedActions = ind.getResourceCalls()[chosen].seeActions(ActionFilter.NO_SQL)
+            Lazy.assert { removedActions.size == 1 }
+            mutatedGenes?.addRemovedOrAddedByAction(
+                removedActions.first(),
+                chosen,
+                true,
+                chosen
+            )
 
             //ind.seeActions().removeAt(chosen)
             ind.removeResourceCall(chosen)
@@ -201,14 +219,18 @@ class RestStructureMutator : HttpWsStructureMutator() {
 
             //add one at random
             log.trace("Adding action to test")
-            val sampledAction = sampler.sampleRandomAction(0.05) as RestAction
+            val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
             val chosen = randomness.nextInt(ind.seeActions().size)
             //ind.seeActions().add(chosen, sampledAction)
             ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction)))
 
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                sampledAction,
+                chosen,
+                false,
+                chosen
+            )
 
             //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             // BMR: Perhaps we could have a function for individual.addAction(action) which would cover both

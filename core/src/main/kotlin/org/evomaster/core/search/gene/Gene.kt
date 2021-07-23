@@ -1,6 +1,9 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -14,7 +17,7 @@ import org.slf4j.LoggerFactory
  * A building block representing one part of an Individual.
  * The terms "gene" comes from the evolutionary algorithm literature
  */
-abstract class Gene(var name: String) {
+abstract class Gene(var name: String, children: List<out StructuralElement>) : StructuralElement(children){
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
@@ -27,33 +30,18 @@ abstract class Gene(var name: String) {
     }
 
     /**
-     *  A gene could be inside a gene, in a tree-like structure.
-     *  So for each gene, but the root, we keep track of its parent.
-     *
-     *  When a gene X is created with a child Y, then X is responsible
-     *  to mark itself as parent of Y
+     * Make a copy of this gene.
      */
-    var parent : Gene? = null
-
-    /**
-     * Follow the parent's path until the root of gene tree,
-     * which could be this same gene
-     */
-    fun getRoot() : Gene{
-        var curr = this
-        while(curr.parent != null){
-            curr = curr.parent!!
-        }
-        return curr
+    final override fun copy() : Gene{
+        val copy = super.copy()
+        if (copy !is Gene)
+            throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
+        return copy
     }
 
-    /**
-     * Make a copy of this gene.
-     *
-     * Note: the [parent] of this gene will be [null], but all children
-     * will have the correct parent
-     */
-    abstract fun copy() : Gene
+    override fun copyContent(): Gene {
+        throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
+    }
 
     /**
      * weight for mutation
@@ -137,6 +125,9 @@ abstract class Gene(var name: String) {
                 }
             }
         }
+
+        //sync binding gene after value mutation
+        syncBindingGenesBasedOnThis()
     }
 
     /**
@@ -261,11 +252,160 @@ abstract class Gene(var name: String) {
     abstract fun containsSameValueAs(other: Gene): Boolean
 
 
+    /**
+     * @return internal genes
+     */
     abstract fun innerGene() : List<Gene>
 
     /**
      * evaluate whether [this] and [gene] belong to one evolution during search
      */
     open fun possiblySame(gene : Gene) : Boolean = gene.name == name && gene::class == this::class
+
+
+    //========================= handing binding genes ===================================
+
+    private val bindingGenes: MutableSet<Gene> = mutableSetOf()
+
+    /**
+     * rebuild the binding relationship of [this] gene based on [copiedGene] which exists in [copiedIndividual]
+     */
+    fun rebuildBindingWithTemplate(newIndividual: Individual, copiedIndividual: Individual, copiedGene: Gene){
+        if (bindingGenes.isNotEmpty())
+            throw IllegalArgumentException("gene ($name) has been rebuilt")
+
+        val list = copiedGene.bindingGenes.map { g->
+            newIndividual.findGene(copiedIndividual, g)
+                ?:throw IllegalArgumentException("cannot find the gene (${g.name}) in the copiedIndividual")
+        }
+
+        bindingGenes.addAll(list)
+    }
+
+    /**
+     * sync [bindingGenes] based on [this]
+     */
+    fun syncBindingGenesBasedOnThis(all : MutableSet<Gene> = mutableSetOf()){
+        if (bindingGenes.isEmpty()) return
+        all.add(this)
+        bindingGenes.filterNot { all.contains(it) }.forEach { b->
+            all.add(b)
+            if(!b.bindValueBasedOn(this))
+                LoggingUtil.uniqueWarn(log, "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})")
+            b.syncBindingGenesBasedOnThis(all)
+        }
+
+        innerGene().filterNot { all.contains(it) }.forEach { it.syncBindingGenesBasedOnThis(all) }
+    }
+
+    /**
+     * get all binding genes of [this]
+     */
+    private fun getBindingGenes(all : MutableSet<Gene>){
+        if (bindingGenes.isEmpty()) return
+        all.add(this)
+        bindingGenes.filterNot { all.contains(it) }.forEach { b->
+            all.add(b)
+            b.getBindingGenes(all)
+        }
+        innerGene().filterNot { all.contains(it) }.forEach { it.getBindingGenes(all) }
+    }
+
+    /**
+     * remove [this] from its binding genes
+     */
+    fun removeThisFromItsBindingGenes(){
+        val all = mutableSetOf<Gene>()
+        getBindingGenes(all)
+        all.forEach { b->
+            b.removeBindingGene(this)
+        }
+    }
+
+    /**
+     * @return whether [this] gene is bound with any other gene
+     */
+    fun isBoundGene() = bindingGenes.isNotEmpty()
+
+    /**
+     * repair the broken binding reference e.g., the binding gene is removed from the current individual
+     */
+    fun cleanBrokenReference(all : List<Gene>) : Boolean{
+        return bindingGenes.removeIf { !all.contains(it) }
+    }
+
+    /**
+     * remove genes which has been removed from the root
+     */
+    fun cleanRemovedGenes(removed: List<Gene>): Boolean{
+        return bindingGenes.removeIf{removed.contains(it)}
+    }
+
+    /**
+     * @return whether [this] gene has same binding gene as [genes]
+     *
+     * it is useful for debugging/unit tests
+     */
+    fun isSameBinding(genes: Set<Gene>) = (genes.size == bindingGenes.size) && genes.containsAll(bindingGenes)
+
+    /**
+     * add [gene] as the binding gene
+     */
+    fun addBindingGene(gene: Gene) {
+        bindingGenes.add(gene)
+    }
+
+    /**
+     * remove [gene] as the binding gene
+     */
+    private fun removeBindingGene(gene: Gene): Boolean {
+        return bindingGenes.remove(gene)
+    }
+
+    /**
+     * @return whether the bindingGene is subset of the [set]
+     */
+    fun bindingGeneIsSubsetOf(set: List<Gene>) = set.containsAll(bindingGenes)
+
+    /**
+     * reset binding based on [genes]
+     */
+    fun resetBinding(genes: Set<Gene>) {
+        bindingGenes.clear()
+        bindingGenes.addAll(genes)
+    }
+
+    /**
+     * @return whether [this] is bound with [gene]
+     */
+    fun isBoundWith(gene: Gene) = bindingGenes.contains(gene)
+
+
+    /**
+     * bind value of [this] gene based on [gene]
+     * @return whether the binding performs successfully
+     */
+    abstract fun bindValueBasedOn(gene: Gene) : Boolean
+
+
+    override fun postCopy(template: StructuralElement) {
+        //rebuild the binding genes
+        val root = getRoot()
+        val postBinding = (template as Gene).bindingGenes.map {b->
+            val found = root.find(b)
+            found as? Gene?:throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (${found::class.java.simpleName})")
+        }
+        bindingGenes.clear()
+        bindingGenes.addAll(postBinding)
+
+        super.postCopy(template)
+    }
+
+    /**
+     * there might be a need to repair gene based on some constraints, e.g., DateGene and TimeGene
+     */
+    open fun repair(){
+        //do nothing
+    }
 }
 

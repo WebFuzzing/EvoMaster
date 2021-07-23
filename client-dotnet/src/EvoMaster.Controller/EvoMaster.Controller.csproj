@@ -18,11 +18,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Resources/warning.html">
-            <Pack>true</Pack>
-            <PackagePath>content\any\any;contentFiles\any\any\;;</PackagePath>
-            <PackageCopyToOutput>true</PackageCopyToOutput>
-        </Content>
+        <EmbeddedResource Include="Resources\warning.html" />
+<!--        <Content Include="Resources/warning.html">-->
+<!--            <Pack>true</Pack>-->
+<!--            <PackagePath>content\any\any;contentFiles\any\any\;;</PackagePath>-->
+<!--            <PackageCopyToOutput>true</PackageCopyToOutput>-->
+<!--        </Content>-->
 
         <None Include="build/EvoMaster.Controller.props">
             <Pack>true</Pack>

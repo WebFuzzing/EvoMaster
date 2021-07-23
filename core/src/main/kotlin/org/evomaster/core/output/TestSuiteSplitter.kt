@@ -68,10 +68,17 @@ object TestSuiteSplitter {
             }
         }.toMutableList()
 
+        val clusterableActions = errs.flatMap {
+            it.evaluatedActions().filter { ac ->
+                TestSuiteSplitter.assessFailed(ac, oracles)
+            }
+        }.map { ac -> ac.result }
+                .filterIsInstance<HttpWsCallResult>()
+
         // If no individuals have a failed result, the summary is empty
         // If only one individual has a failed result, clustering is skipped, and the relevant individual is returned
 
-        when (errs.size) {
+        when (clusterableActions.size) {
             0 -> splitResult.splitOutcome = mutableListOf()
             1 -> splitResult.splitOutcome = mutableListOf(Solution(errs, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY))
         }

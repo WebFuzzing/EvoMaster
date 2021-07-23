@@ -2,12 +2,11 @@ package org.evomaster.core.search.service.mutator.genemutation
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.DisruptiveGene
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import java.nio.file.Files
@@ -31,25 +30,25 @@ object ArchiveMutationUtils {
         content.addAll(mutatedGenes.mutatedGenes.mapIndexed { gindex, geneInfo -> listOf(
                 index,
                 evaluatedMutation,
-                geneInfo.gene.name,
+                geneInfo.gene?.name,
                 geneInfo.previousValue,
-                geneInfo.gene.getValueAsPrintableString(),
+                geneInfo.gene?.getValueAsPrintableString(),
                 "#${targets.joinToString("#")}",
-                if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[gindex] else "",
-                if (mutatedGenes.mutatedPosition.isNotEmpty() && individual.seeActions().isNotEmpty())
-                    getActionInfo(individual.seeActions()[mutatedGenes.mutatedPosition[gindex]])
+                geneInfo.actionPosition,
+                if (geneInfo.actionPosition!=null)
+                    getActionInfo(individual.seeActions(ActionFilter.NO_INIT)[geneInfo.actionPosition])
                 else "").joinToString(",")} )
 
         content.addAll(mutatedGenes.mutatedDbGenes.mapIndexed { gindex, geneInfo -> listOf(
                 index,
                 evaluatedMutation,
-                geneInfo.gene.name,
+                geneInfo.gene?.name,
                 geneInfo.previousValue,
-                geneInfo.gene.getValueAsPrintableString(),
+                geneInfo.gene?.getValueAsPrintableString(),
                 "#${targets.joinToString("#")}",
-                if (mutatedGenes.mutatedDbActionPosition.isNotEmpty()) mutatedGenes.mutatedDbActionPosition[gindex] else "",
-                if (mutatedGenes.mutatedDbActionPosition.isNotEmpty() && individual.seeInitializingActions().isNotEmpty())
-                    getActionInfo(individual.seeInitializingActions()[mutatedGenes.mutatedDbActionPosition[gindex]])
+                geneInfo.actionPosition,
+                if (geneInfo.actionPosition != null)
+                    getActionInfo(individual.seeInitializingActions()[geneInfo.actionPosition])
                 else "" ).joinToString(",")})
 
         if (content.isNotEmpty()) {

@@ -36,6 +36,17 @@ class MutationWeightControl {
     }
 
     /**
+     * @param candidateGenesToMutate specify a list of candidates to be mutated
+     * @param adaptiveWeight specify whether to enable adaptive weight i.e., based on impacts,
+     *          otherwise employ the static weight based on gene info
+     * @param targets specify the targets for this mutation that are useful when [adaptiveWeight] is enabled
+     * @param impacts specify the impacts info that are useful when [adaptiveWeight] is enabled.
+     *          when it is not null and [adaptiveWeight] is enabled, adaptive weights can be calculated based on it
+     * @param individual specify the individual to be mutated which is useful when [impacts] is not null and [adaptiveWeight] is enabled
+     * @param evi specified the evaluated individual which is useful when [impacts] is null and [adaptiveWeight] is enabled
+     * @param forceNotEmpty specify whether the selection can be empty or not
+     * @param numOfGroup specify a number of groups of genes to be mutated that is typically used to calculate the number of genes to be mutated
+     *
      * @return a subset of [candidateGenesToMutate] to mutate with weight-based solution.
      */
     fun selectSubGene(

@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
@@ -48,6 +49,11 @@ class RemoteController() : DatabaseExecutor {
     private lateinit var config: EMConfig
 
     private var client: Client = ClientBuilder.newClient()
+
+    constructor(config: EMConfig) : this(){
+        this.config = config
+        initialize()
+    }
 
     constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean, config: EMConfig = EMConfig()) : this() {
         if (computeSqlHeuristics && !extractSqlExecutionInfo)
@@ -145,7 +151,8 @@ class RemoteController() : DatabaseExecutor {
 
     private fun checkResponse(response: Response, dto: WrappedResponseDto<*>?, msg: String) : Boolean{
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL  || dto?.error != null) {
-            log.warn("{}. HTTP status {}. Error: '{}'", msg, response.status, dto?.error)
+            LoggingUtil.uniqueWarn(log, "$msg. HTTP status ${response.status}. Error: '${dto?.error}")
+//            log.warn("{}. HTTP status {}. Error: '{}'", msg, response.status, dto?.error)
             return false
         }
 
@@ -278,7 +285,7 @@ class RemoteController() : DatabaseExecutor {
         return readAndCheckResponse(response, "Failed to inform SUT of new search")
     }
 
-    fun getTestResults(ids: Set<Int> = setOf()): TestResultsDto? {
+    fun getTestResults(ids: Set<Int> = setOf(), ignoreKillSwitch: Boolean = false): TestResultsDto? {
 
         val queryParam = ids.joinToString(",")
 
@@ -286,7 +293,7 @@ class RemoteController() : DatabaseExecutor {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
                     .queryParam("ids", queryParam)
-                    .queryParam("killSwitch", config.killSwitch)
+                    .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
@@ -365,11 +372,11 @@ class RemoteController() : DatabaseExecutor {
         return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<QueryResultDto>>() {})
     }
 
-    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long, Long>? {
-        return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<Map<Long, Long>>>() {})
+    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
+        return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<InsertionResultsDto>>() {})
     }
 
-    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T? {
+    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
 
         val response = makeHttpCall {
             getWebTarget()

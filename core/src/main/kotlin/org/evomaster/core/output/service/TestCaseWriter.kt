@@ -31,11 +31,6 @@ abstract class TestCaseWriter {
 
     companion object {
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
-
-        /**
-         *   Internal flag to mark cases which do not support yet
-         */
-        const val NOT_COVERED_YET = "NotCoveredYet"
     }
 
 
@@ -84,6 +79,10 @@ abstract class TestCaseWriter {
         return lines
     }
 
+    /**
+     * Before starting to make actions (eg HTTP calls in web apis), check if we need to declare any field, ie variable,
+     * for this test.
+     */
     protected abstract fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>)
 
     protected abstract fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>)
@@ -91,12 +90,6 @@ abstract class TestCaseWriter {
     protected abstract fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String)
 
     protected abstract fun shouldFailIfException(result: ActionResult): Boolean
-
-    protected fun locationVar(id: String): String {
-        //TODO make sure name is syntactically valid
-        //TODO use counters to make them unique
-        return "location_${id.trim().replace(" ", "_")}"
-    }
 
 
     protected fun addActionInTryCatch(call: Action,
@@ -128,7 +121,8 @@ abstract class TestCaseWriter {
         }
 
         when {
-            format.isJavaOrKotlin() -> lines.add("} catch(Exception e){")
+            format.isJava() -> lines.add("} catch(Exception e){")
+            format.isKotlin() -> lines.add("} catch(e: Exception){")
             format.isJavaScript() -> lines.add("} catch(e){")
             format.isCsharp() -> lines.add("} catch(Exception e){")
         }
@@ -140,8 +134,6 @@ abstract class TestCaseWriter {
         }
         lines.add("}")
     }
-
-
 
 
     protected fun capitalizeFirstChar(name: String): String {
@@ -160,16 +152,4 @@ abstract class TestCaseWriter {
         }
     }
 
-    /**
-     * Some content may be lead to problems in the resultant test case.
-     * Null values, or content that is not yet handled are can lead to un-compilable generated tests.
-     * Removing strings that contain "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
-     * Such information can cause failures upon re-run, as object references and timestamps will differ.
-     */
-    protected fun printSuitable(printableContent: String): Boolean {
-        return (printableContent != "null"
-                && printableContent != NOT_COVERED_YET
-                && !printableContent.contains("logged")
-                && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
-    }
 }

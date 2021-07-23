@@ -129,18 +129,6 @@ public class SchemaExtractor {
 
         DbSchemaDto schemaDto = new DbSchemaDto();
 
-        try {
-            schemaDto.name = connection.getSchema();
-        } catch (Exception | AbstractMethodError e) {
-            /*
-                In remote sessions, getSchema might fail.
-                We do not do much with it anyway (at least for
-                now), so not a big deal...
-                Furthermore, some drivers might be compiled to Java 6,
-                whereas getSchema was introduced in Java 7
-             */
-            schemaDto.name = "public";
-        }
         DatabaseMetaData md = connection.getMetaData();
 
         String protocol = md.getURL(); //TODO better handling
@@ -157,9 +145,35 @@ public class SchemaExtractor {
         }
         schemaDto.databaseType = dt;
 
-        //see https://www.progress.com/blogs/jdbc-tutorial-extracting-database-metadata-via-jdbc-driver
 
-        schemaDto.name = schemaDto.name.toUpperCase();
+        /*
+            schema name
+         */
+        switch (dt){
+            case MYSQL:
+                // schema is database name in mysql
+                schemaDto.name = connection.getCatalog();
+                break;
+            default:{
+                try {
+                    schemaDto.name = connection.getSchema();
+                } catch (Exception | AbstractMethodError e) {
+                /*
+                    In remote sessions, getSchema might fail.
+                    We do not do much with it anyway (at least for
+                    now), so not a big deal...
+                    Furthermore, some drivers might be compiled to Java 6,
+                    whereas getSchema was introduced in Java 7
+                 */
+                    schemaDto.name = "public";
+                }
+
+                //see https://www.progress.com/blogs/jdbc-tutorial-extracting-database-metadata-via-jdbc-driver
+                schemaDto.name = schemaDto.name.toUpperCase();
+            }
+        }
+
+
 
         ResultSet tables = md.getTables(null, schemaDto.name, null, new String[]{"TABLE"});
 
@@ -315,8 +329,16 @@ public class SchemaExtractor {
 
             columnDto.type = columns.getString("TYPE_NAME");
             columnDto.size = columns.getInt("COLUMN_SIZE");
-            columnDto.nullable = columns.getBoolean("IS_NULLABLE");
-            columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
+
+            switch (schemaDto.databaseType){
+                case MYSQL:
+                    columnDto.nullable = columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
+                    columnDto.autoIncrement = columns.getString("IS_AUTOINCREMENT").equalsIgnoreCase("yes");
+                    break;
+                default:
+                    columnDto.nullable = columns.getBoolean("IS_NULLABLE");
+                    columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
+            }
             //columns.getString("DECIMAL_DIGITS");
 
             columnDto.primaryKey = pks.contains(columnDto.name);

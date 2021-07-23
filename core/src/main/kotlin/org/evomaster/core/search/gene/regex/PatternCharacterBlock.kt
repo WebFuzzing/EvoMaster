@@ -15,13 +15,15 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 class PatternCharacterBlock(
         name: String,
         val stringBlock: String
-) : RxAtom(name) {
+) : RxAtom(name, listOf()) {
 
     override fun isMutable(): Boolean {
         return false
     }
 
-    override fun copy(): Gene {
+    override fun getChildren(): List<Gene> = listOf()
+
+    override fun copyContent(): Gene {
         return PatternCharacterBlock(name, stringBlock)
     }
 
@@ -56,4 +58,9 @@ class PatternCharacterBlock(
     }
 
     override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing
+        return true
+    }
 }

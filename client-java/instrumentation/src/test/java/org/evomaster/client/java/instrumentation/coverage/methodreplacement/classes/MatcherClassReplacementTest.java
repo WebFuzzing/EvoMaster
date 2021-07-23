@@ -47,4 +47,37 @@ public class MatcherClassReplacementTest {
         assertTrue(h0>0);
         assertTrue(h0<1);
     }
+
+    @Test
+    public void testJUnitIssue(){
+
+        String input = "Unable to create injector, see the following errors:\n" +
+                "\n" +
+                "1) [Guice/MissingImplementation]: No implementation for org.evomaster.core.output.service.TestCaseWriter was bound.\n" +
+                "\n" +
+                "Requested by:\n" +
+                "1  : org.evomaster.core.output.service.TestSuiteWriter.testCaseWriter(TestSuiteWriter.kt:25)\n" +
+                "      \\_ for field testCaseWriter\n" +
+                "     at org.evomaster.core.BaseModule.configure(BaseModule.kt:32)\n" +
+                "\n" +
+                "Learn more:\n" +
+                "  https://github.com/google/guice/wiki/MISSING_IMPLEMENTATION\n" +
+                "\n" +
+                "1 error";
+
+        String regex = "[\\W](([a-z_0-9]++[.]){2,}+[A-Z][\\w$]*)";
+        String anyPositionRegexMatch = String.format("([\\s\\S]*)(%s)([\\s\\S]*)", regex);
+
+        Matcher m = Pattern.compile(regex).matcher(input);
+
+        boolean found = m.find();
+        boolean any = Pattern.matches(anyPositionRegexMatch, input);
+
+        assertTrue(found);
+        assertEquals(found, any);
+
+        //this should NOT throw an exception
+        boolean r = MatcherClassReplacement.find(m, null);
+        assertTrue(r);
+    }
 }

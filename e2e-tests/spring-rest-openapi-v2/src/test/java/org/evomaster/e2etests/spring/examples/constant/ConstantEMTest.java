@@ -3,7 +3,6 @@ package org.evomaster.e2etests.spring.examples.constant;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foo.rest.examples.spring.constant.ConstantController;
 import com.foo.rest.examples.spring.constant.ConstantResponseDto;
-import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.RestCallResult;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
@@ -43,7 +42,7 @@ public class ConstantEMTest extends SpringTestBase {
 
                     //get number of distinct response values
                     List<Boolean> responses = solution.getIndividuals().stream()
-                            .flatMap(i -> i.getResults().stream())
+                            .flatMap(i -> i.seeResults(null).stream())
                             .map(r -> r.getResultValue(RestCallResult.BODY))
                             .filter(s -> s != null)
                             .map(s -> {

@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpact
 import org.evomaster.core.search.gene.GeneUtils
@@ -16,15 +17,13 @@ import java.lang.IllegalStateException
 class SqlNullable(name: String,
                   val gene: Gene,
                   var isPresent: Boolean = true
-) : SqlWrapperGene(name) {
+) : SqlWrapperGene(name, listOf(gene)) {
 
     init{
         if(gene is SqlWrapperGene && gene.getForeignKey() != null){
             throw IllegalStateException("SqlNullable should not contain a FK, " +
                     "as its nullability is handled directly in SqlForeignKeyGene")
         }
-
-        gene.parent = this
     }
 
     companion object{
@@ -32,12 +31,15 @@ class SqlNullable(name: String,
         private const val ABSENT = 0.1
     }
 
+    override fun getChildren(): List<Gene> = listOf(gene)
+
+
     override fun getForeignKey(): SqlForeignKeyGene? {
         return null
     }
 
-    override fun copy(): Gene {
-        return SqlNullable(name, gene.copy(), isPresent)
+    override fun copyContent(): Gene {
+        return SqlNullable(name, gene.copyContent(), isPresent)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -54,10 +56,10 @@ class SqlNullable(name: String,
 
         if (!isPresent) return emptyList()
 
-        if (!enableAdaptiveGeneMutation){
+        if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
             return if (randomness.nextBoolean(ABSENT)) emptyList() else listOf(gene)
         }
-        if (additionalGeneMutationInfo?.impact != null && additionalGeneMutationInfo.impact is SqlNullableImpact){
+        if (additionalGeneMutationInfo.impact is SqlNullableImpact){
             //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
             val inactive = additionalGeneMutationInfo.impact.presentImpact.determinateSelect(
                     minManipulatedTimes = 5,
@@ -69,7 +71,7 @@ class SqlNullable(name: String,
 
             return if (inactive)  emptyList() else listOf(gene)
         }
-        throw IllegalArgumentException("impact is null or not OptionalGeneImpact")
+        throw IllegalArgumentException("impact is not SqlNullableImpact ${additionalGeneMutationInfo.impact::class.java.simpleName}")
     }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
@@ -82,17 +84,6 @@ class SqlNullable(name: String,
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         isPresent = !isPresent
-        if (enableAdaptiveGeneMutation){
-            //TODO MAN further check
-            //if preferPresent is false, it is not necessary to mutate the gene
-//            presentMutationInfo.reached = additionalGeneMutationInfo.archiveMutator.withinNormal()
-//            if (presentMutationInfo.reached){
-//                presentMutationInfo.preferMin = 0
-//                presentMutationInfo.preferMax = 0
-//            }
-
-        }
-
         return true
     }
 
@@ -132,4 +123,8 @@ class SqlNullable(name: String,
 
     override fun innerGene(): List<Gene> = listOf(gene)
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is SqlNullable) isPresent = gene.isPresent
+        return ParamUtil.getValueGene(gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
+    }
 }

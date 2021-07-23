@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.examples.sort;
 
-import org.evomaster.core.Main;
 import org.evomaster.core.output.TestCase;
 import org.evomaster.core.output.TestSuiteOrganizer;
 import org.evomaster.core.problem.rest.HttpVerb;
@@ -11,11 +10,9 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.namedresource.NRTestBase;
 import org.junit.jupiter.api.Test;
 
-import java.util.OptionalInt;
-import java.util.function.Predicate;
-
 import java.util.Iterator;
 import java.util.List;
+import java.util.OptionalInt;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,11 +66,11 @@ public class SortEMTest extends NRTestBase {
                     while(iterator.hasNext()){
                         current = iterator.next();
 
-                        if (current.getResults().stream()
+                        if (current.seeResults(null).stream()
                                 .filter(w -> w instanceof RestCallResult)
                                 .anyMatch(r -> ((RestCallResult) r).getStatusCode() == 500)) {
 
-                            assertTrue(previous.getResults().stream()
+                            assertTrue(previous.seeResults(null).stream()
                                     .filter(w -> w instanceof RestCallResult)
                                     .anyMatch(r -> ((RestCallResult) r).getStatusCode() == 500));
                         }
@@ -82,13 +79,13 @@ public class SortEMTest extends NRTestBase {
 
                         // Check that the current "priority code" is less than the previous priority code
 
-                        OptionalInt currentPrioCode = current.getResults().stream()
+                        OptionalInt currentPrioCode = current.seeResults(null).stream()
                                 .filter(w -> w instanceof RestCallResult)
                                 .mapToInt(w -> ((RestCallResult) w).getStatusCode())
                                 .map(w -> w % 500)
                                 .min();
 
-                        OptionalInt previousPrioCode = previous.getResults().stream()
+                        OptionalInt previousPrioCode = previous.seeResults(null).stream()
                                 .filter(w -> w instanceof RestCallResult)
                                 .mapToInt(w -> ((RestCallResult) w).getStatusCode())
                                 .map(w -> w % 500)

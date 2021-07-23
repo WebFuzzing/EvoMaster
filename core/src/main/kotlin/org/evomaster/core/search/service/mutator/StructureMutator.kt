@@ -44,4 +44,7 @@ abstract class StructureMutator : TrackOperator {
     abstract fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?)
 
 
+    open fun canApplyStructureMutator(individual: Individual) : Boolean = individual.canMutateStructure()
+
+
 }

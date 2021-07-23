@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlPrimaryKeyGeneImpact
 import org.evomaster.core.search.gene.GeneUtils
@@ -27,15 +28,13 @@ class SqlPrimaryKeyGene(name: String,
                          * Cannot be negative
                          */
                         val uniqueId: Long
-) : SqlWrapperGene(name) {
+) : SqlWrapperGene(name, mutableListOf(gene)) {
 
 
     init {
         if (uniqueId < 0) {
             throw IllegalArgumentException("Negative unique id")
         }
-
-        gene.parent = this
     }
 
     companion object{
@@ -49,7 +48,9 @@ class SqlPrimaryKeyGene(name: String,
         return null
     }
 
-    override fun copy() = SqlPrimaryKeyGene(name, tableName, gene.copy(), uniqueId)
+    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
+
+    override fun copyContent() = SqlPrimaryKeyGene(name, tableName, gene.copyContent(), uniqueId)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         gene.randomize(randomness, false, allGenes)
@@ -118,5 +119,10 @@ class SqlPrimaryKeyGene(name: String,
     }
 
     override fun innerGene(): List<Gene> = listOf(gene)
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing
+        return true
+    }
 
 }

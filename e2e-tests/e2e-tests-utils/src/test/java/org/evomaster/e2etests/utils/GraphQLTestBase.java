@@ -29,7 +29,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.getResults().get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
             stopped = res.getStopping();
 
             Integer statusCode = res.getStatusCode();
@@ -67,7 +67,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.getResults().get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
             stopped = res.getStopping();
 
             Integer statusCode = res.getStatusCode();
@@ -122,7 +122,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.getResults().get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
             stopped = res.getStopping();
 
             if (hasValueInData(res, value)){
@@ -214,9 +214,9 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
     private boolean hasAtLeastOne(EvaluatedIndividual<GraphQLIndividual> ind, String methodName, GQMethodType type, int expectedStatusCode, String inResponse){
 
-        if (ind.getIndividual().seeActions().size() != ind.getResults().size()){
+        if (ind.getIndividual().seeActions().size() != ind.seeResults(null).size()){
             throw new IllegalStateException(String.format("mismatched size of results (%d) with calls (%d) for GraphQLIndividual",
-                    ind.getResults().size(), ind.getIndividual().seeActions().size()));
+                    ind.seeResults(null).size(), ind.getIndividual().seeActions().size()));
         }
         List<GraphQLAction> actions = ind.getIndividual().seeActions();
 
@@ -224,7 +224,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.getResults().get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
             stopped = res.getStopping();
 
             boolean matched = actions.get(i).getMethodName().equals(methodName) &&

@@ -75,7 +75,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      */
     abstract fun doesStructureMutation(individual : T) : Boolean
 
-    open fun postActionAfterMutation(individual: T){}
+    open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
 
     open fun update(previous: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation){}
 

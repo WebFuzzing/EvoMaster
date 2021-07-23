@@ -219,9 +219,43 @@ class Main {
             val base = BaseModule(args)
             val config = base.getEMConfig()
 
-            val problemType = base.getEMConfig().problemType
+            if(config.problemType == EMConfig.ProblemType.DEFAULT){
+                /*
+                    Note that, in case ob BB-testing, this would had been already modified
+                 */
+                assert(!config.blackBox || config.bbExperiments)
 
-            val problemModule = when (problemType) {
+                val rc = RemoteController(base.getEMConfig())
+
+                rc.checkConnection()
+
+                /*
+                    Note: we need to start the SUT, because the sutInfo might depend on its dynamic
+                    state, eg the ephemeral port of the server
+                 */
+                val started = rc.startSUT()
+                if(! started){
+                    throw SutProblemException("Failed to start the SUT")
+                }
+
+                val info = rc.getSutInfo()
+                        ?: throw SutProblemException("No 'problemType' was defined, but failed to retried the needed" +
+                                " info from the EM Driver.")
+
+                if(info.restProblem != null){
+                    config.problemType = EMConfig.ProblemType.REST
+                } else if (info.graphQLProblem != null){
+                    config.problemType = EMConfig.ProblemType.GRAPHQL
+                } else {
+                    throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
+                }
+                //TODO in future might support Driver with multi-problem definitions
+
+                //as we modified problemType, we need to re-check these constraints
+                config.checkMultiFieldConstraints()
+            }
+
+            val problemModule = when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     if (config.blackBox) {
                         BlackBoxRestModule(config.bbExperiments)
@@ -240,11 +274,11 @@ class Main {
                 EMConfig.ProblemType.WEB -> WebModule()
 
                 //this should never happen, unless we add new type and forget to add it here
-                else -> throw IllegalStateException("Unrecognized problem type: $problemType")
+                else -> throw IllegalStateException("Unrecognized problem type: ${config.problemType}")
             }
 
-            try {
-                return LifecycleInjector.builder()
+            val injector = try {
+                LifecycleInjector.builder()
                         .withModules(base, problemModule)
                         .build()
                         .createInjector()
@@ -261,6 +295,11 @@ class Main {
 
                 throw e
             }
+
+            val cfg = injector.getInstance(EMConfig::class.java)
+            cfg.problemType = config.problemType
+
+            return injector
         }
 
 
@@ -340,7 +379,7 @@ class Main {
                     " Used experimental settings: $options")
         }
 
-        private fun checkState(injector: Injector): ControllerInfoDto? {
+         fun checkState(injector: Injector): ControllerInfoDto? {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -368,7 +407,7 @@ class Main {
 
         private fun writeTestsAsSnapshots(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshotTimestamp: String="") {
 
-        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
+         fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
 
             val config = injector.getInstance(EMConfig::class.java)
 

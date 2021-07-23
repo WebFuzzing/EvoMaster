@@ -1,13 +1,13 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.value.DisruptiveGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
  * A gene that has a major, disruptive impact on the whole chromosome.
  * As such, it should be mutated only with low probability
  */
-class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) : Gene(name)
+class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) : Gene(name, mutableListOf(gene))
         where T : Gene {
 
     init {
@@ -31,13 +31,10 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         private val log: Logger = LoggerFactory.getLogger(DisruptiveGene::class.java)
     }
 
-    init {
-        gene.parent = this
-    }
+    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
 
-
-    override fun copy(): Gene {
-        return DisruptiveGene(name, gene.copy(), probability)
+    override fun copyContent(): Gene {
+        return DisruptiveGene(name, gene.copyContent(), probability)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -114,5 +111,9 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
 
     override fun possiblySame(gene: Gene): Boolean {
         return gene is DisruptiveGene<*> && gene.name == this.name && this.gene.possiblySame((gene as DisruptiveGene<T>).gene)
+    }
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 }

@@ -44,7 +44,7 @@ class MapGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spec
         if (gc.previous != null && gc.previous !is MapGene<*>)
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be MapGene")
 
-        if (gc.previous != null && (gc.previous as MapGene<*>).elements.size != gc.current.elements.size)
+        if (gc.previous != null && (gc.previous as MapGene<*>).getAllElements().size != gc.current.getAllElements().size)
             sizeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num =  1)
 
         //TODO for elements

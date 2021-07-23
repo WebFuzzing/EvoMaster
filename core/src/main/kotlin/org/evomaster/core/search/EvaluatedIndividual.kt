@@ -4,16 +4,21 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.Individual.GeneFilter
+import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.math.min
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -26,14 +31,20 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                               * prematurely stopped, there might be less
                               * results than actions
                               */
-                             val results: List<out ActionResult>,
+                             private val results: List<out ActionResult>,
 
                              // for tracking its history
-                             trackOperator: TrackOperator? = null,
-                             index: Int = -1,
+                             override var trackOperator: TrackOperator? = null,
+                             override var index: Int = Traceable.DEFAULT_INDEX,
+
+                             // for impact
                              val impactInfo : ImpactsOfIndividual ?= null
 
-) : TraceableElement(trackOperator, index) where T : Individual {
+) : Traceable where T : Individual {
+
+    override var evaluatedResult: EvaluatedMutation? = null
+
+    override var tracking: TrackingHistory<out Traceable>? = null
 
     companion object{
         const val ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED = "ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED"
@@ -64,7 +75,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         set(value) { fitness.executionTimeMs = value}
 
     init{
-        if(individual.seeActions().size < results.size){
+        if (individual.seeActions(ALL).size < results.size){
             throw IllegalArgumentException("Less actions than results")
         }
     }
@@ -94,6 +105,22 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     }
 
     /**
+     * @return action results based on the specified [actions].
+     *      Note that if [actions] is null, then we employ individual.seeActions() as default
+     */
+    fun seeResults(actions: List<Action>? = null): List<ActionResult>{
+        val list = actions?:individual.seeActions()
+        val all = individual.seeActions(ALL)
+        val last = results.indexOfFirst { it.stopping }
+        return list.mapNotNull {
+            val index = all.indexOf(it)
+            if (last == -1 || index <= last)
+                results[index]
+            else null
+        }
+    }
+
+    /**
      * Note: if a test execution was prematurely stopped,
      * the number of evaluated actions would be lower than
      * the total number of actions
@@ -103,36 +130,47 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val list: MutableList<EvaluatedAction> = mutableListOf()
 
         val actions = individual.seeActions()
+        val actionResults = seeResults(actions)
 
-        (0 until results.size).forEach { i ->
-            list.add(EvaluatedAction(actions[i], results[i]))
+        (0 until actionResults.size).forEach { i ->
+            list.add(EvaluatedAction(actions[i], actionResults[i]))
         }
 
         return list
     }
 
     /**
-     * @return grouped db and evaluated actions based on its resource structure
+     * @return grouped evaluated actions based on its resource structure
+     *      first are db actions and their results
+     *      second are rest actions and their results
      */
-    fun evaluatedResourceActions() : List<Pair<List<DbAction>, List<EvaluatedAction>>>{
+    fun evaluatedResourceActions() : List<Pair<List<EvaluatedDbAction>, List<EvaluatedAction>>>{
         if (individual !is RestIndividual)
             throw IllegalStateException("the method do not support the individual with the type: ${individual::class.java.simpleName}");
 
-        val list = mutableListOf<Pair<List<DbAction>, List<EvaluatedAction>>>();
-
-        var index = 0;
+        val list = mutableListOf<Pair<List<EvaluatedDbAction>, List<EvaluatedAction>>>();
 
         individual.getResourceCalls().forEach { c->
-            if (index < results.size){
-                list.add(
-                    c.dbActions to c.actions.subList(0, min(c.actions.size, results.size-index)).map {
-                            a-> EvaluatedAction(a, results[index]).also { index++ }
-                    }.toList()
-                )
-            }
-        }
-        Lazy.assert {
-            index == results.size
+            val dbActions = c.seeActions(ONLY_SQL)
+            val dbResults = seeResults(dbActions)
+
+            val restActions = c.seeActions(NO_SQL)
+            val restResult = seeResults(restActions)
+
+            // get evaluated action based on the list of action results
+            list.add(
+                dbResults.mapIndexed { index, actionResult ->
+                    EvaluatedDbAction(
+                        (dbActions[index] as? DbAction) ?:throw IllegalStateException("mismatched action type, expected is DbAction but it is ${dbActions[index]::class.java.simpleName}"),
+                        (actionResult as? DbActionResult)?:throw IllegalStateException("mismatched action result type, expected is DbActionResult but it is ${actionResult::class.java.simpleName}")
+                    )
+                } to restResult.mapIndexed { index, actionResult ->
+                    EvaluatedAction(
+                        (restActions[index] as? RestCallAction) ?:throw IllegalStateException("mismatched action type, expected is RestCallAction but it is ${restActions[index]::class.java.simpleName}"),
+                        (actionResult as? RestCallResult)?:throw IllegalStateException("mismatched action result type, expected is RestCallResult but it is ${actionResult::class.java.simpleName}")
+                    )
+                }
+            )
         }
         return list
     }
@@ -160,51 +198,33 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 return copy().also { it.wrapWithTracking(evaluatedResult, trackingHistory = tracking) }
             }
             else -> {
-                when {
-                    copyFilter.name == ONLY_WITH_COPY_IMPACT -> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
+                return EvaluatedIndividual(
+                    fitness.copy(),
+                    individual.copy() as T,
+                    results.map(ActionResult::copy),
+                    trackOperator,
+                    index,
+                    when (copyFilter.name) {
+                        ONLY_WITH_COPY_IMPACT, WITH_TRACK_WITH_COPY_IMPACT -> {
                             impactInfo?.copy()
-                    )
-                    copyFilter.name == ONLY_WITH_CLONE_IMPACT-> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
+                        }
+                        ONLY_WITH_CLONE_IMPACT, WITH_TRACK_WITH_CLONE_IMPACT -> {
                             impactInfo?.clone()
-                    )
-                    copyFilter.name == WITH_TRACK_WITH_COPY_IMPACT -> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
-                            impactInfo?.copy()
-                    ).also {
+                        }
+                        else -> throw IllegalStateException("${copyFilter.name} is not available")
+                    }
+                ).also {
+                    if (copyFilter.name == WITH_TRACK_WITH_COPY_IMPACT
+                        || copyFilter.name == WITH_TRACK_WITH_CLONE_IMPACT){
                         it.wrapWithTracking(evaluatedResult, trackingHistory = tracking)
                     }
-                    copyFilter.name == WITH_TRACK_WITH_CLONE_IMPACT -> return EvaluatedIndividual(
-                            fitness.copy(),
-                            individual.copy() as T,
-                            results.map(ActionResult::copy),
-                            trackOperator,
-                            index,
-                            impactInfo?.clone()
-                    ).also {
-                        it.wrapWithTracking(evaluatedResult, trackingHistory = tracking)
-                    }
-                    else -> throw IllegalStateException("${copyFilter.name} is not available")
                 }
             }
         }
 
     }
 
-    fun nextForIndividual(next: TraceableElement, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
+    fun nextForIndividual(next: Traceable, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
         (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
 
         val nextIndividual = individual.next(next.individual, TraceableElementCopyFilter.WITH_TRACK, evaluatedResult)!!
@@ -219,7 +239,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         )
     }
 
-    override fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
+    override fun next(next: Traceable, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
 
         tracking?: throw IllegalStateException("cannot create next due to unavailable tracking info")
         (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
@@ -252,15 +272,19 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      */
     fun updateImpactOfGenes(previous : EvaluatedIndividual<T>, mutated : EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification, targetsInfo: Map<Int, EvaluatedMutation>){
 
-        Lazy.assert{mutatedGenes.mutatedIndividual != null}
-
         Lazy.assert {
-            mutatedGenes.mutatedIndividual != null
-            tracking != null
+            mutatedGenes.mutatedIndividual != null && tracking != null
         }
 
+        if(previous.getSizeOfImpact(false) != mutated.getSizeOfImpact(false)){
+            log.warn("impacts should be same before updating")
+        }
 
         compareWithLatest(next = mutated, previous = previous, targetsInfo = targetsInfo, mutatedGenes = mutatedGenes)
+    }
+
+    private fun verifyImpacts(){
+        impactInfo?.verifyActionGeneImpacts(individual.seeActions(NO_INIT))
     }
 
     private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, targetsInfo: Map<Int, EvaluatedMutation>, mutatedGenes: MutatedGeneSpecification){
@@ -272,13 +296,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val didStructureMutation = mutatedGenes.didStructureMutation()
         if (didStructureMutation){ // structure mutated
             updateImpactsAfterStructureMutation(next, previous.individual, mutatedGenes, noImpactTargets, impactTargets, improvedTargets)
+            verifyImpacts()
+            return
         }
 
-        if ((!didStructureMutation)){
+        if (!didStructureMutation){
             impactInfo!!.syncBasedOnIndividual(individual, mutatedGenes)
         }
-
-        if (didStructureMutation) return
 
         if (mutatedGenes.addedInitializationGenes.isNotEmpty()) {
             //TODO there is no any impact with added initialization, we may record this case.
@@ -289,7 +313,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         syncImpact(previous.individual, mutatedGenes.mutatedIndividual!!)
 
         updateImpactsAfterStandardMutation(previous = previous.individual, mutatedGenes = mutatedGenes, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
-
     }
     private fun updateImpactsAfterStructureMutation(
             next: EvaluatedIndividual<T>,
@@ -300,51 +323,109 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             improvedTargets: Set<Int>
     ){
         Lazy.assert { impactInfo != null }
-        val sizeChanged = (mutatedGenes.mutatedIndividual!!.seeActions().size != previous.seeActions().size)
+        val sizeChanged = (mutatedGenes.mutatedIndividual!!.seeActions(NO_INIT).size != previous.seeActions(NO_INIT).size)
 
         //we update genes impact regarding structure only if structure mutated individual is 'next'
         if(this.index == next.index){
-            if (mutatedGenes.removedGene.isNotEmpty()){ //delete an action
-                impactInfo!!.deleteActionGeneImpacts(actionIndex = mutatedGenes.mutatedPosition.toSet())
-            }else if (mutatedGenes.addedGenes.isNotEmpty()){ //add new action
-                val groupGeneByActionIndex = mutatedGenes.addedGenes.groupBy {g->
-                    mutatedGenes.mutatedIndividual!!.seeActions().find { a->a.seeGenes().contains(g) }.run { mutatedGenes.mutatedIndividual!!.seeActions().indexOf(this) }
+
+            //remove a number of resource with sql
+            if (mutatedGenes.removedDbActions.isNotEmpty()){
+                impactInfo!!.removeInitializationImpacts(mutatedGenes.removedDbActions, individual.seeInitializingActions().count { it is DbAction && it.representExistingData })
+            }
+
+            if (mutatedGenes.addedDbActions.isNotEmpty()){
+                impactInfo!!.appendInitializationImpacts(mutatedGenes.addedDbActions)
+            }
+
+            //handle removed
+            if (mutatedGenes.getRemoved(true).isNotEmpty()){ //delete an action
+                impactInfo!!.deleteActionGeneImpacts(
+                    actionIndex = mutatedGenes.getRemoved(true).mapNotNull { it.actionPosition }.toSet())
+            }
+
+            //handle added
+            if (mutatedGenes.getAdded(true).isNotEmpty()){ //add new action
+                val addedGenes = mutatedGenes.getAdded(true)
+                //handle added actions with genes
+                val groupGeneByActionIndex = addedGenes.filter { it.gene != null }.groupBy {g->
+                    mutatedGenes.mutatedIndividual!!.seeActions(ActionFilter.NO_INIT).find {
+                            a->a.seeGenes().contains(g.gene) }.run { mutatedGenes.mutatedIndividual!!.seeActions(ActionFilter.NO_INIT).indexOf(this) }
                 }
 
-                groupGeneByActionIndex.toSortedMap().forEach { (actionIndex, mgenes) ->
-                    if (!mutatedGenes.mutatedPosition.contains(actionIndex))
-                        throw IllegalArgumentException("mismatched impact info")
-                    impactInfo!!.addOrUpdateActionGeneImpacts(
-                            actionIndex = actionIndex,
-                            actionName = individual.seeActions()[actionIndex].getName(),
-                            impacts = mgenes.map {g->
-                                val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, g)
-                                id to ImpactUtils.createGeneImpact(g,id)
-                            }.toMap().toMutableMap(),
-                            newAction = true
-                    )
-                }
-            }else if (mutatedGenes.mutatedPosition.isNotEmpty()){
-                Lazy.assert { mutatedGenes.mutatedPosition.toSet().size == 1 }
-                val actionIndex = mutatedGenes.mutatedPosition.first()
+                //handle added actions without genes
+                val emptyActions = addedGenes.filter { it.gene == null }.mapNotNull { it.actionPosition }.toSet().sorted()
 
-                // add or remove an action which does not contain any genes
-                if (individual.seeActions().size > previous.seeActions().size){
-                    impactInfo!!.addOrUpdateActionGeneImpacts(
-                            actionName = individual.seeActions()[actionIndex].getName(),
-                            actionIndex = actionIndex,
-                            newAction = true,
-                            impacts = mutableMapOf()
-                    )
-                }else{
-                    impactInfo!!.deleteActionGeneImpacts(actionIndex = setOf(actionIndex))
+                addedGenes.mapNotNull { it.actionPosition }.toSet().sorted().forEach { actionIndex->
+                      if (emptyActions.contains(actionIndex)){
+                          impactInfo!!.addOrUpdateActionGeneImpacts(
+                              actionName = individual.seeActions(ActionFilter.NO_INIT)[actionIndex].getName(),
+                              actionIndex = actionIndex,
+                              newAction = true,
+                              impacts = mutableMapOf()
+                          )
+                      }else{
+                          val mgenes = groupGeneByActionIndex.getValue(actionIndex)
+                          val index = mgenes.mapNotNull { it.actionPosition }.toSet()
+                          if (index.size != 1 || index.first() != actionIndex)
+                              throw IllegalArgumentException("mismatched impact info: genes should be mutated at $index action, but actually the index is $actionIndex")
+                          impactInfo!!.addOrUpdateActionGeneImpacts(
+                              actionIndex = actionIndex,
+                              actionName = individual.seeActions(ActionFilter.NO_INIT)[actionIndex].getName(),
+                              impacts = mgenes.map {g->
+                                  g.gene?:throw IllegalStateException("Added gene is not recorded")
+                                  val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, g.gene)
+                                  id to ImpactUtils.createGeneImpact(g.gene,id)
+                              }.toMap().toMutableMap(),
+                              newAction = true
+                          )
+                      }
                 }
             }
+
+            //handle swap
+            if (mutatedGenes.getSwap().isNotEmpty()){
+                if (mutatedGenes.getSwap().size > 1)
+                    throw IllegalStateException("the swap mutator is applied more than one times, i.e., ${mutatedGenes.getSwap().size}")
+
+                val swap = mutatedGenes.getSwap().first()
+                val from = swap.from?:throw IllegalStateException("the resourcePosition is missing")
+                val to = swap.to?:throw IllegalStateException("the swapToResourcePosition is missing")
+                impactInfo!!.swapActionGeneImpact(from, to)
+            }
+
+            /*
+                actions might be changed due to dependency handling or db repairing
+                e.g., ind A is (table_a, table_b, resource_b)
+                if added resource_b at the beginning, mutated ind A (table_a, resource_a, table_a, table_b, resource_b)
+                in this case, we might remove second table_a, thus the mutated ind A becomes
+                (table_a, resource_a, table_b, resource_b), and the table_b refers to the table_a in the front of resource_a
+             */
+
+            var fix = impactInfo!!.findFirstMismatchedIndex(individual.seeActions(ActionFilter.NO_INIT))
+            while (fix.first != -1){
+                if (fix.second!!){
+                    impactInfo.deleteActionGeneImpacts(setOf(fix.first))
+                }else{
+                    impactInfo.addOrUpdateActionGeneImpacts(
+                        actionName = individual.seeActions(ActionFilter.NO_INIT)[fix.first].getName(),
+                        actionIndex = fix.first,
+                        newAction = true,
+                        impacts = mutableMapOf()
+                    )
+                }
+                val nextFix = impactInfo.findFirstMismatchedIndex(individual.seeActions(ActionFilter.NO_INIT))
+                if (nextFix.first < fix.first){
+                    if (nextFix.first != -1)
+                        log.warn("the fix at {} with remove/add ({}) does not work, and the next fix is at {}", fix.first, fix.second, nextFix.first)
+                    break
+                }
+                fix = nextFix
+            }
         }
-        //TODO handle other kinds of mutation if it has e.g., replace, exchange
         impactInfo!!.impactsOfStructure.countImpact(next, sizeChanged, noImpactTargets= noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
 
     }
+
 
     private fun updateImpactsAfterStandardMutation(
             previous: Individual,
@@ -389,86 +470,26 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     private fun syncImpact(previous : Individual, mutated : Individual) {
 
         // rest action
-        mutated.seeActions().forEachIndexed { index, action ->
+        mutated.seeActions(NO_INIT).forEachIndexed { index, action ->
             action.seeGenes().filter { it.isMutable() }.forEach { sg->
                 val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
 
-                val p = previous.seeActions()[index].seeGenes().find { rootGeneId == ImpactUtils.generateGeneId(previous, it) }
+                val p = previous.seeActions(NO_INIT)[index].seeGenes().find {
+                    rootGeneId == ImpactUtils.generateGeneId(previous, it)
+                }
                 val impact = impactInfo!!.getGene(
                                 actionName = action.getName(),
                                 actionIndex = index,
                                 fromInitialization = false,
                                 geneId = rootGeneId
-                        )?:throw IllegalArgumentException("fail to identify impact info for the gene $rootGeneId at $index of actions11")
+                )?:throw IllegalArgumentException("fail to identify impact info for the gene $rootGeneId at $index of actions")
                 impact.syncImpact(p, sg)
             }
         }
-
-
-
     }
-
-    fun findGeneById(id : String, index : Int = -1, isDb: Boolean=false) : Gene?{
-        if (!isDb){
-            if (index == -1) return individual.seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
-            if (index > individual.seeActions().size)
-                throw IllegalArgumentException("index $index is out of boundary of actions ${individual.seeActions().size} of the individual")
-            return individual.seeActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
-        }
-        if (index == -1) return individual.seeInitializingActions().flatMap { it.seeGenes() }.find { ImpactUtils.generateGeneId(individual, it) == id }
-        if (index >= individual.seeInitializingActions().size) return null
-            //throw IllegalArgumentException("index $index is out of boundary of initializing actions ${individual.seeInitializingActions().size} of the individual")
-        return individual.seeInitializingActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
-    }
-
-    fun findGeneWithActionIndexAndGene(index: Int, gene: Gene, isInitializationAction : Boolean) : Gene?{
-        val action = try {
-            (if (isInitializationAction) individual.seeInitializingActions() else individual.seeActions()).elementAt(index)
-        }catch(e: IndexOutOfBoundsException){
-            return null
-        }
-        // gene should be one of root genes
-        return ImpactUtils.findMutatedGene(action, gene)
-    }
-
 
     //**************** for impact *******************//
 
-    fun getImpactsRelatedTo(mutatedGenes: MutatedGeneSpecification) : List<Impact>{
-        impactInfo?:return emptyList()
-
-        if (mutatedGenes.didStructureMutation())
-            return emptyList()
-        val list = mutableListOf<Impact>()
-        mutatedGenes.mutatedGenes.forEachIndexed { index, gene ->
-            val actionIndex = mutatedGenes.mutatedPosition[index]
-            val action = mutatedGenes.mutatedIndividual!!.seeActions()[actionIndex]
-            val id = ImpactUtils.generateGeneId(action, gene.gene)
-            val found = impactInfo.getGene(
-                    actionName = action.getName(),
-                    actionIndex = actionIndex,
-                    geneId = id,
-                    fromInitialization = false
-            )?:throw IllegalArgumentException("mismatched impact info")
-            list.add(found)
-        }
-
-        mutatedGenes.mutatedDbGenes.forEachIndexed { index, gene ->
-            val actionIndex = mutatedGenes.mutatedDbActionPosition[index]
-            val action = mutatedGenes.mutatedIndividual!!.seeInitializingActions()[actionIndex]
-            val id = ImpactUtils.generateGeneId(action, gene.gene)
-            val found = impactInfo.getGene(
-                    actionName = action.getName(),
-                    actionIndex = actionIndex,
-                    geneId = id,
-                    fromInitialization = true
-            )?:throw IllegalArgumentException("mismatched impact info")
-            list.add(found)
-        }
-
-
-        return list
-    }
 
     fun anyImpactfulGene() : Boolean{
         impactInfo?:return false
@@ -480,11 +501,15 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *  this is to handle unclassified, eg, a gene might be empty gson or a gene constrained with some class
      */
     fun addGeneImpact(individual: Individual, gene: Gene) : GeneImpact?{
-        val action = individual.seeActions().find {
+        val actions = if (individual is RestIndividual)  individual.seeActions(NO_INIT) else individual.seeActions()
+
+        val action = actions.find {
             it.seeGenes().contains(gene)
         }
         if (action == null && !individual.seeGenes().contains(gene)) return null
-        val index = individual.seeActions().indexOf(action)
+
+        val index = actions.indexOf(action)
+
         val geneId = ImpactUtils.generateGeneId(individual, gene)
         val impact = ImpactUtils.createGeneImpact(gene,geneId)
         impactInfo?.addOrUpdateActionGeneImpacts(
@@ -492,7 +517,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 actionIndex = index,
                 newAction = false,
                 impacts = mutableMapOf(geneId to ImpactUtils.createGeneImpact(gene,geneId))
-
         )
         return impact
     }
@@ -501,11 +525,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         impactInfo?:return null
 
         val id = ImpactUtils.generateGeneId(individual, gene)
-        var action = individual.seeActions().find { it.seeGenes().contains(gene) }
+        var action = individual.seeActions(NO_INIT).find { it.seeGenes().contains(gene) }
         if (action != null){
             return impactInfo.getGene(
                     actionName = action.getName(),
-                    actionIndex = individual.seeActions().indexOf(action),
+                    actionIndex = individual.seeActions(NO_INIT).indexOf(action),
                     geneId = id,
                     fromInitialization = false
             )
@@ -524,12 +548,16 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 actionName = null,
                 actionIndex = null,
                 geneId = id,
-                fromInitialization = individual.seeGenes(Individual.GeneFilter.ONLY_SQL).contains(gene)
+                fromInitialization = individual.seeGenes(GeneFilter.ONLY_SQL).contains(gene)
         )
     }
 
     //TODO check this when integrating with SQL resource handling
-    fun updateImpactGeneDueToAddedInitializationGenes(mutatedGenes: MutatedGeneSpecification, old : List<Action>, addedInsertions : List<List<Action>>?){
+    fun updateImpactGeneDueToAddedInitializationGenes(
+        mutatedGenes: MutatedGeneSpecification,
+        old : List<Action>,
+        addedInsertions : List<List<Action>>?
+    ){
         impactInfo?:throw IllegalStateException("there is no any impact initialized")
 
         val allExistingData = individual.seeInitializingActions().filter { it is DbAction && it.representExistingData }
@@ -598,7 +626,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         impactInfo?:return null
         return impactInfo.findImpactsByAction(
                 actionIndex = actionIndex,
-                actionName = if (fromInitialization) individual.seeInitializingActions()[actionIndex].getName() else individual.seeActions()[actionIndex].getName(),
+                actionName = if (fromInitialization) individual.seeInitializingActions()[actionIndex].getName() else individual.seeActions(ActionFilter.NO_INIT)[actionIndex].getName(),
                 fromInitialization = fromInitialization
         )
     }

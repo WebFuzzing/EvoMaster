@@ -5,33 +5,34 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.httpws.service.HttpWsIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 
 class GraphQLIndividual(
-        val actions: MutableList<GraphQLAction>,
+        private val actions: MutableList<GraphQLAction>,
         val sampleType: SampleType,
         dbInitialization: MutableList<DbAction> = mutableListOf()
-) : HttpWsIndividual(dbInitialization= dbInitialization) {
+) : HttpWsIndividual(dbInitialization= dbInitialization, children = dbInitialization.plus(actions)) {
 
-    override fun copy(): Individual {
+    override fun copyContent(): Individual {
 
         return GraphQLIndividual(
-                actions.map { it.copy() as GraphQLAction}.toMutableList(),
+                actions.map { it.copyContent() as GraphQLAction}.toMutableList(),
                 sampleType,
-                dbInitialization.map { it.copy() as DbAction } as MutableList<DbAction>
+                seeInitializingActions().map { it.copyContent() as DbAction } as MutableList<DbAction>
         )
 
     }
 
+    override fun getChildren(): List<Action> = seeInitializingActions().plus(actions)
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
-            GeneFilter.ALL -> dbInitialization.flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
+            GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
             GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-            GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
+            GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(DbAction::seeGenes)
         }
     }
 
@@ -41,11 +42,18 @@ class GraphQLIndividual(
 
     override fun seeActions(): List<GraphQLAction> {
         return actions
+    }
 
+    override fun seeActions(filter: ActionFilter): List<out Action> {
+        return when(filter){
+            ActionFilter.ALL -> seeInitializingActions().plus(actions)
+            ActionFilter.ONLY_SQL, ActionFilter.INIT -> seeInitializingActions()
+            ActionFilter.NO_INIT, ActionFilter.NO_SQL -> actions
+        }
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(dbInitialization)
+        return DbActionUtils.verifyActions(seeInitializingActions())
     }
 
 
@@ -58,6 +66,17 @@ class GraphQLIndividual(
             }else -> throw IllegalStateException("${copyFilter.name} is not implemented!")
         }
         return copy
+    }
+
+    fun addGQLAction(position: Int = -1, action: GraphQLAction){
+        if (position == -1) actions.add(action)
+        else{
+            actions.add(position, action)
+        }
+    }
+
+    fun removeGQLActionAt(position: Int){
+        actions.removeAt(position)
     }
 
 }

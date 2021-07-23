@@ -7,7 +7,7 @@ import org.evomaster.core.search.ActionResult
 class GraphQlCallResult : HttpWsCallResult {
 
     companion object{
-        const val LAST_STATEMENT_WHEN_GQL_ERRORS = "LAST_STATEMENT_WHEN_500"
+        const val LAST_STATEMENT_WHEN_GQL_ERRORS = "LAST_STATEMENT_WHEN_GQL_ERRORS"
     }
 
     constructor(stopping: Boolean = false) : super(stopping)
@@ -26,4 +26,5 @@ class GraphQlCallResult : HttpWsCallResult {
 
     fun getLastStatementWhenGQLErrors() : String? = getResultValue(LAST_STATEMENT_WHEN_GQL_ERRORS)
 
+    fun hasLastStatementWhenGQLError() = ! getLastStatementWhenGQLErrors().isNullOrBlank()
 }

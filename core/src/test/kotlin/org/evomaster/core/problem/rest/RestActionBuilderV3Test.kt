@@ -4,13 +4,15 @@ import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.ArrayGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class RestActionBuilderV3Test{
 
@@ -38,7 +40,7 @@ class RestActionBuilderV3Test{
             }     
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema) as ObjectGene
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name) as ObjectGene
         assertEquals(name, gene.name)
         assertEquals(2, gene.fields.size)
 
@@ -70,6 +72,11 @@ class RestActionBuilderV3Test{
     }
 
     // ----------- V3 --------------
+
+    @Test
+    fun testNexmo(){
+        loadAndAssertActions("/swagger/apisguru-v3/nexmo.json", 5)
+    }
 
     @Test
     fun testBcgnews() {
@@ -162,7 +169,7 @@ class RestActionBuilderV3Test{
     fun testNews() {
         val map = loadAndAssertActions("/swagger/sut/news.json", 7)
 
-        val create = map["POST:/news"] as RestAction
+        val create = map["POST:/news"] as RestCallAction
         assertEquals(2, create.seeGenes().size)
         val bodyNews = create.seeGenes().find { it.name == "body" }
         assertNotNull(bodyNews)
@@ -178,7 +185,7 @@ class RestActionBuilderV3Test{
     fun testCatWatch() {
         val map = loadAndAssertActions("/swagger/sut/catwatch.json", 23)
 
-        val postScoring = map["POST:/config/scoring.project"] as RestAction
+        val postScoring = map["POST:/config/scoring.project"] as RestCallAction
         assertEquals(3, postScoring.seeGenes().size)
         val bodyPostScoring = postScoring.seeGenes().find { it.name == "body" }
         assertNotNull(bodyPostScoring)
@@ -282,5 +289,33 @@ class RestActionBuilderV3Test{
     @Test
     fun testGreenPeace() {
         loadAndAssertActions("/swagger/apisguru-v2/greenpeace.org.json", 6)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["/swagger/artificial/reference_type_v2.json","/swagger/artificial/reference_type_v3.json"])
+    fun testReferenceType(path: String){
+        val actions = loadAndAssertActions(path, 1)
+        val bodyParam = actions.values.filterIsInstance<RestCallAction>().flatMap { it.parameters }.filterIsInstance<BodyParam>()
+        assertEquals(1, bodyParam.size)
+        assertTrue(bodyParam.first().gene is ObjectGene)
+        (bodyParam.first().gene as ObjectGene).apply {
+            assertNotNull(refType)
+            assertEquals("Component", refType)
+            val info = (fields.find { it.name == "info" } as? OptionalGene)
+            assertNotNull(info)
+            assertTrue((info as OptionalGene).gene is ObjectGene)
+            (info.gene as ObjectGene).apply {
+                assertNotNull(refType)
+                assertEquals("Info", refType)
+                val at = (fields.find { it.name =="at" } as? OptionalGene)
+                assertNotNull(at)
+                assertTrue((at as OptionalGene).gene is ArrayGene<*>)
+                (at.gene as ArrayGene<*>).apply {
+                    assertTrue(template is ObjectGene)
+                    assertEquals("AT", (template as ObjectGene).refType)
+                }
+            }
+
+        }
     }
 }

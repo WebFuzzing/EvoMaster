@@ -9,8 +9,11 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -35,9 +38,14 @@ class StringGene(
          * For example, in a URL Path variable, we do not want have "/", as otherwise
          * it would create 2 distinct paths
          */
-        val invalidChars: List<Char> = listOf()
+        val invalidChars: List<Char> = listOf(),
 
-) : Gene(name) {
+        /**
+         * specialization based on taint analysis
+         */
+        val specializationGenes: MutableList<Gene> = mutableListOf()
+
+) : Gene(name, specializationGenes) {
 
     companion object {
 
@@ -49,6 +57,9 @@ class StringGene(
          * These are regex with no value, as they match everything.
          * Note: we could have something more sophisticated, to check for any possible meaningless one.
          * But this simple list should do for most cases.
+         *
+         * TODO: this is not really true, as by default . does not match line breakers like \n
+         * So, although they are not important, they are technically not "meaningless"
          */
         private val meaninglesRegex = setOf(".*","(.*)","^(.*)","(.*)$","^(.*)$","^((.*))","((.*))$","^((.*))$")
     }
@@ -68,8 +79,6 @@ class StringGene(
      * in which we mutate to have only Strings that are valid dates
      */
     private val specializations: MutableSet<StringSpecializationInfo> = mutableSetOf()
-
-    var specializationGenes: MutableList<Gene> = mutableListOf()
 
     var selectedSpecialization = -1
 
@@ -91,10 +100,11 @@ class StringGene(
      */
     var bindingIds = mutableSetOf<String>()
 
-    override fun copy(): Gene {
-        val copy = StringGene(name, value, minLength, maxLength, invalidChars)
+    override fun getChildren(): List<Gene> = specializationGenes
+
+    override fun copyContent(): Gene {
+        val copy = StringGene(name, value, minLength, maxLength, invalidChars, this.specializationGenes.map { g -> g.copyContent() }.toMutableList())
                 .also {
-                    it.specializationGenes = this.specializationGenes.map { g -> g.copy() }.toMutableList()
                     it.specializations.addAll(this.specializations)
                     it.validChar = this.validChar
                     it.selectedSpecialization = this.selectedSpecialization
@@ -102,7 +112,8 @@ class StringGene(
                     it.tainted = this.tainted
                     it.bindingIds = this.bindingIds.map { id -> id }.toMutableSet()
                 }
-        copy.specializationGenes.forEach { it.parent = copy }
+//        copy.specializationGenes.forEach { it.parent = copy }
+        copy.addChildren(copy.specializationGenes)
         return copy
     }
 
@@ -121,6 +132,15 @@ class StringGene(
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+
+        /*
+            TODO weirdly we did not do taint on sampling!!! we must do it, and evaluate it
+
+        if(!tainted){
+            redoTaint()
+        }
+         */
+
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
         repair()
         selectedSpecialization = -1
@@ -423,10 +443,12 @@ class StringGene(
             selectionUpdatedSinceLastMutation = true
             toAddGenes.forEach {
                 it.randomize(randomness, false, listOf())
-                it.parent = this
+//                it.parent = this
             }
             log.trace("in total added specification size: {}", toAddGenes.size)
             specializationGenes.addAll(toAddGenes)
+            addChildren(toAddGenes)
+
             specializations.addAll(toAddSpecs)
         }
 
@@ -484,7 +506,7 @@ class StringGene(
     /**
      * Make sure no invalid chars is used
      */
-    fun repair() {
+    override fun repair() {
         if (invalidChars.isEmpty()) {
             //nothing to do
             return
@@ -553,6 +575,7 @@ class StringGene(
 
         this.specializationGenes.clear()
         this.specializationGenes.addAll(other.specializationGenes.map { it.copy() })
+        addChildren(this.specializationGenes)
 
         this.tainted = other.tainted
 
@@ -612,5 +635,35 @@ class StringGene(
      *  [specializationGenes] is not considered as part of its inner genes.
      */
     override fun innerGene(): List<Gene> = listOf()
+
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        when(gene){
+            //shall I add the specification into the string if it applies?
+            is StringGene -> value = gene.value
+            is Base64StringGene -> value = gene.data.value
+            is FloatGene -> value = gene.value.toString()
+            is IntegerGene -> value = gene.value.toString()
+            is LongGene -> value = gene.value.toString()
+            is DoubleGene -> {
+                value = gene.value.toString()
+            }
+            is ImmutableDataHolderGene -> value = gene.value
+            is SqlPrimaryKeyGene ->{
+                value = gene.uniqueId.toString()
+            }
+            else -> {
+                //return false
+                //Man: with taint analysis, g might be any other type.
+                if (gene is SqlForeignKeyGene){
+                    LoggingUtil.uniqueWarn(log, "attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}")
+                    value = "${gene.uniqueIdOfPrimaryKey}"
+                } else{
+                    value = gene.getValueAsRawString()
+                }
+            }
+        }
+        return true
+    }
 
 }

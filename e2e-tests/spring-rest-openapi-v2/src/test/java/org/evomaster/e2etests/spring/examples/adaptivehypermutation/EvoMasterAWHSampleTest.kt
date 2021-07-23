@@ -8,19 +8,13 @@ import  org.junit.jupiter.api.Test
 import  org.junit.jupiter.api.Assertions.*
 import  io.restassured.RestAssured
 import  io.restassured.RestAssured.given
-import  io.restassured.response.ValidatableResponse
-import  org.evomaster.client.java.controller.api.EMTestUtils.*
 import  org.evomaster.client.java.controller.SutHandler
 import  org.evomaster.client.java.controller.db.dsl.SqlDsl.sql
-import  org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
-import  java.util.List
 import  org.hamcrest.Matchers.*
 import  io.restassured.config.JsonConfig
 import  io.restassured.path.json.config.JsonPathConfig
 import  io.restassured.config.RedirectConfig.redirectConfig
 import  org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*
-import  org.evomaster.client.java.controller.contentMatchers.StringMatcher.*
-import  org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*
 
 
 

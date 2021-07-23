@@ -1,7 +1,6 @@
 package org.evomaster.core.database
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -9,6 +8,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.evomaster.core.database.schema.Table
 
 object DbActionUtils {
 
@@ -62,12 +62,15 @@ object DbActionUtils {
             references to each other (eg Foreign Keys)
          */
 
-        val all = actions.flatMap { it.seeGenes() }
-        all.asSequence()
-                .filter { it.isMutable() }
-                .forEach {
-                    it.randomize(randomness, false, all)
-                }
+//        val all = actions.flatMap { it.seeGenes() }
+//        all.asSequence()
+//                .filter { it.isMutable() }
+//                .forEach {
+//                    it.randomize(randomness, false, all)
+//                }
+        actions.forEach {
+            it.randomize(randomness, false, actions)
+        }
 
         Lazy.assert { verifyForeignKeys(actions) }
     }
@@ -374,6 +377,55 @@ object DbActionUtils {
     }
 
     /**
+     * repair fk of [dbAction] based on primary keys of [previous] dbactions
+     * @return whether fk is fixed
+     */
+    fun repairFk(dbAction: DbAction, previous: MutableList<DbAction>) : Pair<Boolean, List<DbAction>?>{
+        val pks = previous.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
+        val referDbActions = mutableListOf<DbAction>()
+
+        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().forEach {fk->
+
+            val needToFix = pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey && p.tableName == fk.targetTable }
+            if (needToFix){
+                val found = pks.find { fk.targetTable == it.tableName }
+                if (found != null){
+                    fk.uniqueIdOfPrimaryKey = found.uniqueId
+                    referDbActions.add(previous.find { it.seeGenes().contains(found) }!!)
+                }else
+                    return Pair(false, null)
+            }
+        }
+
+        return Pair(true, referDbActions)
+    }
+
+
+    /**
+     * @return sorted tables based on its fk
+     * @param table to be sorted
+     * @param reversed specifies how to sort the tables
+     *
+     * for instance, table A contains foreign key to table B
+     * with inputs setOf(A, B), the return list would be
+     *      1) [reversed] is false, listOf(A, B)
+     *      2) [reversed] is true, listOf(B, A)
+     */
+    fun sortTable(table : List<Table>, reversed: Boolean = false) : List<Table>{
+
+        val sorted = table.sortedWith(
+            Comparator { o1, o2 ->
+                when {
+                    o1.foreignKeys.any { t-> t.targetTable.equals(o2.name,ignoreCase = true) } -> -1
+                    o2.foreignKeys.any { t-> t.targetTable.equals(o1.name,ignoreCase = true) } -> 1
+                    else -> 0
+                }
+            }
+        )
+        return if (reversed) sorted.reversed() else sorted
+    }
+
+    /**
      * In resource-based individual, SQL actions might be distributed to different set of REST actions regarding resources.
      * In this context, a FK of an insertion may refer to a PK that are in front of this insertion and belongs to other resource (referred resource).
      * During mutation, if the referred resource is modified (e.g., removed), the FK will be broken.
@@ -423,6 +475,13 @@ object DbActionUtils {
         }
         if (!verifyForeignKeys(dbActions))
             throw IllegalStateException("FK repair fails")
+    }
+
+    /**
+     * @return a list of dbactions from [dbActions] whose related table is [tableName]
+     */
+    fun findDbActionsByTableName(dbActions: List<DbAction>, tableName : String) : List<DbAction>{
+        return dbActions.filter { it.table.name.equals(tableName, ignoreCase = true) }
     }
 
 }

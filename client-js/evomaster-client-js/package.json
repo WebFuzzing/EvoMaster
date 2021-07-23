@@ -11,7 +11,9 @@
   "author": "EvoMaster Team",
   "license": "LGPL-3.0-only",
   "dependencies": {
-    "express": "^4.17.1"
+    "@types/urijs": "^1.19.15",
+    "express": "^4.17.1",
+    "urijs": "^1.19.6"
   },
   "devDependencies": {
     "@babel/traverse": "^7.8.3",

@@ -242,13 +242,37 @@ class EMConfig {
         }
     }
 
-    private fun checkMultiFieldConstraints() {
+    fun checkMultiFieldConstraints() {
         /*
             Each option field might have specific constraints, setup with @annotations.
             However, there can be multi-field constraints as well.
             Those are defined here.
             They can be check only once all fields have been updated
          */
+
+        if (blackBox && !bbExperiments) {
+
+            if(problemType == ProblemType.DEFAULT){
+                LoggingUtil.uniqueWarn(log, AnsiColor.inRed("WARNING: you are doing Black-Box testing, but you did not specify the" +
+                        " 'problemType'. The system will default to RESTful API testing."))
+                problemType = ProblemType.REST
+            }
+
+            if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
+                throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
+            }
+            if (outputFormat == OutputFormat.DEFAULT) {
+                /*
+                    TODO in the future, once we support POSTMAN outputs, we should default it here
+                 */
+                throw IllegalArgumentException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
+            }
+        }
+
+        if (!blackBox && bbExperiments) {
+            throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
+        }
+
 
         when (stoppingCriterion) {
             StoppingCriterion.TIME -> if (maxActionEvaluations != defaultMaxActionEvaluations) {
@@ -275,18 +299,20 @@ class EMConfig {
         }
 
         //resource related parameters
-        if ((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
-                && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)) {
-            throw IllegalArgumentException("Parameters (${
-            arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics", "exportDependencies")
-                    .filterIndexed { index, _ ->
-                        (index == 0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE) ||
-                                (index == 1 && (probOfApplySQLActionToCreateResources > 0.0)) ||
-                                (index == 2 && doesApplyNameMatching) ||
-                                (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
-                                (index == 4 && exportDependencies)
-                    }.joinToString(" and ")
-            }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
+        if(problemType != ProblemType.DEFAULT) {
+            if ((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
+                    && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)) {
+                throw IllegalArgumentException("Parameters (${
+                    arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics", "exportDependencies")
+                            .filterIndexed { index, _ ->
+                                (index == 0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE) ||
+                                        (index == 1 && (probOfApplySQLActionToCreateResources > 0.0)) ||
+                                        (index == 2 && doesApplyNameMatching) ||
+                                        (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
+                                        (index == 4 && exportDependencies)
+                            }.joinToString(" and ")
+                }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
+            }
         }
 
         /*
@@ -313,19 +339,6 @@ class EMConfig {
 
         if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
-        }
-
-        if (blackBox && !bbExperiments) {
-            if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
-                throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
-            }
-            if (outputFormat == OutputFormat.DEFAULT) {
-                throw IllegalArgumentException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
-            }
-        }
-
-        if (!blackBox && bbExperiments) {
-            throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
         }
 
         if ((outputFilePrefix.contains("-") || outputFileSuffix.contains("-"))
@@ -696,14 +709,20 @@ class EMConfig {
     }
 
     enum class ProblemType(private val experimental: Boolean) : WithExperimentalOptions {
+        DEFAULT(experimental = false),
         REST(experimental = false),
         GRAPHQL(experimental = true),
         WEB(experimental = true);
         override fun isExperimental() = experimental
     }
 
-    @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API")
-    var problemType = ProblemType.REST
+    @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API." +
+            " If left to DEFAULT, the type will be inferred from the EM Driver." +
+            " However, in case of ambiguities (e.g., the driver specifies more than one type)," +
+            " then this field must be set with a specific type." +
+            " This is also the case for Black-Box testing where there is no EM Driver." +
+            " In this latter case, the system defaults to handle REST APIs.")
+    var problemType = ProblemType.DEFAULT
 
 
     @Cfg("Specify if test classes should be created as output of the tool. " +
@@ -1081,6 +1100,22 @@ class EMConfig {
     var maxSqlInitActionsPerResource = 0
 
     @Experimental
+    @Cfg("Specify a strategy to determinate a number of resources to be manipulated throughout the search.")
+    var employSqlNumResourceStrategy = SqlInitResourceStrategy.NONE
+
+    enum class SqlInitResourceStrategy{
+        NONE,
+
+        /**
+         * determinate a number of resource to be manipulated at random between 1 and [maxSqlInitActionsPerResource]
+         */
+        RANDOM,
+        /**
+         * adaptively decrease a number of resources to be manipulated from [maxSqlInitActionsPerResource] to 1
+         */
+        DPC
+    }
+    @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
             "In other word, if the number is less than the specified, insertion is always applied.")
     @Min(0.0)
@@ -1094,6 +1129,11 @@ class EMConfig {
     @Experimental
     @Cfg("Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
     var doesApplyNameMatching = false
+
+    @Experimental
+    @Cfg("Whether to employ NLP parser to process text. " +
+            "Note that to enable this parser, it is required to build the EvoMaster with the resource profile, i.e., mvn clean install -Presourceexp -DskipTests")
+    var enableNLPParser = false
 
     @Experimental
     @Cfg("Whether to save mutated gene info, which is typically used for debugging mutation")
@@ -1363,11 +1403,15 @@ class EMConfig {
     @Cfg("File path where the seeded test cases are located")
     var seedTestCasesPath : String = "postman.postman_collection.json"
 
-    @Experimental
     @Cfg("Try to enforce the stopping of SUT business-level code." +
             " This is needed when TCP connections timeouts, to avoid thread executions" +
             " from previous HTTP calls affecting the current one")
-    var killSwitch = false
+    var killSwitch = true
+
+
+    @Experimental
+    @Cfg("Whether to skip failed SQL commands in the generated test files")
+    var skipFailureSQLInTestFile = false
 
 
     fun timeLimitInSeconds(): Int {

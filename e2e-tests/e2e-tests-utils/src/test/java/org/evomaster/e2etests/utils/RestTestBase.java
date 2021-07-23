@@ -6,10 +6,7 @@ import org.evomaster.core.Main;
 import org.evomaster.core.StaticCounter;
 import org.evomaster.core.logging.TestLoggingUtil;
 import org.evomaster.core.problem.rest.*;
-import org.evomaster.core.search.Action;
-import org.evomaster.core.search.EvaluatedIndividual;
-import org.evomaster.core.search.Individual;
-import org.evomaster.core.search.Solution;
+import org.evomaster.core.search.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -102,8 +99,9 @@ public abstract class RestTestBase  extends WsTestBase{
                                     int expectedStatusCode) {
 
         List<Integer> index = getIndexOfHttpCalls(ind.getIndividual(), verb);
+        List<ActionResult> results = ind.seeResults(null);
         for (int i : index) {
-            String statusCode = ind.getResults().get(i).getResultValue(
+            String statusCode = results.get(i).getResultValue(
                     RestCallResult.STATUS_CODE);
             if (statusCode.equals("" + expectedStatusCode)) {
                 return true;
@@ -118,20 +116,17 @@ public abstract class RestTestBase  extends WsTestBase{
                                     String path,
                                     String inResponse) {
 
-        List<RestAction> actions = ind.getIndividual().seeActions();
+        List<RestCallAction> actions = ind.getIndividual().seeActions();
+        List<ActionResult> results = ind.seeResults(actions);
 
         boolean stopped = false;
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            RestCallResult res = (RestCallResult) ind.getResults().get(i);
+            RestCallResult res = (RestCallResult) results.get(i);
             stopped = res.getStopping();
 
-            if (!(actions.get(i) instanceof RestCallAction)) {
-                continue;
-            }
-
-            RestCallAction action = (RestCallAction) actions.get(i);
+            RestCallAction action = actions.get(i);
 
             if (action.getVerb() != verb) {
                 continue;

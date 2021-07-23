@@ -9,9 +9,6 @@
     <StartupObject>RestApis.Tests.HelloWorld.Controller.EmbeddedEvoMasterController</StartupObject>
   </PropertyGroup>
 
-  <Target Name="htmlWarning" AfterTargets="AfterBuild">
-    <Copy SourceFiles="../../../../client-dotnet/src/EvoMaster.Controller/Resources/warning.html" DestinationFolder="$(OutDir)" />
-  </Target>
   
   <ItemGroup>
 

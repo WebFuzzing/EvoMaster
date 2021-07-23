@@ -246,7 +246,8 @@ abstract class AbstractParser(
 
         var res = true
 
-        gene.elements.clear()
+        //gene.elements.clear()
+        gene.clearElements()
 
         val elements = try {
             ObjectMapper().readValue(paramValue, ArrayList::class.java)
@@ -258,7 +259,7 @@ abstract class AbstractParser(
             gene.maxSize = elements.size
         elements.forEach { element ->
             val elementGene = gene.template.copy()
-            elementGene.parent = gene
+//            elementGene.parent = gene
             if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, getJsonifiedString(element)))
                 addGeneToArrayGene(gene, elementGene)
             else if (res)
@@ -299,7 +300,8 @@ abstract class AbstractParser(
 
         var res = true
 
-        gene.elements.clear()
+//        gene.elements.clear()
+        gene.clearElements()
 
         try {
             val elements = ObjectMapper().readValue(paramValue, Map::class.java)
@@ -308,7 +310,7 @@ abstract class AbstractParser(
             elements.forEach { (key, value) ->
                 val elementGene = gene.template.copy()
                 elementGene.name = key as String
-                elementGene.parent = gene
+//                elementGene.parent = gene
                 if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, getJsonifiedString(value)))
                     addGeneToMapGene(gene, elementGene)
                 else if (res)
@@ -331,43 +333,43 @@ abstract class AbstractParser(
 
     private fun addGeneToArrayGene(gene: ArrayGene<*>, elementGene: Gene) {
         when (elementGene) {
-            is StringGene -> (gene as ArrayGene<StringGene>).elements.add(elementGene)
-            is BooleanGene -> (gene as ArrayGene<BooleanGene>).elements.add(elementGene)
-            is DoubleGene -> (gene as ArrayGene<DoubleGene>).elements.add(elementGene)
-            is FloatGene -> (gene as ArrayGene<FloatGene>).elements.add(elementGene)
-            is IntegerGene -> (gene as ArrayGene<IntegerGene>).elements.add(elementGene)
-            is LongGene -> (gene as ArrayGene<LongGene>).elements.add(elementGene)
-            is Base64StringGene -> (gene as ArrayGene<Base64StringGene>).elements.add(elementGene)
-            is EnumGene<*> -> (gene as ArrayGene<EnumGene<*>>).elements.add(elementGene)
-            is DateGene -> (gene as ArrayGene<DateGene>).elements.add(elementGene)
-            is TimeGene -> (gene as ArrayGene<TimeGene>).elements.add(elementGene)
-            is DateTimeGene -> (gene as ArrayGene<DateTimeGene>).elements.add(elementGene)
-            is OptionalGene -> (gene as ArrayGene<OptionalGene>).elements.add(elementGene)
-            is DisruptiveGene<*> -> (gene as ArrayGene<DisruptiveGene<*>>).elements.add(elementGene)
-            is ArrayGene<*> -> (gene as ArrayGene<ArrayGene<*>>).elements.add(elementGene)
-            is ObjectGene -> (gene as ArrayGene<ObjectGene>).elements.add(elementGene)
-            is MapGene<*> -> (gene as ArrayGene<MapGene<*>>).elements.add(elementGene)
+            is StringGene -> (gene as ArrayGene<StringGene>).addElements(elementGene)
+            is BooleanGene -> (gene as ArrayGene<BooleanGene>).addElements(elementGene)
+            is DoubleGene -> (gene as ArrayGene<DoubleGene>).addElements(elementGene)
+            is FloatGene -> (gene as ArrayGene<FloatGene>).addElements(elementGene)
+            is IntegerGene -> (gene as ArrayGene<IntegerGene>).addElements(elementGene)
+            is LongGene -> (gene as ArrayGene<LongGene>).addElements(elementGene)
+            is Base64StringGene -> (gene as ArrayGene<Base64StringGene>).addElements(elementGene)
+            is EnumGene<*> -> (gene as ArrayGene<EnumGene<*>>).addElements(elementGene)
+            is DateGene -> (gene as ArrayGene<DateGene>).addElements(elementGene)
+            is TimeGene -> (gene as ArrayGene<TimeGene>).addElements(elementGene)
+            is DateTimeGene -> (gene as ArrayGene<DateTimeGene>).addElements(elementGene)
+            is OptionalGene -> (gene as ArrayGene<OptionalGene>).addElements(elementGene)
+            is DisruptiveGene<*> -> (gene as ArrayGene<DisruptiveGene<*>>).addElements(elementGene)
+            is ArrayGene<*> -> (gene as ArrayGene<ArrayGene<*>>).addElements(elementGene)
+            is ObjectGene -> (gene as ArrayGene<ObjectGene>).addElements(elementGene)
+            is MapGene<*> -> (gene as ArrayGene<MapGene<*>>).addElements(elementGene)
         }
     }
 
     private fun addGeneToMapGene(gene: MapGene<*>, elementGene: Gene) {
         when(elementGene) {
-            is StringGene -> (gene as MapGene<StringGene>).elements.add(elementGene)
-            is BooleanGene -> (gene as MapGene<BooleanGene>).elements.add(elementGene)
-            is DoubleGene -> (gene as MapGene<DoubleGene>).elements.add(elementGene)
-            is FloatGene -> (gene as MapGene<FloatGene>).elements.add(elementGene)
-            is IntegerGene -> (gene as MapGene<IntegerGene>).elements.add(elementGene)
-            is LongGene -> (gene as MapGene<LongGene>).elements.add(elementGene)
-            is Base64StringGene -> (gene as MapGene<Base64StringGene>).elements.add(elementGene)
-            is EnumGene<*> -> (gene as MapGene<EnumGene<*>>).elements.add(elementGene)
-            is DateGene -> (gene as MapGene<DateGene>).elements.add(elementGene)
-            is TimeGene -> (gene as MapGene<TimeGene>).elements.add(elementGene)
-            is DateTimeGene -> (gene as MapGene<DateTimeGene>).elements.add(elementGene)
-            is OptionalGene -> (gene as MapGene<OptionalGene>).elements.add(elementGene)
-            is DisruptiveGene<*> -> (gene as MapGene<DisruptiveGene<*>>).elements.add(elementGene)
-            is ArrayGene<*> -> (gene as MapGene<ArrayGene<*>>).elements.add(elementGene)
-            is ObjectGene -> (gene as MapGene<ObjectGene>).elements.add(elementGene)
-            is MapGene<*> -> (gene as MapGene<MapGene<*>>).elements.add(elementGene)
+            is StringGene -> (gene as MapGene<StringGene>).addElements(elementGene)
+            is BooleanGene -> (gene as MapGene<BooleanGene>).addElements(elementGene)
+            is DoubleGene -> (gene as MapGene<DoubleGene>).addElements(elementGene)
+            is FloatGene -> (gene as MapGene<FloatGene>).addElements(elementGene)
+            is IntegerGene -> (gene as MapGene<IntegerGene>).addElements(elementGene)
+            is LongGene -> (gene as MapGene<LongGene>).addElements(elementGene)
+            is Base64StringGene -> (gene as MapGene<Base64StringGene>).addElements(elementGene)
+            is EnumGene<*> -> (gene as MapGene<EnumGene<*>>).addElements(elementGene)
+            is DateGene -> (gene as MapGene<DateGene>).addElements(elementGene)
+            is TimeGene -> (gene as MapGene<TimeGene>).addElements(elementGene)
+            is DateTimeGene -> (gene as MapGene<DateTimeGene>).addElements(elementGene)
+            is OptionalGene -> (gene as MapGene<OptionalGene>).addElements(elementGene)
+            is DisruptiveGene<*> -> (gene as MapGene<DisruptiveGene<*>>).addElements(elementGene)
+            is ArrayGene<*> -> (gene as MapGene<ArrayGene<*>>).addElements(elementGene)
+            is ObjectGene -> (gene as MapGene<ObjectGene>).addElements(elementGene)
+            is MapGene<*> -> (gene as MapGene<MapGene<*>>).addElements(elementGene)
         }
     }
 

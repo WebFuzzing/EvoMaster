@@ -26,7 +26,7 @@ public class FooRestAPI {
       return ResponseEntity.status(400).build();
     if (x < 0 || fooRepository.findById(x).isPresent())
       return ResponseEntity.status(400).build();
-    if (!y.toLowerCase().equals("foo"))
+    if (!y.equalsIgnoreCase("foo"))
       return ResponseEntity.status(400).build();
     String response = "B0";
     if (z.c == 100)

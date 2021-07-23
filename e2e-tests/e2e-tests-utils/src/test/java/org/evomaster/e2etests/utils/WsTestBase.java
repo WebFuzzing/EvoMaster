@@ -157,7 +157,7 @@ public abstract class WsTestBase {
             for (String termination : terminations) {
                 classNames.add(new ClassName(fullClassName + termination));
             }
-            splitType = "CODE";
+            splitType = "CLUSTER";
         }
 
          /*
@@ -408,7 +408,7 @@ public abstract class WsTestBase {
     protected void assertInsertionIntoTable(Solution<? extends HttpWsIndividual> solution, String tableName) {
 
         boolean ok = solution.getIndividuals().stream().anyMatch(
-                ind -> ind.getIndividual().getDbInitialization().stream().anyMatch(
+                ind -> ind.getIndividual().seeInitializingActions().stream().anyMatch(
                         da -> da.getTable().getName().equalsIgnoreCase(tableName))
         );
 
