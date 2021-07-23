@@ -43,7 +43,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
     }
 
     /**
-     * This method does a single step in the search process
+     * This method does a single step in the search process, each algorithm must implement its own.
      */
     abstract fun searchOnce()
 
