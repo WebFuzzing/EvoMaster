@@ -9,6 +9,11 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 
 ### 2021
 
+* M. Zhang, A. Arcuri.
+  *Enhancing Resource-based Test Case Generation For RESTful APIs with SQL Handling*.
+  Symposium on Search-based Software Engineering (SSBSE). (*to appear*)
+  [[PDF](publications/2021_ssbse.pdf)]
+
 * A. Arcuri, J.P. Galeotti.
   *Enhancing Search-Based Testing With Testability Transformations For Existing APIs*.
   ACM Transactions on Software Engineering and Methodology (TOSEM). (*to appear*)
