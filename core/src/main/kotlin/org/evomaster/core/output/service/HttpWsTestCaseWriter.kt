@@ -340,13 +340,13 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     if (!format.isCsharp())
                         lines.add(".$send($body)")
                     else {
-                        lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                        lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                     }
                 } else {
                     if (!format.isCsharp())
                         lines.add(".$send(\"${"""\"\""""}\")")
                     else {
-                        lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                        lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                     }
                 }
 
@@ -362,7 +362,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                 if (!format.isCsharp())
                     lines.add(".$send(\"$body\")")
                 else {
-                    lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\");")
+                    lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                 }
 
             } else {
@@ -391,7 +391,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             if (!format.isCsharp()) {
                 lines.add(".$send(${bodyLines.first()})")
             } else {
-                lines.add("new StringContent(${bodyLines.first()}, Encoding.UTF8, \"application/json\");")
+                lines.add("new StringContent(${bodyLines.first()}, Encoding.UTF8, \"application/json\")")
             }
         } else {
             if (!format.isCsharp()) {
@@ -411,7 +411,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     }
                     lines.add("${bodyLines.last()}")
                 }
-                lines.add(", Encoding.UTF8, \"application/json\");")
+                lines.add(", Encoding.UTF8, \"application/json\")")
             }
         }
     }
@@ -594,8 +594,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             val k = when{
                 //TODO should do check for when there are spaces in the field name
                 format.isJavaOrKotlin() -> if(fieldPath.isEmpty()) "" else "'$fieldPath'."
-                format.isJavaScript() -> if(fieldPath.isEmpty()) "" else ".$fieldPath"
-                format.isCsharp()  -> if(fieldPath.isEmpty()) "" else ".$fieldPath"
+                format.isJavaScript() -> if(fieldPath.isEmpty()) "" else "${if(fieldPath.startsWith("["))"" else "."}$fieldPath"
+                format.isCsharp()  -> if(fieldPath.isEmpty()) "" else "${if(fieldPath.startsWith("["))"" else "."}$fieldPath"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
 
@@ -635,7 +635,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         if (value == null) {
             val instruction = when {
                 format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
-                format.isJavaScript() -> "expect($responseVariableName$fieldPath).toBe(null);"
+                format.isJavaScript() -> "expect($responseVariableName.body$fieldPath).toBe(null);"
                 format.isCsharp() -> "Assert.True($responseVariableName$fieldPath == null);"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }

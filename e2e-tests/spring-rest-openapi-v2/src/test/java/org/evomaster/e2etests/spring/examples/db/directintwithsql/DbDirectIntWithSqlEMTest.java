@@ -11,6 +11,7 @@ import org.evomaster.core.problem.rest.RestCallAction;
 import org.evomaster.core.problem.rest.RestCallResult;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.RestSampler;
+import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.EvaluatedAction;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.FitnessValue;
@@ -111,6 +112,10 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         };
 
         Injector injector = Main.init(args);
+
+        RemoteController rc = injector.getInstance(RemoteController.class);
+        rc.startANewSearch();
+
         //start from creating and evaluating a random individual
         RestSampler sampler = injector.getInstance(RestSampler.class);
         RestIndividual ind = sampler.sampleAtRandom();

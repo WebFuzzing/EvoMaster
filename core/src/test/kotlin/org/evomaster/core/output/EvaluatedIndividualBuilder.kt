@@ -38,10 +38,10 @@ class EvaluatedIndividualBuilder {
                 groups.flatMap { g->
                     g.first.map { DbActionResult().also { it.setInsertExecutionResult(true) } }.plus(g.second.map { RestCallResult().also { it.setTimedout(true) } })
                 }
-            )
+            ),
+            format: OutputFormat = OutputFormat.JAVA_JUNIT_4
         ): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
 
-            val format = OutputFormat.JAVA_JUNIT_4
             val baseUrlOfSut = "baseUrlOfSut"
             val sampleType = SampleType.SMART_RESOURCE
 

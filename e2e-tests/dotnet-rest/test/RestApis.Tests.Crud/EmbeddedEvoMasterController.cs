@@ -5,7 +5,7 @@ using EvoMaster.Controller;
 using EvoMaster.Controller.Api;
 using EvoMaster.Controller.Problem;
 
-namespace RestApis.Tests.ForAssertions {
+namespace RestApis.Tests.Crud {
 
     public class EmbeddedEvoMasterController : EmbeddedSutController {
 
@@ -33,7 +33,7 @@ namespace RestApis.Tests.ForAssertions {
 
         public override List<AuthenticationDto> GetInfoForAuthentication () => null;
 
-        public override string GetPackagePrefixesToCover () => "RestApis.ForAssertions";
+        public override string GetPackagePrefixesToCover () => "RestApis.Crud";
         
         public override OutputFormat GetPreferredOutputFormat () => OutputFormat.CSHARP_XUNIT;
 
@@ -52,7 +52,7 @@ namespace RestApis.Tests.ForAssertions {
 
             var task = Task.Run (() => {
 
-                RestApis.ForAssertions.Program.Main (new string[] { ephemeralPort.ToString () });
+                RestApis.Crud.Program.Main (new string[] { ephemeralPort.ToString () });
             });
 
             WaitUntilSutIsRunning (ephemeralPort);
@@ -66,7 +66,7 @@ namespace RestApis.Tests.ForAssertions {
 
         public override void StopSut () {
 
-            RestApis.ForAssertions.Program.Shutdown ();
+            RestApis.Crud.Program.Shutdown();
 
             isSutRunning = false;
         }

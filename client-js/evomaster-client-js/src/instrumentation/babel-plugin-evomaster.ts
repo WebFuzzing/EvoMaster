@@ -7,7 +7,7 @@ import {
     ReturnStatement,
     Statement,
     UnaryExpression,
-    ConditionalExpression
+    ConditionalExpression, Expression
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
@@ -133,43 +133,9 @@ export default function evomasterPlugin(
             Look like is checking for some types, which in theory should always be pure, like literals.
             But very unclear on its features... eg, would it handle as pure "!false" ???
             TODO need to check... furthermore we do not care if throwing exception
-
-            TODO: Man
-            also check the source code of isPure() from ../@babel/traverse/lib/scope/index.js
-
-            isPureish() seems not fully applicable, we might need to modify it.
-
-            found the source code of isPureish() from ../@babel/types/lib/validators/generated/index.js
-
-                function isPureish(node, opts) {
-                  if (!node) return false;
-                  const nodeType = node.type;
-
-                  if (nodeType === "Pureish"
-                    || "FunctionDeclaration" === nodeType
-                    || "FunctionExpression" === nodeType
-                    || "StringLiteral" === nodeType
-                    || "NumericLiteral" === nodeType
-                    || "NullLiteral" === nodeType
-                    || "BooleanLiteral" === nodeType
-                    || "ArrowFunctionExpression" === nodeType
-                    || "ClassExpression" === nodeType
-                    || "ClassDeclaration" === nodeType
-                    || "BigIntLiteral" === nodeType
-                    || nodeType === "Placeholder" && "StringLiteral" === node.expectedNode) {
-
-                    if (typeof opts === "undefined") {
-                      return true;
-                    } else {
-                      return (0, _shallowEqual.default)(node, opts);
-                    }
-                  }
-
-                  return false;
-                }
          */
-        //const pure = t.isPureish(exp.right);
-        const pure = false; //TODO
+         // const pure = t.isPureish(exp.right);
+        const pure = isPureExpression(exp.right);
 
         const left = t.arrowFunctionExpression([], exp.left, false);
         const right = t.arrowFunctionExpression([], exp.right, false);
@@ -185,6 +151,127 @@ export default function evomasterPlugin(
 
         path.replaceWith(call);
         branchCounter++;
+    }
+
+    /**
+     * @param node to be analyzed
+     * @return whether the node is pure
+     *
+     * we analyze whether the expression in LogicalExpression (from right to left) is pure,
+     *      i.e., the expression can be evaluated without any possible exception.
+     * here we consider all types listed in https://babeljs.io/docs/en/babel-types#expression
+     * Additional info: pureish in babel type https://babeljs.io/docs/en/babel-types#pureish
+     *
+     */
+    function isPureExpression(node: Expression): boolean{
+
+        let pure = false;
+
+        if (t.isStringLiteral(node)
+            || t.isNumericLiteral(node) || t.isNullLiteral(node) || t.isBooleanLiteral(node) || t.isBigIntLiteral(node)
+            || t.isRegExpLiteral(node)
+            || t.isIdentifier(node) // e.g., 'x'
+            // || t.isDecimalLiteral(node) //TODO do not find this lib, but it exists https://babeljs.io/docs/en/babel-types#decimalliteral
+            || t.isArrayExpression(node)
+            || t.isClassExpression(node)
+            || t.isObjectExpression(node)
+            || t.isJSXElement(node) || t.isJSXFragment(node) // need to discuss
+        )
+            pure = true;
+        else if (t.isParenthesizedExpression(node)){
+            pure = isPureExpression(node.expression);
+        }else if (t.isSequenceExpression(node)){
+            for (let exp of node.expressions){
+                pure = pure && isPureExpression(exp);
+            }
+        } else if (t.isTemplateLiteral(node)){
+            // https://babeljs.io/docs/en/babel-types#templateliteral
+            for (let exp of node.expressions){
+                pure = pure && isPureExpression(exp);
+            }
+        } else if (t.isTaggedTemplateExpression(node)){
+            // https://babeljs.io/docs/en/babel-types#taggedtemplateexpression
+            pure = isPureExpression(node.tag)  && isPureExpression(node.quasi);
+        } else if (t.isUnaryExpression(node)){
+            /*
+                https://babeljs.io/docs/en/babel-types#unaryexpression
+                "void" | "throw" | "delete" | "!" | "+" | "-" | "~" | "typeof"
+             */
+            const excludeOp= ["throw", "delete"] // Man: not sure whether to include "void"
+            pure = !excludeOp.includes(node.operator) && isPureExpression(node.argument);
+
+        } else if (t.isBinaryExpression(node)){
+            /*
+                https://babeljs.io/docs/en/babel-types#binaryexpression
+                operator: "+" | "-" | "/" | "%" | "*" | "**" | "&" | "|" | ">>" | ">>>" | "<<" | "^"
+                        | "==" | "===" | "!=" | "!==" | "in" | "instanceof" | ">" | "<" | ">=" | "<="
+
+                shall we need a further handling based on the operator? maybe not since it will not lead to any exception,
+                e.g., for "/", even for instance 5 / 0, it just returns "Infinity".
+                As checked, a result of '(5 / 0) && true' is true, a result of 'a / b || false' is Infinity
+             */
+            pure = isPureExpression(node.right) && isPureExpression(node.left);
+        } else if (t.isConditionalExpression(node)){
+            // https://babeljs.io/docs/en/babel-types#conditionalexpression
+            pure = isPureExpression(node.test) && isPureExpression(node.consequent) && isPureExpression(node.alternate);
+        } else if (t.isMemberExpression(node)){
+            /*
+                https://babeljs.io/docs/en/babel-types#memberexpression
+                currently, we only identify 'this.x' as pure
+                TODO
+                if the object exists in the 'and' expression (e.g., x && x.y), it is false.
+                else it is probably true.
+             */
+            return t.isThisExpression(node.object);
+        } else if (t.isOptionalMemberExpression(node)) {
+            /*
+                https://babeljs.io/docs/en/babel-types#optionalmemberexpression
+                since the object is checked, here the pureish depends on its property
+             */
+            return isPureExpression(node.property);
+        } else if (t.isFunctionExpression(node)){
+            /*
+                https://babeljs.io/docs/en/babel-types#functionexpression
+                TODO this needs a further discussion
+                var foo = function() { return 5; }
+                since this is kind of fun declaration, it may be pure.
+             */
+            return true;
+        } else if (t.isThisExpression(node)){
+            /*
+                here we identify 'this' pure since it would not be null
+             */
+            return true;
+        } else if (t.isArrowFunctionExpression(node)
+            || t.isAwaitExpression(node) // executing it might lead to some side-effect
+            || t.isCallExpression(node) || t.isOptionalCallExpression(node) // there might exist throw inside call. without a deep check, we set it false for the moment
+            || t.isUpdateExpression(node) // "++" | "--"
+            || t.isAssignmentExpression(node)
+            || t.isDoExpression(node) // https://babeljs.io/docs/en/babel-types#doexpression
+            || t.isMetaProperty(node) || t.isNewExpression(node) // executing it might lead to some side-effect
+            || t.isPipelinePrimaryTopicReference(node) // i.e., |>, we set it false for the moment
+            || t.isSuper(node) || t.isImport(node)  // need a further check
+            /*
+                executing following might lead to some side-effect
+             */
+            || t.isTSAsExpression(node) || t.isTSTypeAssertion(node) ||t.isTSNonNullExpression(node)  || t.isTypeCastExpression(node)
+            /*
+                executing it might lead to some side-effect, e.g., con1 && con2 && yield x
+             */
+            || t.isYieldExpression(node)
+            // do not find following expression in the lib, but they exist in the list https://babeljs.io/docs/en/babel-types#expression
+            // || t.isModuleExpression(node)
+            // || t.isRecordExpression(node)
+            // || t.isTupleExpression(node)
+        ){
+            pure = false;
+        } else if (t.isLogicalExpression(node)){
+            throw Error("LogicalExpression should not appear in the pure analysis, and the expression is: loc ("+ node.loc +
+                "), left("+ node.left + "), operator(" + node.operator+ "), right(" +node.right +")");
+        } else{
+            throw Error("Missing expression type in the pure analysis: " + node.type);
+        }
+        return pure;
     }
 
     function replaceBinaryExpression(path: NodePath){
@@ -255,16 +342,7 @@ export default function evomasterPlugin(
             if it is related to condition, it will be replaced by other existing replacement and
             additional branch will be added there.
 
-            From trello
-            where ternary needs to create 2 objectives:
-                - 1 for for when it is executed/called  (h=1)
-                - 1 for when no exception (h=0.5 and then h=1 if and onyl if () => B did not throw exception)
-             Man: check with Andrea, I am not clear about the second point,
-                do we need to handle 'consequent' and 'alternate' differently?
-             Andrea: no, they should be treated the same.
-
          */
-
         const consequent = t.arrowFunctionExpression([], exp.consequent, false);
         const alternate = t.arrowFunctionExpression([], exp.alternate, false);
 

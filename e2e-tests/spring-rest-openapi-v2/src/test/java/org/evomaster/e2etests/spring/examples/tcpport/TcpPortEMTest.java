@@ -48,6 +48,13 @@ public class TcpPortEMTest extends SpringTestBase {
                 false,
                 (args) -> {
 
+                    /*
+                        as we make a call after the search, make sure the killSwitch does not mess
+                        up with the test
+                     */
+                    args.add("--killSwitch");
+                    args.add("false");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

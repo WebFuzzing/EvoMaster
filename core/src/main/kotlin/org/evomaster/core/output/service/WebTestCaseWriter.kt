@@ -17,13 +17,15 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
         TokenWriter.handleGettingTokens(format,ind, lines, baseUrlOfSut)
 
         val initializingActions = ind.individual.seeInitializingActions().filterIsInstance<DbAction>()
-        val initializingActionResults = (ind.seeResults(initializingActions) as? List<DbActionResult>)
-            ?: throw IllegalStateException("the type of results are expected as DbActionResults")
+        val initializingActionResults = (ind.seeResults(initializingActions))
+        if(initializingActionResults.any { (it as? DbActionResult)  == null})
+            throw IllegalStateException("the type of results are expected as DbActionResults")
 
         if (ind.individual.seeInitializingActions().isNotEmpty()) {
             SqlWriter.handleDbInitialization(
                     format,
-                    initializingActions.indices.map { EvaluatedDbAction(initializingActions[it], initializingActionResults[it]) },
+                    initializingActions.indices.map {
+                        EvaluatedDbAction(initializingActions[it], initializingActionResults[it] as DbActionResult) },
                     lines, skipFailure = config.skipFailureSQLInTestFile)
         }
     }

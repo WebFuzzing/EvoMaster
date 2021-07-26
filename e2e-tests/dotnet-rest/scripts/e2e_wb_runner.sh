@@ -2,13 +2,15 @@
 
 # where the SUT is located
 SUT_FOLDER=$1
-# the name of EM Driver, which we are going to start in a new process, before running the process of EM
+# the name of EM Driver, which we are going to start in a new process, before running the process of EM.
+# However, as it is started with Dotnet command, this value is used only for validation (eg checking that we
+# are using the right folder)
 DRIVER_NAME=$2
-# the name of the actual SUT Controller class. only needed in JS to setup the needed --jsControllerPath option
-CONTROLLER_NAME=$3
-# check minimum number of targets that should had been covered
-AT_LEAST_EXPECTED=$4
-NPARAMS=4
+
+# How many fitness evaluations for the search
+BUDGET=$3
+
+NPARAMS=3
 
 echo Executing White-Box E2E for $SUT_FOLDER
 
@@ -18,7 +20,7 @@ trap 'kill $(jobs -p)' EXIT
 # Current folder of the script
 SCRIPT_FOLDER_LOCATION="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-PROJECT_ROOT=$SCRIPT_FOLDER_LOCATION/../..
+PROJECT_ROOT=$SCRIPT_FOLDER_LOCATION/../../..
 
 JAR=$PROJECT_ROOT/core/target/evomaster.jar
 
@@ -30,7 +32,6 @@ else
 fi
 
 DRIVER=$PROJECT_ROOT$SUT_FOLDER/$DRIVER_NAME
-CONTROLLER_LOCATION=$PROJECT_ROOT$SUT_FOLDER/$CONTROLLER_NAME
 
 
 if [ -f "$DRIVER" ]; then
@@ -40,12 +41,12 @@ else
     exit 1
 fi
 
-TEST_NAME="evomaster-e2e-test"
-OUTPUT_FOLDER=$SCRIPT_FOLDER_LOCATION/generated
-TEST_LOCATION=$OUTPUT_FOLDER/$TEST_NAME.js
+TEST_NAME="EvoMasterE2ETest"
+OUTPUT_FOLDER=$PROJECT_ROOT$SUT_FOLDER/generated
+TEST_LOCATION=$OUTPUT_FOLDER/$TEST_NAME.cs
 
 # Deleting previously generated tests, if any
-rm -f $OUTPUT_FOLDER/*-test.js
+rm -f $OUTPUT_FOLDER/*Test.cs
 mkdir -p $OUTPUT_FOLDER
 
 
@@ -55,17 +56,19 @@ mkdir -p $OUTPUT_FOLDER
 #  As workaround, we can use a random port, "hoping" it is available (with should be 99.99% of
 #  the times)
 PORT=$((20000 + $RANDOM % 40000))
-
 echo Using Controller Port $PORT
 
-# Starting  NodeJS Driver in the background
-PORT=$PORT node $DRIVER &
+
+# Starting Driver in the background
+cd $PROJECT_ROOT$SUT_FOLDER || exit 1
+dotnet build
+dotnet run $PORT &
 PID=$!
 
 # give enough time to start
-sleep 10
+sleep 20
 
-java -jar $JAR --seed 42 --maxActionEvaluations 20000  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME --jsControllerPath $CONTROLLER_LOCATION --sutControllerPort $PORT
+java -jar $JAR --seed 42 --maxActionEvaluations $BUDGET  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME  --sutControllerPort $PORT
 
 # stop driver, which was run in background
 kill $PID
@@ -78,23 +81,13 @@ else
 fi
 
 # run the tests
-cd $SCRIPT_FOLDER_LOCATION || exit 1
-npm i
-npm run test
+dotnet test
 
 if [ $? -ne 0 ] ; then
    echo "ERROR: failed to run the generated tests."
    exit 1
 fi
 
-COVERED=` cat $TEST_LOCATION | grep "Covered targets" | cut -c 20-`
-
-if [ $COVERED -ge $AT_LEAST_EXPECTED ]; then
-    echo "Target coverage: $COVERED"
-else
-    echo "ERROR. Achieved not enough target coverage: $COVERED"
-    exit 1
-fi
 
 # check for text in file
 N=$#
