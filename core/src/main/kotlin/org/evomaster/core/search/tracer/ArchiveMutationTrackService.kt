@@ -6,7 +6,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import javax.annotation.PostConstruct
 
 /**
- * handle how to copy a [TraceableElement] based on [EMConfig]
+ * handle how to copy a [Traceable] based on [EMConfig]
  */
 class ArchiveMutationTrackService : TrackService(){
 

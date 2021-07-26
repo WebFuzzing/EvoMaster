@@ -8,21 +8,20 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.resource.dependency.MutualResourcesRelations
 import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToResources
 import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToTable
 import org.evomaster.core.problem.rest.resource.dependency.SelfResourcesRelation
-import org.evomaster.core.problem.rest.util.ParamUtil
-import org.evomaster.core.problem.rest.util.inference.SimpleDeriveResourceBinding
-import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
+import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
+import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
+import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -85,7 +84,7 @@ class ResourceDepManageService {
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
             if (index < dto.extraHeuristics.size) {
                 val dbDto = dto.extraHeuristics[index].databaseExecutionDto
-                if (action is RestCallAction && dbDto != null)
+                if (dbDto != null)
                     updateResourceToTable(action, dbDto, tables, addedMap, removedMap)
             }
         }
@@ -94,13 +93,11 @@ class ResourceDepManageService {
 
     }
 
-    private fun updateParamInfo(action: RestAction, tables: Map<String, Table>) {
-        if (action is RestCallAction) {
-            val r = rm.getResourceNodeFromCluster(action.path.toString())
-            val additionalInfo = r.updateAdditionalParams(action)
-            if (!additionalInfo.isNullOrEmpty()) {
-                SimpleDeriveResourceBinding.deriveParamsToTable(additionalInfo, r, allTables = tables)
-            }
+    private fun updateParamInfo(action: RestCallAction, tables: Map<String, Table>) {
+        val r = rm.getResourceNodeFromCluster(action.path.toString())
+        val additionalInfo = r.updateAdditionalParams(action)
+        if (!additionalInfo.isNullOrEmpty()) {
+            SimpleDeriveResourceBinding.deriveParamsToTable(additionalInfo, r, allTables = tables)
         }
     }
 
@@ -270,12 +267,12 @@ class ResourceDepManageService {
      */
     fun deriveDependencyBasedOnSchema(resourceCluster: ResourceCluster) {
         resourceCluster.getCluster().values
-                .filter { it.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST }.isNotEmpty() }
+                .filter { it.actions.filter { it.verb == HttpVerb.POST }.isNotEmpty() }
                 .forEach { r ->
                     /*
                      TODO Man should only apply on POST Action? how about others?
                      */
-                    val post = r.actions.first { it is RestCallAction && it.verb == HttpVerb.POST } as RestCallAction
+                    val post = r.actions.first { it.verb == HttpVerb.POST } as RestCallAction
                     post.tokens.forEach { _, u ->
                         resourceCluster.getCluster().values.forEach { or ->
                             if (or != r) {
@@ -433,7 +430,7 @@ class ResourceDepManageService {
         val swapsloc = mutableListOf<Int>()
 
         seqCur.forEachIndexed { index, restResourceCalls ->
-            if (restResourceCalls.resourceInstance!!.getKey() != seqPre[index].resourceInstance!!.getKey())
+            if (restResourceCalls.getResolvedKey() != seqPre[index].getResolvedKey())
                 swapsloc.add(index)
         }
         if (swapsloc.size != 2) throw IllegalArgumentException("detect wrong mutator!")
@@ -445,7 +442,7 @@ class ResourceDepManageService {
 
         if (isBetter != EvaluatedMutation.EQUAL_WITH) {
             val locOfF = swapsloc[0]
-            val distance = swapF.actions.size - swapB.actions.size
+            val distance = swapF.seeActionSize(ActionFilter.NO_SQL) - swapB.seeActionSize(ActionFilter.NO_SQL)
 
             //check F
             val middles = seqCur.subList(swapsloc[0] + 1, swapsloc[1] + 1).map { it.getResourceNodeKey() }
@@ -461,7 +458,7 @@ class ResourceDepManageService {
 
             //check FCDE
             var actionIndex = seqCur.mapIndexed { index, restResourceCalls ->
-                if (index <= locOfF) restResourceCalls.actions.size
+                if (index <= locOfF) restResourceCalls.seeActionSize(ActionFilter.NO_SQL)
                 else 0
             }.sum()
 
@@ -469,10 +466,10 @@ class ResourceDepManageService {
                 var isAnyChange = false
                 var changeDegree = 0
 
-                seqCur[indexOfCalls].actions.forEach { curAction ->
+                seqCur[indexOfCalls].seeActions(NO_SQL).forEach { curAction ->
                     val actionA = actionIndex - distance
 
-                    val compareResult = swapF.actions.plus(swapB.actions).find { it.getName() == curAction.getName() }.run {
+                    val compareResult = swapF.seeActions(NO_SQL).plus(swapB.seeActions(NO_SQL)).find { it.getName() == curAction.getName() }.run {
                         if (this == null) compare(actionIndex, current, actionA, previous)
                         else compare(this.getName(), current, previous)
                     }.also { r -> changeDegree += r }
@@ -549,16 +546,16 @@ class ResourceDepManageService {
             //throw IllegalArgumentException("mutator does not change anything.")
 
             val modified = seqCur[locOfModified]
-            val distance = seqCur[locOfModified].actions.size - seqPre[locOfModified].actions.size
+            val distance = seqCur[locOfModified].seeActionSize(NO_SQL) - seqPre[locOfModified].seeActionSize(NO_SQL)
 
             var actionIndex = seqCur.mapIndexed { index, restResourceCalls ->
-                if (index <= locOfModified) restResourceCalls.actions.size
+                if (index <= locOfModified) restResourceCalls.seeActionSize(NO_SQL)
                 else 0
             }.sum()
 
             ((locOfModified + 1) until seqCur.size).forEach { indexOfCalls ->
                 var isAnyChange = false
-                seqCur[indexOfCalls].actions.forEach {
+                seqCur[indexOfCalls].seeActions(NO_SQL).forEach {
                     val actionA = actionIndex - distance
                     isAnyChange = isAnyChange || compare(actionIndex, current, actionA, previous) != 0
                     actionIndex += 1
@@ -584,7 +581,7 @@ class ResourceDepManageService {
 
          */
 
-        val mutatedIndex = (0 until seqCur.size).find { seqCur[it].resourceInstance!!.getKey() != seqPre[it].resourceInstance!!.getKey() }!!
+        val mutatedIndex = (0 until seqCur.size).find { seqCur[it].getResolvedKey() != seqPre[it].getResolvedKey() }!!
 
         val replaced = seqCur[mutatedIndex]
         val replace = seqPre[mutatedIndex]
@@ -594,17 +591,17 @@ class ResourceDepManageService {
             val distance = locOfReplaced - seqPre.indexOf(replace)
 
             var actionIndex = seqCur.mapIndexed { index, restResourceCalls ->
-                if (index <= locOfReplaced) restResourceCalls.actions.size
+                if (index <= locOfReplaced) restResourceCalls.seeActionSize(NO_SQL)
                 else 0
             }.sum()
 
             ((locOfReplaced + 1) until seqCur.size).forEach { indexOfCalls ->
                 var isAnyChange = false
                 var changeDegree = 0
-                seqCur[indexOfCalls].actions.forEach { curAction ->
+                seqCur[indexOfCalls].seeActions(NO_SQL).forEach { curAction ->
                     val actionA = actionIndex - distance
 
-                    val compareResult = replaced.actions.plus(replace.actions).find { it.getName() == curAction.getName() }.run {
+                    val compareResult = replaced.seeActions(NO_SQL).plus(replace.seeActions(NO_SQL)).find { it.getName() == curAction.getName() }.run {
                         if (this == null) compare(actionIndex, current, actionA, previous)
                         else compare(this.getName(), current, previous)
                     }.also { r -> changeDegree += r }
@@ -659,7 +656,7 @@ class ResourceDepManageService {
              For instance, ABCDEFG, if we add H at 3nd position, become ABHCDEFG, then check CDEFG.
              if C is better, C rely on H; else if C is worse, C rely on H ? ;else C may not rely on H
         */
-        val added = seqCur.find { cur -> seqPre.find { pre -> pre.resourceInstance!!.getKey() == cur.resourceInstance!!.getKey() } == null }
+        val added = seqCur.find { cur -> seqPre.find { pre -> pre.getResolvedKey() == cur.getResolvedKey() } == null }
                 ?: return
         val addedKey = added.getResourceNodeKey()
 
@@ -667,18 +664,18 @@ class ResourceDepManageService {
 
         if (isBetter != EvaluatedMutation.EQUAL_WITH) {
             var actionIndex = seqCur.mapIndexed { index, restResourceCalls ->
-                if (index <= locOfAdded) restResourceCalls.actions.size
+                if (index <= locOfAdded) restResourceCalls.seeActionSize(NO_SQL)
                 else 0
             }.sum()
 
-            val distance = added.actions.size
+            val distance = added.seeActionSize(NO_SQL)
 
             (locOfAdded + 1 until seqCur.size).forEach { indexOfCalls ->
                 var isAnyChange = false
 
-                seqCur[indexOfCalls].actions.forEach { curAction ->
+                seqCur[indexOfCalls].seeActions(NO_SQL).forEach { curAction ->
                     val actionA = actionIndex - distance
-                    val compareResult = added.actions.find { it.getName() == curAction.getName() }.run {
+                    val compareResult = added.seeActions(NO_SQL).find { it.getName() == curAction.getName() }.run {
                         if (this == null) compare(actionIndex, current, actionA, previous)
                         else compare(this.getName(), current, previous)
                     }
@@ -722,7 +719,7 @@ class ResourceDepManageService {
          there is another case regarding duplicated resources calls (i.e., same resource and same actions) in a test, for instance, ABCB* (B* denotes the 2nd B), if B is deleted, become ACB*, then check CB* as before,
          when comparing B*, B* probability achieves better performance by taking target from previous first B, so we need to compare with merged targets, i.e., B and B*.
         */
-        val delete = seqPre.find { pre -> seqCur.find { cur -> pre.resourceInstance!!.getKey() == cur.resourceInstance!!.getKey() } == null }
+        val delete = seqPre.find { pre -> seqCur.find { cur -> pre.getResolvedKey() == cur.getResolvedKey() } == null }
                 ?: return
         val deleteKey = delete.getResourceNodeKey()
 
@@ -731,19 +728,19 @@ class ResourceDepManageService {
         if (isBetter != EvaluatedMutation.EQUAL_WITH) {
 
             var actionIndex = seqPre.mapIndexed { index, restResourceCalls ->
-                if (index < locOfDelete) restResourceCalls.actions.size
+                if (index < locOfDelete) restResourceCalls.seeActionSize(NO_SQL)
                 else 0
             }.sum()
 
-            val distance = 0 - delete.actions.size
+            val distance = 0 - delete.seeActionSize(NO_SQL)
 
             (locOfDelete until seqCur.size).forEach { indexOfCalls ->
                 var isAnyChange = false
 
-                seqCur[indexOfCalls].actions.forEach { curAction ->
+                seqCur[indexOfCalls].seeActions(NO_SQL).forEach { curAction ->
                     val actionA = actionIndex - distance
 
-                    val compareResult = delete.actions.find { it.getName() == curAction.getName() }.run {
+                    val compareResult = delete.seeActions(NO_SQL).find { it.getName() == curAction.getName() }.run {
                         if (this == null) compare(actionIndex, current, actionA, previous)
                         else compare(this.getName(), current, previous)
                     }
@@ -789,7 +786,7 @@ class ResourceDepManageService {
                     detectAfterModify(previous, current, isBetter)
                 } else if (seqCur.size > 1
                         && seqCur
-                                .filterIndexed { index, restResourceCalls -> restResourceCalls.resourceInstance!!.getKey() != seqPre[index].resourceInstance!!.getKey() }.size == 2) {
+                                .filterIndexed { index, restResourceCalls -> restResourceCalls.getResolvedKey() != seqPre[index].getResolvedKey() }.size == 2) {
                     //SWAP
                     detectAfterSwap(previous, current, isBetter)
                 } else {
@@ -890,65 +887,87 @@ class ResourceDepManageService {
      * @return a candidate, if none of a resource is deletable, return null
      */
     fun handleDelNonDepResource(ind: RestIndividual): RestResourceCalls? {
-        val candidates = ind.getResourceCalls().filter { cur ->
-            !existsDependentResources(ind, cur) && cur.isDeletable
+        val candidates = ind.getResourceCalls().filter { it.isDeletable }.filter { cur ->
+            !existsDependentResources(ind, cur)
         }
         if (candidates.isEmpty()) return null
 
-        candidates.filter { isNonDepResources(ind, it) }.apply {
-            if (isNotEmpty())
-                return randomness.choose(this)
-            else
-                return randomness.choose(candidates)
-        }
+        val nodep = candidates.filter { isNonDepResources(ind, it)}
+        if (nodep.isNotEmpty()) return randomness.choose(nodep)
+        return randomness.choose(candidates)
     }
+
 
     /**
      * handle to select two related resources for swap
      * @return a pair of position to swap, if none of a pair resource is movable, return null
      */
-    fun handleSwapDepResource(ind: RestIndividual): Pair<Int, Int>? {
+    fun handleSwapDepResource(ind: RestIndividual, candidates: Map<Int, Set<Int>>): Pair<Int, Int>? {
+
+        if (candidates.isEmpty()) return null
+
         val options = mutableListOf(1, 2, 3)
         while (options.isNotEmpty()) {
             val option = randomness.choose(options)
             val pair = when (option) {
-                1 -> adjustDepResource(ind)
+                1 -> adjustDepResource(ind, candidates)
                 2 -> {
-                    swapNotConfirmedDepResource(ind)?:adjustDepResource(ind)
+                    swapNotConfirmedDepResource(ind, candidates)?:adjustDepResource(ind, candidates)
                 }
                 3 -> {
-                    swapNotCheckedResource(ind)?:adjustDepResource(ind)
+                    swapNotCheckedResource(ind, candidates)?:adjustDepResource(ind, candidates)
                 }
                 else -> null
             }
             if (pair != null) return pair
             options.remove(option)
         }
+
         return null
     }
 
-    private fun adjustDepResource(ind: RestIndividual): Pair<Int, Int>? {
+
+
+    private fun adjustDepResource(ind: RestIndividual, all : Map<Int, Set<Int>>): Pair<Int, Int>? {
         val candidates = mutableMapOf<Int, MutableSet<Int>>()
         ind.getResourceCalls().forEachIndexed { index, cur ->
             findDependentResources(ind, cur, minProbability = StringSimilarityComparator.SimilarityThreshold).map { ind.getResourceCalls().indexOf(it) }.filter { second -> index < second }.apply {
                 if (isNotEmpty()) candidates.getOrPut(index) { mutableSetOf() }.addAll(this.toHashSet())
             }
         }
-        if (candidates.isNotEmpty()) randomness.choose(candidates.keys).let {
-            return Pair(it, randomness.choose(candidates.getValue(it)))
+
+        return selectSwap(candidates, all)
+    }
+
+    private fun selectSwap(candidates: Map<Int, Set<Int>>, all: Map<Int, Set<Int>>) : Pair<Int, Int>?{
+        val valid = candidates.filter { e->
+            all.containsKey(e.key) && e.value.any { all[e.key]!!.contains(it) }
+        }
+
+        if (valid.isNotEmpty()) {
+            val select = randomness.choose(valid.keys)
+            val ex = valid.getValue(select).filter { v-> all[select]!!.contains(v) }
+            return select to randomness.choose(ex)
         }
         return null
     }
 
-    private fun swapNotConfirmedDepResource(ind: RestIndividual): Pair<Int, Int>? {
-        val probCandidates = ind.getResourceCalls().filter { existsDependentResources(ind, it, maxProbability = StringSimilarityComparator.SimilarityThreshold) }
+
+    private fun swapNotConfirmedDepResource(ind: RestIndividual, all : Map<Int, Set<Int>>): Pair<Int, Int>? {
+        val probCandidates = ind.getResourceCalls().filter {
+            existsDependentResources(ind, it, maxProbability = StringSimilarityComparator.SimilarityThreshold) }
         if (probCandidates.isEmpty()) return null
-        val first = randomness.choose(probCandidates)
-        val second = randomness.choose(findDependentResources(ind, first, maxProbability = StringSimilarityComparator.SimilarityThreshold))
-        return Pair(ind.getResourceCalls().indexOf(first), ind.getResourceCalls().indexOf(second))
+        val valid = probCandidates.map { ind.getResourceCalls().indexOf(it) }.filter { all.containsKey(it) }
+        if (valid.isEmpty()) return null
+        val select = randomness.choose(valid)
+        val ex = findDependentResources(ind, ind.getResourceCalls()[select], maxProbability = StringSimilarityComparator.SimilarityThreshold)
+        val validEx = ex.map { ind.getResourceCalls().indexOf(it) }.filter { all[select]!!.contains(it) }
+        if (validEx.isNotEmpty())
+            return  select to randomness.choose(validEx)
+        return null
     }
 
-    private fun swapNotCheckedResource(ind: RestIndividual): Pair<Int, Int>? {
+    private fun swapNotCheckedResource(ind: RestIndividual, all : Map<Int, Set<Int>>): Pair<Int, Int>? {
         val candidates = mutableMapOf<Int, MutableSet<Int>>()
         ind.getResourceCalls().forEachIndexed { index, cur ->
             val checked = findDependentResources(ind, cur).plus(findNonDependentResources(ind, cur))
@@ -956,10 +975,8 @@ class ResourceDepManageService {
                 if (isNotEmpty()) candidates.getOrPut(index) { mutableSetOf() }.addAll(this)
             }
         }
-        if (candidates.isNotEmpty()) randomness.choose(candidates.keys).let {
-            return Pair(it, randomness.choose(candidates.getValue(it)))
-        }
-        return null
+
+        return selectSwap(candidates, all)
     }
 
     /**
@@ -967,7 +984,7 @@ class ResourceDepManageService {
      */
     fun unRelatedSQL(ind: RestIndividual) : List<DbAction>{
         val allrelated = getAllRelatedTables(ind)
-        return ind.dbInitialization.filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
+        return ind.seeInitializingActions().filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
     /**
@@ -983,7 +1000,7 @@ class ResourceDepManageService {
 
         val other = if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
             val notincluded = allrelated.filterNot {
-                ind.dbInitialization.any { d-> it.equals(d.table.name, ignoreCase = true) }
+                ind.seeInitializingActions().any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
             //prioritize notincluded related ones with a probability 0.8
             if (notincluded.isNotEmpty() && randomness.nextBoolean(0.8)){
@@ -991,7 +1008,7 @@ class ResourceDepManageService {
             }else randomness.choose(allrelated)
         }else{
             val left = rm.getTableInfo().keys.filterNot {
-                ind.dbInitialization.any { d-> it.equals(d.table.name, ignoreCase = true) }
+                ind.seeInitializingActions().any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
             if (left.isNotEmpty() && randomness.nextBoolean()) randomness.choose(left)
             else randomness.choose(rm.getTableInfo().keys)
@@ -1009,7 +1026,7 @@ class ResourceDepManageService {
         if (log.isTraceEnabled){
             log.trace("at createDbActions, {} insertions are added, and they are {}", list.size,
                 list.flatten().joinToString(",") {
-                    if (it is DbAction) it.getResolvedName() else it.getName()
+                    it.getResolvedName()
                 })
         }
 
@@ -1023,11 +1040,11 @@ class ResourceDepManageService {
      * sample an individual which contains related resources
      */
     fun sampleRelatedResources(calls: MutableList<RestResourceCalls>, sizeOfResource: Int, maxSize: Int) {
-        val start = -calls.sumBy { it.actions.size }
+        val start = -calls.sumBy { it.seeActionSize(NO_SQL) }
 
         val first = randomness.choose(dependencies.keys)
         rm.sampleCall(first, true, calls, maxSize)
-        var size = calls.sumBy { it.actions.size } + start
+        var size = calls.sumBy { it.seeActionSize(NO_SQL) } + start
         val excluded = mutableListOf<String>()
         val relatedResources = mutableListOf<RestResourceCalls>()
         excluded.add(first)
@@ -1043,36 +1060,28 @@ class ResourceDepManageService {
 
             excluded.add(related)
             rm.sampleCall(related, true, calls, size, false, if (related.isEmpty()) null else relatedResources)
+//            calls.last().verifyBindingGenes(calls)
             relatedResources.add(calls.last())
-            size = calls.sumBy { it.actions.size } + start
+            size = calls.sumBy { it.seeActionSize(NO_SQL) } + start
         }
     }
 
     /**
      * add related resource with SQL as its initialization of [ind], i.e., [RestIndividual.dbInitialization]
-     * [maxPerResource] is a maximum resources to be added per resource
+     * @param ind to be handled by adding resources in its initialization with sql
+     * @param maxPerResource is a maximum resources to be added per resource
      */
     fun sampleResourceWithRelatedDbActions(ind: RestIndividual, maxPerResource : Int) {
         if (maxPerResource == 0) return
         rm.getSqlBuilder()?:return
 
-        val added = mutableListOf<DbAction>()
+        val relatedTables = getAllRelatedTables(ind).flatMap { t->  (0 until randomness.nextInt(1, maxPerResource)).map { t } }
 
-        val relatedTables = getAllRelatedTables(ind)
+        val added = rm.cluster.createSqlAction(relatedTables, rm.getSqlBuilder()!!, mutableListOf(), false, true, randomness)
 
-        rm.sortTableBasedOnFK(relatedTables).forEach { t->
-            val num = randomness.nextInt(1, maxPerResource) - added.filter { it.table.name.equals(t.name, ignoreCase = true) }.size
-            if (num > 0){
-                added.addAll((0 until num).flatMap {
-                    rm.getSqlBuilder()!!.createSqlInsertionAction(t.name, setOf())
-                })
-            }
-        }
-
-        DbActionUtils.randomizeDbActionGenes(added, randomness)
         DbActionUtils.repairBrokenDbActionsList(added,randomness)
 
-        ind.dbInitialization.addAll(added)
+        ind.addInitializingActions(actions = added)
     }
 
     private fun getAllRelatedTables(ind: RestIndividual) : Set<String>{
@@ -1089,7 +1098,7 @@ class ResourceDepManageService {
     fun checkIfDeriveTable(call: RestResourceCalls): Boolean {
         if (!call.template!!.independent) return false
 
-        call.actions.first().apply {
+        call.seeActions(NO_SQL).first().apply {
             if (this is RestCallAction) {
                 if (this.parameters.isNotEmpty()) return true
             }
@@ -1097,126 +1106,15 @@ class ResourceDepManageService {
         return false
     }
 
-
-    /**
-     * init related tables for all [RestResourceNode] in [resourceCluster] based on [tables]
-     */
-    fun initRelatedTables(resourceCluster: ResourceCluster) {
-        resourceCluster.getCluster().values.forEach {
-            SimpleDeriveResourceBinding.deriveResourceToTable(it, resourceCluster.getTableInfo())
-        }
-    }
     /**
      * @return extracted related tables for [call] regarding [dbActions]
      * if [dbActions] is not empty, return related table from tables in [dbActions]
      * if [dbActions] is empty, return all derived related table
      */
-    fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf(), withSql : Boolean): MutableMap<RestAction, MutableList<ParamGeneBindMap>> {
-        val paramsInfo = call.getResourceNode().getMissingParams(call.template!!.template, withSql)
+    fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf(), withSql : Boolean): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
+        val paramsInfo = call.getResourceNode().getPossiblyBoundParams(call.template!!.template, withSql)
         return SimpleDeriveResourceBinding.generateRelatedTables(paramsInfo, call, dbActions)
     }
-
-    private fun bindCallWithOtherDBAction(call: RestResourceCalls, dbActions: MutableList<DbAction>) {
-        val dbRelatedToTables = dbActions.map { it.table.name }.toMutableList()
-        val dbTables = call.dbActions.map { it.table.name }.toMutableList()
-
-        var remove = false
-        if (dbRelatedToTables.containsAll(dbTables)) {
-            call.dbActions.clear()
-        } else {
-            call.dbActions.removeIf { dbRelatedToTables.contains(it.table.name) }
-            /*
-             TODO Man there may need to add selection in order to ensure the reference pk exists
-             */
-            //val selections = mutableListOf<DbAction>()
-            val previous = mutableListOf<DbAction>()
-            val created = mutableListOf<DbAction>()
-            call.dbActions.forEach { dbaction ->
-                if (dbaction.table.foreignKeys.find { dbRelatedToTables.contains(it.targetTable) } != null) {
-                    val refers = DbActionUtils.repairFK(dbaction, dbActions.plus(previous).toMutableList(), created, rm.getSqlBuilder(), randomness)
-                    //selections.addAll( (sampler as ResourceRestSampler).sqlInsertBuilder!!.generateSelect(refers) )
-                }
-                previous.add(dbaction)
-            }
-            call.dbActions.addAll(0, created)
-            remove = remove || rm.repairDbActionsForResource(dbActions.plus(call.dbActions).toMutableList())
-            //call.dbActions.addAll(0, selections)
-        }
-
-        val dbActions = dbActions.plus(call.dbActions).toMutableList()
-        extractRelatedTablesForCall(call, dbActions, false).let {
-            call.bindCallWithDbActions(dbActions, bindingMap = it, cluster = rm.cluster, forceBindParamBasedOnDB = true, dbRemovedDueToRepair = remove)
-        }
-    }
-
-    /**
-     * bind a call based on its front including resource call and dbactions
-     */
-    fun bindCallWithFront(call: RestResourceCalls, front: MutableList<RestResourceCalls>) {
-
-        val targets = front.flatMap { it.actions.filter { a -> a is RestCallAction } }
-
-        /*
-        TODO
-
-         e.g., A/{a}, A/{a}/B/{b}, A/{a}/C/{c}
-         if there are A/{a} and A/{a}/B/{b} that exists in the test,
-         1) when appending A/{a}/C/{c}, A/{a} should not be created again;
-         2) But when appending A/{a} in the test, A/{a} with new values should be created.
-        */
-//        if(call.actions.size > 1){
-//            call.actions.removeIf {action->
-//                action is RestCallAction &&
-//                        //(action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT) &&
-//                        action.verb == HttpVerb.POST &&
-//                        action != call.actions.last() &&
-//                        targets.find {it is RestCallAction && it.getName() == action.getName()}.also {
-//                            it?.let {ra->
-//                                front.find { call-> call.actions.contains(ra) }?.let { call -> call.isStructureMutable = false }
-//                                if(action.saveLocation) (ra as RestCallAction).saveLocation = true
-//                                action.locationId?.let {
-//                                    (ra as RestCallAction).saveLocation = action.saveLocation
-//                                }
-//                            }
-//                        }!=null
-//            }
-//        }
-
-        /*
-         bind values based front actions,
-         */
-        call.actions
-                .filter { it is RestCallAction }
-                .forEach { a ->
-                    (a as RestCallAction).parameters.forEach { p ->
-                        targets.forEach { ta ->
-                            ParamUtil.bindParam(p, a.path, (ta as RestCallAction).path, ta.parameters)
-                        }
-                    }
-                }
-
-        /*
-         bind values of dbactions based front dbactions
-         */
-        front.flatMap { it.dbActions }.apply {
-            if (isNotEmpty()) {
-                bindCallWithOtherDBAction(call, this.toMutableList())
-            }
-        }
-
-        val frontTables = front.map { Pair(it, it.dbActions.map { it.table.name }) }.toMap()
-        call.dbActions.forEach { db ->
-            db.table.foreignKeys.map { it.targetTable }.let { ftables ->
-                frontTables.filter { entry ->
-                    entry.value.intersect(ftables).isNotEmpty()
-                }.forEach { t, _ ->
-                    t.isDeletable = false
-                    t.shouldBefore.add(call.getResourceNodeKey())
-                }
-            }
-        }
-    }
-
 
     /**
      * @return whether all resources in SUT are independent
@@ -1225,6 +1123,10 @@ class ResourceDepManageService {
         return rm.getResourceCluster().values.none { r -> !r.isIndependent() }
     }
 
+    /**
+     * @return whether the [ind] can be mutated with resource-based solution
+     *      e.g., the [ind] does not have any related resource, then the resource-based solution will not be employed
+     */
     fun canMutateResource(ind: RestIndividual) : Boolean{
         return ind.getResourceCalls().size > 1 ||
                 getAllRelatedTables(ind).isNotEmpty() ||
@@ -1236,9 +1138,15 @@ class ResourceDepManageService {
                 }.size > 1)
     }
 
+    /**
+     * @return related resource of [resource]
+     */
     fun getRelatedResource(resource : String) : Set<String> = dependencies[resource]?.flatMap { it.targets }?.toSet()?: setOf()
 
 
+    /**
+     * export derived dependency info as outputs of EM
+     */
     fun exportDependencies(){
         val path = Paths.get(config.dependencyFile)
         Files.createDirectories(path.parent)

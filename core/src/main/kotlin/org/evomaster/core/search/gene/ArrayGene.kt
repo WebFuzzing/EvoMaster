@@ -1,6 +1,8 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -36,23 +38,19 @@ class ArrayGene<T>(
          * The actual elements in the array, based on the template. Ie, usually those elements will be clones
          * of the templated, and then mutated/randomized
          */
-        var elements: MutableList<T> = mutableListOf()
-) : CollectionGene, Gene(name)
+        private var elements: MutableList<T> = mutableListOf()
+) : CollectionGene, Gene(name, elements)
         where T : Gene {
 
     init {
         if(template is CycleObjectGene){
             maxSize = 0
-            elements.clear()
+            clearElements()
         }
 
         if (elements.size > maxSize) {
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
-        }
-
-        for(e in elements){
-            e.parent = this
         }
     }
 
@@ -64,14 +62,16 @@ class ArrayGene<T>(
 
     fun forceToOnlyEmpty(){
         maxSize = 0
-        elements.clear()
+        clearElements()
     }
 
-    override fun copy(): Gene {
+    override fun getChildren(): MutableList<T> = elements
+
+    override fun copyContent(): Gene {
         return ArrayGene<T>(name,
-                template.copy() as T,
+                template.copyContent() as T,
                 maxSize,
-                elements.map { e -> e.copy() as T }.toMutableList()
+                elements.map { e -> e.copyContent() as T }.toMutableList()
         )
     }
 
@@ -79,7 +79,11 @@ class ArrayGene<T>(
         if (other !is ArrayGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
+
+        clearElements()
+        this.elements = other.elements.map { e -> e.copyContent() as T }.toMutableList()
+        // build parents for [element]
+        addChildren(this.elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -109,15 +113,15 @@ class ArrayGene<T>(
         }
 
         //maybe not so important here to complicate code to enable forceNewValue
-
-        elements.clear()
+        clearElements()
         log.trace("Randomizing ArrayGene")
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
             val gene = template.copy() as T
-            gene.parent = this
+//            gene.parent = this
             gene.randomize(randomness, false)
             elements.add(gene)
+            addChild(gene)
         }
     }
 
@@ -152,12 +156,15 @@ class ArrayGene<T>(
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
             val gene = template.copy() as T
-            gene.parent = this
+//            gene.parent = this
             gene.randomize(randomness, false)
             elements.add(gene)
+            addChild(gene)
         }else{
             log.trace("Remvoving gene in mutation")
-            elements.removeAt(randomness.nextInt(elements.size))
+            val removed = elements.removeAt(randomness.nextInt(elements.size))
+            // remove binding if any other bound with
+            removed.removeThisFromItsBindingGenes()
         }
         return true
     }
@@ -183,4 +190,36 @@ class ArrayGene<T>(
 
     override fun innerGene(): List<Gene> = elements
 
+    /*
+        Note that value binding cannot be performed on the [elements]
+
+        TODO might bind based on value instead of replacing them
+     */
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
+            clearElements()
+            elements = gene.elements.mapNotNull { it.copyContent() as? T}.toMutableList()
+            addChildren(elements)
+            return true
+        }
+        LoggingUtil.uniqueWarn(log, "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}")
+        return false
+    }
+
+    override fun clearElements() {
+        elements.forEach { it.removeThisFromItsBindingGenes() }
+        elements.clear()
+    }
+
+    fun removeElements(element: T){
+        elements.remove(element)
+        element.removeThisFromItsBindingGenes()
+    }
+
+    fun addElements(element: T){
+        elements.add(element)
+        addChild(element)
+    }
+
+    fun getAllElements() = elements
 }

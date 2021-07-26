@@ -1,6 +1,7 @@
 package org.evomaster.core.database
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
@@ -395,7 +396,7 @@ class SqlInsertBuilderTest {
 
     private class DirectDatabaseExecutor : DatabaseExecutor {
 
-        override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long, Long>? {
+        override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
             return null
         }
 

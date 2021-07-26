@@ -1,0 +1,313 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "v1",
+    "title": ""
+  },
+  "basePath": "/gw",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/foo": {
+      "post": {
+        "summary": "create",
+        "operationId": "post",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "foo",
+            "description": "foo",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Foo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/foo/{key}": {
+      "get": {
+        "summary": "get",
+        "operationId": "getFooByKey",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "description": "key",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "date",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/efoo": {
+      "post": {
+        "summary": "createEFoo",
+        "operationId": "post",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "efoo",
+            "description": "efoo",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/EFoo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "definitions": {
+    "Foo": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "info": {
+          "$ref": "#/definitions/Info"
+        }
+      },
+      "title": "Foo"
+    },
+    "Info": {
+      "type": "object",
+      "properties": {
+        "field1": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "field2": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "Info"
+    },
+    "EFoo": {
+      "type": "object",
+      "properties": {
+        "key1": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "date1": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "key2": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "date2": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "key3": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "date4": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "einfo": {
+          "$ref": "#/definitions/EInfo"
+        }
+      },
+      "title": "EFoo"
+    },
+    "EInfo": {
+      "type": "object",
+      "properties": {
+        "field1": {
+          "type": "string"
+        },
+        "field2": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field3": {
+          "type": "string"
+        },
+        "field4": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field5": {
+          "type": "string"
+        },
+        "field6": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field7": {
+          "type": "string"
+        },
+        "field8": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field9": {
+          "type": "string"
+        },
+        "field10": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field11": {
+          "type": "string"
+        },
+        "field12": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field13": {
+          "type": "string"
+        },
+        "field14": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field15": {
+          "type": "string"
+        },
+        "field16": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field17": {
+          "type": "string"
+        },
+        "field18": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field19": {
+          "type": "string"
+        },
+        "field20": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field21": {
+          "type": "string"
+        },
+        "field22": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field23": {
+          "type": "string"
+        },
+        "field24": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field25": {
+          "type": "string"
+        },
+        "field26": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field27": {
+          "type": "string"
+        },
+        "field28": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "field29": {
+          "type": "string"
+        },
+        "field30": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "EInfo"
+    }
+  }
+}

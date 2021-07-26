@@ -55,7 +55,7 @@ class MutationWeightControlTest {
         config.d = 0.0 //only based on weight
         config.startingPerOfGenesToMutate = 0.5
 
-        val individual = IndividualMutationweightTest.newRestIndividual(numSQLAction = 0, numRestAction = 8)
+        val individual = GeneWeightTestSchema.newRestIndividual(numSQLAction = 0, numRestAction = 8)
         val all = individual.seeGenes().filter { it.isMutable() }
         assertEquals(8, all.size)
 
@@ -80,7 +80,7 @@ class MutationWeightControlTest {
         config.d = 0.0 //only based on weight
         time.newActionEvaluation(5)
 
-        val individual = IndividualMutationweightTest.newRestIndividual()
+        val individual = GeneWeightTestSchema.newRestIndividual()
         val all = individual.seeGenes().filter { it.isMutable() }
         val obj = individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }.find { it is ObjectGene }
         assertEquals(4, all.size)
@@ -105,7 +105,7 @@ class MutationWeightControlTest {
     fun testGeneSelectionForObjectGeneWhenFS(){
         time.newActionEvaluation(5)
 
-        val individual = IndividualMutationweightTest.newRestIndividual("POST:/efoo")
+        val individual = GeneWeightTestSchema.newRestIndividual("POST:/gw/efoo")
         val obj = individual.seeGenes(Individual.GeneFilter.NO_SQL).find { it is ObjectGene }
 
         assertNotNull(obj)

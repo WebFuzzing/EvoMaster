@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
@@ -8,10 +7,13 @@ import org.evomaster.core.problem.httpws.service.HttpWsIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
@@ -31,7 +33,9 @@ class RestIndividual(
 
         trackOperator: TrackOperator? = null,
         index : Int = -1
-): HttpWsIndividual (dbInitialization, trackOperator, index) {
+): HttpWsIndividual (dbInitialization, trackOperator, index, mutableListOf<StructuralElement>().apply {
+    addAll(dbInitialization); addAll(resourceCalls)
+}) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
@@ -42,9 +46,9 @@ class RestIndividual(
             sampleType: SampleType,
             dbInitialization: MutableList<DbAction> = mutableListOf(),
             trackOperator: TrackOperator? = null,
-            index : Int = TraceableElement.DEFAULT_INDEX) :
+            index : Int = Traceable.DEFAULT_INDEX) :
             this(
-                    actions.map { RestResourceCalls(actions= mutableListOf(it as RestAction)) }.toMutableList(),
+                    actions.map { RestResourceCalls(actions= mutableListOf(it as RestCallAction)) }.toMutableList(),
                     sampleType,
                     null,
                     dbInitialization,
@@ -53,16 +57,18 @@ class RestIndividual(
             )
 
 
-    override fun copy(): Individual {
+    override fun copyContent(): Individual {
         return RestIndividual(
-                resourceCalls.map { it.copy() }.toMutableList(),
+                resourceCalls.map { it.copyContent() }.toMutableList(),
                 sampleType,
                 sampleSpec?.copy(),
-                dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                seeInitializingActions().map { d -> d.copyContent() as DbAction } as MutableList<DbAction>,
                 trackOperator,
                 index
         )
     }
+
+    override fun getChildren(): List<StructuralElement> = seeInitializingActions().plus(resourceCalls)
 
     override fun canMutateStructure(): Boolean {
         return sampleType == SampleType.RANDOM ||
@@ -102,13 +108,13 @@ class RestIndividual(
      */
     fun seeResource(filter: ResourceFilter) : List<String>{
         return when(filter){
-            ResourceFilter.ALL -> dbInitialization.map { it.table.name }.plus(
+            ResourceFilter.ALL -> seeInitializingActions().map { it.table.name }.plus(
                 getResourceCalls().map { it.getResourceNodeKey() }
             )
             ResourceFilter.NO_SQL -> getResourceCalls().map { it.getResourceNodeKey() }
-            ResourceFilter.ONLY_SQL -> dbInitialization.map { it.table.name }
-            ResourceFilter.ONLY_SQL_EXISTING -> dbInitialization.filter { it.representExistingData }.map { it.table.name }
-            ResourceFilter.ONLY_SQL_INSERTION -> dbInitialization.filterNot { it.representExistingData }.map { it.table.name }
+            ResourceFilter.ONLY_SQL -> seeInitializingActions().map { it.table.name }
+            ResourceFilter.ONLY_SQL_EXISTING -> seeInitializingActions().filter { it.representExistingData }.map { it.table.name }
+            ResourceFilter.ONLY_SQL_INSERTION -> seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
         }
     }
 
@@ -120,16 +126,15 @@ class RestIndividual(
 
     override fun size() = seeActions().size
 
-    override fun seeActions(): List<RestAction> = resourceCalls.flatMap { it.actions }
+    override fun seeActions(): List<RestCallAction> = resourceCalls.flatMap { it.seeActions(NO_INIT) as List<RestCallAction> }
 
     override fun seeDbActions(): List<DbAction> {
-        return dbInitialization.plus(resourceCalls.flatMap { c-> c.dbActions })
+        return seeInitializingActions().plus(resourceCalls.flatMap { c-> c.seeActions(ONLY_SQL) as List<DbAction> })
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeDbActions())
+        return DbActionUtils.verifyActions(seeInitializingActions())
     }
-
 
     override fun copy(copyFilter: TraceableElementCopyFilter): RestIndividual {
         val copy = copy() as RestIndividual
@@ -184,6 +189,20 @@ class RestIndividual(
      */
 
 
+    /**
+     * for each call, there exist db actions for preparing resources.
+     * however, the db action might refer to a db action which is not in the same call.
+     * In this case, we need to repair the fk of db actions among calls.
+     *
+     * TODO not sure whether build binding between fk and pk
+     */
+    fun repairDbActionsInCalls(){
+        val previous = mutableListOf<DbAction>()
+        resourceCalls.forEach { c->
+            c.repairFK(previous)
+            previous.addAll(c.seeActions(ONLY_SQL) as List<DbAction>)
+        }
+    }
 
     fun getResourceCalls() : List<RestResourceCalls> = resourceCalls.toList()
 
@@ -195,23 +214,22 @@ class RestIndividual(
     fun removeResourceCall(position : Int) {
         if(position >= resourceCalls.size)
             throw IllegalArgumentException("position is out of range of list")
-        resourceCalls.removeAt(position)
+        val removed = resourceCalls.removeAt(position)
+        removed.removeThisFromItsBindingGenes()
     }
 
     /**
-     * add [resourceCalls] at [position]
+     * add [restCalls] at [position], if [position] == -1, append the [restCalls] at the end
      */
-    fun addResourceCall(position: Int, restCalls : RestResourceCalls) {
-        if(position > resourceCalls.size)
-            throw IllegalArgumentException("position is out of range of list")
-        resourceCalls.add(position, restCalls)
-    }
-
-    /**
-     * append [resourceCalls] at the end
-     */
-    fun addResourceCall(restCalls : RestResourceCalls) {
-        resourceCalls.add(restCalls)
+    fun addResourceCall(position: Int = -1, restCalls : RestResourceCalls) {
+        if (position == -1){
+            resourceCalls.add(restCalls)
+        }else{
+            if(position > resourceCalls.size)
+                throw IllegalArgumentException("position is out of range of list")
+            resourceCalls.add(position, restCalls)
+        }
+        addChild(restCalls)
     }
 
     /**
@@ -220,7 +238,9 @@ class RestIndividual(
     fun replaceResourceCall(position: Int, restCalls: RestResourceCalls){
         if(position > resourceCalls.size)
             throw IllegalArgumentException("position is out of range of list")
-        resourceCalls.set(position, restCalls)
+
+        removeResourceCall(position)
+        addResourceCall(position, restCalls)
     }
 
     /**
@@ -232,46 +252,22 @@ class RestIndividual(
         if(position1 == position2)
             throw IllegalArgumentException("It is not necessary to swap two same position on the resource call list")
         val first = resourceCalls[position1]
-        resourceCalls.set(position1, resourceCalls[position2])
-        resourceCalls.set(position2, first)
+        resourceCalls[position1] = resourceCalls[position2]
+        resourceCalls[position2] = first
     }
 
-    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions().map {
+    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions(ALL).map {
         seeActions(actionFilter).indexOf(it)
-    }
-
-    fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?, randomness: Randomness){
-        val previousDbActions = mutableListOf<DbAction>()
-
-        getResourceCalls().filter { it.dbActions.isNotEmpty() }.forEach {
-            val result = DbActionUtils.verifyForeignKeys( previousDbActions.plus(it.dbActions))
-            if(!result){
-                val created = mutableListOf<DbAction>()
-                it.dbActions.forEach { db->
-                    DbActionUtils.repairFK(db, previousDbActions, created, sqlInsertBuilder, randomness)
-                    previousDbActions.add(db)
-                }
-                it.dbActions.addAll(0, created)
-
-            }else{
-                previousDbActions.addAll(it.dbActions)
-            }
-        }
-
-        if(!DbActionUtils.verifyForeignKeys(getResourceCalls().flatMap { it.dbActions })){
-            throw IllegalStateException("after a FK repair, there still exist invalid FKs")
-        }
-
     }
 
     private fun validateSwap(first : Int, second : Int) : Boolean{
         val position = getResourceCalls()[first].shouldBefore.map { r ->
-            getResourceCalls().indexOfFirst { it.resourceInstance?.getAResourceKey() == r }
+            getResourceCalls().indexOfFirst { it.getAResourceKey() == r }
         }
 
         if(!position.none { it > second }) return false
 
-        getResourceCalls().subList(0, second).find { it.shouldBefore.contains(getResourceCalls()[second].resourceInstance?.getAResourceKey()) }?.let {
+        getResourceCalls().subList(0, second).find { it.shouldBefore.contains(getResourceCalls()[second].getAResourceKey()) }?.let {
             return getResourceCalls().indexOf(it) < first
         }
         return true
@@ -300,13 +296,44 @@ class RestIndividual(
 
     override fun seeActions(filter: ActionFilter): List<out Action> {
         return when(filter){
-            ActionFilter.ALL-> dbInitialization.plus(getResourceCalls().flatMap { it.seeActions() })
-            ActionFilter.NO_INIT -> getResourceCalls().flatMap { it.seeActions() }
-            ActionFilter.INIT -> dbInitialization
-            ActionFilter.ONLY_SQL -> dbInitialization.plus(getResourceCalls().flatMap { it.dbActions })
-            ActionFilter.NO_SQL -> getResourceCalls().flatMap { it.actions }
+            ALL-> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions(ALL) })
+            NO_INIT -> getResourceCalls().flatMap { it.seeActions(ALL) }
+            INIT -> seeInitializingActions()
+            ONLY_SQL -> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions(ONLY_SQL) })
+            NO_SQL -> getResourceCalls().flatMap { it.seeActions(NO_SQL) }
         }
     }
 
 
+    /**
+     * @return possible swap positions of calls in this individual
+     */
+    fun extractSwapCandidates(): Map<Int, Set<Int>>{
+        return getResourceCalls().mapIndexed { index, _ ->
+            val range = handleSwapCandidates(this, index)
+            index to range
+        }.filterNot { it.second.isEmpty() }.toMap()
+    }
+
+    private fun handleSwapCandidates(ind: RestIndividual, indexToSwap: Int): Set<Int>{
+        val swapTo = handleSwapTo(ind, indexToSwap)
+        return swapTo.filter { t -> handleSwapTo(ind, t).contains(indexToSwap) }.toSet()
+    }
+
+    private fun handleSwapTo(ind: RestIndividual, indexToSwap: Int): Set<Int>{
+        val before =  ind.getResourceCalls()[indexToSwap].shouldBefore.map { t->
+            ind.getResourceCalls().indexOfFirst { f->
+                f.getResourceNodeKey() == t
+            }
+        }.filter { it >=0 }.min()?:ind.getResourceCalls().size
+
+        val after = ind.getResourceCalls()[indexToSwap].depends.map { t->
+            ind.getResourceCalls().indexOfFirst { f->
+                f.getResourceNodeKey() == t
+            }
+        }.filter { it >=0 }.max()?:0
+
+        if (after >= before) return emptySet()
+        return (after until before).filter { it != indexToSwap }.toSet()
+    }
 }

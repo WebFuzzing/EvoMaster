@@ -6,7 +6,7 @@ import org.evomaster.core.search.gene.Gene
 
 class GQInputParam(name: String, gene: Gene) : Param(name, gene) {
 
-    override fun copy(): Param {
-        return GQInputParam(name, gene.copy())
+    override fun copyContent(): Param {
+        return GQInputParam(name, gene.copyContent())
     }
 }

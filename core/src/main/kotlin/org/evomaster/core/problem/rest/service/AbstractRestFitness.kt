@@ -5,7 +5,6 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
@@ -177,8 +176,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         }
 
         val schema : String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
-
-        return RestActionBuilderV3.createObjectGeneForDTO(name, schema)
+        //TODO neeed to check: referType is same with the name?
+        return RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
     }
 
     /**
@@ -187,7 +186,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
      */
     fun handleResponseTargets(
             fv: FitnessValue,
-            actions: List<RestAction>,
+            actions: List<RestCallAction>,
             actionResults: List<ActionResult>,
             additionalInfoList: List<AdditionalInfoDto>) {
 
@@ -213,7 +212,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
 
-    fun handleAdditionalOracleTargetDescription(fv: FitnessValue, actions: List<RestAction>, result : RestCallResult, name: String, indexOfAction : Int){
+    fun handleAdditionalOracleTargetDescription(fv: FitnessValue, actions: List<RestCallAction>, result : RestCallResult, name: String, indexOfAction : Int){
         /*
            Objectives for the two partial oracles implemented thus far.
         */
@@ -251,16 +250,19 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         }
 
         if (status == 500){
-            Lazy.assert {
-                location5xx != null
-            }
             /*
                 500 codes "might" be bugs. To distinguish between different bugs
                 that crash the same endpoint, we need to know what was the last
                 executed statement in the SUT.
                 So, we create new targets for it.
+
+                However, such info is missing in black-box testing
             */
-            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
+            Lazy.assert {
+                location5xx != null || config.blackBox
+            }
+            val postfix = if(location5xx==null) name else "${location5xx!!} $name"
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500(postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
         }
@@ -463,6 +465,17 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 when objects like WebRequest are used. So we default to urlencoded
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+        } else if(a.verb == HttpVerb.POST && body == null){
+            /*
+                POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
+                411 if  Content-Length is missing...
+             */
+            //builder.header("Content-Length", 0)
+            // null
+            /*
+                yet another critical bug in Jersey that it ignores that header (verified with WireShark)
+             */
+            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
         } else {
             null
         }
@@ -529,7 +542,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     protected fun restActionResultHandling(
-        individual: RestIndividual, targets: Set<Int>, actionResults: MutableList<ActionResult>, fv: FitnessValue) : TestResultsDto?{
+        individual: RestIndividual, targets: Set<Int>, actionResults: List<ActionResult>, fv: FitnessValue) : TestResultsDto?{
 
         if(actionResults.any { it is RestCallResult && it.getTcpProblem() }){
             /*

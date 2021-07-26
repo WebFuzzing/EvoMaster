@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.db.QueryResult;
@@ -228,6 +229,19 @@ public class EMController {
     public Response runSut(SutRunDto dto, @Context HttpServletRequest httpServletRequest) {
 
         assert trackRequestSource(httpServletRequest);
+
+        /*
+            If start/stop the SUT, we want to disable the killSwitch.
+            The reason is it might be on from previous run, and, in such case,
+            until we run a first test it would crash the SUT... eg when retrieving
+            OpenAPI/GraphQL schema.
+
+            TODO: likely all the noKillSwitch calls here are redundant
+         */
+        ExecutionTracer.setKillSwitch(false);
+        if(sutController.isSutRunning()) {
+            sutController.setKillSwitch(false);
+        }
 
         try {
             if (dto.run == null) {
@@ -509,13 +523,14 @@ public class EMController {
             }
 
             QueryResult queryResult = null;
-            Map<Long, Long> idMapping = null;
+            InsertionResultsDto insertionResultsDto = null;
 
             try {
                 if (dto.command != null) {
                     queryResult = SqlScriptRunner.execCommand(connection, dto.command);
                 } else {
-                    idMapping = SqlScriptRunner.execInsert(connection, dto.insertions);
+                    insertionResultsDto = SqlScriptRunner.execInsert(connection, dto.insertions);
+
                 }
             } catch (Exception e) {
                 String msg = "Failed to execute database command: " + e.getMessage();
@@ -525,8 +540,8 @@ public class EMController {
 
             if (queryResult != null) {
                 return Response.status(200).entity(WrappedResponseDto.withData(queryResult.toDto())).build();
-            } else if (idMapping != null) {
-                return Response.status(200).entity(WrappedResponseDto.withData(idMapping)).build();
+            } else if (insertionResultsDto != null) {
+                return Response.status(200).entity(WrappedResponseDto.withData(insertionResultsDto)).build();
             } else {
                 return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
             }

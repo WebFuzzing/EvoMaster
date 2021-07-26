@@ -36,12 +36,13 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
                 individual.seeActions().size)
         }
 
-        doInitializingActions(individual)
+        val actionResults: MutableList<ActionResult> = mutableListOf()
+
+        doDbCalls(individual.seeInitializingActions(), actionResults = actionResults)
 
 
         val fv = FitnessValue(individual.size().toDouble())
 
-        val actionResults: MutableList<ActionResult> = mutableListOf()
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
@@ -73,6 +74,12 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
             if (a is RestCallAction) {
                 ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
+                /*
+                    the action might be stopped due to e.g., timeout (see [handleRestCall]),
+                    but the property of [stopping] is not handle.
+                    we can also handle the property inside [handleRestCall]
+                 */
+                actionResults.filterIsInstance<RestCallResult>()[i].stopping = !ok
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
@@ -86,7 +93,8 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             log.trace("evaluation ends")
         }
 
-        restActionResultHandling(individual, targets, actionResults, fv)?:return null
+        val restActionResults = actionResults.filterIsInstance<RestCallResult>()
+        restActionResultHandling(individual, targets, restActionResults, fv)?:return null
 
         if (log.isTraceEnabled){
             log.trace("restActionResult are handled")

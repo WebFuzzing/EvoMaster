@@ -1,12 +1,10 @@
 package org.evomaster.core.problem.rest.service
 
-import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
-import org.evomaster.core.problem.rest.RestAction
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -48,6 +46,7 @@ class BlackBoxRestFitness : RestFitness() {
 
             if (a is RestCallAction) {
                 ok = handleRestCall(a, actionResults, chainState, mapOf(), mapOf())
+                actionResults[i].stopping = !ok
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
@@ -62,8 +61,10 @@ class BlackBoxRestFitness : RestFitness() {
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
-    //override fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: RestCallResult, name:String): String? {
-    fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: RestCallResult, name:String): String? {
-            return "$status:$name"
+    override fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: HttpWsCallResult, name: String): String? {
+        /*
+            In Black-Box testing, there is no info from the source/bytecode
+         */
+        return null
     }
 }

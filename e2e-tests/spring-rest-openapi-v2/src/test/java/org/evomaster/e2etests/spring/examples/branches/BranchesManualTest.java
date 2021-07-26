@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static io.restassured.RestAssured.config;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,7 +37,7 @@ public class BranchesManualTest extends SpringTestBase {
     @Test
     public void test(){
 
-        TestResultsDto dto = remoteController.getTestResults(Collections.emptySet());
+        TestResultsDto dto = remoteController.getTestResults(Collections.emptySet(), true);
         assertEquals(0, dto.targets.size());
 
         given().contentType(ContentType.JSON)
@@ -47,7 +48,7 @@ public class BranchesManualTest extends SpringTestBase {
                 .statusCode(200)
                 .body("value", is(0));
 
-        dto = remoteController.getTestResults(Collections.emptySet());
+        dto = remoteController.getTestResults(Collections.emptySet(), true);
         assertTrue(dto.targets.size() > 0);
 
         List<String> targetDescriptions = dto.targets.stream()

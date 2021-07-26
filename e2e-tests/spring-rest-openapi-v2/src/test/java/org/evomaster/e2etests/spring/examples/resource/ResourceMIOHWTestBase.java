@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.examples.resource;
 
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.search.Action;
+import org.evomaster.core.search.ActionFilter;
 import org.evomaster.core.search.gene.Gene;
 
 import java.util.*;
@@ -33,29 +34,29 @@ public abstract class ResourceMIOHWTestBase extends ResourceTestBase {
         if (nodeKey.endsWith("Id}")){
             if (withSQL){
                 if (template.equals("GET")){
-                    Gene rdIdInRest = call.getActions().get(0).seeGenes().stream().findFirst().orElse(null);
-                    Gene rdIdInDB = getGeneByName(Objects.requireNonNull(call.getDbActions().stream().findFirst().orElse(null)),"ID");
+                    Gene rdIdInRest = call.seeActions(ActionFilter.NO_SQL).get(0).seeGenes().stream().findFirst().orElse(null);
+                    Gene rdIdInDB = getGeneByName(Objects.requireNonNull(call.seeActions(ActionFilter.ONLY_SQL).stream().findFirst().orElse(null)),"ID");
                     // test binding between DB and RestAction
                     assertEquals(rdIdInRest.getValueAsRawString(), rdIdInDB.getValueAsRawString());
                 }
             }else {
                 if (template.equals("POST-GET")){
-                    Gene bodyInPOST = getGeneByName(call.getActions().get(0), "id");
-                    Gene rdIdInGet = call.getActions().get(1).seeGenes().stream().findFirst().orElse(null);
+                    Gene bodyInPOST = getGeneByName(call.seeActions(ActionFilter.NO_SQL).get(0), "id");
+                    Gene rdIdInGet = call.seeActions(ActionFilter.NO_SQL).get(1).seeGenes().stream().findFirst().orElse(null);
                     assertEquals(bodyInPOST.getValueAsRawString(), rdIdInGet.getValueAsRawString());
 
                 }
             }
         }else{
             if (withSQL){
-                Gene rdIdInRest = getGeneByName(call.getActions().get(0), "id");
-                Gene rdIdInDB = getGeneByName(Objects.requireNonNull(call.getDbActions().stream().findFirst().orElse(null)),"ID");
+                Gene rdIdInRest = getGeneByName(call.seeActions(ActionFilter.NO_SQL).get(0), "id");
+                Gene rdIdInDB = getGeneByName(Objects.requireNonNull(call.seeActions(ActionFilter.ONLY_SQL).stream().findFirst().orElse(null)),"ID");
                 // test binding between DB and RestAction
                 assertEquals(rdIdInRest.getValueAsRawString(), rdIdInDB.getValueAsRawString());
             }else{
                 if (template.equals("POST-POST")){
-                    Gene bodyInPOST = getGeneByName(call.getActions().get(0), "id");
-                    Gene rdIdInGet = getGeneByName(call.getActions().get(0), "id");
+                    Gene bodyInPOST = getGeneByName(call.seeActions(ActionFilter.NO_SQL).get(0), "id");
+                    Gene rdIdInGet = getGeneByName(call.seeActions(ActionFilter.NO_SQL).get(0), "id");
                     assertEquals(bodyInPOST.getValueAsRawString(), rdIdInGet.getValueAsRawString());
                 }
             }

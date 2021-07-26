@@ -13,7 +13,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Individual.ActionFilter
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
@@ -42,7 +42,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
          */
         if (config.disableStructureMutationDuringFocusSearch && apc.doesFocusSearch()){return false}
 
-        return individual.canMutateStructure() &&
+        return structureMutator.canApplyStructureMutator(individual) &&
                 config.maxTestSize > 1 && // if the maxTestSize is 1, there is no point to do structure mutation
                 randomness.nextBoolean(config.structureMutationProbability)
     }
@@ -168,6 +168,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         postActionAfterMutation(mutatedIndividual, mutatedGenes)
 
         if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
+
         return mutatedIndividual
     }
 
@@ -199,6 +200,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         if(mutatedIndividual is GraphQLIndividual) {
             GraphQLUtils.repairIndividual(mutatedIndividual)
         }
+
+        if (!mutatedIndividual.verifyBindingGenes()){
+            mutatedIndividual.cleanBrokenBindingReference()
+            Lazy.assert { mutatedIndividual.verifyBindingGenes() }
+        }
+
+        if (mutatedIndividual is RestIndividual)
+            mutatedIndividual.repairDbActionsInCalls()
     }
 
     /**
@@ -219,7 +228,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         val isFromInit = individual.seeInitializingActions().any { it.seeGenes().contains(gene) }
         val isDbInResourceCall = (individual as? RestIndividual)?.getResourceCalls()?.any {
-            it.dbActions.any { d-> d.seeGenes().contains(gene) }
+            it.seeActions(ActionFilter.ONLY_SQL).any { d-> d.seeGenes().contains(gene) }
         }?:false
 
         val filter = if (isFromInit) ActionFilter.INIT else ActionFilter.NO_INIT
@@ -236,7 +245,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         val resourcePosition = (individual as? RestIndividual)?.getResourceCalls()?.indexOfFirst {
-            it.seeActions().any { d-> d.seeGenes().contains(gene) }
+            it.seeActions(ActionFilter.ALL).any { d-> d.seeGenes().contains(gene) }
         }
 
         mutatedGene?.addMutatedGene(isFromInit || isDbInResourceCall, valueBeforeMutation = value, gene = gene, position = position, resourcePosition = resourcePosition)

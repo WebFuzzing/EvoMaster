@@ -1122,7 +1122,8 @@ class EMConfig {
     var doesApplyNameMatching = false
 
     @Experimental
-    @Cfg("Whether to employ nlp parser to process text")
+    @Cfg("Whether to employ NLP parser to process text. " +
+            "Note that to enable this parser, it is required to build the EvoMaster with the resource profile, i.e., mvn clean install -Presourceexp -DskipTests")
     var enableNLPParser = false
 
     @Experimental
@@ -1393,11 +1394,15 @@ class EMConfig {
     @Cfg("File path where the seeded test cases are located")
     var seedTestCasesPath : String = "postman.postman_collection.json"
 
-    @Experimental
     @Cfg("Try to enforce the stopping of SUT business-level code." +
             " This is needed when TCP connections timeouts, to avoid thread executions" +
             " from previous HTTP calls affecting the current one")
-    var killSwitch = false
+    var killSwitch = true
+
+
+    @Experimental
+    @Cfg("Whether to skip failed SQL commands in the generated test files")
+    var skipFailureSQLInTestFile = false
 
 
     fun timeLimitInSeconds(): Int {

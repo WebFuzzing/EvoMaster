@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -69,13 +70,12 @@ open class ResourceSampler : AbstractRestSampler() {
         var left = n
         while(left > 0){
             val call = sampleRandomResourceAction(0.05, left)
-            left -= call.actions.size
+            left -= call.seeActionSize(ActionFilter.NO_SQL)
             restCalls.add(call)
         }
 
         val ind = RestIndividual(
                 resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
-        ind.repairDBActions(sqlInsertBuilder, randomness)
         return ind
     }
 
@@ -83,7 +83,7 @@ open class ResourceSampler : AbstractRestSampler() {
     private fun sampleRandomResourceAction(noAuthP: Double, left: Int) : RestResourceCalls{
         val r = randomness.choose(rm.getResourceCluster().filter { it.value.isAnyAction() })
         val rc = if (randomness.nextBoolean()) r.sampleOneAction(null, randomness) else r.randomRestResourceCalls(randomness,left)
-        rc.actions.forEach {
+        rc.seeActions(ActionFilter.NO_SQL).forEach {
             if(it is RestCallAction){
                 it.auth = getRandomAuth(noAuthP)
             }
@@ -123,13 +123,13 @@ open class ResourceSampler : AbstractRestSampler() {
         //auth management
         if(authentications.isNotEmpty()){
             val auth = getRandomAuth(0.0)
-            restCalls.flatMap { it.actions }.forEach {
+            restCalls.flatMap { it.seeActions(ActionFilter.NO_SQL) }.forEach {
                 if(it is RestCallAction)
                     it.auth = auth
             }
         }else{
             val auth = NoAuth()
-            restCalls.flatMap { it.actions }.forEach {
+            restCalls.flatMap { it.seeActions(ActionFilter.NO_SQL) }.forEach {
                 if(it is RestCallAction)
                     it.auth = auth
             }
@@ -138,9 +138,10 @@ open class ResourceSampler : AbstractRestSampler() {
         if (restCalls.isNotEmpty()) {
             val individual =  RestIndividual(restCalls, SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency),
                     trackOperator = if(config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1)
-            individual.repairDBActions(sqlInsertBuilder, randomness)
             if (withDependency)
-                dm.sampleResourceWithRelatedDbActions(individual, rm.getResourceNum())
+                dm.sampleResourceWithRelatedDbActions(individual, rm.getSqlMaxNumOfResource())
+
+            individual.cleanBrokenBindingReference()
             return individual
         }
         return null
@@ -189,7 +190,7 @@ open class ResourceSampler : AbstractRestSampler() {
         var size = config.maxTestSize
         keys.forEach {
             rm.sampleCall(it, true, resourceCalls, size)
-            size -= resourceCalls.last().actions.size
+            size -= resourceCalls.last().seeActionSize(ActionFilter.NO_SQL)
         }
     }
 
@@ -204,7 +205,7 @@ open class ResourceSampler : AbstractRestSampler() {
         while(size > 1 && executed.size < resourceSize){
             val key = if(executed.size < resourceSize-1 && size > 2) randomness.choose(depCand.keys.filter { !executed.contains(it) }) else randomness.choose(candR.keys.filter { !executed.contains(it) })
             rm.sampleCall(key, true, resourceCalls, size)
-            size -= resourceCalls.last().actions.size
+            size -= resourceCalls.last().seeActionSize(ActionFilter.NO_SQL)
             executed.add(key)
         }
     }

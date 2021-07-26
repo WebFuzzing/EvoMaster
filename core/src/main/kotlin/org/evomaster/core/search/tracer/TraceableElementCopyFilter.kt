@@ -1,13 +1,9 @@
 package org.evomaster.core.search.tracer
 
-import org.evomaster.core.problem.rest.util.ParamUtil
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
 /**
  * created by manzh on 2019-09-06
  *
- * this is used to decide applicable copy filter for [TraceableElement]
+ * this is used to decide applicable copy filter for [Traceable]
  */
 abstract class TraceableElementCopyFilter (val name : String) {
 
@@ -41,6 +37,6 @@ abstract class TraceableElementCopyFilter (val name : String) {
     /**
      * check if accept the [element] is applicable with the copy filter
      */
-    open fun accept(element : Any): Boolean = element is TraceableElement
+    open fun accept(element : Any): Boolean = element is Traceable
 
 }

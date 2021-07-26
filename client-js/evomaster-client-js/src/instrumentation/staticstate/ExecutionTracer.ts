@@ -185,6 +185,16 @@ export default class ExecutionTracer {
         return ExecutionTracer.objectiveCoverage.get(id).value;
     }
 
+    /**
+     * @param id specifies the target id
+     * @return whether the target is reached
+     *
+     * note that it is only useful for testing
+     */
+    public static isTargetReached(id: string): boolean {
+        return ExecutionTracer.objectiveCoverage.has(id);
+    }
+
     public static updateObjective(id: string, value: number) {
         if (value < 0 || value > 1) {
             throw new Error("Invalid value " + value + " out of range [0,1]");

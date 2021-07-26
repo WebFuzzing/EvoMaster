@@ -23,10 +23,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     private lateinit var dm : ResourceDepManageService
 
     override fun postActionAfterMutation(mutatedIndividual: RestIndividual, mutated: MutatedGeneSpecification?) {
-        //repair genes within a call
-        mutatedIndividual.getResourceCalls().forEach { it.repairGenesAfterMutation(mutated, rm.cluster)}
         // repair db among dbactions
-        mutatedIndividual.repairDBActions(rm.getSqlBuilder(), randomness)
         super.postActionAfterMutation(mutatedIndividual, null)
     }
 
@@ -47,7 +44,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
             return restGenes
 
         // 1) SQL genes in initialization plus 2) SQL genes in resource handling plus 3) rest actions in resource handling
-        return individual.dbInitialization.flatMap { it.seeGenes() }.filter(Gene::isMutable).plus(
+        return individual.seeInitializingActions().flatMap { it.seeGenes() }.filter(Gene::isMutable).plus(
             individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(GeneFilter.ONLY_SQL) }
         ).plus(restGenes)
 

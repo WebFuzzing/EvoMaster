@@ -1,13 +1,17 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class IntegerGene(
@@ -19,7 +23,11 @@ class IntegerGene(
         val max: Int = Int.MAX_VALUE
 ) : NumberGene<Int>(name, value) {
 
-    override fun copy(): Gene {
+    companion object{
+        private val log : Logger = LoggerFactory.getLogger(IntegerGene::class.java)
+    }
+
+    override fun copyContent(): Gene {
         return IntegerGene(name, value, min, max)
     }
 
@@ -115,4 +123,29 @@ class IntegerGene(
 
     override fun innerGene(): List<Gene> = listOf()
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        when(gene){
+            is IntegerGene -> value = gene.value
+            is FloatGene -> value = gene.value.toInt()
+            is DoubleGene -> value = gene.value.toInt()
+            is LongGene -> value = gene.value.toInt()
+            is StringGene -> {
+                value = gene.value.toIntOrNull() ?: return false
+            }
+            is Base64StringGene ->{
+                value = gene.data.value.toIntOrNull() ?: return false
+            }
+            is ImmutableDataHolderGene -> {
+                value = gene.value.toIntOrNull() ?: return false
+            }
+            is SqlPrimaryKeyGene ->{
+                value = gene.uniqueId.toInt()
+            }
+            else -> {
+                LoggingUtil.uniqueWarn(log, "cannot bind Integer with ${gene::class.java.simpleName}")
+                return false
+            }
+        }
+        return true
+    }
 }

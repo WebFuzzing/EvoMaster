@@ -3,6 +3,9 @@ package org.evomaster.core.output
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.EvaluatedDbAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -16,33 +19,39 @@ import org.evomaster.core.search.gene.sql.SqlWrapperGene
  */
 object SqlWriter {
 
-    fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines, allDbInitialization: List<DbAction> = dbInitialization, groupIndex: String ="") {
+    fun handleDbInitialization(
+        format: OutputFormat,
+        dbInitialization: List<EvaluatedDbAction>,
+        lines: Lines,
+        allDbInitialization: List<DbAction> = dbInitialization.map { it.action },
+        groupIndex: String ="",
+        skipFailure : Boolean) {
 
-        if (dbInitialization.isEmpty() || dbInitialization.none { !it.representExistingData }) {
+        if (dbInitialization.isEmpty() || dbInitialization.none { !it.action.representExistingData && (!skipFailure || it.result.getInsertExecutionResult())}) {
             return
         }
 
         dbInitialization
-                .filter { !it.representExistingData }
-                .forEachIndexed { index, dbAction ->
+                .filter { !it.action.representExistingData && (!skipFailure || it.result.getInsertExecutionResult())}
+                .forEachIndexed { index, evaluatedDbAction ->
 
                     lines.add(when {
                         index == 0 && format.isJava() -> "List<InsertionDto> insertions${groupIndex} = sql()"
                         index == 0 && format.isKotlin() -> "val insertions${groupIndex} = sql()"
                         else -> ".and()"
-                    } + ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)")
+                    } + ".insertInto(\"${evaluatedDbAction.action.table.name}\", ${evaluatedDbAction.action.geInsertionId()}L)")
 
                     if (index == 0) {
                         lines.indent()
                     }
 
                     lines.indented {
-                        dbAction.seeGenes()
+                        evaluatedDbAction.action.seeGenes()
                                 .filter { it.isPrintable() }
                                 .forEach { g ->
                                     when {
                                         g is SqlWrapperGene && g.getForeignKey() != null -> {
-                                            val line = handleFK(format, g.getForeignKey()!!, dbAction, allDbInitialization)
+                                            val line = handleFK(format, g.getForeignKey()!!, evaluatedDbAction.action, allDbInitialization)
                                             lines.add(line)
                                         }
                                         g is ObjectGene -> {

@@ -1,11 +1,10 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -15,17 +14,15 @@ import java.util.*
 class Base64StringGene(
         name: String,
         val data: StringGene = StringGene("data")
-) : Gene(name) {
+) : Gene(name, mutableListOf(data)) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(Base64StringGene::class.java)
     }
 
-    init {
-        data.parent = this
-    }
+    override fun getChildren(): MutableList<StringGene> = mutableListOf(data)
 
-    override fun copy(): Gene = Base64StringGene(name, data.copy() as StringGene)
+    override fun copyContent(): Gene = Base64StringGene(name, data.copyContent() as StringGene)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         data.randomize(randomness, forceNewValue)
@@ -59,4 +56,15 @@ class Base64StringGene(
     }
 
     override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return when(gene){
+            is Base64StringGene -> data.bindValueBasedOn(gene.data)
+            is StringGene -> data.bindValueBasedOn(gene)
+            else->{
+                LoggingUtil.uniqueWarn(log, "cannot bind the Base64StringGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
 }

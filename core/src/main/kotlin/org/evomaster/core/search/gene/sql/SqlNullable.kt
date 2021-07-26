@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpact
 import org.evomaster.core.search.gene.GeneUtils
@@ -16,15 +17,13 @@ import java.lang.IllegalStateException
 class SqlNullable(name: String,
                   val gene: Gene,
                   var isPresent: Boolean = true
-) : SqlWrapperGene(name) {
+) : SqlWrapperGene(name, listOf(gene)) {
 
     init{
         if(gene is SqlWrapperGene && gene.getForeignKey() != null){
             throw IllegalStateException("SqlNullable should not contain a FK, " +
                     "as its nullability is handled directly in SqlForeignKeyGene")
         }
-
-        gene.parent = this
     }
 
     companion object{
@@ -32,12 +31,15 @@ class SqlNullable(name: String,
         private const val ABSENT = 0.1
     }
 
+    override fun getChildren(): List<Gene> = listOf(gene)
+
+
     override fun getForeignKey(): SqlForeignKeyGene? {
         return null
     }
 
-    override fun copy(): Gene {
-        return SqlNullable(name, gene.copy(), isPresent)
+    override fun copyContent(): Gene {
+        return SqlNullable(name, gene.copyContent(), isPresent)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -121,4 +123,8 @@ class SqlNullable(name: String,
 
     override fun innerGene(): List<Gene> = listOf(gene)
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is SqlNullable) isPresent = gene.isPresent
+        return ParamUtil.getValueGene(gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
+    }
 }
