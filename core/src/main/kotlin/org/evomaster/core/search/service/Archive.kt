@@ -6,7 +6,7 @@ import org.evomaster.core.EMConfig.FeedbackDirectedSampling.FOCUSED_QUICKEST
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.LAST
 import org.evomaster.core.Lazy
 import org.evomaster.core.output.Termination
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
@@ -140,15 +140,15 @@ class Archive<T> where T : Individual {
 
         sortAndShrinkIfNeeded(candidates, chosenTarget)
 
-        val notTimedout = candidates.filter {
-            !it.seeResults().any { res -> res is RestCallResult && res.getTimedout() }
+        val notTimedOut = candidates.filter {
+            !it.seeResults().any { res -> res is HttpWsCallResult && res.getTimedout() }
         }
 
         /*
             If possible avoid sampling tests that did timeout
          */
-        val chosen = if (!notTimedout.isEmpty()) {
-            randomness.choose(notTimedout)
+        val chosen = if (!notTimedOut.isEmpty()) {
+            randomness.choose(notTimedOut)
         } else {
             randomness.choose(candidates)
         }
