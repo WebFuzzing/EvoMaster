@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
@@ -7,28 +8,24 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlXmlGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name) {
+class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name, mutableListOf(objectGene)) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(SqlXMLGene::class.java)
     }
 
-    init {
-        objectGene.parent = this
-    }
 
-    override fun copy(): Gene = SqlXMLGene(
+    override fun copyContent(): Gene = SqlXMLGene(
             name,
-            objectGene = this.objectGene.copy() as ObjectGene)
+            objectGene = this.objectGene.copyContent() as ObjectGene)
 
+    override fun getChildren(): MutableList<Gene> = mutableListOf(objectGene)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         objectGene.randomize(randomness, forceNewValue, allGenes)
@@ -96,6 +93,18 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
     }
 
     override fun innerGene(): List<Gene> = listOf(objectGene)
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return when(gene){
+            is SqlXMLGene -> objectGene.bindValueBasedOn(gene.objectGene)
+            is SqlJSONGene -> objectGene.bindValueBasedOn(gene.objectGene)
+            is ObjectGene -> objectGene.bindValueBasedOn(gene)
+            else->{
+                LoggingUtil.uniqueWarn(log, "cannot bind SqlXMLGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
 
 
 }

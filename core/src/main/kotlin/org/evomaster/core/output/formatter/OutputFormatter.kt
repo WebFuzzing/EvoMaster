@@ -2,6 +2,7 @@ package org.evomaster.core.output.formatter
 
 import com.google.gson.GsonBuilder
 import com.google.gson.Gson
+import com.google.gson.JsonParser
 import com.google.gson.JsonSyntaxException
 
 /**
@@ -34,17 +35,17 @@ open abstract class OutputFormatter (val name: String) {
             val gson = GsonBuilder().setPrettyPrinting().create()
 
             override fun isValid(content: String): Boolean{
-                try{
+                return try{
                     gson.fromJson(content, Object::class.java)
-                    return true
+                    true
                 }catch (e : JsonSyntaxException ) {
-                    return false
+                    false
                 }
 
             }
             override fun getFormatted(content: String): String{
                 if(this.isValid(content)){
-                    return gson.toJson(gson.fromJson(content, Object::class.java))
+                    return gson.toJson(JsonParser.parseString(content))
                 }
                 throw MismatchedFormatException(this, content)
             }

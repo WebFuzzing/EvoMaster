@@ -6,7 +6,6 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintType
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual

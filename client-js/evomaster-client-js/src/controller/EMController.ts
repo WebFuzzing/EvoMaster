@@ -13,6 +13,7 @@ import WrappedResponseDto from "./api/dto/WrappedResponseDto";
 import SutController from "./SutController";
 import AdditionalInfoDto from "./api/dto/AdditionalInfoDto";
 import TargetInfoDto from "./api/dto/TargetInfoDto";
+import GraphQLProblemDto from "./api/dto/problem/GraphQLProblemDto";
 
 export default class EMController {
 
@@ -96,6 +97,8 @@ export default class EMController {
                 return;
             } else if (info instanceof RestProblemDto) {
                 dto.restProblem = info;
+            } else if(info instanceof GraphQLProblemDto) {
+                dto.graphQLProblem = info;
             } else {
                 res.status(500);
                 res.json(WrappedResponseDto.withError("Unrecognized problem type: " + (typeof info)));

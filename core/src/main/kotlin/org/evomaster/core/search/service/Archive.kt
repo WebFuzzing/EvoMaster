@@ -141,7 +141,7 @@ class Archive<T> where T : Individual {
         sortAndShrinkIfNeeded(candidates, chosenTarget)
 
         val notTimedout = candidates.filter {
-            !it.results.any { res -> res is RestCallResult && res.getTimedout() }
+            !it.seeResults().any { res -> res is RestCallResult && res.getTimedout() }
         }
 
         /*
@@ -310,6 +310,7 @@ class Archive<T> where T : Individual {
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
 
         val copy = ei.copy(tracker.getCopyFilterForEvalInd(ei))
+
         var added = false
         var anyBetter = false
 

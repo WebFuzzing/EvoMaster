@@ -46,7 +46,7 @@ class NamingHelper {
      * The presence of a call with a 500 status code will be added to the test name.
      */
     private fun criterion1_500 (individual: EvaluatedIndividual<*>): String{
-        if (individual.results.filterIsInstance<HttpWsCallResult>().any{ it.getStatusCode() == 500 }){
+        if (individual.seeResults().filterIsInstance<HttpWsCallResult>().any{ it.getStatusCode() == 500 }){
             return "_with500"
         }
         return ""
@@ -139,7 +139,7 @@ class SortingHelper {
      *
      * **/
     private val maxStatusCode: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>>{ ind ->
-        val max = ind.results.filterIsInstance<HttpWsCallResult>().maxBy { it.getStatusCode()?:0 }
+        val max = ind.seeResults().filterIsInstance<HttpWsCallResult>().maxBy { it.getStatusCode()?:0 }
             (max as HttpWsCallResult).getStatusCode() ?: 0
     }.reversed()
 
@@ -152,7 +152,7 @@ class SortingHelper {
 
 
     private val statusCode: Comparator<EvaluatedIndividual<*>> = compareBy { ind ->
-        val min = ind.results.filterIsInstance<HttpWsCallResult>().minBy {
+        val min = ind.seeResults().filterIsInstance<HttpWsCallResult>().minBy {
             it.getStatusCode()?.rem(500) ?: 0
         }
         ((min as HttpWsCallResult).getStatusCode())?.rem(500) ?: 0

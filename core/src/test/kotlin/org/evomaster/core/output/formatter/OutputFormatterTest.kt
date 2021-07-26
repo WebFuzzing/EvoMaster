@@ -3,6 +3,7 @@ package org.evomaster.core.output.formatter
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.StringGene
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.assertThrows
@@ -107,6 +108,21 @@ class OutputFormatterTest {
         OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = OutputFormat.KOTLIN_JUNIT_5))
         OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = OutputFormat.JAVA_JUNIT_5))
 
+    }
+
+    @Test
+    fun testJsonScientificNotation(){
+        val json = "{\"id\":4821943963580588583, \"name\":\"n4QtYI\", \"rdId\":937, \"value\":859}"
+        val formatted = OutputFormatter.JSON_FORMATTER.getFormatted(json)
+        val expected = """
+            {
+              "id": 4821943963580588583,
+              "name": "n4QtYI",
+              "rdId": 937,
+              "value": 859
+            }
+        """.trimIndent()
+        assertEquals(expected, formatted)
     }
 
 }

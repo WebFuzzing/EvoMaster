@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
@@ -8,6 +9,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.LoggerFactory
 
 /*
 \w	Find a word character
@@ -19,8 +21,11 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
  */
 class CharacterClassEscapeRxGene(
         val type: String
-) : RxAtom("\\$type") {
+) : RxAtom("\\$type", listOf()) {
 
+    companion object{
+        private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
+    }
 
     var value: String = ""
 
@@ -30,7 +35,9 @@ class CharacterClassEscapeRxGene(
         }
     }
 
-    override fun copy(): Gene {
+    override fun getChildren(): List<Gene> = listOf()
+
+    override fun copyContent(): Gene {
         val copy = CharacterClassEscapeRxGene(type)
         copy.value = this.value
         return copy
@@ -92,5 +99,14 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is CharacterClassEscapeRxGene){
+            value = gene.value
+            return true
+        }
+        LoggingUtil.uniqueWarn(log,"cannot bind CharacterClassEscapeRxGene with ${gene::class.java.simpleName}")
+        return false
+    }
 
 }

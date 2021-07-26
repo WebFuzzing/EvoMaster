@@ -6,6 +6,8 @@ import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.DatabaseExecution
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.CookieWriter
@@ -15,13 +17,18 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.RestFitness
+import org.evomaster.core.problem.rest.service.RestResourceFitness
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
@@ -50,6 +57,10 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpWsFitness::class.java)
         const val DEFAULT_FAULT_CODE = "framework_code"
+
+        init{
+            System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+        }
     }
 
     @Inject(optional = true)
@@ -71,6 +82,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
             //workaround bug in Jersey client
             .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
             .property(ClientProperties.FOLLOW_REDIRECTS, false)
+
 
 
     protected var client: Client = ClientBuilder.newClient(clientConfiguration)
@@ -392,16 +404,17 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
         return dto
     }
 
+    @Deprecated("replaced by doDbCalls()")
     open fun doInitializingActions(ind: HttpWsIndividual) {
 
         if (log.isTraceEnabled){
-            log.trace("do {} InitializingActions: {}", ind.dbInitialization.size,
-                ind.dbInitialization.joinToString(","){
+            log.trace("do {} InitializingActions: {}", ind.seeInitializingActions().size,
+                ind.seeInitializingActions().joinToString(","){
                     it.getResolvedName()
                 })
         }
 
-        if (ind.dbInitialization.none { !it.representExistingData }) {
+        if (ind.seeInitializingActions().none { !it.representExistingData }) {
             /*
                 We are going to do an initialization of database only if there
                 is data to add.
@@ -411,7 +424,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
             return
         }
 
-        val dto = DbActionTransformer.transform(ind.dbInitialization)
+        val dto = DbActionTransformer.transform(ind.seeInitializingActions())
         dto.idCounter = StaticCounter.getAndIncrease()
 
         val ok = rc.executeDatabaseCommand(dto)
@@ -419,6 +432,87 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
             //this can happen if we do not handle all constraints
             LoggingUtil.uniqueWarn(log, "Failed in executing database command")
         }
+    }
+
+    /**
+     * @param allDbActions specified the db actions to be executed
+     * @param sqlIdMap indicates the map id of pk to generated id
+     * @param allSuccessBefore indicates whether all SQL before this [allDbActions] are executed successfully
+     * @param previous specified the previous db actions which have been executed
+     * @return whether [allDbActions] execute successfully
+     */
+    fun doDbCalls(allDbActions : List<DbAction>,
+                          sqlIdMap : MutableMap<Long, Long> = mutableMapOf(),
+                          allSuccessBefore : Boolean = true,
+                          previous: MutableList<DbAction> = mutableListOf(),
+                          actionResults: MutableList<ActionResult>
+    ) : Boolean {
+
+        if (allDbActions.isEmpty()) {
+            return true
+        }
+
+        val dbresults = (allDbActions.indices).map { DbActionResult() }
+        actionResults.addAll(dbresults)
+
+        if (allDbActions.none { !it.representExistingData }) {
+            /*
+                We are going to do an initialization of database only if there
+                is data to add.
+                Note that current data structure also keeps info on already
+                existing data (which of course should not be re-inserted...)
+             */
+            // other dbactions might bind with the representExistingData, so we still need to record sqlId here.
+            allDbActions.filter { it.representExistingData }.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().forEach {
+                sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
+            }
+            previous.addAll(allDbActions)
+            return true
+        }
+
+        val dto = try {
+            DbActionTransformer.transform(allDbActions, sqlIdMap, previous)
+        }catch (e : IllegalArgumentException){
+            // the failure might be due to previous failure
+            if (!allSuccessBefore){
+                previous.addAll(allDbActions)
+                return false
+            } else
+                throw e
+        }
+        dto.idCounter = StaticCounter.getAndIncrease()
+
+        val sqlResults = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
+        val map = sqlResults?.idMapping
+        val executedResults = sqlResults?.executionResults
+
+        if (executedResults?.size?:0 > allDbActions.size)
+            throw IllegalStateException("incorrect insertion execution results (${executedResults!!.size}) which is more than the size of insertions (${allDbActions.size}).")
+        executedResults?.forEachIndexed { index, b ->
+            dbresults[index].setInsertExecutionResult(b)
+        }
+        previous.addAll(allDbActions)
+
+
+        if (map == null) {
+            LoggingUtil.uniqueWarn(log, "Failed in executing database command")
+            return false
+        }else{
+            val expected = allDbActions.filter { !it.representExistingData }
+                .flatMap { it.seeGenes() }.flatMap { it.flatView() }
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .filter { it.gene is SqlAutoIncrementGene }
+                .filterNot { it.gene is SqlForeignKeyGene }
+            val missing = expected.filterNot {
+                map.containsKey(it.uniqueId)
+            }
+            sqlIdMap.putAll(map)
+            if (missing.isNotEmpty()){
+                log.warn("can not get sql ids for {} from sut", missing.map { "${it.uniqueId} of ${it.tableName}" }.toSet().joinToString(","))
+                return false
+            }
+        }
+        return true
     }
 
     protected fun handleAuth(a: HttpWsAction, builder: Invocation.Builder, cookies: Map<String, List<NewCookie>>, tokens: Map<String, String>) {

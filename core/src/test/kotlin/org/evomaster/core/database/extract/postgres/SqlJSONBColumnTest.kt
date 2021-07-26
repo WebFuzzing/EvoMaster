@@ -167,8 +167,8 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
         assertTrue(genes[1] is SqlJSONGene)
 
         val arrayGene = ArrayGene("arrayValue", template = IntegerGene("item", value = 0))
-        arrayGene.elements.add(IntegerGene("value1", 1))
-        arrayGene.elements.add(IntegerGene("value2", 2))
+        arrayGene.getAllElements().add(IntegerGene("value1", 1))
+        arrayGene.getAllElements().add(IntegerGene("value2", 2))
 
 
         val objectGene = ObjectGene("jsondata", fields = listOf(arrayGene))

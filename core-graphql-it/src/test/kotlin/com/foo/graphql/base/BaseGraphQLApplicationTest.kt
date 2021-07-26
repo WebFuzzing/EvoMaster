@@ -7,7 +7,6 @@ import org.evomaster.core.problem.graphql.IntrospectiveQuery
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class BaseGraphQLApplicationTest{

@@ -2,6 +2,7 @@ package org.evomaster.core.search.matchproblem
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
 
@@ -9,7 +10,7 @@ import org.evomaster.core.search.service.Randomness
  * created by manzh on 2020-06-16
  */
 open class PrimitiveTypeMatchIndividual (
-        val gene : Gene) :  Individual(){
+        val gene : Gene) :  Individual(children = listOf(gene)){
 
     constructor(value : Any, name : String): this(
             instance(value, name)
@@ -18,13 +19,15 @@ open class PrimitiveTypeMatchIndividual (
     companion object{
         fun name() = "value"
 
-        fun instance(value : Any, name : String) = when (value) {
-            is Int -> IntegerGene(name =  name, value = value)
-            is Double -> DoubleGene(name =  name, value = value)
-            is Float -> FloatGene(name = name, value = value)
-            is Long -> LongGene(name = name, value = value)
-            is String -> StringGene(name = name, value = value)
-            else -> throw IllegalStateException("NOT SUPPORT")
+        fun instance(value : Any, name : String) :Gene{
+            return when (value) {
+                is Int -> IntegerGene(name =  name, value = value)
+                is Double -> DoubleGene(name =  name, value = value)
+                is Float -> FloatGene(name = name, value = value)
+                is Long -> LongGene(name = name, value = value)
+                is String -> StringGene(name = name, value = value)
+                else -> throw IllegalStateException("NOT SUPPORT")
+            }
         }
 
         fun intTemplate() = PrimitiveTypeMatchIndividual(IntegerGene(name()))
@@ -49,7 +52,9 @@ open class PrimitiveTypeMatchIndividual (
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> = listOf(gene)
 
-    override fun copy(): Individual {
-        return PrimitiveTypeMatchIndividual(gene.copy())
+    override fun copyContent(): Individual {
+        return PrimitiveTypeMatchIndividual(gene.copyContent())
     }
+
+    override fun getChildren(): List<Gene> = listOf(gene)
 }

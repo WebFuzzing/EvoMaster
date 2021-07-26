@@ -253,7 +253,7 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is HttpWsCallResult && it.result.hasErrorCode()
+                    it.result is HttpWsCallResult && (it.result as HttpWsCallResult).hasErrorCode()
                 }
                 .map { it.action.getName() }
                 .distinct()
@@ -270,8 +270,8 @@ class Statistics : SearchListener {
                 .filter {
                     it.result is HttpWsCallResult
                             && it.action is RestCallAction
-                            && !it.result.hasErrorCode()
-                            && oracles.activeOracles(it.action, it.result).any { or -> or.value }
+                            && !(it.result as HttpWsCallResult).hasErrorCode()
+                            && oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
                 }
                 .map { it.action.getName() }
                 .distinct()
@@ -284,7 +284,7 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is HttpWsCallResult && it.result.getStatusCode()?.let { c -> c in 200..299 } ?: false
+                    it.result is HttpWsCallResult && (it.result as HttpWsCallResult).getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
                 .map { it.action.getName() }
                 .distinct()

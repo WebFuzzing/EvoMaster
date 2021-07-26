@@ -7,10 +7,7 @@
 
     <StartupObject>RestApis.Tests.Animals.Controller.EmbeddedEvoMasterController</StartupObject>
   </PropertyGroup>
-
-  <Target Name="htmlWarning" AfterTargets="AfterBuild">
-    <Copy SourceFiles="../../../../client-dotnet/src/EvoMaster.Controller/Resources/warning.html" DestinationFolder="$(OutDir)" />
-  </Target>
+  
 
   <Target Name="appsettings" AfterTargets="AfterBuild">
     <Copy SourceFiles="../../src/RestApis.Animals/appsettings.json" DestinationFolder="$(MSBuildProjectDirectory)" />

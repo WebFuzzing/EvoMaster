@@ -1,17 +1,18 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlUUIDGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -24,15 +25,17 @@ import java.util.*
  * https://www.postgresql.org/docs/9.1/datatype-uuid.html
  */
 class SqlUUIDGene(
-        name: String,
-        val mostSigBits: LongGene = LongGene("mostSigBits", 0L),
-        val leastSigBits: LongGene = LongGene("leastSigBits", 0L)
-) : Gene(name) {
+    name: String,
+    val mostSigBits: LongGene = LongGene("mostSigBits", 0L),
+    val leastSigBits: LongGene = LongGene("leastSigBits", 0L)
+) : Gene(name, mutableListOf(mostSigBits, leastSigBits)) {
 
-    override fun copy(): Gene = SqlUUIDGene(
+    override fun getChildren(): MutableList<LongGene> = mutableListOf(mostSigBits, leastSigBits)
+
+    override fun copyContent(): Gene = SqlUUIDGene(
             name,
-            mostSigBits.copy() as LongGene,
-            leastSigBits.copy() as LongGene
+            mostSigBits.copyContent() as LongGene,
+            leastSigBits.copyContent() as LongGene
     )
 
     companion object{
@@ -92,5 +95,20 @@ class SqlUUIDGene(
     }
 
     override fun innerGene(): List<Gene> = listOf(mostSigBits, leastSigBits)
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        return when{
+            gene is SqlUUIDGene ->{
+                mostSigBits.bindValueBasedOn(gene.mostSigBits) && leastSigBits.bindValueBasedOn(gene.leastSigBits)
+            }
+            gene is StringGene && gene.getSpecializationGene() != null ->{
+                bindValueBasedOn(gene.getSpecializationGene()!!)
+            }
+            else->{
+                LoggingUtil.uniqueWarn(log,"cannot bind SqlUUIDGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
 
 }
