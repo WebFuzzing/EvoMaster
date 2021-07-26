@@ -76,7 +76,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
     init{
         if (individual.seeActions(ALL).size < results.size){
-            throw IllegalArgumentException("Less actions than results")
+            throw IllegalArgumentException("Less actions (${individual.seeActions(ALL).size}) than results (${results.size})")
         }
     }
 
