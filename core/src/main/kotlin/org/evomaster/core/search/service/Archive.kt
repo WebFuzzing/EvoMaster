@@ -1,6 +1,7 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.FOCUSED_QUICKEST
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.LAST
@@ -220,7 +221,24 @@ class Archive<T> where T : Individual {
     private fun incrementCounter(target: Int) {
         samplingCounter.putIfAbsent(target, 0)
         val counter = samplingCounter[target]!!
-        samplingCounter.put(target, counter + 1)
+
+        val delta = getWeightToAdd(target)
+        samplingCounter[target] = counter + delta
+    }
+
+    private fun getWeightToAdd(target: Int) : Int {
+        if(! config.useWeightedSampling){
+            return 1
+        }
+
+        val id = idMapper.getDescriptiveId(target)
+        if(id.startsWith(ObjectiveNaming.BRANCH)
+                || id.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
+                || id.startsWith(ObjectiveNaming.NUMERIC_COMPARISON)){
+            return 1
+        }
+
+        return 10
     }
 
     private fun reportImprovement(target: Int) {
