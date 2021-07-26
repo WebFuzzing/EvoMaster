@@ -85,6 +85,8 @@ dotnet test
 
 if [ $? -ne 0 ] ; then
    echo "ERROR: failed to run the generated tests."
+   echo "The generated test was:"
+   cat $TEST_LOCATION
    exit 1
 fi
 
