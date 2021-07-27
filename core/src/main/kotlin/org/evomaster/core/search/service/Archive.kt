@@ -1,12 +1,13 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.FOCUSED_QUICKEST
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.LAST
 import org.evomaster.core.Lazy
 import org.evomaster.core.output.Termination
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
@@ -140,15 +141,15 @@ class Archive<T> where T : Individual {
 
         sortAndShrinkIfNeeded(candidates, chosenTarget)
 
-        val notTimedout = candidates.filter {
-            !it.seeResults().any { res -> res is RestCallResult && res.getTimedout() }
+        val notTimedOut = candidates.filter {
+            !it.seeResults().any { res -> res is HttpWsCallResult && res.getTimedout() }
         }
 
         /*
             If possible avoid sampling tests that did timeout
          */
-        val chosen = if (!notTimedout.isEmpty()) {
-            randomness.choose(notTimedout)
+        val chosen = if (!notTimedOut.isEmpty()) {
+            randomness.choose(notTimedOut)
         } else {
             randomness.choose(candidates)
         }
@@ -220,7 +221,24 @@ class Archive<T> where T : Individual {
     private fun incrementCounter(target: Int) {
         samplingCounter.putIfAbsent(target, 0)
         val counter = samplingCounter[target]!!
-        samplingCounter.put(target, counter + 1)
+
+        val delta = getWeightToAdd(target)
+        samplingCounter[target] = counter + delta
+    }
+
+    private fun getWeightToAdd(target: Int) : Int {
+        if(! config.useWeightedSampling){
+            return 1
+        }
+
+        val id = idMapper.getDescriptiveId(target)
+        if(id.startsWith(ObjectiveNaming.BRANCH)
+                || id.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
+                || id.startsWith(ObjectiveNaming.NUMERIC_COMPARISON)){
+            return 1
+        }
+
+        return 10
     }
 
     private fun reportImprovement(target: Int) {
