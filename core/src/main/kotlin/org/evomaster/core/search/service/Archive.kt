@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.FOCUSED_QUICKEST
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.LAST
 import org.evomaster.core.Lazy
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -16,6 +17,7 @@ import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
+import org.slf4j.LoggerFactory
 
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -23,6 +25,10 @@ import java.nio.file.StandardOpenOption
 
 
 class Archive<T> where T : Individual {
+
+    companion object{
+        private val log = LoggerFactory.getLogger(Archive::class.java)
+    }
 
     @Inject
     private lateinit var randomness: Randomness
@@ -72,13 +78,6 @@ class Archive<T> where T : Individual {
      */
     private val lastImprovement = mutableMapOf<Int, Int>()
 
-
-    /**
-     * Key -> id of the target
-     *
-     * Value -> latest evaluated individual there was an improvement for this target.
-     */
-    //private val latestImprovement = mutableMapOf<Int, Int>()
 
     /**
      * Id of last target used for sampling
@@ -154,7 +153,10 @@ class Archive<T> where T : Individual {
             randomness.choose(candidates)
         }
 
-        return chosen.copy(tracker.getCopyFilterForEvalInd(chosen))
+        val copy = chosen.copy(tracker.getCopyFilterForEvalInd(chosen))
+        copy.individual.populationOrigin = idMapper.getDescriptiveId(chosenTarget)
+
+        return copy
     }
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
@@ -246,8 +248,6 @@ class Archive<T> where T : Individual {
         val counter = samplingCounter.getOrDefault(target, 0)
         lastImprovement.put(target, counter)
         samplingCounter.put(target, 0)
-
-        //latestImprovement[target] = time.evaluatedIndividuals
     }
 
     /**
@@ -459,6 +459,11 @@ class Archive<T> where T : Individual {
             }
         }
         processMonitor.record(added, anyBetter, ei)
+
+        /*
+            TODO should log them to a file
+        */
+        //LoggingUtil.getInfoLogger().info("$added $anyBetter ${ei.individual.populationOrigin}")
 
         ei.hasImprovement = anyBetter
         return added
