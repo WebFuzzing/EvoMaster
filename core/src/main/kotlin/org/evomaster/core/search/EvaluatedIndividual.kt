@@ -90,6 +90,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                         null)
 
     fun copy(): EvaluatedIndividual<T> {
+
+        if(!isValid())
+            log.warn("invalid evaluated individual")
+
         val ei = EvaluatedIndividual(
                 fitness.copy(),
                 individual.copy() as T,
@@ -227,6 +231,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     fun nextForIndividual(next: Traceable, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
         (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
 
+        if(next.isValid()){
+            log.warn("nextForIndividual: next for invalid evaluated individual")
+        }
+
         val nextIndividual = individual.next(next.individual, TraceableElementCopyFilter.WITH_TRACK, evaluatedResult)!!
 
         return EvaluatedIndividual(
@@ -243,6 +251,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         tracking?: throw IllegalStateException("cannot create next due to unavailable tracking info")
         (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
+
+        if (!next.isValid()){
+            log.warn("next with invalid evaluated individual")
+        }
 
         val nextInTracking = next.copy(copyFilter)
         nextInTracking.wrapWithEvaluatedResults(evaluatedResult)
@@ -669,4 +681,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     fun belongsToCluster(cluster: String) : Boolean{
         return clusterAssignments.contains(cluster)
     }
+
+    fun isValid() = individual.seeActions(ALL).size >= results.size
 }
