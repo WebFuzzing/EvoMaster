@@ -80,6 +80,9 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
                     args.add("--probOfApplySQLActionToCreateResources");
                     args.add("0.8");
 
+                    args.add("--skipFailureSQLInTestFile");
+                    args.add("true");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
