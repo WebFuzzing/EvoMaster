@@ -682,5 +682,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return clusterAssignments.contains(cluster)
     }
 
-    fun isValid() = individual.seeActions(ALL).size >= results.size
+    fun isValid() : Boolean{
+        val index = results.indexOfFirst { it.stopping }
+        val all = individual.seeActions(ALL)
+        if (results.size > all.size) return false
+        val invalid = (0 until (if(index==-1) index+1 else results.size)).any {
+            !results[it].matchedType(all[it])
+        }
+        return !invalid
+    }
 }

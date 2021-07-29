@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import javax.ws.rs.core.MediaType
 
@@ -58,4 +59,7 @@ class RestCallResult : HttpWsCallResult {
     fun setHeuristicsForChainedLocation(on: Boolean) = addResultValue(HEURISTICS_FOR_CHAINED_LOCATION, on.toString())
     fun getHeuristicsForChainedLocation(): Boolean = getResultValue(HEURISTICS_FOR_CHAINED_LOCATION)?.toBoolean() ?: false
 
+    override fun matchedType(action: Action): Boolean {
+        return action is RestCallAction
+    }
 }
