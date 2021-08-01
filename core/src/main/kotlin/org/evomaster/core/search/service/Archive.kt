@@ -569,6 +569,14 @@ class Archive<T> where T : Individual {
         if (archiveContent.isNotEmpty()) Files.write(apath, archiveContent, StandardOpenOption.APPEND)
     }
 
+    /**
+     * @return whether there exists any invalid evaluated individual in the population
+     * note that it is useful for debugging
+     */
+    fun anyInvalidEvaluatedIndividual(): Boolean{
+        return populations.values.any { e-> e.any { !it.isValid() } }
+    }
+
 //    fun chooseLatestImprovedTargets(size : Int) : Set<Int>{
 //        return latestImprovement.asSequence().sortedByDescending { it.value }.toList().subList(0, min(size, latestImprovement.size)).map { it.key }.toSet()
 //    }

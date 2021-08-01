@@ -1,4 +1,5 @@
 package org.evomaster.core.database
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 
 /**
@@ -28,4 +29,8 @@ class DbActionResult : ActionResult {
      * @return whether the db action executed successfully
      */
     fun getInsertExecutionResult() = getResultValue(INSERT_SQL_EXECUTE_SUCCESSFULLY)?.toBoolean()?:false
+
+    override fun matchedType(action: Action): Boolean {
+        return action is DbAction
+    }
 }
