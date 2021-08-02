@@ -17,13 +17,20 @@ Needs auth :(
 
 ### Summary 
 
-_EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is a tool 
-that automatically *generates* system-level test cases.
-Internally, it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm) 
+_EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is the first (2016) open-source tool 
+that automatically *generates* system-level test cases
+for web/enterprise applications.
+This is related to [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing).
+Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites that can be used for _regression testing_.
+
+_EvoMaster_ is an AI driven tool.
+In particular, internally it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm) 
 and [Dynamic Program Analysis](https://en.wikipedia.org/wiki/Dynamic_program_analysis)  to be 
 able to generate effective test cases.
 The approach is to *evolve* test cases from an initial population of 
 random ones, trying to maximize measures like code coverage and fault detection.
+_EvoMaster_ uses several kinds of AI heuristics to improve performance even further, 
+building on decades of research in the field of [Search-Based Software Testing](https://en.wikipedia.org/wiki/Search-based_software_engineering).
 
 
 __Key features__:

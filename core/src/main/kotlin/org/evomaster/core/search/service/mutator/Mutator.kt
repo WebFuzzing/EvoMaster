@@ -182,7 +182,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 update archive based on mutated individual
                 for next, we use [current] that contains latest updated initialization instead of [currentWithTraces]
              */
-            current = saveMutation(result, archive, current, mutatedWithTraces)
+            current = saveMutation(result, archive, currentWithTraces, mutatedWithTraces)
 
             archiveGeneSelector.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,targetsInfo = targetsInfo, result = result, evaluatedIndividual = current)
 
