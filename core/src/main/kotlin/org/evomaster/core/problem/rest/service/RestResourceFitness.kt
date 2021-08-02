@@ -121,6 +121,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
 
+        if (actionResults.size > individual.seeActions(ActionFilter.ALL).size)
+            log.warn("initialize invalid evaluated individual")
+
         return EvaluatedIndividual(
                 fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)
 

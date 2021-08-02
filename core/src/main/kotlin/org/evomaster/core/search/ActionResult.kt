@@ -34,4 +34,9 @@ open class ActionResult constructor(
 
     fun setErrorMessage(msg: String) = addResultValue(ERROR_MESSAGE, msg)
     fun getErrorMessage(): String? = getResultValue(ERROR_MESSAGE)
+
+    /**
+     * @return whether this action result type matches the [action]
+     */
+    open fun matchedType(action: Action) = true
 }

@@ -42,12 +42,19 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     override var tracking: TrackingHistory<out Traceable>? = null
 
     /**
+     * Mainly used for debugging. keep track from which MIO population this individual was sampled from.
+     * if generated at random, or by any other mean, then it is null
+     */
+    var populationOrigin : String? = null
+
+    /**
      * Make a deep copy of this individual
      */
     final override fun copy(): Individual{
         val copy = super.copy()
         if (copy !is Individual)
             throw IllegalStateException("mismatched type: the type should be Individual, but it is ${this::class.java.simpleName}")
+        copy.populationOrigin = this.populationOrigin
         return copy
     }
 
