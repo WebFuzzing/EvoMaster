@@ -1405,6 +1405,17 @@ class EMConfig {
     var skipFailureSQLInTestFile = false
 
 
+    /////////////////////////////*GQLMaxGenes*///////////////////////////////
+
+    val defaultMaxNumberOfGenes = 30
+
+    @Experimental
+    @Cfg("Maximum number of genes in mutations/queries to be evaluated;" +
+            "this is to avoid issues when dealing with huge graphs in GraphQL")
+    @Min(1.0)
+    var maxNumberOfGenes = defaultMaxNumberOfGenes
+
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
