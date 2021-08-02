@@ -76,7 +76,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
     init{
         if (individual.seeActions(ALL).size < results.size){
-            throw IllegalArgumentException("Less actions than results")
+            throw IllegalArgumentException("Less actions (${individual.seeActions(ALL).size}) than results (${results.size})")
         }
     }
 
@@ -90,6 +90,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                         null)
 
     fun copy(): EvaluatedIndividual<T> {
+
         val ei = EvaluatedIndividual(
                 fitness.copy(),
                 individual.copy() as T,
@@ -668,5 +669,15 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
     fun belongsToCluster(cluster: String) : Boolean{
         return clusterAssignments.contains(cluster)
+    }
+
+    fun isValid() : Boolean{
+        val index = results.indexOfFirst { it.stopping }
+        val all = individual.seeActions(ALL)
+        if (results.size > all.size) return false
+        val invalid = (0 until (if(index==-1) index+1 else results.size)).any {
+            !results[it].matchedType(all[it])
+        }
+        return !invalid
     }
 }

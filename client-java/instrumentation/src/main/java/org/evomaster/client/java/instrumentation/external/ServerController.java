@@ -66,11 +66,11 @@ public class ServerController {
         }
     }
 
-    public synchronized boolean waitForIncomingConnection() {
+    public synchronized boolean waitForIncomingConnection(int seconds) {
 
         try {
             socket = server.accept();
-            socket.setSoTimeout(20_000);
+            socket.setSoTimeout(seconds);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
 

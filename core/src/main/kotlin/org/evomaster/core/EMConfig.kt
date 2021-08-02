@@ -897,6 +897,12 @@ class EMConfig {
     @Cfg("Whether to use timestamp info on the execution time of the tests for sampling (e.g., to reward the quickest ones)")
     var useTimeInFeedbackSampling = true
 
+
+    @Experimental
+    @Cfg("When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often)")
+    var useWeightedSampling = false
+
+
     @Cfg("Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO)")
     @Min(1.0)
     var populationSize = 30
