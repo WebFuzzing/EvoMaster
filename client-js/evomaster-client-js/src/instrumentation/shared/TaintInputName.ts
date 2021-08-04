@@ -5,7 +5,7 @@ export class TaintInputName {
     private static readonly POSTFIX = "_input";
 
     //Pattern.compile("\\Q"+PREFIX+"\\E\\d+\\Q"+POSTFIX+"\\E");
-    private static regex = TaintInputName.PREFIX + "\\d" + TaintInputName.POSTFIX
+    private static regex = TaintInputName.PREFIX + "\\d+" + TaintInputName.POSTFIX
 
     private static partialMatch = new RegExp(TaintInputName.regex);
 
