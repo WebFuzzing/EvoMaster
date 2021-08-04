@@ -39,7 +39,7 @@ object GraphQLActionBuilder {
      * @param actionCluster: for each mutation/query in the schema, populate this map with
      *                      new action templates.
      */
-    fun addActionsFromSchema(schema: String, actionCluster: MutableMap<String, Action>) {
+    fun addActionsFromSchema(schema: String, actionCluster: MutableMap<String, Action>, maxNumberOfGenes: Int = Int.MAX_VALUE) {
 
         val state = TempState()
 
