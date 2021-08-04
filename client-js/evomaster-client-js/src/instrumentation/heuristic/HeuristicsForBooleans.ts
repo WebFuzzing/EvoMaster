@@ -1,7 +1,7 @@
 import Truthness from "./Truthness";
 import TruthnessUtils from "./TruthnessUtils";
 import ExecutionTracer from "../staticstate/ExecutionTracer";
-import ObjectiveNaming from "../ObjectiveNaming";
+import ObjectiveNaming from "../shared/ObjectiveNaming";
 
 
 export default class HeuristicsForBooleans {
@@ -274,6 +274,7 @@ export default class HeuristicsForBooleans {
             if (isLeftNumber && isRightNumber) {
                 h = TruthnessUtils.getEqualityTruthnessNumber(left, right);
             } else if (isLeftString && isRightString) {
+                ExecutionTracer.handleTaintForStringEquals(left, right, false);
                 h = TruthnessUtils.getEqualityTruthnessString(left, right);
             } else {
                 const b = left === right;
