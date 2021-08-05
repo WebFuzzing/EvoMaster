@@ -15,7 +15,7 @@ import ControllerConstants from "./controller/api/ControllerConstants";
 import InjectedFunctions from "./instrumentation/InjectedFunctions";
 import ExecutionTracer from "./instrumentation/staticstate/ExecutionTracer";
 import ObjectiveRecorder from "./instrumentation/staticstate/ObjectiveRecorder";
-import ObjectiveNaming from "./instrumentation/ObjectiveNaming";
+import ObjectiveNaming from "./instrumentation/shared/ObjectiveNaming";
 import EMTestUtils from "./EMTestUtils";
 
 import {Visitor} from "@babel/traverse";

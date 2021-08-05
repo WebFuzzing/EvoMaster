@@ -1,6 +1,6 @@
 import Replacement from "../../../../src/instrumentation/methodreplacement/Replacement";
 import ExecutionTracer from "../../../../src/instrumentation/staticstate/ExecutionTracer";
-import ObjectiveNaming from "../../../../src/instrumentation/ObjectiveNaming";
+import ObjectiveNaming from "../../../../src/instrumentation/shared/ObjectiveNaming";
 
 test("Test no replacement", () => {
 
