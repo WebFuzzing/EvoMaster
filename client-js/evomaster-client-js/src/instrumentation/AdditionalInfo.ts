@@ -79,10 +79,19 @@ export default class AdditionalInfo {
             this.stringSpecializations.set(taintInputName, set);
         }
 
+        /*
+            ah! the joys of JS Set when dealing with objects...
+         */
+        for(let s of set){
+            if(info.equalsTo(s)){
+                return;
+            }
+        }
+
         set.add(info);
     }
 
-    getStringSpecializationsView() :  Map<String, Set<StringSpecializationInfo>> {
+    getStringSpecializationsView() :  Map<string, Set<StringSpecializationInfo>> {
         return this.stringSpecializations;
     }
 

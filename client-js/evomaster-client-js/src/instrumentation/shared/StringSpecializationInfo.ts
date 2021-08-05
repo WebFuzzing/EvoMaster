@@ -34,4 +34,12 @@ export class StringSpecializationInfo {
     getType(): TaintType {
         return this.type;
     }
+
+    equalsTo(other: StringSpecializationInfo) : boolean {
+        if(!other){
+            return false;
+        }
+
+        return this.value === other.value && this.type === other.type && this.stringSpecialization === other.stringSpecialization;
+    }
 }

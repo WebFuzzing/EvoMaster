@@ -7,7 +7,7 @@ app.use(bodyParser.json());
 
 app.get("/constantEqual", (req, res) => {
 
-    if(req.params["value"] === "Hello world!!! Even if this is a long string, it will be trivial to cover with taint analysis"){
+    if(req.query["value"] === "Hello world!!! Even if this is a long string, it will be trivial to cover with taint analysis"){
         res.status(200);
         res.json("OK_hello")
     } else {
@@ -18,7 +18,7 @@ app.get("/constantEqual", (req, res) => {
 
 app.get("/constantDifferent", (req, res) => {
 
-    if(req.params["value"] !== "FooBar!!! Even if this is a long string, it will be trivial to cover with taint analysis"){
+    if(req.query["value"] !== "FooBar!!! Even if this is a long string, it will be trivial to cover with taint analysis"){
         res.status(400);
         res.json("FAILED")
     } else {
@@ -55,7 +55,9 @@ app.get("/swagger.json", (req, res) => {
                             name: "value",
                             in: "query",
                             required: true,
-                            type: "string"
+                            schema: {
+                                type: "string"
+                            }
                         }
                     ]
                 }
@@ -77,7 +79,9 @@ app.get("/swagger.json", (req, res) => {
                             name: "value",
                             in: "query",
                             required: true,
-                            type: "string"
+                            schema: {
+                                type: "string"
+                            }
                         }
                     ]
                 }
