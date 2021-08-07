@@ -1,4 +1,4 @@
-import {ReplacementType} from "./methodreplacement/ReplacementType";
+import {ReplacementType} from "../methodreplacement/ReplacementType";
 
 export default class ObjectiveNaming {
 
