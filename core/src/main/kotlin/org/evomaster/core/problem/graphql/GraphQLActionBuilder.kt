@@ -27,7 +27,6 @@ object GraphQLActionBuilder {
             var tables: MutableList<Table> = mutableListOf(),
             val argsTables: MutableList<Table> = mutableListOf(),
             val tempArgsTables: MutableList<Table> = mutableListOf(),
-            // val tempEnumTables: MutableMap<String, MutableList<String>> = mutableMapOf(),
             var tempUnionTables: MutableList<Table> = mutableListOf()
     )
 
