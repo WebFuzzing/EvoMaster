@@ -78,7 +78,7 @@ abstract class StructuralElement (
      */
     open fun copy() : StructuralElement {
         if (parent != null)
-            LoggingUtil.uniqueWarn(log, "${this::class.java} has a parent, the return copy might lose some info, e.g., parent")
+            LoggingUtil.uniqueWarn(log, "${this::class.java} should have a parent but currently it is null")
         val copy = copyContent()
         copy.postCopy(this)
         return copy
