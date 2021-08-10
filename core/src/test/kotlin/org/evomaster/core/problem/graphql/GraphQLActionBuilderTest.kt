@@ -338,7 +338,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun gitLabSchema04202021Test() {
         /*Important: This is the gitLab schema updates */
@@ -401,7 +400,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun travelgateXSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
