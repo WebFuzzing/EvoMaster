@@ -326,24 +326,12 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
-    fun gitLabSchemaTest() {
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitLab.json").readText()
-
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        /*Important: They are 162 in the documentation but in the retrieved schema they are only 157
-        So there is 5 mentioned in the documentation but not mentioned in the schema*/
-        assertEquals(157, actionCluster.size)
-
-    }
 
     @Disabled
     @Test
-    fun gitLabSchema04202021Test() {
-        /*Important: This is the gitLab schema updates */
+    fun gitLabSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitLab04022021.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitLab.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(169, actionCluster.size)
@@ -491,9 +479,9 @@ class GraphQLActionBuilderTest {
 
         assertTrue(stores.parameters[0].gene is ObjectGene)
         val interfaceObjectStore = stores.parameters[0].gene as ObjectGene
-        assertEquals(2, interfaceObjectStore.fields.size)// basic interface not removed and object gene without fields removed
-       // assertEquals(2, interfaceObjectStore.fields.size)
+        assertEquals(2, interfaceObjectStore.fields.size)
 
+        // basic interface not removed and object gene without fields removed
        // assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
        // assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
        // val objFlowerStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
@@ -540,7 +528,7 @@ class GraphQLActionBuilderTest {
         assertTrue(objectStore1.fields[0] is OptionalGene)
         assertTrue((objectStore1.fields[0] as OptionalGene).gene is ObjectGene)
         val interfaceObjectStore = (objectStore1.fields[0] as OptionalGene).gene as ObjectGene
-        assertEquals(2, interfaceObjectStore.fields.size)// Do not construct an object gene without fields
+        assertEquals(2, interfaceObjectStore.fields.size)
        // assertEquals(2, interfaceObjectStore.fields.size)
 
        // assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
@@ -692,29 +680,6 @@ class GraphQLActionBuilderTest {
 
 
     @Test
-    fun noInterfaceHisObjTest() {//there is no interface, with/without list here, made to check
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/noInterfaceHisObj.json").readText()
-
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        assertEquals(1, actionCluster.size)
-
-        val node = actionCluster.get("node") as GraphQLAction
-        assertEquals(1, node.parameters.size)
-        assertTrue(node.parameters[0] is GQReturnParam)
-
-        assertTrue(node.parameters[0].gene is ObjectGene)
-        val objectNode = node.parameters[0].gene as ObjectGene
-        assertEquals(1, objectNode.fields.size)
-
-        assertTrue(objectNode.fields[0] is OptionalGene)
-        assertTrue((objectNode.fields[0] as OptionalGene).gene is ObjectGene)
-        val objAgency = (objectNode.fields[0] as OptionalGene).gene as ObjectGene
-        assertEquals(1, objAgency.fields.size)
-        assertTrue(objAgency.fields.any { it is OptionalGene && it.name == "routes" })
-    }
-
-    @Test
     fun recEgTest2() {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/recEg2.json").readText()
@@ -724,8 +689,8 @@ class GraphQLActionBuilderTest {
     }
 
 
-    @Test//for the gc error
-    fun testPetClinicGC() {
+    @Test
+    fun testPetClinicGC() {//Temporary test (for the gc error)(fragment extracted from pet clinic)
 
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/petsClinic(GC).json").readText()
@@ -755,9 +720,5 @@ class GraphQLActionBuilderTest {
         assertTrue(objVisitConnection.fields.any { it is OptionalGene && it.name == "visits" })
         GeneUtils.repairBooleanSelection(owner)
 
-
     }
-
-
-
 }
