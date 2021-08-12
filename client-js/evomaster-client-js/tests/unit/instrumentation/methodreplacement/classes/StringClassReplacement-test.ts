@@ -1,4 +1,4 @@
-import ObjectiveNaming from "../../../../../src/instrumentation/ObjectiveNaming";
+import ObjectiveNaming from "../../../../../src/instrumentation/shared/ObjectiveNaming";
 import StringClassReplacement from "../../../../../src/instrumentation/methodreplacement/classes/StringClassReplacement";
 
 /*
