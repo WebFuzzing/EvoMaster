@@ -16,7 +16,8 @@ class AssertionsRest {
     open fun getData() : ResponseEntity<String> {
 
         val assertionDto = Gson().toJson(AssertionDto())
-        return ResponseEntity.status(200).body(assertionDto)
+        return ResponseEntity.status(200)
+                .contentType(MediaType.APPLICATION_JSON).body(assertionDto)
     }
 
     @PostMapping(path = ["/data"])

@@ -94,7 +94,7 @@ class AssertionEMTest : SpringTestBase() {
 
     fun testRunEMGeneric(basicAssertions: Boolean, className: ClassName, outputFormat: OutputFormat? = OutputFormat.KOTLIN_JUNIT_5){
         val outputFolderName = "AssertionEM"
-        val iterations = 10_000
+        val iterations = 100
 
         val lambda = { args : MutableList<String> ->
             args.add("--enableBasicAssertions")
