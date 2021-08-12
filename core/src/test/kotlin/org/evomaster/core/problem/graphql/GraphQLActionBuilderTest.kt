@@ -688,37 +688,4 @@ class GraphQLActionBuilderTest {
         assertEquals(1, actionCluster.size)
     }
 
-
-    @Test
-    fun testPetClinicGC() {//Temporary test (for the gc error)(fragment extracted from pet clinic)
-
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/petsClinic(GC).json").readText()
-
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-
-        assertEquals(1, actionCluster.size)
-
-        val owners = actionCluster.get("owners") as GraphQLAction
-        assertEquals(1, owners.parameters.size)
-
-        assertTrue(owners.parameters[0] is GQReturnParam)
-        assertTrue(owners.parameters[0].gene is ObjectGene)
-        /**/
-        val owner = owners.parameters[0].gene as ObjectGene
-        assertEquals(1, owner.fields.size)
-        assertTrue(owner.fields.any { it is OptionalGene && it.name == "pets" })
-
-        val objPet = ((owner.fields.first { it.name == "pets" }) as OptionalGene).gene as ObjectGene
-        assertEquals(2, objPet.fields.size)
-        assertTrue(objPet.fields.any { it is OptionalGene && it.name == "visits" })
-        assertTrue(objPet.fields[1] is OptionalGene)
-        val objVisitConnection = (objPet.fields[1] as OptionalGene).gene as ObjectGene
-        assertEquals(2, objVisitConnection.fields.size)
-        assertTrue(objVisitConnection.fields[0] is BooleanGene)
-        assertTrue(objVisitConnection.fields.any { it is BooleanGene && it.name == "totalCount" })
-        assertTrue(objVisitConnection.fields.any { it is OptionalGene && it.name == "visits" })
-        GeneUtils.repairBooleanSelection(owner)
-
-    }
 }
