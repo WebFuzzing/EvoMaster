@@ -29,12 +29,16 @@ class AssertionsRest {
 
     @GetMapping(path = ["/simpleNumber"])
     open fun getSimpleNumber() : ResponseEntity<Int> {
-        return ResponseEntity.ok(42)
+        return ResponseEntity.status(200)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(42)
     }
 
     @GetMapping(path = ["/simpleString"])
     open fun getSimpleString() : ResponseEntity<String> {
-        return ResponseEntity.ok("simple-string")
+        return ResponseEntity.status(200)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("simple-string")
     }
 
     @GetMapping(path = ["/simpleText"])
@@ -59,10 +63,10 @@ class AssertionsRest {
     }
 
     @GetMapping(path = ["/arrayEmpty"])
-    open fun getArrayEmpty() : ResponseEntity<String> {
+    open fun getArrayEmpty() : ResponseEntity<Array<String>> {
         return ResponseEntity.status(200)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("[]")
+                .body(arrayOf())
     }
 
     @GetMapping(path = ["/objectEmpty"])
