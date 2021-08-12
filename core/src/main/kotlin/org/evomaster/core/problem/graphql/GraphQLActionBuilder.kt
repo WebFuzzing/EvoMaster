@@ -1217,8 +1217,7 @@ object GraphQLActionBuilder {
                                 } else {
                                     fields.add(OptionalGene(element.tableFieldType, CycleObjectGene(element.tableFieldType)))
                                     history.removeLast()
-                                    // Man: GC error can be fixed by commenting the line below. Please check whether the fix is correct.
-//                                    history.removeLast()
+                                    history.removeLast()
 
                                 }
                             } else if (element.kindOfTableFieldType.toString().equals("ENUM", ignoreCase = true)) {
