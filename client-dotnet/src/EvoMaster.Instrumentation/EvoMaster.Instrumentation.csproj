@@ -9,6 +9,10 @@
         <Version>1.1.1-SNAPSHOT</Version>
         <Authors>EvoMaster Team</Authors>
     </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\EvoMaster.Client.Util\EvoMaster.Client.Util.csproj" />
+    </ItemGroup>
     
     <Target Name="PublishNuGetLocally" AfterTargets="Build">
         <Exec Command="dotnet pack $(ProjectPath) -c $(ConfigurationName)" />

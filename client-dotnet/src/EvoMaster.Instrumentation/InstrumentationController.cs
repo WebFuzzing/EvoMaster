@@ -1,6 +1,6 @@
 
 using System.Collections.Generic;
-using EvoMaster.Instrumentation.Staticstate;
+using EvoMaster.Instrumentation.StaticState;
 
 namespace EvoMaster.Instrumentation
 {

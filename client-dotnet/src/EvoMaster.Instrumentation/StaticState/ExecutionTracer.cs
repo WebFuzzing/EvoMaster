@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 
-namespace EvoMaster.Instrumentation.Staticstate
+namespace EvoMaster.Instrumentation.StaticState
 {
     public static class ExecutionTracer
     {
@@ -57,14 +58,16 @@ namespace EvoMaster.Instrumentation.Staticstate
          */
         private static volatile bool _killSwitch = false;
 
-        static ExecutionTracer(){
+        static ExecutionTracer()
+        {
             Reset();
         }
 
 
         public static void Reset()
         {
-            lock (_lock) {
+            lock (_lock)
+            {
                 ObjectiveCoverage.Clear();
                 _actionIndex = 0;
                 AdditionalInfoList.Clear();
@@ -75,7 +78,8 @@ namespace EvoMaster.Instrumentation.Staticstate
             }
         }
 
-        public static bool IsKillSwitch() {
+        public static bool IsKillSwitch()
+        {
             return _killSwitch;
         }
 
@@ -102,10 +106,86 @@ namespace EvoMaster.Instrumentation.Staticstate
         {
             ExecutionTracer._killSwitch = killSwitch;
         }
-        
-        public static IList<AdditionalInfo> ExposeAdditionalInfoList() {
+
+        public static IList<AdditionalInfo> ExposeAdditionalInfoList()
+        {
             return AdditionalInfoList;
         }
+
+
+        ///<summary>Report on the fact that a given line has been executed.</summary>
+        public static void executedLine(String className, String methodName, String descriptor, int line)
+        {
+            //This is done to prevent the SUT keep on executing code after a test case is evaluated
+            if (IsKillSwitch())
+            {
+                //TODO
+                // var initClass = Arrays.stream(Thread.CurrentThread..getStackTrace())
+                //     .anyMatch(e -> e.getMethodName().equals("<clinit>"));
+
+                /*
+                    must NOT stop the initialization of a class, otherwise the SUT will be left in an
+                    inconsistent state in the following calls
+                 */
+
+                // if (!initClass)
+                // {
+                //     throw new KillSwitchException();
+                // }
+            }
+            
+            //TODO
+            //for targets to cover
+            // var lineId = ObjectiveNaming.lineObjectiveName(className, line);
+            // var classId = ObjectiveNaming.classObjectiveName(className);
+            // UpdateObjective(lineId, 1d);
+            // UpdateObjective(classId, 1d);
+
+            //to calculate last executed line
+            var lastLine = className + "_" + line + "_" + methodName;
+            var lastMethod = className + "_" + methodName + "_" + descriptor;
+            MarkLastExecutedStatement(lastLine, lastMethod);
+        }
         
+        public static void MarkLastExecutedStatement(string lastLine, string lastMethod) {
+            //TODO
+            //GetCurrentAdditionalInfo().PushLastExecutedStatement(lastLine, lastMethod);
+        }
+        private static void UpdateObjective(string id, double value)
+        {
+            if (value < 0d || value > 1d)
+            {
+                throw new ArgumentException("Invalid value " + value + " out of range [0,1]");
+            }
+
+            /*
+                In the same execution, a target could be reached several times,
+                so we should keep track of the best value found so far
+             */
+            lock (_lock)
+            {
+                if (ObjectiveCoverage.ContainsKey(id))
+                {
+                    var previous = ObjectiveCoverage[id].Value;
+                    if (value > previous)
+                    {
+                        ObjectiveCoverage.Add(id, new TargetInfo(null, id, value, _actionIndex));
+                    }
+                }
+                else
+                {
+                    ObjectiveCoverage.Add(id, new TargetInfo(null, id, value, _actionIndex));
+                }
+            }
+
+            ObjectiveRecorder.Update(id, value);
+        }
+        
+        private static AdditionalInfo GetCurrentAdditionalInfo() {
+            lock (_lock)
+            {
+                return AdditionalInfoList[_actionIndex];
+            }
+        }
     }
 }

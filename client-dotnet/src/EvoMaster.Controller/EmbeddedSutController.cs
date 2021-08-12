@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EvoMaster.Controller.Api;
 using EvoMaster.Instrumentation;
-using EvoMaster.Instrumentation.Staticstate;
+using EvoMaster.Instrumentation.StaticState;
 using Microsoft.Extensions.Configuration;
 using Action = EvoMaster.Instrumentation.Action;
 
