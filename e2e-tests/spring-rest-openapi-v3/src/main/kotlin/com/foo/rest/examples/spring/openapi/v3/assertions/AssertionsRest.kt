@@ -17,7 +17,8 @@ class AssertionsRest {
 
         val assertionDto = Gson().toJson(AssertionDto())
         return ResponseEntity.status(200)
-                .contentType(MediaType.APPLICATION_JSON).body(assertionDto)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(assertionDto)
     }
 
     @PostMapping(path = ["/data"])
@@ -27,8 +28,8 @@ class AssertionsRest {
     }
 
     @GetMapping(path = ["/simpleNumber"])
-    open fun getSimpleNumber() : ResponseEntity<String> {
-        return ResponseEntity.ok("42")
+    open fun getSimpleNumber() : ResponseEntity<Int> {
+        return ResponseEntity.ok(42)
     }
 
     @GetMapping(path = ["/simpleString"])
@@ -46,24 +47,28 @@ class AssertionsRest {
     @GetMapping(path = ["/simpleArray"])
     open fun getSimpleArray() : ResponseEntity<String> {
         return ResponseEntity.status(200)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(Gson().toJson(arrayOf(123, 456)))
     }
 
     @GetMapping(path = ["/arrayObject"])
-    open fun getArrayObject() : ResponseEntity<String> {
+    open fun getArrayObject() : ResponseEntity<Array<SimpleObject>> {
         return ResponseEntity.status(200)
-                .body(Gson().toJson(arrayOf(SimpleObject(777), SimpleObject(888))))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(arrayOf(SimpleObject(777), SimpleObject(888)))
     }
 
     @GetMapping(path = ["/arrayEmpty"])
     open fun getArrayEmpty() : ResponseEntity<String> {
         return ResponseEntity.status(200)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body("[]")
     }
 
     @GetMapping(path = ["/objectEmpty"])
     open fun getObjectEmpty() : ResponseEntity<String> {
         return ResponseEntity.status(200)
+                .contentType(MediaType.APPLICATION_JSON)
                 .body("{}")
     }
 
