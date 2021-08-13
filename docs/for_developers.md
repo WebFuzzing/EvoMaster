@@ -24,6 +24,27 @@ The main reason is that, being libraries, we do not want to also have to ship th
 libraries with them. 
 
 
+### BRACES { AND SPACES vs. TABS 
+
+Not going to start an holy war here... once made a choice, we just keep it consistent throughout the whole project. 
+Regarding opening braces {, the ancient texts state that those shall be on the same line of the code, and not in their own line.
+Therefore, the following is fine:
+```
+foo{
+}
+```
+whereas the following should be avoided:
+```
+foo
+{
+}
+```
+
+Note that, at the current moment, we do not use an automated-formatter as part of the build (for several reasons...).
+
+Regarding spaces vs. tabs, I have no idea what is in use. This should be automatically handled by your IDE (and if it doesn't, switch to a better IDE).
+
+
 
 ### AVOID `System.out` AND `System.err`
 _EvoMaster_ uses a logging framework.
@@ -113,6 +134,8 @@ Note: current version of JUnit 5 is worse than JUnit 4 when dealing with E2E tes
 E.g., there is no handling of _flaky_ tests (in JUnit 4, this was handled by the _Surefire_/_Failsafe_ plugins).
 This is the reason why such test executions should be wrapped inside a `handleFlaky` call.   
 
+Also notice that, for JavaScript and C#, E2E tests are different, as run through bash scripts.
+This is due to the fact that we have to run 2 separate processes using different technologies (e.g., JVM vs. .Net and NodeJS). 
 
 ### AVOID TOO LONG METHODS
 
@@ -136,9 +159,10 @@ Cannot really quantify how much comments one should write, but at least it would
 * for `Map`s, should add a comment stating what is the _key_, and what is the _value_.   
 
 When writing a comment for a class/method/field, use JavaDoc style:
-/**
-*/
+`/**
+*/`
 In this way, your IDE can show the comments when you hover with the mouse over them.
+For C#, besides `/** */`, for single line documentation you can use a triple slash `///`.   
   
   
 
