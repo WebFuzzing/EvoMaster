@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
+using EvoMaster.Client.Util;
 using EvoMaster.Client.Util.Extensions;
 
 namespace EvoMaster.Instrumentation.StaticState
@@ -38,10 +39,9 @@ namespace EvoMaster.Instrumentation.StaticState
      * done.
      * This can be useful to calculate how many targets we have missed.
      */
-        private static readonly HashSet<string> AllTargets = new HashSet<string>();
-        // Collections.newSetFromMap(new ConcurrentHashDictionary<>(65536));
+        private static readonly ConcurrentHashSet<string> AllTargets = new ConcurrentHashSet<string>();
 
-
+        
         /**
      * Key -> id of an objective/target
      * <br>
