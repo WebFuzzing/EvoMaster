@@ -121,6 +121,7 @@
         <mysql.connector.java.version>8.0.23</mysql.connector.java.version>
         <mariadb.java.client.version>2.7.2</mariadb.java.client.version>
         <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
+        <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
     </properties>
 
 
@@ -578,6 +579,12 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.connector.java.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${org.mybatis.spring.boot.version}</version>
             </dependency>
 
             <!--   XML  -->
