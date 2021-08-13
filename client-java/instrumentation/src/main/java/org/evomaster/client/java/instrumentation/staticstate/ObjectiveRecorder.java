@@ -83,6 +83,7 @@ public class ObjectiveRecorder {
      */
     private static final Queue<String> firstTimeEncountered = new ConcurrentLinkedQueue<>();
 
+
     /**
      * Reset all the static state in this class
      */
@@ -103,6 +104,23 @@ public class ObjectiveRecorder {
         }
     }
 
+
+    /**
+     * Mark the existence of a testing target.
+     * This is important to do when SUT classes are loaded
+     * and instrumented.
+     * This cannot be done with the added probes in the
+     * instrumentation, as what executed in the SUT depends
+     * on test data.
+     *
+     * @param target a descriptive string representing the id of the target
+     */
+    public static void registerTarget(String target) {
+        if (target == null || target.isEmpty()) {
+            throw new IllegalArgumentException("Empty target name");
+        }
+        allTargets.add(target);
+    }
 
     /**
      * @return a coverage value in [0,1]
@@ -132,23 +150,6 @@ public class ObjectiveRecorder {
         }
 
         return (double) covered / (double) n;
-    }
-
-    /**
-     * Mark the existence of a testing target.
-     * This is important to do when SUT classes are loaded
-     * and instrumented.
-     * This cannot be done with the added probes in the
-     * instrumentation, as what executed in the SUT depends
-     * on test data.
-     *
-     * @param target a descriptive string representing the id of the target
-     */
-    public static void registerTarget(String target) {
-        if (target == null || target.isEmpty()) {
-            throw new IllegalArgumentException("Empty target name");
-        }
-        allTargets.add(target);
     }
 
     public static void printCoveragePerTarget(PrintWriter writer) {
