@@ -22,8 +22,8 @@ namespace EvoMaster.Instrumentation.StaticState
      * Value -> heuristic [0,1], where 1 means covered.
      * Only the highest value found so far is kept.
      */
-        private static readonly IDictionary<int, double?> MaxObjectiveCoverage =
-            new ConcurrentDictionary<int, double?>();
+        private static readonly IDictionary<int, double> MaxObjectiveCoverage =
+            new ConcurrentDictionary<int, double>();
 
 
         /**
@@ -134,7 +134,7 @@ namespace EvoMaster.Instrumentation.StaticState
         /**
      * @return a coverage value in [0,1]
      */
-        public static double? ComputeCoverage(string prefix)
+        public static double ComputeCoverage(string prefix)
         {
             var n = 0;
             var covered = 0;
@@ -150,7 +150,7 @@ namespace EvoMaster.Instrumentation.StaticState
                 if (_idMapping.ContainsKey(id))
                 {
                     int numericId = _idMapping[id];
-                    double? h = MaxObjectiveCoverage[numericId];
+                    var h = MaxObjectiveCoverage[numericId];
                     if (h == 1d)
                     {
                         covered++;
@@ -163,7 +163,7 @@ namespace EvoMaster.Instrumentation.StaticState
                 return 1d;
             }
 
-            return (double?)covered / (double?)n;
+            return (double)covered / (double)n;
         }
 
         // public static void PrintCoveragePerTarget(PrintWriter writer)
@@ -199,7 +199,7 @@ namespace EvoMaster.Instrumentation.StaticState
      * @param descriptiveId of the objective/target
      * @param value         of the coverage heuristic, in [0,1]
      */
-        public static void Update(string descriptiveId, double? value)
+        public static void Update(string descriptiveId, double value)
         {
             if (descriptiveId == null) throw new ArgumentNullException();
             if (value < 0d || value > 1)
