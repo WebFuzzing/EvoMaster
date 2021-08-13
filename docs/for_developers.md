@@ -28,12 +28,12 @@ libraries with them.
 
 Not going to start an holy war here... once made a choice, we just keep it consistent throughout the whole project. 
 Regarding opening braces {, the ancient texts state that those shall be on the same line of the code, and not in their own line.
-Therefore, the following is fine:
+Therefore, the following is right(eous):
 ```
 foo{
 }
 ```
-whereas the following should be avoided:
+whereas the following blasphemy must be expunged:
 ```
 foo
 {
