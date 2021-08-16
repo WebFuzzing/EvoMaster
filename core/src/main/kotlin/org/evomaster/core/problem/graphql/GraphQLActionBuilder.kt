@@ -22,13 +22,13 @@ object GraphQLActionBuilder {
     private val systemTypes = listOf("__Schema", "__Directive", "__DirectiveLocation", "__EnumValue",
             "__Field", "__InputValue", "__Type", "__TypeKind")
 
-    const val scalarTag="scalar"
-    const val listTag="list"
-    const val objectTag="object"
-    const val unionTag="union"
-    const val interfaceTag="interface"
-    const val enumTag="enum"
-    const val inputObjectTag="input_object"
+    const val scalarTag = "scalar"
+    const val listTag = "list"
+    const val objectTag = "object"
+    const val unionTag = "union"
+    const val interfaceTag = "interface"
+    const val enumTag = "enum"
+    const val inputObjectTag = "input_object"
 
     private data class TempState(
             /**
@@ -213,16 +213,17 @@ object GraphQLActionBuilder {
             tableElement.isKindOfTableFieldOptional = true
             if (kind2 == NON_NULL) {// non optional object or scalar or enum or union or interface
                 tableElement.isKindOfTableFieldTypeOptional = false
-                if (kind3 == OBJECT || kind3 == SCALAR || kind3 == ENUM || kind3 == UNION || kind3 == INTERFACE) {
+                if (kindChecks(kind3)) {
                     tableElement.kindOfTableFieldType = kind3
                     tableElement.tableFieldType = elementInfields.type.ofType.ofType.name
                     tableElement.tableType = elementInTypes.name
                     state.tables.add(tableElement)
                 }
 
-            } else {
+            } else {//optional object or scalar or enum or union or interface
+
                 tableElement.isKindOfTableFieldTypeOptional = true
-                if (kind2 == OBJECT || kind2 == SCALAR || kind2 == ENUM || kind2 == UNION || kind2 == INTERFACE) {//optional object or scalar or enum or union or interface
+                if (kindChecks(kind2)) {
                     tableElement.kindOfTableFieldType = kind2
                     tableElement.tableFieldType = elementInfields.type.ofType.name
                     tableElement.tableType = elementInTypes.name
@@ -232,7 +233,7 @@ object GraphQLActionBuilder {
 
         } else {
             tableElement.isKindOfTableFieldTypeOptional = true
-            if (kind == OBJECT || kind == SCALAR || kind == ENUM || kind == UNION || kind == INTERFACE) {// optional object or scalar or enum or union or interface in the top
+            if (kindChecks(kind)) {// optional object or scalar or enum or union or interface in the top
                 tableElement.kindOfTableFieldType = kind
                 tableElement.tableFieldType = elementInfields.type.name
                 tableElement.tableType = elementInTypes.name
@@ -258,8 +259,8 @@ object GraphQLActionBuilder {
             if (kind2 == NON_NULL) {// non optional object or scalar or enum or union or interface
                 tableElement.isKindOfTableFieldTypeOptional = false
                 tableElement.kindOfTableFieldType = kind3
-                tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.ofType?.name
-                tableElement.tableType = elementIntypes?.name
+                tableElement.tableFieldType = elementInfields.type.ofType.ofType.ofType.name
+                tableElement.tableType = elementIntypes.name
                 state.tables.add(tableElement)
             } else {//optional object or scalar or enum or union or interface
                 if (elementInfields?.type?.ofType?.ofType?.name == null) {
@@ -267,21 +268,23 @@ object GraphQLActionBuilder {
                 } else {
                     tableElement.kindOfTableFieldType = kind2
                     tableElement.isKindOfTableFieldTypeOptional = true
-                    tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
-                    tableElement.tableType = elementIntypes?.name
+                    tableElement.tableFieldType = elementInfields.type.ofType.ofType.name
+                    tableElement.tableType = elementIntypes.name
                     state.tables.add(tableElement)
                 }
             }
-        } else if (kind == OBJECT || kind == SCALAR || kind == ENUM || kind == UNION || kind == INTERFACE) {
+        } else if (kindChecks(kind)) {
             tableElement.kindOfTableFieldType = kind
-            tableElement.tableFieldType = elementInfields?.type?.ofType?.name
-            tableElement.tableType = elementIntypes?.name
+            tableElement.tableFieldType = elementInfields.type.ofType.name
+            tableElement.tableType = elementIntypes.name
             state.tables.add(tableElement)
         } else {
-            LoggingUtil.uniqueWarn(log, "Type not supported yet:  ${elementInfields?.type?.ofType?.kind}")
+            LoggingUtil.uniqueWarn(log, "Type not supported yet:  ${elementInfields.type.ofType.kind}")
         }
 
     }
+
+    private fun kindChecks(kind: __TypeKind) = kind == OBJECT || kind == SCALAR || kind == ENUM || kind == UNION || kind == INTERFACE
 
     /*
       This when an entry is not optional in argsTables
@@ -294,37 +297,37 @@ object GraphQLActionBuilder {
             inputElement.kindOfTableField = LIST
             inputElement.isKindOfTableFieldOptional = false
             if (kind2 == NON_NULL) {// non optional input object or scalar
-                if (elementInArgs?.type?.ofType?.ofType?.ofType?.kind == INPUT_OBJECT) {// non optional input object
+                if (elementInArgs.type.ofType.ofType.ofType.kind == INPUT_OBJECT) {// non optional input object
                     inputElement.kindOfTableFieldType = INPUT_OBJECT
                     inputElement.isKindOfTableFieldTypeOptional = false
-                    inputElement.tableFieldType = elementInArgs?.type?.ofType?.ofType?.ofType?.name
-                    inputElement.tableField = elementInArgs?.name
+                    inputElement.tableFieldType = elementInArgs.type.ofType.ofType.ofType.name
+                    inputElement.tableField = elementInArgs.name
                     state.argsTables.add(inputElement)
                 } else {// non optional scalar or enum
                     if (kind3 == SCALAR || kind3 == ENUM) {
                         inputElement.kindOfTableFieldType = SCALAR
                         inputElement.isKindOfTableFieldTypeOptional = false
-                        inputElement.tableFieldType = elementInArgs?.type?.ofType?.ofType?.ofType?.name
-                        inputElement.tableField = elementInArgs?.name
+                        inputElement.tableFieldType = elementInArgs.type.ofType.ofType.ofType.name
+                        inputElement.tableField = elementInArgs.name
                         state.argsTables.add(inputElement)
                     }
                 }
             } else { // optional input object or scalar or enum
                 inputElement.isKindOfTableFieldTypeOptional = true
-                if (kind2 == INPUT_OBJECT || kind2 == SCALAR || kind2 == ENUM) {
+                if (kindChecksInput(kind1)) {
                     inputElement.kindOfTableFieldType = kind2
                     inputElement.isKindOfTableFieldTypeOptional = true
-                    inputElement.tableFieldType = elementInArgs?.type?.ofType?.ofType?.name
-                    inputElement.tableField = elementInArgs?.name
+                    inputElement.tableFieldType = elementInArgs.type.ofType.ofType.name
+                    inputElement.tableField = elementInArgs.name
                     state.argsTables.add(inputElement)
                 }
             }
         } else // non optional input object or scalar or enum not in a list
-            if (kind1 == INPUT_OBJECT || kind1 == SCALAR || kind1 == ENUM) {
+            if (kindChecksInput(kind1)) {
                 inputElement.kindOfTableFieldType = kind1
                 inputElement.isKindOfTableFieldTypeOptional = false
-                inputElement.tableFieldType = elementInArgs?.type?.ofType?.name
-                inputElement.tableField = elementInArgs?.name
+                inputElement.tableFieldType = elementInArgs.type.ofType.name
+                inputElement.tableField = elementInArgs.name
                 state.argsTables.add(inputElement)
             }
     }
@@ -340,30 +343,32 @@ object GraphQLActionBuilder {
             inputElement.kindOfTableField = LIST
             inputElement.isKindOfTableFieldOptional = true
             if (kind1 == NON_NULL) {// non optional input object or scalar
-                if (kind2 == INPUT_OBJECT || kind2 == SCALAR || kind2 == ENUM) {
+                if (kindChecksInput(kind2)) {
                     inputElement.kindOfTableFieldType = kind2
                     inputElement.isKindOfTableFieldTypeOptional = false
-                    inputElement.tableFieldType = elementInArgs?.type?.ofType?.ofType?.name
-                    inputElement.tableField = elementInArgs?.name
+                    inputElement.tableFieldType = elementInArgs.type.ofType.ofType.name
+                    inputElement.tableField = elementInArgs.name
                     state.argsTables.add(inputElement)
                 }
             } else //optional input object or scalar or enum
-                if (kind1 == INPUT_OBJECT || kind1 == SCALAR || kind1 == ENUM) {
+                if (kindChecksInput(kind1)) {
                     inputElement.kindOfTableFieldType = kind1
                     inputElement.isKindOfTableFieldTypeOptional = true
-                    inputElement.tableFieldType = elementInArgs?.type?.ofType?.name
-                    inputElement.tableField = elementInArgs?.name
+                    inputElement.tableFieldType = elementInArgs.type.ofType.name
+                    inputElement.tableField = elementInArgs.name
                     state.argsTables.add(inputElement)
                 }
         } else // optional input object or scalar or enum in the top
-            if (kind0 == INPUT_OBJECT || kind0 == SCALAR || kind0 == ENUM) {
+            if (kindChecksInput(kind0)) {
                 inputElement.kindOfTableFieldType = kind0
                 inputElement.isKindOfTableFieldTypeOptional = true
-                inputElement.tableFieldType = elementInArgs?.type?.name
-                inputElement.tableField = elementInArgs?.name
+                inputElement.tableFieldType = elementInArgs.type.name
+                inputElement.tableField = elementInArgs.name
                 state.argsTables.add(inputElement)
             }
     }
+
+    private fun kindChecksInput(kind: __TypeKind) = kind == INPUT_OBJECT || kind == SCALAR || kind == ENUM
 
     /*
       Extract tempArgsTables
@@ -371,10 +376,10 @@ object GraphQLActionBuilder {
     private fun extractTempArgsTables(state: TempState, schemaObj: SchemaObj) {
         for (elementInInputParamTable in state.argsTables) {
             if (elementInInputParamTable.kindOfTableFieldType == INPUT_OBJECT) {
-                for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
+                for (elementIntypes in schemaObj.data.__schema.types) {
                     if ((elementInInputParamTable.tableFieldType == elementIntypes.name) && (elementIntypes.kind == INPUT_OBJECT))
                         for (elementInInputFields in elementIntypes.inputFields) {
-                            val kind0 = elementInInputFields?.type?.kind
+                            val kind0 = elementInInputFields.type.kind
                             val kind1 = elementInInputFields?.type?.ofType?.kind
                             if (kind0 == NON_NULL) {//non optional scalar or enum
                                 if (kind1 == SCALAR || kind1 == ENUM) {// non optional scalar or enum
@@ -382,8 +387,8 @@ object GraphQLActionBuilder {
                                     inputElement.tableType = elementIntypes.name
                                     inputElement.kindOfTableFieldType = kind1
                                     inputElement.isKindOfTableFieldTypeOptional = false
-                                    inputElement.tableFieldType = elementInInputFields?.type?.ofType?.name
-                                    inputElement.tableField = elementInInputFields?.name
+                                    inputElement.tableFieldType = elementInInputFields.type.ofType.name
+                                    inputElement.tableField = elementInInputFields.name
                                     state.tempArgsTables.add(inputElement)
                                 }
                             } else // optional scalar or enum
@@ -392,8 +397,8 @@ object GraphQLActionBuilder {
                                     inputElement.tableType = elementIntypes.name
                                     inputElement.kindOfTableFieldType = kind0
                                     inputElement.isKindOfTableFieldTypeOptional = true
-                                    inputElement.tableFieldType = elementInInputFields?.type?.name
-                                    inputElement.tableField = elementInInputFields?.name
+                                    inputElement.tableFieldType = elementInInputFields.type.name
+                                    inputElement.tableField = elementInInputFields.name
                                     state.tempArgsTables.add(inputElement)
                                 }
                         }
@@ -406,7 +411,7 @@ object GraphQLActionBuilder {
     private fun handleEnumInArgsTables(state: TempState, schemaObj: SchemaObj) {
         val allEnumElement: MutableMap<String, MutableList<String>> = mutableMapOf()
         for (elementInInputParamTable in state.argsTables) {
-            for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
+            for (elementIntypes in schemaObj.data.__schema.types) {
                 if ((elementInInputParamTable.kindOfTableFieldType == ENUM) && (elementIntypes.kind == ENUM) && (elementIntypes.name == elementInInputParamTable.tableFieldType)) {
                     val enumElement: MutableList<String> = mutableListOf()
                     for (elementInEnumValues in elementIntypes.enumValues) {
@@ -433,7 +438,7 @@ object GraphQLActionBuilder {
     private fun handleEnumInTempArgsTables(state: TempState, schemaObj: SchemaObj) {
         val allEnumElement: MutableMap<String, MutableList<String>> = mutableMapOf()
         for (elementInInputParamTable in state.tempArgsTables) {
-            for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
+            for (elementIntypes in schemaObj.data.__schema.types) {
                 if ((elementInInputParamTable.kindOfTableFieldType == ENUM) && (elementIntypes.kind == ENUM) && (elementIntypes.name == elementInInputParamTable.tableFieldType)) {
                     val enumElement: MutableList<String> = mutableListOf()
                     for (elementInEnumValues in elementIntypes.enumValues) {
@@ -461,7 +466,7 @@ object GraphQLActionBuilder {
         val allUnionElement: MutableMap<String, MutableList<String>> = mutableMapOf()
 
         for (elementInTable in state.tables) {//extraction of the union object names in a map
-            for (elementIntypes in schemaObj.data.__schema.types.orEmpty()) {
+            for (elementIntypes in schemaObj.data.__schema.types) {
                 if ((elementInTable.kindOfTableFieldType == UNION) && (elementIntypes.kind == UNION) && (elementIntypes.name == elementInTable.tableFieldType)) {
                     val unionElement: MutableList<String> = mutableListOf()
                     for (elementInUnionTypes in elementIntypes.possibleTypes) {
@@ -530,29 +535,29 @@ object GraphQLActionBuilder {
             tableElement.isKindOfTableFieldOptional = true
             if (kind2 == NON_NULL) {// non optional object or scalar or enum or union
                 tableElement.isKindOfTableFieldTypeOptional = false
-                if (kind3 == OBJECT || kind3 == SCALAR || kind3 == ENUM || kind3 == UNION || kind3 == INTERFACE) {
+                if (kindChecks(kind3)) {
                     tableElement.kindOfTableFieldType = kind3
-                    tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
-                    tableElement.tableType = elementInTypes?.name
+                    tableElement.tableFieldType = elementInfields.type.ofType.ofType.name
+                    tableElement.tableType = elementInTypes.name
                     state.tempUnionTables.add(tableElement)
                 }
 
             } else {
                 tableElement.isKindOfTableFieldTypeOptional = true
-                if (kind2 == OBJECT || kind2 == SCALAR || kind2 == ENUM || kind2 == UNION || kind2 == INTERFACE) {//optional object or scalar or enum or union
+                if (kindChecks(kind2)) {//optional object or scalar or enum or union
                     tableElement.kindOfTableFieldType = kind2
-                    tableElement.tableFieldType = elementInfields?.type?.ofType?.name
-                    tableElement.tableType = elementInTypes?.name
+                    tableElement.tableFieldType = elementInfields.type.ofType.name
+                    tableElement.tableType = elementInTypes.name
                     state.tempUnionTables.add(tableElement)
                 }
             }
 
         } else {
             tableElement.isKindOfTableFieldTypeOptional = true
-            if (kind == OBJECT || kind == SCALAR || kind == ENUM || kind == UNION || kind == INTERFACE) {// optional object or scalar or enum in the top
+            if (kindChecks(kind)) {// optional object or scalar or enum in the top
                 tableElement.kindOfTableFieldType = kind
-                tableElement.tableFieldType = elementInfields?.type?.name
-                tableElement.tableType = elementInTypes?.name
+                tableElement.tableFieldType = elementInfields.type.name
+                tableElement.tableType = elementInTypes.name
                 state.tempUnionTables.add(tableElement)
             }
         }
@@ -572,8 +577,8 @@ object GraphQLActionBuilder {
             if (kind2 == NON_NULL) {// non optional object or scalar or enum
                 tableElement.isKindOfTableFieldTypeOptional = false
                 tableElement.kindOfTableFieldType = kind3
-                tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.ofType?.name
-                tableElement.tableType = elementIntypes?.name
+                tableElement.tableFieldType = elementInfields.type.ofType.ofType.ofType.name
+                tableElement.tableType = elementIntypes.name
                 state.tempUnionTables.add(tableElement)
             } else {//optional object or scalar or enum
                 if (elementInfields?.type?.ofType?.ofType?.name == null) {
@@ -581,18 +586,18 @@ object GraphQLActionBuilder {
                 } else {
                     tableElement.kindOfTableFieldType = kind2
                     tableElement.isKindOfTableFieldTypeOptional = true
-                    tableElement.tableFieldType = elementInfields?.type?.ofType?.ofType?.name
-                    tableElement.tableType = elementIntypes?.name
+                    tableElement.tableFieldType = elementInfields.type.ofType.ofType.name
+                    tableElement.tableType = elementIntypes.name
                     state.tempUnionTables.add(tableElement)
                 }
             }
-        } else if (kind == OBJECT || kind == SCALAR || kind == ENUM || kind == UNION || kind3 == INTERFACE) {
+        } else if (kindChecks(kind)) {
             tableElement.kindOfTableFieldType = kind
-            tableElement.tableFieldType = elementInfields?.type?.ofType?.name
-            tableElement.tableType = elementIntypes?.name
+            tableElement.tableFieldType = elementInfields.type.ofType.name
+            tableElement.tableType = elementIntypes.name
             state.tempUnionTables.add(tableElement)
         } else {
-            LoggingUtil.uniqueWarn(log, "Type not supported yet:  ${elementInfields?.type?.ofType?.kind}")
+            LoggingUtil.uniqueWarn(log, "Type not supported yet:  ${elementInfields.type.ofType.kind}")
         }
 
     }
@@ -600,7 +605,7 @@ object GraphQLActionBuilder {
     private fun handleEnumInTables(state: TempState, schemaObj: SchemaObj) {
         val allEnumElement: MutableMap<String, MutableList<String>> = mutableMapOf()
         for (elementInInputParamTable in state.tables) {
-            for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
+            for (elementIntypes in schemaObj.data.__schema.types) {
                 if ((elementInInputParamTable.kindOfTableFieldType == ENUM) && (elementIntypes.kind == ENUM) && (elementIntypes.name == elementInInputParamTable.tableFieldType)) {
                     val enumElement: MutableList<String> = mutableListOf()
                     for (elementInEnumValues in elementIntypes.enumValues) {
@@ -628,7 +633,7 @@ object GraphQLActionBuilder {
         val allInterfaceElement: MutableMap<String, MutableList<String>> = mutableMapOf()
 
         for (elementInTable in state.tables) {//extraction of the interface object names in a map
-            for (elementIntypes in schemaObj.data?.__schema?.types.orEmpty()) {
+            for (elementIntypes in schemaObj.data.__schema.types) {
                 if ((elementInTable.kindOfTableFieldType == INTERFACE) && (elementIntypes.kind == INTERFACE) && (elementIntypes.name == elementInTable.tableFieldType)) {
                     val interfaceElement: MutableList<String> = mutableListOf()
                     for (elementInInterfaceTypes in elementIntypes.possibleTypes) {
@@ -879,13 +884,13 @@ object GraphQLActionBuilder {
                     OptionalGene(methodName, StringGene(methodName))
                 else
                     StringGene(methodName)
-            enumTag->
+            enumTag ->
                 return if (isKindOfTableFieldTypeOptional)
                     OptionalGene(methodName, EnumGene(methodName, enumValues))
                 else
                     EnumGene(methodName, enumValues)
 
-            unionTag-> {
+            unionTag -> {
                 LoggingUtil.uniqueWarn(log, "GQL does not support union in input type: $kindOfTableField")
                 return StringGene("Not supported type")
             }
@@ -1033,26 +1038,26 @@ object GraphQLActionBuilder {
         for (element in state.argsTables) {
             if (element.tableType == tableType) {
 
-                if (element.kindOfTableFieldType.toString().toLowerCase()== scalarTag) {
+                if (element.kindOfTableFieldType.toString().toLowerCase() == scalarTag) {
                     val field = element.tableField
                     val template = getInputGene(state, tableType, element.tableFieldType, kindOfTableFieldType, field, history,
                             element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, element.interfaceTypes)
                     fields.add(template)
                 } else {
-                    if (element.kindOfTableField.toString().toLowerCase()== listTag) {
+                    if (element.kindOfTableField.toString().toLowerCase() == listTag) {
                         val template = getInputGene(state, element.tableFieldType, element.kindOfTableField.toString(),
                                 element.kindOfTableFieldType.toString(),
                                 element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes)
 
                         fields.add(template)
                     } else
-                        if (element.kindOfTableFieldType.toString().toLowerCase()== inputObjectTag ) {
+                        if (element.kindOfTableFieldType.toString().toLowerCase() == inputObjectTag) {
                             val template = getInputGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
                                     element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes)
 
                             fields.add(template)
 
-                        } else if (element.kindOfTableFieldType.toString().toLowerCase()== enumTag) {
+                        } else if (element.kindOfTableFieldType.toString().toLowerCase() == enumTag) {
                             val field = element.tableField
                             val template = getInputGene(state, tableType, element.kindOfTableFieldType.toString(), kindOfTableFieldType, field, history,
                                     element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, element.interfaceTypes)
@@ -1103,7 +1108,7 @@ object GraphQLActionBuilder {
                     (OptionalGene(methodName, CycleObjectGene(methodName)))
                 }
             }
-            unionTag-> {
+            unionTag -> {
                 history.addLast(tableType)
                 return if (history.count { it == tableType } == 1) {
                     val optObjGene = createUnionObjectsGene(state, tableType, kindOfTableFieldType, history,
@@ -1191,28 +1196,28 @@ object GraphQLActionBuilder {
                             element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, element.interfaceTypes)
                     fields.add(template)
                 } else {
-                    if (element.kindOfTableField.toString().toLowerCase()== listTag) {
+                    if (element.kindOfTableField.toString().toLowerCase() == listTag) {
                         val template =
                                 getReturnGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(),
                                         element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes)
 
                         fields.add(template)
                     } else
-                        if (element.kindOfTableFieldType.toString().toLowerCase()== objectTag) {
+                        if (element.kindOfTableFieldType.toString().toLowerCase() == objectTag) {
                             val template =
                                     getReturnGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
                                             element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes)
 
                             fields.add(template)
 
-                        } else if (element.kindOfTableFieldType.toString().toLowerCase()== enumTag) {
+                        } else if (element.kindOfTableFieldType.toString().toLowerCase() == enumTag) {
                             val field = element.tableField
                             val template = getReturnGene(state, tableType, element.kindOfTableFieldType.toString(), kindOfTableFieldType, field, history,
                                     element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, element.interfaceTypes)
 
                             fields.add(template)
 
-                        } else if (element.kindOfTableFieldType.toString().toLowerCase()== unionTag) {
+                        } else if (element.kindOfTableFieldType.toString().toLowerCase() == unionTag) {
                             val template =
                                     getReturnGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
                                             element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes)
@@ -1220,7 +1225,7 @@ object GraphQLActionBuilder {
                             fields.add(template)
 
                         } else
-                            if (element.kindOfTableFieldType.toString().toLowerCase()== interfaceTag) {
+                            if (element.kindOfTableFieldType.toString().toLowerCase() == interfaceTag) {
                                 val template =
                                         getReturnGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
                                                 element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes)
