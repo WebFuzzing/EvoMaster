@@ -75,6 +75,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
      *This function takes as input a gene filter which contains fields to skip.
      * The output is an object gene without the fields of the filter gene.
      * It is used in the GQL interface type since we need to remove redundant fields in each object in the interface.
+     * Important: Depending on where copyFields is invoked, it might miss the binding references.
+     * But if it is used for creating genes, it would be ok.
      */
     fun copyFields(filterGene: ObjectGene): ObjectGene {
 
