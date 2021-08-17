@@ -1,3 +1,8 @@
+import {StringSpecializationInfo} from "./shared/StringSpecializationInfo";
+import ExecutionTracer from "./staticstate/ExecutionTracer";
+import {TaintType} from "./shared/TaintType";
+
+
 class StatementDescription {
     readonly line: string;
     readonly method: string;
@@ -36,7 +41,7 @@ export default class AdditionalInfo {
     /**
      * Map from taint input name to string specializations for it
      */
-    //private Map<String, Set<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
+    private stringSpecializations: Map<string, Set<StringSpecializationInfo>> = new Map<string, Set<StringSpecializationInfo>>();
 
 
     /*
@@ -60,21 +65,35 @@ export default class AdditionalInfo {
     private noExceptionStatement: string = null;
 
 
-// public void addSpecialization(String taintInputName, StringSpecializationInfo info){
-//     if(!ExecutionTracer.getTaintType(taintInputName).isTainted()){
-//         throw new IllegalArgumentException("No valid input name: " + taintInputName);
-//     }
-//     Objects.requireNonNull(info);
-//
-//     stringSpecializations.putIfAbsent(taintInputName, new CopyOnWriteArraySet<>());
-//     Set<StringSpecializationInfo> set = stringSpecializations.get(taintInputName);
-//     set.add(info);
-// }
-//
-// public Map<String, Set<StringSpecializationInfo>> getStringSpecializationsView(){
-//     //note: this does not prevent modifying the sets inside it
-//     return Collections.unmodifiableMap(stringSpecializations);
-// }
+    addSpecialization(taintInputName: string, info: StringSpecializationInfo) {
+        if (ExecutionTracer.getTaintType(taintInputName) == TaintType.NONE) {
+            throw new Error("No valid input name: " + taintInputName);
+        }
+        if (!info) {
+            throw new Error("Missing info object");
+        }
+
+        let set = this.stringSpecializations.get(taintInputName);
+        if (!set) {
+            set = new Set<StringSpecializationInfo>();
+            this.stringSpecializations.set(taintInputName, set);
+        }
+
+        /*
+            ah! the joys of JS Set when dealing with objects...
+         */
+        for(let s of set){
+            if(info.equalsTo(s)){
+                return;
+            }
+        }
+
+        set.add(info);
+    }
+
+    getStringSpecializationsView() :  Map<string, Set<StringSpecializationInfo>> {
+        return this.stringSpecializations;
+    }
 
     public addQueryParameter(param: string) {
         if (param && param.length > 0) {
@@ -105,7 +124,7 @@ export default class AdditionalInfo {
             return this.noExceptionStatement;
         }
 
-        return  this.lastExecutedStatementStack[this.lastExecutedStatementStack.length - 1];
+        return this.lastExecutedStatementStack[this.lastExecutedStatementStack.length - 1];
     }
 
     public pushLastExecutedStatement(lastLine: string) {
@@ -115,7 +134,7 @@ export default class AdditionalInfo {
         this.lastExecutedStatementStack.push(lastLine);
     }
 
-    public popLastExecutedStatement() : string {
+    public popLastExecutedStatement(): string {
         const statementDescription = this.lastExecutedStatementStack.pop();
         if (this.lastExecutedStatementStack.length == 0) {
             this.noExceptionStatement = statementDescription;

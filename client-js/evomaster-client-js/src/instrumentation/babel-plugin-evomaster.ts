@@ -11,7 +11,7 @@ import {
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
-import ObjectiveNaming from "./ObjectiveNaming";
+import ObjectiveNaming from "./shared/ObjectiveNaming";
 
 /*
     https://github.com/jamiebuilds/babel-handbook
