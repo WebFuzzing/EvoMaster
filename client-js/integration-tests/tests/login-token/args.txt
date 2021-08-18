@@ -1,0 +1,1 @@
+--testSuiteSplitType=NONE
