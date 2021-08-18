@@ -134,6 +134,43 @@ class Randomness {
         return k
     }
 
+    private fun calculateIncrement(min: Long, max: Long) : Long{
+        return try{
+            Math.addExact(Math.subtractExact(max, min), 1)
+        }catch (e : ArithmeticException) {
+            Long.MAX_VALUE
+        }
+    }
+
+    fun nextLong(min: Long, max: Long): Long {
+
+        if (min == max) {
+            return min
+        }
+        if (min > max) {
+            throw IllegalArgumentException("Min $min is bigger than max $max")
+        }
+
+        val k = min + (random.nextDouble() * calculateIncrement(min, max)).toLong()
+
+        log.trace("nextLong(min {}, max {}): {}", min, max, k)
+        return k
+    }
+
+    fun nextLong(min: Long, max: Long, exclude: Long): Long {
+
+        if (min == max && max == exclude) {
+            throw IllegalArgumentException("Nothing to select, as min/max/exclude are all equal")
+        }
+
+        var k = nextLong(min, max)
+        while (k == exclude) {
+            k = nextLong(min, max)
+        }
+        log.trace("nextLong(min, max, exclude): {}", k)
+        return k
+    }
+
     fun nextWordString(min: Int = 0, max: Int = 10): String {
 
         val n = nextInt(min, max)
@@ -148,6 +185,36 @@ class Randomness {
         return k
     }
 
+    fun randomizeBoundedIntAndLong(value: Long, min: Long, max: Long, forceNewValue: Boolean) : Long{
+        val z = 1000L
+        val range = calculateIncrement(min, max)
+
+        val a: Long
+        val b: Long
+
+        if (range > z && nextBoolean(0.95)) {
+            //if very large range, might want to sample small values around 0 most of the times
+            if (min <= 0 && max >= z) {
+                a = 0
+                b = z
+            } else if (nextBoolean()) {
+                a = min
+                b = min + z
+            } else {
+                a = max - z
+                b = max
+            }
+        } else {
+            a = min
+            b = max
+        }
+
+        return if (forceNewValue) {
+            nextLong(a, b, value)
+        } else {
+            nextLong(a, b)
+        }
+    }
 
     fun nextLetter(): Char {
 

@@ -20,4 +20,6 @@ public class ColumnDto {
 
     public boolean foreignKeyToAutoIncrement = false;
 
+    public boolean isUnsigned = false;
+
 }

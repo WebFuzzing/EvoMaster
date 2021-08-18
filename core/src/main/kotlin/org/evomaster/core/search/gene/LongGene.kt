@@ -15,23 +15,37 @@ import org.slf4j.LoggerFactory
 
 class LongGene(
         name: String,
-        value: Long = 0
+        value: Long = 0,
+        val min : Long? = null,
+        val max : Long? = null
 ) : NumberGene<Long>(name, value) {
+
+    init {
+        if ((min != null).xor(max != null)){
+            throw IllegalArgumentException("min and max should be specified together, i.e., both are null or not")
+        }
+    }
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)
     }
 
     override fun copyContent(): Gene {
-        val copy = LongGene(name, value)
+        val copy = LongGene(name, value, min, max)
         return copy
     }
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
+        if (min != null){
+            value = randomness.randomizeBoundedIntAndLong(value, min, max!!, forceNewValue)
+            return
+        }
+
+
         var k = if (randomness.nextBoolean(0.1)) {
-            randomness.nextLong()
+                randomness.nextLong()
         } else if (randomness.nextBoolean(0.1)) {
             randomness.nextInt().toLong()
         } else {
@@ -60,12 +74,26 @@ class LongGene(
             }
         }
 
-        //choose an i for 2^i modification
-        val delta = GeneUtils.getDelta(randomness, apc)
+        val range = if (min != null){
+            try{
+                Math.subtractExact(max!!, min)
+            }catch (e : ArithmeticException) {
+                Long.MAX_VALUE
+            }
+        }else
+            Long.MAX_VALUE
 
-        val sign = randomness.choose(listOf(-1, +1))
+        //choose an i for 2^i modification
+        val delta = GeneUtils.getDelta(randomness, apc, range)
+
+        val sign = when{
+            max != null && value >= max -> -1
+            min != null && value <= min -> +1
+            else -> randomness.choose(listOf(-1, +1))
+        }
 
         value += (sign * delta)
+
 
         return true
     }
