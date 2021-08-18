@@ -70,21 +70,12 @@ object TokenWriter {
 
             lines.indent(2)
 
-            lines.add(".post(")
-
-            if (format.isKotlin()) {
-                lines.append("\"\${$baseUrlOfSut}")
-            } else {
-                lines.append("$baseUrlOfSut + \"")
-            }
-
-            lines.append("${k.endpoint}\")")
-
             when{
                 format.isJavaOrKotlin() -> {
                     lines.add(".contentType(\"application/json\")")
                 }
                 format.isJavaScript() -> {
+                    appendPost(lines, baseUrlOfSut, format, k.endpoint)
                     lines.add(".set('Content-Type','application/json')")
                 }
             }
@@ -94,6 +85,9 @@ object TokenWriter {
             if (testCaseWriter is HttpWsTestCaseWriter){
                 testCaseWriter.printSendJsonBody(json, lines)
             }
+
+            if (format.isJavaOrKotlin())
+                appendPost(lines, baseUrlOfSut, format, k.endpoint)
 
             val path = k.extractTokenField.substring(1).replace("/",".")
 
@@ -108,5 +102,19 @@ object TokenWriter {
             lines.deindent(2)
 
         }
+    }
+
+
+    private fun appendPost(lines: Lines, baseUrlOfSut: String, format: OutputFormat, endpoint: String){
+
+        lines.add(".post(")
+
+        if (format.isKotlin()) {
+            lines.append("\"\${$baseUrlOfSut}")
+        } else {
+            lines.append("$baseUrlOfSut + \"")
+        }
+
+        lines.append("${endpoint}\")")
     }
 }
