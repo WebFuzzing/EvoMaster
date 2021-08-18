@@ -12,14 +12,13 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
             ITriangleClassification tc = new TriangleClassificationImpl();
 
             ExecutionTracer.Reset();
-           // Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives()); //FIXME
+            // Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
 
             tc.Classify(-1, 0, 0);
             
-            //FIXME
-            //var a = ExecutionTracer.GetNumberOfObjectives();
+            // var a = ExecutionTracer.GetNumberOfObjectives();
             //at least one line should had been covered
-            //Assert.True(a > 0);
+            // Assert.True(a > 0);
         }
     }
 }

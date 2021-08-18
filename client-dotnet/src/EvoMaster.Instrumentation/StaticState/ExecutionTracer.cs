@@ -114,7 +114,7 @@ namespace EvoMaster.Instrumentation.StaticState
 
 
         ///<summary>Report on the fact that a given line has been executed.</summary>
-        public static void executedLine(String className, String methodName, String descriptor, int line)
+        public static void ExecutedLine(string className, string methodName, string descriptor, int line)
         {
             //This is done to prevent the SUT keep on executing code after a test case is evaluated
             if (IsKillSwitch())
