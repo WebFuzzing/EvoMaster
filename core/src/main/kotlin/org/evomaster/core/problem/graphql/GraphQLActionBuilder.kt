@@ -203,18 +203,16 @@ object GraphQLActionBuilder {
         /*
         *Note: the introspective query of GQl goes until 7 ofType. Here we go until 3 ofTypes since only 2 APIs go deeper.
          */
+        val k = KindX()
+        val kindsLevels = k.quadKinds(elementInfields)
 
-        val kind = elementInfields?.type?.kind
-        val kind2 = elementInfields?.type?.ofType?.kind
-        val kind3 = elementInfields?.type?.ofType?.ofType?.kind
-
-        if (kind == LIST) {//optional list in the top
+        if (kindsLevels.kind0 == LIST) {//optional list in the top
             tableElement.kindOfTableField = LIST
             tableElement.isKindOfTableFieldOptional = true
-            if (kind2 == NON_NULL) {// non optional object or scalar or enum or union or interface
+            if (kindsLevels.kind1 == NON_NULL) {// non optional object or scalar or enum or union or interface
                 tableElement.isKindOfTableFieldTypeOptional = false
-                if (kindChecks(kind3)) {
-                    tableElement.kindOfTableFieldType = kind3
+                if (kindsLevels.kind2?.let { kindChecks(it) }!!) {
+                    tableElement.kindOfTableFieldType = kindsLevels.kind2
                     tableElement.tableFieldType = elementInfields.type.ofType.ofType.name
                     tableElement.tableType = elementInTypes.name
                     state.tables.add(tableElement)
@@ -223,8 +221,8 @@ object GraphQLActionBuilder {
             } else {//optional object or scalar or enum or union or interface
 
                 tableElement.isKindOfTableFieldTypeOptional = true
-                if (kindChecks(kind2)) {
-                    tableElement.kindOfTableFieldType = kind2
+                if (kindsLevels.kind1?.let { kindChecks(it) }!!) {
+                    tableElement.kindOfTableFieldType = kindsLevels.kind1
                     tableElement.tableFieldType = elementInfields.type.ofType.name
                     tableElement.tableType = elementInTypes.name
                     state.tables.add(tableElement)
@@ -233,8 +231,8 @@ object GraphQLActionBuilder {
 
         } else {
             tableElement.isKindOfTableFieldTypeOptional = true
-            if (kindChecks(kind)) {// optional object or scalar or enum or union or interface in the top
-                tableElement.kindOfTableFieldType = kind
+            if (kindsLevels.kind0?.let { kindChecks(it) }!!) {// optional object or scalar or enum or union or interface in the top
+                tableElement.kindOfTableFieldType = kindsLevels.kind0
                 tableElement.tableFieldType = elementInfields.type.name
                 tableElement.tableType = elementInTypes.name
                 state.tables.add(tableElement)
@@ -248,17 +246,17 @@ object GraphQLActionBuilder {
      */
     private fun handleNonOptionalInTables(elementInfields: __Field, tableElement: Table, elementIntypes: FullType, state: TempState) {
 
-        val kind = elementInfields?.type?.ofType?.kind
-        val kind2 = elementInfields?.type?.ofType?.ofType?.kind
-        val kind3 = elementInfields?.type?.ofType?.ofType?.ofType?.kind
+        val k = KindX()
+        val kindsLevels = k.quadKinds(elementInfields)
+
         tableElement.isKindOfTableFieldOptional = false
 
-        if (kind == LIST) {// non optional list
+        if (kindsLevels.kind1 == LIST) {// non optional list
             tableElement.kindOfTableField = LIST
 
-            if (kind2 == NON_NULL) {// non optional object or scalar or enum or union or interface
+            if (kindsLevels.kind2 == NON_NULL) {// non optional object or scalar or enum or union or interface
                 tableElement.isKindOfTableFieldTypeOptional = false
-                tableElement.kindOfTableFieldType = kind3
+                tableElement.kindOfTableFieldType = kindsLevels.kind3
                 tableElement.tableFieldType = elementInfields.type.ofType.ofType.ofType.name
                 tableElement.tableType = elementIntypes.name
                 state.tables.add(tableElement)
@@ -266,15 +264,15 @@ object GraphQLActionBuilder {
                 if (elementInfields?.type?.ofType?.ofType?.name == null) {
                     LoggingUtil.uniqueWarn(log, "Depth not supported yet ${elementIntypes}")
                 } else {
-                    tableElement.kindOfTableFieldType = kind2
+                    tableElement.kindOfTableFieldType = kindsLevels.kind2
                     tableElement.isKindOfTableFieldTypeOptional = true
                     tableElement.tableFieldType = elementInfields.type.ofType.ofType.name
                     tableElement.tableType = elementIntypes.name
                     state.tables.add(tableElement)
                 }
             }
-        } else if (kindChecks(kind)) {
-            tableElement.kindOfTableFieldType = kind
+        } else if (kindsLevels.kind1?.let { kindChecks(it) }!!) {
+            tableElement.kindOfTableFieldType = kindsLevels.kind1
             tableElement.tableFieldType = elementInfields.type.ofType.name
             tableElement.tableType = elementIntypes.name
             state.tables.add(tableElement)
@@ -290,13 +288,14 @@ object GraphQLActionBuilder {
       This when an entry is not optional in argsTables
        */
     private fun handleNonOptionalInArgsTables(inputElement: Table, elementInArgs: InputValue, state: TempState) {
-        val kind1 = elementInArgs?.type?.ofType?.kind
-        val kind2 = elementInArgs?.type?.ofType?.ofType?.kind
-        val kind3 = elementInArgs?.type?.ofType?.ofType?.ofType?.kind
-        if (kind1 == LIST) {//non optional list
+
+        val k = KindX()
+        val kindsLevels = k.quadKindsInInputs(elementInArgs)
+
+        if (kindsLevels.kind1 == LIST) {//non optional list
             inputElement.kindOfTableField = LIST
             inputElement.isKindOfTableFieldOptional = false
-            if (kind2 == NON_NULL) {// non optional input object or scalar
+            if (kindsLevels.kind2 == NON_NULL) {// non optional input object or scalar
                 if (elementInArgs.type.ofType.ofType.ofType.kind == INPUT_OBJECT) {// non optional input object
                     inputElement.kindOfTableFieldType = INPUT_OBJECT
                     inputElement.isKindOfTableFieldTypeOptional = false
@@ -304,7 +303,7 @@ object GraphQLActionBuilder {
                     inputElement.tableField = elementInArgs.name
                     state.argsTables.add(inputElement)
                 } else {// non optional scalar or enum
-                    if (kind3 == SCALAR || kind3 == ENUM) {
+                    if (kindsLevels.kind3 == SCALAR || kindsLevels.kind3 == ENUM) {
                         inputElement.kindOfTableFieldType = SCALAR
                         inputElement.isKindOfTableFieldTypeOptional = false
                         inputElement.tableFieldType = elementInArgs.type.ofType.ofType.ofType.name
@@ -314,8 +313,8 @@ object GraphQLActionBuilder {
                 }
             } else { // optional input object or scalar or enum
                 inputElement.isKindOfTableFieldTypeOptional = true
-                if (kindChecksInput(kind1)) {
-                    inputElement.kindOfTableFieldType = kind2
+                if (kindChecksInput(kindsLevels.kind1)) {
+                    inputElement.kindOfTableFieldType = kindsLevels.kind2
                     inputElement.isKindOfTableFieldTypeOptional = true
                     inputElement.tableFieldType = elementInArgs.type.ofType.ofType.name
                     inputElement.tableField = elementInArgs.name
@@ -323,8 +322,8 @@ object GraphQLActionBuilder {
                 }
             }
         } else // non optional input object or scalar or enum not in a list
-            if (kindChecksInput(kind1)) {
-                inputElement.kindOfTableFieldType = kind1
+            if (kindsLevels.kind1?.let { kindChecksInput(it) }!!) {
+                inputElement.kindOfTableFieldType = kindsLevels.kind1
                 inputElement.isKindOfTableFieldTypeOptional = false
                 inputElement.tableFieldType = elementInArgs.type.ofType.name
                 inputElement.tableField = elementInArgs.name
@@ -336,31 +335,32 @@ object GraphQLActionBuilder {
        This when an entry is optional in argsTables
     */
     private fun handleOptionalInArgsTables(inputElement: Table, elementInArgs: InputValue, state: TempState) {
-        val kind0 = elementInArgs?.type?.kind
-        val kind1 = elementInArgs?.type?.ofType?.kind
-        val kind2 = elementInArgs?.type?.ofType?.ofType?.kind
-        if (kind0 == LIST) {//optional list in the top
+
+        val k = KindX()
+        val kindsLevels = k.quadKindsInInputs(elementInArgs)
+
+        if (kindsLevels.kind0 == LIST) {//optional list in the top
             inputElement.kindOfTableField = LIST
             inputElement.isKindOfTableFieldOptional = true
-            if (kind1 == NON_NULL) {// non optional input object or scalar
-                if (kindChecksInput(kind2)) {
-                    inputElement.kindOfTableFieldType = kind2
+            if (kindsLevels.kind1 == NON_NULL) {// non optional input object or scalar
+                if (kindsLevels.kind2?.let { kindChecksInput(it) }!!) {
+                    inputElement.kindOfTableFieldType = kindsLevels.kind2
                     inputElement.isKindOfTableFieldTypeOptional = false
                     inputElement.tableFieldType = elementInArgs.type.ofType.ofType.name
                     inputElement.tableField = elementInArgs.name
                     state.argsTables.add(inputElement)
                 }
             } else //optional input object or scalar or enum
-                if (kindChecksInput(kind1)) {
-                    inputElement.kindOfTableFieldType = kind1
+                if (kindsLevels.kind1?.let { kindChecksInput(it) }!!) {
+                    inputElement.kindOfTableFieldType = kindsLevels.kind1
                     inputElement.isKindOfTableFieldTypeOptional = true
                     inputElement.tableFieldType = elementInArgs.type.ofType.name
                     inputElement.tableField = elementInArgs.name
                     state.argsTables.add(inputElement)
                 }
         } else // optional input object or scalar or enum in the top
-            if (kindChecksInput(kind0)) {
-                inputElement.kindOfTableFieldType = kind0
+            if (kindsLevels.kind0?.let { kindChecksInput(it) }!!) {
+                inputElement.kindOfTableFieldType = kindsLevels.kind0
                 inputElement.isKindOfTableFieldTypeOptional = true
                 inputElement.tableFieldType = elementInArgs.type.name
                 inputElement.tableField = elementInArgs.name
@@ -526,17 +526,16 @@ object GraphQLActionBuilder {
 
     private fun handleOptionalInTempUnionTables(elementInfields: __Field, tableElement: Table, elementInTypes: FullType, state: TempState) {
 
-        val kind = elementInfields?.type?.kind
-        val kind2 = elementInfields?.type?.ofType?.kind
-        val kind3 = elementInfields?.type?.ofType?.ofType?.kind
+        val k = KindX()
+        val kindsLevels = k.quadKinds(elementInfields)
 
-        if (kind == LIST) {//optional list in the top
+        if (kindsLevels.kind0 == LIST) {//optional list in the top
             tableElement.kindOfTableField = LIST
             tableElement.isKindOfTableFieldOptional = true
-            if (kind2 == NON_NULL) {// non optional object or scalar or enum or union
+            if (kindsLevels.kind1 == NON_NULL) {// non optional object or scalar or enum or union
                 tableElement.isKindOfTableFieldTypeOptional = false
-                if (kindChecks(kind3)) {
-                    tableElement.kindOfTableFieldType = kind3
+                if (kindsLevels.kind2?.let { kindChecks(it) }!!) {
+                    tableElement.kindOfTableFieldType = kindsLevels.kind2
                     tableElement.tableFieldType = elementInfields.type.ofType.ofType.name
                     tableElement.tableType = elementInTypes.name
                     state.tempUnionTables.add(tableElement)
@@ -544,8 +543,8 @@ object GraphQLActionBuilder {
 
             } else {
                 tableElement.isKindOfTableFieldTypeOptional = true
-                if (kindChecks(kind2)) {//optional object or scalar or enum or union
-                    tableElement.kindOfTableFieldType = kind2
+                if (kindsLevels.kind1?.let { kindChecks(it) }!!) {//optional object or scalar or enum or union
+                    tableElement.kindOfTableFieldType = kindsLevels.kind1
                     tableElement.tableFieldType = elementInfields.type.ofType.name
                     tableElement.tableType = elementInTypes.name
                     state.tempUnionTables.add(tableElement)
@@ -554,8 +553,8 @@ object GraphQLActionBuilder {
 
         } else {
             tableElement.isKindOfTableFieldTypeOptional = true
-            if (kindChecks(kind)) {// optional object or scalar or enum in the top
-                tableElement.kindOfTableFieldType = kind
+            if (kindsLevels.kind0?.let { kindChecks(it) }!!) {// optional object or scalar or enum in the top
+                tableElement.kindOfTableFieldType = kindsLevels.kind0
                 tableElement.tableFieldType = elementInfields.type.name
                 tableElement.tableType = elementInTypes.name
                 state.tempUnionTables.add(tableElement)
@@ -566,17 +565,17 @@ object GraphQLActionBuilder {
 
     private fun handleNonOptionalInTempUnionTables(elementInfields: __Field, tableElement: Table, elementIntypes: FullType, state: TempState) {
 
-        val kind = elementInfields?.type?.ofType?.kind
-        val kind2 = elementInfields?.type?.ofType?.ofType?.kind
-        val kind3 = elementInfields?.type?.ofType?.ofType?.ofType?.kind
+        val k = KindX()
+        val kindsLevels = k.quadKinds(elementInfields)
+
         tableElement.isKindOfTableFieldOptional = false
 
-        if (kind == LIST) {// non optional list
+        if (kindsLevels.kind1 == LIST) {// non optional list
             tableElement.kindOfTableField = LIST
 
-            if (kind2 == NON_NULL) {// non optional object or scalar or enum
+            if (kindsLevels.kind2 == NON_NULL) {// non optional object or scalar or enum
                 tableElement.isKindOfTableFieldTypeOptional = false
-                tableElement.kindOfTableFieldType = kind3
+                tableElement.kindOfTableFieldType = kindsLevels.kind3
                 tableElement.tableFieldType = elementInfields.type.ofType.ofType.ofType.name
                 tableElement.tableType = elementIntypes.name
                 state.tempUnionTables.add(tableElement)
@@ -584,15 +583,15 @@ object GraphQLActionBuilder {
                 if (elementInfields?.type?.ofType?.ofType?.name == null) {
                     LoggingUtil.uniqueWarn(log, "Depth not supported yet ${elementIntypes}")
                 } else {
-                    tableElement.kindOfTableFieldType = kind2
+                    tableElement.kindOfTableFieldType = kindsLevels.kind2
                     tableElement.isKindOfTableFieldTypeOptional = true
                     tableElement.tableFieldType = elementInfields.type.ofType.ofType.name
                     tableElement.tableType = elementIntypes.name
                     state.tempUnionTables.add(tableElement)
                 }
             }
-        } else if (kindChecks(kind)) {
-            tableElement.kindOfTableFieldType = kind
+        } else if (kindsLevels.kind1?.let { kindChecks(it) }!!) {
+            tableElement.kindOfTableFieldType = kindsLevels.kind1
             tableElement.tableFieldType = elementInfields.type.ofType.name
             tableElement.tableType = elementIntypes.name
             state.tempUnionTables.add(tableElement)
@@ -1295,3 +1294,4 @@ object GraphQLActionBuilder {
     }
 
 }
+
