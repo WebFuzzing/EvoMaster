@@ -70,12 +70,6 @@ object TokenWriter {
 
             lines.indent(2)
 
-            val json = k.jsonPayload
-
-            if (testCaseWriter is HttpWsTestCaseWriter){
-                testCaseWriter.printSendJsonBody(json, lines)
-            }
-
             lines.add(".post(")
 
             if (format.isKotlin()) {
@@ -85,6 +79,21 @@ object TokenWriter {
             }
 
             lines.append("${k.endpoint}\")")
+
+            when{
+                format.isJavaOrKotlin() -> {
+                    lines.add(".contentType(\"application/json\")")
+                }
+                format.isJavaScript() -> {
+                    lines.add(".set('Content-Type','application/json')")
+                }
+            }
+
+            val json = k.jsonPayload
+
+            if (testCaseWriter is HttpWsTestCaseWriter){
+                testCaseWriter.printSendJsonBody(json, lines)
+            }
 
             val path = k.extractTokenField.substring(1).replace("/",".")
 
