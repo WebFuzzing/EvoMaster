@@ -6,6 +6,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
 import javax.annotation.PostConstruct
+import kotlin.math.min
 
 
 class Randomness {
@@ -136,7 +137,7 @@ class Randomness {
 
     private fun calculateIncrement(min: Long, max: Long) : Long{
         return try{
-            Math.addExact(Math.subtractExact(max, min), 1)
+            min(Long.MAX_VALUE, Math.addExact(Math.subtractExact(max, min), 1))
         }catch (e : ArithmeticException) {
             Long.MAX_VALUE
         }
