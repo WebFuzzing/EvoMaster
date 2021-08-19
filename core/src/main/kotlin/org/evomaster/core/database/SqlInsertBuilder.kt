@@ -591,8 +591,8 @@ class SqlInsertBuilder(
     }
 
     private fun formatNameInSql(name: String) : String{
-        return when(databaseType){
-            DatabaseType.MYSQL -> name
+        return when{
+            databaseType == DatabaseType.MYSQL || name == SQLKey.ALL.key  -> name
             else -> "\"$name\""
         }
     }
