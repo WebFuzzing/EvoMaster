@@ -17,7 +17,7 @@ class GraphQLActionBuilderTest {
     fun testPetClinic() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/QueryTypeGlobalPetsClinic.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
 
@@ -115,7 +115,7 @@ class GraphQLActionBuilderTest {
     fun anigListSchemaTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/AniList.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/AniList.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
 
@@ -178,7 +178,7 @@ class GraphQLActionBuilderTest {
     fun bitquerySchemaTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/Bitquery.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Bitquery.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(12, actionCluster.size)
@@ -198,7 +198,7 @@ class GraphQLActionBuilderTest {
     fun catalysisHubSchemaTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/CatalysisHub.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/CatalysisHub.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(11, actionCluster.size)
@@ -208,7 +208,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun contentfulSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/Contentful.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Contentful.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(22, actionCluster.size)
@@ -239,7 +239,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun countriesSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/Countries.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Countries.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(6, actionCluster.size)
@@ -259,7 +259,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun deutscheBahnSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/DeutscheBahn.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/DeutscheBahn.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(7, actionCluster.size)
@@ -275,7 +275,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun digitransitHSLSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/DigitransitHSL.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/DigitransitHSL.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(33, actionCluster.size)
@@ -299,7 +299,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun eHRISchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/EHRI.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/EHRI.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(19, actionCluster.size)
@@ -309,7 +309,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun etMDBSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/EtMDB.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/EtMDB.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(24, actionCluster.size)
@@ -319,30 +319,19 @@ class GraphQLActionBuilderTest {
     @Test
     fun everbaseSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/Everbase.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Everbase.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(14, actionCluster.size)
 
     }
 
-    @Disabled
-    fun gitLabSchemaTest() {
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/GitLab.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        /*Important: They are 162 in the documentation but in the retrieved schema they are only 157
-        So there is 5 mentioned in the documentation but not mentioned in the schema*/
-        assertEquals(157, actionCluster.size)
-
-    }
     @Disabled
     @Test
-    fun gitLabSchema04202021Test() {
-        /*Important: This is the gitLab schema updates */
+    fun gitLabSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/GitLab04022021.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitLab.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(169, actionCluster.size)
@@ -352,7 +341,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun graphQLJobsSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/GraphQLJobs.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GraphQLJobs.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(15, actionCluster.size)
@@ -362,7 +351,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun HIVDBSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/HIVDB.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/HIVDB.json").readText()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(9, actionCluster.size)
 
@@ -371,7 +360,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun melodyRepoSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/MelodyRepo.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/MelodyRepo.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(2, actionCluster.size)
@@ -393,7 +382,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun reactFinlandSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/ReactFinland.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/ReactFinland.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(12, actionCluster.size)
@@ -404,7 +393,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun travelgateXSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/TravelgateX.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/TravelgateX.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(9, actionCluster.size)
@@ -424,10 +413,11 @@ class GraphQLActionBuilderTest {
         assertTrue(logging.parameters[0].gene is ObjectGene)
     }
 
+    @Disabled
     @Test
     fun universeSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/Universe.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Universe.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(87, actionCluster.size)
@@ -436,7 +426,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun recEgTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/recEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/recEg.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
@@ -445,7 +435,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun spaceXTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/SpaceX.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/SpaceX.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(43, actionCluster.size)
@@ -466,7 +456,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun bookTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/Book.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Book.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(3, actionCluster.size)
@@ -477,7 +467,7 @@ class GraphQLActionBuilderTest {
     fun interfaceEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/interfaceEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceEg.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
@@ -489,9 +479,9 @@ class GraphQLActionBuilderTest {
 
         assertTrue(stores.parameters[0].gene is ObjectGene)
         val interfaceObjectStore = stores.parameters[0].gene as ObjectGene
-        assertEquals(2, interfaceObjectStore.fields.size)// basic interface not removed and object gene without fields removed
-       // assertEquals(2, interfaceObjectStore.fields.size)
+        assertEquals(2, interfaceObjectStore.fields.size)
 
+        // basic interface not removed and object gene without fields removed
        // assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
        // assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
        // val objFlowerStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
@@ -520,7 +510,7 @@ class GraphQLActionBuilderTest {
     fun interfaceInternalEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/interfaceInternalEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceInternalEg.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
@@ -538,7 +528,7 @@ class GraphQLActionBuilderTest {
         assertTrue(objectStore1.fields[0] is OptionalGene)
         assertTrue((objectStore1.fields[0] as OptionalGene).gene is ObjectGene)
         val interfaceObjectStore = (objectStore1.fields[0] as OptionalGene).gene as ObjectGene
-        assertEquals(2, interfaceObjectStore.fields.size)// Do not construct an object gene without fields
+        assertEquals(2, interfaceObjectStore.fields.size)
        // assertEquals(2, interfaceObjectStore.fields.size)
 
        // assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
@@ -570,7 +560,7 @@ class GraphQLActionBuilderTest {
     fun unionInternalEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/unionInternalEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalEg.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
@@ -608,7 +598,7 @@ class GraphQLActionBuilderTest {
     fun unionInternalRecEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/unionInternalRecEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalRecEg.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
@@ -646,7 +636,7 @@ class GraphQLActionBuilderTest {
     fun unionInternalRecEg2Test() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/unionInternalRecEg2.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalRecEg2.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
@@ -658,7 +648,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun enumInterfaceTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/enumInterface.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/enumInterface.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
@@ -668,7 +658,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun interfaceHisTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/interfaceHis.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceHis.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
@@ -690,36 +680,12 @@ class GraphQLActionBuilderTest {
 
 
     @Test
-    fun noInterfaceHisObjTest() {//there is no interface, with/without list here, made to check
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/noInterfaceHisObj.json").readText()
-
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
-        assertEquals(1, actionCluster.size)
-
-        val node = actionCluster.get("node") as GraphQLAction
-        assertEquals(1, node.parameters.size)
-        assertTrue(node.parameters[0] is GQReturnParam)
-
-        assertTrue(node.parameters[0].gene is ObjectGene)
-        val objectNode = node.parameters[0].gene as ObjectGene
-        assertEquals(1, objectNode.fields.size)
-
-        assertTrue(objectNode.fields[0] is OptionalGene)
-        assertTrue((objectNode.fields[0] as OptionalGene).gene is ObjectGene)
-        val objAgency = (objectNode.fields[0] as OptionalGene).gene as ObjectGene
-        assertEquals(1, objAgency.fields.size)
-        assertTrue(objAgency.fields.any { it is OptionalGene && it.name == "routes" })
-    }
-
-    @Test
     fun recEgTest2() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/recEg2.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/recEg2.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
     }
-
 
 }

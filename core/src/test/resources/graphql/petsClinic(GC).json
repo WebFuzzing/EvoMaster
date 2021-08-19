@@ -24,29 +24,29 @@
           "enumValues": null,
           "possibleTypes": null
         },
-        {
-          "kind": "SCALAR",
-          "name": "String",
-          "fields": null,
-          "inputFields": null,
-          "interfaces": null,
-          "enumValues": null,
-          "possibleTypes": null
-        },
+
         {
           "kind": "OBJECT",
           "name": "Query",
           "fields": [
             {
-              "name": "node",
+              "name": "owners",
               "args": [],
               "type": {
-                "kind": "LIST",
+                "kind": "NON_NULL",
                 "name": null,
                 "ofType": {
-                  "kind": "OBJECT",
-                  "name": "Node",
-                  "ofType": null
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "OBJECT",
+                      "name": "Owner",
+                      "ofType": null
+                    }
+                  }
                 }
               },
               "isDeprecated": false,
@@ -60,217 +60,39 @@
         },
 
         {
-          "kind": "OBJECT",
-          "name": "Node",
-          "fields": [
-            {
-              "name": "agency",
-              "args": [],
-              "type": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "OBJECT",
-                  "name": "Agency",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": null,
-          "interfaces": null,
-          "enumValues": null,
-          "possibleTypes": null
-        },
-
-        {
-          "kind": "OBJECT",
-          "name": "Agency",
-          "fields": [
-            {
-              "name": "routes",
-              "args": [],
-              "type": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "OBJECT",
-                  "name": "Route",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [
-            {
-              "kind": "INTERFACE",
-              "name": "Node",
-              "ofType": null
-            }
-          ],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
-          "kind": "OBJECT",
-          "name": "Route",
-          "fields": [
-            {
-              "name": "patterns",
-              "args": [],
-              "type": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "OBJECT",
-                  "name": "Pattern",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-
-          ],
-          "inputFields": null,
-          "interfaces": [
-            {
-              "kind": "INTERFACE",
-              "name": "Node",
-              "ofType": null
-            }
-          ],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
-          "kind": "ENUM",
-          "name": "Mode",
+          "kind": "SCALAR",
+          "name": "String",
           "fields": null,
           "inputFields": null,
           "interfaces": null,
-          "enumValues": [
-            {
-              "name": "AIRPLANE",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "BICYCLE",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "BUS",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "CABLE_CAR",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "CAR",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "FERRY",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "FUNICULAR",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "GONDOLA",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "LEG_SWITCH",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "RAIL",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "SUBWAY",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "TRAM",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "TRANSIT",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "WALK",
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "possibleTypes": null
-        },
-        {
-          "kind": "ENUM",
-          "name": "BikesAllowed",
-          "fields": null,
-          "inputFields": null,
-          "interfaces": null,
-          "enumValues": [
-            {
-              "name": "NO_INFORMATION",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "ALLOWED",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "NOT_ALLOWED",
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
+          "enumValues": null,
           "possibleTypes": null
         },
 
+
+
         {
           "kind": "OBJECT",
-          "name": "Pattern",
+          "name": "Owner",
           "fields": [
+
             {
-              "name": "trips",
+              "name": "pets",
               "args": [],
               "type": {
-                "kind": "LIST",
+                "kind": "NON_NULL",
                 "name": null,
                 "ofType": {
-                  "kind": "NON_NULL",
+                  "kind": "LIST",
                   "name": null,
                   "ofType": {
-                    "kind": "OBJECT",
-                    "name": "Trip",
-                    "ofType": null
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "OBJECT",
+                      "name": "Pet",
+                      "ofType": null
+                    }
                   }
                 }
               },
@@ -282,26 +104,28 @@
           "interfaces": [
             {
               "kind": "INTERFACE",
-              "name": "Node",
+              "name": "Person",
               "ofType": null
             }
           ],
           "enumValues": null,
           "possibleTypes": null
         },
+
         {
           "kind": "OBJECT",
-          "name": "Trip",
+          "name": "Pet",
           "fields": [
+
             {
-              "name": "route",
+              "name": "owner",
               "args": [],
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
                 "ofType": {
                   "kind": "OBJECT",
-                  "name": "Route",
+                  "name": "Owner",
                   "ofType": null
                 }
               },
@@ -309,28 +133,124 @@
               "deprecationReason": null
             },
             {
-              "name": "pattern",
+              "name": "visits",
               "args": [],
               "type": {
-                "kind": "OBJECT",
-                "name": "Pattern",
-                "ofType": null
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "VisitConnection",
+                  "ofType": null
+                }
               },
               "isDeprecated": false,
               "deprecationReason": null
             }
           ],
           "inputFields": null,
-          "interfaces": [
-            {
-              "kind": "INTERFACE",
-              "name": "Node",
-              "ofType": null
-            }
-          ],
+          "interfaces": [],
           "enumValues": null,
           "possibleTypes": null
         },
+
+
+        {
+          "kind": "OBJECT",
+          "name": "VisitConnection",
+          "fields": [
+            {
+              "name": "totalCount",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "visits",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "OBJECT",
+                      "name": "Visit",
+                      "ofType": null
+                    }
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+
+
+        {
+          "kind": "OBJECT",
+          "name": "Visit",
+          "fields": [
+
+            {
+              "name": "pet",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "Pet",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "date",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Date",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+
+
+
+
+
 
 
 

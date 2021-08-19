@@ -22,9 +22,35 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
 
-        val unionTag = "#UNION#"
-        val interfaceTag = "#INTERFACE#"
-        val interfaceBaseTag = "#BASE#"
+        /**
+         * This tag is for the GQL union type. Needed in getValueAsPrintableString to print out things like:
+         *   fieldXName{
+         *        ... on UnionObject1 {
+         *           field
+         *        }
+         *        ... on UnionObjectN {
+         *          field
+         *        }
+         *   }
+         */
+        const val unionTag = "#UNION#"
+
+        /**
+         * Those tags are for the GQL interface type. Needed in getValueAsPrintableString to print out things like:
+         *     fieldXName{
+         *        field1
+         *        fieldN
+         *        ... on InterfaceObject1 {
+         *           field
+         *        }
+         *        ... on InterfaceObjectN {
+         *          field
+         *        }
+         *     }
+         */
+        const val interfaceBaseTag = "#BASE#"
+        const val interfaceTag = "#INTERFACE#"
+
     }
 
     override fun getChildren(): List<Gene> {
@@ -44,21 +70,27 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         }
     }
 
+
+    /**
+     *This function takes as input a gene filter which contains fields to skip.
+     * The output is an object gene without the fields of the filter gene.
+     * It is used in the GQL interface type since we need to remove redundant fields in each object in the interface.
+     * Important: Depending on where copyFields is invoked, it might miss the binding references.
+     * But if it is used for creating genes, it would be ok.
+     */
     fun copyFields(filterGene: ObjectGene): ObjectGene {
 
         val fields: MutableList<Gene> = mutableListOf()
-        var k = 0
-        for (i in this.fields.indices) {
+        for (fld in this.fields) {
             var exist = false
             for (element in filterGene.fields) {
-                if (this.fields[i].name == element.name) {
+                if (fld.name == element.name) {
                     exist = true
                     break
                 }
             }
             if (!exist) {
-                fields.add(this.fields[i].copy())
-                k++
+                fields.add(fld.copy())
             }
         }
         return ObjectGene(this.name, fields)
@@ -347,20 +379,20 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is ObjectGene &&  (fields.indices).all { fields[it].possiblySame(gene.fields[it])}){
+        if (gene is ObjectGene && (fields.indices).all { fields[it].possiblySame(gene.fields[it]) }) {
             var result = true
-            (fields.indices).forEach{
+            (fields.indices).forEach {
                 val r = fields[it].bindValueBasedOn(gene.fields[it])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the field ${fields[it].name}")
                 result = result && r
             }
             if (!result)
-                LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${refType?:"null"}) with the object gene (with the refType ${gene.refType?:"null"})")
+                LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${refType ?: "null"}) with the object gene (with the refType ${gene.refType ?: "null"})")
             return result
         }
         // might be cycle object genet
-        LoggingUtil.uniqueWarn(log,"cannot bind the ${this::class.java.simpleName} (with the refType ${refType?:"null"}) with ${gene::class.java.simpleName}")
+        LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${refType ?: "null"}) with ${gene::class.java.simpleName}")
         return false
     }
 
