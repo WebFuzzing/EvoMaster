@@ -16,7 +16,7 @@ class GraphQLUtilsTest {
     @Test
     fun graphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/MelodyRepo2.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/MelodyRepo2.json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -40,7 +40,7 @@ class GraphQLUtilsTest {
     @Test
     fun petClinicFragmentGraphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic(Fragment).json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic(Fragment).json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -63,7 +63,7 @@ class GraphQLUtilsTest {
     @Test
     fun petClinicFragment2GraphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic(Fragment2).json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic(Fragment2).json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -86,7 +86,7 @@ class GraphQLUtilsTest {
     @Test
     fun cyclesEgGraphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/CyclesEg.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/CyclesEg.json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -109,7 +109,7 @@ class GraphQLUtilsTest {
     @Test
     fun universeCyclesFragmentGraphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/UniverseCycles(Fragment).json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/UniverseCycles(Fragment).json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -133,7 +133,7 @@ class GraphQLUtilsTest {
     @Test
     fun unionInternalEgFragmentGraphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/unionInternalEg(Fragment).json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalEg(Fragment).json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -157,7 +157,7 @@ class GraphQLUtilsTest {
     @Test
     fun unionInternalRecEgFragmentGraphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/unionInternalRecEg(Fragment).json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg(Fragment).json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -179,7 +179,7 @@ class GraphQLUtilsTest {
     @Test
     fun unionInternalRecEg2GraphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/unionInternalRecEg2.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg2.json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -201,7 +201,7 @@ class GraphQLUtilsTest {
     @Test
     fun interfaceInternalEgGraphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/interfaceInternalEg.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceInternalEg.json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -224,7 +224,7 @@ class GraphQLUtilsTest {
     @Test
     fun interfaceEgGraphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/interfaceEg.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceEg.json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -247,7 +247,7 @@ class GraphQLUtilsTest {
     @Test
     fun interfaceHisGraphTest() {
 
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/interfaceHis.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceHis.json").readText()
 
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
@@ -272,37 +272,37 @@ class GraphQLUtilsTest {
         val jsonFiles: MutableMap<String, String> = mutableMapOf()
         val buffer = StringBuffer()
 
-        jsonFiles.put("QueryTypeGlobalPetsClinic", PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic.json").readText())
-        jsonFiles.put("AniList", PetClinicCheckMain::class.java.getResource("/graphql/AniList.json").readText())
-        jsonFiles.put("Bitquery", PetClinicCheckMain::class.java.getResource("/graphql/Bitquery.json").readText())
-        jsonFiles.put("GitLab04022021", PetClinicCheckMain::class.java.getResource("/graphql/GitLab04022021.json").readText())
-        jsonFiles.put("DigitransitHSL", PetClinicCheckMain::class.java.getResource("/graphql/DigitransitHSL.json").readText())
-        jsonFiles.put("TravelgateX", PetClinicCheckMain::class.java.getResource("/graphql/TravelgateX.json").readText())
-        jsonFiles.put("Universe", PetClinicCheckMain::class.java.getResource("/graphql/Universe.json").readText())
-        jsonFiles.put("CatalysisHub", PetClinicCheckMain::class.java.getResource("/graphql/CatalysisHub.json").readText())
-        jsonFiles.put("Contentful", PetClinicCheckMain::class.java.getResource("/graphql/Contentful.json").readText())
-        jsonFiles.put("Countries", PetClinicCheckMain::class.java.getResource("/graphql/Countries.json").readText())
-        jsonFiles.put("DeutscheBahn", PetClinicCheckMain::class.java.getResource("/graphql/DeutscheBahn.json").readText())
-        jsonFiles.put("EHRI", PetClinicCheckMain::class.java.getResource("/graphql/EHRI.json").readText())
-        jsonFiles.put("EtMDB", PetClinicCheckMain::class.java.getResource("/graphql/EtMDB.json").readText())
-        jsonFiles.put("Everbase", PetClinicCheckMain::class.java.getResource("/graphql/Everbase.json").readText())
-        jsonFiles.put("GraphQLJobs", PetClinicCheckMain::class.java.getResource("/graphql/GraphQLJobs.json").readText())
-        jsonFiles.put("HIVDB", PetClinicCheckMain::class.java.getResource("/graphql/HIVDB.json").readText())
-        jsonFiles.put("MelodyRepo", PetClinicCheckMain::class.java.getResource("/graphql/MelodyRepo.json").readText())
-        jsonFiles.put("MelodyRepo2", PetClinicCheckMain::class.java.getResource("/graphql/MelodyRepo2.json").readText())
-        jsonFiles.put("ReactFinland", PetClinicCheckMain::class.java.getResource("/graphql/ReactFinland.json").readText())
-        jsonFiles.put("recEg", PetClinicCheckMain::class.java.getResource("/graphql/recEg.json").readText())
-        jsonFiles.put("SpaceX", PetClinicCheckMain::class.java.getResource("/graphql/SpaceX.json").readText())
-        jsonFiles.put("Book", PetClinicCheckMain::class.java.getResource("/graphql/Book.json").readText())
-        jsonFiles.put("interfaceEg", PetClinicCheckMain::class.java.getResource("/graphql/interfaceEg.json").readText())//2?todo graph for interfaces
-        jsonFiles.put("interfaceInternalEg", PetClinicCheckMain::class.java.getResource("/graphql/interfaceInternalEg.json").readText())//3?todo graph for interfaces
-        jsonFiles.put("unionInternalEg", PetClinicCheckMain::class.java.getResource("/graphql/unionInternalEg.json").readText())//todo check th union with graph
-        jsonFiles.put("unionInternalRecEg", PetClinicCheckMain::class.java.getResource("/graphql/unionInternalRecEg.json").readText())
-        jsonFiles.put("unionInternalRecEg2", PetClinicCheckMain::class.java.getResource("/graphql/unionInternalRecEg2.json").readText())
-        jsonFiles.put("enumInterface", PetClinicCheckMain::class.java.getResource("/graphql/enumInterface.json").readText())
-        jsonFiles.put("interfaceHis", PetClinicCheckMain::class.java.getResource("/graphql/interfaceHis.json").readText())
-        jsonFiles.put("noInterfaceHisObj", PetClinicCheckMain::class.java.getResource("/graphql/noInterfaceHisObj.json").readText())
-        jsonFiles.put("recEg2", PetClinicCheckMain::class.java.getResource("/graphql/recEg2.json").readText())
+        jsonFiles.put("QueryTypeGlobalPetsClinic", GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic.json").readText())
+        jsonFiles.put("AniList", GraphQLUtilsTest::class.java.getResource("/graphql/AniList.json").readText())
+        jsonFiles.put("Bitquery", GraphQLUtilsTest::class.java.getResource("/graphql/Bitquery.json").readText())
+        jsonFiles.put("GitLab04022021", GraphQLUtilsTest::class.java.getResource("/graphql/GitLab04022021.json").readText())
+        jsonFiles.put("DigitransitHSL",GraphQLUtilsTest::class.java.getResource("/graphql/DigitransitHSL.json").readText())
+        jsonFiles.put("TravelgateX", GraphQLUtilsTest::class.java.getResource("/graphql/TravelgateX.json").readText())
+        jsonFiles.put("Universe", GraphQLUtilsTest::class.java.getResource("/graphql/Universe.json").readText())
+        jsonFiles.put("CatalysisHub", GraphQLUtilsTest::class.java.getResource("/graphql/CatalysisHub.json").readText())
+        jsonFiles.put("Contentful", GraphQLUtilsTest::class.java.getResource("/graphql/Contentful.json").readText())
+        jsonFiles.put("Countries", GraphQLUtilsTest::class.java.getResource("/graphql/Countries.json").readText())
+        jsonFiles.put("DeutscheBahn", GraphQLUtilsTest::class.java.getResource("/graphql/DeutscheBahn.json").readText())
+        jsonFiles.put("EHRI", GraphQLUtilsTest::class.java.getResource("/graphql/EHRI.json").readText())
+        jsonFiles.put("EtMDB", GraphQLUtilsTest::class.java.getResource("/graphql/EtMDB.json").readText())
+        jsonFiles.put("Everbase", GraphQLUtilsTest::class.java.getResource("/graphql/Everbase.json").readText())
+        jsonFiles.put("GraphQLJobs", GraphQLUtilsTest::class.java.getResource("/graphql/GraphQLJobs.json").readText())
+        jsonFiles.put("HIVDB", GraphQLUtilsTest::class.java.getResource("/graphql/HIVDB.json").readText())
+        jsonFiles.put("MelodyRepo", GraphQLUtilsTest::class.java.getResource("/graphql/MelodyRepo.json").readText())
+        jsonFiles.put("MelodyRepo2", GraphQLUtilsTest::class.java.getResource("/graphql/MelodyRepo2.json").readText())
+        jsonFiles.put("ReactFinland", GraphQLUtilsTest::class.java.getResource("/graphql/ReactFinland.json").readText())
+        jsonFiles.put("recEg", GraphQLUtilsTest::class.java.getResource("/graphql/recEg.json").readText())
+        jsonFiles.put("SpaceX", GraphQLUtilsTest::class.java.getResource("/graphql/SpaceX.json").readText())
+        jsonFiles.put("Book", GraphQLUtilsTest::class.java.getResource("/graphql/Book.json").readText())
+        jsonFiles.put("interfaceEg", GraphQLUtilsTest::class.java.getResource("/graphql/interfaceEg.json").readText())//2?todo graph for interfaces
+        jsonFiles.put("interfaceInternalEg", GraphQLUtilsTest::class.java.getResource("/graphql/interfaceInternalEg.json").readText())//3?todo graph for interfaces
+        jsonFiles.put("unionInternalEg", GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalEg.json").readText())//todo check th union with graph
+        jsonFiles.put("unionInternalRecEg", GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg.json").readText())
+        jsonFiles.put("unionInternalRecEg2", GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg2.json").readText())
+        jsonFiles.put("enumInterface", GraphQLUtilsTest::class.java.getResource("/graphql/enumInterface.json").readText())
+        jsonFiles.put("interfaceHis", GraphQLUtilsTest::class.java.getResource("/graphql/interfaceHis.json").readText())
+        jsonFiles.put("noInterfaceHisObj", GraphQLUtilsTest::class.java.getResource("/graphql/noInterfaceHisObj.json").readText())
+        jsonFiles.put("recEg2", GraphQLUtilsTest::class.java.getResource("/graphql/recEg2.json").readText())
 
         jsonFiles.forEach {
             val state = GraphQLActionBuilder.TempState()
