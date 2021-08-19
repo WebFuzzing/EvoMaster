@@ -319,6 +319,16 @@ class ObjectGeneStructureTest: GeneStructuralElementBaseTest() {
         f4_2.traverseBackIndex(path)
         assertEquals(mutableListOf(3,1), path)
     }
+
+    @Test
+    fun testCopyFields(){
+        val obj = getStructuralElement()
+        val copy = obj.copy() as ObjectGene
+        val copyField = obj.copyFields(copy)
+
+        assertChildren(copyField, -1)
+
+    }
 }
 
 class CycleObjectGeneStructureTest: GeneStructuralElementBaseTest() {

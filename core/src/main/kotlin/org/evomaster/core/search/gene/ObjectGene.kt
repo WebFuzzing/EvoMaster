@@ -12,7 +12,6 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.RuntimeException
 import java.net.URLEncoder
 
 /**
@@ -22,6 +21,35 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
+
+        /**
+         * This tag is for the GQL union type. Needed in getValueAsPrintableString to print out things like:
+         *   fieldXName{
+         *        ... on UnionObject1 {
+         *           field
+         *        }
+         *        ... on UnionObjectN {
+         *          field
+         *        }
+         *   }
+         */
+        const val unionTag = "#UNION#"
+
+        /**
+         * Those tags are for the GQL interface type. Needed in getValueAsPrintableString to print out things like:
+         *     fieldXName{
+         *        field1
+         *        fieldN
+         *        ... on InterfaceObject1 {
+         *           field
+         *        }
+         *        ... on InterfaceObjectN {
+         *          field
+         *        }
+         *     }
+         */
+        const val interfaceBaseTag = "#BASE#"
+        const val interfaceTag = "#INTERFACE#"
 
     }
 
@@ -40,6 +68,32 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         for (i in 0 until fields.size) {
             this.fields[i].copyValueFrom(other.fields[i])
         }
+    }
+
+
+    /**
+     *This function takes as input a gene filter which contains fields to skip.
+     * The output is an object gene without the fields of the filter gene.
+     * It is used in the GQL interface type since we need to remove redundant fields in each object in the interface.
+     * Important: Depending on where copyFields is invoked, it might miss the binding references.
+     * But if it is used for creating genes, it would be ok.
+     */
+    fun copyFields(filterGene: ObjectGene): ObjectGene {
+
+        val fields: MutableList<Gene> = mutableListOf()
+        for (fld in this.fields) {
+            var exist = false
+            for (element in filterGene.fields) {
+                if (fld.name == element.name) {
+                    exist = true
+                    break
+                }
+            }
+            if (!exist) {
+                fields.add(fld.copy())
+            }
+        }
+        return ObjectGene(this.name, fields)
     }
 
     override fun isMutable(): Boolean {
@@ -66,7 +120,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         return fields.filter { it.isMutable() }
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         val buffer = StringBuffer()
 
@@ -111,82 +165,187 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             }.joinToString("&"))
 
         } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE || mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
-            if (includedFields.isEmpty()) {
-                buffer.append("$name")
-            } else {
-                if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
-                    //we do not do it for the first object, but we must do it for all the nested ones
-                    buffer.append("$name")
-                }
-                buffer.append("{")
-
-                val selection = includedFields.filter {
-                    when (it) {
-                        is OptionalGene -> it.isActive
-                        is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
-                        is BooleanGene -> it.value
-                        is DisruptiveGene<*> -> it.probability == 0.0
-                        else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
-                    }
-                }
-
-                buffer.append(selection.map {
-                    val s: String = when (it) {
-                        is OptionalGene -> {
-                            assert(it.gene is ObjectGene)
-                            it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
-                        }
-                        is ObjectGene -> {
-                            it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat)
-                        }
-                        is BooleanGene -> {
-                            it.name
-                        }
-                        //is DisruptiveGene<*> -> {
-                        //  it.name
-                        //}
-                        else -> {
-                            throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
-                        }
-                    }
-                    s
-                }.joinToString(","))
-                buffer.append("}")
-            }
-        } else
-        //GQL arguments need a special object printing mode form that differ from Json and Boolean selection:
-        //ObjName:{FieldNName: instance }
-            if (mode == GeneUtils.EscapeMode.GQL_INPUT_MODE) {
-
-                buffer.append("$name")
-                buffer.append(":{")
-
-                includedFields.map {
-                    "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
-                }.joinTo(buffer, ", ")
-
-                buffer.append("}")
-
-            } else {//GQL array in arguments need a special object printing mode form that differ from Json, Boolean selection and gql input modes:
-                //without the obj name:  {FieldNName: instance }
-                if (mode == GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE) {
-                    buffer.append("{")
-                    includedFields.map {
-                        when {
-                            (it is OptionalGene && it.gene is EnumGene<*>) || it is EnumGene<*> -> "${it.name}:${it.getValueAsRawString()}"
-                            else -> "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
-                        }
-                    }.joinTo(buffer, ", ")
-                    buffer.append("}")
-
-                } else {
-                    throw IllegalArgumentException("Unrecognized mode: $mode")
-                }
-            }
-
-
+            handleBooleanSelectionMode(includedFields, buffer, previousGenes, targetFormat, mode, extraCheck)
+        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE) {
+            handleUnionObjectSelection(includedFields, buffer, previousGenes, targetFormat)
+        } else if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE) {
+            handleUnionFieldSelection(includedFields, buffer, previousGenes, targetFormat)
+        } else if (mode == GeneUtils.EscapeMode.GQL_INPUT_MODE) {
+            handleInputSelection(buffer, includedFields, previousGenes, mode, targetFormat)
+        } else if (mode == GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE) {
+            handleInputArraySelection(buffer, includedFields, previousGenes, mode, targetFormat)
+        } else {
+            throw IllegalArgumentException("Unrecognized mode: $mode")
+        }
 
         return buffer.toString()
+    }
+
+    private fun handleInputArraySelection(buffer: StringBuffer, includedFields: List<Gene>, previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?) {
+        //GQL array in arguments need a special object printing mode form that differ from Json, Boolean selection and gql input modes:
+        //without the obj name:  {FieldNName: instance }
+        buffer.append("{")
+        includedFields.map {
+            when {
+                (it is OptionalGene && it.gene is EnumGene<*>) || it is EnumGene<*> -> "${it.name}:${it.getValueAsRawString()}"
+                else -> "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
+            }
+        }.joinTo(buffer, ", ")
+        buffer.append("}")
+    }
+
+    private fun handleInputSelection(buffer: StringBuffer, includedFields: List<Gene>, previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?) {
+        //GQL arguments need a special object printing mode form that differ from Json and Boolean selection:
+        //ObjName:{FieldNName: instance }
+        buffer.append("$name")
+        buffer.append(":{")
+
+        includedFields.map {
+            "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
+        }.joinTo(buffer, ", ")
+
+        buffer.append("}")
+    }
+
+    private fun handleUnionFieldSelection(includedFields: List<Gene>, buffer: StringBuffer, previousGenes: List<Gene>, targetFormat: OutputFormat?) {
+        /*For GraphQL we need UNION OBJECT FIELDS MODE to print out object`s fields in the union type eg:
+               ... on UnionObject1 {
+                fields<----
+           }
+               ... on UnionObjectN {
+                fields<----
+           }
+       */
+        val selection = includedFields.filter {
+            when (it) {
+                is OptionalGene -> it.isActive
+                is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
+                is BooleanGene -> it.value
+                else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+            }
+        }
+
+        buffer.append(selection.map {
+            val s: String = when (it) {
+                is OptionalGene -> {
+                    assert(it.gene is ObjectGene)
+                    it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
+                }
+                is ObjectGene -> {//todo check
+                    it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
+                }
+                is BooleanGene -> {
+                    it.name
+                }
+                else -> {
+                    throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+                }
+            }
+            s
+        }.joinToString(","))
+
+    }
+
+    private fun handleUnionObjectSelection(includedFields: List<Gene>, buffer: StringBuffer, previousGenes: List<Gene>, targetFormat: OutputFormat?) {
+        /*For GraphQL we need UNION OBJECT MODE to print out the objects in the union type eg:
+                ... on UnionObject1 {<----------
+                fields
+            }
+                ... on UnionObjectN {<----------
+                 fields
+            }
+             */
+        val selection = includedFields.filter {
+            when (it) {
+                is OptionalGene -> it.isActive
+                else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+            }
+        }
+        selection.map {
+            val s: String = when (it) {
+                is OptionalGene -> {
+                    if (it.name.endsWith(interfaceBaseTag)) {
+                        assert(it.gene is ObjectGene)
+                        buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)}").toString()
+                    } else {
+                        buffer.append("... on ${it.gene.name.replace(unionTag, "")} {")
+                        assert(it.gene is ObjectGene)
+                        buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE, targetFormat)}")
+                        buffer.append("}").toString()
+                    }
+                }
+
+                else -> {
+                    throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+                }
+            }
+            s
+        }.joinToString()
+    }
+
+    private fun handleBooleanSelectionMode(includedFields: List<Gene>, buffer: StringBuffer, previousGenes: List<Gene>, targetFormat: OutputFormat?, mode: GeneUtils.EscapeMode?, extraCheck: Boolean) {
+
+        //  if (includedFields.isEmpty()) {
+        //      buffer.append("$name")
+        //      return
+        //  }
+
+        if (name.endsWith(unionTag)) {
+            if (!extraCheck)
+                buffer.append("{") else buffer.append("${name.replace(unionTag, " ")} {")
+            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat, extraCheck = true))
+            buffer.append("}")
+            return
+        }
+
+        if (name.endsWith(interfaceTag)) {
+            if (!extraCheck)
+                buffer.append("{") else buffer.append("${name.replace(interfaceTag, " ")} {")
+            buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat, extraCheck = true))
+            buffer.append("}")
+            return
+        }
+
+        if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE) {
+            //we do not do it for the first object, but we must do it for all the nested ones
+            buffer.append("$name")
+        }
+
+        if (!name.endsWith(interfaceBaseTag)) {
+            buffer.append("{")
+        }
+
+        val selection = includedFields.filter {
+            when (it) {
+                is OptionalGene -> it.isActive
+                is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
+                is BooleanGene -> it.value
+                else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+            }
+        }
+
+        buffer.append(selection.map {
+            val s: String = when (it) {
+                is OptionalGene -> {
+                    assert(it.gene is ObjectGene)
+                    it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat, extraCheck = true)
+                }
+                is ObjectGene -> {
+                    it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat, extraCheck = true)
+                }
+                is BooleanGene -> {
+                    it.name
+                }
+                else -> {
+                    throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+                }
+            }
+            s
+        }.joinToString(","))
+
+        if (!name.endsWith(interfaceBaseTag)) {
+            buffer.append("}")
+        }
     }
 
     private fun openXml(tagName: String) = "<$tagName>"
@@ -220,20 +379,20 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is ObjectGene &&  (fields.indices).all { fields[it].possiblySame(gene.fields[it])}){
+        if (gene is ObjectGene && (fields.indices).all { fields[it].possiblySame(gene.fields[it]) }) {
             var result = true
-            (fields.indices).forEach{
+            (fields.indices).forEach {
                 val r = fields[it].bindValueBasedOn(gene.fields[it])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the field ${fields[it].name}")
                 result = result && r
             }
             if (!result)
-                LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${refType?:"null"}) with the object gene (with the refType ${gene.refType?:"null"})")
+                LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${refType ?: "null"}) with the object gene (with the refType ${gene.refType ?: "null"})")
             return result
         }
         // might be cycle object genet
-        LoggingUtil.uniqueWarn(log,"cannot bind the ${this::class.java.simpleName} (with the refType ${refType?:"null"}) with ${gene::class.java.simpleName}")
+        LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${refType ?: "null"}) with ${gene::class.java.simpleName}")
         return false
     }
 
