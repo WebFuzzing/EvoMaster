@@ -9,9 +9,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertTimeoutPreemptively
+import java.lang.IllegalArgumentException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Duration
+import java.util.stream.Stream
 
 /**
  *
@@ -36,33 +38,87 @@ class AssertionEMTest : SpringTestBase() {
 
         testRunEMGeneric(false, className)
 
-        val assertion = generatedCodeAssertion(outputFolderName, className, OutputFormat.KOTLIN_JUNIT_5, false)
+        val lines = getFileLines(outputFolderName, className, OutputFormat.KOTLIN_JUNIT_5)
+        val assertion = generatedCodeAssertion(lines, false)
 
         assertTrue(assertion)
+
+        compileRunAndVerifyTests(outputFolderName, className)
+
     }
 
     @Test
     fun testRunEMAssertionsOn() {
         val outputFolderName = "AssertionEM"
         val className = ClassName("org.foo.AssertionEMOn")
+        val outputFormat = OutputFormat.KOTLIN_JUNIT_5
 
         testRunEMGeneric(true, className)
+        compileRunAndVerifyTests(outputFolderName, className)
 
-        val assertion = generatedCodeAssertion(outputFolderName, className, OutputFormat.KOTLIN_JUNIT_5, true)
+        val lines = getFileLines(outputFolderName, className, outputFormat)
+        val assertion = generatedCodeAssertion(lines, true)
 
         assertTrue(assertion)
+
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/data", "201", "text/plain", "OK")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/simpleNumber", "200", "application/json", "42")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/simpleString", "200", "application/json", "simple-string")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/simpleText", "200", "text/plain", "simple-text")))
+
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/simpleArray", "200", "application/json", "123")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/arrayObject", "200", "application/json", "777")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/arrayEmpty", "200", "application/json", "[]")))
+
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/objectEmpty", "200", "application/json", "{}")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/data", "200", "application/json", "a", "42", "c", "1000", "2000", "d", "66", "bar", "xvalue", "yvalue", "true", "false")))
+
+
+
     }
 
     @Test
     fun testRunJavaAssertionsOn(){
         val outputFolderName = "AssertionEM"
         val className = ClassName("org.foo.AssertionJavaEMOn")
+        val outputFormat = OutputFormat.JAVA_JUNIT_5
 
-        testRunEMGeneric(true, className, OutputFormat.JAVA_JUNIT_5)
+        testRunEMGeneric(true, className, outputFormat)
 
-        val assertion = generatedCodeAssertion(outputFolderName, className, OutputFormat.JAVA_JUNIT_5, true)
-
+        val assertion = generatedCodeAssertion(getFileLines(outputFolderName, className, outputFormat), true)
         assertTrue(assertion)
+
+
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/data", "201", "text/plain", "OK")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/simpleNumber", "200", "application/json", "42")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/simpleString", "200", "application/json", "simple-string")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/simpleText", "200", "text/plain", "simple-text")))
+
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/simpleArray", "200", "application/json", "123")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/arrayObject", "200", "application/json", "777")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/arrayEmpty", "200", "application/json", "[]")))
+
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/objectEmpty", "200", "application/json", "{}")))
+        assertTrue(assertExistsInCode(outputFolderName, className, outputFormat,
+                listOf("/api/assertions/data", "200", "application/json", "a", "42", "c", "1000", "2000", "d", "66", "bar", "xvalue", "yvalue", "true", "false")))
+
     }
 
     @Test
@@ -71,26 +127,42 @@ class AssertionEMTest : SpringTestBase() {
         val className = ClassName("org.foo.AssertionJavaEMOff")
 
         testRunEMGeneric(false, className, OutputFormat.JAVA_JUNIT_5)
-
-        val assertion = generatedCodeAssertion(outputFolderName, className, OutputFormat.JAVA_JUNIT_5, false)
+        val lines = getFileLines(outputFolderName, className, OutputFormat.JAVA_JUNIT_5)
+        val assertion = generatedCodeAssertion(lines, false)
 
         assertTrue(assertion)
     }
 
-    fun generatedCodeAssertion(outputFolderName: String, className: ClassName, outputFormat: OutputFormat, basicAssertions: Boolean): Boolean {
+    fun getFileLines(outputFolderName: String,
+                     className: ClassName,
+                     outputFormat: OutputFormat): Stream<String> {
         val extension = when {
             outputFormat.isJava() -> ".java"
             outputFormat.isKotlin() -> ".kt"
-            else -> return false
+            else -> throw IllegalArgumentException("Only Java and Kotlin files are supported for now.")
         }
-        val assertion = Files.lines(Paths.get(outputFolderPath(outputFolderName)
+        val lines = Files.lines(Paths.get(outputFolderPath(outputFolderName)
                 + "/"
                 + className.getBytecodeName()
                 + extension))
-
-        return if(basicAssertions) assertion.anyMatch { l: String -> l.contains(".assertThat()") }
-            else assertion.noneMatch { l: String -> l.contains(".assertThat()") }
+        return lines
     }
+
+    fun generatedCodeAssertion(lines: Stream<String>,
+                               basicAssertions: Boolean): Boolean {
+
+        return if(basicAssertions) lines.anyMatch { l: String -> l.contains(".assertThat()") }
+            else lines.noneMatch { l: String -> l.contains(".assertThat()") }
+    }
+
+    /**
+     * The method checks that all the Strings in [contents] are present in the file.
+     */
+    fun assertExistsInCode(outputFolderName: String, className: ClassName, outputFormat: OutputFormat, contents: List<String>): Boolean{
+        val lines = getFileLines(outputFolderName, className, outputFormat)
+        return contents.any { lines.anyMatch { line -> line.contains(it)} }
+    }
+
 
     fun testRunEMGeneric(basicAssertions: Boolean, className: ClassName, outputFormat: OutputFormat? = OutputFormat.KOTLIN_JUNIT_5){
         val outputFolderName = "AssertionEM"
@@ -100,9 +172,7 @@ class AssertionEMTest : SpringTestBase() {
             args.add("--enableBasicAssertions")
             args.add(basicAssertions.toString())
 
-            if (outputFormat != null) {
-                args.replaceAll { s -> s.replace(OutputFormat.KOTLIN_JUNIT_5.name, outputFormat.name) }
-            }
+            setOutputFormat(args, outputFormat)
 
             val solution = initAndRun(args)
             assertTrue(solution.individuals.size >= 1)
@@ -128,10 +198,9 @@ class AssertionEMTest : SpringTestBase() {
                         outputFolderName,
                         className,
                         true)
-
+                setOutputFormat(args, outputFormat)
                 lambda.invoke(args)
             }
-
         }
 
     }
