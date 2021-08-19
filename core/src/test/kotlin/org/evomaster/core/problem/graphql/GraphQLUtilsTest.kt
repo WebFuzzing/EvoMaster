@@ -56,6 +56,7 @@ class GraphQLUtilsTest {
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPaths(visitedVertex, stack, "query", queryGraph, paths)
         Assertions.assertEquals(GraphQLUtils.LongestInfo(size = 4, path = listOf("query", "Owner", "Pet", "VisitConnection")), GraphQLUtils.longest(paths))
+        /**/
 
     }
 
@@ -301,7 +302,6 @@ class GraphQLUtilsTest {
         jsonFiles.put("unionInternalRecEg2", GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg2.json").readText())
         jsonFiles.put("enumInterface", GraphQLUtilsTest::class.java.getResource("/graphql/enumInterface.json").readText())
         jsonFiles.put("interfaceHis", GraphQLUtilsTest::class.java.getResource("/graphql/interfaceHis.json").readText())
-        jsonFiles.put("noInterfaceHisObj", GraphQLUtilsTest::class.java.getResource("/graphql/noInterfaceHisObj.json").readText())
         jsonFiles.put("recEg2", GraphQLUtilsTest::class.java.getResource("/graphql/recEg2.json").readText())
 
         jsonFiles.forEach {
