@@ -301,7 +301,6 @@ class GraphQLUtilsTest {
         jsonFiles.put("unionInternalRecEg2", PetClinicCheckMain::class.java.getResource("/graphql/unionInternalRecEg2.json").readText())
         jsonFiles.put("enumInterface", PetClinicCheckMain::class.java.getResource("/graphql/enumInterface.json").readText())
         jsonFiles.put("interfaceHis", PetClinicCheckMain::class.java.getResource("/graphql/interfaceHis.json").readText())
-        jsonFiles.put("noInterfaceHisObj", PetClinicCheckMain::class.java.getResource("/graphql/noInterfaceHisObj.json").readText())
         jsonFiles.put("recEg2", PetClinicCheckMain::class.java.getResource("/graphql/recEg2.json").readText())
 
         jsonFiles.forEach {
