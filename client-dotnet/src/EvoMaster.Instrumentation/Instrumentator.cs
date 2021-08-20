@@ -28,21 +28,9 @@ namespace EvoMaster.Instrumentation
             {
                 if (type.Name == "<Module>") continue;
 
-                Console.WriteLine($"* Type.Name: {type.Name}");
-
                 foreach (var method in type.Methods)
                 {
-                    Console.WriteLine($"\t Method.Name: {method.Name} HasBody: {method.HasBody}");
-
                     if (!method.HasBody) continue;
-
-                    Console.WriteLine("Printing instructions before change...");
-                    foreach (var ins in method.Body.Instructions)
-                    {
-                        Console.WriteLine($"* {ins}");
-                    }
-
-                    Console.WriteLine("######################");
 
                     var ilProcessor = method.Body.GetILProcessor();
 
@@ -108,28 +96,7 @@ namespace EvoMaster.Instrumentation
                     }
 
                     method.Body.OptimizeMacros(); //Change back Br opcodes to Br.s if possible
-
-                    Console.WriteLine("Printing instructions after change...");
-
-                    foreach (var instruction in method.Body.Instructions)
-                    {
-                        mapping.TryGetValue(instruction, out var seqPoint);
-
-                        if ((seqPoint != null && !seqPoint.IsHidden))
-                        {
-                            Console.WriteLine($"* {instruction} --- Line {seqPoint.StartLine}");
-                        }
-                        else if (instruction.OpCode == OpCodes.Ret)
-                        {
-                            Console.WriteLine(seqPoint == null
-                                ? $"* {instruction} --- seqPoint is null"
-                                : $"* {instruction} --- IsHidden {seqPoint.IsHidden}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"* {instruction}");
-                        }
-                    }
+                    
                 }
             }
 
@@ -139,6 +106,7 @@ namespace EvoMaster.Instrumentation
             }
 
             module.Write($"{destination}/InstrumentedSut.dll");
+            Console.WriteLine($"Instrumented File Saved at \"{destination}\"");
         }
 
         private int InsertVisitLineProbe(Instruction instruction, ILProcessor ilProcessor,
