@@ -442,7 +442,7 @@ class SqlInsertBuilder(
                 continue
             }
 
-            val sql = "SELECT ${pks.map { "\"${it.name}\"" }.joinToString(",")} FROM \"${table.name}\""
+            val sql = formatSelect(pks.map { it.name }, table.name)
 
             val dto = DatabaseCommandDto()
             dto.command = sql
@@ -563,12 +563,7 @@ class SqlInsertBuilder(
 
         for (table in tables.values) {
             val pks = table.columns.filter { it.primaryKey }
-            val selected = if (pks.isEmpty()) {
-                SQLKey.ALL.key
-                //continue
-            } else pks.map { "\"${it.name}\"" }.joinToString(",")
-
-            val sql = "SELECT $selected FROM \"${table.name}\""
+            val sql = formatSelect(if (pks.isEmpty()) listOf(SQLKey.ALL.key) else pks.map { it.name }, table.name)
 
             val dto = DatabaseCommandDto()
             dto.command = sql
@@ -587,6 +582,18 @@ class SqlInsertBuilder(
         if (tablesMap != null) {
             tablesMap.clear()
             tablesMap.putAll(tables)
+        }
+    }
+
+
+    private fun formatSelect(columnNames: List<String>, tableName: String): String{
+        return "SELECT ${columnNames.joinToString(",") { formatNameInSql(it) }} FROM ${formatNameInSql(tableName)}"
+    }
+
+    private fun formatNameInSql(name: String) : String{
+        return when{
+            databaseType == DatabaseType.MYSQL || name == SQLKey.ALL.key  -> name
+            else -> "\"$name\""
         }
     }
 }
