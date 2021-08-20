@@ -22,7 +22,7 @@ namespace EvoMaster.Instrumentation
             _probe =
                 module.ImportReference(
                     typeof(Instrumentator).GetMethod(name: "CompletedLine",
-                        types: new[] { typeof(int) }));
+                        types: new[] { typeof(string),typeof(string), typeof(int) }));
 
             foreach (var type in module.Types)
             {
@@ -144,9 +144,15 @@ namespace EvoMaster.Instrumentation
         private int InsertVisitLineProbe(Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, string methodName, int line)
         {
+            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
+            var methodNameInstruction = ilProcessor.Create(OpCodes.Ldstr, methodName);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, line);
             var visitedInstruction = ilProcessor.Create(OpCodes.Call, _probe);
-
+            
+            ilProcessor.InsertBefore(instruction, classNameInstruction);
+            byteCodeIndex++;
+            ilProcessor.InsertBefore(instruction, methodNameInstruction);
+            byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, lineNumberInstruction);
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, visitedInstruction);
@@ -159,9 +165,9 @@ namespace EvoMaster.Instrumentation
             instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
             instruction.OpCode != OpCodes.Box;
 
-        public static void CompletedLine(int lineNo)
+        public static void CompletedLine(string className, string methodName, int lineNo)
         {
-            var record = $"--- Completed Line \"{lineNo}\"";
+            var record = $"--- Completed Line \"{lineNo}\" at Method: \"{methodName}\" at Class: \"{className}\"";
             Console.WriteLine(record);
         }
     }
