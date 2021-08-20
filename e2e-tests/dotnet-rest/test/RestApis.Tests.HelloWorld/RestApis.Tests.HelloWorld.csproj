@@ -1,26 +1,33 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
 
-    <IsPackable>false</IsPackable>
+        <IsPackable>false</IsPackable>
 
-    <!-->TODO</-->
-    <StartupObject>RestApis.Tests.HelloWorld.Controller.EmbeddedEvoMasterController</StartupObject>
-  </PropertyGroup>
+        <!-->TODO</-->
+        <StartupObject>RestApis.Tests.HelloWorld.Controller.EmbeddedEvoMasterController</StartupObject>
+    </PropertyGroup>
 
-  
-  <ItemGroup>
 
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
-    <PackageReference Include="xunit" Version="2.4.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
-    <PackageReference Include="coverlet.collector" Version="1.0.1" />
-  </ItemGroup>
+    <ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="../../src/RestApis.HelloWorld/RestApis.HelloWorld.csproj" />
-    <ProjectReference Include="..\..\..\..\client-dotnet\src\EvoMaster.Controller\EvoMaster.Controller.csproj" />
-  </ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0"/>
+        <PackageReference Include="xunit" Version="2.4.0"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0"/>
+        <PackageReference Include="coverlet.collector" Version="1.0.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../src/RestApis.HelloWorld/RestApis.HelloWorld.csproj"/>
+        <ProjectReference Include="..\..\..\..\client-dotnet\src\EvoMaster.Controller\EvoMaster.Controller.csproj"/>
+    </ItemGroup>
+
+    <Target Name="Instrument" AfterTargets="Build">
+        <Exec Command="cp -a $(OutputPath). $(ProjectDir)bin-instrumentation"/>
+        <Exec Command="cd $(ProjectDir)/../../../../client-dotnet/src/EvoMaster.Instrumentation; dotnet run $(ProjectDir)bin-instrumentation/RestApis.HelloWorld.dll $(ProjectDir)bin-instrumentation;"/>
+        <!--        TODO:copy runtimeconfig from actual sut-->
+        <Exec Command="cd $(ProjectDir)bin-instrumentation; rm RestApis.HelloWorld.dll RestApis.HelloWorld; cp RestApis.Tests.HelloWorld.runtimeconfig.json InstrumentedSut.runtimeconfig.json;"/>
+    </Target>
 
 </Project>

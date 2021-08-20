@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <IsPackable>true</IsPackable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -12,6 +13,10 @@
 
     <ItemGroup>
       <ProjectReference Include="..\EvoMaster.Client.Util\EvoMaster.Client.Util.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Mono.Cecil" Version="0.11.3" />
     </ItemGroup>
     
     <Target Name="PublishNuGetLocally" AfterTargets="Build">
