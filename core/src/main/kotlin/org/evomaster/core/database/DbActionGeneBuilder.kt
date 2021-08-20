@@ -48,14 +48,14 @@ class DbActionGeneBuilder {
                 /**
                  * TINYINT(3) is assumed to be representing a byte/Byte field
                  */
-                ColumnDataType.TINYINT ->
-                    handleTinyIntColumn(column)
+//                ColumnDataType.TINYINT ->
+//                    handleTinyIntColumn(column)
 
                 /**
                  * SMALLINT(5) is assumed as a short/Short field
                  */
-                ColumnDataType.INT2, ColumnDataType.SMALLINT ->
-                    handleSmallIntColumn(column)
+//                ColumnDataType.INT2, ColumnDataType.SMALLINT ->
+//                    handleSmallIntColumn(column)
 
                 /**
                  * CHAR(255) is assumed to be a char/Character field.
@@ -66,9 +66,11 @@ class DbActionGeneBuilder {
                     handleCharColumn(column)
 
                 /**
+                 * TINYINT(3) is assumed to be representing a byte/Byte field
+                 * INT2/SMALLINT(5) is assumed as a short/Short field
                  * INT4/INTEGER(10) is a int/Integer field
                  */
-                ColumnDataType.INT, ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL ->
+                ColumnDataType.TINYINT, ColumnDataType.INT2, ColumnDataType.SMALLINT, ColumnDataType.INT, ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL, ColumnDataType.MEDIUMINT ->
                     handleIntegerColumn(column)
 
                 /**
@@ -136,7 +138,7 @@ class DbActionGeneBuilder {
                     handleRealColumn(column)
 
 
-                ColumnDataType.DECIMAL, ColumnDataType.NUMERIC ->
+                ColumnDataType.DECIMAL, ColumnDataType.DEC, ColumnDataType.NUMERIC ->
                     handleDecimalColumn(column)
 
                 /**
@@ -194,7 +196,7 @@ class DbActionGeneBuilder {
 
     private fun handleBigIntColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
-            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toLong() })
         } else {
 
@@ -204,12 +206,34 @@ class DbActionGeneBuilder {
 
     private fun handleIntegerColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
-            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toInt() })
         } else {
-            IntegerGene(column.name,
-                    min = column.lowerBound ?: Int.MIN_VALUE,
-                    max = column.upperBound ?: Int.MAX_VALUE)
+
+            if ((column.type == ColumnDataType.INT4
+                        || column.type == ColumnDataType.INT
+                        || column.type == ColumnDataType.INTEGER) && column.isUnsigned){
+                LongGene(column.name, min = 0L, max = 4294967295L)
+            }else{
+                val min = when{
+                    column.isUnsigned -> 0
+                    column.type == ColumnDataType.TINYINT -> Byte.MIN_VALUE.toInt()
+                    column.type == ColumnDataType.SMALLINT || column.type == ColumnDataType.INT2 -> Short.MIN_VALUE.toInt()
+                    column.type == ColumnDataType.MEDIUMINT -> -8388608
+                    else -> Int.MIN_VALUE
+                }
+
+                val max = when (column.type){
+                    ColumnDataType.TINYINT -> if (column.isUnsigned) 255 else Byte.MAX_VALUE.toInt()
+                    ColumnDataType.SMALLINT, ColumnDataType.INT2 -> if (column.isUnsigned) 65535 else Short.MAX_VALUE.toInt()
+                    ColumnDataType.MEDIUMINT -> if (column.isUnsigned) 16777215 else 8388607
+                    else -> Int.MAX_VALUE
+                }
+
+                IntegerGene(column.name,
+                    min = column.lowerBound ?: min,
+                    max = column.upperBound ?: max)
+            }
         }
     }
 
@@ -233,6 +257,7 @@ class DbActionGeneBuilder {
         }
     }
 
+    @Deprecated("replaced by handleIntegerColumn, now all numeric types resulting in IntegerGene would by handled in handleIntegerColumn")
     private fun handleSmallIntColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
             if (column.enumValuesAsStrings.isEmpty()) {
@@ -247,6 +272,7 @@ class DbActionGeneBuilder {
         }
     }
 
+    @Deprecated("replaced by handleIntegerColumn, now all numeric types resulting in IntegerGene would by handled in handleIntegerColumn")
     private fun handleTinyIntColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
             if (column.enumValuesAsStrings.isEmpty()) {

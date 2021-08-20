@@ -11,11 +11,14 @@ import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHis
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.min
 
 
 class LongGene(
         name: String,
-        value: Long = 0
+        value: Long = 0,
+        val min : Long? = null,
+        val max : Long? = null
 ) : NumberGene<Long>(name, value) {
 
     companion object{
@@ -23,15 +26,24 @@ class LongGene(
     }
 
     override fun copyContent(): Gene {
-        val copy = LongGene(name, value)
+        val copy = LongGene(name, value, min, max)
         return copy
     }
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
+        /*
+            if one of min or max is specified,
+            we employ [randomness.randomizeBoundedIntAndLong] for randomizing long that is same as randomizing int
+         */
+        if (isRangeSpecified()){
+            value = randomness.randomizeBoundedIntAndLong(value, min?: Long.MIN_VALUE, max?: Long.MAX_VALUE, forceNewValue)
+            return
+        }
+
         var k = if (randomness.nextBoolean(0.1)) {
-            randomness.nextLong()
+                randomness.nextLong()
         } else if (randomness.nextBoolean(0.1)) {
             randomness.nextInt().toLong()
         } else {
@@ -61,11 +73,16 @@ class LongGene(
         }
 
         //choose an i for 2^i modification
-        val delta = GeneUtils.getDelta(randomness, apc)
+        val delta = GeneUtils.getDelta(randomness, apc, delta())
 
-        val sign = randomness.choose(listOf(-1, +1))
+        val sign = when{
+            max != null && value >= max -> -1
+            min != null && value <= min -> +1
+            else -> randomness.choose(listOf(-1, +1))
+        }
 
         value += (sign * delta)
+
 
         return true
     }
@@ -116,4 +133,22 @@ class LongGene(
         return true
     }
 
+    private fun isRangeSpecified() = min != null || max != null
+
+
+    /**
+     * calculate the delta based on [min] and [max] that is used for eg, mutation
+     * note the delta is less than [Long.MAX_VALUE]
+     */
+    private fun delta() : Long{
+        return if (isRangeSpecified()){
+            try{
+                min(Long.MAX_VALUE, Math.subtractExact(max?: Long.MAX_VALUE, min?: Long.MIN_VALUE))
+            }catch (e : ArithmeticException) {
+                Long.MAX_VALUE
+            }
+        }else
+            Long.MAX_VALUE
+
+    }
 }
