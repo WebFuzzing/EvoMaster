@@ -266,8 +266,16 @@ export default function evomasterPlugin(
         ){
             pure = false;
         } else if (t.isLogicalExpression(node)){
-            throw Error("LogicalExpression should not appear in the pure analysis, and the expression is: loc ("+ node.loc +
-                "), left("+ node.left + "), operator(" + node.operator+ "), right(" +node.right +")");
+            /*
+                it is pure only if its right and left are pure
+
+                its def:
+                operator: "||" | "&&" | "??" (required)
+                left: Expression (required)
+                right: Expression (required)
+
+             */
+            pure = isPureExpression(node.right) && isPureExpression(node.left);
         } else{
             throw Error("Missing expression type in the pure analysis: " + node.type);
         }

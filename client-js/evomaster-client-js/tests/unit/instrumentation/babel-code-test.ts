@@ -734,6 +734,39 @@ test("purity analysis non-pure: new object, yield, type cast", () => {
 });
 
 
+test("purity analysis expint", () => {
+    const code = dedent`
+        const expint = (n, x) => {
+            if (n < 0 || x < 0.0 || (x == 0.0 && (n == 0 || n == 1)))
+                throw new Error("error: n < 0 or x < 0");
+        }
+    `;
+
+    const res = runPlugin(code);
+
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "Branch_at_test.ts_at_line_00002_position_1_falseBranch", "Branch_at_test.ts_at_line_00002_position_1_trueBranch", "Branch_at_test.ts_at_line_00002_position_2_falseBranch", "Branch_at_test.ts_at_line_00002_position_2_trueBranch", "Branch_at_test.ts_at_line_00002_position_3_falseBranch", "Branch_at_test.ts_at_line_00002_position_3_trueBranch", "Branch_at_test.ts_at_line_00002_position_4_falseBranch", "Branch_at_test.ts_at_line_00002_position_4_trueBranch", "Branch_at_test.ts_at_line_00002_position_5_falseBranch", "Branch_at_test.ts_at_line_00002_position_5_trueBranch", "Branch_at_test.ts_at_line_00002_position_6_falseBranch", "Branch_at_test.ts_at_line_00002_position_6_trueBranch", "Branch_at_test.ts_at_line_00002_position_7_falseBranch", "Branch_at_test.ts_at_line_00002_position_7_trueBranch", "Branch_at_test.ts_at_line_00002_position_8_falseBranch", "Branch_at_test.ts_at_line_00002_position_8_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const expint = (n, x) => {
+          __EM__.markStatementForCompletion("test.ts", 2, 1);
+        
+          if (__EM__.or(() => __EM__.or(() => __EM__.cmp(n, "<", 0, "test.ts", 2, 2), () => __EM__.cmp(x, "<", 0.0, "test.ts", 2, 3), true, "test.ts", 2, 1), () => __EM__.and(() => __EM__.cmp(x, "==", 0.0, "test.ts", 2, 5), () => __EM__.or(() => __EM__.cmp(n, "==", 0, "test.ts", 2, 7), () => __EM__.cmp(n, "==", 1, "test.ts", 2, 8), true, "test.ts", 2, 6), true, "test.ts", 2, 4), true, "test.ts", 2, 0)) {
+            __EM__.markStatementForCompletion("test.ts", 3, 2);
+        
+            throw new Error("error: n < 0 or x < 0");
+          }
+        };
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+});
+
 
 
 
