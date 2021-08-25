@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.Instrumentation.E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.Instrumentation.Tests", "client-dotnet\test\EvoMaster.Instrumentation.Tests\EvoMaster.Instrumentation.Tests.csproj", "{1F902123-42A3-4F93-BDAE-040C68A37278}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.Instrumentation-Shared", "client-dotnet\src\EvoMaster.Instrumentation-Shared\EvoMaster.Instrumentation-Shared.csproj", "{B827940D-A8C1-4D96-8F42-4CE2C9A84965}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -256,6 +258,18 @@ Global
 		{1F902123-42A3-4F93-BDAE-040C68A37278}.Release|x64.Build.0 = Release|Any CPU
 		{1F902123-42A3-4F93-BDAE-040C68A37278}.Release|x86.ActiveCfg = Release|Any CPU
 		{1F902123-42A3-4F93-BDAE-040C68A37278}.Release|x86.Build.0 = Release|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Debug|x64.Build.0 = Debug|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Debug|x86.Build.0 = Debug|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Release|x64.ActiveCfg = Release|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Release|x64.Build.0 = Release|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Release|x86.ActiveCfg = Release|Any CPU
+		{B827940D-A8C1-4D96-8F42-4CE2C9A84965}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A4DD5E57-91EE-44F4-87F7-69F4B9053DDF} = {C7482DD5-AD81-49FE-9395-80C952893534}

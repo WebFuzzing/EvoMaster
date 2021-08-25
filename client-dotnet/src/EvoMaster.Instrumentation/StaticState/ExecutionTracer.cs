@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using EvoMaster.Instrumentation_Shared;
 
 namespace EvoMaster.Instrumentation.StaticState
 {
@@ -133,24 +135,32 @@ namespace EvoMaster.Instrumentation.StaticState
                 //     throw new KillSwitchException();
                 // }
             }
-            
+
             //TODO
             //for targets to cover
-            // var lineId = ObjectiveNaming.lineObjectiveName(className, line);
-            // var classId = ObjectiveNaming.classObjectiveName(className);
-            // UpdateObjective(lineId, 1d);
-            // UpdateObjective(classId, 1d);
+             var lineId = ObjectiveNaming.LineObjectiveName(className, line);
+             var classId = ObjectiveNaming.ClassObjectiveName(className);
+             UpdateObjective(lineId, 1d);
+             UpdateObjective(classId, 1d);
 
             //to calculate last executed line
             var lastLine = className + "_" + line + "_" + methodName;
             var lastMethod = className + "_" + methodName + "_" + descriptor;
             MarkLastExecutedStatement(lastLine, lastMethod);
         }
-        
-        public static void MarkLastExecutedStatement(string lastLine, string lastMethod) {
+
+        public static void MarkLastExecutedStatement(string lastLine, string lastMethod)
+        {
             //TODO
             //GetCurrentAdditionalInfo().PushLastExecutedStatement(lastLine, lastMethod);
         }
+
+        ///<returns>the number of objectives that have been encountered during the test execution</returns>
+        public static int GetNumberOfObjectives() => ObjectiveCoverage.Count;
+
+        public static int GetNumberOfObjectives(string prefix) =>
+            ObjectiveCoverage.Count(e => prefix == null || e.Key.StartsWith(prefix));
+
         private static void UpdateObjective(string id, double value)
         {
             if (value < 0d || value > 1d)
@@ -180,8 +190,9 @@ namespace EvoMaster.Instrumentation.StaticState
 
             ObjectiveRecorder.Update(id, value);
         }
-        
-        private static AdditionalInfo GetCurrentAdditionalInfo() {
+
+        private static AdditionalInfo GetCurrentAdditionalInfo()
+        {
             lock (_lock)
             {
                 return AdditionalInfoList[_actionIndex];

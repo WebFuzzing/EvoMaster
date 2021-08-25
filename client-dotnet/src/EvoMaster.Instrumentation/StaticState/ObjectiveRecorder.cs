@@ -41,7 +41,7 @@ namespace EvoMaster.Instrumentation.StaticState
      */
         private static readonly ConcurrentHashSet<string> AllTargets = new ConcurrentHashSet<string>();
 
-        
+
         /**
      * Key -> id of an objective/target
      * <br>
@@ -59,7 +59,7 @@ namespace EvoMaster.Instrumentation.StaticState
         /**
      * Counter used to generate unique numeric ids for idMapping
      */
-        //should be atomic, final
+        //TODO: should be atomic, final
         private static int IdMappingCounter;
 
         /**
@@ -67,7 +67,7 @@ namespace EvoMaster.Instrumentation.StaticState
      * is not important. In other words, if an entity gets "n", that does not
      * mean that its next call will get "n+1", just a value "k" with "k!=n"
      */
-        //should be atomic, final
+        //TODO: should be atomic, final
         private static int Counter;
 
         /**
@@ -82,7 +82,7 @@ namespace EvoMaster.Instrumentation.StaticState
      * for the first time and have not been reported yet to the EvoMaster
      * process.
      */
-        private static ConcurrentQueue<string> FirstTimeEncountered = new ConcurrentQueue<string>();
+        private static readonly ConcurrentQueue<string> FirstTimeEncountered = new ConcurrentQueue<string>();
 
 
         /**
@@ -95,8 +95,7 @@ namespace EvoMaster.Instrumentation.StaticState
             _reversedIdMapping.Clear();
             //TODO: check
             IdMappingCounter = 0;
-            //TODO: new instead of clear
-            FirstTimeEncountered = new ConcurrentQueue<string>();
+            FirstTimeEncountered.Clear();
             //TODO: check
             Counter = 0;
 
@@ -110,17 +109,12 @@ namespace EvoMaster.Instrumentation.StaticState
             }
         }
 
-
-        /**
-     * Mark the existence of a testing target.
-     * This is important to do when SUT classes are loaded
-     * and instrumented.
-     * This cannot be done with the added probes in the
-     * instrumentation, as what executed in the SUT depends
-     * on test data.
-     *
-     * @param target a descriptive string representing the id of the target
-     */
+        ///<summary>
+        /// Mark the existence of a testing target.
+        /// This is important to do when SUT classes are loaded and instrumented.
+        /// This cannot be done with the added probes in the instrumentation, as what executed in the SUT depends on test data.
+        /// </summary>
+        /// <param name="target">A descriptive string representing the id of the target</param>
         public static void RegisterTarget(string target)
         {
             if (target == null || string.IsNullOrEmpty(target))
@@ -130,10 +124,8 @@ namespace EvoMaster.Instrumentation.StaticState
 
             AllTargets.Add(target);
         }
-
-        /**
-     * @return a coverage value in [0,1]
-     */
+        
+        /// <returns>A coverage value in [0,1]</returns>
         public static double ComputeCoverage(string prefix)
         {
             var n = 0;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using EvoMaster.Instrumentation.StaticState;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -137,6 +138,7 @@ namespace EvoMaster.Instrumentation
         {
             var record = $"--- Completed Line \"{lineNo}\" at Method: \"{methodName}\" at Class: \"{className}\"";
             Console.WriteLine(record);
+            ExecutionTracer.ExecutedLine(className, methodName, "desc", lineNo);
         }
     }
 }
