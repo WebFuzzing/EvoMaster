@@ -11,8 +11,8 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
         {
             ITriangleClassification tc = new TriangleClassificationImpl();
 
-            ExecutionTracer.Reset();
-            // Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
+            ExecutionTracer.Reset(); 
+           // Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
 
             tc.Classify(-1, 0, 0);
             

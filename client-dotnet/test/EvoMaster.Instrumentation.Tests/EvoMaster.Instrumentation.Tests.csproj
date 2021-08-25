@@ -18,4 +18,12 @@
     <ProjectReference Include="..\EvoMaster.Instrumentation.Examples\EvoMaster.Instrumentation.Examples.csproj" />
   </ItemGroup>
 
+  <Target Name="Instrument" AfterTargets="Build">
+    
+    <Exec Command="cp -a $(OutputPath). $(ProjectDir)bin-instrumentation"/>
+    <Exec Command="cd $(ProjectDir)/../../src/EvoMaster.Instrumentation; dotnet run $(ProjectDir)bin-instrumentation/EvoMaster.Instrumentation.Examples.dll $(ProjectDir)bin-instrumentation;"/>
+    <!--        TODO:copy runtimeconfig from actual sut-->
+    <Exec Command="cd $(ProjectDir)bin-instrumentation; rm EvoMaster.Instrumentation.Examples.dll EvoMaster.Instrumentation.Examples; cp EvoMaster.Instrumentation.Tests.runtimeconfig.json InstrumentedSut.runtimeconfig.json;"/>
+  </Target>
+  
 </Project>
