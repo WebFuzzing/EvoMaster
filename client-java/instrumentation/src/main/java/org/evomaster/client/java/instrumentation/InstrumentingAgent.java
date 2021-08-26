@@ -170,7 +170,11 @@ public class InstrumentingAgent {
 
             ClassReader reader = new ClassReader(classfileBuffer);
 
-            return instrumentator.transformBytes(loader, cn, reader);
+            byte[] instrumented = instrumentator.transformBytes(loader, cn, reader);
+            if(instrumented == null){
+                return classfileBuffer;
+            }
+            return instrumented;
         }
     }
 }
