@@ -33,7 +33,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 3, path = listOf("query", "Package", "Version")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("query", "Package", "Version"), GraphQLUtils.longest(paths))
         Assertions.assertEquals(0, GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph))
     }
 
@@ -55,7 +55,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 4, path = listOf("query", "Owner", "Pet", "VisitConnection")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("query", "Owner", "Pet", "PetType"), GraphQLUtils.longest(paths))
     }
 
 
@@ -77,7 +77,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 4, path = listOf("query", "Owner", "Pet", "VisitConnection")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("query", "Owner", "Pet", "PetType"), GraphQLUtils.longest(paths))
 
     }
 
@@ -100,7 +100,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 3, path = listOf("query", "Job", "Commitment")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("query", "Job", "Commitment"), GraphQLUtils.longest(paths))
 
     }
 
@@ -124,7 +124,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "mutation", mutationGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 4, path = listOf("mutation", "AddOnCreatePayload", "AddOn", "AddOnRate")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("mutation", "AddOnCreatePayload", "AddOn", "AddOnRate"), GraphQLUtils.longest(paths))
 
     }
 
@@ -148,7 +148,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 4, path = listOf("query", "Store", "Bouquet", "Pot")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("query", "Store", "Bouquet", "Flower"), GraphQLUtils.longest(paths))
         Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph))
 
     }
@@ -171,7 +171,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 4, path = listOf("query", "Store", "Bouquet", "Pot")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("query", "Store", "Bouquet", "Flower"), GraphQLUtils.longest(paths))
         Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph))
     }
 
@@ -193,7 +193,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 5, path = listOf("query", "VulnerabilityConnection", "Vulnerability", "VulnerabilityDetail", "VulnerabilityDetailTable")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("query", "VulnerabilityConnection", "Vulnerability", "VulnerabilityDetail", "VulnerabilityDetailList"), GraphQLUtils.longest(paths))
         Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph))
     }
 
@@ -215,7 +215,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 4, path = listOf("query", "Store1", "Store", "PotStore")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("query", "Store1", "Store", "FlowerStore"), GraphQLUtils.longest(paths))
         Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(interfaceTag, queryGraph))
     }
 
@@ -238,7 +238,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 3, path = listOf("query", "Store", "PotStore")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("query", "Store", "FlowerStore"), GraphQLUtils.longest(paths))
         Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(interfaceTag, queryGraph))
     }
 
@@ -261,7 +261,7 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 6, path = listOf("query", "Node", "Agency", "Route", "Pattern", "Trip")), GraphQLUtils.longest(paths))
+        Assertions.assertEquals(listOf("query", "Node", "Agency", "Route", "Pattern", "Trip"), GraphQLUtils.longest(paths))
         Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(interfaceTag, queryGraph))
     }
 
@@ -291,32 +291,31 @@ class GraphQLUtilsTest {
         Assertions.assertEquals(listOf(listOf("A", "B", "C", "D", "E"), listOf("A", "F", "E")), GraphQLUtils.getAllPaths("A", "E", queryGraph))
         Assertions.assertEquals(listOf(listOf("query", "A", "B", "C", "D", "E"), listOf("query", "A", "F", "E"), listOf("query", "B", "C", "D", "E")), GraphQLUtils.getAllPaths("query", "E", queryGraph))
         /**/
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 4, path = listOf("query", "A", "F", "E")), GraphQLUtils.shortestPath(GraphQLUtils.getAllPaths("query", "E", queryGraph)))
+        Assertions.assertEquals(listOf("query", "A", "F", "E"), GraphQLUtils.shortestPath(GraphQLUtils.getAllPaths("query", "E", queryGraph)))
         /**/
         val shortestPFromEachEP = GraphQLUtils.getShortestPathFromEachEntryPointToEachNode(queryGraph)
 
-        Assertions.assertEquals(listOf(
-                GraphQLUtils.PathInfo(size = 2, path = listOf("A", "B")),
-                GraphQLUtils.PathInfo(size = 3, path = listOf("A", "B", "C")),
-                GraphQLUtils.PathInfo(size = 4, path = listOf("A", "B", "C", "D")),
-                GraphQLUtils.PathInfo(size = 3, path = listOf("A", "F", "E")),
-                GraphQLUtils.PathInfo(size = 2, path = listOf("A", "F")),
-                GraphQLUtils.PathInfo(size = 0, path = listOf()),
-                GraphQLUtils.PathInfo(size = 2, path = listOf("B", "C")),
-                GraphQLUtils.PathInfo(size = 3, path = listOf("B", "C", "D")),
-                GraphQLUtils.PathInfo(size = 4, path = listOf("B", "C", "D", "E")),
-                GraphQLUtils.PathInfo(size = 0, path = listOf())), shortestPFromEachEP)
+        Assertions.assertEquals(listOf(listOf("A", "B"),
+                listOf("A", "B", "C"),
+                listOf("A", "B", "C", "D"),
+                listOf("A", "F", "E"),
+                listOf("A", "F"),
+                listOf(),
+                listOf("B", "C"),
+                listOf("B", "C", "D"),
+                listOf("B", "C", "D", "E"),
+                listOf()), shortestPFromEachEP)
 
         val minPAmongAllEPForEachNode = GraphQLUtils.minPathAmongAllEntryPointsForEachNode(shortestPFromEachEP)
 
-        Assertions.assertEquals(listOf(GraphQLUtils.PathInfo(size = 2, path = listOf("B", "C")),
-                GraphQLUtils.PathInfo(size = 3, path = listOf("B", "C", "D")),
-                GraphQLUtils.PathInfo(size = 2, path = listOf("A", "F")),
-                GraphQLUtils.PathInfo(size = 3, path = listOf("A", "F", "E"))), minPAmongAllEPForEachNode)
+        Assertions.assertEquals(listOf(listOf("B", "C"),
+                listOf("B", "C", "D"),
+                listOf("A", "F"),
+                listOf("A", "F", "E")), minPAmongAllEPForEachNode)
 
         val maxPathAmongAllEPForAllNodes = GraphQLUtils.maxPathAmongAllEntryPointsForAllNodes(minPAmongAllEPForEachNode)
 
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 3, path = listOf("A", "F", "E")), maxPathAmongAllEPForAllNodes)
+        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 3, path = listOf("B", "C", "D")), maxPathAmongAllEPForAllNodes)
     }
 
 
@@ -329,7 +328,7 @@ class GraphQLUtilsTest {
         jsonFiles["PetsClinic"] = GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic.json").readText()
         jsonFiles["AniList"] = GraphQLUtilsTest::class.java.getResource("/graphql/AniList.json").readText()
         jsonFiles["Bitquery"] = GraphQLUtilsTest::class.java.getResource("/graphql/Bitquery.json").readText()
-       // jsonFiles["GitLab"] = GraphQLUtilsTest::class.java.getResource("/graphql/GitLab.json").readText()//Todo not working
+        // jsonFiles["GitLab"] = GraphQLUtilsTest::class.java.getResource("/graphql/GitLab.json").readText()//Todo not working
         jsonFiles["DigitransitHSL"] = GraphQLUtilsTest::class.java.getResource("/graphql/DigitransitHSL.json").readText()
         jsonFiles["TravelgateX"] = GraphQLUtilsTest::class.java.getResource("/graphql/TravelgateX.json").readText()
         jsonFiles["Universe"] = GraphQLUtilsTest::class.java.getResource("/graphql/Universe.json").readText()
