@@ -141,7 +141,7 @@ class GraphQLUtilsTest {
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         Assertions.assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
-        println(GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf()))
+        GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         Assertions.assertEquals(listOf(1, 1, 1, 1), GraphQLUtils.getNbrFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
@@ -270,7 +270,6 @@ class GraphQLUtilsTest {
     fun allNodesReachableTest() {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/abstract.json").readText()
-
         val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
@@ -280,7 +279,6 @@ class GraphQLUtilsTest {
         Assertions.assertEquals(7, GraphQLUtils.getGraphSize(queryGraph))
         Assertions.assertEquals(listOf(3, 1, 1, 2, 1, 1), GraphQLUtils.getNbrFields(queryGraph))
         Assertions.assertEquals(setOf("E"), GraphQLUtils.getAdjacent("D", queryGraph))
-        println(queryGraph)
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
