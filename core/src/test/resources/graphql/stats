@@ -1,27 +1,64 @@
-************* GitLab04022021:
-The number of fields in the type Query: 27
-The number of fields in all nodes, excluding Query: [4, 3, 2, 2, 3, 2, 3, 3, 2, 13, 1, 3, 2, 1, 4, 13, 105, 24, 3, 2, 20, 5, 2, 82, 3, 2, 16, 4, 2, 27, 9, 5, 3, 2, 6, 3, 2, 2, 3, 2, 1, 7, 4, 3, 2, 2, 3, 2, 3, 3, 2, 4, 3, 3, 2, 9, 60, 13, 3, 2, 46, 3, 2, 6, 3, 2, 45, 4, 2, 3, 2, 8, 3, 2, 18, 11, 3, 6, 3, 5, 2, 56, 8, 14, 54, 15, 2, 5, 3, 2, 4, 2, 6, 5, 14, 2, 2, 8, 3, 2, 5, 12, 3, 2, 3, 2, 8, 1, 3, 2, 15, 5, 2, 3, 2, 3, 2, 4, 3, 2, 12, 3, 3, 2, 6, 3, 2, 3, 2, 9, 2, 1, 3, 2, 3, 2, 2, 3, 2, 9, 1, 2, 3, 2, 5, 3, 2, 29, 1, 3, 4, 5, 4, 5, 6, 4, 4, 4, 5, 5, 4, 5, 3, 2, 3, 7, 4, 3, 2, 3, 1, 3, 2, 1, 6, 4, 3, 6, 6, 4, 9, 3, 2, 8, 3, 2, 3, 3, 3, 2, 6, 3, 4, 9, 3, 2, 9, 42, 3, 2, 19, 12, 7, 3, 2, 6, 4, 1, 6, 3, 3, 2, 5, 2, 6, 3, 2, 3, 2, 8, 7, 7, 4, 6, 4, 2, 3, 4, 2, 3, 3, 2, 5, 9, 3, 2, 6, 9, 7, 1, 3, 2, 3, 2, 3, 2, 3, 3, 2, 5, 3, 2, 5, 3, 2, 7, 3, 2, 4, 3, 2, 3, 3, 3, 2, 7, 22, 3, 2, 11, 1, 2, 4, 3, 2, 4, 3, 2, 10, 11, 3, 2, 8, 14, 3, 3, 2, 6, 3, 2, 2, 3, 2, 4, 7, 4, 2, 4, 4, 3, 2, 10, 3, 2, 8, 3, 2, 8, 15, 3, 2, 4, 5, 2, 3, 2, 3, 3, 2, 5, 3, 2, 8, 3, 2, 2, 0, 28, 2, 2, 4, 3, 5, 2, 3, 2, 17, 3, 2, 3, 2, 3, 3, 2, 3, 9, 7, 7, 4, 2, 3, 2, 9, 2, 3, 2, 4, 10, 19, 3, 2, 8, 3, 2, 8, 3, 2, 3, 2, 8, 3, 2, 8, 4, 3, 2, 3, 2, 3, 2, 3, 3, 2, 2, 2]
-The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 802
-The number of nodes, including Query: 386
-The longest path is: LongestInfo(size=31, path=[query, ContainerRepositoryDetails, Project, AlertManagementAlert, UserConnection, UserEdge, User, MergeRequestConnection, MergeRequestEdge, MergeRequest, TodoConnection, TodoEdge, Todo, Group, Board, BoardEpicConnection, BoardEpicEdge, BoardEpic, EpicConnection, EpicEdge, Epic, EpicIssueConnection, EpicIssueEdge, EpicIssue, DesignCollection, Design, DesignVersionConnection, DesignVersionEdge, DesignVersion, DesignAtVersionConnection, DesignAtVersionEdge])
-The number of unions: 3
-The number of interfaces: 3
+************* PetsClinic:
+The number of fields in the type Query: 7
+The number of fields in all nodes, excluding Query: [2, 4, 2, 7, 6, 2, 4]
+The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 12
+The number of nodes, including Query: 8
+The longest path is: PathInfo(size=5, path=[query, Owner, Pet, VisitConnection, Visit])
+The number of unions: 0
+The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Pet, VisitConnection, Visit])
 --**--
-The number of fields in the type Mutation: 142
-The number of fields in all nodes, excluding Mutation: [3, 6, 20, 5, 2, 82, 3, 2, 4, 3, 2, 16, 4, 2, 27, 9, 5, 3, 2, 6, 3, 2, 2, 3, 2, 1, 105, 24, 3, 2, 8, 3, 2, 18, 11, 3, 6, 6, 3, 3, 2, 5, 2, 3, 2, 9, 60, 13, 3, 2, 46, 3, 2, 3, 2, 45, 4, 2, 3, 5, 2, 56, 8, 14, 54, 15, 2, 5, 3, 2, 4, 2, 6, 5, 14, 2, 2, 8, 3, 2, 5, 12, 3, 2, 3, 2, 8, 1, 3, 2, 15, 5, 2, 3, 2, 3, 2, 4, 3, 2, 12, 3, 3, 2, 6, 3, 2, 3, 2, 9, 2, 1, 3, 2, 3, 2, 2, 3, 2, 9, 1, 2, 3, 2, 5, 3, 2, 29, 1, 3, 4, 5, 4, 5, 6, 4, 4, 4, 5, 5, 4, 5, 3, 2, 3, 7, 4, 3, 2, 3, 1, 3, 2, 1, 6, 4, 3, 6, 6, 4, 9, 3, 2, 8, 3, 2, 3, 3, 3, 2, 6, 6, 3, 2, 3, 2, 8, 7, 7, 4, 6, 4, 2, 3, 4, 2, 3, 3, 2, 5, 9, 3, 2, 6, 9, 7, 1, 3, 2, 3, 2, 3, 2, 3, 3, 2, 5, 3, 2, 5, 3, 2, 7, 3, 2, 4, 3, 2, 3, 3, 3, 2, 7, 22, 3, 2, 11, 1, 2, 4, 3, 2, 4, 3, 2, 10, 11, 3, 2, 8, 9, 42, 14, 3, 3, 2, 6, 3, 2, 2, 3, 2, 4, 7, 4, 2, 4, 4, 3, 2, 10, 3, 2, 8, 3, 2, 8, 15, 3, 2, 4, 5, 2, 3, 2, 3, 3, 2, 5, 3, 2, 8, 3, 2, 2, 0, 28, 2, 2, 4, 3, 5, 2, 3, 2, 17, 3, 2, 3, 2, 3, 3, 2, 3, 3, 2, 19, 12, 7, 3, 2, 6, 9, 7, 7, 4, 2, 7, 4, 3, 2, 2, 3, 2, 3, 3, 2, 4, 3, 3, 4, 9, 3, 2, 4, 1, 3, 3, 3, 5, 5, 3, 3, 4, 3, 3, 2, 2, 4, 2, 3, 4, 5, 3, 3, 3, 2, 3, 3, 3, 4, 10, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 4, 2, 3, 3, 2, 3, 5, 4, 2, 2, 2, 3, 3, 4, 3, 3, 2, 3, 3, 3, 3, 3, 3, 2, 4, 3, 3, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 3, 3, 3, 3, 4, 3, 3, 3, 3, 2, 3, 3, 3, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3, 2, 3, 3]
-The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 967
-The number of nodes, including Mutation: 483
-The number of unions: 3
-The number of interfaces: 3
-The longest path is: LongestInfo(size=36, path=[mutation, AddAwardEmojiPayload, AwardEmoji, User, MergeRequestConnection, MergeRequestEdge, MergeRequest, CommitConnection, CommitEdge, Commit, PipelineConnection, PipelineEdge, Pipeline, Project, AlertManagementAlert, TodoConnection, TodoEdge, Todo, Group, Board, BoardEpicConnection, BoardEpicEdge, BoardEpic, EpicConnection, EpicEdge, Epic, EpicIssueConnection, EpicIssueEdge, EpicIssue, DesignCollection, Design, DesignVersionConnection, DesignVersionEdge, DesignVersion, DesignAtVersionConnection, DesignAtVersionEdge])
+The number of fields in the type Mutation: 8
+The number of fields in all nodes, excluding Mutation: [1, 7, 6, 2, 2, 4, 1, 1, 1, 1, 1, 2, 1, 1]
+The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 22
+The number of nodes, including Mutation: 15
+The number of unions: 0
+The number of interfaces: 0
+The longest path is: PathInfo(size=6, path=[mutation, AddOwnerPayload, Owner, Pet, VisitConnection, Visit])
+The maximum path of the minimum among all entry points: PathInfo(size=3, path=[AddPetPayload, Pet, VisitConnection])
+************* AniList:
+The number of fields in the type Query: 26
+The number of fields in all nodes, excluding Query: [19, 5, 20, 2, 5, 2, 7, 6, 5, 3, 9, 53, 4, 3, 3, 4, 8, 3, 6, 10, 5, 2, 17, 5, 2, 3, 4, 3, 4, 7, 6, 3, 2, 3, 1, 9, 3, 4, 8, 20, 3, 1, 16, 3, 1, 6, 3, 2, 2, 3, 2, 19, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 6, 6, 17, 3, 2, 4, 4, 4, 4, 3, 2, 1, 7, 6, 8, 17, 9, 8, 1, 14, 16, 8, 8, 8, 8, 9, 22, 2, 13, 9, 9, 9, 9, 6, 3, 5, 1, 3, 7, 3, 1, 3]
+The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 225
+The number of nodes, including Query: 105
+The longest path is: PathInfo(size=11, path=[query, Page, User, Favourites, MediaConnection, MediaEdge, Media, CharacterConnection, CharacterEdge, Staff, StaffImage])
+The number of unions: 2
+The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=4, path=[User, UserStatisticTypes, UserStatistics, UserStudioStatistic])
+--**--
+The number of fields in the type Mutation: 28
+The number of fields in all nodes, excluding Mutation: [20, 2, 5, 2, 7, 6, 5, 3, 9, 53, 4, 3, 3, 4, 8, 3, 6, 10, 5, 2, 17, 5, 2, 5, 3, 4, 3, 4, 7, 6, 3, 2, 3, 1, 9, 3, 4, 8, 20, 3, 1, 16, 3, 1, 6, 3, 2, 2, 3, 2, 19, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 6, 6, 17, 3, 2, 4, 4, 4, 4, 3, 2, 1, 14, 9, 17, 16, 1, 1, 22, 2, 13]
+The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 155
+The number of nodes, including Mutation: 83
+The number of unions: 2
+The number of interfaces: 0
+The longest path is: PathInfo(size=10, path=[mutation, User, Favourites, MediaConnection, MediaEdge, Media, CharacterConnection, CharacterEdge, Staff, StaffImage])
+The maximum path of the minimum among all entry points: PathInfo(size=4, path=[User, UserStatisticTypes, UserStatistics, UserStudioStatistic])
+************* Bitquery:
+The number of fields in the type Query: 12
+The number of fields in all nodes, excluding Query: [7, 2, 2, 3, 18, 2, 10, 6, 2, 22, 11, 6, 2, 17, 19, 17, 6, 13, 11, 18, 1, 17, 17, 2, 15, 5, 16, 12, 4, 5, 13, 5, 14, 5, 20, 9, 5, 3, 4, 4, 4, 3, 3, 18, 2, 4, 1, 3, 3, 5, 2, 24, 12, 30, 4, 6, 8, 16, 4, 11, 20, 3, 14, 6, 3, 3, 9, 11, 20, 4, 12, 18, 9, 18, 20, 6, 17, 6, 2, 3, 3, 16, 20, 16, 14, 7, 15, 4, 19, 2, 11, 26, 2, 3, 24, 5, 16, 11, 2, 16, 25, 29, 1, 1, 6, 11, 6, 2, 2, 1, 4, 9, 3, 3, 13, 11, 15, 18, 4, 11, 19, 22, 20]
+The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 367
+The number of nodes, including Query: 124
+The longest path is: PathInfo(size=7, path=[query, Conflux, EthereumAddressInfoWithBalance, EthereumSmartContractInfoWithAttributes, SmartContractReadonlyAttribute, EthereumAddressInfo, EthereumSmartContractInfo])
+The number of unions: 2
+The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=4, path=[Offchain, CovidHistory, CovidFact, CovidLocation])
+--**--
+The number of fields in the type Mutation: null
+The number of fields in all nodes, excluding Mutation: []
+The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
+The number of nodes, including Mutation: 0
+The number of unions: 0
+The number of interfaces: 0
 ************* DigitransitHSL:
 The number of fields in the type Query: 33
 The number of fields in all nodes, excluding Query: [2, 10, 16, 13, 22, 27, 17, 6, 3, 2, 19, 2, 2, 2, 5, 3, 4, 6, 13, 7, 8, 2, 2, 2, 4, 2, 2, 2, 0, 7, 11, 10, 23, 4, 2, 4, 4, 5]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 108
 The number of nodes, including Query: 39
-The longest path is: LongestInfo(size=9, path=[querytype, Node, Agency, Route, Pattern, Trip, Stop, Alert, TranslatedString])
+The longest path is: PathInfo(size=9, path=[querytype, Node, Agency, Route, Pattern, Trip, Stop, Alert, TranslatedString])
 The number of unions: 0
 The number of interfaces: 2
+The maximum path of the minimum among all entry points: PathInfo(size=5, path=[Plan, Itinerary, Leg, step, elevationProfileComponent])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -31,91 +68,49 @@ The number of unions: 0
 The number of interfaces: 0
 ************* TravelgateX:
 The number of fields in the type Query: 9
-The number of fields in all nodes, excluding Query: [21, 4, 2, 5, 20, 5, 12, 4, 5, 30, 4, 2, 5, 25, 5, 8, 2, 2, 5, 14, 2, 2, 5, 6, 2, 2, 5, 8, 2, 2, 5, 5, 6, 2, 4, 2, 2, 5, 6, 3, 4, 2, 2, 2, 5, 5, 4, 2, 4, 2, 5, 6, 3, 4, 2, 5, 8, 2, 2, 5, 1, 2, 2, 2, 5, 6, 5, 3, 5, 6, 4, 2, 2, 4, 2, 5, 6, 4, 2, 2, 4, 4, 2, 2, 5, 3, 2, 2, 21, 3, 2, 11, 3, 2, 2, 5, 2, 2, 3, 2, 2, 6, 3, 2, 2, 2, 6, 3, 4, 2, 6, 21, 4, 2, 9, 2, 7, 5, 3, 5, 6, 4, 3, 6, 2, 3, 2, 6, 11, 4, 2, 2, 3, 2, 2, 5, 6, 2, 2, 7, 2, 4, 2, 3, 2, 6, 1, 3, 2, 5, 14, 22, 2, 2, 2, 8, 2, 3, 2, 2, 4, 2, 3, 2, 2, 7, 7, 7, 3, 1, 7, 13, 3, 2, 10, 5, 3, 3, 8, 1, 1, 22, 2, 14, 2, 6, 2, 7, 4, 5, 4, 7, 7, 5, 1, 5, 15, 3, 2, 5, 2, 2, 3, 5, 9, 4, 6, 5, 12, 5, 2, 11, 4, 5, 8, 3, 4, 2, 2, 5, 1, 11, 2, 3, 1, 3, 3, 6, 3, 2, 2, 5, 10, 2, 2, 3, 2, 5, 7, 3, 5, 7, 4, 3, 2, 1, 2, 3, 3, 2, 5, 17, 3, 2, 5, 18, 3, 2, 10, 2, 2, 1, 1, 3, 2, 5, 9, 19, 7, 5, 3, 1, 3, 2, 5, 5, 3, 4, 2, 5, 4, 2, 5, 3, 5, 2, 1, 2, 2, 2, 5, 5, 3, 4, 1, 2, 2, 3, 2, 5, 9, 2, 2, 5, 13, 3]
+The number of fields in all nodes, excluding Query: [21, 4, 2, 5, 21, 5, 12, 4, 5, 30, 4, 2, 5, 25, 5, 8, 2, 2, 5, 14, 2, 2, 5, 6, 2, 2, 5, 8, 2, 2, 5, 5, 6, 2, 4, 2, 2, 5, 6, 3, 4, 2, 2, 2, 5, 5, 4, 2, 4, 2, 5, 6, 3, 4, 2, 5, 8, 2, 2, 5, 1, 2, 2, 2, 5, 6, 5, 3, 5, 6, 4, 2, 2, 4, 2, 5, 6, 4, 2, 2, 4, 4, 2, 2, 5, 3, 2, 2, 21, 3, 2, 11, 3, 2, 2, 5, 2, 2, 3, 2, 2, 6, 3, 2, 2, 2, 6, 3, 4, 2, 6, 22, 4, 2, 9, 2, 7, 5, 3, 5, 6, 4, 3, 6, 2, 3, 2, 6, 11, 4, 2, 2, 3, 2, 2, 5, 6, 2, 2, 7, 2, 4, 2, 3, 2, 6, 1, 3, 2, 5, 14, 22, 2, 2, 2, 8, 2, 3, 2, 2, 4, 2, 3, 2, 2, 7, 7, 7, 3, 1, 7, 13, 3, 2, 10, 5, 3, 3, 8, 1, 1, 23, 2, 14, 2, 6, 2, 7, 4, 5, 4, 7, 7, 5, 1, 5, 15, 3, 2, 5, 2, 2, 3, 5, 10, 4, 6, 5, 12, 5, 2, 11, 4, 5, 8, 3, 4, 2, 2, 5, 1, 11, 2, 3, 1, 3, 3, 6, 3, 2, 2, 5, 10, 2, 2, 3, 2, 5, 7, 3, 5, 7, 4, 3, 2, 1, 2, 3, 3, 2, 5, 17, 3, 2, 5, 18, 3, 2, 10, 2, 2, 1, 1, 3, 2, 5, 9, 22, 7, 5, 3, 1, 3, 2, 5, 5, 3, 4, 2, 5, 4, 2, 5, 3, 5, 2, 1, 2, 2, 2, 5, 5, 3, 4, 1, 2, 2, 3, 2, 5, 9, 2, 2, 5, 13, 3]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 592
 The number of nodes, including Query: 307
-The longest path is: LongestInfo(size=33, path=[query, AdminQuery, AccessConnection, AccessEdge, Access, AccessData, Supplier, SupplierData, Organization, OrganizationData, GroupConnection, GroupEdge, Group, GroupData, Member, MemberData, RoleConnection, RoleEdge, Role, RoleData, ResourceConnection, ResourceEdge, Resource, ResourceData, APIConnection, APIEdge, API, APIData, OperationConnection, OperationEdge, Operation, AdviseMessage, ExternalMessage])
+The longest path is: PathInfo(size=33, path=[query, AdminQuery, AccessConnection, AccessEdge, Access, AccessData, Supplier, SupplierData, Organization, OrganizationData, GroupConnection, GroupEdge, Group, GroupData, Member, MemberData, RoleConnection, RoleEdge, Role, RoleData, ResourceConnection, ResourceEdge, Resource, ResourceData, APIConnection, APIEdge, API, APIData, OperationConnection, OperationEdge, Operation, AdviseMessage, ExternalMessage])
 The number of unions: 4
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=9, path=[FlightXQuery, FlightOffer, FlightOfferData, FlightOfferItem, FlightOfferItemData, FlightService, FlightServiceData, FlightSegment, TransportDeparture])
 --**--
 The number of fields in the type Mutation: 7
-The number of fields in all nodes, excluding Mutation: [46, 5, 20, 5, 12, 4, 4, 2, 4, 6, 2, 5, 30, 4, 2, 5, 25, 5, 8, 2, 2, 5, 14, 2, 2, 5, 6, 2, 2, 5, 8, 2, 2, 5, 5, 2, 2, 5, 6, 3, 4, 2, 2, 2, 5, 5, 4, 2, 4, 2, 5, 6, 3, 4, 2, 5, 8, 2, 2, 5, 1, 2, 2, 2, 5, 6, 5, 3, 5, 6, 4, 2, 2, 4, 2, 5, 6, 4, 2, 2, 9, 2, 11, 3, 2, 2, 5, 2, 5, 2, 2, 3, 5, 13, 3, 2, 10, 5, 3, 3, 12, 5, 2, 11, 2, 1, 4, 6, 2, 7, 4, 4, 2, 5, 2, 2, 5, 8, 3, 5, 5, 5, 2, 3, 2, 3, 4, 3, 2, 5, 10, 5, 3, 2, 29, 5, 9, 19, 7, 5, 3, 1, 3, 2, 3, 2, 5, 5, 1, 5, 7, 3, 5, 5, 3, 5, 2, 2, 1, 2, 2, 2, 5, 5, 3, 4, 1, 2, 2, 3, 2, 5, 9]
+The number of fields in all nodes, excluding Mutation: [46, 5, 21, 5, 12, 4, 4, 2, 4, 6, 2, 5, 30, 4, 2, 5, 25, 5, 8, 2, 2, 5, 14, 2, 2, 5, 6, 2, 2, 5, 8, 2, 2, 5, 5, 2, 2, 5, 6, 3, 4, 2, 2, 2, 5, 5, 4, 2, 4, 2, 5, 6, 3, 4, 2, 5, 8, 2, 2, 5, 1, 2, 2, 2, 5, 6, 5, 3, 5, 6, 4, 2, 2, 4, 2, 5, 6, 4, 2, 2, 9, 2, 11, 3, 2, 2, 5, 2, 5, 2, 2, 3, 5, 13, 3, 2, 10, 5, 3, 3, 12, 5, 2, 11, 2, 1, 4, 6, 2, 7, 4, 4, 2, 5, 2, 2, 5, 8, 3, 5, 5, 5, 2, 3, 2, 3, 4, 3, 2, 5, 10, 5, 3, 2, 29, 5, 9, 22, 7, 5, 3, 1, 3, 2, 3, 2, 5, 5, 1, 5, 7, 3, 5, 5, 3, 5, 2, 2, 1, 2, 2, 2, 5, 5, 3, 4, 1, 2, 2, 3, 2, 5, 9]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 345
 The number of nodes, including Mutation: 174
 The number of unions: 2
 The number of interfaces: 0
-The longest path is: LongestInfo(size=30, path=[mutation, AdminMutation, Access, AccessData, Supplier, SupplierData, Organization, OrganizationData, GroupConnection, GroupEdge, Group, GroupData, Member, MemberData, RoleConnection, RoleEdge, Role, RoleData, ResourceConnection, ResourceEdge, Resource, ResourceData, APIConnection, APIEdge, API, APIData, OperationConnection, OperationEdge, Operation, OperationData])
+The longest path is: PathInfo(size=30, path=[mutation, AdminMutation, Access, AccessData, Supplier, SupplierData, Organization, OrganizationData, GroupConnection, GroupEdge, Group, GroupData, Member, MemberData, RoleConnection, RoleEdge, Role, RoleData, ResourceConnection, ResourceEdge, Resource, ResourceData, APIConnection, APIEdge, API, APIData, OperationConnection, OperationEdge, Operation, OperationData])
+The maximum path of the minimum among all entry points: PathInfo(size=9, path=[FlightXMutation, FlightOrder, FlightOrderData, FlightOrderItem, FlightOrderItemData, FlightService, FlightServiceData, FlightSegment, TransportDeparture])
 ************* Universe:
 The number of fields in the type Query: 27
-The number of fields in all nodes, excluding Query: [10, 88, 3, 4, 2, 7, 20, 3, 12, 3, 14, 21, 3, 29, 14, 3, 31, 28, 4, 45, 3, 13, 2, 2, 3, 8, 23, 3, 3, 12, 3, 3, 3, 5, 2, 3, 3, 6, 3, 10, 32, 7, 6, 3, 3, 8, 21, 3, 3, 3, 5, 3, 3, 2, 3, 12, 3, 7, 5, 3, 27, 20, 13, 2, 3, 7, 18, 2, 13, 7, 4, 6, 6, 2, 4, 14, 19, 10, 4, 1, 10, 5, 9, 2, 26, 3, 6]
+The number of fields in all nodes, excluding Query: [10, 88, 3, 4, 2, 7, 20, 3, 12, 3, 14, 21, 3, 29, 14, 3, 31, 28, 4, 45, 3, 13, 2, 2, 3, 8, 23, 3, 3, 12, 3, 3, 3, 5, 2, 3, 3, 6, 3, 10, 32, 7, 6, 3, 3, 8, 21, 3, 3, 3, 5, 3, 3, 2, 3, 12, 3, 7, 5, 3, 27, 20, 13, 2, 3, 7, 18, 2, 13, 7, 4, 6, 6, 2, 4, 14, 19, 10, 4, 1, 10, 5, 9, 2, 27, 3, 6]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 173
 The number of nodes, including Query: 88
-The longest path is: LongestInfo(size=19, path=[query, AddOn, Event, TimeSlot, AttendeeConnection, Attendee, Answer, Question, Rate, OrderItemConnection, OrderItem, Buyer, OrderConnection, Order, Host, DiscountConnection, Discount, DiscountRedemptionConnection, DiscountRedemption])
+The longest path is: PathInfo(size=19, path=[query, AddOn, Event, TimeSlot, AttendeeConnection, Attendee, Answer, Question, Rate, OrderItemConnection, OrderItem, Buyer, OrderConnection, Order, Host, DiscountConnection, Discount, DiscountRedemptionConnection, DiscountRedemption])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=4, path=[Host, Analytics, BuyersLocation, Location])
 --**--
 The number of fields in the type Mutation: 60
-The number of fields in all nodes, excluding Mutation: [3, 2, 10, 29, 10, 88, 3, 4, 2, 7, 20, 3, 12, 3, 14, 21, 3, 3, 31, 14, 3, 28, 4, 45, 3, 13, 2, 2, 3, 8, 23, 3, 3, 12, 3, 3, 3, 5, 2, 3, 3, 6, 3, 10, 3, 8, 21, 3, 3, 3, 5, 3, 3, 2, 3, 12, 3, 7, 5, 3, 27, 20, 32, 7, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 2, 2, 2, 18, 2, 3, 3, 3, 3, 26, 3, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+The number of fields in all nodes, excluding Mutation: [3, 2, 10, 29, 10, 88, 3, 4, 2, 7, 20, 3, 12, 3, 14, 21, 3, 3, 31, 14, 3, 28, 4, 45, 3, 13, 2, 2, 3, 8, 23, 3, 3, 12, 3, 3, 3, 5, 2, 3, 3, 6, 3, 10, 3, 8, 21, 3, 3, 3, 5, 3, 3, 2, 3, 12, 3, 7, 5, 3, 27, 20, 32, 7, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 2, 2, 2, 18, 2, 3, 3, 3, 3, 27, 3, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 225
 The number of nodes, including Mutation: 114
 The number of unions: 0
 The number of interfaces: 0
-The longest path is: LongestInfo(size=15, path=[mutation, TransferAcceptPayload, Transfer, OrderItem, AddOn, Event, TimeSlot, AttendeeConnection, Attendee, Order, Host, DiscountConnection, Discount, DiscountRedemptionConnection, DiscountRedemption])
-************* QueryTypeGlobalPetsClinic:
-The number of fields in the type Query: 7
-The number of fields in all nodes, excluding Query: [2, 4, 2, 7, 6, 2, 4]
-The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 12
-The number of nodes, including Query: 8
-The longest path is: LongestInfo(size=5, path=[query, Owner, Pet, VisitConnection, Visit])
-The number of unions: 0
-The number of interfaces: 0
---**--
-The number of fields in the type Mutation: 8
-The number of fields in all nodes, excluding Mutation: [1, 7, 6, 2, 2, 4, 1, 1, 1, 1, 1, 2, 1, 1]
-The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 22
-The number of nodes, including Mutation: 15
-The number of unions: 0
-The number of interfaces: 0
-The longest path is: LongestInfo(size=6, path=[mutation, AddOwnerPayload, Owner, Pet, VisitConnection, Visit])
-************* AniList:
-The number of fields in the type Query: 26
-The number of fields in all nodes, excluding Query: [19, 5, 20, 2, 5, 2, 7, 6, 5, 3, 9, 53, 4, 3, 3, 4, 8, 3, 6, 10, 5, 2, 17, 5, 2, 3, 4, 3, 4, 7, 6, 3, 2, 3, 1, 9, 3, 4, 8, 20, 3, 1, 16, 3, 1, 6, 3, 2, 2, 3, 2, 19, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 6, 6, 17, 3, 2, 4, 4, 4, 4, 3, 2, 1, 7, 6, 8, 17, 9, 8, 1, 14, 16, 8, 8, 8, 8, 9, 22, 2, 13, 9, 9, 9, 9, 6, 3, 5, 1, 3, 7, 3, 1, 3]
-The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 225
-The number of nodes, including Query: 105
-The longest path is: LongestInfo(size=11, path=[query, Page, User, Favourites, MediaConnection, MediaEdge, Media, CharacterConnection, CharacterEdge, Staff, StaffImage])
-The number of unions: 2
-The number of interfaces: 0
---**--
-The number of fields in the type Mutation: 28
-The number of fields in all nodes, excluding Mutation: [20, 2, 5, 2, 7, 6, 5, 3, 9, 53, 4, 3, 3, 4, 8, 3, 6, 10, 5, 2, 17, 5, 2, 5, 3, 4, 3, 4, 7, 6, 3, 2, 3, 1, 9, 3, 4, 8, 20, 3, 1, 16, 3, 1, 6, 3, 2, 2, 3, 2, 19, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 6, 6, 17, 3, 2, 4, 4, 4, 4, 3, 2, 1, 14, 9, 17, 16, 1, 1, 22, 2, 13]
-The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 155
-The number of nodes, including Mutation: 83
-The number of unions: 2
-The number of interfaces: 0
-The longest path is: LongestInfo(size=10, path=[mutation, User, Favourites, MediaConnection, MediaEdge, Media, CharacterConnection, CharacterEdge, Staff, StaffImage])
-************* Bitquery:
-The number of fields in the type Query: 12
-The number of fields in all nodes, excluding Query: [7, 2, 2, 3, 18, 2, 10, 6, 2, 22, 11, 6, 2, 17, 19, 17, 6, 13, 11, 18, 1, 17, 17, 2, 15, 5, 16, 12, 4, 5, 13, 5, 14, 5, 20, 9, 5, 3, 4, 4, 4, 3, 3, 18, 2, 4, 1, 3, 3, 5, 2, 24, 12, 30, 4, 6, 8, 16, 4, 11, 20, 3, 14, 6, 3, 3, 9, 11, 20, 4, 12, 18, 9, 18, 20, 6, 17, 6, 2, 3, 3, 16, 20, 16, 14, 7, 15, 4, 19, 2, 11, 26, 2, 3, 24, 5, 16, 11, 2, 16, 25, 29, 1, 1, 6, 11, 6, 2, 2, 1, 4, 9, 3, 3, 13, 11, 15, 18, 4, 11, 19, 22, 20]
-The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 367
-The number of nodes, including Query: 124
-The longest path is: LongestInfo(size=7, path=[query, Conflux, EthereumAddressInfoWithBalance, EthereumSmartContractInfoWithAttributes, SmartContractReadonlyAttribute, EthereumAddressInfo, EthereumSmartContractInfo])
-The number of unions: 2
-The number of interfaces: 0
---**--
-The number of fields in the type Mutation: null
-The number of fields in all nodes, excluding Mutation: []
-The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
-The number of nodes, including Mutation: 0
-The number of unions: 0
-The number of interfaces: 0
+The longest path is: PathInfo(size=15, path=[mutation, TransferAcceptPayload, Transfer, OrderItem, AddOn, Event, TimeSlot, AttendeeConnection, Attendee, Order, Host, DiscountConnection, Discount, DiscountRedemptionConnection, DiscountRedemption])
+The maximum path of the minimum among all entry points: PathInfo(size=5, path=[AttendeesMessagePayload, Event, ScheduleConnection, Schedule, ScheduleInterval])
 ************* CatalysisHub:
 The number of fields in the type Query: 11
 The number of fields in all nodes, excluding Query: [2, 3, 55, 3, 4, 2, 3, 3, 2, 4, 3, 2, 4, 3, 2, 4, 3, 2, 6, 19, 17, 5, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 71
 The number of nodes, including Query: 33
-The longest path is: LongestInfo(size=8, path=[query, Node, System, ReactionSystemCountableConnection, ReactionSystemCountableEdge, ReactionSystem, Reaction, Publication])
+The longest path is: PathInfo(size=8, path=[query, Node, System, ReactionSystemCountableConnection, ReactionSystemCountableEdge, ReactionSystem, Reaction, Publication])
 The number of unions: 0
 The number of interfaces: 1
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[LogCountableConnection, LogCountableEdge])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -128,9 +123,10 @@ The number of fields in the type Query: 22
 The number of fields in all nodes, excluding Query: [10, 6, 4, 4, 2, 5, 2, 4, 7, 2, 4, 11, 2, 4, 4, 2, 4, 5, 1, 4, 1, 8, 2, 5, 2, 4, 4, 4, 2, 4, 1, 12, 2, 4, 2, 4, 4, 4, 4, 4, 4, 4]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 108
 The number of nodes, including Query: 43
-The longest path is: LongestInfo(size=22, path=[query, Asset, AssetLinkingCollections, EntryCollection, Entry, LessonImage, LessonImageLinkingCollections, LessonCollection, Lesson, LessonLinkingCollections, CourseCollection, Course, CourseLinkingCollections, LayoutHighlightedCourseCollection, LayoutHighlightedCourse, LayoutHighlightedCourseLinkingCollections, LayoutCollection, Layout, LayoutContentModulesCollection, LayoutContentModulesItem, LayoutHeroImage, LayoutHeroImageLinkingCollections])
+The longest path is: PathInfo(size=22, path=[query, Asset, AssetLinkingCollections, EntryCollection, Entry, LessonImage, LessonImageLinkingCollections, LessonCollection, Lesson, LessonLinkingCollections, CourseCollection, Course, CourseLinkingCollections, LayoutHighlightedCourseCollection, LayoutHighlightedCourse, LayoutHighlightedCourseLinkingCollections, LayoutCollection, Layout, LayoutContentModulesCollection, LayoutContentModulesItem, LayoutHeroImage, LayoutHeroImageLinkingCollections])
 The number of unions: 2
 The number of interfaces: 1
+The maximum path of the minimum among all entry points: PathInfo(size=4, path=[Asset, AssetLinkingCollections, EntryCollection, Entry])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -143,9 +139,10 @@ The number of fields in the type Query: 6
 The number of fields in all nodes, excluding Query: [3, 11, 4, 3]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 8
 The number of nodes, including Query: 5
-The longest path is: LongestInfo(size=4, path=[query, Continent, Country, State])
+The longest path is: PathInfo(size=4, path=[query, Continent, Country, State])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Country, State])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -158,9 +155,10 @@ The number of fields in the type Query: 7
 The number of fields in all nodes, excluding Query: [3, 9, 37, 2, 3, 5, 3, 8, 2, 5, 2, 5, 51, 5, 3, 5, 4, 2, 4, 2, 13, 5, 5, 11, 7, 6, 11, 12, 3, 2, 3, 1, 1, 13, 1]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 55
 The number of nodes, including Query: 36
-The longest path is: LongestInfo(size=7, path=[query, Nearby, FlinksterCar, FlinksterParkingArea, GeoJSON, GeoFeature, GeoPolygon])
+The longest path is: PathInfo(size=7, path=[query, Nearby, FlinksterCar, FlinksterParkingArea, GeoJSON, GeoFeature, GeoPolygon])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=6, path=[Nearby, FlinksterCar, FlinksterParkingArea, GeoJSON, GeoFeature, GeoPolygon])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -173,9 +171,10 @@ The number of fields in the type Query: 19
 The number of fields in all nodes, excluding Query: [14, 32, 2, 2, 14, 3, 2, 4, 29, 10, 13, 3, 2, 4, 9, 4, 9, 22, 9, 4, 10, 3, 2, 4, 3, 17, 11, 10, 3, 2, 4, 2, 3, 2, 4, 3, 2, 4, 3, 2, 4, 3, 2, 4, 3, 2, 4]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 123
 The number of nodes, including Query: 48
-The longest path is: LongestInfo(size=13, path=[root, DocumentaryUnit, Repository, Country, Link, Linkable, HistoricalAgent, Annotation, Annotatable, CvocConcept, CvocVocabulary, concepts, pageInfoCvocConcept])
+The longest path is: PathInfo(size=13, path=[root, DocumentaryUnit, Repository, Country, Link, Linkable, HistoricalAgent, Annotation, Annotatable, CvocConcept, CvocVocabulary, concepts, pageInfoCvocConcept])
 The number of unions: 0
 The number of interfaces: 2
+The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Repository, RepositoryDescription, Address])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -188,9 +187,10 @@ The number of fields in the type Query: 24
 The number of fields in all nodes, excluding Query: [8, 2, 4, 2, 8, 17, 2, 2, 6, 2, 2, 6, 2, 2, 16, 11, 2, 2, 2, 2, 6, 8, 2, 2, 6, 8, 2, 2, 2, 2, 6, 2, 2, 2, 2, 6, 2, 2]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 74
 The number of nodes, including Query: 39
-The longest path is: LongestInfo(size=10, path=[query, JobBoardNode, JobTagNodeConnection, JobTagNodeEdge, JobTagNode, ContentTagNode, NewsTagNodeConnection, NewsTagNodeEdge, NewsTagNode, NewsNode])
+The longest path is: PathInfo(size=10, path=[query, JobBoardNode, JobTagNodeConnection, JobTagNodeEdge, JobTagNode, ContentTagNode, NewsTagNodeConnection, NewsTagNodeEdge, NewsTagNode, NewsNode])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=3, path=[ShowtimeNodeConnection, ShowtimeNodeEdge, ShowtimeNode])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -203,9 +203,10 @@ The number of fields in the type Query: 14
 The number of fields in all nodes, excluding Query: [9, 5, 14, 6, 4, 2, 4, 2, 4, 6, 2, 4, 6, 4, 5, 9, 1, 3, 8]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 45
 The number of nodes, including Query: 20
-The longest path is: LongestInfo(size=5, path=[query, City, Continent, Country, Coordinates])
+The longest path is: PathInfo(size=5, path=[query, City, Continent, Country, Coordinates])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[HTMLDocument, HTMLNode])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -218,9 +219,10 @@ The number of fields in the type Query: 11
 The number of fields in all nodes, excluding Query: [18, 6, 8, 9, 7, 10, 6, 4]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 21
 The number of nodes, including Query: 9
-The longest path is: LongestInfo(size=4, path=[query, Job, City, Country])
+The longest path is: PathInfo(size=4, path=[query, Job, City, Country])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Job, Tag])
 --**--
 The number of fields in the type Mutation: 4
 The number of fields in all nodes, excluding Mutation: [6, 18, 6, 8, 9, 7, 10, 6]
@@ -228,15 +230,17 @@ The number of edge (number of fields that are pointers to other nodes in the gra
 The number of nodes, including Mutation: 9
 The number of unions: 0
 The number of interfaces: 0
-The longest path is: LongestInfo(size=4, path=[mutation, Job, City, Country])
+The longest path is: PathInfo(size=4, path=[mutation, Job, City, Country])
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Job, Tag])
 ************* HIVDB:
 The number of fields in the type Query: 9
 The number of fields in all nodes, excluding Query: [6, 2, 2, 18, 4, 9, 4, 4, 2, 14, 4, 0, 8, 7, 14, 3, 6, 7, 2, 2, 3, 3, 2, 8, 2, 3, 3, 2, 5, 18, 12, 4, 12, 8, 9, 3, 4, 5, 8]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 87
 The number of nodes, including Query: 41
-The longest path is: LongestInfo(size=7, path=[root, SequenceAnalysis, BoundMutationPrevalence, MutationPrevalenceByAA, MutationPrevalence, MutationPrevalenceSubtype, MutationPrevalenceSubtypeStat])
+The longest path is: PathInfo(size=7, path=[root, SequenceAnalysis, BoundMutationPrevalence, MutationPrevalenceByAA, MutationPrevalence, MutationPrevalenceSubtype, MutationPrevalenceSubtypeStat])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=4, path=[SequenceReadsAnalysis, GeneSequenceReads, PositionCodonReads, OneCodonReads])
 --**--
 The number of fields in the type Mutation: 26
 The number of fields in all nodes, excluding Mutation: [9, 2, 4, 4, 8, 0]
@@ -244,15 +248,17 @@ The number of edge (number of fields that are pointers to other nodes in the gra
 The number of nodes, including Mutation: 7
 The number of unions: 0
 The number of interfaces: 0
-The longest path is: LongestInfo(size=4, path=[mutation, Gene, DrugClass, Drug])
+The longest path is: PathInfo(size=4, path=[mutation, Gene, DrugClass, Drug])
+The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Gene, DrugClass, Drug])
 ************* MelodyRepo:
 The number of fields in the type Query: 2
 The number of fields in all nodes, excluding Query: [4, 4, 3, 5, 3]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 7
 The number of nodes, including Query: 6
-The longest path is: LongestInfo(size=4, path=[query, Package, Version, Release])
+The longest path is: PathInfo(size=4, path=[query, Package, Version, Release])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Package, Version, Dependency])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -265,9 +271,10 @@ The number of fields in the type Query: 2
 The number of fields in all nodes, excluding Query: [2, 1, 1]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 3
 The number of nodes, including Query: 4
-The longest path is: LongestInfo(size=3, path=[query, Package, Version])
+The longest path is: PathInfo(size=3, path=[query, Package, Version])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Package, Version])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -280,9 +287,10 @@ The number of fields in the type Query: 12
 The number of fields in all nodes, excluding Query: [30, 15, 3, 1, 14, 7, 2, 10, 3, 4, 5, 3, 5, 3, 6, 4, 3, 2]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 34
 The number of nodes, including Query: 19
-The longest path is: LongestInfo(size=5, path=[query, Conference, Contact, Session, SessionUrls])
+The longest path is: PathInfo(size=5, path=[query, Conference, Contact, Session, SessionUrls])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Theme, Logos, WithWithoutText])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -295,9 +303,10 @@ The number of fields in the type Query: 1
 The number of fields in all nodes, excluding Query: [4, 2]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 3
 The number of nodes, including Query: 3
-The longest path is: LongestInfo(size=3, path=[query, Job, Commitment])
+The longest path is: PathInfo(size=3, path=[query, Job, Commitment])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Job, Commitment])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -310,9 +319,10 @@ The number of fields in the type Query: 40
 The number of fields in all nodes, excluding Query: [5, 2, 3, 4, 4, 8, 2, 22, 2, 4, 2, 2, 1, 6, 2, 2, 2, 15, 3, 4, 11, 7, 3, 19, 3, 11, 6, 4, 1, 10, 21, 10, 6, 2, 4, 5, 2, 2, 2, 11, 15, 1, 23, 2, 2, 2, 1, 9, 4, 2, 9, 8, 2, 24, 2, 2]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 84
 The number of nodes, including Query: 57
-The longest path is: LongestInfo(size=8, path=[query, History, Launch, LaunchRocket, Rocket, RocketSecondStage, RocketSecondStagePayloads, RocketSecondStagePayloadCompositeFairing])
+The longest path is: PathInfo(size=8, path=[query, History, Launch, LaunchRocket, Rocket, RocketSecondStage, RocketSecondStagePayloads, RocketSecondStagePayloadCompositeFairing])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=4, path=[Rocket, RocketSecondStage, RocketSecondStagePayloads, RocketSecondStagePayloadCompositeFairing])
 --**--
 The number of fields in the type Mutation: 3
 The number of fields in all nodes, excluding Mutation: [2, 5]
@@ -320,15 +330,17 @@ The number of edge (number of fields that are pointers to other nodes in the gra
 The number of nodes, including Mutation: 3
 The number of unions: 0
 The number of interfaces: 0
-The longest path is: LongestInfo(size=3, path=[mutation, users_mutation_response, users])
+The longest path is: PathInfo(size=3, path=[mutation, users_mutation_response, users])
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[users_mutation_response, users])
 ************* Book:
 The number of fields in the type Query: 3
 The number of fields in all nodes, excluding Query: [10, 4]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 2
 The number of nodes, including Query: 3
-The longest path is: LongestInfo(size=3, path=[query, Book, Author])
+The longest path is: PathInfo(size=3, path=[query, Book, Author])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Book, Author])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -341,9 +353,10 @@ The number of fields in the type Query: 1
 The number of fields in all nodes, excluding Query: [3, 2, 3]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 3
 The number of nodes, including Query: 4
-The longest path is: LongestInfo(size=3, path=[query, Store, PotStore])
+The longest path is: PathInfo(size=3, path=[query, Store, PotStore])
 The number of unions: 0
 The number of interfaces: 1
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Store, PotStore])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -356,9 +369,10 @@ The number of fields in the type Query: 1
 The number of fields in all nodes, excluding Query: [1, 3, 2, 3]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 4
 The number of nodes, including Query: 5
-The longest path is: LongestInfo(size=4, path=[query, Store1, Store, PotStore])
+The longest path is: PathInfo(size=4, path=[query, Store1, Store, PotStore])
 The number of unions: 0
 The number of interfaces: 1
+The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Store1, Store, PotStore])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -371,9 +385,10 @@ The number of fields in the type Query: 1
 The number of fields in all nodes, excluding Query: [2, 1, 4, 3]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 4
 The number of nodes, including Query: 5
-The longest path is: LongestInfo(size=4, path=[query, Store, Bouquet, Pot])
+The longest path is: PathInfo(size=4, path=[query, Store, Bouquet, Pot])
 The number of unions: 1
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Store, Bouquet, Pot])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -386,9 +401,10 @@ The number of fields in the type Query: 1
 The number of fields in all nodes, excluding Query: [2, 1, 4, 3]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 5
 The number of nodes, including Query: 5
-The longest path is: LongestInfo(size=4, path=[query, Store, Bouquet, Pot])
+The longest path is: PathInfo(size=4, path=[query, Store, Bouquet, Pot])
 The number of unions: 1
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Store, Bouquet, Pot])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -401,9 +417,10 @@ The number of fields in the type Query: 1
 The number of fields in all nodes, excluding Query: [1, 1, 1, 2, 1]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 7
 The number of nodes, including Query: 6
-The longest path is: LongestInfo(size=5, path=[query, VulnerabilityConnection, Vulnerability, VulnerabilityDetail, VulnerabilityDetailTable])
+The longest path is: PathInfo(size=5, path=[query, VulnerabilityConnection, Vulnerability, VulnerabilityDetail, VulnerabilityDetailTable])
 The number of unions: 1
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=4, path=[VulnerabilityConnection, Vulnerability, VulnerabilityDetail, VulnerabilityDetailTable])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -416,9 +433,10 @@ The number of fields in the type Query: 1
 The number of fields in all nodes, excluding Query: [1, 1, 2, 0]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 5
 The number of nodes, including Query: 5
-The longest path is: LongestInfo(size=5, path=[query, DocumentaryUnit, Annotation, Annotatable, Link])
+The longest path is: PathInfo(size=5, path=[query, DocumentaryUnit, Annotation, Annotatable, Link])
 The number of unions: 0
 The number of interfaces: 1
+The maximum path of the minimum among all entry points: PathInfo(size=4, path=[DocumentaryUnit, Annotation, Annotatable, Link])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -431,24 +449,10 @@ The number of fields in the type Query: 1
 The number of fields in all nodes, excluding Query: [2, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 20
 The number of nodes, including Query: 16
-The longest path is: LongestInfo(size=6, path=[query, Node, Agency, Route, Pattern, Trip])
+The longest path is: PathInfo(size=6, path=[query, Node, Agency, Route, Pattern, Trip])
 The number of unions: 0
 The number of interfaces: 1
---**--
-The number of fields in the type Mutation: null
-The number of fields in all nodes, excluding Mutation: []
-The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
-The number of nodes, including Mutation: 0
-The number of unions: 0
-The number of interfaces: 0
-************* noInterfaceHisObj:
-The number of fields in the type Query: 1
-The number of fields in all nodes, excluding Query: [1, 1, 1, 1, 2]
-The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 7
-The number of nodes, including Query: 6
-The longest path is: LongestInfo(size=6, path=[query, Node, Agency, Route, Pattern, Trip])
-The number of unions: 0
-The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Node, CarPark])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
@@ -461,9 +465,10 @@ The number of fields in the type Query: 1
 The number of fields in all nodes, excluding Query: [1, 1]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Query: 3
 The number of nodes, including Query: 3
-The longest path is: LongestInfo(size=3, path=[query, Job, Commitment])
+The longest path is: PathInfo(size=3, path=[query, Job, Commitment])
 The number of unions: 0
 The number of interfaces: 0
+The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Job, Commitment])
 --**--
 The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
