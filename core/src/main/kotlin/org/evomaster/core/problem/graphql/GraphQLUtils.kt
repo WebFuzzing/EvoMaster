@@ -365,11 +365,10 @@ object GraphQLUtils {
     fun getNbrFields(graph: MutableMap<String, GraphInfo>): MutableList<Int> {
         val nbrFields: MutableList<Int> = mutableListOf()
         for (element in graph.entries) {
-            if (element.key == "query" || element.key == "querytype" || element.key == "root" || element.key == "mutation")
+            if (isRoots(element))
                 continue
             else
                 nbrFields.add(element.value.fields.size)
-
         }
         return nbrFields
     }
@@ -378,8 +377,6 @@ object GraphQLUtils {
      * Get all adjacent vertex
      */
     fun getAdjacent(vertex: String, graph: Map<String, GraphInfo>): MutableSet<String>? {
-        val x = graph[vertex]?.edges
-        x
         return graph[vertex]?.edges
     }
 
@@ -391,7 +388,6 @@ object GraphQLUtils {
         graph.keys.forEach {
             if (it.toLowerCase() == node) return true
         }
-
         return false
     }
 
@@ -407,65 +403,39 @@ object GraphQLUtils {
                 cycle.add(adjacent)
                 continue
             }
-
             getAllPathsFromEntryPoint(visitedVertex, stack, adjacent, graph, paths)
-
         }
 
-        val tempGraph = mapOf<String, GraphInfo>()// the tempGraph is used because the function removeAll() will modify the initial structure graph
+        val tempGraph = mapOf<String, GraphInfo>()// The tempGraph is used because the function removeAll() will modify the initial graph structure
 
-        val x = getAdjacent(current, tempGraph)
+        val adj = getAdjacent(current, tempGraph)
 
-        x?.removeAll(cycle)
+        adj?.removeAll(cycle)
 
-        if (getAdjacent(current, graph).isNullOrEmpty() || x.isNullOrEmpty()) {
+        if (getAdjacent(current, graph).isNullOrEmpty() || adj.isNullOrEmpty()) {
             paths.add(stack.reversed())//current is a leaf
             stack.pop() //backtrack
         } else {
             stack.pop() //backtrack
         }
-
     }
 
     /**
      * Get the longest path
      */
-    fun longest(paths: MutableList<List<String>>): PathInfo {
-        val longest = PathInfo()
-        paths.forEach {
-            if ((it.size) >= longest.size) {
-                longest.size = it.size
-                longest.path = it
-            }
-        }
-        return longest
+    fun longest(paths: MutableList<List<String>>): List<String> {
+        return paths.maxWith(Comparator.comparingInt { it.size })!!
     }
 
     /**
      * Get the shortest path
      */
-    fun shortestPath(paths: MutableList<List<String>>): PathInfo {//todo refactor with longest
-        val shortest = PathInfo()
-        if (paths.size == 0) {
-            shortest.path = listOf()
-            shortest.size = 0
-            return shortest
+    fun shortestPath(paths: MutableList<List<String>>): List<String> {
+        return if (paths.size == 0) {
+            listOf()
         } else {
-            shortest.path = paths.minWith(Comparator.comparingInt { it.size })!!//todo be careful with size 0
-            shortest.size = shortest.path.size
-            return shortest
+            paths.minWith(Comparator.comparingInt { it.size })!!
         }
-
-        /*  if (paths.size == 0) {
-              shortest.path = listOf()
-              shortest.size = 0
-              return shortest
-          } else {
-              paths.sortedWith(Comparator.comparingInt { l -> l.size })
-              shortest.path = paths[0]
-              shortest.size = paths[0].size
-              return shortest
-          }*/
     }
 
 
@@ -478,15 +448,15 @@ object GraphQLUtils {
     }
 
     /**
-     * Get the shortest path from each entry point (i.e. the return objects in each Query and Mutation) to each node
+     * Get the minimum path from each entry point (i.e. the return objects in each Query and Mutation) to each node
      */
-    fun getShortestPathFromEachEntryPointToEachNode(graph: MutableMap<String, GraphInfo>): MutableList<PathInfo> {
-        val x: MutableList<PathInfo> = mutableListOf()
+    fun getShortestPathFromEachEntryPointToEachNode(graph: MutableMap<String, GraphInfo>): MutableList<List<String>> {
+        val x: MutableList<List<String>> = mutableListOf()
         for (entry in graph) {
             if (isRoots(entry)) {
                 for (edge in entry.value.edges) {
                     for (node in graph) {
-                        if (isRoots(node)|| node.key == edge)
+                        if (isRoots(node) || node.key == edge)
                             continue
                         //this is a "regular" node
                         //find all paths from entry point to this node
@@ -494,20 +464,19 @@ object GraphQLUtils {
                     }
                 }
             }
-
         }
         return x
     }
 
 
     /**
-     * return all paths from a node x to a node y
+     * Return all paths from a node x to a node y
      */
     fun getAllPaths(start: String, end: String, graph: MutableMap<String, GraphInfo>): MutableList<List<String>> {
         val stack = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         if (!graph.containsKey(start) || !graph.containsKey(end)) {
-            return mutableListOf()//todo check 0 size
+            return mutableListOf()
         }
 //        require(start != end)
         allPathsFromXToY(stack, start, end, graph, paths)
@@ -540,19 +509,16 @@ object GraphQLUtils {
     }
 
     /**
-     *  for P_x compute the mimumin P_xm amond ALL the entry points Todo
+     *  Get the minimum path, among minimum path from each entry point (return objects in each Query and Mutation) to each node
      */
-    fun minPathAmongAllEntryPointsForEachNode(paths: MutableList<PathInfo>): MutableList<PathInfo> {
-
-        val minPaths: MutableList<PathInfo> = mutableListOf()
+    fun minPathAmongAllEntryPointsForEachNode(paths: MutableList<List<String>>): MutableList<List<String>> {
+        val minPaths: MutableList<List<String>> = mutableListOf()
         val entryPointObjectsNodes: MutableSet<String> = mutableSetOf()//todo check cases
-        val onlyPaths: MutableList<List<String>> = mutableListOf()
         val regularNodes: MutableSet<String> = mutableSetOf()
 
-        paths.forEach { if (it.path.isNotEmpty()) onlyPaths.add(it.path) }//extract only path from the structure without the size
-        onlyPaths.forEach { entryPointObjectsNodes.add(it.first()) }//extract entry points
+        paths.forEach { if (it.isNotEmpty()) entryPointObjectsNodes.add(it.first()) }//extract entry points
         //extract "regular" nodes
-        onlyPaths.forEach { i ->
+        paths.forEach { i ->
             i.forEach {
                 if (!entryPointObjectsNodes.contains(it)) {
                     regularNodes.add(it)
@@ -561,64 +527,28 @@ object GraphQLUtils {
         }
         //find all paths for a node x, then take the min
         regularNodes.forEach { s ->
-            val onlyPathsNodeX: MutableList<List<String>> = mutableListOf()
-           // findPathsEndingWithVertexX(paths, s).forEach {
-            findPathsEndingWithVertexX(onlyPaths, s).forEach {
-                onlyPathsNodeX.add(it)
-            }
-            minPaths.add(shortestPath(onlyPathsNodeX))
+            minPaths.add(shortestPath(findPathsEndingWithVertexX(paths, s)))
         }
         return minPaths
-        /*to remove
-        val w: MutableList<PathInfo> = mutableListOf()
-        //for (entry in graph) {
-        //if (entry.key.toLowerCase() == "query" || entry.key.toLowerCase() == "querytype" || entry.key.toLowerCase() == "root" || entry.key.toLowerCase() == "mutation") {
-        //for (edge in entry.value.edges) {//for each object in the entry point
-        for (node in graph) {//node is query or its objects
-            if (node.key.toLowerCase() == "query" || node.key.toLowerCase() == "querytype" || node.key.toLowerCase() == "root" || node.key.toLowerCase() == "mutation" || edge.toLowerCase() == node.key.toLowerCase())
-                continue
-            //this is a "normal" node
-            //find all paths from entry point to this node
-            val endWithNode = findPathsEndingWithVertexX(paths, node.key)//the min path
-            val onlyPaths: MutableList<List<String>> = mutableListOf()
-            endWithNode.forEach { onlyPaths.add(it.path) }
-
-            w.add(shortestPath(onlyPaths))
-            //}
-            //}
-            //}
-        }
-        return w
-
-        */
     }
 
 
-    fun findPathsEndingWithVertexX(paths: MutableList<List<String>>, vertex: String): MutableList<List<String>> {//paths here = ShortestFromEachEntryPointToEachNogde
-
+    fun findPathsEndingWithVertexX(paths: MutableList<List<String>>, vertex: String): MutableList<List<String>> {
         val endWithVertexX: MutableList<List<String>> = mutableListOf()
-
         paths.forEach { if (it.isNotEmpty() && it.last() == vertex) endWithVertexX.add((it)) }
-
         return endWithVertexX
 
     }
 
-
     /**
-     *  once we have P_xm for every single node in the graph, compute the Maximum
+     *  Get the max path of all minimum path among minimum path from each entry point (return objects in each Query and Mutation) to each node
      */
-    fun maxPathAmongAllEntryPointsForAllNodes(paths: MutableList<PathInfo>): PathInfo {//todo refactor with longest path?
+    fun maxPathAmongAllEntryPointsForAllNodes(paths: MutableList<List<String>>): PathInfo {
 
-        val longest = PathInfo()
-        paths.forEach {
-            if (it.size >= longest.size) {
-                longest.size = it.size
-                longest.path = it.path
-            }
-        }
-
-        return longest
+        val maxPath = PathInfo()
+        maxPath.path = longest(paths)
+        maxPath.size = maxPath.path.size
+        return maxPath
     }
 
     private fun isRoots(entry: MutableMap.MutableEntry<String, GraphInfo>) = (entry.key.toLowerCase() == "query" || entry.key.toLowerCase() == "querytype" || entry.key.toLowerCase() == "root" || entry.key.toLowerCase() == "mutation")
