@@ -400,7 +400,11 @@ export default function evomasterPlugin(
                 t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.callTracked.name)),
                 [t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter),
                     // @ts-ignore
-                    call.callee.object, t.stringLiteral(call.callee.property.name), ...call.arguments]
+                    call.callee.object,
+                    !call.callee.computed ?
+                        t.stringLiteral(call.callee.property.name)
+                        : call.callee.property,
+                    ...call.arguments]
             );
             branchCounter++;
         } else {
