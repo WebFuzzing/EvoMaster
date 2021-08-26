@@ -43,7 +43,7 @@ public class Instrumentator {
      * @param classLoader
      * @param className
      * @param reader
-     * @return
+     * @return null if there was any issue
      */
     public byte[] transformBytes(ClassLoader classLoader, ClassName className, ClassReader reader) {
         Objects.requireNonNull(classLoader);
@@ -74,7 +74,11 @@ public class Instrumentator {
             cn.accept(cv);
         } catch(Throwable e){
             SimpleLogger.error("Failed to instrument " + className.getFullNameWithDots(), e);
-            throw e;
+            /*
+                throwing exception here is problematic... there are legit cases in which it crashes
+                when computing common ancestors, if those are on classpath
+             */
+            return null;
         }
 
         return writer.toByteArray();
