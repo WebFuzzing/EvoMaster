@@ -275,7 +275,7 @@ class GraphQLUtilsTest {
         jsonFiles.put("QueryTypeGlobalPetsClinic", PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic.json").readText())
         jsonFiles.put("AniList", PetClinicCheckMain::class.java.getResource("/graphql/AniList.json").readText())
         jsonFiles.put("Bitquery", PetClinicCheckMain::class.java.getResource("/graphql/Bitquery.json").readText())
-        jsonFiles.put("GitLab04022021", PetClinicCheckMain::class.java.getResource("/graphql/GitLab04022021.json").readText())
+        jsonFiles.put("GitLab04022021", PetClinicCheckMain::class.java.getResource("/graphql/GitLab.json").readText())
         jsonFiles.put("DigitransitHSL", PetClinicCheckMain::class.java.getResource("/graphql/DigitransitHSL.json").readText())
         jsonFiles.put("TravelgateX", PetClinicCheckMain::class.java.getResource("/graphql/TravelgateX.json").readText())
         jsonFiles.put("Universe", PetClinicCheckMain::class.java.getResource("/graphql/Universe.json").readText())
