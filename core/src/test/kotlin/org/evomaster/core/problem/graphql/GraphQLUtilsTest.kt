@@ -284,7 +284,6 @@ class GraphQLUtilsTest {
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-
         /**/
         Assertions.assertEquals(listOf(listOf("A", "B", "C", "D", "E"), listOf("A", "F", "E")), GraphQLUtils.getAllPaths("A", "E", queryGraph))
         Assertions.assertEquals(listOf(listOf("query", "A", "B", "C", "D", "E"), listOf("query", "A", "F", "E"), listOf("query", "B", "C", "D", "E")), GraphQLUtils.getAllPaths("query", "E", queryGraph))
@@ -292,7 +291,6 @@ class GraphQLUtilsTest {
         Assertions.assertEquals(listOf("query", "A", "F", "E"), GraphQLUtils.shortestPath(GraphQLUtils.getAllPaths("query", "E", queryGraph)))
         /**/
         val shortestPFromEachEP = GraphQLUtils.getShortestPathFromEachEntryPointToEachNode(queryGraph)
-
         Assertions.assertEquals(listOf(listOf("A", "B"),
                 listOf("A", "B", "C"),
                 listOf("A", "B", "C", "D"),

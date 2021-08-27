@@ -16,8 +16,29 @@ object GraphQLUtils {
 
     const val unionTag = "#UNION#"
     const val interfaceTag = "#INTERFACE#"
-
+    private const val scalarTag = "scalar"
+    private const val objectTag = "object"
+    private const val unionStringTag = "union"
+    private const val interfaceStringTag = "interface"
+    private const val enumTag = "enum"
     val history: Deque<String> = ArrayDeque<String>()
+
+    /**
+     * A data structure to store information about a graph
+     */
+    data class GraphInfo(
+            var fields: MutableSet<String> = mutableSetOf(),
+            var edges: MutableSet<String> = mutableSetOf()//Set to omit redundant nodes
+
+    )
+
+    /**
+     * A data structure to store information about a path
+     */
+    data class PathInfo(
+            var size: Int = 0,
+            var path: List<String> = listOf()
+    )
 
     fun generateGQLBodyEntity(a: GraphQLAction, targetFormat: OutputFormat): Entity<String>? {
 
@@ -170,159 +191,108 @@ object GraphQLUtils {
         }
     }
 
-
-    /**
-     * A data structure to store information about a graph
-     */
-    data class GraphInfo(
-            var fields: MutableSet<String> = mutableSetOf(),
-            var edges: MutableSet<String> = mutableSetOf()//set to omit redundant nodes
-
-    )
-
-    /**
-     * A data structure to store information about a path
-     */
-    data class PathInfo(
-            var size: Int = 0,
-            var path: List<String> = listOf()
-    )
-
     fun constructGraph(state: GraphQLActionBuilder.TempState, entryPoint: String, source: String, graph: MutableMap<String, GraphInfo>, history: MutableList<String>, objectFieldsHistory: MutableSet<String>): MutableMap<String, GraphInfo> {
 
         for (element in state.tables) {
             if (element.tableType?.toLowerCase() != entryPoint.toLowerCase()) {
                 continue
             }
-
-            if (entryPoint.toLowerCase() == "query" || entryPoint.toLowerCase() == "querytype" || entryPoint.toLowerCase() == "root" || entryPoint.toLowerCase() == "mutation") {//First entry point
-
-                if (element.kindOfTableFieldType.toString().toLowerCase() == "object") {
+            if (isRoot(entryPoint)) {//First entry point
+                if (element.kindOfTableFieldType.toString().toLowerCase() == objectTag) {
                     history.add(element.tableFieldType)
                     addEdge(element.tableType!!.toLowerCase(), element.tableFieldType, element.tableField, graph)
-                    if (history.count { it == element.tableFieldType } <= 1) {
-                        if (!objectFieldsHistory.contains(element.tableFieldType)) {
-                            constructGraph(state, element.tableFieldType, element.tableField, graph, history, objectFieldsHistory)
-                            history.remove(element.tableFieldType)
-                            objectFieldsHistory.add(element.tableFieldType)
-                        } else {
-                            history.remove(element.tableFieldType)
-                        }
-                    } else {
-                        history.remove(element.tableFieldType)
-                    }
-                } else {
-                    if (element.kindOfTableFieldType.toString().toLowerCase() == "scalar" || element.kindOfTableFieldType.toString().toLowerCase() == "enum") {//Primitive type: create a field and add it
-                        graph[element.tableType!!.toLowerCase()]?.fields?.add(element.tableField)
-                    } else {
-                        if (element.kindOfTableFieldType.toString().toLowerCase() == "interface") {
-                            history.add(element.tableFieldType)// add interface type object to the history
-                            addEdge(element.tableType!!.toLowerCase(), element.tableFieldType, element.tableField, graph)//from a query node to the interface type object
-                            if (history.count { it == element.tableFieldType } <= 1) {// The interface type object is already treated
-                                constructGraph(state, element.tableFieldType, "", graph, history, objectFieldsHistory)//Construct the base fields of the interface
-                                element.interfaceTypes.forEach { ob ->
-                                    history.add(ob)//add the interface objects to the history
-                                    addEdge(element.tableFieldType, ob, interfaceTag, graph) // from the interface type object to its objects
-                                    if (history.count { it == ob } <= 1) {
-                                        constructGraph(state, ob, "", graph, history, objectFieldsHistory)
-                                        history.remove(ob)
-                                    } else {
-                                        history.remove(ob)
-                                    }
-                                }
-                                history.remove(element.tableFieldType)// remove the interface type object from the history: the normal case (not cycle)
-                            } else {
-                                history.remove(element.tableFieldType)// remove the interface type object to the history: the cycle case
-                            }
-                        } else {
-                            if (element.kindOfTableFieldType.toString().toLowerCase() == "union") {
-                                history.add(element.tableFieldType)// add union type object to the history
-                                addEdge(element.tableType!!.toLowerCase(), element.tableFieldType, element.tableField, graph)//from a query node to the union type object
-                                if (history.count { it == element.tableFieldType } <= 1) {// the union type object already treated
-                                    element.unionTypes.forEach { ob ->
-                                        history.add(ob)//add the union objects to the history
-                                        addEdge(element.tableFieldType, ob, unionTag, graph) // from the union type object to its objects
-                                        if (history.count { it == ob } <= 1) {
-                                            constructGraph(state, ob, "", graph, history, objectFieldsHistory)
-                                            history.remove(ob)
-                                        } else {
-                                            history.remove(ob)
-                                        }
-                                    }
-                                    history.remove(element.tableFieldType)// remove the union type object to the history: the normal case (not cycle)
-                                } else {
-                                    history.remove(element.tableFieldType)// remove the union type object to the history: the cycle case
-                                }
-                            }
-                        }
-                    }
+                    getObjectNode(history, element, objectFieldsHistory, state, graph)
                 }
-            } else {//Second entry
+                if (isScalarOrEnum(element)) //Primitive type: create a field and add it
+                    graph[element.tableType!!.toLowerCase()]?.fields?.add(element.tableField)
 
-                if (element.kindOfTableFieldType.toString().toLowerCase() == "object") {
+                if (element.kindOfTableFieldType.toString().toLowerCase() == interfaceStringTag) {
+                    history.add(element.tableFieldType)// add interface type object to the history
+                    addEdge(element.tableType!!.toLowerCase(), element.tableFieldType, element.tableField, graph)//from a query node to the interface type object
+                    getInterfaceNodes(history, element, state, graph, objectFieldsHistory)
+                }
+                if (element.kindOfTableFieldType.toString().toLowerCase() == unionStringTag) {
+                    history.add(element.tableFieldType)// add union type object to the history
+                    addEdge(element.tableType!!.toLowerCase(), element.tableFieldType, element.tableField, graph)//from a query node to the union type object
+                    getUnionNodes(history, element, graph, state, objectFieldsHistory)
+                }
+
+            } else {//Second entry
+                if (element.kindOfTableFieldType.toString().toLowerCase() == objectTag) {
                     history.add(element.tableFieldType)
                     addEdge(entryPoint, element.tableFieldType, element.tableField, graph)
-                    if (history.count { it == element.tableFieldType } <= 1) {
-                        if (!objectFieldsHistory.contains(element.tableFieldType)) {
-                            constructGraph(state, element.tableFieldType, element.tableField, graph, history, objectFieldsHistory)
-                            history.remove(element.tableFieldType)
-                            objectFieldsHistory.add(element.tableFieldType)
-                        } else {
-                            history.remove(element.tableFieldType)
-                        }
-                    } else {
-                        history.remove(element.tableFieldType)
-                    }
-                } else {
-                    if (element.kindOfTableFieldType.toString().toLowerCase() == "scalar" || element.kindOfTableFieldType.toString().toLowerCase() == "enum") {//Primitive type: create a field and add it
-                        graph[entryPoint]?.fields?.add(element.tableField)
-                    } else {
-                        if (element.kindOfTableFieldType.toString().toLowerCase() == "union") {
-                            history.add(element.tableFieldType)// add union type object to the history
-                            addEdge(entryPoint, element.tableFieldType, element.tableField, graph)//from a node to the union type object
-                            if (history.count { it == element.tableFieldType } <= 1) {// the union type object is already treated
-                                element.unionTypes.forEach { ob ->
-                                    history.add(ob)//add the union objects to the history
-                                    addEdge(element.tableFieldType, ob, unionTag, graph) // from the union type object to its objects
-                                    if (history.count { it == ob } <= 1) {
-                                        constructGraph(state, ob, "", graph, history, objectFieldsHistory)
-                                        history.remove(ob)
-                                    } else {
-                                        history.remove(ob)
-                                    }
-                                }
-                                history.remove(element.tableFieldType)// remove the union type object to the history: the normal case (not cycle)
-                            } else {
-                                history.remove(element.tableFieldType)// remove the union type object to the history:the cycle case
-                            }
-                        } else {
-                            if (element.kindOfTableFieldType.toString().toLowerCase() == "interface") {
-                                history.add(element.tableFieldType)// add interface type object to the history
-                                addEdge(entryPoint, element.tableFieldType, element.tableField, graph)//from a node to the interface type object
-                                if (history.count { it == element.tableFieldType } <= 1) {// the interface type object already treated
-                                    constructGraph(state, element.tableFieldType, "", graph, history, objectFieldsHistory)//construct the base fields of the interface
-                                    element.interfaceTypes.forEach { ob ->
-                                        history.add(ob)//add the interface objects to the history
-                                        addEdge(element.tableFieldType, ob, interfaceTag, graph) // from the interface type object to its objects
-                                        if (history.count { it == ob } <= 1) {
-                                            constructGraph(state, ob, "", graph, history, objectFieldsHistory)
-                                            history.remove(ob)
-                                        } else {
-                                            history.remove(ob)
-                                        }
-                                    }
-                                    history.remove(element.tableFieldType)// remove the interface type object to the history:the normal case (not cycle)
-                                } else {
-                                    history.remove(element.tableFieldType)// remove the interface type object to the history:the cycle case
-                                }
-                            }
-                        }
-                    }
+                    getObjectNode(history, element, objectFieldsHistory, state, graph)
+                }
+                if (isScalarOrEnum(element)) //Primitive type: create a field and add it
+                    graph[entryPoint]?.fields?.add(element.tableField)
 
+                if (element.kindOfTableFieldType.toString().toLowerCase() == unionStringTag) {
+                    history.add(element.tableFieldType)// add union type object to the history
+                    addEdge(entryPoint, element.tableFieldType, element.tableField, graph)//from a node to the union type object
+                    getUnionNodes(history, element, graph, state, objectFieldsHistory)
+                }
+                if (element.kindOfTableFieldType.toString().toLowerCase() == interfaceStringTag) {
+                    history.add(element.tableFieldType)// add interface type object to the history
+                    addEdge(entryPoint, element.tableFieldType, element.tableField, graph)//from a node to the interface type object
+                    getInterfaceNodes(history, element, state, graph, objectFieldsHistory)
                 }
             }
         }
         return graph
+    }
+
+    private fun isScalarOrEnum(element: Table) =
+            element.kindOfTableFieldType.toString().toLowerCase() == scalarTag || element.kindOfTableFieldType.toString().toLowerCase() == enumTag
+
+    private fun getInterfaceNodes(history: MutableList<String>, element: Table, state: GraphQLActionBuilder.TempState, graph: MutableMap<String, GraphInfo>, objectFieldsHistory: MutableSet<String>) {
+        if (history.count { it == element.tableFieldType } <= 1) {// the interface type object already treated
+            constructGraph(state, element.tableFieldType, "", graph, history, objectFieldsHistory)//construct the base fields of the interface
+            element.interfaceTypes.forEach { ob ->
+                history.add(ob)//add the interface objects to the history
+                addEdge(element.tableFieldType, ob, interfaceTag, graph) // from the interface type object to its objects
+                if (history.count { it == ob } <= 1) {
+                    constructGraph(state, ob, "", graph, history, objectFieldsHistory)
+                    history.remove(ob)
+                } else {
+                    history.remove(ob)
+                }
+            }
+            history.remove(element.tableFieldType)// remove the interface type object to the history:the normal case (not cycle)
+        } else {
+            history.remove(element.tableFieldType)// remove the interface type object to the history:the cycle case
+        }
+    }
+
+    private fun getUnionNodes(history: MutableList<String>, element: Table, graph: MutableMap<String, GraphInfo>, state: GraphQLActionBuilder.TempState, objectFieldsHistory: MutableSet<String>) {
+        if (history.count { it == element.tableFieldType } <= 1) {// the union type object is already treated
+            element.unionTypes.forEach { ob ->
+                history.add(ob)//add the union objects to the history
+                addEdge(element.tableFieldType, ob, unionTag, graph) // from the union type object to its objects
+                if (history.count { it == ob } <= 1) {
+                    constructGraph(state, ob, "", graph, history, objectFieldsHistory)
+                    history.remove(ob)
+                } else {
+                    history.remove(ob)
+                }
+            }
+            history.remove(element.tableFieldType)// remove the union type object to the history: the normal case (not cycle)
+        } else {
+            history.remove(element.tableFieldType)// remove the union type object to the history:the cycle case
+        }
+    }
+
+    private fun getObjectNode(history: MutableList<String>, element: Table, objectFieldsHistory: MutableSet<String>, state: GraphQLActionBuilder.TempState, graph: MutableMap<String, GraphInfo>) {
+        if (history.count { it == element.tableFieldType } <= 1) {
+            if (!objectFieldsHistory.contains(element.tableFieldType)) {
+                constructGraph(state, element.tableFieldType, element.tableField, graph, history, objectFieldsHistory)
+                history.remove(element.tableFieldType)
+                objectFieldsHistory.add(element.tableFieldType)
+            } else {
+                history.remove(element.tableFieldType)
+            }
+        } else {
+            history.remove(element.tableFieldType)
+        }
     }
 
     private fun addNode(node: String, graph: MutableMap<String, GraphInfo>): GraphInfo? {
@@ -365,7 +335,7 @@ object GraphQLUtils {
     fun getNbrFields(graph: MutableMap<String, GraphInfo>): MutableList<Int> {
         val nbrFields: MutableList<Int> = mutableListOf()
         for (element in graph.entries) {
-            if (isRoots(element))
+            if (isRoot(element))
                 continue
             else
                 nbrFields.add(element.value.fields.size)
@@ -453,10 +423,10 @@ object GraphQLUtils {
     fun getShortestPathFromEachEntryPointToEachNode(graph: MutableMap<String, GraphInfo>): MutableList<List<String>> {
         val x: MutableList<List<String>> = mutableListOf()
         for (entry in graph) {
-            if (isRoots(entry)) {
+            if (isRoot(entry)) {
                 for (edge in entry.value.edges) {
                     for (node in graph) {
-                        if (isRoots(node) || node.key == edge)
+                        if (isRoot(node) || node.key == edge)
                             continue
                         //this is a "regular" node
                         //find all paths from entry point to this node
@@ -478,7 +448,7 @@ object GraphQLUtils {
         if (!graph.containsKey(start) || !graph.containsKey(end)) {
             return mutableListOf()
         }
-//        require(start != end)
+        //require(start != end)//depends on previous checks
         allPathsFromXToY(stack, start, end, graph, paths)
         return paths
     }
@@ -513,7 +483,7 @@ object GraphQLUtils {
      */
     fun minPathAmongAllEntryPointsForEachNode(paths: MutableList<List<String>>): MutableList<List<String>> {
         val minPaths: MutableList<List<String>> = mutableListOf()
-        val entryPointObjectsNodes: MutableSet<String> = mutableSetOf()//todo check cases
+        val entryPointObjectsNodes: MutableSet<String> = mutableSetOf()//TODO check cases
         val regularNodes: MutableSet<String> = mutableSetOf()
 
         paths.forEach { if (it.isNotEmpty()) entryPointObjectsNodes.add(it.first()) }//extract entry points
@@ -551,6 +521,9 @@ object GraphQLUtils {
         return maxPath
     }
 
-    private fun isRoots(entry: MutableMap.MutableEntry<String, GraphInfo>) = (entry.key.toLowerCase() == "query" || entry.key.toLowerCase() == "querytype" || entry.key.toLowerCase() == "root" || entry.key.toLowerCase() == "mutation")
+    private fun isRoot(entry: MutableMap.MutableEntry<String, GraphInfo>) = isRoot(entry.key)
+
+    private fun isRoot(entryPoint: String) =
+            entryPoint.toLowerCase() == "query" || entryPoint.toLowerCase() == "querytype" || entryPoint.toLowerCase() == "root" || entryPoint.toLowerCase() == "mutation"
 
 }
