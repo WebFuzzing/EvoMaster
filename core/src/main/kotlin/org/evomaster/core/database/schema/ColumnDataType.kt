@@ -106,6 +106,7 @@ enum class ColumnDataType(dataTypeName: String) {
      * A 16-bit (2 bytes) exact integer value
      */
     SMALLINT("SMALLINT"),
+    MEDIUMINT("MEDIUMINT"),
     INT2("INT2"),
     /**
      * A CLOB (character large object) value can be up to 2,147,483,647 characters long.
@@ -125,6 +126,7 @@ enum class ColumnDataType(dataTypeName: String) {
      * Example: DECIMAL(20, 2)
      **/
     DECIMAL("DECIMAL"),
+    DEC("DEC"),
     /**
      * Same as DECIMAL
      */

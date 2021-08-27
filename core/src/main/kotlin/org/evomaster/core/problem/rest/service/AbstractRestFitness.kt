@@ -380,8 +380,17 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         }
 
         if (response.status == 401 && a.auth !is NoAuth) {
-            //this would likely be a misconfiguration in the SUT controller
-            log.warn("Got 401 although having auth for '${a.auth.name}'")
+            /*
+                if the endpoint itself is to get auth info, we might exclude auth check for it
+                eg,
+                    the auth is Login with foo,
+                    then the action is to Login with a generated account (eg bar)
+                    thus, the response would likely be 401
+             */
+            if (!a.auth.excludeAuthCheck(a)){
+                //this would likely be a misconfiguration in the SUT controller
+                log.warn("Got 401 although having auth for '${a.auth.name}'")
+            }
         }
 
 

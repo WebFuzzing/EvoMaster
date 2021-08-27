@@ -358,3 +358,23 @@ test("purity analysis 'and' and 'or' with update and assignement", () => {
     // y=42 was not executed
     expect(y).toBe(1);
 });
+
+
+test("function call reference via array access", () => {
+
+    let k;
+
+    const code = dedent`
+        const getName = () => "foo";
+        const x = {"foo": (x) => {return x*2}};
+        k = x.foo(2);
+        k = x["foo"](k);
+        k = x[getName()](k);        
+    `;
+
+    const instrumented = runPlugin(code).code;
+
+    eval(instrumented);
+
+    expect(k).toBe(16);
+});

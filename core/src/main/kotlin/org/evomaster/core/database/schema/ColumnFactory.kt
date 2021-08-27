@@ -8,10 +8,12 @@ object ColumnFactory {
     fun createColumnFromDto(columnDto: ColumnDto, lowerBoundForColumn: Int?, upperBoundForColumn: Int?,
                             enumValuesForColumn: List<String>?, similarToPatternsForColumn: List<String>?,
                             likePatternsForColumn: List<String>?, databaseType: DatabaseType): Column {
+
         return Column(
                 name = columnDto.name,
                 size = columnDto.size,
                 type = parseColumnDataType(columnDto),
+                isUnsigned = columnDto.isUnsigned,
                 primaryKey = columnDto.primaryKey,
                 autoIncrement = columnDto.autoIncrement,
                 foreignKeyToAutoIncrement = columnDto.foreignKeyToAutoIncrement,
@@ -35,4 +37,5 @@ object ColumnFactory {
             throw IllegalArgumentException(String.format("Column data type %s is not supported in Evomaster Data types", typeAsString))
         }
     }
+
 }

@@ -372,7 +372,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         }
     }
 
-    protected fun printSendJsonBody(json: String, lines: Lines) {
+    fun printSendJsonBody(json: String, lines: Lines) {
 
         val send = sendBodyCommand()
 
