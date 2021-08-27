@@ -9,6 +9,17 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 
 ### 2021
 
+* A. Martin-Lopez, A. Arcuri, S. Segura, A. Ruiz-Cortes.
+  *Black-Box and White-Box Test Case Generation for RESTful APIs: Enemies or Allies?*
+  IEEE International Symposium on Software Reliability Engineering (ISSRE). (*to appear*)  
+  [[PDF](publications/2021_issre.pdf)]
+
+* A. Arcuri.
+  *SSBSE'21 Tutorial: Search-Based System Testing with EvoMaster*.
+  Symposium on Search-based Software Engineering (SSBSE). (*to appear*)
+  [[PDF](publications/2021_ssbse_tutorial.pdf)]
+
+
 * M. Zhang, A. Arcuri.
   *Enhancing Resource-based Test Case Generation For RESTful APIs with SQL Handling*.
   Symposium on Search-based Software Engineering (SSBSE). (*to appear*)
@@ -48,7 +59,7 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 
 * A. Arcuri, J.P. Galeotti.
   *Testability Transformations For Existing APIs*.
-  IEEE Conference on Software Testing, Validation and Verification (ICST).
+  IEEE International Conference on Software Testing, Validation and Verification (ICST).
   [[PDF](publications/2020_icst.pdf)]
 
 ### 2019
@@ -77,7 +88,7 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 
 
 * A. Arcuri. *EvoMaster: Evolutionary Multi-context Automated System Test Generation*.
-     IEEE Conference on Software Testing, Validation and Verification (ICST).
+     IEEE International Conference on Software Testing, Validation and Verification (ICST).
      [[PDF](publications/2018_icst.pdf)]
      
 * A. Arcuri. *An Experience Report On Applying Software Testing Academic 
