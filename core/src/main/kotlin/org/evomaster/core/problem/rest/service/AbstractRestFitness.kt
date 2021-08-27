@@ -281,6 +281,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                                 tokens: Map<String,String>)
             : Boolean {
 
+        searchTimeController.waitForRateLimiter()
+
         val rcr = RestCallResult()
         actionResults.add(rcr)
 
