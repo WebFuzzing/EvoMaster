@@ -14,7 +14,7 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
     override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>) {
 
         CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut)
-        TokenWriter.handleGettingTokens(format,ind, lines, baseUrlOfSut)
+        TokenWriter.handleGettingTokens(format,ind, lines, baseUrlOfSut, this)
 
         val initializingActions = ind.individual.seeInitializingActions().filterIsInstance<DbAction>()
         val initializingActionResults = (ind.seeResults(initializingActions))

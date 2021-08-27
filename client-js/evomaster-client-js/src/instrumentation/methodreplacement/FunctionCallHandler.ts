@@ -1,4 +1,4 @@
-import ObjectiveNaming from "../ObjectiveNaming";
+import ObjectiveNaming from "../shared/ObjectiveNaming";
 import Replacement from "./Replacement";
 import HeuristicsForBooleans from "../heuristic/HeuristicsForBooleans";
 

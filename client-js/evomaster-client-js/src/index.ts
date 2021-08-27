@@ -15,10 +15,11 @@ import ControllerConstants from "./controller/api/ControllerConstants";
 import InjectedFunctions from "./instrumentation/InjectedFunctions";
 import ExecutionTracer from "./instrumentation/staticstate/ExecutionTracer";
 import ObjectiveRecorder from "./instrumentation/staticstate/ObjectiveRecorder";
-import ObjectiveNaming from "./instrumentation/ObjectiveNaming";
+import ObjectiveNaming from "./instrumentation/shared/ObjectiveNaming";
 import EMTestUtils from "./EMTestUtils";
 
 import {Visitor} from "@babel/traverse";
+import JsonTokenPostLoginDto from "./controller/api/dto/JsonTokenPostLoginDto";
 
 
 
@@ -29,6 +30,7 @@ interface EM {
     dto: {
         AuthenticationDto: typeof AuthenticationDto,
         HeaderDto: typeof HeaderDto,
+        JsonTokenPostLoginDto: typeof JsonTokenPostLoginDto,
         ProblemInfo: typeof ProblemInfo,
         RestProblemDto: typeof RestProblemDto,
         GraphQLProblemDto: typeof GraphQLProblemDto,
@@ -52,6 +54,7 @@ f.EMController = EMController;
 f.dto = {
     AuthenticationDto: AuthenticationDto,
     HeaderDto: HeaderDto,
+    JsonTokenPostLoginDto: JsonTokenPostLoginDto,
     ProblemInfo: ProblemInfo,
     RestProblemDto: RestProblemDto,
     GraphQLProblemDto: GraphQLProblemDto,
