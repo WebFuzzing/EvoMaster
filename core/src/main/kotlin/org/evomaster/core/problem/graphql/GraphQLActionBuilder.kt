@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
 
 object GraphQLActionBuilder {
 
@@ -1210,56 +1209,62 @@ object GraphQLActionBuilder {
         var accum = accum
 
         for (element in state.tables) {
-            if (element.tableType == tableType) {
-                if (element.kindOfTableFieldType.toString().toLowerCase() == scalarTag) {
-                    val field = element.tableField
-                    val template = getReturnGene(state, tableType, element.tableFieldType, kindOfTableFieldType, field, history,
-                            element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, element.interfaceTypes, accum)
+
+            if (element.tableType != tableType) {
+                continue
+            }
+
+            val ktfType = element.kindOfTableFieldType.toString()
+            val ktf = element.kindOfTableField.toString()
+
+            if (ktfType.toLowerCase() == scalarTag) {
+                val field = element.tableField
+                val template = getReturnGene(state, tableType, element.tableFieldType, kindOfTableFieldType, field, history,
+                        element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, element.interfaceTypes, accum)
+                fields.add(template)
+            } else {
+                if (ktf.toLowerCase() == listTag) {
+                    val template =
+                            getReturnGene(state, element.tableFieldType, ktf, ktfType,
+                                    element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes, accum)
+
                     fields.add(template)
-                } else {
-                    if (element.kindOfTableField.toString().toLowerCase() == listTag) {
+                } else
+                    if (ktfType.toLowerCase() == objectTag) {
+
+                        accum += 1
+                        if (checkDepth(accum)) {
+
+                            val template =
+                                    getReturnGene(state, element.tableFieldType, ktfType, ktf,
+                                            element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes, accum)
+                            accum -= 1
+                            fields.add(template)
+
+                        }
+                    } else if (ktfType.toLowerCase() == enumTag) {
+                        val field = element.tableField
+                        val template = getReturnGene(state, tableType, ktfType, kindOfTableFieldType, field, history,
+                                element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, element.interfaceTypes, accum)
+
+                        fields.add(template)
+
+                    } else if (ktfType.toLowerCase() == unionTag) {
                         val template =
-                                getReturnGene(state, element.tableFieldType, element.kindOfTableField.toString(), element.kindOfTableFieldType.toString(),
+                                getReturnGene(state, element.tableFieldType, ktfType, ktf,
                                         element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes, accum)
 
                         fields.add(template)
+
                     } else
-                        if (element.kindOfTableFieldType.toString().toLowerCase() == objectTag) {
-
-                            accum += 1
-                            if (checkDepth(accum)) {
-
-                                val template =
-                                        getReturnGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
-                                                element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes, accum)
-                                accum -= 1
-                                fields.add(template)
-
-                            }
-                        } else if (element.kindOfTableFieldType.toString().toLowerCase() == enumTag) {
-                            val field = element.tableField
-                            val template = getReturnGene(state, tableType, element.kindOfTableFieldType.toString(), kindOfTableFieldType, field, history,
-                                    element.isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, methodName, element.unionTypes, element.interfaceTypes, accum)
-
-                            fields.add(template)
-
-                        } else if (element.kindOfTableFieldType.toString().toLowerCase() == unionTag) {
+                        if (ktfType.toLowerCase() == interfaceTag) {
                             val template =
-                                    getReturnGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
+                                    getReturnGene(state, element.tableFieldType, ktfType, ktf,
                                             element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes, accum)
 
                             fields.add(template)
 
-                        } else
-                            if (element.kindOfTableFieldType.toString().toLowerCase() == interfaceTag) {
-                                val template =
-                                        getReturnGene(state, element.tableFieldType, element.kindOfTableFieldType.toString(), element.kindOfTableField.toString(),
-                                                element.tableFieldType, history, isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, element.enumValues, element.tableField, element.unionTypes, element.interfaceTypes, accum)
-
-                                fields.add(template)
-
-                            }
-                }
+                        }
             }
 
         }
