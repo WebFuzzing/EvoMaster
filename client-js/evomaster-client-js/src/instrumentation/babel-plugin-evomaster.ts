@@ -7,7 +7,7 @@ import {
     ReturnStatement,
     Statement,
     UnaryExpression,
-    ConditionalExpression, Expression
+    ConditionalExpression, Expression, isAwaitExpression
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
@@ -137,8 +137,8 @@ export default function evomasterPlugin(
          // const pure = t.isPureish(exp.right);
         const pure = isPureExpression(exp.right);
 
-        const left = t.arrowFunctionExpression([], exp.left, t.isAwaitExpression(exp.left));
-        const right = t.arrowFunctionExpression([], exp.right, t.isAwaitExpression(exp.right));
+        const left = t.arrowFunctionExpression([], exp.left, doesContainExpression(exp.left));
+        const right = t.arrowFunctionExpression([], exp.right, doesContainExpression(exp.right));
 
         const call = t.callExpression(
             t.memberExpression(t.identifier(ref), t.identifier(methodName)),
@@ -152,6 +152,20 @@ export default function evomasterPlugin(
         path.replaceWith(call);
         branchCounter++;
     }
+
+    function doesContainExpression(node: Expression) : boolean{
+        if (t.isAwaitExpression(node))
+            return true;
+        if (t.isAssignmentExpression(node))
+            return doesContainExpression(node.right);
+        if (t.isArrowFunctionExpression(node)) return node.async;
+        if (t.isCallExpression(node) || t.isOptionalCallExpression(node) || t.isNewExpression(node)){
+            return node.arguments.some((arg) => t.isExpression(arg) && doesContainExpression(arg))
+        }
+        // isLogicalExpression should be handled by introduced arrow function
+        return false;
+    }
+
 
     /**
      * @param node to be analyzed
@@ -351,8 +365,8 @@ export default function evomasterPlugin(
             additional branch will be added there.
 
          */
-        const consequent = t.arrowFunctionExpression([], exp.consequent, t.isAwaitExpression(exp.consequent));
-        const alternate = t.arrowFunctionExpression([], exp.alternate, t.isAwaitExpression(exp.alternate));
+        const consequent = t.arrowFunctionExpression([], exp.consequent, doesContainExpression(exp.consequent));
+        const alternate = t.arrowFunctionExpression([], exp.alternate, doesContainExpression(exp.alternate));
 
 
         objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
@@ -410,7 +424,7 @@ export default function evomasterPlugin(
         } else {
             replaced = t.callExpression(
                 t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.callBase.name)),
-                [t.arrowFunctionExpression([], call, false) ]
+                [t.arrowFunctionExpression([], call, doesContainExpression(call)) ]
             );
             // @ts-ignore
             call.evomaster = true;

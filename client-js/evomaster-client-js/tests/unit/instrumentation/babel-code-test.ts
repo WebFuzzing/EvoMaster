@@ -830,7 +830,101 @@ test("logic expression with await expression", async () => {
 });
 
 
+test("embedded await expression", async () => {
+
+    const code = dedent`
+        async function afoo (x) {
+            return  x > 5
+                ? await new Promise((resolve) => resolve(x - 1))
+                : await new Promise((resolve) => resolve(x + 1))
+        }     
+        
+        function numToString (x) {
+            return x.toString();
+        }
+        
+        f = async function (x) {
+            return await afoo(x) > 5 
+                ? numToString(await afoo(x - 1))
+                : numToString(await afoo(x + 1));
+        }; 
+    `;
+
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "Branch_at_test.ts_at_line_00012_position_2_falseBranch", "Branch_at_test.ts_at_line_00012_position_2_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00007", "Line_test.ts_00008", "Line_test.ts_00011", "Line_test.ts_00012", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00002_2", "Statement_test.ts_00002_3", "Statement_test.ts_00007_4", "Statement_test.ts_00008_5", "Statement_test.ts_00011_6", "Statement_test.ts_00012_7", "Statement_test.ts_00012_8", "Statement_test.ts_00012_9"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        async function afoo(x) {
+          __EM__.enteringStatement("test.ts", 2, 1);
+        
+          return __EM__.completingStatement(__EM__.cmp(x, ">", 5, "test.ts", 2, 0) ? __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x - 1))), "test.ts", 2, 2) : __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x + 1))), "test.ts", 2, 3), "test.ts", 2, 1);
+        }
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 7, 4);
+        
+        function numToString(x) {
+          __EM__.enteringStatement("test.ts", 8, 5);
+        
+          return __EM__.completingStatement(__EM__.callTracked("test.ts", 8, 1, x, "toString"), "test.ts", 8, 5);
+        }
+        
+        __EM__.completedStatement("test.ts", 7, 4);
+        
+        __EM__.enteringStatement("test.ts", 11, 6);
+        
+        f = async function (x) {
+          __EM__.enteringStatement("test.ts", 12, 7);
+        
+          return __EM__.completingStatement(__EM__.cmp((await __EM__.callBase(() => afoo(x))), ">", 5, "test.ts", 12, 2) ? __EM__.ternary(async () => __EM__.callBase(async () => numToString((await __EM__.callBase(() => afoo(x - 1))))), "test.ts", 12, 8) : __EM__.ternary(async () => __EM__.callBase(async () => numToString((await __EM__.callBase(() => afoo(x + 1))))), "test.ts", 12, 9), "test.ts", 12, 7);
+        };
+        
+        __EM__.completedStatement("test.ts", 11, 6);
+
+    `);
+});
 
 
+
+
+
+test("disease sut", async () => {
+
+    const code = dedent`
+        async function afoo(key, lastdays) {
+            await redis.hexists(key, lastdays)
+                ? parsedData = JSON.parse(await redis.hget(key, lastdays))
+                : parsedData = JSON.parse(await redis.hget(key, 'data')); 
+        }       
+    `;
+
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00002_2", "Statement_test.ts_00002_3"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        async function afoo(key, lastdays) {
+          __EM__.enteringStatement("test.ts", 2, 1);
+        
+          (await __EM__.callTracked("test.ts", 2, 0, redis, "hexists", key, lastdays)) ? __EM__.ternary(async () => parsedData = __EM__.callTracked("test.ts", 3, 1, JSON, "parse", (await __EM__.callTracked("test.ts", 3, 2, redis, "hget", key, lastdays))), "test.ts", 2, 2) : __EM__.ternary(async () => parsedData = __EM__.callTracked("test.ts", 4, 3, JSON, "parse", (await __EM__.callTracked("test.ts", 4, 4, redis, "hget", key, 'data'))), "test.ts", 2, 3);
+        
+          __EM__.completedStatement("test.ts", 2, 1);
+        }
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+});
 
 

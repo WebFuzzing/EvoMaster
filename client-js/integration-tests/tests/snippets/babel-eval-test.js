@@ -421,3 +421,54 @@ test("logic expression with await expression", async () => {
     k = await f(1);
     expect(k).toBe(true);
 });
+
+
+test("toString", async () => {
+
+    let f;
+    const code = dedent`
+        f = function (x) {
+            return x.toString();
+        }
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = await f(5);
+    expect(k).toBe("5");
+
+    k = await f(10);
+    expect(k).toBe("10");
+});
+
+test("embedded await expression", async () => {
+
+    let f;
+    const code = dedent`
+        async function afoo (x) {
+            return  x > 5
+                ? await new Promise((resolve) => resolve(x - 1))
+                : await new Promise((resolve) => resolve(x + 1))
+        }     
+        
+        function numToString (x) {
+            return x.toString();
+        }
+        
+        f = async function (x) {
+            return await afoo(x) > 5 
+                ? numToString(await afoo(x - 1))
+                : numToString(await afoo(x + 1));
+        };    
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = await f(5);
+    expect(k).toBe("5");
+
+    k = await f(10);
+    expect(k).toBe("8");
+});
