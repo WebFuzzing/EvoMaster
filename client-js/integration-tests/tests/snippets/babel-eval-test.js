@@ -320,7 +320,7 @@ test("purity analysis 'and' and 'or' with literal/binary expression", () => {
 });
 
 
-test("purity analysis 'and' and 'or' with update and assignement", () => {
+test("purity analysis 'and' and 'or' with update and assignment", () => {
 
     expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(0);
 
@@ -377,4 +377,47 @@ test("function call reference via array access", () => {
     eval(instrumented);
 
     expect(k).toBe(16);
+});
+
+
+test("ternary with await expression", async () => {
+
+    let f;
+    const code = dedent`
+        f = async function (x) {
+            return  x > 0
+                ? await new Promise((resolve) => resolve(1))
+                : await new Promise((resolve) => resolve(2));
+        };       
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = await f(0);
+    expect(k).toBe(2);
+
+    k = await f(1);
+    expect(k).toBe(1);
+});
+
+test("logic expression with await expression", async () => {
+
+    let f;
+    const code = dedent`
+        f = async function (x) {
+            return  x > 0 || 
+                (await new Promise((resolve) => resolve(x > 1))) ||
+                (await new Promise((resolve) => resolve(x > 2)));
+        };  
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = await f(0);
+    expect(k).toBe(false);
+
+    k = await f(1);
+    expect(k).toBe(true);
 });

@@ -768,6 +768,68 @@ test("purity analysis expint", () => {
 });
 
 
+test("ternary with await expression", async () => {
+
+    const code = dedent`
+        f = async function (x) {
+            return  x > 0
+                ? await new Promise((resolve) => resolve(1))
+                : await new Promise((resolve) => resolve(2))
+        };       
+    `;
+
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00002_2", "Statement_test.ts_00002_3"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        f = async function (x) {
+          __EM__.enteringStatement("test.ts", 2, 1);
+        
+          return __EM__.completingStatement(__EM__.cmp(x, ">", 0, "test.ts", 2, 0) ? __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(1))), "test.ts", 2, 2) : __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(2))), "test.ts", 2, 3), "test.ts", 2, 1);
+        };
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+});
+
+
+test("logic expression with await expression", async () => {
+
+    const code = dedent`
+        f = async function (x) {
+            return  x > 0 || 
+                (await new Promise((resolve) => resolve(x > 1))) ||
+                (await new Promise((resolve) => resolve(x > 2)));
+        };        
+    `;
+
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "Branch_at_test.ts_at_line_00002_position_1_falseBranch", "Branch_at_test.ts_at_line_00002_position_1_trueBranch", "Branch_at_test.ts_at_line_00002_position_2_falseBranch", "Branch_at_test.ts_at_line_00002_position_2_trueBranch", "Branch_at_test.ts_at_line_00003_position_3_falseBranch", "Branch_at_test.ts_at_line_00003_position_3_trueBranch", "Branch_at_test.ts_at_line_00004_position_4_falseBranch", "Branch_at_test.ts_at_line_00004_position_4_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        f = async function (x) {
+          __EM__.enteringStatement("test.ts", 2, 1);
+        
+          return __EM__.completingStatement(__EM__.or(() => __EM__.or(() => __EM__.cmp(x, ">", 0, "test.ts", 2, 2), async () => await new Promise(resolve => __EM__.callBase(() => resolve(__EM__.cmp(x, ">", 1, "test.ts", 3, 3)))), false, "test.ts", 2, 1), async () => await new Promise(resolve => __EM__.callBase(() => resolve(__EM__.cmp(x, ">", 2, "test.ts", 4, 4)))), false, "test.ts", 2, 0), "test.ts", 2, 1);
+        };
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+});
+
+
 
 
 

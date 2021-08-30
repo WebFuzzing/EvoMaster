@@ -137,8 +137,8 @@ export default function evomasterPlugin(
          // const pure = t.isPureish(exp.right);
         const pure = isPureExpression(exp.right);
 
-        const left = t.arrowFunctionExpression([], exp.left, false);
-        const right = t.arrowFunctionExpression([], exp.right, false);
+        const left = t.arrowFunctionExpression([], exp.left, t.isAwaitExpression(exp.left));
+        const right = t.arrowFunctionExpression([], exp.right, t.isAwaitExpression(exp.right));
 
         const call = t.callExpression(
             t.memberExpression(t.identifier(ref), t.identifier(methodName)),
@@ -351,8 +351,8 @@ export default function evomasterPlugin(
             additional branch will be added there.
 
          */
-        const consequent = t.arrowFunctionExpression([], exp.consequent, false);
-        const alternate = t.arrowFunctionExpression([], exp.alternate, false);
+        const consequent = t.arrowFunctionExpression([], exp.consequent, t.isAwaitExpression(exp.consequent));
+        const alternate = t.arrowFunctionExpression([], exp.alternate, t.isAwaitExpression(exp.alternate));
 
 
         objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
