@@ -389,7 +389,7 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
+    //@Disabled
     @Test
     fun travelgateXSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -413,7 +413,7 @@ class GraphQLActionBuilderTest {
         assertTrue(logging.parameters[0].gene is ObjectGene)
     }
 
-    @Disabled
+  //  @Disabled
     @Test
     fun universeSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -686,6 +686,43 @@ class GraphQLActionBuilderTest {
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         assertEquals(1, actionCluster.size)
+    }
+
+
+    @Test
+    fun depthTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/abstract2.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        assertEquals(2, actionCluster.size)
+
+        val a = actionCluster.get("a") as GraphQLAction
+        assertEquals(1, a.parameters.size)
+        assertTrue(a.parameters[0] is GQReturnParam)
+        assertTrue(a.parameters[0].gene is ObjectGene)
+
+        val objA = a.parameters[0].gene as ObjectGene//first level
+        assertEquals(3, objA.fields.size)
+        assertTrue(objA.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objA.fields.any { it is OptionalGene && it.name == "b" })// second level
+        assertTrue(objA.fields.any { it is OptionalGene && it.name == "f" })// second level
+
+        val objB = (objA.fields.first { it.name == "b" } as OptionalGene).gene as ObjectGene
+        assertEquals(1, objB.fields.size)
+        assertTrue(objB.fields.any { it is OptionalGene && it.name == "c" })//third level
+
+        val objC = (objB.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(1, objC.fields.size)
+        assertTrue(objC.fields.any { it is OptionalGene && it.name == "d" })//fourth level
+
+        val objD = (objC.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objD.fields.size)
+        assertTrue(objD.fields.any { it is OptionalGene && it.name == "e" })//fifth level
+
+        val objF = (objA.fields.first { it.name == "f" } as OptionalGene).gene as ObjectGene// second level
+        assertEquals(1, objF.fields.size)
+
     }
 
 }
