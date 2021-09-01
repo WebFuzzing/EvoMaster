@@ -472,3 +472,34 @@ test("embedded await expression", async () => {
     k = await f(10);
     expect(k).toBe("8");
 });
+
+
+test("await in the inputs params", async () => {
+
+    let f;
+    const code = dedent`
+        async function afoo (x) {
+            return  x > 5
+                ? await new Promise((resolve) => resolve(x - 1))
+                : await new Promise((resolve) => resolve(x + 1))
+        }     
+        
+        function numToString (x) {
+            return x.toString();
+        }
+        
+        f = async function (x) {
+            const data = numToString(await afoo(x));
+            return data;
+        }; 
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = await f(5);
+    expect(k).toBe("6");
+
+    k = await f(10);
+    expect(k).toBe("9");
+});

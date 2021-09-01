@@ -891,11 +891,7 @@ test("embedded await expression", async () => {
     `);
 });
 
-
-
-
-
-test("disease sut", async () => {
+test("disease sut", () => {
 
     const code = dedent`
         async function afoo(key, lastdays) {
@@ -925,6 +921,76 @@ test("disease sut", async () => {
         
         __EM__.completedStatement("test.ts", 1, 0);
     `);
+});
+
+
+test("await in the inputs params", ()=>{
+    /*
+        const data = JSON.parse(await redis.get(keys.therapeutics));
+     */
+
+    const code = dedent`
+        async function afoo (x) {
+            return  x > 5
+                ? await new Promise((resolve) => resolve(x - 1))
+                : await new Promise((resolve) => resolve(x + 1))
+        }     
+        
+        function numToString (x) {
+            return x.toString();
+        }
+        
+        f = async function (x) {
+            const data = numToString(await afoo(x));
+            return data;
+        }; 
+    `;
+
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00007", "Line_test.ts_00008", "Line_test.ts_00011", "Line_test.ts_00012", "Line_test.ts_00013", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00002_2", "Statement_test.ts_00002_3", "Statement_test.ts_00007_4", "Statement_test.ts_00008_5", "Statement_test.ts_00011_6", "Statement_test.ts_00012_7", "Statement_test.ts_00013_8"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        async function afoo(x) {
+          __EM__.enteringStatement("test.ts", 2, 1);
+        
+          return __EM__.completingStatement(__EM__.cmp(x, ">", 5, "test.ts", 2, 0) ? __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x - 1))), "test.ts", 2, 2) : __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x + 1))), "test.ts", 2, 3), "test.ts", 2, 1);
+        }
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 7, 4);
+        
+        function numToString(x) {
+          __EM__.enteringStatement("test.ts", 8, 5);
+        
+          return __EM__.completingStatement(__EM__.callTracked("test.ts", 8, 1, x, "toString"), "test.ts", 8, 5);
+        }
+        
+        __EM__.completedStatement("test.ts", 7, 4);
+        
+        __EM__.enteringStatement("test.ts", 11, 6);
+        
+        f = async function (x) {
+          __EM__.enteringStatement("test.ts", 12, 7);
+        
+          const data = __EM__.callBase(async () => numToString((await __EM__.callBase(() => afoo(x)))));
+        
+          __EM__.completedStatement("test.ts", 12, 7);
+        
+          __EM__.enteringStatement("test.ts", 13, 8);
+        
+          return __EM__.completingStatement(data, "test.ts", 13, 8);
+        };
+        
+        __EM__.completedStatement("test.ts", 11, 6);
+    `);
+
 });
 
 
