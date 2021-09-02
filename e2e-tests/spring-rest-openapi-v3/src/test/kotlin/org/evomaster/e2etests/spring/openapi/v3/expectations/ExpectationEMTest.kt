@@ -86,7 +86,7 @@ class ExpectationEMTest : SpringTestBase() {
 
     fun testRunEMGeneric(expectationActive: Boolean, className: ClassName, outputFormat: OutputFormat? = OutputFormat.KOTLIN_JUNIT_5){
         val outputFolderName = "ExpectationsEM"
-        val iterations = 100
+        val iterations = 1000
 
         val lambda = {args: MutableList<String> ->
             setOutputFormat(args, outputFormat)
