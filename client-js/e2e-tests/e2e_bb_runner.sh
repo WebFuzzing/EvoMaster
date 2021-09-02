@@ -7,8 +7,10 @@
 SUT_FOLDER=$1
 # the main entry point for the SUT. it assumes it reads the environment variable PORT
 SUT_MAIN=$2
+# the problem type, eg REST and GRAPHQL
+TYPE=$3
 
-NPARAMS=2
+NPARAMS=3
 
 echo Executing Black-Box E2E for $SUT_FOLDER
 
@@ -62,15 +64,22 @@ echo Using SUT Port $PORT
 PORT=$PORT node $MAIN_LOCATION &
 PID=$!
 
-#TODO update/improve once we will support BB for other types besides REST (eg GraphQL)
-OPENAPI=http://localhost:$PORT/swagger.json
+
+if [ "$TYPE" == "REST" ]; then
+  PROBLEM=" --problemType REST --bbSwaggerUrl http://localhost:$PORT/swagger.json "
+elif [ "$TYPE" == "GRAPHQL" ]; then
+  PROBLEM=" --problemType GRAPHQL --bbTargetUrl http://localhost:$PORT/graphql "
+else
+  echo "ERROR. Invalid problem type: $TYPE"
+  exit 1
+fi
 
 # give enough time to start
 sleep 10
 
 java -jar $JAR --seed 42 --maxActionEvaluations 1000  --stoppingCriterion FITNESS_EVALUATIONS \
        --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME \
-       --blackBox true --bbSwaggerUrl $OPENAPI --outputFormat JS_JEST
+       --blackBox true $PROBLEM --outputFormat JS_JEST
 
 
 if [ -f "$TEST_LOCATION" ]; then
