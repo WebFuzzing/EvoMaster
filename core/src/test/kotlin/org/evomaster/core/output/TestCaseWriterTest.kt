@@ -1424,8 +1424,7 @@ public void test() throws Exception {
             });
             
 """.trimIndent()
-        // Man: a bug foo@foo.foo is modified as foo in the generated assertion
-        assertNotEquals(expectedLines, lines.toString())
+        assertEquals(expectedLines, lines.toString())
     }
 
 }
