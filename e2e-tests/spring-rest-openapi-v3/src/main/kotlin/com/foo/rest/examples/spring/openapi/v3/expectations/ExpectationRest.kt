@@ -20,9 +20,8 @@ class ExpectationRest {
     fun getNumeric(
             @PathVariable("s") succeeded: Int
     ): ResponseEntity<Int> {
-        val result = if (succeeded >= 0) 42
-                else throw IllegalArgumentException("I don't like negative numbers, and you gave me a $succeeded")
-        return ResponseEntity.ok(result)
+        if (succeeded < 0) throw IllegalArgumentException("I don't like negative numbers, and you gave me a $succeeded")
+        return ResponseEntity.ok(42)
     }
 
     // A test looking at getting the wrong input
@@ -30,24 +29,17 @@ class ExpectationRest {
     fun getInput(
             @PathVariable("s") succeeded: Int
     ): ResponseEntity<String> {
-        val result = if (succeeded >= 0) 42
-        else throw IllegalArgumentException("I don't like negative numbers, and you gave me a $succeeded")
+        if (succeeded >= 0) throw IllegalArgumentException("I don't like negative numbers, and you gave me a $succeeded")
+        val result = 42
         return ResponseEntity.ok("Response: $result")
     }
-
-    // A test looking at wrong output type
 
     // A test looking at wrong output type
     @GetMapping(path = ["/responseObj/{s}"])
     fun getObject(
             @PathVariable("s") succeeded: Int
     ): ResponseEntity<OtherExampleObject> {
-        val result = if (succeeded >= 0) {
-            OtherExampleObject(succeeded, "object_$succeeded", "successes")
-        } else {
-            OtherExampleObject()
-        }
-
+        val result = OtherExampleObject(succeeded, "object_$succeeded", "successes")
         return ResponseEntity.ok(result)
     }
 
@@ -56,32 +48,19 @@ class ExpectationRest {
     fun getUnsupObject(
             @PathVariable("s") succeeded: Int
     ): ResponseEntity<ExampleObject> {
-        val result = if (succeeded >= 0) {
-            ExampleObject(succeeded, "validObject_$succeeded", "successful")
-        } else {
-            ExampleObject(succeeded, "object_$succeeded", "failed")
-        }
+        val result = ExampleObject(succeeded, "validObject_$succeeded", "successful")
         return ResponseEntity.ok(result)
     }
-
-    // A test looking at an array of returned objects
 
     // A test looking at an array of returned objects
     @GetMapping(path = ["/responseMultipleObjs/{s}"])
     fun getMultipleObjects(
             @PathVariable("s") succeeded: Int
     ): ResponseEntity<Array<GenericObject>> {
-        val result = if (succeeded >= 0) {
-            arrayOf<GenericObject>(
-                    ExampleObject(succeeded, "validObject_$succeeded", "successful"),
-                    ExampleObject(succeeded + 1, "validObject_" + (succeeded + 1), "successful")
+        val result = arrayOf<GenericObject>(
+                    OtherExampleObject(succeeded, "object_$succeeded", "successes"),
+                    ExampleObject(succeeded + 1, "validObject_${succeeded + 1}", "successful")
             )
-        } else {
-            arrayOf<GenericObject>(
-                    OtherExampleObject(),
-                    OtherExampleObject(succeeded, "object_$succeeded", "successes")
-            )
-        }
         return ResponseEntity.ok(result)
     }
 
