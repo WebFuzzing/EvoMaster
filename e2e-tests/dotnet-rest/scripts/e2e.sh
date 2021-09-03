@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo Starting to run E2E for C#
+
 # Make sure to kill all sub-processes on exit
 trap 'kill $(jobs -p)' EXIT
 
