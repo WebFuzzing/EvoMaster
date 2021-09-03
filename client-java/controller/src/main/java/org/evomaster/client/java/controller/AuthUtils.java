@@ -76,6 +76,7 @@ public class AuthUtils {
         cookie.loginEndpointUrl = "/login";
         cookie.username = username;
         cookie.password = password;
+        cookie.fullUrl = false;
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
         dto.cookieLogin = cookie;
