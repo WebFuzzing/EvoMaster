@@ -1,3 +1,8 @@
+# NOTE:
+# updating CircleCI is giving way too many issues (eg Maven and Docker)... so we just disable it, as we run stuff
+# on GitHub actions anyway.
+# Keeping this file in case one day we want to re-enable it
+#
 version: 2
 
 # To enable TestContainers
