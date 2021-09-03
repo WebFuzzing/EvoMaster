@@ -21,42 +21,38 @@ namespace EvoMaster.Instrumentation.StaticState
             new ConcurrentDictionary<string, TargetInfo>(Environment.ProcessorCount, 65536);
 
 
-        /**
-         *  A test case can be composed by 1 or more actions, eg HTTP calls.
-         * When we get the best distance for a testing target, we might
-         * also want to know which action in the test led to it.
-         * */
+        /*
+        A test case can be composed by 1 or more actions, eg HTTP calls.
+        When we get the best distance for a testing target, we might
+        also want to know which action in the test led to it.
+        */
         private static int _actionIndex = 0;
 
-        /**
-         * A set of possible values used in the tests, needed for some kinds
-         * of taint analyses
-         * */
+        /*
+        A set of possible values used in the tests, needed for some kinds
+        of taint analyses
+        */
         private static ISet<string> _inputVariables = new HashSet<string>();
 
-        /**
-         * Besides code coverage, there might be other events that we want to
-         * keep track during test execution.
-         * We keep track of it separately for each action
-         */
+        /*
+        Besides code coverage, there might be other events that we want to
+        keep track during test execution.
+        We keep track of it separately for each action
+        */
         private static readonly IList<AdditionalInfo> AdditionalInfoList = new List<AdditionalInfo>();
 
-        /**
-         * Keep track of expensive operations. Might want to skip doing them if too many.
-         * This should be re-set for each action
-         */
+        /*
+        Keep track of expensive operations. Might want to skip doing them if too many.
+        This should be re-set for each action
+        */
         private static int _expensiveOperation = 0;
 
-        /**
-         * note that lock is keyword in C#
-         */
         private static readonly object _lock = new object();
 
 
-        /**
-         * One problem is that, once a test case is evaluated, some background tests might still be running.
-         * We want to kill them to avoid issue (eg, when evaluating new tests while previous threads
-         * are still running).
+        /*
+         One problem is that, once a test case is evaluated, some background tests might still be running.
+         We want to kill them to avoid issue (eg, when evaluating new tests while previous threads are still running).
          */
         private static volatile bool _killSwitch = false;
 
@@ -138,10 +134,10 @@ namespace EvoMaster.Instrumentation.StaticState
 
             //TODO
             //for targets to cover
-             var lineId = ObjectiveNaming.LineObjectiveName(className, line);
-             var classId = ObjectiveNaming.ClassObjectiveName(className);
-             UpdateObjective(lineId, 1d);
-             UpdateObjective(classId, 1d);
+            var lineId = ObjectiveNaming.LineObjectiveName(className, line);
+            var classId = ObjectiveNaming.ClassObjectiveName(className);
+            UpdateObjective(lineId, 1d);
+            UpdateObjective(classId, 1d);
 
             //to calculate last executed line
             var lastLine = className + "_" + line + "_" + methodName;
@@ -168,10 +164,7 @@ namespace EvoMaster.Instrumentation.StaticState
                 throw new ArgumentException("Invalid value " + value + " out of range [0,1]");
             }
 
-            /*
-                In the same execution, a target could be reached several times,
-                so we should keep track of the best value found so far
-             */
+            //In the same execution, a target could be reached several times, so we should keep track of the best value found so far
             lock (_lock)
             {
                 if (ObjectiveCoverage.ContainsKey(id))

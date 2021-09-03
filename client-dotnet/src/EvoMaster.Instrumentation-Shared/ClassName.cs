@@ -7,19 +7,19 @@ namespace EvoMaster.Instrumentation_Shared
 {
     public class ClassName
     {
-        /**
-     * Name used in the bytecode, where "/" are used
-     * instead of "."
-     * eg
-     * org.bar.Foo turns into org/bar/Foo
-     */
+        /*
+        Name used in the bytecode, where "/" are used
+        instead of "."
+        eg
+        org.bar.Foo turns into org/bar/Foo
+        */
         private readonly string _bytecodeName;
 
-        /**
-     * What usually returned with Foo.class.getName(),
-     * eg
-     * org.bar.Foo
-     */
+        /*
+        What usually returned with Foo.class.getName(),
+        eg
+        org.bar.Foo
+        */
         private readonly string _fullNameWithDots;
 
 
@@ -45,10 +45,7 @@ namespace EvoMaster.Instrumentation_Shared
         {
         }
 
-        /**
-     *
-     * @param name of the class, or path resource
-     */
+        /// <param name="name">name of the class, or path resource</param>
         public ClassName(string name)
         {
             name.RequireNonNull<string>();
@@ -80,19 +77,14 @@ namespace EvoMaster.Instrumentation_Shared
             }
         }
 
-        /**
-        Name of the class as used in the bytecode instructions.
-        This means that foo.bar.Hello would be foo/bar/Hello
-     */
+        ///<summary>Name of the class as used in the bytecode instructions.
+        /// This means that foo.bar.Hello would be foo/bar/Hello</summary>
         public string GetBytecodeName()
         {
             return _bytecodeName;
         }
 
-        /**
-     * Eg, foo.bar.Hello
-     * @return
-     */
+        /// <summary>Eg, foo.bar.Hello</summary>
         public string GetFullNameWithDots()
         {
             return _fullNameWithDots;
