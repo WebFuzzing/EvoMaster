@@ -37,6 +37,11 @@ class CookieLogin(
         val loginEndpointUrl: String,
 
         /**
+         *  whether the [loginEndpointUrl] is a complete URL
+         */
+        val fullUrl : Boolean,
+
+        /**
          * The HTTP verb used to send the data.
          * Usually a "POST".
          */
@@ -46,6 +51,8 @@ class CookieLogin(
          * The encoding type used to specify how the data is sent
          */
         val contentType: ContentType
+
+
 ) {
 
     companion object {
@@ -56,6 +63,7 @@ class CookieLogin(
                 dto.usernameField,
                 dto.passwordField,
                 dto.loginEndpointUrl,
+                dto.fullUrl,
                 HttpVerb.valueOf(dto.httpVerb.toString()),
                 ContentType.valueOf(dto.contentType.toString())
         )

@@ -1,5 +1,7 @@
 package org.evomaster.core.output
 
+import org.evomaster.core.output.service.HttpWsTestCaseWriter
+import org.evomaster.core.output.service.WebTestCaseWriter
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.httpws.service.auth.CookieLogin
@@ -31,7 +33,9 @@ object CookieWriter {
     fun handleGettingCookies(format: OutputFormat,
                              ind: EvaluatedIndividual<*>,
                              lines: Lines,
-                             baseUrlOfSut: String) {
+                             baseUrlOfSut: String,
+                             testCaseWriter: WebTestCaseWriter
+    ) {
 
         val cookiesInfo =  getCookieLoginAuth(ind.individual)
 
@@ -54,17 +58,33 @@ object CookieWriter {
                 if (k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
                     lines.add(".formParam(\"${k.usernameField}\", \"${k.username}\")")
                     lines.add(".formParam(\"${k.passwordField}\", \"${k.password}\")")
-                } else {
+                } else if(k.contentType == ContentType.JSON) {
+                    val json = """
+                        {
+                            "${k.usernameField}":"${k.username}",
+                            "${k.passwordField}":"${k.password}"
+                        }
+                    """.trimIndent()
+                    lines.add(".contentType(\"application/json\")")
+                    if (testCaseWriter is HttpWsTestCaseWriter){
+                        testCaseWriter.printSendJsonBody(json, lines)
+                    }
+                }else {
                     throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
                 }
 
                 lines.add(".post(")
-                if (format.isJava()) {
-                    lines.append("$baseUrlOfSut + \"")
-                } else {
-                    lines.append("\"\${$baseUrlOfSut}")
+                if (k.fullUrl){
+                    lines.append("\"${k.loginEndpointUrl}\")")
+                }else{
+                    if (format.isJava()) {
+                        lines.append("$baseUrlOfSut + \"")
+                    } else {
+                        lines.append("\"\${$baseUrlOfSut}")
+                    }
+                    lines.append("${k.loginEndpointUrl}\")")
                 }
-                lines.append("${k.loginEndpointUrl}\")")
+
 
                 lines.add(".then().extract().cookies()") //TODO check response status and cookie headers?
                 lines.appendSemicolon(format)
