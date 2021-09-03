@@ -540,7 +540,6 @@
             </dependency>
 
 
-
             <!-- databases -->
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -620,11 +619,11 @@
                 <artifactId>voyager-spring-boot-starter</artifactId>
                 <version>${version.graphql-spring}</version>
             </dependency>
-<!--            <dependency>-->
-<!--                <groupId>com.graphql-java-kickstart</groupId>-->
-<!--                <artifactId>graphql-java-tools</artifactId>-->
-<!--                <version>${version.graphql-java-tools}</version>-->
-<!--            </dependency>-->
+            <!--            <dependency>-->
+            <!--                <groupId>com.graphql-java-kickstart</groupId>-->
+            <!--                <artifactId>graphql-java-tools</artifactId>-->
+            <!--                <version>${version.graphql-java-tools}</version>-->
+            <!--            </dependency>-->
 
 
             <!-- test dependencies -->
@@ -685,6 +684,30 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>3.0.0</version>
+                    <executions>
+                        <execution>
+                            <id>enforce-maven</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <requireMavenVersion>
+                                        <!--
+                                            Due to possible issues with CI not having latest version, good
+                                            to stay bit behind (but not too much)
+                                        -->
+                                        <version>3.6.3</version>
+                                    </requireMavenVersion>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
 
                 <!-- To run unit tests -->
                 <plugin>
@@ -956,6 +979,10 @@
 
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
             <!-- Executed JaCoCo in all the modules. Default binding is on "verify" -->
             <plugin>
                 <groupId>org.jacoco</groupId>
