@@ -15,7 +15,7 @@ class LoginTokenEMTest : SpringTestBase(){
         @BeforeAll
         @JvmStatic
         fun init() {
-            SpringTestBase.initClass(LoginTokenController())
+            initClass(LoginTokenController())
         }
     }
 
