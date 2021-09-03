@@ -1,4 +1,4 @@
-package org.evomaster.e2etests.utils;
+package org.evomaster.ci.utils;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
