@@ -219,7 +219,7 @@ class Statistics : SearchListener {
 
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))
-            add(Pair("maxReturnCodes", "" + codes.max()))
+            add(Pair("maxReturnCodes", "" + codes.maxOrNull()))
 
             add(Pair(TEST_TIMEOUTS, "$timeouts"))
             add(Pair("coverageFailures", "$coverageFailures"))

@@ -51,8 +51,8 @@ open class Impact(
     fun getDegree(property: ImpactProperty, targets: Set<Int>, by: By, singleImpactReward: Boolean) : Double?{
         return targets.mapNotNull { getDegree(property, it, singleImpactReward = singleImpactReward) }.run {
             when(by){
-                By.MIN -> this.min()
-                By.MAX -> this.max()
+                By.MIN -> this.minOrNull()
+                By.MAX -> this.maxOrNull()
                 By.AVG -> this.average()
                 By.SUM -> this.filter { it > 0.0 }.sum()
             }
@@ -62,8 +62,8 @@ open class Impact(
     fun getCounter(property: ImpactProperty, targets: Set<Int>, by: By, singleImpactReward: Boolean) : Double?{
         val list = targets.mapNotNull { getCounter(property, it, singleImpactReward) }
         return when(by){
-            By.MIN -> list.min()
-            By.MAX -> list.max()
+            By.MIN -> list.minOrNull()
+            By.MAX -> list.maxOrNull()
             By.AVG -> list.average()
             By.SUM -> list.filter { it > 0.0}.sum()
         }
@@ -161,7 +161,7 @@ open class Impact(
             "NV:${getNoImprovementCounter().filter { targets?.contains(it.key)?:true }.map { "${it.key}->${it.value}" }.joinToString(";")}"
     )
 
-    fun getMaxImpact() : Double = shared.timesOfImpact.values.max()?:0.0
+    fun getMaxImpact() : Double = shared.timesOfImpact.values.maxOrNull()?:0.0
 
     private fun getValueByImpactProperty(property: ImpactProperty, target : Int, singleImpactReward: Boolean) : Double?{
         return when(property){

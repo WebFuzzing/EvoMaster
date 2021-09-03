@@ -48,7 +48,7 @@ class LongMutationUpdate(direction: Boolean, min: Long, max: Long, updateTimes :
 
         return when {
             valid.isNotEmpty() -> randomness.choose(valid)
-            candidates.min()!! > preferMax -> preferMax
+            candidates.minOrNull()!! > preferMax -> preferMax
             else -> preferMin
         }
     }
