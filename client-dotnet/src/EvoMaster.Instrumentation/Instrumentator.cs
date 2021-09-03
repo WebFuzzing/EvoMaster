@@ -136,8 +136,9 @@ namespace EvoMaster.Instrumentation
 
         public static void CompletedLine(string className, string methodName, int lineNo)
         {
-            var record = $"--- Completed Line \"{lineNo}\" at Method: \"{methodName}\" at Class: \"{className}\"";
-            Console.WriteLine(record);
+            // var record = $"--- Completed Line \"{lineNo}\" at Method: \"{methodName}\" at Class: \"{className}\"";
+            // Console.WriteLine(record);
+            //TODO: description
             ExecutionTracer.ExecutedLine(className, methodName, "desc", lineNo);
         }
     }
