@@ -35,10 +35,6 @@ public class CookieLoginDto {
      */
     public String loginEndpointUrl;
 
-    /**
-     * Whether the [loginEndpointUrl] is a complete URL
-     */
-    public Boolean fullUrl;
 
     public enum HttpVerb{
         GET, POST

@@ -43,7 +43,6 @@ class CookieLoginController: SpringController(CookieLoginApplication::class.java
                     usernameField = "username"
                     password = "123"
                     passwordField = "password"
-                    fullUrl = false
                     loginEndpointUrl = "/api/logintoken/login"
                     httpVerb = CookieLoginDto.HttpVerb.POST
                     contentType = CookieLoginDto.ContentType.JSON
@@ -53,7 +52,6 @@ class CookieLoginController: SpringController(CookieLoginApplication::class.java
                     usernameField = "username"
                     password = "456"
                     passwordField = "password"
-                    fullUrl = true
                     loginEndpointUrl = getFakeApplicationURL()+"/api/manager/login"
                     httpVerb = CookieLoginDto.HttpVerb.POST
                     contentType = CookieLoginDto.ContentType.JSON

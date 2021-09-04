@@ -74,7 +74,7 @@ object CookieWriter {
                 }
 
                 lines.add(".post(")
-                if (k.fullUrl){
+                if (k.isFullUrlSpecified()){
                     lines.append("\"${k.loginEndpointUrl}\")")
                 }else{
                     if (format.isJava()) {

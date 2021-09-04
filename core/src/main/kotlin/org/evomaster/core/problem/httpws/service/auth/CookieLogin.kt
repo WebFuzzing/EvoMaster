@@ -37,11 +37,6 @@ class CookieLogin(
         val loginEndpointUrl: String,
 
         /**
-         *  whether the [loginEndpointUrl] is a complete URL
-         */
-        val fullUrl : Boolean,
-
-        /**
          * The HTTP verb used to send the data.
          * Usually a "POST".
          */
@@ -63,7 +58,6 @@ class CookieLogin(
                 dto.usernameField,
                 dto.passwordField,
                 dto.loginEndpointUrl,
-                dto.fullUrl,
                 HttpVerb.valueOf(dto.httpVerb.toString()),
                 ContentType.valueOf(dto.contentType.toString())
         )
@@ -82,5 +76,16 @@ class CookieLogin(
             else -> throw IllegalStateException("Currently not supporting $contentType for auth")
         }
 
+    }
+
+    /**
+     * @return whether the specified [loginEndpointUrl] is a complete url, i.e., start with http/https protocol
+     */
+    fun isFullUrlSpecified() = loginEndpointUrl.startsWith("https://")|| loginEndpointUrl.startsWith("http://")
+
+    fun getUrl(baseUrl: String) : String{
+        if (isFullUrlSpecified()) return loginEndpointUrl
+
+        return baseUrl.run { if (!endsWith("/")) "$this/" else this} + loginEndpointUrl.run { if (startsWith("/")) this.drop(1) else this }
     }
 }
