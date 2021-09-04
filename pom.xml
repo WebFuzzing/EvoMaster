@@ -101,10 +101,9 @@
         <swagger.version>1.6.1</swagger.version>
         <swagger.parser-v2.version>1.0.39</swagger.parser-v2.version>
         <swagger.parser-v3.version>2.0.27</swagger.parser-v3.version>
-        <springboot.version>2.2.0.RELEASE</springboot.version>
+        <springboot.version>2.5.4</springboot.version>
         <springfox.version>2.9.2</springfox.version>
-        <!--  upgrading this one gives issue... might have to update Spring as well -->
-        <springdoc.version>1.2.21</springdoc.version>
+        <springdoc.version>1.5.10</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
         <jersey.version>2.33</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
