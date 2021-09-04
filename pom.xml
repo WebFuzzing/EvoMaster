@@ -102,7 +102,7 @@
         <swagger.parser-v2.version>1.0.39</swagger.parser-v2.version>
         <swagger.parser-v3.version>2.0.27</swagger.parser-v3.version>
         <springboot.version>2.5.4</springboot.version>
-        <springfox.version>2.9.2</springfox.version>
+        <springfox.version>3.0.0</springfox.version>
         <springdoc.version>1.5.10</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
         <jersey.version>2.33</jersey.version>
@@ -115,8 +115,7 @@
         <nlp.version>3.9.2</nlp.version>
         <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
         <jgrapht.version>0.8.3</jgrapht.version>
-        <version.graphql-spring>7.1.0</version.graphql-spring>
-        <version.graphql-java-tools>6.2.0</version.graphql-java-tools>
+        <version.graphql-spring>11.1.0</version.graphql-spring>
         <mysql.connector.java.version>8.0.23</mysql.connector.java.version>
         <mariadb.java.client.version>2.7.2</mariadb.java.client.version>
         <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
@@ -618,11 +617,6 @@
                 <artifactId>voyager-spring-boot-starter</artifactId>
                 <version>${version.graphql-spring}</version>
             </dependency>
-            <!--            <dependency>-->
-            <!--                <groupId>com.graphql-java-kickstart</groupId>-->
-            <!--                <artifactId>graphql-java-tools</artifactId>-->
-            <!--                <version>${version.graphql-java-tools}</version>-->
-            <!--            </dependency>-->
 
 
             <!-- test dependencies -->
