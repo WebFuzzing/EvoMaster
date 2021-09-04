@@ -69,10 +69,10 @@ class ErrorsEMTest : SpringTestBase() {
         val results = stats[1].split(",")
 
         assertEquals(2, stats.size)
-        val actual = results[header.indexOf("gqlerrors")].toInt()
+        val actual = results[header.indexOf("gqlErrors")].toInt()
         assertEquals(num, actual)
 
-        val actualLine = results[header.indexOf("gqlerrorsPerLines")].toInt()
+        val actualLine = results[header.indexOf("gqlErrorsPerLines")].toInt()
         assertEquals(numLine, actualLine)
 
         val actualfaults = results[header.indexOf("potentialFaults")].toInt()

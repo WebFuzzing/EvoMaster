@@ -414,4 +414,16 @@ public abstract class WsTestBase {
 
         assertTrue(ok);
     }
+
+    /**
+     * Bit of a helper method to replace the default output format for testing purposes.
+     *
+     * @param args - the list of arguments
+     * @param outputFormat - the desired output format
+     */
+    protected void setOutputFormat(List<String> args, OutputFormat outputFormat){
+        if (outputFormat != null){
+            args.replaceAll(s -> s.replace(OutputFormat.KOTLIN_JUNIT_5.name(), outputFormat.name()));
+        }
+    }
 }

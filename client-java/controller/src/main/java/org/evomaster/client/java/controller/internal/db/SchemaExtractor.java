@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class SchemaExtractor {
 
@@ -327,15 +328,25 @@ public class SchemaExtractor {
                 columnNames.add(columnDto.name);
             }
 
-            columnDto.type = columns.getString("TYPE_NAME");
+
+            String typeAsString = columns.getString("TYPE_NAME");
             columnDto.size = columns.getInt("COLUMN_SIZE");
 
             switch (schemaDto.databaseType){
                 case MYSQL:
+                    // numeric https://dev.mysql.com/doc/refman/8.0/en/numeric-type-syntax.html
+                    String[] attrs = typeAsString.split(" ");
+                    if(attrs.length == 0)
+                        throw new IllegalStateException("missing type info of the column");
+                    columnDto.type = attrs[0];
+                    columnDto.isUnsigned = attrs.length > 1 && IntStream
+                            .range(1, attrs.length).anyMatch(i -> attrs[i].equalsIgnoreCase("UNSIGNED"));
                     columnDto.nullable = columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
                     columnDto.autoIncrement = columns.getString("IS_AUTOINCREMENT").equalsIgnoreCase("yes");
                     break;
                 default:
+                    // might need to support unsigned property of numeric in other types of db
+                    columnDto.type = typeAsString;
                     columnDto.nullable = columns.getBoolean("IS_NULLABLE");
                     columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
             }

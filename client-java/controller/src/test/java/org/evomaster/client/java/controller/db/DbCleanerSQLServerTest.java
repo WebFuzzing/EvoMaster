@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.db;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 //TODO
 //import org.evomaster.e2etests.utils.CIUtils;
-import org.evomaster.e2etests.utils.CIUtils;
+import org.evomaster.ci.utils.CIUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;

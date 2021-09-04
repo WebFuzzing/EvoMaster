@@ -219,6 +219,11 @@ object RestActionBuilderV3 {
     private fun handleParam(p: Parameter, swagger: OpenAPI, params: MutableList<Param>) {
         val name = p.name ?: "undefined"
 
+        if(p.schema == null){
+            log.warn("No schema definition for parameter $name")
+            return
+        }
+
         var gene = getGene(name, p.schema, swagger, referenceClassDef = null)
 
         if (p.`in` == "path" && gene is StringGene) {

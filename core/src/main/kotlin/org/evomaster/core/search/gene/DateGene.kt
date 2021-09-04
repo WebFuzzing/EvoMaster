@@ -83,7 +83,7 @@ class DateGene(
         throw IllegalArgumentException("impact is null or not DateGeneImpact")
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "\"${getValueAsRawString()}\""
     }
 

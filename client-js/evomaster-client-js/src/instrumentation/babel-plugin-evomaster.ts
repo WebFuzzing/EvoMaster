@@ -7,11 +7,11 @@ import {
     ReturnStatement,
     Statement,
     UnaryExpression,
-    ConditionalExpression, Expression
+    ConditionalExpression, Expression, isAwaitExpression
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
-import ObjectiveNaming from "./ObjectiveNaming";
+import ObjectiveNaming from "./shared/ObjectiveNaming";
 
 /*
     https://github.com/jamiebuilds/babel-handbook
@@ -137,8 +137,8 @@ export default function evomasterPlugin(
          // const pure = t.isPureish(exp.right);
         const pure = isPureExpression(exp.right);
 
-        const left = t.arrowFunctionExpression([], exp.left, false);
-        const right = t.arrowFunctionExpression([], exp.right, false);
+        const left = t.arrowFunctionExpression([], exp.left, doesContainAwaitExpression(exp.left));
+        const right = t.arrowFunctionExpression([], exp.right, doesContainAwaitExpression(exp.right));
 
         const call = t.callExpression(
             t.memberExpression(t.identifier(ref), t.identifier(methodName)),
@@ -152,6 +152,24 @@ export default function evomasterPlugin(
         path.replaceWith(call);
         branchCounter++;
     }
+
+    /**
+     * @param node to be checked
+     * @return whether the expression contains asynchronous functions.
+     */
+    function doesContainAwaitExpression(node: Expression) : boolean{
+        if (t.isAwaitExpression(node))
+            return true;
+        if (t.isAssignmentExpression(node))
+            return doesContainAwaitExpression(node.right);
+        if (t.isArrowFunctionExpression(node)) return node.async;
+        if (t.isCallExpression(node) || t.isOptionalCallExpression(node) || t.isNewExpression(node)){
+            return node.arguments.some((arg) => t.isExpression(arg) && doesContainAwaitExpression(arg))
+        }
+        // isLogicalExpression should be handled by introduced arrow function
+        return false;
+    }
+
 
     /**
      * @param node to be analyzed
@@ -266,8 +284,16 @@ export default function evomasterPlugin(
         ){
             pure = false;
         } else if (t.isLogicalExpression(node)){
-            throw Error("LogicalExpression should not appear in the pure analysis, and the expression is: loc ("+ node.loc +
-                "), left("+ node.left + "), operator(" + node.operator+ "), right(" +node.right +")");
+            /*
+                it is pure only if its right and left are pure
+
+                its def:
+                operator: "||" | "&&" | "??" (required)
+                left: Expression (required)
+                right: Expression (required)
+
+             */
+            pure = isPureExpression(node.right) && isPureExpression(node.left);
         } else{
             throw Error("Missing expression type in the pure analysis: " + node.type);
         }
@@ -343,8 +369,8 @@ export default function evomasterPlugin(
             additional branch will be added there.
 
          */
-        const consequent = t.arrowFunctionExpression([], exp.consequent, false);
-        const alternate = t.arrowFunctionExpression([], exp.alternate, false);
+        const consequent = t.arrowFunctionExpression([], exp.consequent, doesContainAwaitExpression(exp.consequent));
+        const alternate = t.arrowFunctionExpression([], exp.alternate, doesContainAwaitExpression(exp.alternate));
 
 
         objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
@@ -392,13 +418,17 @@ export default function evomasterPlugin(
                 t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.callTracked.name)),
                 [t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter),
                     // @ts-ignore
-                    call.callee.object, t.stringLiteral(call.callee.property.name), ...call.arguments]
+                    call.callee.object,
+                    !call.callee.computed ?
+                        t.stringLiteral(call.callee.property.name)
+                        : call.callee.property,
+                    ...call.arguments]
             );
             branchCounter++;
         } else {
             replaced = t.callExpression(
                 t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.callBase.name)),
-                [t.arrowFunctionExpression([], call, false) ]
+                [t.arrowFunctionExpression([], call, doesContainAwaitExpression(call)) ]
             );
             // @ts-ignore
             call.evomaster = true;

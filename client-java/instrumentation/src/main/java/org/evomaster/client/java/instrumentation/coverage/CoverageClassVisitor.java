@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.commons.JSRInlinerAdapter;
 
 /**
  * Add instrumentations to keep track of which statements/lines
@@ -68,6 +69,7 @@ public class CoverageClassVisitor extends ClassVisitor {
 
         ObjectiveRecorder.registerTarget(ObjectiveNaming.classObjectiveName(bytecodeClassName));
 
+        mv = new JSRInlinerAdapter(mv, methodAccess, name, descriptor, signature, exceptions);
         mv = new LineCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new BranchCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new SuccessCallMethodVisitor(mv, bytecodeClassName, name, descriptor);

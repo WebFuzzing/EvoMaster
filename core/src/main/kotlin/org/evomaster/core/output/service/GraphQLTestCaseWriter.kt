@@ -93,14 +93,28 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         val verb = "post"
         lines.add(".$verb(")
 
-        if (format.isKotlin()) {
-            lines.append("\"\${$baseUrlOfSut}")
+        if(config.blackBox){
+            /*
+                in BB, the baseUrl is actually the full endpoint
+             */
+
+            if (format.isKotlin()) {
+                lines.append("\"\${$baseUrlOfSut}\"")
+            } else {
+                lines.append("$baseUrlOfSut")
+            }
         } else {
-            lines.append("$baseUrlOfSut + \"")
+
+            if (format.isKotlin()) {
+                lines.append("\"\${$baseUrlOfSut}")
+            } else {
+                lines.append("$baseUrlOfSut + \"")
+            }
+
+            val path = "/graphql"  //FIXME not hardcoded
+            lines.append("${GeneUtils.applyEscapes(path, mode = GeneUtils.EscapeMode.NONE, format = format)}\"")
         }
 
-        val path = "/graphql"  //FIXME not hardcoded
-        lines.append("${GeneUtils.applyEscapes(path, mode = GeneUtils.EscapeMode.NONE, format = format)}\"")
         lines.append(")")
     }
 

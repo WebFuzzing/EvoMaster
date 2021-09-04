@@ -1,0 +1,32 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+<!--
+    WARNING
+    Based on how releases are currently done, all code used by client-java has to be inside
+    the client-java module structure.
+
+    So that is the reason why this module is here, even if needed by e2e-tests (for example)
+-->
+
+    <parent>
+        <artifactId>evomaster-client-java</artifactId>
+        <groupId>org.evomaster</groupId>
+        <version>1.2.2-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>evomaster-ci-utils</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+        </dependency>
+    </dependencies>
+</project>

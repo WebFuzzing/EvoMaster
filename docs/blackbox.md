@@ -20,7 +20,7 @@ Such website provides an API itself to query info on existing APIs.
 Such small API (only 2 endpoints) can be easily tested by running the following on a command-line: 
 
 ```
-java -jar core/target/evomaster.jar  --blackBox true --bbSwaggerUrl https://api.apis.guru/v2/swagger.yaml  --outputFormat JAVA_JUNIT_4 --maxTime 30s
+java -jar core/target/evomaster.jar  --blackBox true --bbSwaggerUrl https://api.apis.guru/v2/openapi.yaml  --outputFormat JAVA_JUNIT_4 --maxTime 30s --ratePerMinute 60
 ```
 
 The command is doing the following:
@@ -36,6 +36,7 @@ The command is doing the following:
   using JUnit 4 in this case. Note: the language of the generated tests is not necessarily related
   to the language in which the tested application is implemented. 
 * `--maxTime 30s`: for how long to run the search, i.e., just 30 seconds in this very simple example.
+* `--ratePerMinute 60`: avoid doing a DoS attack by bombarding the remote service with too many HTTP calls in quick rapid succession. Limit to max 1 per second (i.e., 60 per minute) in this example.
 
 This command will create the following test suite, in which 2 `GET` calls are executed:
 

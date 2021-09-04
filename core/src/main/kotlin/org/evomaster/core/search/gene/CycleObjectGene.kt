@@ -35,7 +35,7 @@ class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
         return true
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         throw IllegalStateException("CycleObjectGene has no value")
     }
 

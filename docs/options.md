@@ -38,7 +38,8 @@ There are 3 types of options:
 |`outputFormat`| __Enum__. Specify in which format the tests should be outputted. If left on `DEFAULT`, then the value specified in the _EvoMaster Driver_ will be used. But a different value must be chosen if doing Black-Box testing. *Valid values*: `DEFAULT, JAVA_JUNIT_5, JAVA_JUNIT_4, KOTLIN_JUNIT_4, KOTLIN_JUNIT_5, JS_JEST, CSHARP_XUNIT`. *Default value*: `DEFAULT`.|
 |`blackBox`| __Boolean__. Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT. *Default value*: `false`.|
 |`bbSwaggerUrl`| __String__. When in black-box mode for REST APIs, specify where the Swagger schema can be downloaded from. *Constraints*: `URL`. *Default value*: `""`.|
-|`bbTargetUrl`| __String__. When in black-box mode, specify the URL of where the SUT can be reached. If this is missing, the URL will be inferred from Swagger. *Constraints*: `URL`. *Default value*: `""`.|
+|`bbTargetUrl`| __String__. When in black-box mode, specify the URL of where the SUT can be reached. In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema. In GraphQL, this will point to the entry point of the API. *Constraints*: `URL`. *Default value*: `""`.|
+|`ratePerMinute`| __Int__. Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards an external service, might want to limit the number of calls to avoid bombarding such service (which could end up becoming equivalent to a DoS attack). A value of zero or negative means that no limiter is applied. This is needed only for black-box testing of remote services. *Default value*: `0`.|
 
 ## Internal Command-Line Options
 
@@ -164,4 +165,5 @@ There are 3 types of options:
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
 |`skipFailureSQLInTestFile`| __Boolean__. Whether to skip failed SQL commands in the generated test files. *Default value*: `false`.|
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
+|`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|

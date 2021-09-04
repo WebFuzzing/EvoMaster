@@ -21,8 +21,7 @@ import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlUUIDGene
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import javax.ws.rs.core.MediaType
 
@@ -1305,6 +1304,126 @@ public void test() throws Exception {
 
 """.trimIndent()
 
+        assertEquals(expectedLines, lines.toString())
+    }
+
+
+    @Test
+    fun testTestWithObjectLengthAssertion(){
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val fooResult = RestCallResult()
+
+        fooResult.setStatusCode(200)
+        fooResult.setBody("""
+           {
+                "p1":{},
+                "p2":{
+                    "id":"foo",
+                    "properties":[
+                        {},
+                        {
+                          "name":"mapProperty1",
+                          "type":"string",
+                          "value":"one"
+                        },
+                        {
+                          "name":"mapProperty2",
+                          "type":"string",
+                          "value":"two"
+                        }],
+                    "empty":{}
+                }
+           }
+        """.trimIndent())
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<DbAction>() to mutableListOf(fooAction))
+            ),
+            results = mutableListOf(fooResult),
+            format = OutputFormat.JS_JEST
+        )
+
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+            test("test", async () => {
+                
+                const res_0 = await superagent
+                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .ok(res => res.status);
+                
+                expect(res_0.status).toBe(200);
+                expect(res_0.header["content-type"].startsWith("application/json")).toBe(true);
+                expect(Object.keys(res_0.body.p1).length).toBe(0);
+                expect(res_0.body.p2.properties.length).toBe(3);
+                expect(Object.keys(res_0.body.p2.properties[0]).length).toBe(0);
+                expect(res_0.body.p2.properties[1].name).toBe("mapProperty1");
+                expect(res_0.body.p2.properties[1].type).toBe("string");
+                expect(res_0.body.p2.properties[1].value).toBe("one");
+                expect(res_0.body.p2.properties[2].name).toBe("mapProperty2");
+                expect(res_0.body.p2.properties[2].type).toBe("string");
+                expect(res_0.body.p2.properties[2].value).toBe("two");
+                expect(Object.keys(res_0.body.p2.empty).length).toBe(0);
+            });
+            
+""".trimIndent()
+        assertEquals(expectedLines, lines.toString())
+    }
+
+
+    @Test
+    fun testApplyAssertionEscapes(){
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val fooResult = RestCallResult()
+
+        val email = "foo@foo.foo"
+        fooResult.setStatusCode(200)
+        fooResult.setBody("""
+           {
+                "email":$email
+           }
+        """.trimIndent())
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<DbAction>() to mutableListOf(fooAction))
+            ),
+            results = mutableListOf(fooResult),
+            format = OutputFormat.JS_JEST
+        )
+
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+            test("test", async () => {
+                
+                const res_0 = await superagent
+                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .ok(res => res.status);
+                
+                expect(res_0.status).toBe(200);
+                expect(res_0.header["content-type"].startsWith("application/json")).toBe(true);
+                expect(res_0.body.email).toBe("$email");
+            });
+            
+""".trimIndent()
         assertEquals(expectedLines, lines.toString())
     }
 

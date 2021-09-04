@@ -2,6 +2,7 @@ package org.evomaster.core.problem.graphql
 
 import com.google.common.annotations.VisibleForTesting
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 
 class GraphQlCallResult : HttpWsCallResult {
@@ -27,4 +28,8 @@ class GraphQlCallResult : HttpWsCallResult {
     fun getLastStatementWhenGQLErrors() : String? = getResultValue(LAST_STATEMENT_WHEN_GQL_ERRORS)
 
     fun hasLastStatementWhenGQLError() = ! getLastStatementWhenGQLErrors().isNullOrBlank()
+
+    override fun matchedType(action: Action): Boolean {
+        return action is GraphQLAction
+    }
 }

@@ -81,10 +81,12 @@ else
 fi
 
 # run the tests
-dotnet test
+dotnet test --filter $TEST_NAME
 
 if [ $? -ne 0 ] ; then
    echo "ERROR: failed to run the generated tests."
+   echo "The generated test was:"
+   cat $TEST_LOCATION
    exit 1
 fi
 

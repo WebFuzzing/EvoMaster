@@ -259,7 +259,10 @@ class EMConfig {
             }
 
             if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
-                throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
+                throw IllegalArgumentException("In black-box mode for REST APIs, you must set the bbSwaggerUrl option")
+            }
+            if(problemType == ProblemType.GRAPHQL && bbTargetUrl.isNullOrBlank()){
+                throw java.lang.IllegalArgumentException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
             }
             if (outputFormat == OutputFormat.DEFAULT) {
                 /*
@@ -273,6 +276,15 @@ class EMConfig {
             throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
         }
 
+        if(!blackBox && ratePerMinute > 0){
+            throw IllegalArgumentException("ratePerMinute is used only for black-box testing")
+        }
+
+        if(blackBox && ratePerMinute <=0){
+            LoggingUtil.getInfoLogger().warn("You have not setup 'ratePerMinute'. If you are doing testing of" +
+                    " a remote service which you do not own, you might want to put a rate-limiter to prevent" +
+                    " EvoMaster from bombarding such service with HTTP requests.")
+        }
 
         when (stoppingCriterion) {
             StoppingCriterion.TIME -> if (maxActionEvaluations != defaultMaxActionEvaluations) {
@@ -681,10 +693,19 @@ class EMConfig {
 
     @Important(3.5)
     @Url
-    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached. " +
-            "If this is missing, the URL will be inferred from Swagger.")
+    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached." +
+            " In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema." +
+            " In GraphQL, this will point to the entry point of the API.")
     var bbTargetUrl: String = ""
 
+
+    @Important(3.7)
+    @Cfg("Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards" +
+            " an external service, might want to limit the number of calls to avoid bombarding such service" +
+            " (which could end up becoming equivalent to a DoS attack)." +
+            " A value of zero or negative means that no limiter is applied." +
+            " This is needed only for black-box testing of remote services.")
+    var ratePerMinute = 0
 
     //-------- other options -------------
 
@@ -903,6 +924,12 @@ class EMConfig {
     //Warning: this is off in the tests, as it is a source of non-determinism
     @Cfg("Whether to use timestamp info on the execution time of the tests for sampling (e.g., to reward the quickest ones)")
     var useTimeInFeedbackSampling = true
+
+
+    @Experimental
+    @Cfg("When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often)")
+    var useWeightedSampling = false
+
 
     @Cfg("Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO)")
     @Min(1.0)
