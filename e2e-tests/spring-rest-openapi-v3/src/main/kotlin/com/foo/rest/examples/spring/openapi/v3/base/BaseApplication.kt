@@ -6,9 +6,11 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api/base"])
+@RestController
 open class BaseApplication {
 
 
