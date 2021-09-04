@@ -10,16 +10,16 @@ import org.evomaster.core.search.service.mutator.Mutator
 abstract class SearchAlgorithm<T> where T : Individual {
 
     @Inject
-    protected lateinit var sampler : Sampler<T>
+    protected lateinit var sampler: Sampler<T>
 
     @Inject
-    protected lateinit var ff : FitnessFunction<T>
+    protected lateinit var ff: FitnessFunction<T>
 
     @Inject
-    protected lateinit var randomness : Randomness
+    protected lateinit var randomness: Randomness
 
     @Inject
-    protected lateinit var time : SearchTimeController
+    protected lateinit var time: SearchTimeController
 
     @Inject
     protected lateinit var archive: Archive<T>
@@ -38,7 +38,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
     private var lastSnapshot = 0
 
 
-    protected fun getMutatator() : Mutator<T> {
+    protected fun getMutatator(): Mutator<T> {
         return mutator
     }
 
@@ -52,7 +52,6 @@ abstract class SearchAlgorithm<T> where T : Individual {
      * Here goes all the implementation needed for the algorithm to setup before running the search
      */
     abstract fun setupBeforeSearch()
-
 
 
     /**
@@ -72,8 +71,8 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
             if (needsToSnapshot() && writeTestsSnapshot != null) {
                 lastSnapshot = time.getElapsedSeconds()
-                val partialSolution = archive.extractPartialSolution()
-                writeTestsSnapshot(partialSolution, time.getElapsedSeconds().toString())
+                val partialSolution = archive.extractSolution()
+                writeTestsSnapshot(partialSolution, lastSnapshot.toString())
             }
         }
 
@@ -87,5 +86,5 @@ abstract class SearchAlgorithm<T> where T : Individual {
         return isSnapshotEnabled && time.getElapsedSeconds() - lastSnapshot > snapshotPeriod
     }
 
-    abstract fun getType() : EMConfig.Algorithm
+    abstract fun getType(): EMConfig.Algorithm
 }

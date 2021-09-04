@@ -44,10 +44,6 @@ public class PrintSnapshotsEMTest extends SpringTestBase {
 
                     initAndRun(args);
 
-                    // Snapshots file is removed
-                    File snapshotFile = new File(System.getProperty("user.dir") +
-                            "/target/em-tests/PrintSnapshotsEM/org/bar/PrintSnapshotsEM_snapshot.kt");
-                    assertFalse(snapshotFile.exists());
                     // Final test suite persists
                     File finalFile = new File(System.getProperty("user.dir") +
                             "/target/em-tests/PrintSnapshotsEM/org/bar/PrintSnapshotsEM.kt");

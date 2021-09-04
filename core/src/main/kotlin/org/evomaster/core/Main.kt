@@ -61,8 +61,10 @@ class Main {
                 val parser = try {
                     EMConfig.validateOptions(args)
                 } catch (e: Exception) {
-                    logError("Invalid parameter settings: " + e.message +
-                            "\nUse --help to see the available options")
+                    logError(
+                        "Invalid parameter settings: " + e.message +
+                                "\nUse --help to see the available options"
+                    )
                     return
                 }
 
@@ -75,8 +77,10 @@ class Main {
 
                 LoggingUtil.getInfoLogger().apply {
                     info("EvoMaster process has completed successfully")
-                    info("Use ${inGreen("--help")} and visit ${inBlue("http://www.evomaster.org")} to" +
-                            " learn more about available options")
+                    info(
+                        "Use ${inGreen("--help")} and visit ${inBlue("http://www.evomaster.org")} to" +
+                                " learn more about available options"
+                    )
                 }
 
             } catch (e: Exception) {
@@ -88,19 +92,27 @@ class Main {
 
                 when (cause) {
                     is NoRemoteConnectionException ->
-                        logError("ERROR: ${cause.message}" +
-                                "\n  Make sure the EvoMaster Driver for the system under test is running correctly.")
+                        logError(
+                            "ERROR: ${cause.message}" +
+                                    "\n  Make sure the EvoMaster Driver for the system under test is running correctly."
+                        )
 
                     is SutProblemException ->
-                        logError("ERROR in the Remote EvoMaster Driver: ${cause.message}" +
-                                "\n  Look at the logs of the EvoMaster Driver to help debugging this problem.")
+                        logError(
+                            "ERROR in the Remote EvoMaster Driver: ${cause.message}" +
+                                    "\n  Look at the logs of the EvoMaster Driver to help debugging this problem."
+                        )
 
                     else ->
-                        LoggingUtil.getInfoLogger().error(inRed("[ERROR] ") +
-                                inYellow("EvoMaster process terminated abruptly." +
-                                        " This is likely a bug in EvoMaster." +
-                                        " Please copy&paste the following stacktrace, and create a new issue on" +
-                                        " " + inBlue("https://github.com/EMResearch/EvoMaster/issues")), e)
+                        LoggingUtil.getInfoLogger().error(
+                            inRed("[ERROR] ") +
+                                    inYellow(
+                                        "EvoMaster process terminated abruptly." +
+                                                " This is likely a bug in EvoMaster." +
+                                                " Please copy&paste the following stacktrace, and create a new issue on" +
+                                                " " + inBlue("https://github.com/EMResearch/EvoMaster/issues")
+                                    ), e
+                        )
                 }
             }
         }
@@ -202,9 +214,14 @@ class Main {
                 }
 
                 if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
-                        config.maxTime == config.defaultMaxTime) {
-                    info(inGreen("To obtain better results, use the '--maxTime' option" +
-                            " to run the search for longer"))
+                    config.maxTime == config.defaultMaxTime
+                ) {
+                    info(
+                        inGreen(
+                            "To obtain better results, use the '--maxTime' option" +
+                                    " to run the search for longer"
+                        )
+                    )
                 }
             }
             solution.statistics = data.toMutableList()
@@ -217,7 +234,7 @@ class Main {
             val base = BaseModule(args)
             val config = base.getEMConfig()
 
-            if(config.problemType == EMConfig.ProblemType.DEFAULT){
+            if (config.problemType == EMConfig.ProblemType.DEFAULT) {
                 /*
                     Note that, in case ob BB-testing, this would had been already modified
                  */
@@ -232,17 +249,19 @@ class Main {
                     state, eg the ephemeral port of the server
                  */
                 val started = rc.startSUT()
-                if(! started){
+                if (!started) {
                     throw SutProblemException("Failed to start the SUT")
                 }
 
                 val info = rc.getSutInfo()
-                        ?: throw SutProblemException("No 'problemType' was defined, but failed to retried the needed" +
-                                " info from the EM Driver.")
+                    ?: throw SutProblemException(
+                        "No 'problemType' was defined, but failed to retried the needed" +
+                                " info from the EM Driver."
+                    )
 
-                if(info.restProblem != null){
+                if (info.restProblem != null) {
                     config.problemType = EMConfig.ProblemType.REST
-                } else if (info.graphQLProblem != null){
+                } else if (info.graphQLProblem != null) {
                     config.problemType = EMConfig.ProblemType.GRAPHQL
                 } else {
                     throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
@@ -265,7 +284,7 @@ class Main {
                 }
 
                 EMConfig.ProblemType.GRAPHQL -> {
-                    if(config.blackBox){
+                    if (config.blackBox) {
                         GraphQLBlackBoxModule(config.bbExperiments)
                     } else {
                         GraphQLModule()
@@ -280,9 +299,9 @@ class Main {
 
             val injector = try {
                 LifecycleInjector.builder()
-                        .withModules(base, problemModule)
-                        .build()
-                        .createInjector()
+                    .withModules(base, problemModule)
+                    .build()
+                    .createInjector()
 
             } catch (e: Error) {
                 /*
@@ -290,7 +309,8 @@ class Main {
                     https://github.com/Netflix/governator/issues/371
                  */
                 if (e.cause != null &&
-                        InvocationTargetException::class.java.isAssignableFrom(e.cause!!.javaClass)) {
+                    InvocationTargetException::class.java.isAssignableFrom(e.cause!!.javaClass)
+                ) {
                     throw e.cause!!
                 }
 
@@ -382,7 +402,9 @@ class Main {
             LoggingUtil.getInfoLogger().info("Starting to generate test cases")
 
             return imp.search { solution: Solution<*>,
-                                snapshotTimestamp: String -> writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp) }
+                                snapshotTimestamp: String ->
+                writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp)
+            }
         }
 
         private fun checkExperimentalSettings(injector: Injector) {
@@ -397,13 +419,15 @@ class Main {
 
             val options = "[" + experimental.joinToString(", ") + "]"
 
-            logWarn("Using experimental settings." +
-                    " Those might not work as expected, or simply straight out crash." +
-                    " Furthermore, they might simply be incomplete features still under development." +
-                    " Used experimental settings: $options")
+            logWarn(
+                "Using experimental settings." +
+                        " Those might not work as expected, or simply straight out crash." +
+                        " Furthermore, they might simply be incomplete features still under development." +
+                        " Used experimental settings: $options"
+            )
         }
 
-         fun checkState(injector: Injector): ControllerInfoDto? {
+        fun checkState(injector: Injector): ControllerInfoDto? {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -414,7 +438,8 @@ class Main {
             val rc = injector.getInstance(RemoteController::class.java)
 
             val dto = rc.getControllerInfo() ?: throw IllegalStateException(
-                    "Cannot retrieve Remote Controller info from ${rc.host}:${rc.port}")
+                "Cannot retrieve Remote Controller info from ${rc.host}:${rc.port}"
+            )
 
             if (dto.isInstrumentationOn != true) {
                 LoggingUtil.getInfoLogger().warn("The system under test is running without instrumentation")
@@ -429,7 +454,12 @@ class Main {
             return dto
         }
 
-        private fun writeTestsAsSnapshots(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshotTimestamp: String="") {
+        private fun writeTestsAsSnapshots(
+            injector: Injector,
+            solution: Solution<*>,
+            controllerInfoDto: ControllerInfoDto?,
+            snapshotTimestamp: String = ""
+        ) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -454,7 +484,7 @@ class Main {
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshotTimestamp) }
 
                 if (config.executiveSummary) {
-                    writeExecSummary(injector, controllerInfoDto, splitResult)
+                    writeExecSummary(injector, controllerInfoDto, splitResult, snapshotTimestamp)
                     //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
                 }
             } else {
@@ -467,7 +497,12 @@ class Main {
         }
 
 
-         fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshot: String="") {
+        fun writeTests(
+            injector: Injector,
+            solution: Solution<*>,
+            controllerInfoDto: ControllerInfoDto?,
+            snapshot: String = ""
+        ) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -488,7 +523,7 @@ class Main {
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
                 splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshot) }
+                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshot) }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult)
@@ -502,8 +537,6 @@ class Main {
                 writer.writeTests(solution, controllerInfoDto?.fullName)
             }
 
-             // If snapshots of the generated tests were stored to disk, then they must be removed
-             writer.removeSnapshotTests(solution)
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
@@ -583,9 +616,12 @@ class Main {
             statistics.writeCoveredTargets(solution, config.coveredTargetSortedBy)
         }
 
-        private fun writeExecSummary(injector: Injector,
-                                     controllerInfoDto: ControllerInfoDto?,
-                                     splitResult: SplitResult) {
+        private fun writeExecSummary(
+            injector: Injector,
+            controllerInfoDto: ControllerInfoDto?,
+            splitResult: SplitResult,
+            snapshotTimestamp: String = ""
+        ) {
             val config = injector.getInstance(EMConfig::class.java)
 
             if (!config.createTests) {
@@ -594,7 +630,7 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             assert(controllerInfoDto == null || controllerInfoDto.fullName != null)
-            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName)
+            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName, snapshotTimestamp)
         }
     }
 }
