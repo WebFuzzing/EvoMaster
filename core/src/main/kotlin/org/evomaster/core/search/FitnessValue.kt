@@ -154,8 +154,14 @@ class FitnessValue(
 
     fun gqlErrors(idMapper: IdMapper, withLine : Boolean): List<String>{
         return targets.keys
-            .filter { idMapper.isGQLErrors(it, withLine) }
-            .map { idMapper.getDescriptiveId(it) }
+                .filter { idMapper.isGQLErrors(it, withLine) }
+                .map { idMapper.getDescriptiveId(it) }
+    }
+
+    fun gqlNoErrors(idMapper: IdMapper): List<String>{
+        return targets.keys
+                .filter { idMapper.isGQLNoErrors(it) }
+                .map { idMapper.getDescriptiveId(it) }
     }
 
     fun potentialFoundFaults(idMapper: IdMapper) : List<String>{

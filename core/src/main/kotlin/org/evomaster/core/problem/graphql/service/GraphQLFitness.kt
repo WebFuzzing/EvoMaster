@@ -134,7 +134,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
      */
     private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult, additionalInfoList: List<AdditionalInfoDto>) {
         val errorId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodName(name))
-        val okId = idMapper.handleLocalTarget("GQL_NO_ERRORS:$name")
+        val okId = idMapper.handleLocalTarget(idMapper.getGQLNoErrors(name))
 
         val anyError = hasErrors(result)
 

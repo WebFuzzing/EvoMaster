@@ -183,15 +183,12 @@ class Statistics : SearchListener {
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
-            add(Pair("endpoints", "" + numberOfEndpoints()))
+            add(Pair("distinctActions", "" + distinctActions()))
+            add(Pair("endpoints", "" + distinctActions()))
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
-
-            // Statistics on errors in gql
-            add(Pair("gqlerrors", "" + solution.overall.gqlErrors(idMapper, withLine = false).size))
-
-            // Statistics on errors in gql
-            add(Pair("gqlerrorsPerLines", "" + solution.overall.gqlErrors(idMapper, withLine = true).size))
-
+            add(Pair("gqlNoErrors", "" + solution.overall.gqlNoErrors(idMapper).size))
+            add(Pair("gqlErrors", "" + solution.overall.gqlErrors(idMapper, withLine = false).size))
+            add(Pair("gqlErrorsPerLines", "" + solution.overall.gqlErrors(idMapper, withLine = true).size))
             // Statistics on faults found
             // errors5xx - counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))
@@ -231,8 +228,8 @@ class Statistics : SearchListener {
         return list
     }
 
-    private fun numberOfEndpoints() : Int {
-        if(sampler == null || sampler !is RestSampler){
+    private fun distinctActions() : Int {
+        if(sampler == null){
             return 0
         }
         return sampler!!.numberOfDistinctActions()
