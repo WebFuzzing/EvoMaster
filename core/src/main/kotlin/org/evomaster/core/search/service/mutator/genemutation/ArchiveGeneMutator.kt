@@ -390,7 +390,7 @@ class ArchiveGeneMutator{
             originalActions: List<Action>, mutatedActions : List<Action>, mutatedGenes: List<Gene>, genesAtActionIndex: List<Int>
     ) : MutableList<Pair<Gene, Gene>>{
         Lazy.assert {
-            mutatedActions.isEmpty()  || mutatedActions.size > genesAtActionIndex.max()!!
+            mutatedActions.isEmpty()  || mutatedActions.size > genesAtActionIndex.maxOrNull()!!
             mutatedActions.isEmpty()  || mutatedGenes.size == genesAtActionIndex.size
             originalActions.size == mutatedActions.size
         }

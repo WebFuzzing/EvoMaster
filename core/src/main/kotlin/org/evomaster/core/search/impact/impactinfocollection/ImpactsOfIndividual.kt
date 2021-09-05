@@ -191,7 +191,7 @@ class ImpactsOfIndividual private constructor(
      */
     fun deleteActionGeneImpacts(actionIndex: Set<Int>): Boolean {
         if (actionIndex.isEmpty()) return false
-        if (actionIndex.max()!! >= actionGeneImpacts.size)
+        if (actionIndex.maxOrNull()!! >= actionGeneImpacts.size)
             return false
         actionIndex.sortedDescending().forEach {
             actionGeneImpacts.removeAt(it)

@@ -32,7 +32,7 @@ class ParamUtil {
         fun selectLongestPathAction(actions: List<RestCallAction>): List<RestCallAction> {
             val max =
                 actions.asSequence().map { a -> (a as RestCallAction).path.levels() }
-                    .max()!!
+                    .maxOrNull()!!
             return actions.filter { a ->  a.path.levels() == max }
         }
 

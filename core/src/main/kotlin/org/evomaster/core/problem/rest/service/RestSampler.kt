@@ -376,7 +376,7 @@ class RestSampler : AbstractRestSampler(){
             throw IllegalArgumentException("Cannot choose from an empty collection")
         }
 
-        val max = actions.asSequence().map { a -> a.path.levels() }.max()!!
+        val max = actions.asSequence().map { a -> a.path.levels() }.maxOrNull()!!
         val candidates = actions.filter { a -> a.path.levels() == max }
 
         return randomness.choose(candidates)
