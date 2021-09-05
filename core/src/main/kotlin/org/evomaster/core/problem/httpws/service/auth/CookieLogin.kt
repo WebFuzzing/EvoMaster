@@ -83,6 +83,9 @@ class CookieLogin(
      */
     fun isFullUrlSpecified() = loginEndpointUrl.startsWith("https://")|| loginEndpointUrl.startsWith("http://")
 
+    /**
+     * @return a complete URL based on [baseUrl] and [loginEndpointUrl]
+     */
     fun getUrl(baseUrl: String) : String{
         if (isFullUrlSpecified()) return loginEndpointUrl
 
