@@ -2,16 +2,13 @@ package org.evomaster.core.problem.graphql
 
 import com.google.gson.Gson
 import org.evomaster.core.problem.graphql.schema.SchemaObj
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.util.*
 
-
 class GraphQLUtilsTest {
-
-    val unionTag = "#UNION#"
-    val interfaceTag = "#INTERFACE#"
 
     @Test
     fun graphTest() {
@@ -24,17 +21,17 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(4, GraphQLUtils.getGraphSize(queryGraph))
-        Assertions.assertEquals(2, GraphQLUtils.getNbrQueriesOrMutations("query", queryGraph))
-        Assertions.assertEquals(3, GraphQLUtils.getNbrOfEdges(queryGraph))
-        Assertions.assertEquals(listOf(2, 1, 1), GraphQLUtils.getNbrFields(queryGraph))
+        assertEquals(4, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(2, GraphQLUtils.getNumberOfQueriesOrMutations("query", queryGraph))
+        assertEquals(3, GraphQLUtils.getNumberOfEdges(queryGraph))
+        assertEquals(listOf(2, 1, 1), GraphQLUtils.getNumberOfFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(listOf("query", "Package", "Version"), GraphQLUtils.longest(paths))
-        Assertions.assertEquals(0, GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph))
+        assertEquals(listOf("query", "Package", "Version"), GraphQLUtils.longestPath(paths))
+        assertEquals(0, GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.UNION_TAG, queryGraph))
     }
 
     @Test
@@ -48,14 +45,14 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
-        Assertions.assertEquals(listOf(7, 5, 0, 0), GraphQLUtils.getNbrFields(queryGraph))
+        assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(listOf(7, 5, 0, 0), GraphQLUtils.getNumberOfFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(listOf("query", "Owner", "Pet", "PetType"), GraphQLUtils.longest(paths))
+        assertEquals(listOf("query", "Owner", "Pet", "PetType"), GraphQLUtils.longestPath(paths))
     }
 
 
@@ -70,14 +67,14 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
-        Assertions.assertEquals(listOf(7, 6, 0, 0), GraphQLUtils.getNbrFields(queryGraph))
+        assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(listOf(7, 6, 0, 0), GraphQLUtils.getNumberOfFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(listOf("query", "Owner", "Pet", "PetType"), GraphQLUtils.longest(paths))
+        assertEquals(listOf("query", "Owner", "Pet", "PetType"), GraphQLUtils.longestPath(paths))
 
     }
 
@@ -93,14 +90,14 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(3, GraphQLUtils.getGraphSize(queryGraph))
-        Assertions.assertEquals(listOf(4, 2), GraphQLUtils.getNbrFields(queryGraph))
+        assertEquals(3, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(listOf(4, 2), GraphQLUtils.getNumberOfFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(listOf("query", "Job", "Commitment"), GraphQLUtils.longest(paths))
+        assertEquals(listOf("query", "Job", "Commitment"), GraphQLUtils.longestPath(paths))
 
     }
 
@@ -116,15 +113,15 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val mutationGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "mutation", " ", mutationGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(4, GraphQLUtils.getGraphSize(mutationGraph))
-        Assertions.assertEquals(1, GraphQLUtils.getNbrQueriesOrMutations("mutation", mutationGraph))
-        Assertions.assertEquals(listOf(1, 1, 1), GraphQLUtils.getNbrFields(mutationGraph))
+        assertEquals(4, GraphQLUtils.getGraphSize(mutationGraph))
+        assertEquals(1, GraphQLUtils.getNumberOfQueriesOrMutations("mutation", mutationGraph))
+        assertEquals(listOf(1, 1, 1), GraphQLUtils.getNumberOfFields(mutationGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "mutation", mutationGraph, paths)
-        Assertions.assertEquals(listOf("mutation", "AddOnCreatePayload", "AddOn", "AddOnRate"), GraphQLUtils.longest(paths))
+        assertEquals(listOf("mutation", "AddOnCreatePayload", "AddOn", "AddOnRate"), GraphQLUtils.longestPath(paths))
 
     }
 
@@ -140,16 +137,16 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(listOf(1, 1, 1, 1), GraphQLUtils.getNbrFields(queryGraph))
+        assertEquals(listOf(1, 1, 1, 1), GraphQLUtils.getNumberOfFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(listOf("query", "Store", "Bouquet", "Flower"), GraphQLUtils.longest(paths))
-        Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph))
+        assertEquals(listOf("query", "Store", "Bouquet", "Flower"), GraphQLUtils.longestPath(paths))
+        assertEquals(1, GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.UNION_TAG, queryGraph))
 
     }
 
@@ -164,15 +161,15 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
-        Assertions.assertEquals(listOf(1, 1, 2, 1), GraphQLUtils.getNbrFields(queryGraph))
+        assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(listOf(1, 1, 2, 1), GraphQLUtils.getNumberOfFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(listOf("query", "Store", "Bouquet", "Flower"), GraphQLUtils.longest(paths))
-        Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph))
+        assertEquals(listOf("query", "Store", "Bouquet", "Flower"), GraphQLUtils.longestPath(paths))
+        assertEquals(1, GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.UNION_TAG, queryGraph))
     }
 
     @Test
@@ -186,15 +183,15 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(6, GraphQLUtils.getGraphSize(queryGraph))
-        Assertions.assertEquals(listOf(1, 1, 1, 2, 1), GraphQLUtils.getNbrFields(queryGraph))
+        assertEquals(6, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(listOf(1, 1, 1, 2, 1), GraphQLUtils.getNumberOfFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(listOf("query", "VulnerabilityConnection", "Vulnerability", "VulnerabilityDetail", "VulnerabilityDetailList"), GraphQLUtils.longest(paths))
-        Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph))
+        assertEquals(listOf("query", "VulnerabilityConnection", "Vulnerability", "VulnerabilityDetail", "VulnerabilityDetailList"), GraphQLUtils.longestPath(paths))
+        assertEquals(1, GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.UNION_TAG, queryGraph))
     }
 
     @Test
@@ -208,15 +205,15 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
-        Assertions.assertEquals(listOf(1, 3, 2, 3), GraphQLUtils.getNbrFields(queryGraph))
+        assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(listOf(1, 3, 2, 3), GraphQLUtils.getNumberOfFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(listOf("query", "Store1", "Store", "FlowerStore"), GraphQLUtils.longest(paths))
-        Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(interfaceTag, queryGraph))
+        assertEquals(listOf("query", "Store1", "Store", "FlowerStore"), GraphQLUtils.longestPath(paths))
+        assertEquals(1, GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.INTERFACE_TAG, queryGraph))
     }
 
 
@@ -231,15 +228,15 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(4, GraphQLUtils.getGraphSize(queryGraph))
-        Assertions.assertEquals(listOf(3, 2, 3), GraphQLUtils.getNbrFields(queryGraph))
+        assertEquals(4, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(listOf(3, 2, 3), GraphQLUtils.getNumberOfFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(listOf("query", "Store", "FlowerStore"), GraphQLUtils.longest(paths))
-        Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(interfaceTag, queryGraph))
+        assertEquals(listOf("query", "Store", "FlowerStore"), GraphQLUtils.longestPath(paths))
+        assertEquals(1, GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.INTERFACE_TAG, queryGraph))
     }
 
 
@@ -254,15 +251,15 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(16, GraphQLUtils.getGraphSize(queryGraph))
-        Assertions.assertEquals(listOf(2, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), GraphQLUtils.getNbrFields(queryGraph))
+        assertEquals(16, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(listOf(2, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), GraphQLUtils.getNumberOfFields(queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-        Assertions.assertEquals(listOf("query", "Node", "Agency", "Route", "Pattern", "Trip"), GraphQLUtils.longest(paths))
-        Assertions.assertEquals(1, GraphQLUtils.getUnionOrInterfaceNbr(interfaceTag, queryGraph))
+        assertEquals(listOf("query", "Node", "Agency", "Route", "Pattern", "Trip"), GraphQLUtils.longestPath(paths))
+        assertEquals(1, GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.INTERFACE_TAG, queryGraph))
     }
 
 
@@ -276,22 +273,22 @@ class GraphQLUtilsTest {
         GraphQLActionBuilder.initTablesInfo(schemaObj, state)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
-        Assertions.assertEquals(7, GraphQLUtils.getGraphSize(queryGraph))
-        Assertions.assertEquals(listOf(3, 1, 1, 2, 1, 1), GraphQLUtils.getNbrFields(queryGraph))
-        Assertions.assertEquals(setOf("E"), GraphQLUtils.getAdjacent("D", queryGraph))
+        assertEquals(7, GraphQLUtils.getGraphSize(queryGraph))
+        assertEquals(listOf(3, 1, 1, 2, 1, 1), GraphQLUtils.getNumberOfFields(queryGraph))
+        assertEquals(setOf("E"), GraphQLUtils.getAdjacent("D", queryGraph))
         /**/
         val visitedVertex: MutableSet<String> = mutableSetOf()
         val stack: Deque<String> = ArrayDeque<String>()
         val paths: MutableList<List<String>> = mutableListOf()
         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
         /**/
-        Assertions.assertEquals(listOf(listOf("A", "B", "C", "D", "E"), listOf("A", "F", "E")), GraphQLUtils.getAllPaths("A", "E", queryGraph))
-        Assertions.assertEquals(listOf(listOf("query", "A", "B", "C", "D", "E"), listOf("query", "A", "F", "E"), listOf("query", "B", "C", "D", "E")), GraphQLUtils.getAllPaths("query", "E", queryGraph))
+        assertEquals(listOf(listOf("A", "B", "C", "D", "E"), listOf("A", "F", "E")), GraphQLUtils.getAllPaths("A", "E", queryGraph))
+        assertEquals(listOf(listOf("query", "A", "B", "C", "D", "E"), listOf("query", "A", "F", "E"), listOf("query", "B", "C", "D", "E")), GraphQLUtils.getAllPaths("query", "E", queryGraph))
         /**/
-        Assertions.assertEquals(listOf("query", "A", "F", "E"), GraphQLUtils.shortestPath(GraphQLUtils.getAllPaths("query", "E", queryGraph)))
+        assertEquals(listOf("query", "A", "F", "E"), GraphQLUtils.shortestPath(GraphQLUtils.getAllPaths("query", "E", queryGraph)))
         /**/
         val shortestPFromEachEP = GraphQLUtils.getShortestPathFromEachEntryPointToEachNode(queryGraph)
-        Assertions.assertEquals(listOf(listOf("A", "B"),
+        assertEquals(listOf(listOf("A", "B"),
                 listOf("A", "B", "C"),
                 listOf("A", "B", "C", "D"),
                 listOf("A", "F", "E"),
@@ -304,14 +301,14 @@ class GraphQLUtilsTest {
 
         val minPAmongAllEPForEachNode = GraphQLUtils.minPathAmongAllEntryPointsForEachNode(shortestPFromEachEP)
 
-        Assertions.assertEquals(listOf(listOf("B", "C"),
+        assertEquals(listOf(listOf("B", "C"),
                 listOf("B", "C", "D"),
                 listOf("A", "F"),
                 listOf("A", "F", "E")), minPAmongAllEPForEachNode)
 
         val maxPathAmongAllEPForAllNodes = GraphQLUtils.maxPathAmongAllEntryPointsForAllNodes(minPAmongAllEPForEachNode)
 
-        Assertions.assertEquals(GraphQLUtils.PathInfo(size = 3, path = listOf("B", "C", "D")), maxPathAmongAllEPForAllNodes)
+        assertEquals(GraphQLUtils.PathInfo(size = 3, path = listOf("B", "C", "D")), maxPathAmongAllEPForAllNodes)
     }
 
 
@@ -368,39 +365,39 @@ class GraphQLUtilsTest {
 
 
             if (GraphQLUtils.getGraphSize(queryGraph) != 0) {
-                buffer.append("The number of fields in the type Query: ${GraphQLUtils.getNbrQueriesOrMutations("query", queryGraph)}").append(System.getProperty("line.separator"))
-                buffer.append("The number of fields in all nodes, excluding Query: ${GraphQLUtils.getNbrFields(queryGraph)}").append(System.getProperty("line.separator"))
-                buffer.append("The number of edge (number of fields that are pointers to other nodes in the graph) including Query: ${GraphQLUtils.getNbrOfEdges(queryGraph)}").append(System.getProperty("line.separator"))
+                buffer.append("The number of fields in the type Query: ${GraphQLUtils.getNumberOfQueriesOrMutations("query", queryGraph)}").append(System.getProperty("line.separator"))
+                buffer.append("The number of fields in all nodes, excluding Query: ${GraphQLUtils.getNumberOfFields(queryGraph)}").append(System.getProperty("line.separator"))
+                buffer.append("The number of edge (number of fields that are pointers to other nodes in the graph) including Query: ${GraphQLUtils.getNumberOfEdges(queryGraph)}").append(System.getProperty("line.separator"))
                 buffer.append("The number of nodes, including Query: ${GraphQLUtils.getGraphSize(queryGraph)}").append(System.getProperty("line.separator"))
                 GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "query", queryGraph, paths)
-                buffer.append("The longest path is: ${GraphQLUtils.longest(paths)}").append(System.getProperty("line.separator"))
-                buffer.append("The number of unions: ${GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph)}").append(System.getProperty("line.separator"))
-                buffer.append("The number of interfaces: ${GraphQLUtils.getUnionOrInterfaceNbr(interfaceTag, queryGraph)}").append(System.getProperty("line.separator"))
+                buffer.append("The longest path is: ${GraphQLUtils.longestPath(paths)}").append(System.getProperty("line.separator"))
+                buffer.append("The number of unions: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.UNION_TAG, queryGraph)}").append(System.getProperty("line.separator"))
+                buffer.append("The number of interfaces: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.INTERFACE_TAG, queryGraph)}").append(System.getProperty("line.separator"))
                 buffer.append("The maximum path of the minimum among all entry points: ${GraphQLUtils.maxPathAmongAllEntryPointsForAllNodes(GraphQLUtils.minPathAmongAllEntryPointsForEachNode(GraphQLUtils.getShortestPathFromEachEntryPointToEachNode(queryGraph)))}").append(System.getProperty("line.separator"))
             } else {
                 GraphQLUtils.constructGraph(state, "querytype", " ", queryGraph, mutableListOf(), mutableSetOf())
                 if (GraphQLUtils.getGraphSize(queryGraph) != 0) {
-                    buffer.append("The number of fields in the type Query: ${GraphQLUtils.getNbrQueriesOrMutations("querytype", queryGraph)}").append(System.getProperty("line.separator"))
-                    buffer.append("The number of fields in all nodes, excluding Query: ${GraphQLUtils.getNbrFields(queryGraph)}").append(System.getProperty("line.separator"))
-                    buffer.append("The number of edge (number of fields that are pointers to other nodes in the graph) including Query: ${GraphQLUtils.getNbrOfEdges(queryGraph)}").append(System.getProperty("line.separator"))
+                    buffer.append("The number of fields in the type Query: ${GraphQLUtils.getNumberOfQueriesOrMutations("querytype", queryGraph)}").append(System.getProperty("line.separator"))
+                    buffer.append("The number of fields in all nodes, excluding Query: ${GraphQLUtils.getNumberOfFields(queryGraph)}").append(System.getProperty("line.separator"))
+                    buffer.append("The number of edge (number of fields that are pointers to other nodes in the graph) including Query: ${GraphQLUtils.getNumberOfEdges(queryGraph)}").append(System.getProperty("line.separator"))
                     buffer.append("The number of nodes, including Query: ${GraphQLUtils.getGraphSize(queryGraph)}").append(System.getProperty("line.separator"))
                     GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "querytype", queryGraph, paths)
-                    buffer.append("The longest path is: ${GraphQLUtils.longest(paths)}").append(System.getProperty("line.separator"))
-                    buffer.append("The number of unions: ${GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph)}").append(System.getProperty("line.separator"))
-                    buffer.append("The number of interfaces: ${GraphQLUtils.getUnionOrInterfaceNbr(interfaceTag, queryGraph)}").append(System.getProperty("line.separator"))
+                    buffer.append("The longest path is: ${GraphQLUtils.longestPath(paths)}").append(System.getProperty("line.separator"))
+                    buffer.append("The number of unions: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.UNION_TAG, queryGraph)}").append(System.getProperty("line.separator"))
+                    buffer.append("The number of interfaces: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.INTERFACE_TAG, queryGraph)}").append(System.getProperty("line.separator"))
                     buffer.append("The maximum path of the minimum among all entry points: ${GraphQLUtils.maxPathAmongAllEntryPointsForAllNodes(GraphQLUtils.minPathAmongAllEntryPointsForEachNode(GraphQLUtils.getShortestPathFromEachEntryPointToEachNode(queryGraph)))}").append(System.getProperty("line.separator"))
 
                 } else {
                     GraphQLUtils.constructGraph(state, "root", " ", queryGraph, mutableListOf(), mutableSetOf())
                     if (GraphQLUtils.getGraphSize(queryGraph) != 0) {
-                        buffer.append("The number of fields in the type Query: ${GraphQLUtils.getNbrQueriesOrMutations("root", queryGraph)}").append(System.getProperty("line.separator"))
-                        buffer.append("The number of fields in all nodes, excluding Query: ${GraphQLUtils.getNbrFields(queryGraph)}").append(System.getProperty("line.separator"))
-                        buffer.append("The number of edge (number of fields that are pointers to other nodes in the graph) including Query: ${GraphQLUtils.getNbrOfEdges(queryGraph)}").append(System.getProperty("line.separator"))
+                        buffer.append("The number of fields in the type Query: ${GraphQLUtils.getNumberOfQueriesOrMutations("root", queryGraph)}").append(System.getProperty("line.separator"))
+                        buffer.append("The number of fields in all nodes, excluding Query: ${GraphQLUtils.getNumberOfFields(queryGraph)}").append(System.getProperty("line.separator"))
+                        buffer.append("The number of edge (number of fields that are pointers to other nodes in the graph) including Query: ${GraphQLUtils.getNumberOfEdges(queryGraph)}").append(System.getProperty("line.separator"))
                         buffer.append("The number of nodes, including Query: ${GraphQLUtils.getGraphSize(queryGraph)}").append(System.getProperty("line.separator"))
                         GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "root", queryGraph, paths)
-                        buffer.append("The longest path is: ${GraphQLUtils.longest(paths)}").append(System.getProperty("line.separator"))
-                        buffer.append("The number of unions: ${GraphQLUtils.getUnionOrInterfaceNbr(unionTag, queryGraph)}").append(System.getProperty("line.separator"))
-                        buffer.append("The number of interfaces: ${GraphQLUtils.getUnionOrInterfaceNbr(interfaceTag, queryGraph)}").append(System.getProperty("line.separator"))
+                        buffer.append("The longest path is: ${GraphQLUtils.longestPath(paths)}").append(System.getProperty("line.separator"))
+                        buffer.append("The number of unions: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.UNION_TAG, queryGraph)}").append(System.getProperty("line.separator"))
+                        buffer.append("The number of interfaces: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.INTERFACE_TAG, queryGraph)}").append(System.getProperty("line.separator"))
                         buffer.append("The maximum path of the minimum among all entry points: ${GraphQLUtils.maxPathAmongAllEntryPointsForAllNodes(GraphQLUtils.minPathAmongAllEntryPointsForEachNode(GraphQLUtils.getShortestPathFromEachEntryPointToEachNode(queryGraph)))}").append(System.getProperty("line.separator"))
 
                     }
@@ -414,16 +411,16 @@ class GraphQLUtilsTest {
 
             GraphQLUtils.constructGraph(state, "mutation", " ", mutationGraph, mutableListOf(), mutableSetOf())
             buffer.append("--**--").append(System.getProperty("line.separator"))
-            buffer.append("The number of fields in the type Mutation: ${GraphQLUtils.getNbrQueriesOrMutations("mutation", mutationGraph)}").append(System.getProperty("line.separator"))
-            buffer.append("The number of fields in all nodes, excluding Mutation: ${GraphQLUtils.getNbrFields(mutationGraph)}").append(System.getProperty("line.separator"))
-            buffer.append("The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: ${GraphQLUtils.getNbrOfEdges(mutationGraph)}").append(System.getProperty("line.separator"))
+            buffer.append("The number of fields in the type Mutation: ${GraphQLUtils.getNumberOfQueriesOrMutations("mutation", mutationGraph)}").append(System.getProperty("line.separator"))
+            buffer.append("The number of fields in all nodes, excluding Mutation: ${GraphQLUtils.getNumberOfFields(mutationGraph)}").append(System.getProperty("line.separator"))
+            buffer.append("The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: ${GraphQLUtils.getNumberOfEdges(mutationGraph)}").append(System.getProperty("line.separator"))
             buffer.append("The number of nodes, including Mutation: ${GraphQLUtils.getGraphSize(mutationGraph)}").append(System.getProperty("line.separator"))
-            buffer.append("The number of unions: ${GraphQLUtils.getUnionOrInterfaceNbr(unionTag, mutationGraph)}").append(System.getProperty("line.separator"))
-            buffer.append("The number of interfaces: ${GraphQLUtils.getUnionOrInterfaceNbr(interfaceTag, mutationGraph)}").append(System.getProperty("line.separator"))
+            buffer.append("The number of unions: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.UNION_TAG, mutationGraph)}").append(System.getProperty("line.separator"))
+            buffer.append("The number of interfaces: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.INTERFACE_TAG, mutationGraph)}").append(System.getProperty("line.separator"))
 
-            if (GraphQLUtils.checkNode("mutation", mutationGraph)) {
+            if (GraphQLUtils.checkNodeExists("mutation", mutationGraph)) {
                 GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "mutation", mutationGraph, paths)
-                buffer.append("The longest path is: ${GraphQLUtils.longest(paths)}").append(System.getProperty("line.separator"))
+                buffer.append("The longest path is: ${GraphQLUtils.longestPath(paths)}").append(System.getProperty("line.separator"))
                 buffer.append("The maximum path of the minimum among all entry points: ${GraphQLUtils.maxPathAmongAllEntryPointsForAllNodes(GraphQLUtils.minPathAmongAllEntryPointsForEachNode(GraphQLUtils.getShortestPathFromEachEntryPointToEachNode(mutationGraph)))}").append(System.getProperty("line.separator"))
 
             }
