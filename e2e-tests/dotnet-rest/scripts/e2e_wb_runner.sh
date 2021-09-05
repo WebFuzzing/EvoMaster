@@ -12,7 +12,7 @@ BUDGET=$3
 
 NPARAMS=3
 
-echo Executing White-Box E2E for $SUT_FOLDER
+echo $(date) Executing White-Box E2E for $SUT_FOLDER
 
 # Make sure to kill all sub-processes on exit
 trap 'kill $(jobs -p)' EXIT
@@ -60,6 +60,7 @@ echo Using Controller Port $PORT
 
 
 # Starting Driver in the background
+echo $(date) Starting Driver
 cd $PROJECT_ROOT$SUT_FOLDER || exit 1
 dotnet build
 dotnet run $PORT &
@@ -68,19 +69,21 @@ PID=$!
 # give enough time to start
 sleep 20
 
+echo $(date) Starting EvoMaster
 java -jar $JAR --seed 42 --maxActionEvaluations $BUDGET  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME  --sutControllerPort $PORT
 
 # stop driver, which was run in background
 kill $PID
 
 if [ -f "$TEST_LOCATION" ]; then
-    echo "Test suite correctly generated at: $TEST_LOCATION"
+    echo $(date) "Test suite correctly generated at: $TEST_LOCATION"
 else
-    echo "ERROR. Failed to locate generated tests at: $TEST_LOCATION"
+    echo $(date) "ERROR. Failed to locate generated tests at: $TEST_LOCATION"
     exit 1
 fi
 
 # run the tests
+echo $(date) Running the generated tests
 dotnet test --filter $TEST_NAME
 
 if [ $? -ne 0 ] ; then
@@ -92,6 +95,7 @@ fi
 
 
 # check for text in file
+echo $(date) Validating the generated tests
 N=$#
 
 if [ $N -gt $NPARAMS ]; then
@@ -108,6 +112,6 @@ if [ $N -gt $NPARAMS ]; then
   done
 fi
 
-echo All checks have successfuly completed for this test
+echo $(date) All checks have successfuly completed for this test
 
 

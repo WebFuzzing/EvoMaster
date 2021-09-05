@@ -104,7 +104,7 @@ abstract class ImplementedOracle {
                 //log.warn("There seem to be multiple paths matching a call: ${call.verb}${call.path}. Only one will be returned.")
                 val possibleItemString = possibleItems.entries.joinToString { it.key }
                 LoggingUtil.Companion.uniqueWarn(log, "There seem to be multiple paths matching a call: ${call.verb}\n${possibleItemString}. Only one will be returned.")
-                possibleItems.entries.maxBy{ it.key.length }?.value
+                possibleItems.entries.maxByOrNull{ it.key.length }?.value
             }
         }
 

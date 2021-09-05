@@ -139,7 +139,7 @@ class SortingHelper {
      *
      * **/
     private val maxStatusCode: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>>{ ind ->
-        val max = ind.seeResults().filterIsInstance<HttpWsCallResult>().maxBy { it.getStatusCode()?:0 }
+        val max = ind.seeResults().filterIsInstance<HttpWsCallResult>().maxByOrNull { it.getStatusCode()?:0 }
             (max as HttpWsCallResult).getStatusCode() ?: 0
     }.reversed()
 
@@ -152,7 +152,7 @@ class SortingHelper {
 
 
     private val statusCode: Comparator<EvaluatedIndividual<*>> = compareBy { ind ->
-        val min = ind.seeResults().filterIsInstance<HttpWsCallResult>().minBy {
+        val min = ind.seeResults().filterIsInstance<HttpWsCallResult>().minByOrNull {
             it.getStatusCode()?.rem(500) ?: 0
         }
         ((min as HttpWsCallResult).getStatusCode())?.rem(500) ?: 0

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo $(date) Starting to run E2E for C#
+
 # Make sure to kill all sub-processes on exit
 trap 'kill $(jobs -p)' EXIT
 
@@ -13,14 +15,14 @@ WB="bash ./e2e_wb_runner.sh"
 
 $WB /e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions  EmbeddedEvoMasterController.cs 100 42 hello 1000 2000 3000 66 bar xvalue yvalue true false simple-string simple-text 123 456 777 888
 if [ $? -ne 0 ] ; then
-   echo "ERROR: Test failed for ForAssertions. Exist status " $?
+   echo $(date) "ERROR: Test failed for ForAssertions. Exist status " $?
    exit 1
 fi
 
 
 $WB /e2e-tests/dotnet-rest/test/RestApis.Tests.Crud  EmbeddedEvoMasterController.cs  100 FOO CREATED UPDATED PATCHED DELETED
 if [ $? -ne 0 ] ; then
-   echo "ERROR: Test failed for Crud."
+   echo $(date) "ERROR: Test failed for Crud."
    exit 1
 fi
 
@@ -31,3 +33,4 @@ fi
 #BB="bash ./e2e_bb_runner.sh"
 
 
+echo $(date) All E2E are succesfully finished
