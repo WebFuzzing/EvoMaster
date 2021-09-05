@@ -411,7 +411,6 @@ class GraphQLUtilsTest {
 
             GraphQLUtils.constructGraph(state, "mutation", " ", mutationGraph, mutableListOf(), mutableSetOf())
             buffer.append("--**--").append(System.getProperty("line.separator"))
-            buffer.append("The number of fields in the type Mutation: ${GraphQLUtils.getNumberOfQueriesOrMutations("mutation", mutationGraph)}").append(System.getProperty("line.separator"))
             buffer.append("The number of fields in all nodes, excluding Mutation: ${GraphQLUtils.getNumberOfFields(mutationGraph)}").append(System.getProperty("line.separator"))
             buffer.append("The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: ${GraphQLUtils.getNumberOfEdges(mutationGraph)}").append(System.getProperty("line.separator"))
             buffer.append("The number of nodes, including Mutation: ${GraphQLUtils.getGraphSize(mutationGraph)}").append(System.getProperty("line.separator"))
@@ -419,6 +418,7 @@ class GraphQLUtilsTest {
             buffer.append("The number of interfaces: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.INTERFACE_TAG, mutationGraph)}").append(System.getProperty("line.separator"))
 
             if (GraphQLUtils.checkNodeExists("mutation", mutationGraph)) {
+                buffer.append("The number of fields in the type Mutation: ${GraphQLUtils.getNumberOfQueriesOrMutations("mutation", mutationGraph)}").append(System.getProperty("line.separator"))
                 GraphQLUtils.getAllPathsFromEntryPoint(visitedVertex, stack, "mutation", mutationGraph, paths)
                 buffer.append("The longest path is: ${GraphQLUtils.longestPath(paths)}").append(System.getProperty("line.separator"))
                 buffer.append("The maximum path of the minimum among all entry points: ${GraphQLUtils.maxPathAmongAllEntryPointsForAllNodes(GraphQLUtils.minPathAmongAllEntryPointsForEachNode(GraphQLUtils.getShortestPathFromEachEntryPointToEachNode(mutationGraph)))}").append(System.getProperty("line.separator"))

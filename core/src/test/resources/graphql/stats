@@ -8,12 +8,12 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Pet, VisitConnection, Visit])
 --**--
-The number of fields in the type Mutation: 8
 The number of fields in all nodes, excluding Mutation: [1, 7, 6, 2, 2, 4, 1, 1, 1, 1, 1, 2, 1, 1]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 22
 The number of nodes, including Mutation: 15
 The number of unions: 0
 The number of interfaces: 0
+The number of fields in the type Mutation: 8
 The longest path is: [mutation, AddOwnerPayload, Owner, Pet, VisitConnection, Visit]
 The maximum path of the minimum among all entry points: PathInfo(size=3, path=[AddPetPayload, Pet, PetType])
 ************* AniList:
@@ -26,12 +26,12 @@ The number of unions: 2
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=4, path=[User, UserStatisticTypes, UserStatistics, UserFormatStatistic])
 --**--
-The number of fields in the type Mutation: 28
 The number of fields in all nodes, excluding Mutation: [20, 2, 5, 2, 7, 6, 5, 3, 9, 53, 4, 3, 3, 4, 8, 3, 6, 10, 5, 2, 17, 5, 2, 5, 3, 4, 3, 4, 7, 6, 3, 2, 3, 1, 9, 3, 4, 8, 20, 3, 1, 16, 3, 1, 6, 3, 2, 2, 3, 2, 19, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 6, 6, 17, 3, 2, 4, 4, 4, 4, 3, 2, 1, 14, 9, 17, 16, 1, 1, 22, 2, 13]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 155
 The number of nodes, including Mutation: 83
 The number of unions: 2
 The number of interfaces: 0
+The number of fields in the type Mutation: 28
 The longest path is: [mutation, User, Favourites, MediaConnection, MediaEdge, Media, CharacterConnection, CharacterEdge, Character, CharacterName]
 The maximum path of the minimum among all entry points: PathInfo(size=4, path=[Favourites, CharacterConnection, Character, CharacterName])
 ************* Bitquery:
@@ -44,7 +44,6 @@ The number of unions: 2
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=4, path=[Conflux, EthereumAddressInfoWithBalance, EthereumBalance, EthereumBalanceChange])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -60,7 +59,6 @@ The number of unions: 0
 The number of interfaces: 2
 The maximum path of the minimum among all entry points: PathInfo(size=5, path=[Plan, Itinerary, Leg, step, elevationProfileComponent])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -76,12 +74,12 @@ The number of unions: 4
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=9, path=[AdminQuery, GroupConnection, GroupEdge, Group, GroupData, ManagedGroupConnection, ManagedGroupEdge, ManagedGroup, ManagedGroupData])
 --**--
-The number of fields in the type Mutation: 7
 The number of fields in all nodes, excluding Mutation: [46, 5, 21, 5, 12, 4, 4, 2, 4, 6, 2, 5, 30, 4, 2, 5, 25, 5, 8, 2, 2, 5, 14, 2, 2, 5, 6, 2, 2, 5, 8, 2, 2, 5, 5, 2, 2, 5, 6, 3, 4, 2, 2, 2, 5, 5, 4, 2, 4, 2, 5, 6, 3, 4, 2, 5, 8, 2, 2, 5, 1, 2, 2, 2, 5, 6, 5, 3, 5, 6, 4, 2, 2, 4, 2, 5, 6, 4, 2, 2, 9, 2, 11, 3, 2, 2, 5, 2, 5, 2, 2, 3, 5, 13, 3, 2, 10, 5, 3, 3, 12, 5, 2, 11, 2, 1, 4, 6, 2, 7, 4, 4, 2, 5, 2, 2, 5, 8, 3, 5, 5, 5, 2, 3, 2, 3, 4, 3, 2, 5, 10, 5, 3, 2, 29, 5, 9, 22, 7, 5, 3, 1, 3, 2, 3, 2, 5, 5, 1, 5, 7, 3, 5, 5, 3, 5, 2, 2, 1, 2, 2, 2, 5, 5, 3, 4, 1, 2, 2, 3, 2, 5, 9]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 345
 The number of nodes, including Mutation: 174
 The number of unions: 2
 The number of interfaces: 0
+The number of fields in the type Mutation: 7
 The longest path is: [mutation, AdminMutation, Access, AccessData, Supplier, SupplierData, Organization, OrganizationData, GroupConnection, GroupEdge, Group, GroupData, Member, MemberData, RoleConnection, RoleEdge, Role, RoleData, ResourceConnection, ResourceEdge, Resource, ResourceData, APIConnection, APIEdge, API, APIData, OperationConnection, OperationEdge, Operation, OperationData]
 The maximum path of the minimum among all entry points: PathInfo(size=9, path=[AdminMutation, Member, MemberData, RoleConnection, RoleEdge, Role, RoleData, ResourceConnection, ResourceEdge])
 ************* Universe:
@@ -94,12 +92,12 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=4, path=[Host, Analytics, BuyersLocation, Location])
 --**--
-The number of fields in the type Mutation: 60
 The number of fields in all nodes, excluding Mutation: [3, 2, 10, 29, 10, 88, 3, 4, 2, 7, 20, 3, 12, 3, 14, 21, 3, 3, 31, 14, 3, 28, 4, 45, 3, 13, 2, 2, 3, 8, 23, 3, 3, 12, 3, 3, 3, 5, 2, 3, 3, 6, 3, 10, 3, 8, 21, 3, 3, 3, 5, 3, 3, 2, 3, 12, 3, 7, 5, 3, 27, 20, 32, 7, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 2, 2, 2, 18, 2, 3, 3, 3, 3, 27, 3, 6, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 225
 The number of nodes, including Mutation: 114
 The number of unions: 0
 The number of interfaces: 0
+The number of fields in the type Mutation: 60
 The longest path is: [mutation, TransferAcceptPayload, Transfer, OrderItem, AddOn, Event, TimeSlot, AttendeeConnection, Attendee, Order, Host, DiscountConnection, Discount, DiscountRedemptionConnection, DiscountRedemption]
 The maximum path of the minimum among all entry points: PathInfo(size=5, path=[HostGaIntegrationUpdatePayload, Host, Analytics, BuyersLocation, Location])
 ************* CatalysisHub:
@@ -112,7 +110,6 @@ The number of unions: 0
 The number of interfaces: 1
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Node, Information])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -128,7 +125,6 @@ The number of unions: 2
 The number of interfaces: 1
 The maximum path of the minimum among all entry points: PathInfo(size=4, path=[Asset, AssetLinkingCollections, EntryCollection, Entry])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -144,7 +140,6 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Country, Language])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -160,7 +155,6 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=6, path=[Nearby, FlinksterCar, FlinksterParkingArea, GeoJSON, GeoFeature, GeoProperties])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -176,7 +170,6 @@ The number of unions: 0
 The number of interfaces: 2
 The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Repository, RepositoryDescription, Address])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -192,7 +185,6 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=3, path=[FilmographyTypeNodeConnection, FilmographyTypeNodeEdge, FilmographyTypeNode])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -208,7 +200,6 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[City, Coordinates])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -224,12 +215,12 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Job, Tag])
 --**--
-The number of fields in the type Mutation: 4
 The number of fields in all nodes, excluding Mutation: [6, 18, 6, 8, 9, 7, 10, 6]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 17
 The number of nodes, including Mutation: 9
 The number of unions: 0
 The number of interfaces: 0
+The number of fields in the type Mutation: 4
 The longest path is: [mutation, Job, City, Country]
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Job, Commitment])
 ************* HIVDB:
@@ -242,12 +233,12 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=4, path=[SequenceAnalysis, DrugResistance, DrugScore, DrugPartialScore])
 --**--
-The number of fields in the type Mutation: 26
 The number of fields in all nodes, excluding Mutation: [9, 2, 4, 4, 8]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 10
 The number of nodes, including Mutation: 7
 The number of unions: 0
 The number of interfaces: 0
+The number of fields in the type Mutation: 26
 The longest path is: [mutation, Gene, DrugClass, Drug]
 The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Gene, DrugClass, Drug])
 ************* MelodyRepo:
@@ -260,7 +251,6 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Package, Version, Dependency])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -276,7 +266,6 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Package, Version])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -292,7 +281,6 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Contact, Image, Style])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -308,7 +296,6 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Job, Commitment])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -324,12 +311,12 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=4, path=[Launch, LaunchRocket, LaunchRocketFirstStage, LaunchRocketFirstStageCore])
 --**--
-The number of fields in the type Mutation: 3
 The number of fields in all nodes, excluding Mutation: [2, 5]
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 2
 The number of nodes, including Mutation: 3
 The number of unions: 0
 The number of interfaces: 0
+The number of fields in the type Mutation: 3
 The longest path is: [mutation, users_mutation_response, users]
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[users_mutation_response, users])
 ************* Book:
@@ -342,7 +329,6 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Book, Author])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -358,7 +344,6 @@ The number of unions: 0
 The number of interfaces: 1
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Store, FlowerStore])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -374,7 +359,6 @@ The number of unions: 0
 The number of interfaces: 1
 The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Store1, Store, FlowerStore])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -390,7 +374,6 @@ The number of unions: 1
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Store, Bouquet, Flower])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -406,7 +389,6 @@ The number of unions: 1
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=3, path=[Store, Bouquet, Flower])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -422,7 +404,6 @@ The number of unions: 1
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=4, path=[VulnerabilityConnection, Vulnerability, VulnerabilityDetail, VulnerabilityDetailList])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -438,7 +419,6 @@ The number of unions: 0
 The number of interfaces: 1
 The maximum path of the minimum among all entry points: PathInfo(size=4, path=[DocumentaryUnit, Annotation, Annotatable, Link])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -454,7 +434,6 @@ The number of unions: 0
 The number of interfaces: 1
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Node, Agency])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0
@@ -470,7 +449,6 @@ The number of unions: 0
 The number of interfaces: 0
 The maximum path of the minimum among all entry points: PathInfo(size=2, path=[Job, Commitment])
 --**--
-The number of fields in the type Mutation: null
 The number of fields in all nodes, excluding Mutation: []
 The number of edge (number of fields that are pointers to other nodes in the graph) including Mutation: 0
 The number of nodes, including Mutation: 0

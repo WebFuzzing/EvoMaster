@@ -332,7 +332,7 @@ object GraphQLUtils {
      * The number of fields in the type Query or mutation
      */
     fun getNumberOfQueriesOrMutations(queriesMutationsEntryPoint: String, graph: Map<String, GraphInfo>): Int? {
-        if (graph[queriesMutationsEntryPoint.toLowerCase()]?.fields?.isEmpty()!!)
+        if (queriesMutationsEntryPoint !in graph.keys )
             throw IllegalArgumentException(" Query/Mutation entry points are not in the graph ")
         else return graph[queriesMutationsEntryPoint.toLowerCase()]?.fields?.size
     }
