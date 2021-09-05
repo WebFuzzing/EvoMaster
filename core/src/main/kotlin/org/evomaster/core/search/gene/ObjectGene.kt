@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
@@ -21,35 +22,6 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
-
-        /**
-         * This tag is for the GQL union type. Needed in getValueAsPrintableString to print out things like:
-         *   fieldXName{
-         *        ... on UnionObject1 {
-         *           field
-         *        }
-         *        ... on UnionObjectN {
-         *          field
-         *        }
-         *   }
-         */
-        const val unionTag = "#UNION#"
-
-        /**
-         * Those tags are for the GQL interface type. Needed in getValueAsPrintableString to print out things like:
-         *     fieldXName{
-         *        field1
-         *        fieldN
-         *        ... on InterfaceObject1 {
-         *           field
-         *        }
-         *        ... on InterfaceObjectN {
-         *          field
-         *        }
-         *     }
-         */
-        const val interfaceBaseTag = "#BASE#"
-        const val interfaceTag = "#INTERFACE#"
 
     }
 
@@ -264,11 +236,11 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         selection.map {
             val s: String = when (it) {
                 is OptionalGene -> {
-                    if (it.name.endsWith(interfaceBaseTag)) {
+                    if (it.name.endsWith(GqlConst.INTERFACE_BASE_TAG)) {
                         assert(it.gene is ObjectGene)
                         buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)}").toString()
                     } else {
-                        buffer.append("... on ${it.gene.name.replace(unionTag, "")} {")
+                        buffer.append("... on ${it.gene.name.replace(GqlConst.UNION_TAG, "")} {")
                         assert(it.gene is ObjectGene)
                         buffer.append("${it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE, targetFormat)}")
                         buffer.append("}").toString()
@@ -290,17 +262,17 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         //      return
         //  }
 
-        if (name.endsWith(unionTag)) {
+        if (name.endsWith(GqlConst.UNION_TAG)) {
             if (!extraCheck)
-                buffer.append("{") else buffer.append("${name.replace(unionTag, " ")} {")
+                buffer.append("{") else buffer.append("${name.replace(GqlConst.UNION_TAG, " ")} {")
             buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat, extraCheck = true))
             buffer.append("}")
             return
         }
 
-        if (name.endsWith(interfaceTag)) {
+        if (name.endsWith(GqlConst.INTERFACE_TAG)) {
             if (!extraCheck)
-                buffer.append("{") else buffer.append("${name.replace(interfaceTag, " ")} {")
+                buffer.append("{") else buffer.append("${name.replace(GqlConst.INTERFACE_TAG, " ")} {")
             buffer.append(getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE, targetFormat, extraCheck = true))
             buffer.append("}")
             return
@@ -311,7 +283,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             buffer.append("$name")
         }
 
-        if (!name.endsWith(interfaceBaseTag)) {
+        if (!name.endsWith(GqlConst.INTERFACE_BASE_TAG)) {
             buffer.append("{")
         }
 
@@ -343,7 +315,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             s
         }.joinToString(","))
 
-        if (!name.endsWith(interfaceBaseTag)) {
+        if (!name.endsWith(GqlConst.INTERFACE_BASE_TAG)) {
             buffer.append("}")
         }
     }
