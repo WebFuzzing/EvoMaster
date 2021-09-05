@@ -27,7 +27,7 @@ import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.NewCookie
 
 
-class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
+open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GraphQLFitness::class.java)
@@ -99,7 +99,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         return EvaluatedIndividual(fv, individual.copy() as GraphQLIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
-    private fun handleResponseTargets(fv: FitnessValue, actions: List<GraphQLAction>, actionResults: List<ActionResult>, additionalInfoList: List<AdditionalInfoDto>) {
+    protected fun handleResponseTargets(fv: FitnessValue, actions: List<GraphQLAction>, actionResults: List<ActionResult>, additionalInfoList: List<AdditionalInfoDto>) {
 
         (0 until actionResults.size)
                 .filter { actions[it] is GraphQLAction }
@@ -134,7 +134,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
      */
     private fun handleGraphQLErrors(fv: FitnessValue, name: String, actionIndex: Int, result: GraphQlCallResult, additionalInfoList: List<AdditionalInfoDto>) {
         val errorId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodName(name))
-        val okId = idMapper.handleLocalTarget("GQL_NO_ERRORS:$name")
+        val okId = idMapper.handleLocalTarget(idMapper.getGQLNoErrors(name))
 
         val anyError = hasErrors(result)
 
@@ -216,7 +216,7 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         }
     }
 
-    private fun handleGraphQLCall(
+    protected fun handleGraphQLCall(
             action: GraphQLAction,
             actionResults: MutableList<ActionResult>,
             cookies: Map<String, List<NewCookie>>,
@@ -231,6 +231,8 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             For simplicity, for now we just do POST for Query as well, as anyway URL have limitations
             on their length
          */
+
+        searchTimeController.waitForRateLimiter()
 
         val gqlcr = GraphQlCallResult()
         actionResults.add(gqlcr)
@@ -342,29 +344,19 @@ class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
 
     fun createInvocation(a: GraphQLAction, cookies: Map<String, List<NewCookie>>, tokens: Map<String,String>): Invocation {
-        val baseUrl = getBaseUrl()
 
-        val path = "/graphql"
-
-        val locationHeader = null
-
-        val fullUri = EMTestUtils.resolveLocation(locationHeader, baseUrl + path)!!
-                .let {
-                    /*
-                        TODO this will be need to be done properly, and check if
-                        it is or not a valid char.
-                        Furthermore, likely needed to be done in resolveLocation,
-                        or at least check how RestAssured would behave
-                     */
-                    //it.replace("\"", "")
-                    GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
-                }
-
+        val uri = if(config.blackBox){
+            config.bbTargetUrl
+        } else {
+            val baseUrl = getBaseUrl()
+            val path = "/graphql" // FIXME no hardcoding... should come from SUT info
+            baseUrl + path
+        }
+        val fullUri = GeneUtils.applyEscapes(uri, GeneUtils.EscapeMode.URI, configuration.outputFormat)
 
         val builder = client.target(fullUri).request("application/json")
 
         handleAuth(a, builder, cookies, tokens)
-
 
         val bodyEntity = GraphQLUtils.generateGQLBodyEntity(a, config.outputFormat)?:Entity.json(" ")
         val invocation = builder.buildPost(bodyEntity)

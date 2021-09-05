@@ -6,6 +6,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.utils.IncrementalAverage
 import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.math.ceil
 
 /**
  * Class used to keep track of passing of time during the search.
@@ -37,6 +38,9 @@ class SearchTimeController {
     var lastActionImprovement = -1
         private set
 
+    var lastActionTimestamp = 0L
+        private set
+
     /**
      * The SUT should avoid sending HTTP requests with "Connection: close", as it puts strains on the OS,
      * possibly running out of available ports when running experiments
@@ -62,6 +66,32 @@ class SearchTimeController {
 
     val averageOverheadMsBetweenTests = IncrementalAverage()
 
+
+    /**
+     * Make sure we do not make too many requests in a short amount of time, to avoid
+     * possible DoS attacks.
+     */
+    fun waitForRateLimiter(){
+        if(configuration.ratePerMinute <=0){
+            //nothing to do
+            return
+        }
+
+        val now = System.currentTimeMillis()
+        val passed = now - lastActionTimestamp
+
+        val delta = ceil((60.0 * 1000.0) / configuration.ratePerMinute).toLong()
+
+        if(passed >= delta){
+            //already slow enough, nothing to do
+            lastActionTimestamp = now
+            return
+        }
+
+        val toWait = delta - passed
+        Thread.sleep(toWait)
+        lastActionTimestamp = System.currentTimeMillis()
+    }
 
     fun startSearch(){
         searchStarted = true

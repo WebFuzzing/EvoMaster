@@ -26,14 +26,19 @@ class IdMapper {
 
         private const val GQL_ERRORS_LINE_PREFIX = "GQL_ERRORS_LINE"
 
+        private const val GQL_NO_ERRORS = "GQL_NO_ERRORS"
+
         fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX) || isGQLErrors(descriptiveId, true)
 
         fun isFault500(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_500)
 
         fun isFaultPartialOracle(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_PARTIAL_ORACLE)
 
-        fun isGQLErrors(descriptiveId: String, withLine: Boolean = false) = if (!withLine) descriptiveId.startsWith(GQL_ERRORS_PREFIX) else descriptiveId.startsWith(
-            GQL_ERRORS_LINE_PREFIX)
+        fun isGQLErrors(descriptiveId: String, withLine: Boolean = false) =
+                if (!withLine) descriptiveId.startsWith(GQL_ERRORS_PREFIX)
+                else descriptiveId.startsWith(GQL_ERRORS_LINE_PREFIX)
+
+        fun isGQLNoErrors(descriptiveId: String) = descriptiveId.startsWith(GQL_NO_ERRORS)
 
         fun faultInfo(descriptiveId: String) : String{
             if(! isFault(descriptiveId)){
@@ -81,9 +86,20 @@ class IdMapper {
         return FAULT_DESCRIPTIVE_ID_PREFIX + FAULT_PARTIAL_ORACLE + postfix
     }
 
+    /*
+        TODO double-check
+        Is just using "method" name enough to identify a Query/Mutation in GQL?
+        or could we get issue when there is name overloading? ie, queries with same
+        name but different input signature.
+        if so, should use a description of the input signatures to get unique ids...
+        although likely this is really loooow priority
+     */
+
     fun getGQLErrorsDescriptiveWithMethodName(method: String) = "$GQL_ERRORS_PREFIX:$method"
 
     fun getGQLErrorsDescriptiveWithMethodNameAndLine(line : String, method: String) = "${GQL_ERRORS_LINE_PREFIX}:${method}_$line"
+
+    fun getGQLNoErrors(method: String) = "$GQL_NO_ERRORS:$method"
 
     fun isFault(id: Int) : Boolean = mapping[id]?.let{ isFault(it)} ?: false
 
@@ -92,4 +108,6 @@ class IdMapper {
     fun isFaultExpectation(id: Int): Boolean = mapping[id]?.let{ isFaultPartialOracle(it) } ?:false
 
     fun isGQLErrors(id : Int, withLine: Boolean) : Boolean = mapping[id]?.let { isGQLErrors(it, withLine) } == true
+
+    fun isGQLNoErrors(id : Int) : Boolean = mapping[id]?.let { isGQLNoErrors(it) } == true
 }

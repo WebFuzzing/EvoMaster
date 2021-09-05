@@ -155,8 +155,8 @@ class SqlInsertBuilder(
         val minRangeValue: Int?
         val maxRangeValue: Int?
         if (rangeConstraints.isNotEmpty()) {
-            minRangeValue = rangeConstraints.map { c -> c.minValue }.max()!!.toInt()
-            maxRangeValue = rangeConstraints.map { c -> c.maxValue }.min()!!.toInt()
+            minRangeValue = rangeConstraints.map { c -> c.minValue }.maxOrNull()!!.toInt()
+            maxRangeValue = rangeConstraints.map { c -> c.maxValue }.minOrNull()!!.toInt()
         } else {
             minRangeValue = null
             maxRangeValue = null
@@ -194,7 +194,7 @@ class SqlInsertBuilder(
         val upperBounds = filterUpperBoundConstraints(tableConstraints, c.name)
 
         val upperBound = if (upperBounds.isNotEmpty())
-            upperBounds.map { c -> c.upperBound.toInt() }.min()
+            upperBounds.map { c -> c.upperBound.toInt() }.minOrNull()
         else
             null
 
@@ -206,7 +206,7 @@ class SqlInsertBuilder(
         val lowerBounds = findLowerBounds(tableConstraints, c.name)
 
         val lowerBound = if (lowerBounds.isNotEmpty())
-            lowerBounds.map { c -> c.lowerBound.toInt() }.max()
+            lowerBounds.map { c -> c.lowerBound.toInt() }.maxOrNull()
         else
             null
 

@@ -346,6 +346,16 @@ public class ExecutionTracer {
          */
         if (isKillSwitch()) {
 
+            /*
+                This is tricky... not only if we are in the middle of a class initializer (e.g., a
+                static block, or static fields initialization), but also if any ancestor calls are
+                a class initializer (in bytecode these are marked as <clinit>).
+                For example, assume class X has a static intiliazer "static{ Foo f == new Foo()},
+                then, if the kill switch is on while we are executing "Foo()", we must not kill the
+                execution, otherwise the class initializer of X would fail, and X would not be usable
+                anymore inside the whole SUT.
+                To check those cases, we look at the stack trace of the method calls.
+             */
             boolean initClass = Arrays.stream(Thread.currentThread().getStackTrace())
                     .anyMatch(e -> e.getMethodName().equals("<clinit>"));
 
