@@ -30,6 +30,9 @@ class BlackBoxRestFitness : RestFitness() {
             rc.resetSUT()
         }
 
+        val cookies = getCookies(individual)
+        val tokens = getTokens(individual)
+
         val fv = FitnessValue(individual.size().toDouble())
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
@@ -45,7 +48,7 @@ class BlackBoxRestFitness : RestFitness() {
             var ok = false
 
             if (a is RestCallAction) {
-                ok = handleRestCall(a, actionResults, chainState, mapOf(), mapOf())
+                ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
                 actionResults[i].stopping = !ok
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
