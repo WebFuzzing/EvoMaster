@@ -407,7 +407,7 @@ object GraphQLUtils {
      * Get the longest path
      */
     fun longestPath(paths: List<List<String>>): List<String> {
-        return paths.maxWith(Comparator.comparingInt { it.size })!!
+        return paths.maxWithOrNull(Comparator.comparingInt { it.size })!!
     }
 
     /**
@@ -417,7 +417,7 @@ object GraphQLUtils {
         return if (paths.isEmpty()) {
             listOf()
         } else {
-            paths.minWith(Comparator.comparingInt { it.size })!!
+            paths.minWithOrNull(Comparator.comparingInt { it.size })!!
         }
     }
 
