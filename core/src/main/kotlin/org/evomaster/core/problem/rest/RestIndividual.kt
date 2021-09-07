@@ -325,13 +325,13 @@ class RestIndividual(
             ind.getResourceCalls().indexOfFirst { f->
                 f.getResourceNodeKey() == t
             }
-        }.filter { it >=0 }.min()?:ind.getResourceCalls().size
+        }.filter { it >=0 }.minOrNull()?:ind.getResourceCalls().size
 
         val after = ind.getResourceCalls()[indexToSwap].depends.map { t->
             ind.getResourceCalls().indexOfFirst { f->
                 f.getResourceNodeKey() == t
             }
-        }.filter { it >=0 }.max()?:0
+        }.filter { it >=0 }.maxOrNull()?:0
 
         if (after >= before) return emptySet()
         return (after until before).filter { it != indexToSwap }.toSet()

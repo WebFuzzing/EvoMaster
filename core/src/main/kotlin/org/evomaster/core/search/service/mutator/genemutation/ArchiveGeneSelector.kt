@@ -165,7 +165,7 @@ class ArchiveGeneSelector {
     private fun handleNotVisit(values : List<MutableList<Double>>, sizeOfProperty: Int){
 
         (0 until sizeOfProperty).forEach {pi->
-            val r = max(0.0,values.map { v->v[pi] }.max()?:0.0)
+            val r = max(0.0,values.map { v->v[pi] }.maxOrNull()?:0.0)
             values.forEachIndexed { index, list -> if (list[pi] < 0) values[index][pi] = r }
         }
     }

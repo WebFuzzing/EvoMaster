@@ -15,6 +15,7 @@ import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
@@ -264,8 +265,11 @@ class Main {
                 }
 
                 EMConfig.ProblemType.GRAPHQL -> {
-                    //TODO blackBox
-                    GraphQLModule()
+                    if(config.blackBox){
+                        GraphQLBlackBoxModule(config.bbExperiments)
+                    } else {
+                        GraphQLModule()
+                    }
                 }
 
                 EMConfig.ProblemType.WEB -> WebModule()

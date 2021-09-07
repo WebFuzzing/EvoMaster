@@ -43,7 +43,7 @@ class DoubleMutationUpdate(direction: Boolean, min: Double, max: Double, updateT
         }
         return when{
             valid.isNotEmpty() -> randomness.choose(valid)
-            candidates.min()!! > preferMax -> preferMax
+            candidates.minOrNull()!! > preferMax -> preferMax
             else -> preferMin
         }
     }

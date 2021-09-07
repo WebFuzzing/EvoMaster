@@ -3,11 +3,10 @@ package com.foo.base
 import org.evomaster.client.java.controller.InstrumentedSutStarter
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.e2etests.utils.CIUtils
+import org.evomaster.ci.utils.CIUtils
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
 import java.io.File
-import java.nio.file.Paths
 
 
 @Disabled("No CI (Travis, CircleCI and GitHub) likes this test... :( ")

@@ -122,7 +122,7 @@ class ResourceRelatedToTable(val key: String) {
         fmap.forEach { t, u ->
             val related = u.derivedMap.filter { m-> tables.any { t-> t.equals(m.key, ignoreCase = true) }}
             if (related.isNotEmpty()){
-                val best = related.map { it.value.similarity }.max()!!
+                val best = related.map { it.value.similarity }.maxOrNull()!!
                 result.put(t, Pair(related.filter { it.value.similarity == best }.keys, best))
             }
         }

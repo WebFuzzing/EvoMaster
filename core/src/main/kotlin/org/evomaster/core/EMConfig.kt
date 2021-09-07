@@ -259,7 +259,10 @@ class EMConfig {
             }
 
             if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
-                throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
+                throw IllegalArgumentException("In black-box mode for REST APIs, you must set the bbSwaggerUrl option")
+            }
+            if(problemType == ProblemType.GRAPHQL && bbTargetUrl.isNullOrBlank()){
+                throw java.lang.IllegalArgumentException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
             }
             if (outputFormat == OutputFormat.DEFAULT) {
                 /*
@@ -690,8 +693,9 @@ class EMConfig {
 
     @Important(3.5)
     @Url
-    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached. " +
-            "If this is missing, the URL will be inferred from Swagger.")
+    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached." +
+            " In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema." +
+            " In GraphQL, this will point to the entry point of the API.")
     var bbTargetUrl: String = ""
 
 

@@ -38,7 +38,7 @@ gpg --list-keys
 
 Upload the public key with:
 ```
-gpg --keyserver hkp://hkps.pool.sks-keyservers.net:80 --send-keys  ???
+gpg --keyserver https://keys.openpgp.org --send-keys  ???
 ```
 where `???` needs to be replaced with the id of the generated public key.
 You can also read more details [here](https://central.sonatype.org/pages/working-with-pgp-signatures.html).

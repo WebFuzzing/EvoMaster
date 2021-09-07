@@ -17,7 +17,7 @@ class StatisticsEMTest : SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-            SpringTestBase.initClass(StatisticsController())
+            initClass(StatisticsController())
         }
     }
 
