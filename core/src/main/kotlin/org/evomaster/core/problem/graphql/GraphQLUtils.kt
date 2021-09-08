@@ -14,8 +14,6 @@ object GraphQLUtils {
 
     private val log = LoggerFactory.getLogger(GraphQLUtils::class.java)
 
-    val history: Deque<String> = ArrayDeque<String>()
-
     /**
      * A data structure to store information about a graph, where each node is composed of:
      * fields: are primitive types and edges
