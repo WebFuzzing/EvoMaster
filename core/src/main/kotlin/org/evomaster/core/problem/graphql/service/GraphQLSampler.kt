@@ -82,7 +82,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
         actionCluster.clear()
 
-        GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster)
+        GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster, config.maxNumberOfGenes)
     }
 
 
