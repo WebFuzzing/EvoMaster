@@ -15,7 +15,7 @@ object GqlConst {
      */
     const val UNION_TAG = "#UNION#"
     /**
-     * Those tags are for the GQL interface type. Needed in getValueAsPrintableString to print out things like:
+     * Is used for the GQL interface type. Needed in getValueAsPrintableString to print out: field1 ... fieldN  in:
      *     fieldXName{
      *        field1
      *        fieldN
@@ -28,6 +28,19 @@ object GqlConst {
      *     }
      */
     const val INTERFACE_BASE_TAG = "#BASE#"
+    /**
+     * Is used for the GQL interface type. Needed in getValueAsPrintableString to print out: ... on InterfaceObject1 ... on InterfaceObjectN in :
+     *     fieldXName{
+     *        field1
+     *        fieldN
+     *        ... on InterfaceObject1 {
+     *           field
+     *        }
+     *        ... on InterfaceObjectN {
+     *          field
+     *        }
+     *     }
+     */
     const val INTERFACE_TAG = "#INTERFACE#"
     const val SCALAR = "scalar"
     const val OBJECT = "object"
