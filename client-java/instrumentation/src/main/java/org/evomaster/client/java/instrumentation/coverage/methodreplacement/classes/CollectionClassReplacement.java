@@ -51,7 +51,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
 
         Truthness t;
         if (result) {
-            t = new Truthness(1d, 0d);
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
         } else {
             double h = CollectionsDistanceUtils.getHeuristicToContains(c, o);
             t = new Truthness(h, 1d);

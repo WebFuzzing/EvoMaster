@@ -244,7 +244,7 @@ public class CollectionClassReplacementTest {
         assertEquals(1, nonCoveredObjectives.size());
         final String objectiveId = nonCoveredObjectives.iterator().next();
         final double heuristicValue0 = ExecutionTracer.getValue(objectiveId);
-        assertEquals(0, heuristicValue0);
+        assertEquals(DistanceHelper.H_NOT_NULL, heuristicValue0);
     }
 
     @Test
