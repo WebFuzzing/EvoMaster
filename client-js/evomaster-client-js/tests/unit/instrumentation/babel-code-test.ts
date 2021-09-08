@@ -791,7 +791,7 @@ test("ternary with await expression", async () => {
         f = async function (x) {
           __EM__.enteringStatement("test.ts", 2, 1);
         
-          return __EM__.completingStatement(__EM__.cmp(x, ">", 0, "test.ts", 2, 0) ? __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(1))), "test.ts", 2, 2) : __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(2))), "test.ts", 2, 3), "test.ts", 2, 1);
+          return __EM__.completingStatement(__EM__.cmp(x, ">", 0, "test.ts", 2, 0) ? await __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(1))), "test.ts", 2, 2) : await __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(2))), "test.ts", 2, 3), "test.ts", 2, 1);
         };
         
         __EM__.completedStatement("test.ts", 1, 0);
@@ -863,7 +863,7 @@ test("embedded await expression", async () => {
         async function afoo(x) {
           __EM__.enteringStatement("test.ts", 2, 1);
         
-          return __EM__.completingStatement(__EM__.cmp(x, ">", 5, "test.ts", 2, 0) ? __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x - 1))), "test.ts", 2, 2) : __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x + 1))), "test.ts", 2, 3), "test.ts", 2, 1);
+          return __EM__.completingStatement(__EM__.cmp(x, ">", 5, "test.ts", 2, 0) ? await __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x - 1))), "test.ts", 2, 2) : await __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x + 1))), "test.ts", 2, 3), "test.ts", 2, 1);
         }
         
         __EM__.completedStatement("test.ts", 1, 0);
@@ -883,7 +883,7 @@ test("embedded await expression", async () => {
         f = async function (x) {
           __EM__.enteringStatement("test.ts", 12, 7);
         
-          return __EM__.completingStatement(__EM__.cmp((await __EM__.callBase(() => afoo(x))), ">", 5, "test.ts", 12, 2) ? __EM__.ternary(async () => __EM__.callBase(async () => numToString((await __EM__.callBase(() => afoo(x - 1))))), "test.ts", 12, 8) : __EM__.ternary(async () => __EM__.callBase(async () => numToString((await __EM__.callBase(() => afoo(x + 1))))), "test.ts", 12, 9), "test.ts", 12, 7);
+          return __EM__.completingStatement(__EM__.cmp((await __EM__.callBase(() => afoo(x))), ">", 5, "test.ts", 12, 2) ? await __EM__.ternary(async () => __EM__.callBase(async () => numToString((await __EM__.callBase(() => afoo(x - 1))))), "test.ts", 12, 8) : await __EM__.ternary(async () => __EM__.callBase(async () => numToString((await __EM__.callBase(() => afoo(x + 1))))), "test.ts", 12, 9), "test.ts", 12, 7);
         };
         
         __EM__.completedStatement("test.ts", 11, 6);
@@ -914,7 +914,7 @@ test("disease sut", () => {
         async function afoo(key, lastdays) {
           __EM__.enteringStatement("test.ts", 2, 1);
         
-          (await __EM__.callTracked("test.ts", 2, 0, redis, "hexists", key, lastdays)) ? __EM__.ternary(async () => parsedData = __EM__.callTracked("test.ts", 3, 1, JSON, "parse", (await __EM__.callTracked("test.ts", 3, 2, redis, "hget", key, lastdays))), "test.ts", 2, 2) : __EM__.ternary(async () => parsedData = __EM__.callTracked("test.ts", 4, 3, JSON, "parse", (await __EM__.callTracked("test.ts", 4, 4, redis, "hget", key, 'data'))), "test.ts", 2, 3);
+          (await __EM__.callTracked("test.ts", 2, 0, redis, "hexists", key, lastdays)) ? await __EM__.ternary(async () => parsedData = __EM__.callTracked("test.ts", 3, 1, JSON, "parse", (await __EM__.callTracked("test.ts", 3, 2, redis, "hget", key, lastdays))), "test.ts", 2, 2) : await __EM__.ternary(async () => parsedData = __EM__.callTracked("test.ts", 4, 3, JSON, "parse", (await __EM__.callTracked("test.ts", 4, 4, redis, "hget", key, 'data'))), "test.ts", 2, 3);
         
           __EM__.completedStatement("test.ts", 2, 1);
         }
@@ -959,7 +959,7 @@ test("await in the inputs params", ()=>{
         async function afoo(x) {
           __EM__.enteringStatement("test.ts", 2, 1);
         
-          return __EM__.completingStatement(__EM__.cmp(x, ">", 5, "test.ts", 2, 0) ? __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x - 1))), "test.ts", 2, 2) : __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x + 1))), "test.ts", 2, 3), "test.ts", 2, 1);
+          return __EM__.completingStatement(__EM__.cmp(x, ">", 5, "test.ts", 2, 0) ? await __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x - 1))), "test.ts", 2, 2) : await __EM__.ternary(async () => await new Promise(resolve => __EM__.callBase(() => resolve(x + 1))), "test.ts", 2, 3), "test.ts", 2, 1);
         }
         
         __EM__.completedStatement("test.ts", 1, 0);
