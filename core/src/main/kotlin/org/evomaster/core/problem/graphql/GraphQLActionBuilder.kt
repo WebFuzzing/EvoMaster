@@ -51,7 +51,6 @@ object GraphQLActionBuilder {
         var tempUnionTables: MutableList<Table> = mutableListOf()
     )
 
-    private const val maxDepth: Int = 1
     private var accum: Int = 0
 
     /**
@@ -92,7 +91,8 @@ object GraphQLActionBuilder {
                         element.tableFieldWithArgs,
                         element.enumValues,
                         element.unionTypes,
-                        element.interfaceTypes
+                        element.interfaceTypes,
+                        maxNumberOfGenes
                     )
                 }
             }
@@ -113,7 +113,8 @@ object GraphQLActionBuilder {
                         element.tableFieldWithArgs,
                         element.enumValues,
                         element.unionTypes,
-                        element.interfaceTypes
+                        element.interfaceTypes,
+                        maxNumberOfGenes
                     )
                 }
             }
@@ -134,7 +135,8 @@ object GraphQLActionBuilder {
                         element.tableFieldWithArgs,
                         element.enumValues,
                         element.unionTypes,
-                        element.interfaceTypes
+                        element.interfaceTypes,
+                        maxNumberOfGenes
                     )
                 }
             }
@@ -726,7 +728,8 @@ object GraphQLActionBuilder {
         tableFieldWithArgs: Boolean,
         enumValues: MutableList<String>,
         unionTypes: MutableList<String>,
-        interfaceTypes: MutableList<String>
+        interfaceTypes: MutableList<String>,
+        maxNumberOfGenes: Int
     ) {
         if (methodName == null) {
             log.warn("Skipping operation, as no method name is defined.")
@@ -755,7 +758,7 @@ object GraphQLActionBuilder {
         val params = extractParams(
             state, methodName, tableFieldType, kindOfTableFieldType, kindOfTableField,
             tableType, isKindOfTableFieldTypeOptional,
-            isKindOfTableFieldOptional, tableFieldWithArgs, enumValues, unionTypes, interfaceTypes
+            isKindOfTableFieldOptional, tableFieldWithArgs, enumValues, unionTypes, interfaceTypes, maxNumberOfGenes
         )
 
         //Note: if a return param is a primitive type it will be null
@@ -793,7 +796,8 @@ object GraphQLActionBuilder {
         tableFieldWithArgs: Boolean,
         enumValues: MutableList<String>,
         unionTypes: MutableList<String>,
-        interfaceTypes: MutableList<String>
+        interfaceTypes: MutableList<String>,
+        maxNumberOfGenes: Int
 
     ): MutableList<Param> {
 
@@ -834,7 +838,7 @@ object GraphQLActionBuilder {
                             element.enumValues,
                             element.tableField,
                             element.unionTypes,
-                            element.interfaceTypes
+                            element.interfaceTypes, maxNumberOfGenes
                         )
                         params.add(GQInputParam(element.tableField, gene))
                     }
@@ -855,7 +859,8 @@ object GraphQLActionBuilder {
                 methodName,
                 unionTypes,
                 interfaceTypes,
-                accum
+                accum,
+                maxNumberOfGenes
             )
 
             //Remove primitive types (scalar and enum) from return params
@@ -893,7 +898,8 @@ object GraphQLActionBuilder {
                 methodName,
                 unionTypes,
                 interfaceTypes,
-                accum
+                accum,
+                maxNumberOfGenes
             )
 
             //Remove primitive types (scalar and enum) from return params
@@ -1042,7 +1048,8 @@ object GraphQLActionBuilder {
         enumValues: MutableList<String>,
         methodName: String,
         unionTypes: MutableList<String>,
-        interfaceTypes: MutableList<String>
+        interfaceTypes: MutableList<String>,
+        maxNumberOfGenes: Int
     ): Gene {
 
         when (kindOfTableField?.toLowerCase()) {
@@ -1061,7 +1068,7 @@ object GraphQLActionBuilder {
                         enumValues,
                         methodName,
                         unionTypes,
-                        interfaceTypes
+                        interfaceTypes, maxNumberOfGenes
                     )
 
                     OptionalGene(methodName, ArrayGene(tableType, template))
@@ -1079,7 +1086,7 @@ object GraphQLActionBuilder {
                         enumValues,
                         methodName,
                         unionTypes,
-                        interfaceTypes
+                        interfaceTypes, maxNumberOfGenes
                     )
 
                     ArrayGene(methodName, template)
@@ -1088,25 +1095,27 @@ object GraphQLActionBuilder {
                 return if (isKindOfTableFieldTypeOptional) {
                     val optObjGene = createObjectGene(
                         state, tableType, kindOfTableFieldType, history,
-                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum
+                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum,
+                        maxNumberOfGenes
                     )
                     OptionalGene(methodName, optObjGene)
                 } else
                     createObjectGene(
                         state, tableType, kindOfTableFieldType, history,
-                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum
+                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum,
+                        maxNumberOfGenes
                     )
             inputObjectTag ->
                 return if (isKindOfTableFieldTypeOptional) {
                     val optInputObjGene = createInputObjectGene(
                         state, tableType, kindOfTableFieldType, history,
-                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName
+                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, maxNumberOfGenes
                     )
                     OptionalGene(methodName, optInputObjGene)
                 } else
                     createInputObjectGene(
                         state, tableType, kindOfTableFieldType, history,
-                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName
+                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, maxNumberOfGenes
                     )
             "int" ->
                 return if (isKindOfTableFieldTypeOptional)
@@ -1146,7 +1155,7 @@ object GraphQLActionBuilder {
                     enumValues,
                     methodName,
                     unionTypes,
-                    interfaceTypes
+                    interfaceTypes, maxNumberOfGenes
                 )
             "date" ->
                 return if (isKindOfTableFieldTypeOptional)
@@ -1171,7 +1180,7 @@ object GraphQLActionBuilder {
                     enumValues,
                     methodName,
                     unionTypes,
-                    interfaceTypes
+                    interfaceTypes, maxNumberOfGenes
                 )
             "id" ->
                 return if (isKindOfTableFieldTypeOptional)
@@ -1206,7 +1215,8 @@ object GraphQLActionBuilder {
         history: Deque<String>,
         isKindOfTableFieldTypeOptional: Boolean,
         isKindOfTableFieldOptional: Boolean,
-        methodName: String
+        methodName: String,
+        maxNumberOfGenes: Int
     ): Gene {
         val fields: MutableList<Gene> = mutableListOf()
         for (element in state.argsTables) {
@@ -1226,7 +1236,7 @@ object GraphQLActionBuilder {
                         element.enumValues,
                         methodName,
                         element.unionTypes,
-                        element.interfaceTypes
+                        element.interfaceTypes, maxNumberOfGenes
                     )
                     fields.add(template)
                 } else {
@@ -1243,7 +1253,7 @@ object GraphQLActionBuilder {
                             element.enumValues,
                             element.tableField,
                             element.unionTypes,
-                            element.interfaceTypes
+                            element.interfaceTypes, maxNumberOfGenes
                         )
 
                         fields.add(template)
@@ -1261,7 +1271,7 @@ object GraphQLActionBuilder {
                                 element.enumValues,
                                 element.tableField,
                                 element.unionTypes,
-                                element.interfaceTypes
+                                element.interfaceTypes, maxNumberOfGenes
                             )
 
                             fields.add(template)
@@ -1280,7 +1290,7 @@ object GraphQLActionBuilder {
                                 element.enumValues,
                                 methodName,
                                 element.unionTypes,
-                                element.interfaceTypes
+                                element.interfaceTypes, maxNumberOfGenes
                             )
                             fields.add(template)
                         }
@@ -1308,7 +1318,8 @@ object GraphQLActionBuilder {
         methodName: String,
         unionTypes: MutableList<String>,
         interfaceTypes: MutableList<String>,
-        accum: Int
+        accum: Int,
+        maxNumberOfGenes: Int
     ): Gene {
 
 
@@ -1331,19 +1342,21 @@ object GraphQLActionBuilder {
                     methodName,
                     unionTypes,
                     interfaceTypes,
-                    accum
+                    accum,
+                    maxNumberOfGenes
                 )
 
                 return OptionalGene(methodName, ArrayGene(tableType, template))//check the name
             }
             objectTag -> {
                 accum += 1
-                return if (checkDepth(accum)) {
+                return if (checkDepth(accum, maxNumberOfGenes)) {
                     history.addLast(tableType)
                     if (history.count { it == tableType } == 1) {
                         val objGene = createObjectGene(
                             state, tableType, kindOfTableFieldType, history,
-                            isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum
+                            isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum,
+                            maxNumberOfGenes
                         )
                         history.removeLast()
                         OptionalGene(methodName, objGene)
@@ -1361,7 +1374,8 @@ object GraphQLActionBuilder {
                 return if (history.count { it == tableType } == 1) {
                     val optObjGene = createUnionObjectsGene(
                         state, tableType, kindOfTableFieldType, history,
-                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, unionTypes, accum
+                        isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, unionTypes, accum,
+                        maxNumberOfGenes
                     )
                     history.removeLast()
                     OptionalGene("$methodName#UNION#", optObjGene)
@@ -1376,12 +1390,13 @@ object GraphQLActionBuilder {
                 return if (history.count { it == tableType } == 1) {
 
                     accum += 1
-                    if (checkDepth(accum)) {
+                    if (checkDepth(accum, maxNumberOfGenes)) {
 
                         //will contain basic interface fields, and had as name the methode name
                         var interfaceBaseOptObjGene = createObjectGene(
                             state, tableType, kindOfTableFieldType, history,
-                            isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum
+                            isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum,
+                            maxNumberOfGenes
                         )
 
                         interfaceBaseOptObjGene = interfaceBaseOptObjGene as ObjectGene
@@ -1399,7 +1414,7 @@ object GraphQLActionBuilder {
                             isKindOfTableFieldOptional,
                             interfaceTypes,
                             interfaceBaseOptObjGene,
-                            accum
+                            accum, maxNumberOfGenes
                         )
 
                         //merge basic interface fields with additional interface fields
@@ -1442,7 +1457,8 @@ object GraphQLActionBuilder {
                     methodName,
                     unionTypes,
                     interfaceTypes,
-                    accum
+                    accum,
+                    maxNumberOfGenes
                 )
             "date" ->
                 return OptionalGene(tableType, DateGene(tableType))
@@ -1462,7 +1478,8 @@ object GraphQLActionBuilder {
                     methodName,
                     unionTypes,
                     interfaceTypes,
-                    accum
+                    accum,
+                    maxNumberOfGenes
                 )
             "id" ->
                 return OptionalGene(tableType, StringGene(tableType))
@@ -1484,7 +1501,8 @@ object GraphQLActionBuilder {
         isKindOfTableFieldTypeOptional: Boolean,
         isKindOfTableFieldOptional: Boolean,
         methodName: String,
-        accum: Int
+        accum: Int,
+        maxNumberOfGenes: Int
     ): Gene {
         val fields: MutableList<Gene> = mutableListOf()
         var accum = accum
@@ -1513,7 +1531,8 @@ object GraphQLActionBuilder {
                     methodName,
                     element.unionTypes,
                     element.interfaceTypes,
-                    accum
+                    accum,
+                    maxNumberOfGenes
                 )
                 fields.add(template)
             } else {
@@ -1532,7 +1551,8 @@ object GraphQLActionBuilder {
                             element.tableField,
                             element.unionTypes,
                             element.interfaceTypes,
-                            accum
+                            accum,
+                            maxNumberOfGenes
                         )
 
                     fields.add(template)
@@ -1553,7 +1573,8 @@ object GraphQLActionBuilder {
                                 element.tableField,
                                 element.unionTypes,
                                 element.interfaceTypes,
-                                accum
+                                accum,
+                                maxNumberOfGenes
                             )
 
                         fields.add(template)
@@ -1574,7 +1595,8 @@ object GraphQLActionBuilder {
                             methodName,
                             element.unionTypes,
                             element.interfaceTypes,
-                            accum
+                            accum,
+                            maxNumberOfGenes
                         )
 
                         fields.add(template)
@@ -1594,7 +1616,8 @@ object GraphQLActionBuilder {
                                 element.tableField,
                                 element.unionTypes,
                                 element.interfaceTypes,
-                                accum
+                                accum,
+                                maxNumberOfGenes
                             )
 
                         fields.add(template)
@@ -1615,7 +1638,8 @@ object GraphQLActionBuilder {
                                     element.tableField,
                                     element.unionTypes,
                                     element.interfaceTypes,
-                                    accum
+                                    accum,
+                                    maxNumberOfGenes
                                 )
 
                             fields.add(template)
@@ -1639,7 +1663,8 @@ object GraphQLActionBuilder {
         isKindOfTableFieldOptional: Boolean,
         methodName: String,
         unionTypes: MutableList<String>,
-        accum: Int
+        accum: Int,
+        maxNumberOfGenes: Int
     ): Gene {
 
         val fields: MutableList<Gene> = mutableListOf()
@@ -1650,11 +1675,12 @@ object GraphQLActionBuilder {
 
         for (elementInUnionTypes in unionTypes) {//Browse all objects defining the union
             accum += 1
-            if (checkDepth(accum)) {
+            if (checkDepth(accum, maxNumberOfGenes)) {
                 history.addLast(elementInUnionTypes)
                 val objGeneTemplate = createObjectGene(
                     state, elementInUnionTypes, kindOfTableFieldType, history,
-                    isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, elementInUnionTypes, accum
+                    isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, elementInUnionTypes, accum,
+                    maxNumberOfGenes
                 )
 
                 history.removeLast()
@@ -1675,21 +1701,24 @@ object GraphQLActionBuilder {
         isKindOfTableFieldOptional: Boolean,
         interfaceTypes: MutableList<String>,
         interfaceBaseOptObjGene: Gene,
-        accum: Int
+        accum: Int,
+        maxNumberOfGenes: Int
     ): MutableList<Gene> {
 
         val fields: MutableList<Gene> = mutableListOf()
 
         var accum = accum
-        val initAccum = accum // needed since we restore the accumulator each time we construct one object defining the interface
+        val initAccum =
+            accum // needed since we restore the accumulator each time we construct one object defining the interface
 
         for (elementInInterfaceTypes in interfaceTypes) {//Browse all additional objects in the interface
             accum += 1
-            if (checkDepth(accum)) {
+            if (checkDepth(accum, maxNumberOfGenes)) {
                 history.addLast(elementInInterfaceTypes)
                 val objGeneTemplate = createObjectGene(
                     state, elementInInterfaceTypes, kindOfTableFieldType, history,
-                    isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, elementInInterfaceTypes, accum
+                    isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, elementInInterfaceTypes, accum,
+                    maxNumberOfGenes
                 )
                 history.removeLast()
 
@@ -1714,8 +1743,8 @@ object GraphQLActionBuilder {
     }
 
 
-    private fun checkDepth(count: Int): Boolean {
-        return count <= maxDepth
+    private fun checkDepth(count: Int, maxNumberOfGenes: Int): Boolean {
+        return count <= maxNumberOfGenes
     }
 
 }
