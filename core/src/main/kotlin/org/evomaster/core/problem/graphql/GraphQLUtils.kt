@@ -204,7 +204,7 @@ object GraphQLUtils {
                 continue
             }
             if (isRoot(typeName)) {//First entry point
-                if (kOTFT == GqlConst.OBJECT_TAG) {
+                if (kOTFT == GqlConst.OBJECT) {
                     history.add(element.tableFieldType)
                     addEdge(element.tableType!!.toLowerCase(), element.tableFieldType, element.tableField, graph)
                     getObjectNode(history, element, objectFieldsHistory, state, graph)
@@ -212,19 +212,19 @@ object GraphQLUtils {
                 if (isScalarOrEnum(element)) //Primitive type: create a field and add it
                     graph[element.tableType!!.toLowerCase()]?.fields?.add(element.tableField)
 
-                if (kOTFT == GqlConst.INTERFACE_STRING_TAG) {
+                if (kOTFT == GqlConst.INTERFACE) {
                     history.add(element.tableFieldType)// add interface type object to the history
                     addEdge(element.tableType!!.toLowerCase(), element.tableFieldType, element.tableField, graph)//from a query node to the interface type object
                     getInterfaceNodes(history, element, state, graph, objectFieldsHistory)
                 }
-                if (kOTFT == GqlConst.UNION_STRING_TAG) {
+                if (kOTFT == GqlConst.UNION) {
                     history.add(element.tableFieldType)// add union type object to the history
                     addEdge(element.tableType!!.toLowerCase(), element.tableFieldType, element.tableField, graph)//from a query node to the union type object
                     getUnionNodes(history, element, graph, state, objectFieldsHistory)
                 }
 
             } else {//Second entry
-                if (kOTFT == GqlConst.OBJECT_TAG) {
+                if (kOTFT == GqlConst.OBJECT) {
                     history.add(element.tableFieldType)
                     addEdge(typeName, element.tableFieldType, element.tableField, graph)
                     getObjectNode(history, element, objectFieldsHistory, state, graph)
@@ -232,12 +232,12 @@ object GraphQLUtils {
                 if (isScalarOrEnum(element)) //Primitive type: create a field and add it
                     graph[typeName]?.fields?.add(element.tableField)
 
-                if (kOTFT == GqlConst.UNION_STRING_TAG) {
+                if (kOTFT == GqlConst.UNION) {
                     history.add(element.tableFieldType)// add union type object to the history
                     addEdge(typeName, element.tableFieldType, element.tableField, graph)//from a node to the union type object
                     getUnionNodes(history, element, graph, state, objectFieldsHistory)
                 }
-                if (kOTFT == GqlConst.INTERFACE_STRING_TAG) {
+                if (kOTFT == GqlConst.INTERFACE) {
                     history.add(element.tableFieldType)// add interface type object to the history
                     addEdge(typeName, element.tableFieldType, element.tableField, graph)//from a node to the interface type object
                     getInterfaceNodes(history, element, state, graph, objectFieldsHistory)
@@ -248,7 +248,7 @@ object GraphQLUtils {
     }
 
     private fun isScalarOrEnum(element: Table) =
-            element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.SCALAR_TAG|| element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.ENUM_TAG
+            element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.SCALAR|| element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.ENUM
 
     private fun getInterfaceNodes(history: MutableList<String>, element: Table, state: GraphQLActionBuilder.TempState, graph: MutableMap<String, GraphInfo>, objectFieldsHistory: MutableSet<String>) {
         if (history.count { it == element.tableFieldType } <= 1) {// the interface type object already treated
