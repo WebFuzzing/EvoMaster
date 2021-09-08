@@ -2,12 +2,11 @@ package com.foo.rest.examples.spring.openapi.v3.cookielogin
 
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletResponse
 
-@Controller
+@RestController
 @RequestMapping(path = ["/api/logintoken"])
 class CookieLoginRest {
 
