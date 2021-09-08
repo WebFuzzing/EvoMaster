@@ -46,6 +46,8 @@ class CookieLogin(
          * The encoding type used to specify how the data is sent
          */
         val contentType: ContentType
+
+
 ) {
 
     companion object {
@@ -74,5 +76,19 @@ class CookieLogin(
             else -> throw IllegalStateException("Currently not supporting $contentType for auth")
         }
 
+    }
+
+    /**
+     * @return whether the specified [loginEndpointUrl] is a complete url, i.e., start with http/https protocol
+     */
+    fun isFullUrlSpecified() = loginEndpointUrl.startsWith("https://")|| loginEndpointUrl.startsWith("http://")
+
+    /**
+     * @return a complete URL based on [baseUrl] and [loginEndpointUrl]
+     */
+    fun getUrl(baseUrl: String) : String{
+        if (isFullUrlSpecified()) return loginEndpointUrl
+
+        return baseUrl.run { if (!endsWith("/")) "$this/" else this} + loginEndpointUrl.run { if (startsWith("/")) this.drop(1) else this }
     }
 }
