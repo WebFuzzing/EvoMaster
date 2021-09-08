@@ -10,6 +10,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.ws.rs.core.NewCookie
 
 
 class BlackBoxRestFitness : RestFitness() {
@@ -20,6 +21,9 @@ class BlackBoxRestFitness : RestFitness() {
 
     override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
 
+        val cookies = mutableMapOf<String, List<NewCookie>>()
+        val tokens = mutableMapOf<String, String>()
+
         if(config.bbExperiments){
             /*
                 If we have a controller, we MUST reset the SUT at each test execution.
@@ -28,10 +32,15 @@ class BlackBoxRestFitness : RestFitness() {
                 memory leak
              */
             rc.resetSUT()
-        }
 
-        val cookies = getCookies(individual)
-        val tokens = getTokens(individual)
+            /*
+                currently, for bb, the auth can be only configured with the driver,
+                ie, bbExperiments is enabled.
+                TODO might support other manner to configure auth for bb
+             */
+            cookies.plus(getCookies(individual))
+            tokens.plus(getTokens(individual))
+        }
 
         val fv = FitnessValue(individual.size().toDouble())
 
