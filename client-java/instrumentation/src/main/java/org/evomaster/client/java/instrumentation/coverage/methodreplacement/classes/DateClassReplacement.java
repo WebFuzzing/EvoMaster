@@ -51,7 +51,7 @@ public class DateClassReplacement implements MethodReplacementClass {
                 t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
             } else {
                 double distance = DistanceHelper.getDistanceToEquality(caller, anotherDate);
-                final double base = DistanceHelper.H_NOT_NULL;
+                double base = DistanceHelper.H_NOT_NULL;
                 double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
@@ -79,7 +79,7 @@ public class DateClassReplacement implements MethodReplacementClass {
             return res;
         }
 
-        final Truthness t = getBeforeTruthness(caller, when);
+        Truthness t = getBeforeTruthness(caller, when);
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return res;
     }
@@ -92,7 +92,7 @@ public class DateClassReplacement implements MethodReplacementClass {
         final long a = caller.getTime();
         final long b = when.getTime();
 
-        /**
+        /*
          * We use the same gradient that HeuristicsForJumps.getForValueComparison()
          * used for IF_ICMPLT, ie, a < b
          */
@@ -118,7 +118,7 @@ public class DateClassReplacement implements MethodReplacementClass {
             return res;
         }
 
-        final Truthness t = getBeforeTruthness(when, caller);
+        Truthness t = getBeforeTruthness(when, caller);
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return res;
     }

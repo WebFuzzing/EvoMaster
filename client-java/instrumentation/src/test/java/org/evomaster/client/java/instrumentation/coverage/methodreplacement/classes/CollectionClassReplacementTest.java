@@ -32,7 +32,7 @@ public class CollectionClassReplacementTest {
         assertEquals(1, nonCoveredObjectives.size());
         String objectiveId = nonCoveredObjectives.iterator().next();
         double value = ExecutionTracer.getValue(objectiveId);
-        assertEquals(0, value);
+        assertEquals(DistanceHelper.H_NOT_NULL, value);
     }
 
     @Test

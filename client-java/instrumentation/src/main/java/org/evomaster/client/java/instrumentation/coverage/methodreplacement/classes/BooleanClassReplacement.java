@@ -54,7 +54,7 @@ public class BooleanClassReplacement implements MethodReplacementClass {
             if (input == null) {
                 t = new Truthness(H_REACHED_BUT_NULL, 1);
             } else {
-                final double base = DistanceHelper.H_NOT_NULL;
+                double base = DistanceHelper.H_NOT_NULL;
                 long distance = DistanceHelper.getLeftAlignmentDistance(input.toLowerCase(), "true");
                 double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1);

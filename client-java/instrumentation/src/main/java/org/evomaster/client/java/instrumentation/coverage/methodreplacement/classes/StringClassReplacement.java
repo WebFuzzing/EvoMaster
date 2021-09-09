@@ -37,13 +37,15 @@ public class StringClassReplacement implements MethodReplacementClass {
         Truthness t;
 
         if (result) {
-            t = new Truthness(1d, 0d);
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
         } else {
             if (!(anObject instanceof String)) {
-                t = new Truthness(0d, 1d);
+                t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
             } else {
-                long distance = DistanceHelper.getLeftAlignmentDistance(caller, anObject.toString());
-                t = new Truthness(1d / (1d + distance), 1d);
+                final double base = DistanceHelper.H_NOT_NULL;
+                double distance = DistanceHelper.getLeftAlignmentDistance(caller, anObject.toString());
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
+                t = new Truthness(h, 1d);
             }
         }
 
@@ -67,7 +69,8 @@ public class StringClassReplacement implements MethodReplacementClass {
         }
 
         if (anotherString == null) {
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, new Truthness(0, 1));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN,
+                    new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1));
             return false;
         }
 
@@ -76,10 +79,12 @@ public class StringClassReplacement implements MethodReplacementClass {
         if (result) {
             t = new Truthness(1d, 0d);
         } else {
-            long distance = DistanceHelper.getLeftAlignmentDistance(
+            double base = DistanceHelper.H_NOT_NULL;
+            double distance = DistanceHelper.getLeftAlignmentDistance(
                     caller.toLowerCase(),
                     anotherString.toLowerCase());
-            t = new Truthness(1d / (1d + distance), 1d);
+            double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
+            t = new Truthness(h, 1d);
         }
 
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
