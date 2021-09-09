@@ -115,23 +115,30 @@ public class NumberParsingUtils {
         return h;
     }
 
+    /*
+        The -2 in the computations below is bit tricky...
+        Given a maximum length N, not all digit strings of length N would be valid, eg
+        3 billion is not a valid signed int.
+        And we also need to consider the "-" for negative values.
+     */
+
     public static double parseByteHeuristic(String input) {
-        final int maxNumberOfDigits = Byte.valueOf(Byte.MIN_VALUE).toString().length();
+        int maxNumberOfDigits = Byte.valueOf(Byte.MIN_VALUE).toString().length() - 2;
         return parseIntHeuristic(input, maxNumberOfDigits);
     }
 
     public static double parseShortHeuristic(String input) {
-        final int maxNumberOfDigits = Short.valueOf(Short.MIN_VALUE).toString().length();
+        int maxNumberOfDigits = Short.valueOf(Short.MIN_VALUE).toString().length() - 2;
         return parseIntHeuristic(input, maxNumberOfDigits);
     }
 
     public static double parseIntHeuristic(String input) {
-        final int maxNumberOfDigits = Integer.valueOf(Integer.MIN_VALUE).toString().length();
+        int maxNumberOfDigits = Integer.valueOf(Integer.MIN_VALUE).toString().length() - 2;
         return parseIntHeuristic(input, maxNumberOfDigits);
     }
 
     public static double parseLongHeuristic(String input) {
-        final int maxNumberOfDigits = Long.valueOf(Long.MIN_VALUE).toString().length();
+        int maxNumberOfDigits = Long.valueOf(Long.MIN_VALUE).toString().length() - 2;
         return parseIntHeuristic(input, maxNumberOfDigits);
     }
 }
