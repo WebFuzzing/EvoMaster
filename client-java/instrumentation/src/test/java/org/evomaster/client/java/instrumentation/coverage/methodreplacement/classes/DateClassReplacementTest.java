@@ -63,7 +63,7 @@ public class DateClassReplacementTest {
                 .iterator().next();
         double h0 = ExecutionTracer.getValue(targetId);
 
-        assertEquals(0, h0);
+        assertEquals(DistanceHelper.H_NOT_NULL, h0);
         assertTrue(equalsValue);
     }
 

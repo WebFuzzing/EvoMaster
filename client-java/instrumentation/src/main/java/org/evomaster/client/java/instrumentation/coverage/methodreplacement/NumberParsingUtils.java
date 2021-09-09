@@ -55,9 +55,14 @@ public class NumberParsingUtils {
 
         }
 
+        if(distance < 0){
+            distance = Long.MAX_VALUE; // overflow
+        }
+
         //recall h in [0,1] where the highest the distance the closer to 0
-        final double base = H_NOT_NULL;
-        return base + ((1d - base) / (distance + 1));
+        double base = H_NOT_NULL;
+        double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
+        return h;
     }
 
     private static double parseIntHeuristic(String input, int maxNumberOfDigits) {
@@ -70,7 +75,7 @@ public class NumberParsingUtils {
             return H_REACHED_BUT_NULL;
         }
 
-        final double base = H_NOT_NULL;
+        double base = H_NOT_NULL;
 
         if (input.length() == 0) {
             return base;
@@ -100,27 +105,40 @@ public class NumberParsingUtils {
             }
         }
 
+        if(distance < 0){
+            distance = Long.MAX_VALUE; // overflow
+        }
+
+
         //recall h in [0,1] where the highest the distance the closer to 0
-        return base + ((1d - base) / (distance + 1));
+        double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
+        return h;
     }
 
+    /*
+        The -2 in the computations below is bit tricky...
+        Given a maximum length N, not all digit strings of length N would be valid, eg
+        3 billion is not a valid signed int.
+        And we also need to consider the "-" for negative values.
+     */
+
     public static double parseByteHeuristic(String input) {
-        final int maxNumberOfDigits = Byte.valueOf(Byte.MIN_VALUE).toString().length();
+        int maxNumberOfDigits = Byte.valueOf(Byte.MIN_VALUE).toString().length() - 2;
         return parseIntHeuristic(input, maxNumberOfDigits);
     }
 
     public static double parseShortHeuristic(String input) {
-        final int maxNumberOfDigits = Short.valueOf(Short.MIN_VALUE).toString().length();
+        int maxNumberOfDigits = Short.valueOf(Short.MIN_VALUE).toString().length() - 2;
         return parseIntHeuristic(input, maxNumberOfDigits);
     }
 
     public static double parseIntHeuristic(String input) {
-        final int maxNumberOfDigits = Integer.valueOf(Integer.MIN_VALUE).toString().length();
+        int maxNumberOfDigits = Integer.valueOf(Integer.MIN_VALUE).toString().length() - 2;
         return parseIntHeuristic(input, maxNumberOfDigits);
     }
 
     public static double parseLongHeuristic(String input) {
-        final int maxNumberOfDigits = Long.valueOf(Long.MIN_VALUE).toString().length();
+        int maxNumberOfDigits = Long.valueOf(Long.MIN_VALUE).toString().length() - 2;
         return parseIntHeuristic(input, maxNumberOfDigits);
     }
 }

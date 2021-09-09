@@ -83,4 +83,18 @@ public class LongClassReplacementTest {
         assertEquals(Long.MAX_VALUE, longValue);
     }
 
+    @Test
+    public void testParseClassReplacement() {
+        BigInteger bigInteger = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
+        String input = bigInteger.toString();
+
+        assertThrows(NumberFormatException.class, () -> {
+            Long.parseLong(input);
+        });
+
+        assertThrows(NumberFormatException.class, () -> {
+            LongClassReplacement.parseLong(input, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        });
+    }
+
 }

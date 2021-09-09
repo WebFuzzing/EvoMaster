@@ -30,13 +30,13 @@ public class CharacterClassReplacement implements MethodReplacementClass {
         if (anObject == null || !(anObject instanceof Character)) {
             t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
-            Character anoterCharacter = (Character) anObject;
-            if (caller.equals(anoterCharacter)) {
-                t = new Truthness(1d, 0d);
+            Character anotherCharacter = (Character) anObject;
+            if (caller.equals(anotherCharacter)) {
+                t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
             } else {
-                final double base = DistanceHelper.H_NOT_NULL;
-                double distance = DistanceHelper.getDistanceToEquality(caller, anoterCharacter);
-                double h = base + ((1 - base) / (distance + 1));
+                double base = DistanceHelper.H_NOT_NULL;
+                double distance = DistanceHelper.getDistanceToEquality(caller, anotherCharacter);
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
         }

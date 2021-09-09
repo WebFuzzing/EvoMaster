@@ -46,7 +46,8 @@ public abstract class CollectionsDistanceUtils {
                     continue;
                 }
 
-                double h = base + (1d - base) / (1d + distance);
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
+
                 if (h > max) {
                     max = h;
                 }

@@ -49,7 +49,8 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
 
         try {
             LocalDate res = LocalDate.parse(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                    new Truthness(1, DistanceHelper.H_NOT_NULL));
             return res;
         } catch (RuntimeException e) {
             double h = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing(input);
@@ -73,11 +74,11 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
         } else {
             LocalDate anotherLocalDate = (LocalDate) anObject;
             if (caller.equals(anotherLocalDate)) {
-                t = new Truthness(1d, 0d);
+                t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
             } else {
-                final double base = DistanceHelper.H_NOT_NULL;
+                double base = DistanceHelper.H_NOT_NULL;
                 double distance = DistanceHelper.getDistanceToEquality(caller, anotherLocalDate);
-                double h = base + ((1 - base) / (distance + 1));
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
         }
