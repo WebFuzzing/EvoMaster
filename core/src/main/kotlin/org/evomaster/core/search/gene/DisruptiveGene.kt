@@ -66,7 +66,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         return true
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 

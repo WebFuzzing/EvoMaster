@@ -85,14 +85,20 @@ object TestSuiteSplitter {
         val clusters = mutableMapOf<String, MutableList<MutableList<HttpWsCallResult>>>()
         val clusteringSol = Solution(errs, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.SUMMARY)
 
-        for (metric in metrics) {
-            clusters[metric.getName()] = Clusterer.cluster(
-                    //Solution(errs, solution.testSuiteName, Termination.SUMMARY),
-                    clusteringSol,
-                    epsilon = metric.getRecommendedEpsilon(),
-                    oracles = oracles,
-                    metric = metric)
+        /**
+        In order for clustering to make sense, we need a set of clusterable actions with at least 2 elements.
+         */
+        if(clusterableActions.size >= 2){
+            for (metric in metrics) {
+                clusters[metric.getName()] = Clusterer.cluster(
+                        //Solution(errs, solution.testSuiteName, Termination.SUMMARY),
+                        clusteringSol,
+                        epsilon = metric.getRecommendedEpsilon(),
+                        oracles = oracles,
+                        metric = metric)
+            }
         }
+
         solution.clusteringTime = ((System.currentTimeMillis() - clusteringStart) / 1000).toInt()
         splitResult.clusteringTime = System.currentTimeMillis() - clusteringStart
         //If clustering is done, the executive summary is, essentially, for free.

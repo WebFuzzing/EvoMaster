@@ -35,21 +35,32 @@ if [ $? -ne 0 ] ; then
    exit 1
 fi
 
+$WB  /client-js/integration-tests/build/src/login-token   em-main.js   app-driver.js  1 OK_check
+if [ $? -ne 0 ] ; then
+   echo "ERROR: Test failed for login-token"
+   exit 1
+fi
+
 
 ### Black-Box Testing ###
 # Note that here we will run the original, NON-instrumented version of the SUT, i.e, under /src
 BB="bash ./e2e_bb_runner.sh"
 
 
-$BB /client-js/integration-tests/src/for-assertions-api  main.js    42 hello 1000 2000 3000 66 bar xvalue yvalue true false simple-string simple-text 123 456 777 888
+$BB /client-js/integration-tests/src/for-assertions-api  main.js  REST  42  hello 1000 2000 3000 66 bar xvalue yvalue true false simple-string simple-text 123 456 777 888
 if [ $? -ne 0 ] ; then
-   echo "ERROR: Test failed for for-assertions-api."
+   echo "ERROR: BB Test failed for for-assertions-api."
    exit 1
 fi
 
-$BB /client-js/integration-tests/src/status-api  main.js   ".status).toBe(200)"  ".status).toBe(400)"  ".status).toBe(404)"  ".status).toBe(500)"
+$BB /client-js/integration-tests/src/status-api  main.js  REST ".status).toBe(200)"  ".status).toBe(400)"  ".status).toBe(404)"  ".status).toBe(500)"
 if [ $? -ne 0 ] ; then
-   echo "ERROR: Test failed for status-api."
+   echo "ERROR: BB Test failed for status-api."
    exit 1
 fi
 
+$BB /client-js/integration-tests/src/base-graphql  main.js GRAPHQL FOO
+if [ $? -ne 0 ] ; then
+   echo "ERROR: BB Test failed for base-graphql."
+   exit 1
+fi

@@ -19,7 +19,7 @@ class SqlAutoIncrementGene(name: String) : Gene(name, mutableListOf()) {
     }
 
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         throw IllegalStateException("AutoIncrement fields should never be printed")
     }
 

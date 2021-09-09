@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.database.DbActionGeneBuilder
+import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.PetClinicCheckMain
@@ -253,7 +254,7 @@ internal class GeneUtilsTest {
     fun testRepairInPetclinic() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/QueryTypeGlobalPetsClinic.json").readText()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         val pettypes = actionCluster.get("pettypes") as GraphQLAction
@@ -270,6 +271,82 @@ internal class GeneUtilsTest {
         assertFalse(objPetType.fields.any{ it is BooleanGene && it.value})
         GeneUtils.repairBooleanSelection(objPetType)
         assertTrue(objPetType.fields.any{ it is BooleanGene && it.value})
+    }
+
+
+    @Test
+    fun testInterfaceSelectionName(){
+
+        val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
+        val b = OptionalGene("B",ObjectGene("B", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+
+        val unionObj = ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b))
+
+        val res = unionObj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{...onA{a1}...onB{b1,b2}}", res)//with out the name foo
+    }
+
+    @Test
+    fun testNestedInterfaceSelectionName(){
+
+        val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
+        val b = OptionalGene("B",ObjectGene("B", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+
+        val optionalUnionObj = OptionalGene("foo ${GqlConst.INTERFACE_TAG}",ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b)))
+
+        val obj = ObjectGene("obj", listOf(optionalUnionObj))
+
+
+        val res = obj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{foo{...onA{a1}...onB{b1,b2}}}", res)//with the name foo
+    }
+
+
+    @Test
+    fun testCopyFields() {
+
+        val obj = ObjectGene("Obj1",  listOf(StringGene("a", "hello"),StringGene("b", "hihi")))
+
+        val objBase = ObjectGene("Obj1", listOf(StringGene("a", "hello")))
+
+        val diff = obj.copyFields(objBase)
+
+        assertEquals(1, diff.fields.size )
+    }
+
+    @Test
+    fun testInterfaceSelection(){
+
+        val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
+        val b = OptionalGene("B ${GqlConst.INTERFACE_BASE_TAG}",ObjectGene("B ${GqlConst.INTERFACE_BASE_TAG}", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+
+        val unionObj = ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b))
+
+        val res = unionObj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{...onA{a1}b1,b2}", res)//without the name foo and without "...on" for the object B
+    }
+
+    @Test
+    fun testNestedInterfaceSelection(){
+
+        val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
+        val b = OptionalGene("B ${GqlConst.INTERFACE_BASE_TAG}",ObjectGene("B${GqlConst.INTERFACE_BASE_TAG}", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+
+        val optionalUnionObj = OptionalGene("foo ${GqlConst.INTERFACE_TAG}",ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b)))
+
+        val obj = ObjectGene("obj", listOf(optionalUnionObj))
+
+
+        val res = obj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{foo{...onA{a1}b1,b2}}", res)//with the name foo and without "...on" for the object B
     }
 
 }

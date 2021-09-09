@@ -320,7 +320,7 @@ test("purity analysis 'and' and 'or' with literal/binary expression", () => {
 });
 
 
-test("purity analysis 'and' and 'or' with update and assignement", () => {
+test("purity analysis 'and' and 'or' with update and assignment", () => {
 
     expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(0);
 
@@ -357,4 +357,149 @@ test("purity analysis 'and' and 'or' with update and assignement", () => {
     expect(x).toBe(1);
     // y=42 was not executed
     expect(y).toBe(1);
+});
+
+
+test("function call reference via array access", () => {
+
+    let k;
+
+    const code = dedent`
+        const getName = () => "foo";
+        const x = {"foo": (x) => {return x*2}};
+        k = x.foo(2);
+        k = x["foo"](k);
+        k = x[getName()](k);        
+    `;
+
+    const instrumented = runPlugin(code).code;
+
+    eval(instrumented);
+
+    expect(k).toBe(16);
+});
+
+
+test("ternary with await expression", async () => {
+
+    let f;
+    const code = dedent`
+        f = async function (x) {
+            return  x > 0
+                ? await new Promise((resolve) => resolve(1))
+                : await new Promise((resolve) => resolve(2));
+        };       
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = await f(0);
+    expect(k).toBe(2);
+
+    k = await f(1);
+    expect(k).toBe(1);
+});
+
+test("logic expression with await expression", async () => {
+
+    let f;
+    const code = dedent`
+        f = async function (x) {
+            return  x > 0 || 
+                (await new Promise((resolve) => resolve(x > 1))) ||
+                (await new Promise((resolve) => resolve(x > 2)));
+        };  
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = await f(0);
+    expect(k).toBe(false);
+
+    k = await f(1);
+    expect(k).toBe(true);
+});
+
+
+test("toString", async () => {
+
+    let f;
+    const code = dedent`
+        f = function (x) {
+            return x.toString();
+        }
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = await f(5);
+    expect(k).toBe("5");
+
+    k = await f(10);
+    expect(k).toBe("10");
+});
+
+test("embedded await expression", async () => {
+
+    let f;
+    const code = dedent`
+        async function afoo (x) {
+            return  x > 5
+                ? await new Promise((resolve) => resolve(x - 1))
+                : await new Promise((resolve) => resolve(x + 1))
+        }     
+        
+        function numToString (x) {
+            return x.toString();
+        }
+        
+        f = async function (x) {
+            return await afoo(x) > 5 
+                ? numToString(await afoo(x - 1))
+                : numToString(await afoo(x + 1));
+        };    
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = await f(5);
+    expect(k).toBe("5");
+
+    k = await f(10);
+    expect(k).toBe("8");
+});
+
+
+test("await in the inputs params", async () => {
+
+    let f;
+    const code = dedent`
+        async function afoo (x) {
+            return  x > 5
+                ? await new Promise((resolve) => resolve(x - 1))
+                : await new Promise((resolve) => resolve(x + 1))
+        }     
+        
+        function numToString (x) {
+            return x.toString();
+        }
+        
+        f = async function (x) {
+            const data = numToString(await afoo(x));
+            return data;
+        }; 
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = await f(5);
+    expect(k).toBe("6");
+
+    k = await f(10);
+    expect(k).toBe("9");
 });

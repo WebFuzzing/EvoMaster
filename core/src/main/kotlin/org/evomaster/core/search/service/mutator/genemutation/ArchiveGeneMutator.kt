@@ -88,7 +88,7 @@ class ArchiveGeneMutator{
                                 ?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
-                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = Long.MIN_VALUE, max = Long.MAX_VALUE),
+                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.min?: Long.MIN_VALUE, max = gene.max?: Long.MAX_VALUE),
                     start = GeneUtils.intpow2.size, end = 10
             )
             is DoubleGene -> gene.value =  sampleValue(
@@ -390,7 +390,7 @@ class ArchiveGeneMutator{
             originalActions: List<Action>, mutatedActions : List<Action>, mutatedGenes: List<Gene>, genesAtActionIndex: List<Int>
     ) : MutableList<Pair<Gene, Gene>>{
         Lazy.assert {
-            mutatedActions.isEmpty()  || mutatedActions.size > genesAtActionIndex.max()!!
+            mutatedActions.isEmpty()  || mutatedActions.size > genesAtActionIndex.maxOrNull()!!
             mutatedActions.isEmpty()  || mutatedGenes.size == genesAtActionIndex.size
             originalActions.size == mutatedActions.size
         }

@@ -60,7 +60,7 @@ class PrimitiveTypeMatchFitness : FitnessFunction<PrimitiveTypeMatchIndividual>(
 
         val currents = if (archive.isEmpty()) initialTargets() else if (archive.notCoveredTargets().isNotEmpty()) archive.notCoveredTargets()  else return
 
-        val max = currents.max()
+        val max = currents.maxOrNull()
 
         currents.forEach { c->
             val value = getValue(individual)

@@ -32,6 +32,7 @@ class ExpectationEMTest : SpringTestBase() {
 
         val assertion = generatedCodeAssertion(outputFolderName, className, OutputFormat.KOTLIN_JUNIT_5, false)
         assertTrue(assertion)
+        compileRunAndVerifyTests(outputFolderName, className)
     }
 
     @Test
@@ -43,6 +44,7 @@ class ExpectationEMTest : SpringTestBase() {
 
         val assertion = generatedCodeAssertion(outputFolderName, className, OutputFormat.KOTLIN_JUNIT_5, true)
         assertTrue(assertion)
+        compileRunAndVerifyTests(outputFolderName, className)
     }
 
     @Test
@@ -84,12 +86,10 @@ class ExpectationEMTest : SpringTestBase() {
 
     fun testRunEMGeneric(expectationActive: Boolean, className: ClassName, outputFormat: OutputFormat? = OutputFormat.KOTLIN_JUNIT_5){
         val outputFolderName = "ExpectationsEM"
-        val iterations = 10_000
+        val iterations = 1000
 
         val lambda = {args: MutableList<String> ->
-            if(outputFormat != null) {
-                args.replaceAll { s -> s.replace(OutputFormat.KOTLIN_JUNIT_5.name, outputFormat.name) }
-            }
+            setOutputFormat(args, outputFormat)
 
             if(!expectationActive){
                 val ind = args.indexOf("--expectationsActive") + 1
@@ -125,6 +125,7 @@ class ExpectationEMTest : SpringTestBase() {
                 outputFolderName,
                 className,
                 true)
+                setOutputFormat(args, outputFormat)
 
                 lambda.invoke(args)
             }

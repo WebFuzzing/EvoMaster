@@ -46,6 +46,8 @@ object GeneUtils {
         BOOLEAN_SELECTION_NESTED_MODE,
         GQL_INPUT_MODE,
         GQL_INPUT_ARRAY_MODE,
+        BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE,
+        BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE,
         GQL_STR_VALUE
     }
 
@@ -127,20 +129,16 @@ object GeneUtils {
 
 
     /**
-    [applyEscapes] - applies various escapes needed for assertion generation.
-    Moved here to allow extension to other purposes (SQL escapes, for example) and to
-    allow a more consistent way of making changes.
-
+     * [applyEscapes] - applies various escapes needed for assertion generation.
+     * Moved here to allow extension to other purposes (SQL escapes, for example) and to
+     * allow a more consistent way of making changes.
+     *
      * This includes escaping special chars for java and kotlin.
-     * Currently, Strings containing "@" are split, on the assumption (somewhat premature, admittedly) that
-     * the symbol signifies an object reference (which would likely cause the assertion to fail).
-     * TODO: Tests are needed to make sure this does not break.
      * Escapes may have to be applied differently between:
      * Java and Kotlin
      * calls and assertions
 
      */
-
     fun applyEscapes(string: String, mode: EscapeMode = EscapeMode.NONE, format: OutputFormat): String {
         val ret = when (mode) {
             EscapeMode.URI -> applyUriEscapes(string, format)
@@ -152,6 +150,8 @@ object GeneUtils {
             EscapeMode.NONE,
             EscapeMode.X_WWW_FORM_URLENCODED,
             EscapeMode.BOOLEAN_SELECTION_MODE,
+            EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE,
+            EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE,
             EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
             EscapeMode.GQL_INPUT_ARRAY_MODE,
             EscapeMode.GQL_INPUT_MODE -> string
@@ -180,14 +180,14 @@ object GeneUtils {
      * TODO might need a further handling based on [format]
      * Note that there is kind of post handling for graphQL, see [GraphQLUtils.getPrintableInputGenes]
      */
-    fun applyGQLStr(string: String, format: OutputFormat) : String{
+    private fun applyGQLStr(string: String, format: OutputFormat) : String{
         val replace = string
             .replace("\"", "\\\\\"")
 
         return replace
     }
 
-    fun applyExpectationEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
+    private fun applyExpectationEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
         val ret = string.replace("\\", """\\\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
@@ -198,7 +198,7 @@ object GeneUtils {
         }
     }
 
-    fun applyUriEscapes(string: String, format: OutputFormat): String {
+    private fun applyUriEscapes(string: String, format: OutputFormat): String {
         //val ret = URLEncoder.encode(string, "utf-8")
         val ret = string.replace("\\", "%5C")
                 .replace("\"", "%22")
@@ -208,7 +208,7 @@ object GeneUtils {
         else return ret
     }
 
-    fun applyTextEscapes(string: String, format: OutputFormat): String {
+    private fun applyTextEscapes(string: String, format: OutputFormat): String {
         val ret = string.replace("\\", """\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
@@ -223,12 +223,23 @@ object GeneUtils {
 
     }
 
-    fun applyAssertionEscapes(string: String, format: OutputFormat): String {
-        var ret = ""
-        val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
-        ret = string.split("@")[0] //first split off any reference that might differ between runs
-                .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
-                .replace("\\", "\\\\")
+    private fun applyAssertionEscapes(string: String, format: OutputFormat): String {
+
+    /*
+        FIXME
+        This was completely broken, as modifying the string for flakiness handling has
+        nothing to do with applying escapes... which broke assertion generation for when
+        we do full matches (and checking substrings).
+
+        Flakiness handling has to be handled somewhere else. plus this is misleading, as
+        eg messing up assertions on email addresses.
+     */
+//        var ret = ""
+//        val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
+//        ret = string.split("@")[0] //first split off any reference that might differ between runs
+//                .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
+
+        val ret = string.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
@@ -239,8 +250,8 @@ object GeneUtils {
         else return ret
     }
 
-    fun applyBodyEscapes(string: String, format: OutputFormat): String {
-        var ret = string.replace("\\", """\\""")
+    private fun applyBodyEscapes(string: String, format: OutputFormat): String {
+        val ret = string.replace("\\", """\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
@@ -264,7 +275,7 @@ object GeneUtils {
                      */
     }
 
-    fun applySqlEscapes(string: String, format: OutputFormat): String {
+    private fun applySqlEscapes(string: String, format: OutputFormat): String {
         val ret = string.replace("\\", """\\""")
                 .replace("\"", "\\\\\"")
 

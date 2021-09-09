@@ -50,7 +50,7 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
         return true
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         val rawValue = objectGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML , targetFormat)
         when {
             // TODO: refactor with StringGene.getValueAsPrintableString(()

@@ -292,7 +292,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
             }
 
             val response = try {
-                client.target(baseUrl + cl.loginEndpointUrl)
+                client.target(cl.getUrl(baseUrl))
                         .request()
                         //TODO could consider other cases besides POST
                         .buildPost(Entity.entity(cl.payload(), mediaType))

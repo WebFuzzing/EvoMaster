@@ -33,7 +33,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         log.debug("Initializing {}", GraphQLSampler::class.simpleName)
 
         if(config.blackBox && !config.bbExperiments){
-           // initForBlackBox() //TODO
+            initForBlackBox()
             return
         }
 
@@ -48,7 +48,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
         var gqlEndpoint = infoDto.graphQLProblem?.endpoint
-                ?: throw IllegalStateException("Missing information about the GraphQL ednpoint URL")
+                ?: throw IllegalStateException("Missing information about the GraphQL endpoint URL")
 
         if(! gqlEndpoint.startsWith("http", true)){
             gqlEndpoint = infoDto.baseUrlOfSUT + gqlEndpoint
@@ -74,7 +74,16 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
+    private fun initForBlackBox() {
+        val gqlEndpoint = config.bbTargetUrl
 
+        val iq = IntrospectiveQuery()
+        val schema = iq.fetchSchema(gqlEndpoint)
+
+        actionCluster.clear()
+
+        GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster)
+    }
 
 
     override fun sampleAtRandom(): GraphQLIndividual {

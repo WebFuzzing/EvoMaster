@@ -6,7 +6,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*
 import java.util.regex.Pattern
 
-@Controller
+@RestController
 @RequestMapping(path = ["/api/charescaperegex"], consumes = [MediaType.APPLICATION_JSON_VALUE])
 open class CharEscapeRegexRest {
 

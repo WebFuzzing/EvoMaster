@@ -8,14 +8,4 @@ import org.evomaster.e2etests.utils.WsTestBase
 /**
  * Created by arcuri82 on 03-Mar-20.
  */
-abstract class SpringTestBase : GraphQLTestBase() {
-
-    companion object {
-        @JvmStatic
-        @Suppress("ACCIDENTAL_OVERRIDE")
-        //https://youtrack.jetbrains.com/issue/KT-12993
-        fun initClass(controller: EmbeddedSutController) {
-            WsTestBase.initClass(controller)
-        }
-    }
-}
+abstract class SpringTestBase : GraphQLTestBase()
