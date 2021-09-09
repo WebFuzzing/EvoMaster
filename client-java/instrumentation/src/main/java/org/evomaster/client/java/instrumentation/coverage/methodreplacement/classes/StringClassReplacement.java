@@ -77,7 +77,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         Truthness t;
 
         if (result) {
-            t = new Truthness(1d, 0d);
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
         } else {
             double base = DistanceHelper.H_NOT_NULL;
             double distance = DistanceHelper.getLeftAlignmentDistance(
@@ -200,7 +200,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         Truthness t;
 
         if (result) {
-            t = new Truthness(1, 0);
+            t = new Truthness(1, DistanceHelper.H_NOT_NULL);
         } else {
             assert caller.length() > k.length();
             long best = Long.MAX_VALUE;
