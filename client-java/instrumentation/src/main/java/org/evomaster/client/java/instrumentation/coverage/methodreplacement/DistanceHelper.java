@@ -67,6 +67,10 @@ public class DistanceHelper {
             throw new IllegalArgumentException("Negative distance: " + distance);
         }
 
+        if(Double.isInfinite(distance) || distance == Double.MAX_VALUE){
+            return base;
+        }
+
        return base + ((1 - base) / (distance + 1));
     }
 
@@ -102,7 +106,10 @@ public class DistanceHelper {
             dist += Math.abs(a.charAt(i) - b.charAt(i));
         }
 
-        assert dist >= 0;
+        if(dist < 0){
+            dist = Long.MAX_VALUE; // overflow
+        }
+
         return dist;
     }
 

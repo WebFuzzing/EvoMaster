@@ -55,9 +55,14 @@ public class NumberParsingUtils {
 
         }
 
+        if(distance < 0){
+            distance = Long.MAX_VALUE; // overflow
+        }
+
         //recall h in [0,1] where the highest the distance the closer to 0
-        final double base = H_NOT_NULL;
-        return base + ((1d - base) / (distance + 1));
+        double base = H_NOT_NULL;
+        double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
+        return h;
     }
 
     private static double parseIntHeuristic(String input, int maxNumberOfDigits) {
@@ -70,7 +75,7 @@ public class NumberParsingUtils {
             return H_REACHED_BUT_NULL;
         }
 
-        final double base = H_NOT_NULL;
+        double base = H_NOT_NULL;
 
         if (input.length() == 0) {
             return base;
@@ -100,8 +105,14 @@ public class NumberParsingUtils {
             }
         }
 
+        if(distance < 0){
+            distance = Long.MAX_VALUE; // overflow
+        }
+
+
         //recall h in [0,1] where the highest the distance the closer to 0
-        return base + ((1d - base) / (distance + 1));
+        double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
+        return h;
     }
 
     public static double parseByteHeuristic(String input) {
