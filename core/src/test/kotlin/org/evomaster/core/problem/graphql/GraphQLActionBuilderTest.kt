@@ -17,7 +17,7 @@ class GraphQLActionBuilderTest {
     fun testPetClinic() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/QueryTypeGlobalPetsClinic.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/PetsClinic.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
 

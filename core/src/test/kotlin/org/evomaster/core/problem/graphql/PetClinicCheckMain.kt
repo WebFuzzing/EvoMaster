@@ -4,9 +4,6 @@ package org.evomaster.core.problem.graphql
 import com.google.gson.Gson
 import org.evomaster.core.problem.graphql.schema.SchemaObj
 import org.evomaster.core.search.Action
-import org.junit.jupiter.api.Assertions
-import java.io.File
-import java.io.InputStream
 
 class PetClinicCheckMain {
 
@@ -16,7 +13,7 @@ class PetClinicCheckMain {
         fun main(args: Array<String>) {
 
             //reading the gson file
-            val json = PetClinicCheckMain::class.java.getResource("/graphql/QueryTypeGlobalPetsClinic.json").readText()
+            val json = PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic.json").readText()
 
             //converting json to object
             val gson = Gson()
