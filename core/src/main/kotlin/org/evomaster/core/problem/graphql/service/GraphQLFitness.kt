@@ -3,13 +3,10 @@ package org.evomaster.core.problem.graphql.service
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.graphql.*
-import org.evomaster.core.problem.graphql.param.GQInputParam
-import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.remote.TcpUtils
@@ -137,7 +134,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                       but, unfortunately, currently there is no way to distinguish between user and server errors
                       https://github.com/graphql/graphql-spec/issues/698
                  */
-                handleGraphQLErrors(fv, name, it, result, additionalInfoList, actionResults)
+                handleGraphQLErrors(fv, name, it, result, additionalInfoList)
 
             }
     }
@@ -150,8 +147,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         name: String,
         actionIndex: Int,
         result: GraphQlCallResult,
-        additionalInfoList: List<AdditionalInfoDto>,
-        actionResults: List<ActionResult>
+        additionalInfoList: List<AdditionalInfoDto>
     ) {
         val errorId = idMapper.handleLocalTarget(idMapper.getGQLErrorsDescriptiveWithMethodName(name))
         val okId = idMapper.handleLocalTarget(idMapper.getGQLNoErrors(name))
@@ -160,33 +156,46 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         if (anyError) {
 
-            /*Todo to remove one the above semantic is checked
-           fv.updateTarget(errorId, 1.0, actionIndex)
-           fv.updateTarget(okId, 0.5, actionIndex)
-           // handle with last statement
-           val last = additionalInfoList[actionIndex].lastExecutedStatement ?: DEFAULT_FAULT_CODE
-           result.setLastStatementWhenGQLErrors(last)
-           // shall we add additional target with last?
-           val errorlineId = idMapper.handleLocalTarget(
-               idMapper.getGQLErrorsDescriptiveWithMethodNameAndLine(
-                   line = last,
-                   method = name
-               )
-           )
-           fv.updateTarget(errorlineId, 1.0, actionIndex)
-           */
-            /*Todo: check the semantic**/
-            val result = actionResults[actionIndex] as GraphQlCallResult
-            val status = result.getStatusCode() ?: -1
-            val location5xx: String? = getlocation5xx(status, additionalInfoList, actionIndex, result, name)
-            handleAdditionalStatusTargetDescription(fv, status, name, actionIndex, location5xx)
+
+            fv.updateTarget(errorId, 1.0, actionIndex)
+            fv.updateTarget(okId, 0.5, actionIndex)
+            val graphQlError = getGraphQLError(additionalInfoList, actionIndex, result, name)
+            if (graphQlError != null) {
+                val errorlineId = idMapper.handleLocalTarget(graphQlError)
+                fv.updateTarget(errorlineId, 1.0, actionIndex)
+            }
+
+
+//            /*Todo: check the semantic**/
+//            val result = actionResults[actionIndex] as GraphQlCallResult
+//            val status = result.getStatusCode() ?: -1
+//            val location5xx: String? = getlocation5xx(status, additionalInfoList, actionIndex, result, name)
+//            handleAdditionalStatusTargetDescription(fv, status, name, actionIndex, location5xx)
 
         } else {
             fv.updateTarget(okId, 1.0, actionIndex)
             fv.updateTarget(errorId, 0.5, actionIndex)
         }
+    }
 
+    /**
+     * @return description for graphql error with lastExecutedStatement
+     */
+    open fun getGraphQLError(
+        additionalInfoList: List<AdditionalInfoDto>,
+        indexOfAction: Int,
+        result: GraphQlCallResult,
+        name: String
+    ): String? {
 
+        // handle with last statement
+        val last = additionalInfoList[indexOfAction].lastExecutedStatement ?: DEFAULT_FAULT_CODE
+        result.setLastStatementWhenGQLErrors(last)
+        // shall we add additional target with last?
+        return idMapper.getGQLErrorsDescriptiveWithMethodNameAndLine(
+            line = last,
+            method = name
+        )
     }
 
     private fun hasErrors(result: GraphQlCallResult): Boolean {

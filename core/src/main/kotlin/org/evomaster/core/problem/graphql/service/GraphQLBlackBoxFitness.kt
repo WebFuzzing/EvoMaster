@@ -3,9 +3,8 @@ package org.evomaster.core.problem.graphql.service
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -60,6 +59,18 @@ class GraphQLBlackBoxFitness : GraphQLFitness() {
     }
 
     override fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: HttpWsCallResult, name: String): String? {
+        /*
+            In Black-Box testing, there is no info from the source/bytecode
+         */
+        return null
+    }
+
+    override fun getGraphQLError(
+        additionalInfoList: List<AdditionalInfoDto>,
+        indexOfAction: Int,
+        result: GraphQlCallResult,
+        name: String
+    ): String? {
         /*
             In Black-Box testing, there is no info from the source/bytecode
          */
