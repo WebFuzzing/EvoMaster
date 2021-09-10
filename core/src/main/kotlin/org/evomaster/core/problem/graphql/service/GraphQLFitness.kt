@@ -238,7 +238,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         if (status == 500) {
             Lazy.assert {
-                location5xx != null
+                location5xx != null || config.blackBox
             }
             /*
                 500 codes "might" be bugs. To distinguish between different bugs
@@ -246,9 +246,18 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 executed statement in the SUT.
                 So, we create new targets for it.
             */
-            val descriptiveId = idMapper.getFaultDescriptiveIdFor500("${location5xx!!} $name")
+            val postfix = if(location5xx==null) name else "${location5xx!!} $name"
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500(postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
+
+            /*
+            val postfix = if(location5xx==null) name else "${location5xx!!} $name"
+            val descriptiveId = idMapper.getFaultDescriptiveIdFor500(postfix)
+            val bugId = idMapper.handleLocalTarget(descriptiveId)
+            fv.updateTarget(bugId, 1.0, indexOfAction) */
+
+
         }
     }
 
