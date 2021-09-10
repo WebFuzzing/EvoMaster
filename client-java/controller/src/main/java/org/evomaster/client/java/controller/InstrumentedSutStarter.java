@@ -63,12 +63,12 @@ public class InstrumentedSutStarter {
     }
 
     public boolean start() {
-        StandardOutputTracker.setTracker(true, sutController);
+       // StandardOutputTracker.setTracker(true, sutController);
         return sutController.startTheControllerServer();
     }
 
     public boolean stop() {
-        StandardOutputTracker.setTracker(false, null);
+       // StandardOutputTracker.setTracker(false, null);
         return sutController.stopTheControllerServer();
     }
 

@@ -163,6 +163,7 @@ public abstract class SutController implements SutHandler {
      *
      * @param sql command as a string
      */
+    @Deprecated
     public final void handleSql(String sql) {
         Objects.requireNonNull(sql);
 
@@ -200,6 +201,19 @@ public abstract class SutController implements SutHandler {
     public final ExtraHeuristicsDto computeExtraHeuristics() {
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
+
+        if(sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution()){
+            /*
+                TODO refactor, once we move SQL analysis into Core
+             */
+            List<AdditionalInfo> list = getAdditionalInfoList();
+            if(!list.isEmpty()) {
+                AdditionalInfo last = list.get(list.size() - 1);
+                last.getSqlInfoData().stream().forEach(it -> {
+                    sqlHandler.handle(it.getCommand());
+                });
+            }
+        }
 
         if(sqlHandler.isCalculateHeuristics()) {
             sqlHandler.getDistances().stream()
@@ -255,23 +269,26 @@ public abstract class SutController implements SutHandler {
      *
      * @return false if the verification failed
      */
+    @Deprecated
     public final boolean verifySqlConnection(){
 
-        Connection connection = getConnection();
-        if(connection == null
-                //check does not make sense for External
-                || !(this instanceof EmbeddedSutController)){
-            return true;
-        }
+        return true;
 
-        /*
-            bit hacky/brittle, but seems there is no easy way to check if a connection is
-            using P6Spy.
-            However, the name of driver's package would appear when doing a toString on it
-         */
-        String info = connection.toString();
-
-        return info.contains("p6spy");
+//        Connection connection = getConnection();
+//        if(connection == null
+//                //check does not make sense for External
+//                || !(this instanceof EmbeddedSutController)){
+//            return true;
+//        }
+//
+//        /*
+//            bit hacky/brittle, but seems there is no easy way to check if a connection is
+//            using P6Spy.
+//            However, the name of driver's package would appear when doing a toString on it
+//         */
+//        String info = connection.toString();
+//
+//        return info.contains("p6spy");
     }
 
 

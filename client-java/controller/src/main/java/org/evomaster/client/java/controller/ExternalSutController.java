@@ -428,9 +428,9 @@ public abstract class ExternalSutController extends SutController {
 
                         String line = scanner.nextLine();
 
-                        if(line.startsWith(P6SpyFormatter.PREFIX)){
-                            StandardOutputTracker.handleSqlLine(this, line);
-                        }
+//                        if(line.startsWith(P6SpyFormatter.PREFIX)){
+//                            StandardOutputTracker.handleSqlLine(this, line);
+//                        }
 
                         if(!muted) {
                             SimpleLogger.info("SUT: " + line);

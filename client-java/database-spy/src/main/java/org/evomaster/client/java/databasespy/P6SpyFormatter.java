@@ -7,6 +7,7 @@ import com.p6spy.engine.spy.appender.MessageFormattingStrategy;
  * need them in a specific format.
  * This is also useful when we need to discern them from other SUT messages.
  */
+@Deprecated
 public class P6SpyFormatter implements MessageFormattingStrategy {
 
     public static final String PREFIX = "P6SPY_SQL: ";

@@ -26,6 +26,7 @@ import java.util.Objects;
  * <p>
  * This class can be used for any analyses of the SUT output
  */
+@Deprecated // we are now using testability transformations
 public class StandardOutputTracker extends ByteArrayOutputStream{
 
     private static final PrintStream DEFAULT_OUT = System.out;
