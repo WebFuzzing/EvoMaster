@@ -170,7 +170,7 @@ class Archive<T> where T : Individual {
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
 
         return when (config.feedbackDirectedSampling) {
-            LAST -> toChooseFrom.minBy {
+            LAST -> toChooseFrom.minByOrNull {
                 val counter = samplingCounter.getOrDefault(it, 0)
                 val p = populations[it]!!
                 val time = p[p.lastIndex].executionTimeMs //time of best individual
@@ -218,9 +218,9 @@ class Archive<T> where T : Individual {
                 previous != null &&
                         samplingCounter[it]!! < previous * 2
             }
-            .minBy { lastImprovement[it]!! }
+            .minByOrNull { lastImprovement[it]!! }
 
-        return index ?: toChooseFrom.minBy {
+        return index ?: toChooseFrom.minByOrNull {
             samplingCounter.getOrDefault(it, 0)
         }!!
     }
@@ -275,7 +275,7 @@ class Archive<T> where T : Individual {
     fun reachedTargetHeuristics(): List<String> {
 
         return populations.entries
-            .map { e -> "key ${e.key} -> best heuristics=${e.value.map { it.fitness.computeFitnessScore() }.max()}" }
+            .map { e -> "key ${e.key} -> best heuristics=${e.value.map { it.fitness.computeFitnessScore() }.maxOrNull()}" }
             .sorted()
     }
 
@@ -532,7 +532,7 @@ class Archive<T> where T : Individual {
      * useful for debugging
      */
     fun getReachedTargetHeuristics(target: Int): Double? {
-        return populations[target]?.map { v -> v.fitness.getHeuristic(target) }?.max()
+        return populations[target]?.map { v -> v.fitness.getHeuristic(target) }?.maxOrNull()
     }
 
     /**
