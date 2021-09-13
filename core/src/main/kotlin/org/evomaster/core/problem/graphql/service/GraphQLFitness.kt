@@ -165,13 +165,6 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 fv.updateTarget(errorlineId, 1.0, actionIndex)
             }
 
-
-//            /*Todo: check the semantic**/
-//            val result = actionResults[actionIndex] as GraphQlCallResult
-//            val status = result.getStatusCode() ?: -1
-//            val location5xx: String? = getlocation5xx(status, additionalInfoList, actionIndex, result, name)
-//            handleAdditionalStatusTargetDescription(fv, status, name, actionIndex, location5xx)
-
         } else {
             fv.updateTarget(okId, 1.0, actionIndex)
             fv.updateTarget(errorId, 0.5, actionIndex)
@@ -259,13 +252,6 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             val descriptiveId = idMapper.getFaultDescriptiveIdFor500(postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
-
-            /*
-            val postfix = if(location5xx==null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveIdFor500(postfix)
-            val bugId = idMapper.handleLocalTarget(descriptiveId)
-            fv.updateTarget(bugId, 1.0, indexOfAction) */
-
 
         }
     }

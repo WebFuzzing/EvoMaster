@@ -194,24 +194,6 @@ object GraphQLActionBuilder {
         state.argsTables.addAll(state.tempArgsTables)
         state.tables =
             state.tables.distinctBy { Pair(it.tableType, it.tableField) }.toMutableList()//remove redundant elements
-
-        println("I am the table:////////////////////////////////////////////////////////////////////// ")
-        for (element in state.tables) {
-            println(
-                "{Table Name: ${element?.tableType}, " +
-                        "Field: ${element?.tableField}, " +
-                        "KindOfTableField: ${element?.kindOfTableField}, " +
-                        "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfTableFieldOptional}, " +
-                        "table field Type: ${element?.tableFieldType}, " +
-                        "KindOfTable field type : ${element?.kindOfTableFieldType} " +
-                        "IsKindOfKindOfTableTypeOptional?: ${element?.isKindOfTableFieldTypeOptional} " +
-                        "Enum?: ${element?.enumValues} " +
-                        "UnionTypes: ${element?.unionTypes} " +
-                        "InterfaceTypes: ${element?.interfaceTypes} "
-            )
-        }
-        println(state.tables.size)
-
     }
 
     /*
