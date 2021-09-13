@@ -471,7 +471,7 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertEquals(0, h0); // null value provides no gradient to reach false branch
+        assertEquals(DistanceHelper.H_NOT_NULL, h0); // null value provides no gradient to reach false branch
 
         te.objectEquals("Hello!", null);
 
@@ -522,7 +522,7 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertEquals(0, h0); // no guidance is provided since the pattern is unknown
+        assertEquals(DistanceHelper.H_NOT_NULL, h0); // no guidance is provided since the pattern is unknown
     }
 
     @Test
@@ -792,7 +792,7 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertEquals(0, h0);
+        assertEquals(H_REACHED_BUT_NULL, h0);
 
         te.stringEquals("Hello", "H");
         double h1 = ExecutionTracer.getValue(targetId);
@@ -827,7 +827,7 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertEquals(0, h0);
+        assertEquals(H_REACHED_BUT_NULL, h0);
 
         te.stringEqualsIgnoreCase("hello", "H");
         double h1 = ExecutionTracer.getValue(targetId);
@@ -1212,7 +1212,7 @@ public class TestabilityExcInstrumentedTest {
         String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
                 .iterator().next();
         double h0 = ExecutionTracer.getValue(targetId); // false branch not covered
-        assertEquals(0, h0);
+        assertEquals(DistanceHelper.H_NOT_NULL, h0);
 
         // second match
         boolean find1 = te.matcherFind(matcher);

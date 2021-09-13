@@ -52,7 +52,8 @@ public class LocalTimeClassReplacement implements MethodReplacementClass {
 
         try {
             LocalTime res = LocalTime.parse(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                    new Truthness(1, DistanceHelper.H_NOT_NULL));
             return res;
         } catch (DateTimeParseException | NullPointerException e) {
             double h = DateTimeParsingUtils.getHeuristicToISOLocalTimeParsing(input);
@@ -76,11 +77,11 @@ public class LocalTimeClassReplacement implements MethodReplacementClass {
         } else {
             LocalTime anotherLocalTime = (LocalTime) anObject;
             if (caller.equals(anotherLocalTime)) {
-                t = new Truthness(1d, 0d);
+                t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
             } else {
                 double base = DistanceHelper.H_NOT_NULL;
                 double distance = DistanceHelper.getDistanceToEquality(caller, anotherLocalTime);
-                double h = base + (1 - base) / (1 + distance);
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
         }
