@@ -23,7 +23,6 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
     }
 
     private var population: MutableList<Data> = mutableListOf()
-    private var n: Int = config.populationSize
 
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.MOSA
@@ -40,6 +39,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
     override fun searchOnce() {
         //new generation
+        val n = config.populationSize
 
         val nextPop: MutableList<Data> = mutableListOf()
 

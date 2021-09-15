@@ -24,7 +24,6 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
 
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
-    private val n: Int= config.populationSize
 
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.WTS
@@ -37,6 +36,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
     }
 
     override fun searchOnce() {
+        val n = config.populationSize
         //new generation
 
         val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()

@@ -88,9 +88,9 @@ class ClusterEMTest : SpringTestBase() {
             val config = injector.getInstance(EMConfig::class.java)
             config.testSuiteSplitType = EMConfig.TestSuiteSplitType.CLUSTER
 
-            val solution = Main.run(injector, null) as Solution<RestIndividual>
-
             val controllerInfoDto = Main.checkState(injector)
+
+            val solution = Main.run(injector, controllerInfoDto) as Solution<RestIndividual>
 
             Main.writeTests(injector, solution, controllerInfoDto)
 
