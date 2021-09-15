@@ -159,7 +159,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             fv.updateTarget(errorId, 1.0, actionIndex)
             fv.updateTarget(okId, 0.5, actionIndex)
-            val graphQlError = getGraphQLError(additionalInfoList, actionIndex, result, name)
+            val graphQlError = getGraphQLErrorWithLineInfo(additionalInfoList, actionIndex, result, name)
             if (graphQlError != null) {
                 val errorlineId = idMapper.handleLocalTarget(graphQlError)
                 fv.updateTarget(errorlineId, 1.0, actionIndex)
@@ -174,7 +174,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     /**
      * @return description for graphql error with lastExecutedStatement
      */
-    open fun getGraphQLError(
+    open fun getGraphQLErrorWithLineInfo(
         additionalInfoList: List<AdditionalInfoDto>,
         indexOfAction: Int,
         result: GraphQlCallResult,

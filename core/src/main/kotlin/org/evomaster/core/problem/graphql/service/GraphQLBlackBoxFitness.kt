@@ -65,7 +65,7 @@ class GraphQLBlackBoxFitness : GraphQLFitness() {
         return null
     }
 
-    override fun getGraphQLError(
+    override fun getGraphQLErrorWithLineInfo(
         additionalInfoList: List<AdditionalInfoDto>,
         indexOfAction: Int,
         result: GraphQlCallResult,
