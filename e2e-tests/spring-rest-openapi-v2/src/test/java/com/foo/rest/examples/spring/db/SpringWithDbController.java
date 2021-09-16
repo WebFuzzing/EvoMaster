@@ -37,8 +37,7 @@ public class SpringWithDbController extends SpringController {
 
         ctx = SpringApplication.run(applicationClass, new String[]{
                 "--server.port=0",
-                "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;",
-                "--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),
+                "--spring.datasource.url=jdbc:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;",
                 "--spring.jpa.database-platform=" + H2Dialect.class.getName(),
                 "--spring.datasource.username=sa",
                 "--spring.datasource.password",
