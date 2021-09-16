@@ -34,8 +34,14 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
         /*
             This is very tricky, as not supported by all DBs... see for example:
             https://stackoverflow.com/questions/2382532/how-can-i-get-the-sql-of-a-preparedstatement
+
+            So what done here is quite ad-hoc...
          */
         String sql = stmt.toString();
+
+        if(sql.startsWith("com.mysql")){
+            sql = sql.substring(sql.indexOf(":")+1);
+        }
 
         //TODO see TODO in StatementClassReplacement
         SqlInfo info = new SqlInfo(sql, false, false);
