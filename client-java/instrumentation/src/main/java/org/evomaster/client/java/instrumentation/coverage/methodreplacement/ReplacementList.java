@@ -32,6 +32,7 @@ public class ReplacementList {
                 new MatcherClassReplacement(),
                 new ObjectsClassReplacement(),
                 new PatternClassReplacement(),
+                new PreparedStatementClassReplacement(),
                 new StatementClassReplacement(),
                 new StringClassReplacement(),
                 new ShortClassReplacement(),

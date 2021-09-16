@@ -46,12 +46,11 @@ abstract class SpringRestPostgresController(
         postgres.start()
         val host = postgres.getContainerIpAddress()
         val port = postgres.getMappedPort(5432)
-        val dbUrl = "jdbc:p6spy:postgresql://$host:$port/postgres"
+        val dbUrl = "jdbc:postgresql://$host:$port/postgres"
 
         ctx = SpringApplication.run(applicationClass,
                 "--server.port=0",
                 "--spring.datasource.url=$dbUrl",
-                "--spring.datasource.driver-class-name=" + P6SpyDriver::class.java.name,
                 "--spring.jpa.database=postgresql",
                 "--spring.datasource.username=postgres",
                 "--spring.datasource.password",
