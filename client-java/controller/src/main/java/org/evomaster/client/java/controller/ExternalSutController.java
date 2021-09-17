@@ -8,7 +8,6 @@ import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.client.java.databasespy.P6SpyFormatter;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.external.JarAgentLocator;
