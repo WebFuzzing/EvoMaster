@@ -439,8 +439,12 @@ public abstract class SutController implements SutHandler {
      * This is needed for when we intercept SQL commands with P6Spy
      *
      * @return {@code null} if the SUT does not use any SQL database
+     * @deprecated this method is no longer needed
      */
-    public abstract String getDatabaseDriverName();
+    @Deprecated
+    public String getDatabaseDriverName(){
+        throw new IllegalStateException("This deprecated method should never be called");
+    }
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 

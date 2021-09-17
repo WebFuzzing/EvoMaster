@@ -171,10 +171,10 @@ public abstract class ExternalSutController extends SutController {
             int port = serverController.startServer();
             command.add("-D" + InputProperties.EXTERNAL_PORT_PROP + "=" + port);
 
-            String driver = getDatabaseDriverName();
-            if (driver != null && !driver.isEmpty()) {
-                command.add("-D" + InputProperties.SQL_DRIVER + "=" + driver);
-            }
+//            String driver = getDatabaseDriverName();
+//            if (driver != null && !driver.isEmpty()) {
+//                command.add("-D" + InputProperties.SQL_DRIVER + "=" + driver);
+//            }
 
             String jarPath = JarAgentLocator.getAgentJarPath();
             if (jarPath == null) {
