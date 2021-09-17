@@ -48,7 +48,12 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
                         try {
                             Method gpvm = it.getClass().getDeclaredMethod("getParamValue");
                             gpvm.setAccessible(true);
-                            return gpvm.invoke(it).toString();
+                            Object value =  gpvm.invoke(it);
+                            if(value.getClass().getName().equals("org.h2.value.ValueLobDb")){
+                                //FIXME this gives issues... not sure we can really handle it
+                                return "?";
+                            }
+                            return value.toString();
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
