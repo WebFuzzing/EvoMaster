@@ -51,7 +51,7 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
                             Object value =  gpvm.invoke(it);
                             if(value.getClass().getName().equals("org.h2.value.ValueLobDb")){
                                 //FIXME this gives issues... not sure we can really handle it
-                                return "?";
+                                return "LOB";
                             }
                             return value.toString();
                         } catch (Exception e) {
