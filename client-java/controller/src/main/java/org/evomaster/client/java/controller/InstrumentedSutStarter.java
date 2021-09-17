@@ -43,11 +43,6 @@ public class InstrumentedSutStarter {
             }
             InstrumentingAgent.changePackagesToInstrument(sutController.getPackagePrefixesToCover());
 
-            String driver = sutController.getDatabaseDriverName();
-            if(driver!=null && ! driver.isEmpty()){
-                InstrumentingAgent.initP6Spy(driver);
-            }
-
         } else if(sutController instanceof ExternalSutController){
             ((ExternalSutController)sutController).setInstrumentation(true);
             /*
