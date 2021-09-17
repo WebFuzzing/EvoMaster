@@ -1,6 +1,5 @@
 package com.foo.spring.rest.postgres
 
-import com.p6spy.engine.spy.P6SpyDriver
 import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto

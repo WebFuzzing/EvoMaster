@@ -1,7 +1,6 @@
 package com.foo.graphql.db
 
 import com.foo.graphql.SpringController
-import com.p6spy.engine.spy.P6SpyDriver
 import org.evomaster.client.java.controller.db.DbCleaner
 import org.hibernate.dialect.H2Dialect
 import org.springframework.boot.SpringApplication
