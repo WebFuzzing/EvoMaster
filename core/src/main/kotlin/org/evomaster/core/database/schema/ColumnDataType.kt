@@ -82,6 +82,9 @@ enum class ColumnDataType(dataTypeName: String) {
      * https://dev.mysql.com/doc/refman/8.0/en/blob.html
      */
     MEDIUMTEXT("MEDIUMTEXT"),
+    LONGBLOB("LONGBLOB"),
+    TINYBLOB("TINYBLOB"),
+    MEDIUMBLOB("MEDIUMBLOB"),
     /**
      * The TIMESTAMP data type is used for values that contain both date and time parts.
      * TIMESTAMP has a range of '1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
