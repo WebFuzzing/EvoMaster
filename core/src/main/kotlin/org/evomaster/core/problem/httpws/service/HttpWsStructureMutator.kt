@@ -26,14 +26,21 @@ abstract class HttpWsStructureMutator : StructureMutator(){
         if(ind.seeDbActions().isEmpty()
             || ! ind.seeDbActions().any { it is DbAction && it.representExistingData }) {
 
+            /*
+                tmp solution to set maximum size of executing existing data in sql
+             */
+            val existing = if (sampler.existingSqlData.size > 100)
+                        randomness.choose(sampler.existingSqlData, 100)
+                    else sampler.existingSqlData
+
             //add existing data only once
-            ind.addInitializingActions(0, sampler.existingSqlData)
+            ind.addInitializingActions(0, existing)
 
             //record newly added existing sql data
-            mutatedGenes?.addedExistingDataInitialization?.addAll(0, sampler.existingSqlData)
+            mutatedGenes?.addedExistingDataInitialization?.addAll(0, existing)
 
             if (log.isTraceEnabled)
-                log.trace("{} existingSqlData are added", sampler.existingSqlData)
+                log.trace("{} existingSqlData are added", existing)
         }
 
         // add fw into dbInitialization
