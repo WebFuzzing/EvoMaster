@@ -92,7 +92,7 @@ class DbActionGeneBuilder {
                  * N could be as large as Integer.MAX_VALUE
                  */
                 ColumnDataType.ARRAY_VARCHAR, //FIXME need general solution for arrays
-                ColumnDataType.TEXT, ColumnDataType.VARCHAR, ColumnDataType.CLOB, ColumnDataType.MEDIUMTEXT, ColumnDataType.LONGBLOB, ColumnDataType.MEDIUMBLOB, ColumnDataType.TINYBLOB ->
+                ColumnDataType.TINYTEXT, ColumnDataType.TEXT, ColumnDataType.VARCHAR, ColumnDataType.CLOB, ColumnDataType.MEDIUMTEXT, ColumnDataType.LONGBLOB, ColumnDataType.MEDIUMBLOB, ColumnDataType.TINYBLOB ->
                     handleTextColumn(column)
 
                 //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
