@@ -36,7 +36,16 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             Field cf = klass.getDeclaredField("command");
             cf.setAccessible(true);
             Object command = cf.get(stmt);
-            Field sf = command.getClass().getSuperclass().getDeclaredField("sql");
+            Class<?> ck = command.getClass();
+            if(! ck.getName().endsWith("CommandRemote")){
+                /*
+                    very brittle.. :(
+                    based on the concrete class for the Command (there are 3...)
+                    the location of the 'sql' private field is different :(
+                 */
+                ck = ck.getSuperclass();
+            }
+            Field sf = ck.getDeclaredField("sql");
             sf.setAccessible(true);
             String sql = (String) sf.get(command);
 
