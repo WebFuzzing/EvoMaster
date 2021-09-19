@@ -1432,6 +1432,13 @@ class EMConfig {
     var skipFailureSQLInTestFile = false
 
 
+    @Experimental
+    @Cfg("Specify a maximum number of existing data in the database to sample when SQL handling is enabled. " +
+            "Note that 0 means all existing data would be sampled")
+    @Min(0.0)
+    var maximumExistingDataToSampleInDb = 0
+
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
