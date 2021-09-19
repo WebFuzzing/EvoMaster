@@ -210,7 +210,17 @@ public abstract class SutController implements SutHandler {
             if(!list.isEmpty()) {
                 AdditionalInfo last = list.get(list.size() - 1);
                 last.getSqlInfoData().stream().forEach(it -> {
-                    sqlHandler.handle(it.getCommand());
+                    String sql = it.getCommand();
+                    try {
+                        sqlHandler.handle(sql);
+                    } catch (Exception e){
+                        SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + sql);
+
+                        //FIXME put it back once JSqlParser is updated.
+                        //Unfortunately, JSqlParser is bugged, and valid things like following do crash
+                        //INSERT INTO Foo() VALUES()
+                        //assert false; //we should try to handle all cases in our tests
+                    }
                 });
             }
         }
