@@ -29,12 +29,18 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
         val columns = schema.tables.first { it.name.equals("BoundedNumberTable", ignoreCase = true) }.columns
 
         columns.apply {
-            assertEquals(7, size)
-            assertEquals(listOf("bc", "dd", "dc1", "dc2", "dc3", "tc1","tc2"), map { it.name })
-            assertEquals(listOf(-1, -1, 2, 3, 1, -1, -1), map { it.precision })
+            assertEquals(8, size)
+            assertEquals(listOf("bc", "dd", "dc1", "dc2", "dc3", "dc4", "tc1","tc2"), map { it.name })
+            assertEquals(listOf(-1, -1, 2, 3, 1, 1, -1, -1), map { it.precision })
             assertEquals(10, this[2].size)
+            assertFalse(this[2].isUnsigned)
             assertEquals(5, this[3].size)
+            assertFalse(this[3].isUnsigned)
             assertEquals(2, this[4].size)
+            assertFalse(this[4].isUnsigned)
+            assertEquals(2, this[5].size)
+            assertTrue(this[5].isUnsigned)
+            assertTrue(this[7].isUnsigned)
         }
 
         val builder = SqlInsertBuilder(schema)
@@ -42,8 +48,8 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
         val actions = builder.createSqlInsertionAction("BoundedNumberTable", setOf("*"))
 
         actions[0].seeGenes().apply {
-            assertEquals(7, size)
-            assertEquals(listOf("bc", "dd", "dc1", "dc2", "dc3", "tc1", "tc2"), map { it.name })
+            assertEquals(8, size)
+            assertEquals(listOf("bc", "dd", "dc1", "dc2", "dc3", "dc4", "tc1", "tc2"), map { it.name })
 
             val dd = this[1]
             assertTrue(dd is SqlNullable)
@@ -80,7 +86,16 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
                 assertEquals(9.9f, max)
             }
 
-            val tc1 = this[5]
+            val dc4 = this[5]
+            assertTrue(dc4 is FloatGene)
+            (dc4 as FloatGene).apply {
+                assertNotNull(precision)
+                assertEquals(1, precision)
+                assertEquals(0.0f, min)
+                assertEquals(9.9f, max)
+            }
+
+            val tc1 = this[6]
             assertTrue(tc1 is IntegerGene)
             (tc1 as IntegerGene).apply {
                 assertEquals(Byte.MIN_VALUE.toInt(), min)
@@ -88,7 +103,7 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
             }
 
 
-            val tc2 = this[6]
+            val tc2 = this[7]
             assertTrue(tc2 is IntegerGene)
             (tc2 as IntegerGene).apply {
                 assertEquals(0, min)

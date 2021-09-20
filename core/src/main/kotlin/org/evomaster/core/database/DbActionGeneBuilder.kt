@@ -427,7 +427,7 @@ class DbActionGeneBuilder {
                     https://dev.mysql.com/doc/refman/8.0/en/fixed-point-types.html
                  */
                 val range = NumberCalculationUtil.boundaryDecimal(column.size, column.precision)
-                FloatGene(column.name, min= range.first.toFloat(), max = range.second.toFloat(), precision = column.precision)
+                FloatGene(column.name, min= if (column.isUnsigned) 0.0f else range.first.toFloat(), max = range.second.toFloat(), precision = column.precision)
             }else
                 FloatGene(column.name)
         }
