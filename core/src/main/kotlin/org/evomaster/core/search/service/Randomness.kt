@@ -2,8 +2,10 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.utils.CalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import java.util.*
 import javax.annotation.PostConstruct
 import kotlin.math.min
@@ -79,6 +81,31 @@ class Randomness {
         return k
     }
 
+    fun nextDouble(min: Double, max: Double, exclude: Double): Double{
+        if (min == max && max == exclude) {
+            throw IllegalArgumentException("Nothing to select, as min/max/exclude are all equal")
+        }
+
+        var k = nextDouble(min, max)
+        while (k == exclude) {
+            k = nextDouble(min, max)
+        }
+        log.trace("nextDouble(min, max, exclude): {}", k)
+        return k
+    }
+
+    fun nextDouble(min: Double, max: Double): Double{
+        if (min == max) return min
+        if (min > max) {
+            throw IllegalArgumentException("Min $min is bigger than max $max")
+        }
+
+        val k = min + random.nextDouble() * CalculationUtil.calculateIncrement(min, max)
+
+        log.trace("nextDouble(min {}, max {}): {}", min, max, k)
+        return k
+    }
+
     fun nextGaussian(): Double {
         val k = random.nextGaussian()
         log.trace("nextGaussian(): {}", k)
@@ -135,13 +162,9 @@ class Randomness {
         return k
     }
 
-    private fun calculateIncrement(min: Long, max: Long) : Long{
-        return try{
-            min(Long.MAX_VALUE, Math.addExact(Math.subtractExact(max, min), 1))
-        }catch (e : ArithmeticException) {
-            Long.MAX_VALUE
-        }
-    }
+
+
+
 
     fun nextLong(min: Long, max: Long): Long {
 
@@ -152,7 +175,7 @@ class Randomness {
             throw IllegalArgumentException("Min $min is bigger than max $max")
         }
 
-        val k = min + (random.nextDouble() * calculateIncrement(min, max)).toLong()
+        val k = min + (random.nextDouble() * CalculationUtil.calculateIncrement(min, max)).toLong()
 
         log.trace("nextLong(min {}, max {}): {}", min, max, k)
         return k
@@ -188,7 +211,7 @@ class Randomness {
 
     fun randomizeBoundedIntAndLong(value: Long, min: Long, max: Long, forceNewValue: Boolean) : Long{
         val z = 1000L
-        val range = calculateIncrement(min, max)
+        val range = CalculationUtil.calculateIncrement(min, max, 1L)
 
         val a: Long
         val b: Long

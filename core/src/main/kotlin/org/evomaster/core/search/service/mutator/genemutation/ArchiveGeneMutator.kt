@@ -96,7 +96,7 @@ class ArchiveGeneMutator{
                         ((it.first as? DoubleGene)?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
-                    valueUpdate = DoubleMutationUpdate(config.archiveGeneMutation.withDirection, min = Double.MIN_VALUE, max = Double.MAX_VALUE),
+                    valueUpdate = DoubleMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.min?:Double.MIN_VALUE, max = gene.max?:Double.MAX_VALUE),
                     start = GeneUtils.intpow2.size, end = 10
             )
             is FloatGene -> gene.value = sampleValue(

@@ -17,11 +17,19 @@ import org.slf4j.LoggerFactory
 class IntegerGene(
         name: String,
         value: Int = 0,
-        /** Inclusive */
-        val min: Int = Int.MIN_VALUE,
-        /** Inclusive */
-        val max: Int = Int.MAX_VALUE
-) : NumberGene<Int>(name, value) {
+        /**
+         * Inclusive
+         *
+         * For IntegerGene, min must be specified
+         * */
+        override val min: Int = Int.MIN_VALUE,
+        /**
+         * Inclusive
+         *
+         * For IntegerGene, max must be specified
+         * */
+        override val max: Int = Int.MAX_VALUE
+) : NumberGene<Int>(name, value, min, max) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(IntegerGene::class.java)
