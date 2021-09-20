@@ -41,7 +41,7 @@ class FloatGene(name: String,
         if (isRangeSpecified() && ((rand < (min ?: Float.MIN_VALUE)) || (rand > (max ?: Float.MAX_VALUE)))){
             rand = randomness.nextDouble((min?:Float.MIN_VALUE).toDouble(), (max?:Float.MAX_VALUE).toDouble()).toFloat()
         }
-        value = rand
+        value = getFormattedValue(rand)
 
     }
 
@@ -83,13 +83,13 @@ class FloatGene(name: String,
 
         value = if (max != null && res > max) max
                 else if (min != null && res < min) min
-                else res
+                else getFormattedValue(res)
 
         return true
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return value.toString()
+        return getFormattedValue().toString()
     }
 
     override fun copyValueFrom(other: Gene) {

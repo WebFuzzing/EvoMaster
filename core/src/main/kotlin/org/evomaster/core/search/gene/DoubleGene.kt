@@ -39,7 +39,7 @@ class DoubleGene(name: String,
         if (isRangeSpecified() && ((rand < (min ?: Double.MIN_VALUE)) || (rand > (max ?: Double.MAX_VALUE)))){
             rand = randomness.nextDouble(min?:Double.MIN_VALUE, max?:Double.MAX_VALUE)
         }
-        value = rand
+        value = getFormattedValue(rand)
 
     }
 
@@ -86,13 +86,13 @@ class DoubleGene(name: String,
 
         value = if (max != null && res > max) max
                 else if (min != null && res < min) min
-                else res
+                else getFormattedValue(res)
 
         return true
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return value.toString()
+        return getFormattedValue().toString()
     }
 
     override fun copyValueFrom(other: Gene) {

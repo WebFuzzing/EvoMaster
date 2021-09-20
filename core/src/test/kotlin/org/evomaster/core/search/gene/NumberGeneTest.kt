@@ -20,6 +20,7 @@ class NumberGeneTest {
         gene.randomize(random, false, listOf())
         assertTrue(gene.value in -99.99..99.99)
 
+        assertEquals(2, gene.value.toString().split(".")[1].length)
     }
 
     @Test
@@ -32,6 +33,8 @@ class NumberGeneTest {
 
         gene.randomize(random, false, listOf())
         assertTrue(gene.value in -99.99..99.99)
+
+        assertEquals(2, gene.value.toString().split(".")[1].length)
     }
 
 }
