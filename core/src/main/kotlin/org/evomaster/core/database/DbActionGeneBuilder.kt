@@ -71,7 +71,7 @@ class DbActionGeneBuilder {
                  * INT2/SMALLINT(5) is assumed as a short/Short field
                  * INT4/INTEGER(10) is a int/Integer field
                  */
-                ColumnDataType.LONGTEXT, ColumnDataType.TINYINT, ColumnDataType.INT2, ColumnDataType.SMALLINT, ColumnDataType.INT, ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL, ColumnDataType.MEDIUMINT ->
+                 ColumnDataType.TINYINT, ColumnDataType.INT2, ColumnDataType.SMALLINT, ColumnDataType.INT, ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL, ColumnDataType.MEDIUMINT ->
                     handleIntegerColumn(column)
 
                 /**
