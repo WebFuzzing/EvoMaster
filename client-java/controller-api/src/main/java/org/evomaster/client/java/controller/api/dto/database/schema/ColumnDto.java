@@ -23,7 +23,7 @@ public class ColumnDto {
     public boolean isUnsigned = false;
 
     /**
-     * precision of number which is applicable only if the type is double or float
+     * precision of number
      * -1 means that the precision is unspecified or inapplicable
      */
     public int precision = -1;
