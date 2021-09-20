@@ -86,8 +86,8 @@ class DoubleGene(name: String,
         }
 
         value = if (max != null && res > max) max
-                else if (min != null && res < min) min
-                else getFormattedValue(res)
+            else if (min != null && res < min) min
+            else getFormattedValue(res)
 
         return true
     }
@@ -138,9 +138,10 @@ class DoubleGene(name: String,
     }
 
     override fun getFormattedValue(valueToFormat: Double?): Double {
+        val fvalue = valueToFormat?:value
         if (precision == null)
-            return value
-        return BigDecimal(value).setScale(precision, RoundingMode.HALF_UP).toDouble()
+            return fvalue
+        return BigDecimal(fvalue).setScale(precision, RoundingMode.HALF_UP).toDouble()
     }
 
     override fun getMinimalDelta(): Double? {

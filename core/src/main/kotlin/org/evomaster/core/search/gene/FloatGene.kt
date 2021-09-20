@@ -136,9 +136,10 @@ class FloatGene(name: String,
     }
 
     override fun getFormattedValue(valueToFormat: Float?): Float {
+        val fvalue = valueToFormat?:value
         if (precision == null)
-            return value
-        return BigDecimal(value.toDouble()).setScale(precision, RoundingMode.HALF_UP).toFloat()
+            return fvalue
+        return BigDecimal(fvalue.toDouble()).setScale(precision, RoundingMode.HALF_UP).toFloat()
     }
 
     override fun getMinimalDelta(): Float? {
