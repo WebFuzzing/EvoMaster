@@ -51,13 +51,17 @@ abstract class NumberGene<T : Number>(name: String,
     open fun getFormattedValue(valueToFormat: T? = null) = valueToFormat?:value
 
     /**
-     * @return minimal delta if it has
+     * @return minimal delta if it has.
+     * this is typically used when the precision is specified
      */
     open fun getMinimalDelta() : T? = null
 
     enum class ModifyStrategy{
+        //for small changes
         SMALL_CHANGE,
+        //for large jumps
         LARGE_JUMP,
+        //to reduce precision, ie chop off digits after the "."
         REDUCE_PRECISION
     }
 
