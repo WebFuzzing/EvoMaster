@@ -46,7 +46,7 @@ class DoubleGene(name: String,
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
             if (additionalGeneMutationInfo.hasHistory()){
                 try {
                     additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
@@ -145,6 +145,6 @@ class DoubleGene(name: String,
     override fun getMinimalDelta(): Double? {
         if (precision == null) return null
         val num = (10.0).pow(precision)
-        return BigDecimal(num).setScale(precision, RoundingMode.HALF_UP).toDouble()
+        return BigDecimal(1.0/num).setScale(precision, RoundingMode.HALF_UP).toDouble()
     }
 }
