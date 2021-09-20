@@ -36,7 +36,12 @@ data class Column(
 
         val databaseType: DatabaseType,
 
-        val isUnsigned : Boolean = false
+        val isUnsigned : Boolean = false,
+
+        /**
+         * -1 means that the precision is unspecified or inapplicable
+         */
+        val precision: Int = -1
 
         // public boolean identity;
 

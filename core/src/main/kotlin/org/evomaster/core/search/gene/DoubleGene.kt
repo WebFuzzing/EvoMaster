@@ -9,7 +9,8 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
-import org.evomaster.core.utils.CalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecision
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
@@ -74,9 +75,9 @@ class DoubleGene(name: String,
 
         val maxRange = if (!isRangeSpecified()) Long.MAX_VALUE
                     else if (gaussianDelta > 0)
-                        CalculationUtil.calculateIncrement(value, max?: Double.MAX_VALUE).toLong()
+                        NumberCalculationUtil.calculateIncrement(value, max?: Double.MAX_VALUE).toLong()
                     else
-                        CalculationUtil.calculateIncrement(min?: Double.MIN_VALUE, value).toLong()
+                        NumberCalculationUtil.calculateIncrement(min?: Double.MIN_VALUE, value).toLong()
 
         var res = modifyValue(randomness, value, delta = gaussianDelta, maxRange = maxRange, specifiedJumpDelta = GeneUtils.getDelta(randomness, apc, maxRange),precision == null)
 
@@ -144,7 +145,6 @@ class DoubleGene(name: String,
 
     override fun getMinimalDelta(): Double? {
         if (precision == null) return null
-        val num = (10.0).pow(precision)
-        return BigDecimal(1.0/num).setScale(precision, RoundingMode.HALF_UP).toDouble()
+        return valueWithPrecision(1.0/((10.0).pow(precision)), precision).toDouble()
     }
 }

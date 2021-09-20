@@ -2,13 +2,11 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
-import org.evomaster.core.utils.CalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
 import java.util.*
 import javax.annotation.PostConstruct
-import kotlin.math.min
 
 
 class Randomness {
@@ -100,7 +98,7 @@ class Randomness {
             throw IllegalArgumentException("Min $min is bigger than max $max")
         }
 
-        val k = min + random.nextDouble() * CalculationUtil.calculateIncrement(min, max)
+        val k = min + random.nextDouble() * NumberCalculationUtil.calculateIncrement(min, max)
 
         log.trace("nextDouble(min {}, max {}): {}", min, max, k)
         return k
@@ -175,7 +173,7 @@ class Randomness {
             throw IllegalArgumentException("Min $min is bigger than max $max")
         }
 
-        val k = min + (random.nextDouble() * CalculationUtil.calculateIncrement(min, max)).toLong()
+        val k = min + (random.nextDouble() * NumberCalculationUtil.calculateIncrement(min, max)).toLong()
 
         log.trace("nextLong(min {}, max {}): {}", min, max, k)
         return k
@@ -211,7 +209,7 @@ class Randomness {
 
     fun randomizeBoundedIntAndLong(value: Long, min: Long, max: Long, forceNewValue: Boolean) : Long{
         val z = 1000L
-        val range = CalculationUtil.calculateIncrement(min, max, 1L)
+        val range = NumberCalculationUtil.calculateIncrement(min, max, 1L)
 
         val a: Long
         val b: Long

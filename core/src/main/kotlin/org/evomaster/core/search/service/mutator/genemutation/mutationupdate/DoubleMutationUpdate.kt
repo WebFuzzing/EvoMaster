@@ -3,7 +3,7 @@ package org.evomaster.core.search.service.mutator.genemutation.mutationupdate
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.utils.CalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -52,7 +52,7 @@ class DoubleMutationUpdate(direction: Boolean, min: Double, max: Double, updateT
     override fun copy(): DoubleMutationUpdate = DoubleMutationUpdate(direction, preferMin, preferMax, updateTimes, counter, reached, latest, preferMin, preferMax)
 
     override fun candidatesBoundary(): Double {
-        val result = CalculationUtil.calculateIncrement(max= preferMax, min=preferMin)
+        val result = NumberCalculationUtil.calculateIncrement(max= preferMax, min=preferMin)
 
         return result.also {
             if (it < 0) throw IllegalStateException("preferMax < preferMin: $preferMax, $preferMin")

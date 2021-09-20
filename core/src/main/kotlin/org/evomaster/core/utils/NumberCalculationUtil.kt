@@ -1,9 +1,11 @@
 package org.evomaster.core.utils
 
 import java.math.BigDecimal
+import java.math.RoundingMode
 import kotlin.math.min
+import kotlin.math.pow
 
-object CalculationUtil {
+object NumberCalculationUtil {
 
 
     /**
@@ -27,4 +29,14 @@ object CalculationUtil {
             maxIncrement
         }
     }
+
+
+    fun boundaryDecimal(size: Int, precision: Int): Pair<Double, Double>{
+        val value = valueWithPrecision(10.0.pow(size-precision), precision)
+        val p = valueWithPrecision(1.0/(10.0.pow(precision)), precision)
+        val boundary = value.subtract(p).toDouble()
+        return valueWithPrecision(boundary * -1, precision).toDouble() to valueWithPrecision(boundary * 1, precision).toDouble()
+    }
+
+    fun valueWithPrecision(value: Double, precision: Int) : BigDecimal = BigDecimal(value).setScale(precision, RoundingMode.HALF_UP)
 }

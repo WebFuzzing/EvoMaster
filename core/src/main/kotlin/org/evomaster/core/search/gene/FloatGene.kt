@@ -9,7 +9,8 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
-import org.evomaster.core.utils.CalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecision
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
@@ -71,9 +72,9 @@ class FloatGene(name: String,
 
         val maxRange = if (!isRangeSpecified()) Long.MAX_VALUE
         else if (gaussianDelta > 0)
-            CalculationUtil.calculateIncrement(value.toDouble(), (max?: Float.MAX_VALUE).toDouble()).toLong()
+            NumberCalculationUtil.calculateIncrement(value.toDouble(), (max?: Float.MAX_VALUE).toDouble()).toLong()
         else
-            CalculationUtil.calculateIncrement((min?: Float.MIN_VALUE).toDouble(), value.toDouble()).toLong()
+            NumberCalculationUtil.calculateIncrement((min?: Float.MIN_VALUE).toDouble(), value.toDouble()).toLong()
 
         var res = modifyValue(randomness, value.toDouble(), delta = gaussianDelta, maxRange = maxRange, specifiedJumpDelta = GeneUtils.getDelta(randomness, apc, maxRange),precision == null).toFloat()
 
@@ -142,7 +143,6 @@ class FloatGene(name: String,
 
     override fun getMinimalDelta(): Float? {
         if (precision == null) return null
-        val num = (10.0).pow(precision)
-        return BigDecimal(1.0/num).setScale(precision, RoundingMode.HALF_UP).toFloat()
+        return valueWithPrecision(1.0 / ((10.0).pow(precision)), precision).toFloat()
     }
 }
