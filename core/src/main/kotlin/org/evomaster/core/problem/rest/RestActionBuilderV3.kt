@@ -425,10 +425,33 @@ object RestActionBuilderV3 {
             TODO constraints like min/max
          */
 
+        val swaggerNumericConstrains: SwaggerNumericConstrains = SwaggerNumericConstrains(
+        min = schema.minimum,
+        max = schema.maximum,
+        exclusiveMinimum = schema.exclusiveMinimum,
+        exclusiveMaximum = schema.exclusiveMaximum,
+        multipleOf = schema.multipleOf)
+
+        val min = swaggerNumericConstrains.getMin()
+        val max = swaggerNumericConstrains.getMax()
+
         //first check for "optional" format
         when (format) {
-            "int32" -> return IntegerGene(name)
-            "int64" -> return LongGene(name)
+            "int32" -> {
+                if (min != null) {
+                    return if (max != null) {
+                        IntegerGene(name, min = min as Int, max = max as Int)
+                    } else {
+                        IntegerGene(name, min = min as Int)
+                    }
+                } else {
+                    if (max != null) {
+                        return IntegerGene(name, max = max as Int)
+                    }
+                }
+                return IntegerGene(name)
+            }
+            "int64" -> return LongGene(name, min = min as Long?, max = max as Long?)
             "double" -> return DoubleGene(name)
             "float" -> return FloatGene(name)
             "password" -> return StringGene(name) //nothing special to do, it is just a hint
@@ -746,5 +769,31 @@ object RestActionBuilderV3 {
         }
         return basePath
     }
+}
 
+
+class SwaggerNumericConstrains(min: Number? = null, max: Number? = null, exclusiveMinimum: Boolean? = null,
+                               exclusiveMaximum: Boolean? = null, multipleOf: Number? = null) {
+    private var min: Number? = min;
+    private var max: Number? = max;
+    private var exclusiveMinimum: Boolean? = exclusiveMinimum;
+    private var exclusiveMaximum: Boolean? = exclusiveMaximum;
+    private var multipleOf: Number? = multipleOf;
+
+
+    public fun getMin(): Number? {
+        return this.min
+    }
+    public fun getMax(): Number? {
+        return this.max
+    }
+    public fun getExclusiveMinimum(): Boolean? {
+        return this.exclusiveMinimum
+    }
+    public fun getExclusiveMaximum(): Boolean? {
+        return this.exclusiveMaximum
+    }
+    public fun getMultipleOf(): Number? {
+        return this.multipleOf
+    }
 }
