@@ -421,9 +421,6 @@ object RestActionBuilderV3 {
             }
         }
 
-        /*
-            TODO constraints like min/max
-         */
 
         val swaggerNumericConstrains: SwaggerNumericConstrains = SwaggerNumericConstrains(
         min = schema.minimum,
@@ -440,18 +437,31 @@ object RestActionBuilderV3 {
             "int32" -> {
                 if (min != null) {
                     return if (max != null) {
-                        IntegerGene(name, min = min as Int, max = max as Int)
+                        IntegerGene(name, min = min.toInt(), max = max.toInt())
                     } else {
-                        IntegerGene(name, min = min as Int)
+                        IntegerGene(name, min = min.toInt())
                     }
                 } else {
                     if (max != null) {
-                        return IntegerGene(name, max = max as Int)
+                        return IntegerGene(name, max = max.toInt())
                     }
                 }
                 return IntegerGene(name)
             }
-            "int64" -> return LongGene(name, min = min as Long?, max = max as Long?)
+            "int64" -> {
+                if (min != null) {
+                    return if (max != null) {
+                        LongGene(name, min = min.toLong(), max = max.toLong())
+                    } else {
+                        LongGene(name, min = min.toLong())
+                    }
+                } else {
+                    if (max != null) {
+                        return LongGene(name, max = max.toLong())
+                    }
+                }
+                return LongGene(name)
+            }
             "double" -> return DoubleGene(name)
             "float" -> return FloatGene(name)
             "password" -> return StringGene(name) //nothing special to do, it is just a hint
