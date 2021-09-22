@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.CollectionsDistanceUtils;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
@@ -76,7 +77,7 @@ public class MapClassReplacement implements MethodReplacementClass {
 
         Truthness t;
         if (result) {
-            t = new Truthness(1d, 0d);
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
         } else {
             double h = CollectionsDistanceUtils.getHeuristicToContains(keyCollection, o, 50);
             t = new Truthness(h, 1d);

@@ -75,7 +75,7 @@ public class TruthnessUtils {
             throw new IllegalArgumentException("lengths should always be non-negative. Invalid length " + len);
         }
         if (len == 0) {
-            t = new Truthness(1, 0);
+            t = new Truthness(1, DistanceHelper.H_NOT_NULL);
         } else {
             t = new Truthness(1d / (1d + len), 1);
         }

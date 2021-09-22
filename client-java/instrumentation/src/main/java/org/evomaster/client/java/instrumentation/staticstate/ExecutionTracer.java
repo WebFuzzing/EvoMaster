@@ -325,6 +325,12 @@ public class ExecutionTracer {
 
     public static void executedReplacedMethod(String idTemplate, ReplacementType type, Truthness t) {
 
+        /*
+            Considering the fact that the method has been executed, and so reached, cannot happen
+            that any of the heuristic values is 0
+         */
+        assert t.getOfTrue() != 0 && t.getOfFalse() !=0;
+
         String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
         String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, type);
 

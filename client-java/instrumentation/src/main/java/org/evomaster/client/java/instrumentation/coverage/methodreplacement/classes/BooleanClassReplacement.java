@@ -9,6 +9,7 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_NOT_NULL;
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_REACHED_BUT_NULL;
 
 public class BooleanClassReplacement implements MethodReplacementClass {
@@ -44,14 +45,18 @@ public class BooleanClassReplacement implements MethodReplacementClass {
         boolean res = Boolean.parseBoolean(input);
         Truthness t;
         if (res) {
-            t = new Truthness(1, 0);
+                /*
+                    no need of gradient computation for false branch, as any value
+                    different from "true" would cover it
+                 */
+            t = new Truthness(1, H_NOT_NULL);
         } else {
             if (input == null) {
                 t = new Truthness(H_REACHED_BUT_NULL, 1);
             } else {
-                final double base = DistanceHelper.H_NOT_NULL;
+                double base = DistanceHelper.H_NOT_NULL;
                 long distance = DistanceHelper.getLeftAlignmentDistance(input.toLowerCase(), "true");
-                double h = base + ((1d - base) / (1d + distance));
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1);
             }
         }
