@@ -153,13 +153,15 @@ class FitnessValue(
     }
 
     fun gqlErrors(idMapper: IdMapper, withLine : Boolean): List<String>{
-        return targets.keys
+        // GQLErrors would be 0.5 when it is initialed, so we count it when it is covered.
+        return targets.filter { it.value.distance == MAX_VALUE }.keys
                 .filter { idMapper.isGQLErrors(it, withLine) }
                 .map { idMapper.getDescriptiveId(it) }
     }
 
     fun gqlNoErrors(idMapper: IdMapper): List<String>{
-        return targets.keys
+        // GQLNoErrors would be 0.5 when it is initialed, so we count it when it is covered.
+        return targets.filter { it.value.distance == MAX_VALUE }.keys
                 .filter { idMapper.isGQLNoErrors(it) }
                 .map { idMapper.getDescriptiveId(it) }
     }
