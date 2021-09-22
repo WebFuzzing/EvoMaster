@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using EvoMaster.Instrumentation_Shared;
 using EvoMaster.Instrumentation.StaticState;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -23,7 +24,7 @@ namespace EvoMaster.Instrumentation
             _probe =
                 module.ImportReference(
                     typeof(Instrumentator).GetMethod(name: "CompletedLine",
-                        types: new[] { typeof(string),typeof(string), typeof(int) }));
+                        types: new[] { typeof(string), typeof(string), typeof(int) }));
 
             foreach (var type in module.Types)
             {
@@ -97,7 +98,6 @@ namespace EvoMaster.Instrumentation
                     }
 
                     method.Body.OptimizeMacros(); //Change back Br opcodes to Br.s if possible
-                    
                 }
             }
 
@@ -117,7 +117,7 @@ namespace EvoMaster.Instrumentation
             var methodNameInstruction = ilProcessor.Create(OpCodes.Ldstr, methodName);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, line);
             var visitedInstruction = ilProcessor.Create(OpCodes.Call, _probe);
-            
+
             ilProcessor.InsertBefore(instruction, classNameInstruction);
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, methodNameInstruction);
@@ -136,8 +136,8 @@ namespace EvoMaster.Instrumentation
 
         public static void CompletedLine(string className, string methodName, int lineNo)
         {
-            // var record = $"--- Completed Line \"{lineNo}\" at Method: \"{methodName}\" at Class: \"{className}\"";
-            // Console.WriteLine(record);
+            ObjectiveRecorder.RegisterTarget(ObjectiveNaming.LineObjectiveName(className, lineNo));
+            
             //TODO: description
             ExecutionTracer.ExecutedLine(className, methodName, "desc", lineNo);
         }
