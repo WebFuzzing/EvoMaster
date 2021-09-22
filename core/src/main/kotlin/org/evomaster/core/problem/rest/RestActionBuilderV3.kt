@@ -16,6 +16,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
@@ -45,10 +46,12 @@ object RestActionBuilderV3 {
     /**
      * @param doParseDescription presents whether apply name/text analysis on description and summary of rest action
      */
-    fun addActionsFromSwagger(swagger: OpenAPI,
-                              actionCluster: MutableMap<String, Action>,
-                              endpointsToSkip: List<String> = listOf(),
-                              doParseDescription: Boolean = false) {
+    fun addActionsFromSwagger(
+        swagger: OpenAPI,
+        actionCluster: MutableMap<String, Action>,
+        endpointsToSkip: List<String> = listOf(),
+        doParseDescription: Boolean = false
+    ) {
 
         actionCluster.clear()
         refCache.clear()
@@ -59,48 +62,104 @@ object RestActionBuilderV3 {
         val basePath = getBasePathFromURL(swagger)
 
         swagger.paths
-                .filter { e ->
-                    if (endpointsToSkip.contains(e.key)) {
-                        skipped.add(e.key)
-                        false
-                    } else {
-                        true
-                    }
+            .filter { e ->
+                if (endpointsToSkip.contains(e.key)) {
+                    skipped.add(e.key)
+                    false
+                } else {
+                    true
                 }
-                .forEach { e ->
+            }
+            .forEach { e ->
 
-                    /*
-                        In V2 there that a "host" and "basePath".
-                        In V3, this was replaced by a "servers" list of URLs.
-                        The "paths" are then appended to such URLs, which works
-                        like a "host+basePath"
-                     */
+                /*
+                    In V2 there that a "host" and "basePath".
+                    In V3, this was replaced by a "servers" list of URLs.
+                    The "paths" are then appended to such URLs, which works
+                    like a "host+basePath"
+                 */
 
-                    val restPath = RestPath(if (basePath == "/") e.key else (basePath + e.key))
+                val restPath = RestPath(if (basePath == "/") e.key else (basePath + e.key))
 
-                    if (e.value.`$ref` != null) {
-                        //TODO
-                        log.warn("Currently cannot handle \$ref: ${e.value.`$ref`}")
-                    }
-
-                    if (e.value.parameters != null && e.value.parameters.isNotEmpty()) {
-                        //TODO
-                        log.warn("Currently cannot handle 'path-scope' parameters")
-                    }
-
-                    if (!e.value.description.isNullOrBlank()) {
-                        //TODO should we do something with it for doParseDescription?
-                    }
-
-                    if (e.value.get != null) handleOperation(actionCluster, HttpVerb.GET, restPath, e.value.get, swagger, doParseDescription)
-                    if (e.value.post != null) handleOperation(actionCluster, HttpVerb.POST, restPath, e.value.post, swagger, doParseDescription)
-                    if (e.value.put != null) handleOperation(actionCluster, HttpVerb.PUT, restPath, e.value.put, swagger, doParseDescription)
-                    if (e.value.patch != null) handleOperation(actionCluster, HttpVerb.PATCH, restPath, e.value.patch, swagger, doParseDescription)
-                    if (e.value.options != null) handleOperation(actionCluster, HttpVerb.OPTIONS, restPath, e.value.options, swagger, doParseDescription)
-                    if (e.value.delete != null) handleOperation(actionCluster, HttpVerb.DELETE, restPath, e.value.delete, swagger, doParseDescription)
-                    if (e.value.trace != null) handleOperation(actionCluster, HttpVerb.TRACE, restPath, e.value.trace, swagger, doParseDescription)
-                    if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head, swagger, doParseDescription)
+                if (e.value.`$ref` != null) {
+                    //TODO
+                    log.warn("Currently cannot handle \$ref: ${e.value.`$ref`}")
                 }
+
+                if (e.value.parameters != null && e.value.parameters.isNotEmpty()) {
+                    //TODO
+                    log.warn("Currently cannot handle 'path-scope' parameters")
+                }
+
+                if (!e.value.description.isNullOrBlank()) {
+                    //TODO should we do something with it for doParseDescription?
+                }
+
+                if (e.value.get != null) handleOperation(
+                    actionCluster,
+                    HttpVerb.GET,
+                    restPath,
+                    e.value.get,
+                    swagger,
+                    doParseDescription
+                )
+                if (e.value.post != null) handleOperation(
+                    actionCluster,
+                    HttpVerb.POST,
+                    restPath,
+                    e.value.post,
+                    swagger,
+                    doParseDescription
+                )
+                if (e.value.put != null) handleOperation(
+                    actionCluster,
+                    HttpVerb.PUT,
+                    restPath,
+                    e.value.put,
+                    swagger,
+                    doParseDescription
+                )
+                if (e.value.patch != null) handleOperation(
+                    actionCluster,
+                    HttpVerb.PATCH,
+                    restPath,
+                    e.value.patch,
+                    swagger,
+                    doParseDescription
+                )
+                if (e.value.options != null) handleOperation(
+                    actionCluster,
+                    HttpVerb.OPTIONS,
+                    restPath,
+                    e.value.options,
+                    swagger,
+                    doParseDescription
+                )
+                if (e.value.delete != null) handleOperation(
+                    actionCluster,
+                    HttpVerb.DELETE,
+                    restPath,
+                    e.value.delete,
+                    swagger,
+                    doParseDescription
+                )
+                if (e.value.trace != null) handleOperation(
+                    actionCluster,
+                    HttpVerb.TRACE,
+                    restPath,
+                    e.value.trace,
+                    swagger,
+                    doParseDescription
+                )
+                if (e.value.head != null) handleOperation(
+                    actionCluster,
+                    HttpVerb.HEAD,
+                    restPath,
+                    e.value.head,
+                    swagger,
+                    doParseDescription
+                )
+            }
 
         checkSkipped(skipped, endpointsToSkip, actionCluster)
     }
@@ -111,13 +170,13 @@ object RestActionBuilderV3 {
      * "name: {...}"
      * @param referenceTypeName specifies refType (i.e., [ObjectGene.refType]]) of the [ObjectGene] to be created that could be same with [name]
      */
-    fun createObjectGeneForDTO(name: String, dtoSchema: String, referenceTypeName: String?) : Gene{
+    fun createObjectGeneForDTO(name: String, dtoSchema: String, referenceTypeName: String?): Gene {
 
-        if(! dtoSchema.startsWith("\"$name\"")){
+        if (!dtoSchema.startsWith("\"$name\"")) {
             throw IllegalArgumentException("Invalid name $name for schema $dtoSchema")
         }
 
-        if(dtoCache.containsKey(dtoSchema)){
+        if (dtoCache.containsKey(dtoSchema)) {
             return dtoCache[dtoSchema]!!.copy()
         }
 
@@ -133,31 +192,32 @@ object RestActionBuilderV3 {
             }          
         """.trimIndent()
 
-        val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
-        val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque(), referenceTypeName)
+        val swagger = OpenAPIParser().readContents(schema, null, null).openAPI
+        val gene = createObjectGene(name, swagger.components.schemas[name]!!, swagger, ArrayDeque(), referenceTypeName)
         dtoCache[dtoSchema] = gene
         return gene.copy()
     }
 
 
     private fun handleOperation(
-            actionCluster: MutableMap<String, Action>,
-            verb: HttpVerb,
-            restPath: RestPath,
-            operation: Operation,
-            swagger: OpenAPI,
-            doParseDescription: Boolean) {
+        actionCluster: MutableMap<String, Action>,
+        verb: HttpVerb,
+        restPath: RestPath,
+        operation: Operation,
+        swagger: OpenAPI,
+        doParseDescription: Boolean
+    ) {
 
         val params = extractParams(verb, restPath, operation, swagger)
         repairParams(params, restPath)
 
         val produces = operation.responses?.values //different response objects based on HTTP code
-                ?.filter { it.content != null && it.content.isNotEmpty() }
-                //each response can have different media-types
-                ?.flatMap { it.content.keys }
-                ?.toSet() // remove duplicates
-                ?.toList()
-                ?: listOf()
+            ?.filter { it.content != null && it.content.isNotEmpty() }
+            //each response can have different media-types
+            ?.flatMap { it.content.keys }
+            ?.toSet() // remove duplicates
+            ?.toList()
+            ?: listOf()
 
         val actionId = "$verb$restPath${idGenerator.incrementAndGet()}"
         val action = RestCallAction(actionId, verb, restPath, params, produces = produces)
@@ -178,7 +238,8 @@ object RestActionBuilderV3 {
         if (doParseDescription) {
             var info = operation.description
             if (!info.isNullOrBlank() && !info.endsWith(".")) info += "."
-            if (!operation.summary.isNullOrBlank()) info = if (info == null) operation.summary else (info + " " + operation.summary)
+            if (!operation.summary.isNullOrBlank()) info =
+                if (info == null) operation.summary else (info + " " + operation.summary)
             if (!info.isNullOrBlank() && !info.endsWith(".")) info += "."
             action.initTokens(info)
         }
@@ -188,28 +249,28 @@ object RestActionBuilderV3 {
 
 
     private fun extractParams(
-            verb: HttpVerb,
-            restPath: RestPath,
-            operation: Operation,
-            swagger: OpenAPI
+        verb: HttpVerb,
+        restPath: RestPath,
+        operation: Operation,
+        swagger: OpenAPI
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
 
         removeDuplicatedParams(operation)
-                .forEach { p ->
+            .forEach { p ->
 
-                    if(p.`$ref` != null){
-                        val param = getLocalParameter(swagger, p.`$ref`)
-                        if(param == null){
-                            log.warn("Failed to handle: ${p.`$ref`}")
-                        } else {
-                            handleParam(param, swagger, params)
-                        }
+                if (p.`$ref` != null) {
+                    val param = getLocalParameter(swagger, p.`$ref`)
+                    if (param == null) {
+                        log.warn("Failed to handle: ${p.`$ref`}")
                     } else {
-                        handleParam(p, swagger, params)
+                        handleParam(param, swagger, params)
                     }
+                } else {
+                    handleParam(p, swagger, params)
                 }
+            }
 
         handleBodyPayload(operation, verb, restPath, swagger, params)
 
@@ -219,7 +280,7 @@ object RestActionBuilderV3 {
     private fun handleParam(p: Parameter, swagger: OpenAPI, params: MutableList<Param>) {
         val name = p.name ?: "undefined"
 
-        if(p.schema == null){
+        if (p.schema == null) {
             log.warn("No schema definition for parameter $name")
             return
         }
@@ -232,7 +293,7 @@ object RestActionBuilderV3 {
                             would lead to 2 variables, or any other char that does affect the
                             structure of the URL, like '.'
                          */
-            gene = StringGene(gene.name, (gene as StringGene).value, 1, (gene as StringGene).maxLength, listOf('/', '.'))
+            gene = StringGene(gene.name, gene.value, 1, gene.maxLength, listOf('/', '.'))
         }
 
         if (p.required != true && p.`in` != "path" && gene !is OptionalGene) {
@@ -283,11 +344,12 @@ object RestActionBuilderV3 {
     }
 
     private fun handleBodyPayload(
-            operation: Operation,
-            verb: HttpVerb,
-            restPath: RestPath,
-            swagger: OpenAPI,
-            params: MutableList<Param>) {
+        operation: Operation,
+        verb: HttpVerb,
+        restPath: RestPath,
+        swagger: OpenAPI,
+        params: MutableList<Param>
+    ) {
 
         if (operation.requestBody == null) {
             return
@@ -353,11 +415,11 @@ object RestActionBuilderV3 {
     }
 
     private fun getGene(
-            name: String,
-            schema: Schema<*>,
-            swagger: OpenAPI,
-            history: Deque<String> = ArrayDeque<String>(),
-            referenceClassDef: String?
+        name: String,
+        schema: Schema<*>,
+        swagger: OpenAPI,
+        history: Deque<String> = ArrayDeque<String>(),
+        referenceClassDef: String?
     ): Gene {
 
         if (!schema.`$ref`.isNullOrBlank()) {
@@ -397,24 +459,24 @@ object RestActionBuilderV3 {
                  */
                 "integer" -> {
                     if (format == "int64") {
-                        val data : MutableList<Long> = schema.enum
-                                .map{ if(it is String) it.toLong() else it as Long}
-                                .toMutableList()
+                        val data: MutableList<Long> = schema.enum
+                            .map { if (it is String) it.toLong() else it as Long }
+                            .toMutableList()
 
                         return EnumGene(name, (data).apply { add(42L) })
                     }
 
-                    val data : MutableList<Int> = schema.enum
-                            .map{ if(it is String) it.toInt() else it as Int}
-                            .toMutableList()
+                    val data: MutableList<Int> = schema.enum
+                        .map { if (it is String) it.toInt() else it as Int }
+                        .toMutableList()
                     return EnumGene(name, data.apply { add(42) })
                 }
                 "number" -> {
                     //if (format == "double" || format == "float") {
                     //TODO: Is it always casted as Double even for Float??? Need test
-                    val data : MutableList<Double> = schema.enum
-                            .map{ if(it is String) it.toDouble() else it as Double}
-                            .toMutableList()
+                    val data: MutableList<Double> = schema.enum
+                        .map { if (it is String) it.toDouble() else it as Double }
+                        .toMutableList()
                     return EnumGene(name, data.apply { add(42.0) })
                 }
                 else -> log.warn("Cannot handle enum of type: $type")
@@ -422,47 +484,22 @@ object RestActionBuilderV3 {
         }
 
 
-        val swaggerNumericConstrains: SwaggerNumericConstrains = SwaggerNumericConstrains(
-        min = schema.minimum,
-        max = schema.maximum,
-        exclusiveMinimum = schema.exclusiveMinimum,
-        exclusiveMaximum = schema.exclusiveMaximum,
-        multipleOf = schema.multipleOf)
+        val numericConstrains: NumericConstrains = NumericConstrains(
+            min = schema.minimum,
+            max = schema.maximum,
+            exclusiveMinimum = schema.exclusiveMinimum,
+            exclusiveMaximum = schema.exclusiveMaximum,
+            multipleOf = schema.multipleOf
+        )
 
-        val min = swaggerNumericConstrains.getMin()
-        val max = swaggerNumericConstrains.getMax()
-
-        //first check for "optional" format
+        // first check for "optional" format
         when (format) {
-            "int32" -> {
-                if (min != null) {
-                    return if (max != null) {
-                        IntegerGene(name, min = min.toInt(), max = max.toInt())
-                    } else {
-                        IntegerGene(name, min = min.toInt())
-                    }
-                } else {
-                    if (max != null) {
-                        return IntegerGene(name, max = max.toInt())
-                    }
-                }
-                return IntegerGene(name)
-            }
-            "int64" -> {
-                if (min != null) {
-                    return if (max != null) {
-                        LongGene(name, min = min.toLong(), max = max.toLong())
-                    } else {
-                        LongGene(name, min = min.toLong())
-                    }
-                } else {
-                    if (max != null) {
-                        return LongGene(name, max = max.toLong())
-                    }
-                }
-                return LongGene(name)
-            }
+            "int32" -> return IntegerGene(name, numericConstrains = numericConstrains)
+//            "int64" -> return LongGene(name, swaggerNumericConstrains = swaggerNumericConstrains)
+            "int64" -> return LongGene(name)
+//            "double" -> return DoubleGene(name, swaggerNumericConstrains =  swaggerNumericConstrains)
             "double" -> return DoubleGene(name)
+//            "float" -> return FloatGene(name, swaggerNumericConstrains =  swaggerNumericConstrains)
             "float" -> return FloatGene(name)
             "password" -> return StringGene(name) //nothing special to do, it is just a hint
             "binary" -> return StringGene(name) //does it need to be treated specially?
@@ -505,8 +542,10 @@ object RestActionBuilderV3 {
                 if (schema is ArraySchema) {
 
                     val arrayType: Schema<*> = if (schema.items == null) {
-                        LoggingUtil.uniqueWarn(log, "Array type '$name' is missing mandatory field 'items' to define its type." +
-                                " Defaulting to 'string'")
+                        LoggingUtil.uniqueWarn(
+                            log, "Array type '$name' is missing mandatory field 'items' to define its type." +
+                                    " Defaulting to 'string'"
+                        )
                         Schema<Any>().also { it.type = "string" }
                     } else {
                         schema.items
@@ -548,12 +587,18 @@ object RestActionBuilderV3 {
     /**
      * @param referenceTypeName is the name of object type
      */
-    private fun createObjectGene(name: String, schema: Schema<*>, swagger: OpenAPI, history: Deque<String>, referenceTypeName: String?): Gene {
+    private fun createObjectGene(
+        name: String,
+        schema: Schema<*>,
+        swagger: OpenAPI,
+        history: Deque<String>,
+        referenceTypeName: String?
+    ): Gene {
 
         val fields = schema.properties?.entries?.map {
             possiblyOptional(
-                    getGene(it.key, it.value, swagger, history, referenceClassDef = null),
-                    schema.required?.contains(it.key)
+                getGene(it.key, it.value, swagger, history, referenceClassDef = null),
+                schema.required?.contains(it.key)
             )
         } ?: listOf()
 
@@ -596,14 +641,15 @@ object RestActionBuilderV3 {
             add refClass with title of SchemaObject
             Man: shall we pop history here?
          */
-        return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
+        return ObjectGene(name, fields, if (schema is ObjectSchema) referenceTypeName ?: schema.title else null)
     }
 
 
-    private fun createObjectFromReference(name: String,
-                                          reference: String,
-                                          swagger: OpenAPI,
-                                          history: Deque<String> = ArrayDeque()
+    private fun createObjectFromReference(
+        name: String,
+        reference: String,
+        swagger: OpenAPI,
+        history: Deque<String> = ArrayDeque()
     ): Gene {
 
         val isRoot = history.isEmpty()
@@ -645,7 +691,7 @@ object RestActionBuilderV3 {
 
         val gene = getGene(name, schema, swagger, history, getClassDef(reference))
 
-        if(isRoot) {
+        if (isRoot) {
             GeneUtils.preventCycles(gene)
             refCache[reference] = gene
         }
@@ -657,7 +703,7 @@ object RestActionBuilderV3 {
 
     private fun getClassDef(reference: String) = reference.substring(reference.lastIndexOf("/") + 1)
 
-    private fun getLocalParameter(swagger: OpenAPI, reference: String) : Parameter?{
+    private fun getLocalParameter(swagger: OpenAPI, reference: String): Parameter? {
         val name = extractReferenceName(reference)
 
         return swagger.components.parameters[name]
@@ -713,13 +759,17 @@ object RestActionBuilderV3 {
     }
 
 
-    private fun checkSkipped(skipped: MutableList<String>, endpointsToSkip: List<String>, actionCluster: MutableMap<String, Action>) {
+    private fun checkSkipped(
+        skipped: MutableList<String>,
+        endpointsToSkip: List<String>,
+        actionCluster: MutableMap<String, Action>
+    ) {
         if (skipped.size != endpointsToSkip.size) {
             val msg = "${endpointsToSkip.size} were set to be skipped, but only ${skipped.size}" +
                     " were found in the schema"
             LoggingUtil.getInfoLogger().error(msg)
             endpointsToSkip.filter { !skipped.contains(it) }
-                    .forEach { LoggingUtil.getInfoLogger().warn("Missing endpoint: $it") }
+                .forEach { LoggingUtil.getInfoLogger().warn("Missing endpoint: $it") }
             throw SutProblemException(msg)
         }
 
@@ -737,8 +787,10 @@ object RestActionBuilderV3 {
         }
     }
 
-    fun getModelsFromSwagger(swagger: OpenAPI,
-                             modelCluster: MutableMap<String, ObjectGene>) {
+    fun getModelsFromSwagger(
+        swagger: OpenAPI,
+        modelCluster: MutableMap<String, ObjectGene>
+    ) {
         modelCluster.clear()
 
         /*
@@ -750,18 +802,19 @@ object RestActionBuilderV3 {
 
         if (swagger.components?.schemas != null) {
             swagger.components.schemas
-                    .forEach {
-                        val model = createObjectFromReference(it.key,
-                                it.component1(),
-                                swagger
-                        )
-                        when (model) {
-                            //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
-                            is ObjectGene -> modelCluster.put(it.component1(), (model as ObjectGene))
-                            is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
-                        }
-
+                .forEach {
+                    val model = createObjectFromReference(
+                        it.key,
+                        it.component1(),
+                        swagger
+                    )
+                    when (model) {
+                        //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
+                        is ObjectGene -> modelCluster.put(it.component1(), model)
+                        is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
                     }
+
+                }
         }
     }
 
@@ -782,28 +835,43 @@ object RestActionBuilderV3 {
 }
 
 
-class SwaggerNumericConstrains(min: Number? = null, max: Number? = null, exclusiveMinimum: Boolean? = null,
-                               exclusiveMaximum: Boolean? = null, multipleOf: Number? = null) {
-    private var min: Number? = min;
-    private var max: Number? = max;
+class NumericConstrains(
+    min: BigDecimal? = null, max: BigDecimal? = null, exclusiveMinimum: Boolean? = null,
+    exclusiveMaximum: Boolean? = null, multipleOf: BigDecimal? = null
+) {
+    private var min: BigDecimal? = min;
+    private var max: BigDecimal? = max;
     private var exclusiveMinimum: Boolean? = exclusiveMinimum;
     private var exclusiveMaximum: Boolean? = exclusiveMaximum;
-    private var multipleOf: Number? = multipleOf;
+    private var multipleOf: BigDecimal? = multipleOf;
 
 
-    public fun getMin(): Number? {
+    constructor(min: Int?, max: Int?) : this() {
+        if (min != null) {
+            this.min = BigDecimal(min)
+        }
+        if (max != null) {
+            this.max = BigDecimal(max)
+        }
+    }
+
+    public fun getMin(): BigDecimal? {
         return this.min
     }
-    public fun getMax(): Number? {
+
+    public fun getMax(): BigDecimal? {
         return this.max
     }
+
     public fun getExclusiveMinimum(): Boolean? {
         return this.exclusiveMinimum
     }
+
     public fun getExclusiveMaximum(): Boolean? {
         return this.exclusiveMaximum
     }
-    public fun getMultipleOf(): Number? {
+
+    public fun getMultipleOf(): BigDecimal? {
         return this.multipleOf
     }
 }

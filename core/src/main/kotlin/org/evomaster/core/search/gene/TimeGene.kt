@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.rest.NumericConstrains
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
@@ -12,6 +13,8 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
+import java.util.*
 
 /**
  * Using RFC3339
@@ -21,20 +24,18 @@ import org.slf4j.LoggerFactory
 class TimeGene(
     name: String,
         //note: ranges deliberately include wrong values.
-    val hour: IntegerGene = IntegerGene("hour", 0, MIN_HOUR, MAX_HOUR),
-    val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
-    val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
+    val hour: IntegerGene = IntegerGene("hour", 0, hourNumericConstrain),
+    val minute: IntegerGene = IntegerGene("minute", 0, minuteNumericConstrain),
+    val second: IntegerGene = IntegerGene("second", 0, secondNumericConstrain),
     val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
 ) : Gene(name, mutableListOf<Gene>(hour, minute, second)) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(TimeGene::class.java)
-        const val MAX_HOUR = 25
-        const val MIN_HOUR = -1
-        const val MAX_MINUTE = 60
-        const val MIN_MINUTE = -1
-        const val MAX_SECOND = 60
-        const val MIN_SECOND = -1
+
+        val hourNumericConstrain: NumericConstrains = NumericConstrains(-1, 25)
+        val minuteNumericConstrain: NumericConstrains = NumericConstrains(-1, 60)
+        val secondNumericConstrain: NumericConstrains = NumericConstrains(-1, 60)
     }
 
     enum class TimeGeneFormat {
@@ -130,16 +131,17 @@ class TimeGene(
     }
 
     private fun isValidHourRange(gene: IntegerGene): Boolean {
-        return gene.min == 0 && gene.max == 23
+        return gene.getMin() == 0 && gene.getMax() == 23
     }
 
     private fun isValidMinuteRange(gene: IntegerGene): Boolean {
-        return gene.min == 0 && gene.max == 59
+        return gene.getMin() == 0 && gene.getMax() == 59
     }
 
     private fun isValidSecondRange(gene: IntegerGene): Boolean {
-        return gene.min == 0 && gene.max == 59
+        return gene.getMin() == 0 && gene.getMax() == 59
     }
+
 
     /**
      * Queries the time gent to know if it can

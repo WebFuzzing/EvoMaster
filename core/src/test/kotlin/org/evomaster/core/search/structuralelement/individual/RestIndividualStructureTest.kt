@@ -6,6 +6,7 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.problem.rest.NumericConstrains
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -48,11 +49,11 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
         val bar = Table("Bar", setOf(barIdColumn, fkColumn), setOf(foreignKey))
 
         val insertId0 = 1001L
-        val pkGeneFoo = SqlPrimaryKeyGene("Id", "Foo", IntegerGene("Id", 1, 0, 10), insertId0)
+        val pkGeneFoo = SqlPrimaryKeyGene("Id", "Foo", IntegerGene("Id", 1, NumericConstrains(0, 10)), insertId0)
         val action0 = DbAction(foo, setOf(idColumn), insertId0, listOf(pkGeneFoo))
 
         val insertId1 = 1002L
-        val pkGeneBar = SqlPrimaryKeyGene("Id", "Bar", IntegerGene("Id", 2, 0, 10), insertId0)
+        val pkGeneBar = SqlPrimaryKeyGene("Id", "Bar", IntegerGene("Id", 2, NumericConstrains(0, 10)), insertId0)
         val fkGene = SqlForeignKeyGene("fooId", insertId1, "Foo", false, insertId0)
 
         val action1 = DbAction(bar, setOf(barIdColumn, fkColumn), insertId1, listOf(pkGeneBar, fkGene))

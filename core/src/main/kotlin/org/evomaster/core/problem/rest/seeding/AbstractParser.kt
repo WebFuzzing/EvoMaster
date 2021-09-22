@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.codec.binary.Base64
+import org.evomaster.core.problem.rest.NumericConstrains
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import java.util.regex.Pattern
 
 /**
@@ -17,15 +19,18 @@ import java.util.regex.Pattern
  * operation) and the Swagger specification.
  */
 abstract class AbstractParser(
-        protected val defaultRestCallActions: List<RestCallAction>,
-        protected val swagger: OpenAPI
+    protected val defaultRestCallActions: List<RestCallAction>,
+    protected val swagger: OpenAPI
 ) : Parser {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractParser::class.java)
-        private const val WARN_REQ_PARAM_MISSING = "Required parameter {} was not found in a seeded request. Ignoring and keeping the parameter..."
-        private const val WARN_WRONG_VALUE = "Attempt to set {} parameter {} with non-{} value {}. Ignoring and keeping the parameter the same..."
-        private const val WARN_WRONG_DATE_TIME = "Attempt to set {} parameter {} with invalid {} {}. Ignoring and keeping the parameter the same..."
+        private const val WARN_REQ_PARAM_MISSING =
+            "Required parameter {} was not found in a seeded request. Ignoring and keeping the parameter..."
+        private const val WARN_WRONG_VALUE =
+            "Attempt to set {} parameter {} with non-{} value {}. Ignoring and keeping the parameter the same..."
+        private const val WARN_WRONG_DATE_TIME =
+            "Attempt to set {} parameter {} with invalid {} {}. Ignoring and keeping the parameter the same..."
         private const val WARN_WRONG_JSON = "Failed to parse parameter {} as JSON"
     }
 
@@ -70,7 +75,11 @@ abstract class AbstractParser(
             is ArrayGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is MapGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is CycleObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue) // Same as ObjectGene, should it differ?
+            is CycleObjectGene -> updateGeneWithParameterValue(
+                gene,
+                paramName,
+                paramValue
+            ) // Same as ObjectGene, should it differ?
 
             else -> {
                 // ImmutableDataHolderGene should never happen
@@ -159,14 +168,16 @@ abstract class AbstractParser(
             Instead, we check the format with a regular expression and see if year, month
             and day are between EvoMaster genes' constraints.
          */
+        // TODO: Automatically parse the regex and store values on the vals
         val dateRegex = Regex("^\\d{4}-\\d{2}-\\d{2}$")
         if (paramValue.matches(dateRegex)) {
             val year = paramValue.substring(0, 4).toInt()
             val month = paramValue.substring(5, 7).toInt()
             val day = paramValue.substring(8).toInt()
-            if (year <= DateGene.MAX_YEAR && year >= DateGene.MIN_YEAR
-                    && month <= DateGene.MAX_MONTH && month >= DateGene.MIN_MONTH
-                    && day <= DateGene.MAX_DAY && day >= DateGene.MIN_DAY) {
+            if (inRange(year, DateGene.yearNumericConstrain) &&
+                inRange(month, DateGene.monthNumericConstrain) &&
+                inRange(day, DateGene.dayNumericConstrain)
+            ) {
                 gene.year.value = year
                 gene.month.value = month
                 gene.day.value = day
@@ -178,6 +189,11 @@ abstract class AbstractParser(
         return true
     }
 
+    private fun inRange(value: Int, numericConstrains: NumericConstrains): Boolean {
+        return numericConstrains.getMax() != null && numericConstrains.getMin() != null &&
+                BigDecimal(value) <= numericConstrains.getMax() && BigDecimal(value) >= numericConstrains.getMin()
+    }
+
     protected fun updateGeneWithParameterValue(gene: TimeGene, paramName: String, paramValue: String): Boolean {
         /*
             TODO: Same comment as in DateGene
@@ -187,9 +203,10 @@ abstract class AbstractParser(
             val hour = paramValue.substring(0, 2).toInt()
             val minute = paramValue.substring(3, 5).toInt()
             val second = paramValue.substring(6, 8).toInt()
-            if (hour <= TimeGene.MAX_HOUR && hour >= TimeGene.MIN_HOUR
-                    && minute <= TimeGene.MAX_MINUTE && minute >= TimeGene.MIN_MINUTE
-                    && second <= TimeGene.MAX_SECOND && second >= TimeGene.MIN_SECOND) {
+            if (inRange(hour, TimeGene.hourNumericConstrain) &&
+                inRange(minute, TimeGene.minuteNumericConstrain) &&
+                inRange(second, TimeGene.secondNumericConstrain)
+            ) {
                 gene.hour.value = hour
                 gene.minute.value = minute
                 gene.second.value = second
@@ -208,8 +225,8 @@ abstract class AbstractParser(
         val dateTimeRegex = "^(\\d{4}-\\d{2}-\\d{2})[ T](\\d{2}:\\d{2}:\\d{2}(.\\d{3}Z)?)$"
         if (paramValue.matches(Regex(dateTimeRegex))) {
             val matcher = Pattern
-                    .compile(dateTimeRegex)
-                    .matcher(paramValue)
+                .compile(dateTimeRegex)
+                .matcher(paramValue)
             matcher.find()
             updateGeneWithParameterValue(gene.date, paramName, matcher.group(1))
             updateGeneWithParameterValue(gene.time, paramName, matcher.group(2))
@@ -223,7 +240,11 @@ abstract class AbstractParser(
         return updateGenesRecursivelyWithParameterValue(gene.gene, gene.name, paramValue)
     }
 
-    protected fun updateGeneWithParameterValue(gene: DisruptiveGene<*>, paramName: String, paramValue: String): Boolean {
+    protected fun updateGeneWithParameterValue(
+        gene: DisruptiveGene<*>,
+        paramName: String,
+        paramValue: String
+    ): Boolean {
         return updateGenesRecursivelyWithParameterValue(gene.gene, gene.gene.name, paramValue)
     }
 
@@ -324,9 +345,9 @@ abstract class AbstractParser(
     }
 
     private fun getJsonifiedString(element: Any?): String? {
-        return when(element) {
+        return when (element) {
             null -> null
-            is ArrayList<*>, is HashMap<*,*> -> ObjectMapper().writeValueAsString(element)
+            is ArrayList<*>, is HashMap<*, *> -> ObjectMapper().writeValueAsString(element)
             else -> element.toString()
         }
     }
@@ -353,7 +374,7 @@ abstract class AbstractParser(
     }
 
     private fun addGeneToMapGene(gene: MapGene<*>, elementGene: Gene) {
-        when(elementGene) {
+        when (elementGene) {
             is StringGene -> (gene as MapGene<StringGene>).addElements(elementGene)
             is BooleanGene -> (gene as MapGene<BooleanGene>).addElements(elementGene)
             is DoubleGene -> (gene as MapGene<DoubleGene>).addElements(elementGene)

@@ -7,10 +7,12 @@ import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
+import org.evomaster.core.problem.rest.NumericConstrains
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
+import java.math.BigDecimal
 import kotlin.math.pow
 
 class DbActionGeneBuilder {
@@ -36,7 +38,7 @@ class DbActionGeneBuilder {
 
             else -> when (column.type) {
                 // Man: TODO need to check
-                ColumnDataType.BIT->
+                ColumnDataType.BIT ->
                     handleBitColumn(column)
 
                 /**
@@ -182,16 +184,16 @@ class DbActionGeneBuilder {
     /*
         https://dev.mysql.com/doc/refman/8.0/en/year.html
      */
-    private fun handleYearColumn(column: Column): Gene{
+    private fun handleYearColumn(column: Column): Gene {
         // Year(2) is not supported by mysql 8.0
         if (column.size == 2)
-            return IntegerGene(column.name,16 ,min =0, max = 99)
+            return IntegerGene(column.name, 16, NumericConstrains(0, 99))
 
-        return IntegerGene(column.name, 2016, min = 1901, max = 2155)
+        return IntegerGene(column.name, 2016, NumericConstrains(1901, 2155))
     }
 
-    private fun handleEnumColumn(column: Column): Gene{
-        return EnumGene(name = column.name, data = column.enumValuesAsStrings?: listOf())
+    private fun handleEnumColumn(column: Column): Gene {
+        return EnumGene(name = column.name, data = column.enumValuesAsStrings ?: listOf())
     }
 
     private fun handleBigIntColumn(column: Column): Gene {
@@ -212,10 +214,11 @@ class DbActionGeneBuilder {
 
             if ((column.type == ColumnDataType.INT4
                         || column.type == ColumnDataType.INT
-                        || column.type == ColumnDataType.INTEGER) && column.isUnsigned){
+                        || column.type == ColumnDataType.INTEGER) && column.isUnsigned
+            ) {
                 LongGene(column.name, min = 0L, max = 4294967295L)
-            }else{
-                val min = when{
+            } else {
+                val min = when {
                     column.isUnsigned -> 0
                     column.type == ColumnDataType.TINYINT -> Byte.MIN_VALUE.toInt()
                     column.type == ColumnDataType.SMALLINT || column.type == ColumnDataType.INT2 -> Short.MIN_VALUE.toInt()
@@ -223,16 +226,20 @@ class DbActionGeneBuilder {
                     else -> Int.MIN_VALUE
                 }
 
-                val max = when (column.type){
+                val max = when (column.type) {
                     ColumnDataType.TINYINT -> if (column.isUnsigned) 255 else Byte.MAX_VALUE.toInt()
                     ColumnDataType.SMALLINT, ColumnDataType.INT2 -> if (column.isUnsigned) 65535 else Short.MAX_VALUE.toInt()
                     ColumnDataType.MEDIUMINT -> if (column.isUnsigned) 16777215 else 8388607
                     else -> Int.MAX_VALUE
                 }
 
-                IntegerGene(column.name,
-                    min = column.lowerBound ?: min,
-                    max = column.upperBound ?: max)
+                IntegerGene(
+                    column.name,
+                    numericConstrains = NumericConstrains(
+                        column.lowerBound ?: min,
+                        column.upperBound ?: max
+                    )
+                )
             }
         }
     }
@@ -266,9 +273,13 @@ class DbActionGeneBuilder {
                 EnumGene(column.name, column.enumValuesAsStrings.map { it.toInt() })
             }
         } else {
-            IntegerGene(column.name,
-                    min = column.lowerBound ?: Short.MIN_VALUE.toInt(),
-                    max = column.upperBound ?: Short.MAX_VALUE.toInt())
+            IntegerGene(
+                column.name,
+                numericConstrains = NumericConstrains(
+                    column.lowerBound ?: Short.MIN_VALUE.toInt(),
+                    column.upperBound ?: Short.MAX_VALUE.toInt()
+                )
+            )
         }
     }
 
@@ -281,9 +292,13 @@ class DbActionGeneBuilder {
                 EnumGene(column.name, column.enumValuesAsStrings.map { it.toInt() })
             }
         } else {
-            IntegerGene(column.name,
-                    min = column.lowerBound ?: Byte.MIN_VALUE.toInt(),
-                    max = column.upperBound ?: Byte.MAX_VALUE.toInt())
+            IntegerGene(
+                column.name,
+                numericConstrains = NumericConstrains(
+                    column.lowerBound ?: Byte.MIN_VALUE.toInt(),
+                    column.upperBound ?: Byte.MAX_VALUE.toInt()
+                )
+            )
         }
     }
 
@@ -314,19 +329,23 @@ class DbActionGeneBuilder {
      * The resulting gene is a disjunction of the given patterns
      */
     fun buildLikeRegexGene(geneName: String, likePatterns: List<String>, databaseType: DatabaseType): RegexGene {
-        return when(databaseType) {
+        return when (databaseType) {
             DatabaseType.POSTGRES, DatabaseType.MYSQL -> buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
             //TODO: support other database SIMILAR_TO check expressions
-            else -> throw UnsupportedOperationException("Must implement LIKE expressions for database %s".format(databaseType))
+            else -> throw UnsupportedOperationException(
+                "Must implement LIKE expressions for database %s".format(
+                    databaseType
+                )
+            )
         }
     }
 
     private fun buildPostgresMySQLLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
         val disjunctionRxGenes = likePatterns
-                .map { createGeneForPostgresLike(it) }
-                .map { it.disjunctions }
-                .map { it.disjunctions }
-                .flatten()
+            .map { createGeneForPostgresLike(it) }
+            .map { it.disjunctions }
+            .map { it.disjunctions }
+            .flatten()
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
@@ -336,37 +355,48 @@ class DbActionGeneBuilder {
      * The resulting gene is a disjunction of the given patterns
      * according to the database we are using
      */
-    fun buildSimilarToRegexGene(geneName: String, similarToPatterns: List<String>, databaseType: DatabaseType): RegexGene {
+    fun buildSimilarToRegexGene(
+        geneName: String,
+        similarToPatterns: List<String>,
+        databaseType: DatabaseType
+    ): RegexGene {
         return when {
             databaseType == DatabaseType.POSTGRES -> buildPostgresSimilarToRegexGene(geneName, similarToPatterns)
             //TODO: support other database SIMILAR_TO check expressions
-            else -> throw UnsupportedOperationException("Must implement similarTo expressions for database %s".format(databaseType))
+            else -> throw UnsupportedOperationException(
+                "Must implement similarTo expressions for database %s".format(
+                    databaseType
+                )
+            )
         }
     }
 
     private fun buildPostgresSimilarToRegexGene(geneName: String, similarToPatterns: List<String>): RegexGene {
         val disjunctionRxGenes = similarToPatterns
-                .map { createGeneForPostgresSimilarTo(it) }
-                .map { it.disjunctions }
-                .map { it.disjunctions }
-                .flatten()
+            .map { createGeneForPostgresSimilarTo(it) }
+            .map { it.disjunctions }
+            .map { it.disjunctions }
+            .flatten()
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
     fun buildSqlTimestampGene(name: String): DateTimeGene {
         return DateTimeGene(
-                name = name,
-                date = DateGene("date",
-                        year = IntegerGene("year", 2016, 1900, 2100),
-                        month = IntegerGene("month", 3, 1, 12),
-                        day = IntegerGene("day", 12, 1, 31),
-                        onlyValidDates = true),
-                time = TimeGene("time",
-                        hour = IntegerGene("hour", 0, 0, 23),
-                        minute = IntegerGene("minute", 0, 0, 59),
-                        second = IntegerGene("second", 0, 0, 59)
-                        ),
-                dateTimeGeneFormat =  DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
+            name = name,
+            date = DateGene(
+                "date",
+                year = IntegerGene("year", 2016, NumericConstrains(1900, 2100)),
+                month = IntegerGene("month", 3, NumericConstrains(1, 12)),
+                day = IntegerGene("day", 12, NumericConstrains(1, 31)),
+                onlyValidDates = true
+            ),
+            time = TimeGene(
+                "time",
+                hour = IntegerGene("hour", 0, NumericConstrains(0, 23)),
+                minute = IntegerGene("minute", 0, NumericConstrains(0, 59)),
+                second = IntegerGene("second", 0, NumericConstrains(0, 59))
+            ),
+            dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
         )
 
     }
@@ -375,7 +405,7 @@ class DbActionGeneBuilder {
         return if (column.enumValuesAsStrings != null) {
             throw RuntimeException("Unsupported enum in TIMESTAMP. Please implement")
         } else {
-            return buildSqlTimestampGene(column.name)
+            buildSqlTimestampGene(column.name)
         }
     }
 
@@ -438,9 +468,12 @@ class DbActionGeneBuilder {
      * handle bit for mysql
      * https://dev.mysql.com/doc/refman/8.0/en/bit-value-literals.html
      */
-    private fun handleBitColumn(column: Column): Gene{
+    private fun handleBitColumn(column: Column): Gene {
 
-        return IntegerGene(column.name,  min= 0, max = (2.0).pow(column.size).toInt() -1 )
+        return IntegerGene(
+            column.name,
+            numericConstrains = NumericConstrains(0, (2.0).pow(column.size).toInt() - 1)
+        )
     }
 
     companion object {

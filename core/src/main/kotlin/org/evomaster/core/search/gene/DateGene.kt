@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.rest.NumericConstrains
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateGeneImpact
@@ -12,6 +13,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -24,21 +26,19 @@ import java.time.format.DateTimeParseException
 class DateGene(
     name: String,
         //note: ranges deliberately include wrong values.
-    val year: IntegerGene = IntegerGene("year", 2016, MIN_YEAR, MAX_YEAR),
-    val month: IntegerGene = IntegerGene("month", 3, MIN_MONTH, MAX_MONTH),
-    val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
+    val year: IntegerGene = IntegerGene("year", 2016, yearNumericConstrain),
+    val month: IntegerGene = IntegerGene("month", 3, monthNumericConstrain),
+    val day: IntegerGene = IntegerGene("day", 12, dayNumericConstrain),
     val onlyValidDates: Boolean = false,
     val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
 ) : Gene(name, mutableListOf(year, month, day)) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(DateGene::class.java)
-        const val MAX_YEAR = 2100
-        const val MIN_YEAR = 1900
-        const val MAX_MONTH = 13
-        const val MIN_MONTH = 0
-        const val MAX_DAY = 32
-        const val MIN_DAY = 9
+
+        val yearNumericConstrain: NumericConstrains = NumericConstrains(1900, 2100)
+        val monthNumericConstrain: NumericConstrains = NumericConstrains(0, 13)
+        val dayNumericConstrain: NumericConstrains = NumericConstrains(9, 32)
     }
 
     enum class DateGeneFormat {

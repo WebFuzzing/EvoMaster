@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.rest.NumericConstrains
 import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -12,23 +13,33 @@ import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHis
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
 
 
 class IntegerGene(
-        name: String,
-        value: Int = 0,
-        /** Inclusive */
-        val min: Int = Int.MIN_VALUE,
-        /** Inclusive */
-        val max: Int = Int.MAX_VALUE
-) : NumberGene<Int>(name, value) {
+    name: String,
+    value: Int = 0,
+    numericConstrains: NumericConstrains? = null
+) : NumberGene<Int>(name, value, numericConstrains) {
+
+    /** Inclusive */
+    private val min: Int = Optional.ofNullable(numericConstrains?.getMin()?.toInt()).orElse(Int.MIN_VALUE)
+    /** Inclusive */
+    private val max: Int = Optional.ofNullable(numericConstrains?.getMax()?.toInt()).orElse(Int.MAX_VALUE)
+
+    fun getMin(): Int {
+        return min
+    }
+    fun getMax(): Int {
+        return max
+    }
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(IntegerGene::class.java)
     }
 
     override fun copyContent(): Gene {
-        return IntegerGene(name, value, min, max)
+        return IntegerGene(name, value, numericConstrains)
     }
 
     override fun copyValueFrom(other: Gene) {

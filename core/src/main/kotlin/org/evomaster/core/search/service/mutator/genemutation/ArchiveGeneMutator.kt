@@ -79,7 +79,7 @@ class ArchiveGeneMutator{
                                 ).value.toLong() to (it.second.result?.value?:-2)
                     },
                     value = gene.value.toLong(),
-                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.min.toLong(), max = gene.max.toLong()),
+                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.getMin().toLong(), max = gene.getMax().toLong()),
                     start = GeneUtils.intpow2.size, end = 10
             ).toInt()
             is LongGene -> gene.value =  sampleValue(
