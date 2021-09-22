@@ -11,34 +11,38 @@ import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Sampler
 
 class GraphQLBlackBoxModule(
-        val usingRemoteController: Boolean
-): AbstractModule(){
+    val usingRemoteController: Boolean
+) : AbstractModule() {
 
     override fun configure() {
         bind(object : TypeLiteral<Sampler<GraphQLIndividual>>() {})
-                .to(GraphQLSampler::class.java)
-                .asEagerSingleton()
+            .to(GraphQLSampler::class.java)
+            .asEagerSingleton()
 
         bind(GraphQLSampler::class.java)
-                .asEagerSingleton()
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<GraphQLIndividual>>() {})
-                .to(GraphQLBlackBoxFitness::class.java)
-                .asEagerSingleton()
+            .to(GraphQLBlackBoxFitness::class.java)
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
-                .asEagerSingleton()
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<*>>() {})
-                .to(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
+            .to(object : TypeLiteral<Archive<GraphQLIndividual>>() {})
 
-        if(usingRemoteController) {
+        if (usingRemoteController) {
             bind(RemoteController::class.java)
-                    .asEagerSingleton()
+                .asEagerSingleton()
         }
 
         bind(TestCaseWriter::class.java)
-                .to(GraphQLTestCaseWriter::class.java)
-                .asEagerSingleton()
+            .to(GraphQLTestCaseWriter::class.java)
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<Sampler<*>>() {})
+            .to(GraphQLSampler::class.java)
+            .asEagerSingleton()
     }
 }
