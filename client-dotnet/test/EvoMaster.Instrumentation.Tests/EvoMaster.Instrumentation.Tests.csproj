@@ -18,15 +18,29 @@
     <ProjectReference Include="..\EvoMaster.Instrumentation.Examples\EvoMaster.Instrumentation.Examples.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="bin-instrumentation\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="bin-instrumentation\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="bin-instrumentation\**" />
+  </ItemGroup>
+
   <Target Name="Instrument" AfterTargets="Build">
-    
-    <Exec Command="cp -a $(OutputPath). $(ProjectDir)bin-instrumentation"/>
-    <Exec Command="cd $(ProjectDir)/../../src/EvoMaster.Instrumentation; dotnet run $(ProjectDir)bin-instrumentation/EvoMaster.Instrumentation.Examples.dll $(ProjectDir)bin-instrumentation;"/>
+
+    <!-- Copy generated files after build into a separate directory, then generate the instrumented dll -->
+    <Exec Command="cp -a $(OutputPath). $(ProjectDir)bin-instrumentation" />
+    <Exec Command="cd $(ProjectDir)/../../src/EvoMaster.Instrumentation; dotnet run $(ProjectDir)bin-instrumentation/EvoMaster.Instrumentation.Examples.dll $(ProjectDir)bin-instrumentation;" />
     <!--        TODO:copy runtimeconfig from actual sut-->
-    <Exec Command="cd $(ProjectDir)bin-instrumentation; rm EvoMaster.Instrumentation.Examples.dll EvoMaster.Instrumentation.Examples; cp EvoMaster.Instrumentation.Tests.runtimeconfig.json InstrumentedSut.runtimeconfig.json;"/>
-    
-    <Exec Command="rm -rf $(OutputPath)*;cp -a $(ProjectDir)bin-instrumentation/. $(OutputPath)"/>
-    <Exec Command="cd $(OutputPath);mv InstrumentedSut.runtimeconfig.json EvoMaster.Instrumentation.Examples.runtimeconfig.json;mv InstrumentedSut.dll EvoMaster.Instrumentation.Examples.dll"/>
+    <Exec Command="cd $(ProjectDir)bin-instrumentation; rm EvoMaster.Instrumentation.Examples.dll EvoMaster.Instrumentation.Examples; cp EvoMaster.Instrumentation.Tests.runtimeconfig.json InstrumentedSut.runtimeconfig.json;" />
+
+    <!-- Clear contents of bin and fill it with the files from the separate directory and finally rename the instrumented dll -->
+    <Exec Command="rm -rf $(OutputPath)*;cp -a $(ProjectDir)bin-instrumentation/. $(OutputPath)" />
+    <Exec Command="cd $(OutputPath);mv InstrumentedSut.runtimeconfig.json EvoMaster.Instrumentation.Examples.runtimeconfig.json;mv InstrumentedSut.dll EvoMaster.Instrumentation.Examples.dll" />
   </Target>
   
 </Project>

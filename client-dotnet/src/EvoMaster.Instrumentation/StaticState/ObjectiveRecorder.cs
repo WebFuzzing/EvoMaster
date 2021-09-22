@@ -39,7 +39,7 @@ namespace EvoMaster.Instrumentation.StaticState
          * done.
          * This can be useful to calculate how many targets we have missed.
          */
-        private static readonly ConcurrentHashSet<string> AllTargets = new ConcurrentHashSet<string>();
+        public static readonly ConcurrentHashSet<string> AllTargets = new ConcurrentHashSet<string>();
 
         /*
         * Key -> id of an objective/target

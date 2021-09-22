@@ -18,7 +18,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
             tc.Classify(-1, 0, 0);
             
             var a = ExecutionTracer.GetNumberOfObjectives();
-            //at least one line should had been covered
+            //at least one line should have been covered
             Assert.True(a > 0);
         }
     }
