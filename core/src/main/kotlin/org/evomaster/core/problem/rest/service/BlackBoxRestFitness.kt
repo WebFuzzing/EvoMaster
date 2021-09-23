@@ -38,8 +38,8 @@ class BlackBoxRestFitness : RestFitness() {
                 ie, bbExperiments is enabled.
                 TODO might support other manner to configure auth for bb
              */
-            cookies.plus(getCookies(individual))
-            tokens.plus(getTokens(individual))
+            cookies.putAll(getCookies(individual))
+            tokens.putAll(getTokens(individual))
         }
 
         val fv = FitnessValue(individual.size().toDouble())
