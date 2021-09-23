@@ -152,4 +152,8 @@ abstract class FloatingPointNumber<T:Number>(
     abstract fun getMinimum() : T
 
     abstract fun getMaximum() : T
+
+    override fun isValid(): Boolean {
+        return super.isValid() && (precision == null || !value.toString().contains(".") || value.toString().split(".")[1].length <= precision)
+    }
 }
