@@ -56,8 +56,8 @@ public class DbCleanerPostgresTest extends DbCleanerTestBase{
     }
 
     @Override
-    protected void clearDatabase(List<String> tablesToSkip) {
-        DbCleaner.clearDatabase_Postgres(connection, "public", tablesToSkip);
+    protected void clearDatabase(List<String> tables, boolean areTableToSkip) {
+        DbCleaner.clearDatabase_Postgres(connection, "public", tables, areTableToSkip);
     }
 
     @Override

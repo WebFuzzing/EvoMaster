@@ -57,8 +57,8 @@ public class DbCleanerMariaDBTest extends DbCleanerTestBase{
     }
 
     @Override
-    protected void clearDatabase(List<String> tablesToSkip) {
-        DbCleaner.clearDatabase(connection, DB_NAME, tablesToSkip, getDbType());
+    protected void clearDatabase(List<String> tables, boolean areTableToSkip) {
+        DbCleaner.clearDatabase(connection, DB_NAME, tables, areTableToSkip, getDbType());
     }
 
     @Override

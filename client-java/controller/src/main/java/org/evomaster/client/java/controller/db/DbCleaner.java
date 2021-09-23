@@ -22,18 +22,22 @@ public class DbCleaner {
         clearDatabase_H2(connection, null);
     }
 
-    public static void clearDatabase_H2(Connection connection, List<String> tablesToSkip) {
-        clearDatabase_H2(connection, getDefaultSchema(DatabaseType.H2), tablesToSkip);
+    public static void clearDatabase_H2(Connection connection, List<String> specifiedTables) {
+        clearDatabase_H2(connection, getDefaultSchema(DatabaseType.H2), specifiedTables);
     }
 
-    public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tablesToSkip) {
-        clearDatabase(getDefaultReties(DatabaseType.H2), connection, schemaName, tablesToSkip, DatabaseType.H2, false);
+    public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tableToSkip) {
+        clearDatabase_H2(connection, schemaName, tableToSkip, true);
+    }
+
+    public static void clearDatabase_H2(Connection connection, String schemaName, List<String> specifiedTables, boolean areTableToSkip) {
+        clearDatabase(getDefaultReties(DatabaseType.H2), connection, schemaName, specifiedTables, areTableToSkip, DatabaseType.H2, false);
     }
 
     /*
         [non-determinism-source] Man: retries might lead to non-determinate logs
      */
-    private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type, boolean doDropTable) {
+    private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> specifiedTables, boolean areTablesToSkip, DatabaseType type, boolean doDropTable) {
 
         /*
             Code based on
@@ -50,7 +54,7 @@ public class DbCleaner {
             disableReferentialIntegrity(statement, type);
 
 
-            cleanDataInTables(tablesToSkip, statement, type, schemaName, isSingleCleanCommand(type), doDropTable);
+            cleanDataInTables(specifiedTables, areTablesToSkip, statement, type, schemaName, isSingleCleanCommand(type), doDropTable);
 
             resetSequences(statement, type, schemaName);
 
@@ -71,7 +75,7 @@ public class DbCleaner {
                     } catch (InterruptedException interruptedException) {
                     }
                     retries--;
-                    clearDatabase(retries, connection, schemaName, tablesToSkip, type, doDropTable);
+                    clearDatabase(retries, connection, schemaName, specifiedTables, areTablesToSkip, type, doDropTable);
                 } else {
                     SimpleLogger.error("Giving up cleaning the DB. There are still timeouts.");
                 }
@@ -85,31 +89,44 @@ public class DbCleaner {
         clearDatabase(connection, getDefaultSchema(type), tablesToSkip, type);
     }
 
+    public static void clearDatabase(Connection connection, List<String> specifiedTables, boolean areTablesToSkip, DatabaseType type){
+        clearDatabase(connection, getDefaultSchema(type), specifiedTables, areTablesToSkip, type);
+    }
+
     public static void clearDatabase(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type){
-        clearDatabase(getDefaultReties(type), connection, schemaName, tablesToSkip, type, false);
+        clearDatabase(connection, schemaName, tablesToSkip, true, type);
+    }
+
+    public static void clearDatabase(Connection connection, String schemaName, List<String> specifiedTables, boolean areTablesToSkip, DatabaseType type){
+        clearDatabase(getDefaultReties(type), connection, schemaName, specifiedTables, areTablesToSkip, type, false);
     }
 
     public static void dropDatabaseTables(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type){
         if (type != DatabaseType.MYSQL && type != DatabaseType.MARIADB)
             throw new IllegalArgumentException("Dropping tables are not supported by "+type);
-        clearDatabase(getDefaultReties(type), connection, schemaName, tablesToSkip, type, true);
+        clearDatabase(getDefaultReties(type), connection, schemaName, tablesToSkip, true, type, true);
     }
 
 
     public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tablesToSkip ) {
-        clearDatabase(getDefaultReties(DatabaseType.POSTGRES), connection, schemaName, tablesToSkip, DatabaseType.POSTGRES, false);
+        clearDatabase_Postgres(connection, schemaName, tablesToSkip, true);
+    }
+
+    public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> specifiedTables, boolean areTablesToSkip ) {
+        clearDatabase(getDefaultReties(DatabaseType.POSTGRES), connection, schemaName, specifiedTables, areTablesToSkip, DatabaseType.POSTGRES, false);
     }
 
     /**
      *
-     * @param tablesToSkip are tables to be skipped
+     * @param specifiedTables are tables to be skipped/clean
+     * @param areTablesToSkip is to clarify whether only clean [specifiedTables] or exclude [specifiedTables]
      * @param statement is to execute the SQL command
      * @param schema specify the schema of data to clean. if [schema] is empty, all data will be cleaned.
      * @param singleCommand specify whether to execute the SQL commands (e.g., truncate table/tables) by single command
      * @param doDropTable specify whether to drop tables which is only for MySQL and MariaDB now.
      * @throws SQLException are exceptions during sql execution
      */
-    private static void cleanDataInTables(List<String> tablesToSkip, Statement statement, DatabaseType type, String schema, boolean singleCommand, boolean doDropTable) throws SQLException {
+    private static void cleanDataInTables(List<String> specifiedTables, boolean areTablesToSkip, Statement statement, DatabaseType type, String schema, boolean singleCommand, boolean doDropTable) throws SQLException {
         // Find all tables and truncate them
         Set<String> tables = new HashSet<>();
         ResultSet rs = statement.executeQuery(getAllTableCommand(type, schema));
@@ -123,10 +140,10 @@ public class DbCleaner {
         }
 
 
-        if (tablesToSkip != null) {
-            for (String skip : tablesToSkip) {
+        if (specifiedTables != null) {
+            for (String skip : specifiedTables) {
                 if (!tables.stream().anyMatch(t -> t.equalsIgnoreCase(skip))) {
-                    String msg = "Asked to skip table '" + skip + "', but it does not exist.";
+                    String msg = "Asked to skip/clean table '" + skip + "', but it does not exist.";
                     msg += " Existing tables in schema '"+schema+"': [" +
                             tables.stream().collect(Collectors.joining(", ")) + "]";
                     throw new IllegalStateException(msg);
@@ -144,8 +161,10 @@ public class DbCleaner {
         }
 
         List<String> tablesToClear = tables.stream()
-                .filter(n -> tablesToSkip == null || tablesToSkip.isEmpty() ||
-                        !tablesToSkip.stream().anyMatch(skip -> skip.equalsIgnoreCase(n)))
+                .filter(n -> specifiedTables == null ||
+                                (areTablesToSkip && (specifiedTables.isEmpty() || specifiedTables.stream().noneMatch(skip -> skip.equalsIgnoreCase(n)))) ||
+                                (!areTablesToSkip && specifiedTables.stream().anyMatch(clean-> clean.equalsIgnoreCase(n)))
+                )
                 .collect(Collectors.toList());
 
         if (singleCommand) {
