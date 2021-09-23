@@ -30,7 +30,7 @@ class FloatGene(name: String,
         private val log : Logger = LoggerFactory.getLogger(FloatGene::class.java)
     }
 
-    override fun copyContent() = FloatGene(name, value, min, max)
+    override fun copyContent() = FloatGene(name, value, min, max, precision)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
