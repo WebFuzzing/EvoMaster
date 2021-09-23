@@ -39,7 +39,7 @@ data class Column(
         val isUnsigned : Boolean = false,
 
         /**
-         * -1 means that the precision is unspecified or inapplicable
+         * the negative number means that the precision is unspecified or inapplicable
          */
         val precision: Int = -1
 

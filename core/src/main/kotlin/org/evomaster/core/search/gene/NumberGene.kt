@@ -46,7 +46,7 @@ abstract class NumberGene<T : Number>(name: String,
     }
 
     /**
-     * @return formatted value
+     * @return formatted value based on e.g., precision for Double/Float
      */
     open fun getFormattedValue(valueToFormat: T? = null) = valueToFormat?:value
 

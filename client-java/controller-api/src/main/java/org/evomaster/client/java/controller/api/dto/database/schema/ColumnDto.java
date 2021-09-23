@@ -24,7 +24,7 @@ public class ColumnDto {
 
     /**
      * precision of number
-     * -1 means that the precision is unspecified or inapplicable
+     * the negative number means that the precision is unspecified or inapplicable
      */
     public int precision = -1;
 
