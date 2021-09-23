@@ -23,7 +23,13 @@ abstract class FloatingPointNumber<T:Number>(
 
     companion object{
 
-
+        /**
+         * @return the maximum range of the [value] that can be changed based on
+         * @param direction specified direction, >0 means + and <0 means -
+         * @param min the lower bound of [value]
+         * @param max the upper bound of [value]
+         * @param value to be further modified
+         */
         fun <N:Number> getRange(direction: Double, min: N, max: N, value : N): Long {
             return if (direction > 0)
                 calculateIncrement(value.toDouble(), max.toDouble()).toLong()
@@ -129,7 +135,7 @@ abstract class FloatingPointNumber<T:Number>(
     }
 
 
-    fun getMaxRange(direction: Double): Long {
+    private fun getMaxRange(direction: Double): Long {
         return if (!isRangeSpecified()) Long.MAX_VALUE
         else if (direction > 0)
             calculateIncrement(value.toDouble(), getMaximum().toDouble()).toLong()
@@ -137,22 +143,43 @@ abstract class FloatingPointNumber<T:Number>(
             calculateIncrement(getMinimum().toDouble(), value.toDouble()).toLong()
     }
 
+    /**
+     * mutate Floating Point Number in a standard way
+     */
     fun mutateFloatingPointNumber(randomness: Randomness, apc: AdaptiveParameterControl): T{
         return Companion.mutateFloatingPointNumber(randomness, null, maxRange = null, apc, value, smin = getMinimum(), smax = getMaximum(), precision=precision)
     }
 
+    /**
+     * @return formatted [value] based on [precision]
+     */
     fun getFormattedValue(valueToFormat: T?=null) : T{
         return Companion.getFormattedValue(valueToFormat?:value, precision)
     }
 
+    /**
+     * @return minimal changes of the [value].
+     * this is typlically used when [precision] is specified
+     */
     fun getMinimalDelta(): T?{
         return Companion.getMinimalDelta(precision, value)
     }
 
+    /**
+     * @return Minimum value of the gene
+     */
     abstract fun getMinimum() : T
 
+    /**
+     * @return Maximum value of the gene
+     */
     abstract fun getMaximum() : T
 
+    /**
+     * @return whether the gene is valid that considers
+     *      1) within min..max if they are specified
+     *      2) precision if it is specified
+     */
     override fun isValid(): Boolean {
         return super.isValid() && (precision == null || !value.toString().contains(".") || value.toString().split(".")[1].length <= precision)
     }
