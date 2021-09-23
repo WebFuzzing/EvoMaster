@@ -9,7 +9,6 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
-import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -107,12 +106,12 @@ class DoubleGene(name: String,
         return true
     }
 
-    override fun getMaxRange(direction: Double): Long {
-        return if (!isRangeSpecified()) Long.MAX_VALUE
-        else if (direction > 0)
-            calculateIncrement(value, max?: Double.MAX_VALUE).toLong()
-        else
-            calculateIncrement(min?: Double.MIN_VALUE, value).toLong()
+    override fun getMaximum(): Double {
+        return max?: Double.MAX_VALUE
+    }
+
+    override fun getMinimum(): Double {
+        return min?: Double.MIN_VALUE
     }
 
 }

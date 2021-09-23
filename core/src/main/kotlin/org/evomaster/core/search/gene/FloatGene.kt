@@ -9,7 +9,6 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
-import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -110,11 +109,11 @@ class FloatGene(name: String,
         return true
     }
 
-    override fun getMaxRange(direction: Double): Long {
-        return if (!isRangeSpecified()) Long.MAX_VALUE
-        else if (direction > 0)
-            calculateIncrement(value.toDouble(), (max?: Float.MAX_VALUE).toDouble()).toLong()
-        else
-            calculateIncrement((min?: Float.MIN_VALUE).toDouble(), value.toDouble()).toLong()
+    override fun getMinimum(): Float {
+        return min?:Float.MIN_VALUE
+    }
+
+    override fun getMaximum(): Float {
+        return max?: Float.MAX_VALUE
     }
 }
