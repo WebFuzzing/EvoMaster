@@ -1,8 +1,5 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.search.service.Randomness
-import java.math.BigDecimal
-import java.math.RoundingMode
 import kotlin.math.min
 
 /**
@@ -33,36 +30,15 @@ abstract class NumberGene<T : Number>(name: String,
             value.toFloat()
 
 
-    fun modifyValue(randomness: Randomness, value: Double, delta: Double, maxRange: Long, specifiedJumpDelta: Int, precisionChangeable: Boolean): Double{
-        val strategies = ModifyStrategy.values().filter{
-            precisionChangeable || it != ModifyStrategy.REDUCE_PRECISION
-        }
-        return when(randomness.choose(strategies)){
-            ModifyStrategy.SMALL_CHANGE-> value + min(1, maxRange) * delta
-            ModifyStrategy.LARGE_JUMP -> value + specifiedJumpDelta * delta
-            ModifyStrategy.REDUCE_PRECISION -> BigDecimal(value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
-        }
-
-    }
-
     /**
-     * @return formatted value based on e.g., precision for Double/Float
+     * @return whether the [value] is between [min] and [max] if they are specified
      */
-    open fun getFormattedValue(valueToFormat: T? = null) = valueToFormat?:value
-
-    /**
-     * @return minimal delta if it has.
-     * this is typically used when the precision is specified
-     */
-    open fun getMinimalDelta() : T? = null
-
-    enum class ModifyStrategy{
-        //for small changes
-        SMALL_CHANGE,
-        //for large jumps
-        LARGE_JUMP,
-        //to reduce precision, ie chop off digits after the "."
-        REDUCE_PRECISION
+    override fun isValid() : Boolean{
+        if (max != null && value.toDouble() > max!!.toDouble())
+            return false
+        if (min != null && value.toDouble() < min!!.toDouble())
+            return false
+        return true
     }
 
 }

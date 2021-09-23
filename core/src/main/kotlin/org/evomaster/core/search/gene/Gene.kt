@@ -418,5 +418,11 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     open fun repair(){
         //do nothing
     }
+
+    /**
+     * @return whether the gene is valid
+     *  based on any specialized rule for different types of genes if there exist
+     */
+    open fun isValid() = true
 }
 

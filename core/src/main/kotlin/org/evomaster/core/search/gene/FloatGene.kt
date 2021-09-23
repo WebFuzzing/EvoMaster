@@ -9,13 +9,10 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
-import org.evomaster.core.utils.NumberCalculationUtil
-import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecision
+import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
-import java.math.RoundingMode
-import kotlin.math.pow
+
 
 
 class FloatGene(name: String,
@@ -27,8 +24,8 @@ class FloatGene(name: String,
                 /**
                  * specified precision
                  */
-                val precision: Int? = null
-) : NumberGene<Float>(name, value, min, max) {
+                precision: Int? = null
+) : FloatingPointNumber<Float>(name, value, min, max, precision) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(FloatGene::class.java)
@@ -61,30 +58,8 @@ class FloatGene(name: String,
             }
         }
 
-        /*
-            TODO min/max for Float
-            Man: update a bit by considering min and max,
-            NEED a check by Andrea
-         */
-        var gaussianDelta = randomness.nextGaussian()
-        if ((max != null && max == value && gaussianDelta > 0) || (min != null && min == value && gaussianDelta < 0) )
-            gaussianDelta *= -1.0
 
-        val maxRange = if (!isRangeSpecified()) Long.MAX_VALUE
-        else if (gaussianDelta > 0)
-            NumberCalculationUtil.calculateIncrement(value.toDouble(), (max?: Float.MAX_VALUE).toDouble()).toLong()
-        else
-            NumberCalculationUtil.calculateIncrement((min?: Float.MIN_VALUE).toDouble(), value.toDouble()).toLong()
-
-        var res = modifyValue(randomness, value.toDouble(), delta = gaussianDelta, maxRange = maxRange, specifiedJumpDelta = GeneUtils.getDelta(randomness, apc, maxRange),precision == null).toFloat()
-
-        if (precision != null && getFormattedValue() == getFormattedValue(res)){
-            res += (if (gaussianDelta>0) 1.0f else -1.0f) * getMinimalDelta()!!
-        }
-
-        value = if (max != null && res > max) max
-                else if (min != null && res < min) min
-                else getFormattedValue(res)
+        value = mutateFloatingPointNumber(randomness, apc)
 
         return true
     }
@@ -135,15 +110,11 @@ class FloatGene(name: String,
         return true
     }
 
-    override fun getFormattedValue(valueToFormat: Float?): Float {
-        val fvalue = valueToFormat?:value
-        if (precision == null)
-            return fvalue
-        return BigDecimal(fvalue.toDouble()).setScale(precision, RoundingMode.HALF_UP).toFloat()
-    }
-
-    override fun getMinimalDelta(): Float? {
-        if (precision == null) return null
-        return valueWithPrecision(1.0 / ((10.0).pow(precision)), precision).toFloat()
+    override fun getMaxRange(direction: Double): Long {
+        return if (!isRangeSpecified()) Long.MAX_VALUE
+        else if (direction > 0)
+            calculateIncrement(value.toDouble(), (max?: Float.MAX_VALUE).toDouble()).toLong()
+        else
+            calculateIncrement((min?: Float.MIN_VALUE).toDouble(), value.toDouble()).toLong()
     }
 }
