@@ -32,7 +32,7 @@ class NumberCalculationUtilTest {
 
     @Test
     fun testCalculateLongIncrement(){
-        var deltaRange = NumberCalculationUtil.calculateIncrement(-1, 5)
+        var deltaRange = NumberCalculationUtil.calculateIncrement(-1, 5, maxIncrement = 0L)
         assertEquals(6, deltaRange)
 
         deltaRange = NumberCalculationUtil.calculateIncrement(-1, 5, maxIncrement = 2)
