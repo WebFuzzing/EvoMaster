@@ -60,13 +60,13 @@ class BasicEMTest : RestTestBase() {
 
             val a = genes.find { it.name.equals("a", ignoreCase = true) }
             assertTrue(a is IntegerGene)
-            assertEquals(0, (a as IntegerGene).min)
-            assertEquals(255, a.max)
+            assertEquals(0, (a as IntegerGene).getMin())
+            assertEquals(255, a.getMax())
             val b = genes.find { it.name.equals("b", ignoreCase = true) }
             assertTrue(b is LongGene)
 
-            assertEquals(0L, (b as LongGene).min)
-            assertEquals(4294967295L, b.max)
+            assertEquals(0L, (b as LongGene).getMin())
+            assertEquals(4294967295L, b.getMax())
         }
 
     }
