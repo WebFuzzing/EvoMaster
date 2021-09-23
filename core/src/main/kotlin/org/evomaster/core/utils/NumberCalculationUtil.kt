@@ -22,7 +22,7 @@ object NumberCalculationUtil {
     /**
      * calculate the maximum increment for long which should be [min, max]
      */
-    fun calculateIncrement(min: Long, max: Long, minIncrement: Long =0L, maxIncrement: Long= Long.MAX_VALUE) : Long{
+    fun calculateIncrement(min: Long, max: Long, minIncrement: Long =1L, maxIncrement: Long= Long.MAX_VALUE) : Long{
         return try{
             min(maxIncrement, Math.addExact(Math.subtractExact(max, min), minIncrement))
         }catch (e : ArithmeticException) {
