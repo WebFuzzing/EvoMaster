@@ -422,6 +422,8 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     /**
      * @return whether the gene is valid
      *  based on any specialized rule for different types of genes if there exist
+     *
+     * Note that the method is only used for debugging and testing purposes.
      *  e.g., for NumberGene, if min and max are specified, the value should be within min..max.
      *        for FloatGene with precision 2, the value 10.222 would not be considered as a valid gene.
      */
