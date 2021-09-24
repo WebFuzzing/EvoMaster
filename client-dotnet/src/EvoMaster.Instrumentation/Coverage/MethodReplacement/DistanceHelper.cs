@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 public class DistanceHelper
 {
@@ -67,17 +68,16 @@ public class DistanceHelper
             dist += Math.Abs(a[i] - b[i]);
         }
 
-        //assert dist >= 0; TODO
+        Trace.Assert(dist >= 0);
         return dist;
     }
-
-    /**
-     * Computes a distance to a==b. If a-b overflows,
-     *
-     * @param a
-     * @param b
-     * @return
-     */
+    
+    /// <summary>
+    /// Computes a distance to a==b. If a-b overflows
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns></returns>
     public static double GetDistanceToEquality(long a, long b)
     {
         // TODO: Some long values cannot be precisely represented as double values
