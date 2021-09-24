@@ -85,8 +85,8 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
     }
 
     @Override
-    protected void clearDatabase(List<String> tables, boolean areTableToSkip) {
-        DbCleaner.clearDatabase(connection, tables, areTableToSkip, getDbType());
+    protected void clearDatabase(List<String> tablesToSkip, List<String> tableToClean) {
+        DbCleaner.clearDatabase(connection, tablesToSkip, tableToClean, getDbType());
     }
 
     @Override

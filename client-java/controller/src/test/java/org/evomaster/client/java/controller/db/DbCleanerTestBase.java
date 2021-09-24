@@ -19,9 +19,9 @@ public abstract class DbCleanerTestBase {
     protected abstract Connection getConnection();
 
     protected void clearDatabase(List<String> tablesToSkip){
-        clearDatabase(tablesToSkip, true);
+        clearDatabase(tablesToSkip, null);
     }
-    protected abstract void clearDatabase(List<String> tablesToSkip, boolean areTableToSkip);
+    protected abstract void clearDatabase(List<String> tablesToSkip, List<String> tableToClean);
 
     protected abstract DatabaseType getDbType();
 
@@ -55,7 +55,7 @@ public abstract class DbCleanerTestBase {
         assertEquals(1, res.seeRows().size());
 
         //Bar should be reset, but not Foo
-        clearDatabase(Arrays.asList("Foo"), false);
+        clearDatabase(null, Arrays.asList("Foo"));
 
         res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;");
         assertEquals(0, res.seeRows().size());
