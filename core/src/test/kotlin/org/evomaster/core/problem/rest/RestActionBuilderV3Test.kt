@@ -52,6 +52,31 @@ class RestActionBuilderV3Test{
     }
 
 
+    @Test
+    fun testRegexDto(){
+
+        val name = "com.RegexFoo"
+        val foo = "foo"
+
+        val dtoSchema = """
+            "$name": {
+                 "type": "object",
+                 "properties": {
+                        "$foo": {
+                            "pattern": "^(0\\.\\d{0,1}[1-9]|\\+?[1-9][0-9]{0,3})(\\.\\d{1,2})?${'$'}",
+                            "type": "string"
+                        }
+                 },
+                 "required": [
+                    "$foo"
+                 ]
+            }     
+        """.trimIndent()
+
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name) as ObjectGene
+        assertEquals(1, gene.fields.size)
+    }
+
 
 
     //---------------------------------
