@@ -1434,7 +1434,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a maximum number of existing data in the database to sample when SQL handling is enabled. " +
-            "Note that the negative number means all existing data would be sampled")
+            "Note that a negative number means all existing data would be sampled")
     @Min(-1.0)
     var maximumExistingDataToSampleInDb = -1
 
