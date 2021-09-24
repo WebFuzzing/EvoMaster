@@ -434,11 +434,10 @@ object RestActionBuilderV3 {
         // first check for "optional" format
         when (format) {
             "int32" -> return IntegerGene(name, numericConstrains = numericConstrains)
-            // "int64" -> return LongGene(name, numericConstrains = numericConstrains)
-            "int64" -> return LongGene(name)
+             "int64" -> return LongGene(name, numericConstrains = numericConstrains)
             // "double" -> return DoubleGene(name, numericConstrains = numericConstrains)
             "double" -> return DoubleGene(name)
-            // "float" -> return FloatGene(name, numericConstrains = numericConstrains)
+            // "float" -> return FloatGene(name, numericConstrains = numericConstrain s)
             "float" -> return FloatGene(name)
             "password" -> return StringGene(name) //nothing special to do, it is just a hint
             "binary" -> return StringGene(name) //does it need to be treated specially?
@@ -770,12 +769,35 @@ class NumericConstrains(
     private var multipleOf: BigDecimal? = multipleOf;
 
 
-    constructor(min: Int?, max: Int?) : this() {
+    private val log: Logger = LoggerFactory.getLogger(NumericConstrains::class.java)
+
+
+    constructor(min: Number?, max: Number?) : this() {
         if (min != null) {
-            this.min = BigDecimal(min)
+            when (min) {
+                is Int -> {
+                    this.min = BigDecimal(min)
+                }
+                is Long -> {
+                    this.min = BigDecimal(min)
+                }
+                else -> {
+                    log.warn("Not supported number type to generate Numeric Constrains")
+                }
+            }
         }
         if (max != null) {
-            this.max = BigDecimal(max)
+            when (max) {
+                is Int -> {
+                    this.max = BigDecimal(max)
+                }
+                is Long -> {
+                    this.max = BigDecimal(max)
+                }
+                else -> {
+                    log.warn("Not supported number type to generate Numeric Constrains")
+                }
+            }
         }
     }
 

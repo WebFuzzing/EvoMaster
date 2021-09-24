@@ -1,7 +1,7 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.rest.NumericConstrains
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -17,19 +17,28 @@ import kotlin.math.min
 class LongGene(
         name: String,
         value: Long = 0,
-        val min : Long? = null,
-        val max : Long? = null
+        numericConstrains: NumericConstrains? = null
 ) : NumberGene<Long>(name, value) {
+
+    /** Inclusive */
+    private val min: Long? = numericConstrains?.getMin()?.toLong()
+    /** Inclusive */
+    private val max: Long? = numericConstrains?.getMax()?.toLong()
+
+    fun getMin(): Long? {
+        return min
+    }
+    fun getMax(): Long? {
+        return max
+    }
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)
     }
 
     override fun copyContent(): Gene {
-        val copy = LongGene(name, value, min, max)
-        return copy
+        return LongGene(name, value, numericConstrains)
     }
-
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
@@ -42,12 +51,16 @@ class LongGene(
             return
         }
 
-        var k = if (randomness.nextBoolean(0.1)) {
+        var k = when {
+            randomness.nextBoolean(0.1) -> {
                 randomness.nextLong()
-        } else if (randomness.nextBoolean(0.1)) {
-            randomness.nextInt().toLong()
-        } else {
-            randomness.nextInt(1000).toLong()
+            }
+            randomness.nextBoolean(0.1) -> {
+                randomness.nextInt().toLong()
+            }
+            else -> {
+                randomness.nextInt(1000).toLong()
+            }
         }
 
         while (forceNewValue && k == value) {
@@ -59,7 +72,7 @@ class LongGene(
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
         if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
             if (additionalGeneMutationInfo.hasHistory()){
                 try {
                     additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(

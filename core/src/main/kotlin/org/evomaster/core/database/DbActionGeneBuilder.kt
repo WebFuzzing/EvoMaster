@@ -216,7 +216,7 @@ class DbActionGeneBuilder {
                         || column.type == ColumnDataType.INT
                         || column.type == ColumnDataType.INTEGER) && column.isUnsigned
             ) {
-                LongGene(column.name, min = 0L, max = 4294967295L)
+                LongGene(column.name, numericConstrains = NumericConstrains(0L, 4294967295L))
             } else {
                 val min = when {
                     column.isUnsigned -> 0
