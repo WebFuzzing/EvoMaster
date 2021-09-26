@@ -127,7 +127,7 @@ public class DbCleaner {
      * @throws SQLException are exceptions during sql execution
      */
     private static void cleanDataInTables(List<String> tableToSkip, List<String> tableToClean, Statement statement, DatabaseType type, String schema, boolean singleCommand, boolean doDropTable) throws SQLException {
-        if (tableToSkip != null && tableToClean != null)
+        if (tableToSkip != null && (!tableToSkip.isEmpty()) && tableToClean != null && (!tableToClean.isEmpty()) )
             throw new IllegalArgumentException("tableToSkip and tableToClean cannot be configured at the same time.");
 
         // Find all tables and truncate them
