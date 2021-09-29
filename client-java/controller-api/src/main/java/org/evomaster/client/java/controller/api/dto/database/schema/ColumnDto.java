@@ -22,4 +22,10 @@ public class ColumnDto {
 
     public boolean isUnsigned = false;
 
+    /**
+     * precision of number
+     * a negative number means that the precision is unspecified or inapplicable
+     */
+    public int precision = -1;
+
 }

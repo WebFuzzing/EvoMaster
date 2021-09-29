@@ -21,7 +21,7 @@ class CreateTableCheckT1Test : ExtractTestBaseMySQL() {
         assertTrue(schema.tables.any { it.name.equals("t1", ignoreCase = true) })
         assertEquals(3, schema.tables.first { it.name.equals("t1", ignoreCase = true) }.columns.size)
 
-        assertEquals(listOf("c1", "c2", "c3"),schema.tables.first { it.name.equals("t1", ignoreCase = true) }.columns.map { it.name });
+        assertEquals(listOf("c1", "c2", "c3"),schema.tables.first { it.name.equals("t1", ignoreCase = true) }.columns.map { it.name })
 
         schema.tables.first { it.name.equals("t1", ignoreCase = true) }.tableCheckExpressions.apply {
             assertEquals(6, size)

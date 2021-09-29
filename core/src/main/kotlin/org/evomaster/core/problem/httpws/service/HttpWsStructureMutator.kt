@@ -22,18 +22,29 @@ abstract class HttpWsStructureMutator : StructureMutator(){
         /*
             because there might exist representExistingData in db actions which are in between rest actions,
             we use seeDbActions() instead of seeInitializingActions() here
+
+            TODO
+            Man: with config.maximumExistingDataToSampleInD,
+                we might remove the condition check on representExistingData.
          */
         if(ind.seeDbActions().isEmpty()
             || ! ind.seeDbActions().any { it is DbAction && it.representExistingData }) {
 
+            /*
+                tmp solution to set maximum size of executing existing data in sql
+             */
+            val existing = if (config.maximumExistingDataToSampleInDb > 0 && sampler.existingSqlData.size > config.maximumExistingDataToSampleInDb)
+                        randomness.choose(sampler.existingSqlData, config.maximumExistingDataToSampleInDb)
+                    else sampler.existingSqlData
+
             //add existing data only once
-            ind.addInitializingActions(0, sampler.existingSqlData)
+            ind.addInitializingActions(0, existing)
 
             //record newly added existing sql data
-            mutatedGenes?.addedExistingDataInitialization?.addAll(0, sampler.existingSqlData)
+            mutatedGenes?.addedExistingDataInitialization?.addAll(0, existing)
 
             if (log.isTraceEnabled)
-                log.trace("{} existingSqlData are added", sampler.existingSqlData)
+                log.trace("{} existingSqlData are added", existing)
         }
 
         // add fw into dbInitialization
