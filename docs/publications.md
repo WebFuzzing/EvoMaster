@@ -6,7 +6,7 @@ Furthermore, slides of presentations can be  found [here](presentations.md).
 These can be useful if you want to know more on how _EvoMaster_ works internally,
 e.g., details on the Many Independent Objective (MIO) algorithm.
 
-To help replicating previous studies, for most of these papers we also provide the experiment scripts.
+To help replicating previous studies, for most of these papers we also provide the scripts used to setup the experiments.
 This explained in more details [here](replicating_studies.md).
 
 ### 2021
