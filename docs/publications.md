@@ -6,6 +6,8 @@ Furthermore, slides of presentations can be  found [here](presentations.md).
 These can be useful if you want to know more on how _EvoMaster_ works internally,
 e.g., details on the Many Independent Objective (MIO) algorithm.
 
+To help replicating previous studies, for most of these papers we also provide the experiment scripts.
+This explained in more details [here](replicating_studies.md).
 
 ### 2021
 
@@ -31,7 +33,7 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
   *Enhancing Search-Based Testing With Testability Transformations For Existing APIs*.
   ACM Transactions on Software Engineering and Methodology (TOSEM).
   [[PDF](publications/2021_tosem_tt.pdf)]
-
+  [[Scripts](exp/2021_tosem_tt.py)]
 
 * M. Zhang, A. Arcuri.
   *Adaptive Hypermutation for Search-Based System Test  Generation: A Study on REST APIs with EvoMaster*.
@@ -56,18 +58,18 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
   *Automated Blackbox and Whitebox Testing of RESTful APIs with EvoMaster*.
   IEEE Software.
   [[PDF](publications/2020_sw.pdf)]
-
+  [[Scripts](exp/2020_sw.py)]
 
 * A. Arcuri, J.P. Galeotti.
   *Handling SQL Databases in Automated System Test Generation*. 
   ACM Transactions on Software Engineering and Methodology (TOSEM).
-  [[PDF](publications/2020_tosem.pdf)]   
-
+  [[PDF](publications/2020_tosem.pdf)] [[Scripts](exp/2020_tosem.py)]
 
 * A. Arcuri, J.P. Galeotti.
   *Testability Transformations For Existing APIs*.
   IEEE International Conference on Software Testing, Validation and Verification (ICST).
   [[PDF](publications/2020_icst.pdf)]
+  [[Scripts](exp/2020_icst.py)]
 
 ### 2019
 
@@ -81,20 +83,19 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
      *SQL Data Generation to Enhance Search-Based System Testing*.
      ACM Genetic and Evolutionary Computation Conference (GECCO).
      [[PDF](publications/2019_gecco_sql.pdf)]
-
+     [[Scripts](exp/2019_gecco_sql.py)]
 
 * A. Arcuri. *RESTful API Automated Test Case Generation with EvoMaster*.
      ACM Transactions on Software Engineering and Methodology (TOSEM).
-     [[PDF](publications/2019_tosem.pdf)]   
+     [[PDF](publications/2019_tosem.pdf)]    [[Scripts](exp/2019_tosem.py)]
 
-
+  
 ### 2018
 
 
 * A. Arcuri. *Test Suite Generation with the Many Independent Objective (MIO) Algorithm*.
      Information and Software Technology (IST).
-     [[PDF](publications/2018_ist.pdf)]   
-
+     [[PDF](publications/2018_ist.pdf)]    [[Scripts](exp/2018_ist.py)]
 
 * A. Arcuri. *EvoMaster: Evolutionary Multi-context Automated System Test Generation*.
      IEEE International Conference on Software Testing, Validation and Verification (ICST).
@@ -111,12 +112,11 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 
 * A. Arcuri. *RESTful API Automated Test Case Generation*.
   IEEE International Conference on Software Quality, Reliability & Security (QRS).
-  [[PDF](publications/2017_qrs.pdf)]
-  
+  [[PDF](publications/2017_qrs.pdf)] 
+  [[Scripts](exp/2017_qrs.sh)]
   
 * A. Arcuri. *Many Independent Objective (MIO) Algorithm for Test Suite Generation*.
   Symposium on Search-based Software Engineering (SSBSE).
   **Best paper award**.
-  [[PDF](publications/2017_ssbse.pdf)]  
-  
+  [[PDF](publications/2017_ssbse.pdf)] [[Scripts](exp/2017_ssbse.sh)]
   
