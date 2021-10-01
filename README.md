@@ -134,6 +134,7 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 * More Info
     * [Academic papers related to EvoMaster](docs/publications.md)
     * [Slides of presentations/seminars](docs/presentations.md)
+    * [Replicating studies](docs/replicating_studies.md)
 
 
 

@@ -67,7 +67,7 @@ The script will provide descriptive error messages when those variables are not 
 An usage of the script could be:
 
 ```
-exp.py false 12345 foo 0 4 100000 1 10")
+exp.py false 12345 foo 0 4 100000 1 10
 ```
 
 This will generate 10 Bash scripts in the `foo` folder, with experiments repeated 5 times, having a search budget of 100k HTTP calls per experiment.
