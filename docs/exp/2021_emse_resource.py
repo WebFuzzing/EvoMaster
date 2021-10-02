@@ -549,13 +549,13 @@ MIO_BASE2= Solution("MIO_BASE2", [NONE_RES_SMART_SAMPLE, NONE_RES_SMART_SAMPLE,F
 MIO_REST_RESOURCE= Solution("MIO_REST_RESOURCE", [ALL_RES_SMART_SAMPLE, ALL_SMART_SAMPLE_PROB,F_WITH_MATCH,ZERO_PROB_DEP])
 MIO_REST_RESOURCE_DEP= Solution("MIO_REST_RESOURCE_DEP", [ALL_RES_SMART_SAMPLE, ALL_SMART_SAMPLE_PROB,F_WITH_MATCH,ZERO_PROB_DEP])
 
-MIO_RES = Experiment("MIO_RES",[MIO_BASE1,MIO_BASE2,MIO_REST_RESOURCE,MIO_REST_RESOURCE_DEP])
+MIO_RESDEP = Experiment("MIO_RESDEP",[MIO_BASE1,MIO_BASE2,MIO_REST_RESOURCE,MIO_REST_RESOURCE_DEP])
 
 ############################################################################
 ### configure experiments
 ############################################################################
 
-EXPS = [MIO_RES]
+EXPS = [MIO_RESDEP]
 SELECTED_EXP = EXPS[0]
 SELECTED_SOLUTION= SELECTED_EXP.solutions
 
@@ -654,8 +654,8 @@ if __name__ == '__main__':
                         help='a search budget. DEFAULT is 5 minutes (5m).',
                         type=str, required=False, default="5m")
     parser.add_argument('--setting',
-                        help='a predefined experiment setting. Now only AHW is available.',
-                        type=str, required=False, default="AHW")
+                        help='a predefined experiment setting.',
+                        type=str, required=False, default="MIO_RESDEP")
     parser.add_argument('--solution',
                         help='a specified solution (e.g., E1) for the employed experiment setting. DEFAULT is all.',
                         type=str, required=False, default=None)

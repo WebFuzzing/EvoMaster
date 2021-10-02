@@ -569,7 +569,7 @@ RDMIO_SQL = Solution("RDMIO_SQL", [
     ENABLE_TAINT, T_H_SOL, T_G_SQL, T_SQL_EXECUTION, ENABLE_WITH_DB,
     BEST_RES_SMART_SAMPLE, BEST_SMART_SAMPLE_PROB, T_WITH_MATCH, RDMIO_BEST_PROB_DEP_BEST])
 
-RDMIO_SQL_EXP = Experiment("RDMIO_BASELINE",[RDMIO_BASELINE,RDMIO_SQL])
+RDMIO_SQL_EXP = Experiment("RDMIO_SQL_EXP",[RDMIO_BASELINE,RDMIO_SQL])
 
 ############################################################################
 ### configure experiments
@@ -674,8 +674,8 @@ if __name__ == '__main__':
                         help='a search budget. DEFAULT is 5 minutes (5m).',
                         type=str, required=False, default="5m")
     parser.add_argument('--setting',
-                        help='a predefined experiment setting. Now only AHW is available.',
-                        type=str, required=False, default="AHW")
+                        help='a predefined experiment setting. ',
+                        type=str, required=False, default="RDMIO_SQL_EXP")
     parser.add_argument('--solution',
                         help='a specified solution (e.g., E1) for the employed experiment setting. DEFAULT is all.',
                         type=str, required=False, default=None)

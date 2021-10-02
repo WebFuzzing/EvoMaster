@@ -641,8 +641,8 @@ if __name__ == '__main__':
                         help='a search budget. DEFAULT is 5 minutes (5m).',
                         type=str, required=False, default="5m")
     parser.add_argument('--setting',
-                        help='a predefined experiment setting. Now only AHW is available.',
-                        type=str, required=False, default="AHW")
+                        help='a predefined experiment setting.',
+                        type=str, required=False, default="MIO_RES")
     parser.add_argument('--solution',
                         help='a specified solution (e.g., E1) for the employed experiment setting. DEFAULT is all.',
                         type=str, required=False, default=None)
