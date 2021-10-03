@@ -74,7 +74,7 @@ experiments/target/
 [Dd]ebug/
 [Bb]in/
 [Oo]bj/
-bin-instrumentation/
+bin-temp/
 *.dll
 client-dotnet/src/*/Properties/
 e2e-tests/*/Properties/
