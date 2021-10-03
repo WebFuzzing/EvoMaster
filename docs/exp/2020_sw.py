@@ -139,64 +139,41 @@ else:
     print("ERROR: target folder already exists")
     exit(1)
 
-
-JDK_8 = "JDK_8"
-JDK_11 = "JDK_11"
-JS = "JS"
-
-class Sut:
-    def __init__(self, name, timeWeight, platform):
-        self.name = name
-        # the higher value, the more time it will need compared to the other SUTS
-        self.timeWeight = timeWeight
-        # Java? JS? NodeJS
-        self.platform = platform
-
-
-
-# To ge the SUTs, you need in EMB to run the script "scripts/dist.py" to
-# generate a dist.zip file that you can upload on cluster.
-# Note: the values after the SUT names is multiplicative factor for how long
-# experiments should be run.
-# Depending on what experiments you are running, might want to de-select some
-# of the SUTs (eg, by commenting them out)
-
-SUTS = [
-        # REST
-        Sut("features-service", 1, JDK_8),
-        Sut("scout-api", 2, JDK_8),
-        Sut("proxyprint", 2, JDK_8),
-        Sut("rest-ncs", 2, JDK_8),
-        Sut("rest-scs", 1, JDK_8),
-        Sut("rest-news", 1, JDK_8),
-        Sut("catwatch", 1, JDK_8),
-        Sut("restcountries", 2, JDK_8),
-        Sut("languagetool", 3, JDK_8),
-        # GRAPHQL
-        Sut("petclinic", 1, JDK_8),
-        Sut("patio-api", 1, JDK_11)
-        # Sut("ind0", 1, JDK_8),
-        # Sut("ocvn-rest", 1, JDK_8),
-        # Sut("ncs-js", 1, JS),
-        # Sut("scs-js", 1, JS)
-]
-
-# Specify if using any industrial case study
-USING_IND = False
-
-
-### We need different settings based on whether we are running the
+### We might want to have different settings based on whether we are running the
 ### scripts on cluster or locally.
 if CLUSTER:
+
+    # To ge the SUTs, you need in EMB to run the script "scripts/dist.py" to
+    # generate a dist.zip file that you can upload on cluster.
+    # Note: the values after the SUT names is multiplicative factor for how long
+    # experiments should be run. For example, all SUTs have similar runtime, but
+    # proxyprint is roughly twice as slow.
+    # Depending on what experiments you are running, might want to de-select some
+    # of the SUTs (eg, by comment them out)
+
+    SUTS = [
+            ("features-service", 1),
+            ("scout-api", 2),
+            ("proxyprint", 2),
+            ("rest-ncs", 2),
+            ("rest-scs", 1),
+            ("rest-news", 1),
+            ("catwatch", 1)
+            ]
 
     HOME = os.environ['HOME']
     EVOMASTER_DIR = HOME
     CASESTUDY_DIR = HOME + "/dist"
-    LOGS_DIR = HOME + "/nobackup"
+    LOGS_DIR = os.environ['USERWORK']
 
 
 ## Local configurations
 else:
+    # These SUTs require Docker
+    SUTS = [
+        ("ind0", 1),
+        ("ocvn-rest", 1)
+    ]
 
     # You will need to define environment variables on your OS
     EVOMASTER_DIR = os.environ.get("EVOMASTER_DIR", "")
@@ -213,24 +190,15 @@ else:
     if not os.path.exists(CASESTUDY_DIR):
         raise Exception(CASESTUDY_DIR + " does not exist. Did you run script/dist.py?")
 
-    if USING_IND:
-        ind0_package = os.environ.get("SUT_PACKAGE_IND0", "")
-        if ind0_package == "":
-            raise Exception("You cannot run experiments on IND0 without specify target package to cover with SUT_PACKAGE_IND0 env variable")
+    ind0_package = os.environ.get("SUT_PACKAGE_IND0", "")
+    if ind0_package == "":
+        raise Exception("You cannot run experiments on IND0 without specify target package to cover with SUT_PACKAGE_IND0 env variable")
 
     LOGS_DIR = BASE_DIR
 
-    JAVA_HOME_8 = os.environ.get("JAVA_HOME_8", "")
-    if JAVA_HOME_8 == "":
-        raise Exception("You must specify a JAVA_HOME_8 env variable specifying where JDK 8 is installed")
-
-    JAVA_HOME_11 = os.environ.get("JAVA_HOME_11", "")
-    if JAVA_HOME_11 == "":
-        raise Exception("You must specify a JAVA_HOME_11 env variable specifying where JDK 11 is installed")
-
 
 # How to run EvoMaster
-EVOMASTER_JAVA_OPTIONS = " -Xms2G -Xmx4G  -jar evomaster.jar "
+EVOMASTER = "java  -Xms2G -Xmx4G  -jar evomaster.jar"
 AGENT = "evomaster-agent.jar"
 EM_POSTFIX = "-evomaster-runner.jar"
 SUT_POSTFIX = "-sut.jar"
@@ -272,21 +240,13 @@ if not CLUSTER:
 
     #Due to Windows limitations (ie crappy FS), we need to copy JARs over
     for sut in SUTS:
-        if sut.platform == JDK_8 or sut.platform == JDK_11:
-            # copy jar files
-            shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX), BASE_DIR)
-            shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX), BASE_DIR)
-        elif sut.platform == JS:
-            # copy folders, which include both SUT and EM Controller
-            shutil.copytree(os.path.join(CASESTUDY_DIR, sut.name), os.path.join(BASE_DIR, sut.name))
-
+        sut_name = sut[0]
+        shutil.copy(os.path.join(CASESTUDY_DIR, sut_name + EM_POSTFIX), BASE_DIR)
+        shutil.copy(os.path.join(CASESTUDY_DIR, sut_name + SUT_POSTFIX), BASE_DIR)
     shutil.copy(os.path.join(CASESTUDY_DIR, AGENT), BASE_DIR)
     shutil.copy(os.path.join(EVOMASTER_DIR, "evomaster.jar"), BASE_DIR)
 
 
-
-# We could end up with many scripts, up to the max number of jobs we can run in parallel, eg. 400.
-# But those scripts still need to be submitted. So, we create a script to do that.
 def createRunallScript():
     script_path = BASE_DIR + "/runall.sh"
     script = open(script_path, "w")
@@ -308,8 +268,8 @@ def createRunallScript():
 
 
 
-def writeScript(code, port, sut):
-    script_path = SCRIPT_DIR + "/evomaster_" + str(port) + "_" + sut.name + ".sh"
+def writeScript(code, port, sut_name):
+    script_path = SCRIPT_DIR + "/evomaster_" + str(port) + "_" + sut_name + ".sh"
     script = open(script_path, "w")
     script.write(code)
 
@@ -319,7 +279,6 @@ def writeScript(code, port, sut):
     return script
 
 
-# A cluster can have several configurations, which can be set with #SBATCH comments
 def getScriptHead(timeoutMinutes):
     s = "#!/bin/bash \n"
 
@@ -332,71 +291,51 @@ def getScriptHead(timeoutMinutes):
     return s
 
 
-def createJobHead(port, sut, timeoutMinutes):
+def createJobHead(port, sut_name, timeoutMinutes):
     script = io.StringIO()
 
     script.write(getScriptHead(timeoutMinutes))
 
-    sut_log = LOG_DIR + "/log_sut_" + sut.name + "_" + str(port) + ".txt"
+    sut_log = LOG_DIR + "/log_sut_" + sut_name + "_" + str(port) + ".txt"
 
     # Start SUT as background process on the given port
     controllerPort = str(port)
     sutPort = str(port + 1)
 
+    em_runner = sut_name + EM_POSTFIX
+    em_sut = sut_name + SUT_POSTFIX
+
     if CLUSTER:
+        sut_em_path = os.path.join(CASESTUDY_DIR, em_runner)
+        sut_jar_path = os.path.join(CASESTUDY_DIR, em_sut)
+        agent_path = os.path.join(CASESTUDY_DIR, AGENT)
 
-        if sut.platform == JDK_8:
-            script.write("\nmodule load Java/1.8.0_212\n\n")
-        else:
-            print("ERROR: currently not handling " + sut.platform)
-            exit(1)
-
-        # To speed-up I/O, copy files over to SCRATCH folder
+        script.write("\nmodule load Java/1.8.0_212\n\n")
         script.write("cd $SCRATCH \n")
         script.write("cp " + EVOMASTER_DIR + "/evomaster.jar . \n")
-
-        # Not sure if great idea to copy 1000s of files for JS intro SCRATCH
-        if sut.platform == JDK_8 or sut.platform == JDK_11:
-            sut_em_path = os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX)
-            sut_jar_path = os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX)
-            agent_path = os.path.join(CASESTUDY_DIR, AGENT)
-            script.write("cp " + sut_em_path + " . \n")
-            script.write("cp " + sut_jar_path + " . \n")
-            script.write("cp " + agent_path + " . \n")
-
+        script.write("cp " + sut_em_path + " . \n")
+        script.write("cp " + sut_jar_path + " . \n")
+        script.write("cp " + agent_path + " . \n")
         script.write("\n")
+
 
     script.write("\n")
 
     timeoutStart = TIMEOUT_SUT_START_MINUTES * 60
 
-    command = ""
+    params = " " + controllerPort + " " + sutPort + " " + em_sut + " " + str(timeoutStart)
 
-    if sut.platform == JDK_8 or sut.platform == JDK_11:
-        params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart) + " " + getJavaCommand(sut)
+    # JVM properties
+    jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
 
-        jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
-        JAVA = getJavaCommand(sut)
-        command = JAVA + jvm + " -jar " + sut.name + EM_POSTFIX + " " + params + " > " + sut_log + " 2>&1 &"
-
-    elif sut.platform == JS:
-        # TODO sutPort
-        before = "pushd " + sut.name + "\n"
-        command = " EM_PORT=" + controllerPort + " npm run em > " + sut_log + " 2>&1 & "
-        command = before + command
-
+    command = "java " + jvm + " -jar " + em_runner + " " + params + " > " + sut_log + " 2>&1 &"
 
     if not CLUSTER:
         script.write("\n\necho \"Starting EM Runner with: " + command + "\"\n")
         script.write("echo\n\n")
 
     script.write(command + "\n\n")
-    # FIXME: this does not work for JS... as the process running NPM dies immediately after spawning Node
     script.write(CONTROLLER_PID + "=$! \n\n")  # store pid of process, so can kill it
-
-    if sut.platform == JS:
-        script.write("popd\n\n")
-
     script.write("sleep 20 \n\n")  # wait a bit to be sure the SUT handler can respond
 
     return script.getvalue()
@@ -410,27 +349,15 @@ def closeJob(port, sut_name):
 
 class State:
     def __init__(self, budget):
-        # total budget for the search which is left
         self.budget = budget
 
-    # number of generated script files, so far
     generated = 0
-    # each job will have a different time duration, and we keep track
-    # of those durations for every single generated script
     waits = []
-    # how many jobs/scripts we still need to create
     jobsLeft = NJOBS
-    # how many SUTs we still need to create jobs/scripts for.
-    # recall that in a script there can be only 1 SUT
     sutsLeft = len(SUTS)
-    # how much budget we have used for the current opened job/script
     counter = 0
-    # whether we are adding a new run in an existing script.
-    # if not, need to make sure to create all the right header / init methods
     opened = False
-    # budget left for each remaining job/script
     perJob = 0
-    # to avoid TCP conflicts, each job uses a different port range
     port = BASE_SEED
 
     def updatePerJob(self):
@@ -443,15 +370,10 @@ class State:
         self.port += 10
 
     def updateBudget(self, weight):
-        # the used budget for current script increases...
         self.counter += weight
-        # ... whereas the total left budget decreases by the same amount
         self.budget -= weight
 
     def getTimeoutMinutes(self):
-        # the timeout we want to wait for does depend not only on the number of runs, but
-        # also on the weights of the SUT (this is captured by self.counter).
-        # Note: we add a 10% just in case...
         timeoutMinutes = TIMEOUT_SUT_START_MINUTES + int(math.ceil(1.1 * self.counter * MINUTES_PER_RUN))
         self.waits.append(timeoutMinutes)
         return timeoutMinutes
@@ -466,67 +388,55 @@ class State:
         return self.jobsLeft > self.sutsLeft
 
 
-def writeWithHeadAndFooter(code, port, sut, timeout):
-    head = createJobHead(port, sut, timeout)
-    footer = closeJob(port, sut)
+def writeWithHeadAndFooter(code, port, sut_name, timeout):
+    head = createJobHead(port, sut_name, timeout)
+    footer = closeJob(port, sut_name)
     code = head + code + footer
-    writeScript(code, port, sut)
+    writeScript(code, port, sut_name)
 
 
 
-def createOneJob(state, sut, seed, config):
-    code = addJobBody(state.port, sut, seed, config)
-    state.updateBudget(sut.timeWeight)
+def createOneJob(state, sut_name, seed, weight, config):
+    code = addJobBody(state.port, sut_name, seed, config, weight)
+    state.updateBudget(weight)
     state.jobsLeft -= 1
     state.opened = True
     state.generated += 1
     return code
 
 
-def getJavaCommand(sut):
-    JAVA = "java "
-    if not CLUSTER:
-        if sut.platform == JDK_8:
-            JAVA = "\"" + JAVA_HOME_8 +"\"/bin/java "
-        elif sut.platform == JDK_11:
-            JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
-    return JAVA
-
-
-def addJobBody(port, sut, seed, config):
+def addJobBody(port, sut_name, seed, config, weight):
     script = io.StringIO()
 
-    em_log = LOG_DIR + "/log_em_" + sut.name + "_" + str(port) + ".txt"
+    em_log = LOG_DIR + "/log_em_" + sut_name + "_" + str(port) + ".txt"
 
     params = customParameters(seed, config)
 
     ### standard
     params += " --stoppingCriterion=FITNESS_EVALUATIONS"
     params += " --maxActionEvaluations=" + str(MAX_ACTIONS)
-    params += " --statisticsColumnId=" + sut.name
+    params += " --statisticsColumnId=" + sut_name
     params += " --seed=" + str(seed)
     params += " --sutControllerPort=" + str(port)
-    params += " --outputFolder=" + TEST_DIR + "/" + sut.name
+    params += " --outputFolder=" + TEST_DIR + "/" + sut_name
     params += " --statisticsFile=" + \
-              REPORT_DIR + "/statistics_" + sut.name + "_" + str(seed) + ".csv"
+              REPORT_DIR + "/statistics_" + sut_name + "_" + str(seed) + ".csv"
     params += " --snapshotInterval=5"
     params += " --snapshotStatisticsFile=" + \
-              REPORT_DIR + "/snapshot_" + sut.name + "_" + str(seed) + ".csv"
+              REPORT_DIR + "/snapshot_" + sut_name + "_" + str(seed) + ".csv"
     params += " --appendToStatisticsFile=true"
     params += " --writeStatistics=true"
     params += " --showProgress=false"
-    params += " --testSuiteSplitType=NONE"
 
-    JAVA = getJavaCommand(sut)
-    command = JAVA + EVOMASTER_JAVA_OPTIONS + params + " >> " + em_log + " 2>&1"
+    command = EVOMASTER + params + " >> " + em_log + " 2>&1"
 
     if not CLUSTER:
-        script.write("\n\necho \"Starting EvoMaster with: " + command + "\"\n")
+        script.write("\n\necho \"Starting SUT with: " + command + "\"\n")
         script.write("echo\n\n")
 
     if CLUSTER:
-        timeout = int(math.ceil(1.1 * sut.timeWeight * MINUTES_PER_RUN * 60))
-        errorMsg = "ERROR: timeout for " + sut.name
+        timeout = int(math.ceil(1.1 * weight * MINUTES_PER_RUN * 60))
+        errorMsg = "ERROR: timeout for " + sut_name
         command = "timeout " +str(timeout) + "  " + command \
                   + " || ([ $? -eq 124 ] && echo " + errorMsg + " >> " + em_log + " 2>&1" + ")"
 
@@ -540,18 +450,15 @@ def createJobs():
     CONFIGS = getConfigs()
 
     NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * len(CONFIGS)
-    SUT_WEIGHTS = sum(map(lambda x: x.timeWeight, SUTS))
-    # For example, if we have 30 runs and 5 SUTs, the total budget
-    # to distribute among the different jobs/scripts is 150.
-    # However, some SUTs might have weights greater than 1 (ie, they run slower, so
-    # need more budget)
-    TOTAL_BUDGET = NRUNS_PER_SUT * SUT_WEIGHTS
+    SUT_WEIGHTS = sum(map(lambda x: x[1], SUTS))
 
-    state = State(TOTAL_BUDGET)
+    state = State(NRUNS_PER_SUT * SUT_WEIGHTS)
 
-    SUTS.sort(key=lambda x: -x.timeWeight)
+    SUTS.sort(key=lambda x: -x[1])
 
     for sut in SUTS:
+        sut_name = sut[0]
+        weight = sut[1]
 
         state.sutsLeft -= 1
         state.resetTmpForNewRun()
@@ -565,37 +472,23 @@ def createJobs():
 
             for config in CONFIGS:
 
-                # first run in current script: we need to create all the initializing preambles
-                if state.counter == 0:
-                    code = createOneJob(state, sut, seed, config)
+                    if state.counter == 0:
+                        code = createOneJob(state, sut_name, seed, weight, config)
 
-                # can we add this new run to the current opened script?
-                elif(
-                        # we need to check if we would not exceed the budget limit per job
-                        (state.counter + sut.timeWeight) <= state.perJob
-                        # however, that check must be ignored if we cannot open/create any new script file
-                        # for the current SUT
-                        or not state.hasSpareJobs() or
-                        # this case is bit more tricky... let's say only few runs are left that
-                        # we need to allocate in a script, but they are so few that they would need
-                        # only a small percentage of a new script capacity (eg, less than 30%).
-                        # In such a case, to avoid getting very imbalanced execution times,
-                        # we could just add those few runs to the current script.
-                        (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight)
-                     ):
-                    code += addJobBody(state.port, sut, seed, config)
-                    state.updateBudget(sut.timeWeight)
+                    elif (state.counter + weight) < state.perJob \
+                            or not state.hasSpareJobs() or \
+                            (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / weight):
+                        code += addJobBody(state.port, sut_name, seed, config, weight)
+                        state.updateBudget(weight)
 
-                else:
-                    writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
-                    state.resetTmpForNewRun()
-                    code = createOneJob(state, sut, seed, config)
-
-                # keep track that a new run has been handled
-                completedForSut += 1
+                    else:
+                        writeWithHeadAndFooter(code, state.port, sut_name, state.getTimeoutMinutes())
+                        state.resetTmpForNewRun()
+                        code = createOneJob(state, sut_name, seed, weight, config)
+                    completedForSut += 1
 
         if state.opened:
-            writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
+            writeWithHeadAndFooter(code, state.port, sut_name, state.getTimeoutMinutes())
 
     print("Generated scripts: " + str(state.generated))
     print("Max wait for a job: " + str(max(state.waits)) + " minutes")
@@ -614,8 +507,10 @@ def createJobs():
 
 
 class Config:
-    i=42
-    # def __init__(self):
+    def __init__(self, blackBox, algorithm):
+        self.blackBox = blackBox
+        self.bbExperiments = blackBox
+        self.algorithm = algorithm
 
 
 
@@ -623,14 +518,17 @@ def customParameters(seed, config):
 
     params = ""
 
-    ### Custom for these experiments
-    params += " "
+    label = str(config.blackBox)
 
-    # For each experiment configuration, we MUST create a unique label, with also the seed used.
-    # We need this to create unique file names for the generated test suites, so that EvoMaster
-    # does not override already generated tests from experiment runs that have already finished.
-    label = ""
+    ### Custom for these experiments
     params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
+    params += " --blackBox=" + str(config.blackBox)
+    params += " --bbExperiments=" + str(config.blackBox)
+    params += " --algorithm=" + str(config.algorithm)
+
+    params += " --heuristicsForSQL=" + str(not config.blackBox)
+    params += " --extractSqlExecutionInfo=" + str(not config.blackBox)
+    params += " --generateSqlDataWithSearch=" + str(not config.blackBox)
 
 
     return params
@@ -640,14 +538,12 @@ def getConfigs():
 
     # array of configuration objects. We will run experiments for each of
     # these configurations
-   CONFIGS = []
+    CONFIGS = []
 
-   CONFIGS.append(Config())
+    CONFIGS.append(Config(True, "RANDOM"))
+    CONFIGS.append(Config(False, "MIO"))
 
-#    if CLUSTER:
-#    else:
-
-   return CONFIGS
+    return CONFIGS
 
 
 ############################################################################
