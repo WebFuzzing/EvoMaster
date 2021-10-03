@@ -16,18 +16,12 @@ This explained in more details [here](replicating_studies.md).
   IEEE International Symposium on Software Reliability Engineering (ISSRE). (*to appear*)
   [[PDF](publications/2021_issre.pdf)]
 
-
-* A. Arcuri.
-  *SSBSE'21 Tutorial: Search-Based System Testing with EvoMaster*.
-  Symposium on Search-based Software Engineering (SSBSE). (*to appear*)
-  [[PDF](publications/2021_ssbse_tutorial.pdf)]
-
-
+  
 * M. Zhang, A. Arcuri.
   *Enhancing Resource-based Test Case Generation For RESTful APIs with SQL Handling*.
-  Symposium on Search-based Software Engineering (SSBSE). (*to appear*)
+  Symposium on Search-based Software Engineering (SSBSE). 
   [[PDF](publications/2021_ssbse.pdf)]
-
+  [[Scripts](exp/2021_ssbse.py)]
 
 * A. Arcuri, J.P. Galeotti.
   *Enhancing Search-Based Testing With Testability Transformations For Existing APIs*.
@@ -38,14 +32,13 @@ This explained in more details [here](replicating_studies.md).
 * M. Zhang, A. Arcuri.
   *Adaptive Hypermutation for Search-Based System Test  Generation: A Study on REST APIs with EvoMaster*.
   ACM Transactions on Software Engineering and Methodology (TOSEM). 
-  [[PDF](publications/2021_tosem_hm.pdf)]  
-
+  [[PDF](publications/2021_tosem_hm.pdf)] [[Scripts](exp/2021_tosem_hm.py)]
 
 * M. Zhang, B. Marculescu, A. Arcuri.
   *Resource and Dependency based Test Case Generation for RESTful Web Services*.
   Empirical Software Engineering (EMSE). 
   [[PDF](publications/2021_emse.pdf)]
-
+  [[Scripts](exp/2021_tosem_tt.py)]
 
 * A. Arcuri, J.P. Galeotti, B. Marculescu, M. Zhang.
   *EvoMaster: A Search-Based System Test Generation Tool*.
@@ -76,8 +69,7 @@ This explained in more details [here](replicating_studies.md).
 * M. Zhang, B. Marculescu, A. Arcuri. 
      *Resource-based Test Case Generation for RESTful Web Services*.
      ACM Genetic and Evolutionary Computation Conference (GECCO).
-     [[PDF](publications/2019_gecco_resources.pdf)]   
-
+     [[PDF](publications/2019_gecco_resources.pdf)] [[Scripts](exp/2019_gecco_resource.py)]
 
 * A. Arcuri, J.P. Galeotti. 
      *SQL Data Generation to Enhance Search-Based System Testing*.
