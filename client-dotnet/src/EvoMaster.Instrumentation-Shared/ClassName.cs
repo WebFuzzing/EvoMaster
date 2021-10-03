@@ -55,9 +55,9 @@ namespace EvoMaster.Instrumentation_Shared
                 name = name.Substring(0, name.Length - ".class".Length);
             }
 
-            if (name.EndsWith(".java"))
+            if (name.EndsWith(".cs"))
             {
-                name = name.Substring(0, name.Length - ".java".Length);
+                name = name.Substring(0, name.Length - ".cs".Length);
             }
 
             if (name.Contains("/") && name.Contains("."))
