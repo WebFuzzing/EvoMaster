@@ -171,7 +171,13 @@ class ArrayGene<T>(
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "[" +
-                elements.map { g -> g.getValueAsPrintableString(previousGenes, mode, targetFormat) }.joinToString(", ") +
+                elements.map { g ->
+                    if (g is EnumGene<*>|| g is OptionalGene && g.gene is EnumGene<*> ) {
+                        g.getValueAsRawString()
+                    } else {
+                        g.getValueAsPrintableString(previousGenes, mode, targetFormat)
+                    }
+                }.joinToString(", ") +
                 "]"
     }
 
