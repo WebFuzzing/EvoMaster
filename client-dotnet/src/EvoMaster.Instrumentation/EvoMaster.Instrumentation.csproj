@@ -13,7 +13,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\EvoMaster.Client.Util\EvoMaster.Client.Util.csproj" />
-      <ProjectReference Include="..\EvoMaster.Instrumentation-Shared\EvoMaster.Instrumentation-Shared.csproj" />
+      <ProjectReference Include="..\EvoMaster.Instrumentation_Shared\EvoMaster.Instrumentation_Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>

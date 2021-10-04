@@ -31,7 +31,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
         [InlineData(7, 6, 7, "Line_at_TriangleClassificationImpl_00030")]
         [InlineData(7, 6, 5, "Line_at_TriangleClassificationImpl_00033")]
         public void TestSpecificLineCoverage(int a, int b, int c, string returnLine)
-        {
+        {               
             ITriangleClassification tc = new TriangleClassificationImpl();
 
             ExecutionTracer.Reset();
