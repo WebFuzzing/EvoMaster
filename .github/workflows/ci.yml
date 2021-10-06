@@ -4,7 +4,7 @@ on: [push]
 
 env:
   evomaster-version: 1.2.2
-  release-jdk: 16
+  release-jdk: 17
   retention-days: 3
 
 
@@ -18,11 +18,8 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    # Currently does not like Docker...
-    #    runs-on: windows-latest
 
     steps:
-
       # Checkout code
       - uses: actions/checkout@v2
 
@@ -92,13 +89,34 @@ jobs:
         run: curl -s https://codecov.io/bash | bash
 
 
-      #Only once coverage is uploaded, we try to build with other versions of Java, as "mvn clean" would delete those reports
+      # Only once coverage is uploaded, we try to build with other versions of Java, as "mvn clean" would delete those reports
+      # However, the latest LTS is fully built (with tests) on a different job
       - name: Setup JDK 11
         uses: actions/setup-java@v1
         with:
           java-version: 11
       - name: Compile with JDK 11
         run: mvn clean verify -DskipTests
+
+  latest-LTS:
+    # run on a different OS from main build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup JDK 17
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build with Maven
+        run: mvn clean verify --fae
+        env:
+          CI_env: GithubAction
 
 
   windows:
@@ -175,3 +193,6 @@ jobs:
           path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
+
+
+
