@@ -722,8 +722,11 @@
                             TODO might not needed when using workaround like in ByteBuddy
                             of creating an external process to do the Agent attachment
                             https://github.com/raphw/byte-buddy/issues/295
+
+                            Fucking JDK 17!!! And fuck you JEP 403!!!
+                            https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true --add-opens java.base/java.util.regex=ALL-UNNAMED</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
