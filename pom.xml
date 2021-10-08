@@ -42,6 +42,15 @@
 
     <profiles>
         <profile>
+            <id>Configs for JDK >= 17</id>
+            <activation>
+                <jdk>17</jdk>
+            </activation>
+            <properties>
+                <addOpens>--add-opens java.base/java.util.regex=ALL-UNNAMED</addOpens>
+            </properties>
+        </profile>
+        <profile>
             <!--
                    This profile is needed when making a deployment to Maven Central.
                    Note: we upload only the client library, not the whole EvoMaster.
@@ -91,6 +100,7 @@
     </licenses>
 
     <properties>
+        <addOpens></addOpens> <!-- overridden in profile -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <kotlin.version>1.5.30</kotlin.version>
@@ -726,7 +736,7 @@
                             Fucking JDK 17!!! And fuck you JEP 403!!!
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true --add-opens java.base/java.util.regex=ALL-UNNAMED</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
@@ -741,7 +751,7 @@
                         <forkCount>1</forkCount>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
                     <executions>

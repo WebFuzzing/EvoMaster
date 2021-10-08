@@ -99,8 +99,12 @@ jobs:
         run: mvn clean verify -DskipTests
 
   latest-LTS:
-    # run on a different OS from main build
-    runs-on: windows-latest
+    # run on a different OS from main build.
+    # It would had been good, but does not work due to Docker support :(  see:
+    # https://stackoverflow.com/questions/66077884/testcontainers-in-windows-environment-on-github-actions-could-not-find-a-valid
+    # TODO check this again in the future
+    # runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 17
@@ -117,6 +121,7 @@ jobs:
         run: mvn clean verify --fae
         env:
           CI_env: GithubAction
+
 
 
   windows:
