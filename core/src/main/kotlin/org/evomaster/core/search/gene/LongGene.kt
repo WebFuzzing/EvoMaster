@@ -17,9 +17,11 @@ import kotlin.math.min
 class LongGene(
         name: String,
         value: Long = 0,
-        val min : Long? = null,
-        val max : Long? = null
-) : NumberGene<Long>(name, value) {
+        /** Inclusive */
+        min : Long? = null,
+        /** Inclusive */
+        max : Long? = null
+) : NumberGene<Long>(name, value, min, max) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)
@@ -133,7 +135,6 @@ class LongGene(
         return true
     }
 
-    private fun isRangeSpecified() = min != null || max != null
 
 
     /**

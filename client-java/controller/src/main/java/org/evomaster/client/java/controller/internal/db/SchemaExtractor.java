@@ -343,12 +343,20 @@ public class SchemaExtractor {
                             .range(1, attrs.length).anyMatch(i -> attrs[i].equalsIgnoreCase("UNSIGNED"));
                     columnDto.nullable = columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
                     columnDto.autoIncrement = columns.getString("IS_AUTOINCREMENT").equalsIgnoreCase("yes");
+                    /*
+                        this precision is only used for decimal, not for double and float in mysql
+                        https://dev.mysql.com/doc/refman/8.0/en/floating-point-types.html
+                        therefore, here, we only set precision when type is DECIMAL
+                     */
+                    if (columnDto.type.equals("DECIMAL"))
+                        columnDto.precision = columns.getInt("DECIMAL_DIGITS");
                     break;
                 default:
                     // might need to support unsigned property of numeric in other types of db
                     columnDto.type = typeAsString;
                     columnDto.nullable = columns.getBoolean("IS_NULLABLE");
                     columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
+                    // TODO handle precision for other databases
             }
             //columns.getString("DECIMAL_DIGITS");
 

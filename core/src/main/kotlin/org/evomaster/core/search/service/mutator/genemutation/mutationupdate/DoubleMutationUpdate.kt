@@ -1,14 +1,20 @@
 package org.evomaster.core.search.service.mutator.genemutation.mutationupdate
 
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.FloatingPointNumber.Companion.getFormattedValue
+import org.evomaster.core.search.gene.FloatingPointNumber.Companion.mutateFloatingPointNumber
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import java.math.BigDecimal
-import java.math.RoundingMode
+import org.evomaster.core.utils.NumberCalculationUtil
 
 
-class DoubleMutationUpdate(direction: Boolean, min: Double, max: Double, updateTimes : Int = 0, counter: Int = 0, reached: Boolean = false, latest : Double? = null, preferMin: Double = min, preferMax : Double = max)
-    : MutationBoundaryUpdate<Double>(direction, min, max, updateTimes = updateTimes, counter = counter, reached = reached, latest = latest, preferMin = preferMin, preferMax = preferMax), Comparable<DoubleMutationUpdate> {
+class DoubleMutationUpdate(direction: Boolean,
+                           min: Double,
+                           max: Double,
+                           precision: Int?,
+                           updateTimes : Int = 0,
+                           counter: Int = 0,
+                           reached: Boolean = false, latest : Double? = null, preferMin: Double = min, preferMax : Double = max)
+    : MutationBoundaryUpdate<Double>(direction, min, max, precision = precision, updateTimes = updateTimes, counter = counter, reached = reached, latest = latest, preferMin = preferMin, preferMax = preferMax), Comparable<DoubleMutationUpdate> {
 
     override fun compareTo(other: DoubleMutationUpdate): Int {
         val r = -candidatesBoundary() + other.candidatesBoundary()
@@ -26,34 +32,18 @@ class DoubleMutationUpdate(direction: Boolean, min: Double, max: Double, updateT
     override fun random(apc: AdaptiveParameterControl, randomness: Randomness, current: Double, probOfMiddle: Double, start: Int, end: Int, minimalTimeForUpdate: Int): Double {
         if(randomness.nextBoolean(probOfMiddle)) {
             val m = middle()
-            if (m != current) return m
+            if (m != current) return getFormattedValue(m, precision)
         }
-        val delta = randomness.nextGaussian()
-        val times = GeneUtils.getDelta(randomness, apc, candidatesBoundary().toLong(), start = start, end = end)
-        val candidates = listOf(current + delta, current + times * delta, BigDecimal(current).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble())
-        val valid = candidates.filter { it <= preferMax && it >= preferMin }
-        if (direction){
-            val dir = randomDirection(randomness)
-            if (dir != null && dir != 0){
-                val values = valid.filter {
-                    if(dir > 0) it > current else it < current
-                }
-                if (values.isNotEmpty()) return randomness.choose(values)
-            }
-        }
-        return when{
-            valid.isNotEmpty() -> randomness.choose(valid)
-            candidates.minOrNull()!! > preferMax -> preferMax
-            else -> preferMin
-        }
+
+        val sdirection = if (direction) randomDirection(randomness)?.run { this > 0 } else null
+
+        return mutateFloatingPointNumber(
+            randomness, sdirection, maxRange = candidatesBoundary().toLong(),apc, current, preferMin, preferMax, precision
+        )
     }
 
-    override fun copy(): DoubleMutationUpdate = DoubleMutationUpdate(direction, preferMin, preferMax, updateTimes, counter, reached, latest, preferMin, preferMax)
-
     override fun candidatesBoundary(): Double {
-        val result = preferMax - preferMin
-        if (Double.NEGATIVE_INFINITY == result || result == Double.NaN || result == Double.NEGATIVE_INFINITY)
-            return Long.MAX_VALUE.toDouble()
+        val result = NumberCalculationUtil.calculateIncrement(max= preferMax, min=preferMin)
 
         return result.also {
             if (it < 0) throw IllegalStateException("preferMax < preferMin: $preferMax, $preferMin")
