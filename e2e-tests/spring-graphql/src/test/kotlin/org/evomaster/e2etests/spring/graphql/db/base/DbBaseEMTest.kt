@@ -25,7 +25,7 @@ class DbBaseEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GQL_DbBaseEM",
             "org.foo.graphql.DbBaseEM",
-            10000
+            20000
         ) { args: MutableList<String> ->
 
             args.add("--problemType")
