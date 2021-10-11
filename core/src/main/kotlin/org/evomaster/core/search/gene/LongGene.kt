@@ -18,19 +18,8 @@ class LongGene(
         name: String,
         value: Long = 0,
         numericConstrains: NumericConstrains? = null
-) : NumberGene<Long>(name, value) {
+) : NumberGene<Long>(name, value, numericConstrains) {
 
-    /** Inclusive */
-    private val min: Long? = numericConstrains?.getMin()?.toLong()
-    /** Inclusive */
-    private val max: Long? = numericConstrains?.getMax()?.toLong()
-
-    fun getMin(): Long? {
-        return min
-    }
-    fun getMax(): Long? {
-        return max
-    }
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)
@@ -47,7 +36,7 @@ class LongGene(
             we employ [randomness.randomizeBoundedIntAndLong] for randomizing long that is same as randomizing int
          */
         if (isRangeSpecified()){
-            value = randomness.randomizeBoundedIntAndLong(value, min?: Long.MIN_VALUE, max?: Long.MAX_VALUE, forceNewValue)
+            value = randomness.randomizeBoundedIntAndLong(value, min?.toLong() ?: Long.MIN_VALUE, max?.toLong() ?: Long.MAX_VALUE, forceNewValue)
             return
         }
 
@@ -89,8 +78,8 @@ class LongGene(
         val delta = GeneUtils.getDelta(randomness, apc, delta())
 
         val sign = when{
-            max != null && value >= max -> -1
-            min != null && value <= min -> +1
+            max != null && value >= max!!.toLong() -> -1
+            min != null && value <= min!!.toLong() -> +1
             else -> randomness.choose(listOf(-1, +1))
         }
 
@@ -146,7 +135,6 @@ class LongGene(
         return true
     }
 
-    private fun isRangeSpecified() = min != null || max != null
 
 
     /**
@@ -156,7 +144,7 @@ class LongGene(
     private fun delta() : Long{
         return if (isRangeSpecified()){
             try{
-                min(Long.MAX_VALUE, Math.subtractExact(max?: Long.MAX_VALUE, min?: Long.MIN_VALUE))
+                min(Long.MAX_VALUE, Math.subtractExact(max?.toLong() ?: Long.MAX_VALUE, min?.toLong() ?: Long.MIN_VALUE))
             }catch (e : ArithmeticException) {
                 Long.MAX_VALUE
             }

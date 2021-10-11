@@ -20,13 +20,14 @@ import org.evomaster.core.search.service.Randomness
  */
 abstract class MutationBoundaryUpdate<T> (
         val direction : Boolean,
-        val min : T, val max : T, var counter : Int = 0, var reached : Boolean = false,
+        val min : T, val max : T,
+        val precision: Int?,
+        var counter : Int = 0, var reached : Boolean = false,
         var updateTimes : Int = 0,
         var resetTimes : Int = 0, var latest: T? = null, var preferMin : T = min, var preferMax : T = max) where T : Number{
 
     private var directionHistory : MutableList<Int> = mutableListOf()
 
-    abstract fun copy() : MutationBoundaryUpdate<T>
     abstract fun candidatesBoundary() : T
 
     fun updateCounter(improved : Int){

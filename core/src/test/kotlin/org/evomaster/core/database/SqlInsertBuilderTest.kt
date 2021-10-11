@@ -785,7 +785,7 @@ class SqlInsertBuilderTest {
         assertEquals(1, fooActions[0].seeGenes().size)
 
         val gene = fooActions[0].seeGenes()[0] as IntegerGene
-        assertEquals(-10, gene.getMin())
+        assertEquals(-10, gene.min)
 
     }
 
@@ -811,7 +811,7 @@ class SqlInsertBuilderTest {
         assertEquals(1, fooActions[0].seeGenes().size)
 
         val gene = fooActions[0].seeGenes()[0] as IntegerGene
-        assertEquals(10, gene.getMax())
+        assertEquals(10, gene.max)
 
     }
 
@@ -844,8 +844,8 @@ class SqlInsertBuilderTest {
         assertEquals(1, fooActions[0].seeGenes().size)
 
         val gene = fooActions[0].seeGenes()[0] as IntegerGene
-        assertEquals(-10, gene.getMin())
-        assertEquals(10, gene.getMax())
+        assertEquals(-10, gene.min)
+        assertEquals(10, gene.max)
 
     }
 
@@ -872,8 +872,8 @@ class SqlInsertBuilderTest {
         assertEquals(1, fooActions[0].seeGenes().size)
 
         val gene = fooActions[0].seeGenes()[0] as IntegerGene
-        assertEquals(10, gene.getMin())
-        assertEquals(10, gene.getMax())
+        assertEquals(10, gene.min)
+        assertEquals(10, gene.max)
 
     }
 

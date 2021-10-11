@@ -11,29 +11,40 @@ import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHis
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
-import java.math.RoundingMode
+
 
 
 class FloatGene(name: String,
-                value: Float = 0.0f
-) : NumberGene<Float>(name, value) {
+                value: Float = 0.0f,
+                /** Inclusive */
+                min : Float? = null,
+                /** Inclusive */
+                max : Float? = null,
+                /**
+                 * specified precision
+                 */
+                precision: Int? = null
+) : FloatingPointNumber<Float>(name, value, min, max, precision) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(FloatGene::class.java)
     }
 
-    override fun copyContent() = FloatGene(name, value)
+    override fun copyContent() = FloatGene(name, value, min?.toFloat(), max?.toFloat(), precision)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        //need for forceNewValue?
-        value = randomness.nextFloat()
+        var rand = randomness.nextFloat()
+        if (isRangeSpecified() && ((rand < (min?.toFloat() ?: Float.MIN_VALUE)) || (rand > (max?.toFloat() ?: Float.MAX_VALUE)))){
+            rand = randomness.nextDouble((min?.toFloat() ?: Float.MIN_VALUE).toDouble(), (max?.toFloat() ?: Float.MAX_VALUE).toDouble()).toFloat()
+        }
+        value = getFormattedValue(rand)
+
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
             if (additionalGeneMutationInfo.hasHistory()){
                 try {
                     additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
@@ -46,24 +57,14 @@ class FloatGene(name: String,
             }
         }
 
-        //TODO min/max for Float
-        val k = when (randomness.choose(listOf(0, 1, 2))) {
-            //for small changes
-            0 -> value + randomness.nextGaussian()
-            //for large jumps
-            1 -> value + (GeneUtils.getDelta(randomness, apc) * randomness.nextGaussian())
-            //to reduce precision, ie chop off digits after the "."
-            2 -> BigDecimal(value.toDouble()).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
-            else -> throw IllegalStateException("Regression bug")
-        }
 
-        value = k.toFloat()
+        value = mutateFloatingPointNumber(randomness, apc)
 
         return true
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return value.toString()
+        return getFormattedValue().toString()
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -106,5 +107,13 @@ class FloatGene(name: String,
             }
         }
         return true
+    }
+
+    override fun getMinimum(): Float {
+        return min?.toFloat() ?: Float.MIN_VALUE
+    }
+
+    override fun getMaximum(): Float {
+        return max?.toFloat() ?: Float.MAX_VALUE
     }
 }

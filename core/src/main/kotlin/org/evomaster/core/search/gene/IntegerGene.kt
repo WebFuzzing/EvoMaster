@@ -15,24 +15,21 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
 
+fun complete(numericConstrains: NumericConstrains?): NumericConstrains {
+    /** Inclusive */
+     val min: Int = Optional.ofNullable(numericConstrains?.getMin()?.toInt()).orElse(Int.MIN_VALUE)
+    /** Inclusive */
+     val max: Int = Optional.ofNullable(numericConstrains?.getMax()?.toInt()).orElse(Int.MAX_VALUE)
+
+    return NumericConstrains(min, max)
+}
 
 class IntegerGene(
     name: String,
     value: Int = 0,
     numericConstrains: NumericConstrains? = null
-) : NumberGene<Int>(name, value, numericConstrains) {
+) : NumberGene<Int>(name, value, complete(numericConstrains)) {
 
-    /** Inclusive */
-    private val min: Int = Optional.ofNullable(numericConstrains?.getMin()?.toInt()).orElse(Int.MIN_VALUE)
-    /** Inclusive */
-    private val max: Int = Optional.ofNullable(numericConstrains?.getMax()?.toInt()).orElse(Int.MAX_VALUE)
-
-    fun getMin(): Int {
-        return min
-    }
-    fun getMax(): Int {
-        return max
-    }
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(IntegerGene::class.java)
@@ -58,7 +55,7 @@ class IntegerGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        value = randomness.randomizeBoundedIntAndLong(value.toLong(), min.toLong(), max.toLong(), forceNewValue).toInt()
+        value = randomness.randomizeBoundedIntAndLong(value.toLong(), min!!.toLong(), max!!.toLong(), forceNewValue).toInt()
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
@@ -78,22 +75,22 @@ class IntegerGene(
         }
 
         //check maximum range. no point in having a delta greater than such range
-        val range = max.toLong() - min.toLong()
+        val range = max!!.toLong() - min!!.toLong()
 
         //choose an i for 2^i modification
         val delta = getDelta(randomness, apc, range)
 
         val sign = when (value) {
-            max -> -1
-            min -> +1
+            max!! -> -1
+            min!! -> +1
             else -> randomness.choose(listOf(-1, +1))
         }
 
         val res: Long = (value.toLong()) + (sign * delta)
 
         value = when {
-            res > max -> max
-            res < min -> min
+            res > max!!.toLong() -> max!!.toInt()
+            res < min!!.toLong() -> min!!.toInt()
             else -> res.toInt()
         }
 

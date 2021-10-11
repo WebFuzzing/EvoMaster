@@ -13,6 +13,7 @@ import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
 import java.math.BigDecimal
+import org.evomaster.core.utils.NumberCalculationUtil
 import kotlin.math.pow
 
 class DbActionGeneBuilder {
@@ -72,7 +73,7 @@ class DbActionGeneBuilder {
                  * INT2/SMALLINT(5) is assumed as a short/Short field
                  * INT4/INTEGER(10) is a int/Integer field
                  */
-                ColumnDataType.TINYINT, ColumnDataType.INT2, ColumnDataType.SMALLINT, ColumnDataType.INT, ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL, ColumnDataType.MEDIUMINT ->
+                 ColumnDataType.TINYINT, ColumnDataType.INT2, ColumnDataType.SMALLINT, ColumnDataType.INT, ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL, ColumnDataType.MEDIUMINT ->
                     handleIntegerColumn(column)
 
                 /**
@@ -94,7 +95,7 @@ class DbActionGeneBuilder {
                  * N could be as large as Integer.MAX_VALUE
                  */
                 ColumnDataType.ARRAY_VARCHAR, //FIXME need general solution for arrays
-                ColumnDataType.TEXT, ColumnDataType.VARCHAR, ColumnDataType.CLOB ->
+                ColumnDataType.TINYTEXT, ColumnDataType.TEXT, ColumnDataType.VARCHAR, ColumnDataType.CLOB, ColumnDataType.MEDIUMTEXT, ColumnDataType.LONGBLOB, ColumnDataType.MEDIUMBLOB, ColumnDataType.TINYBLOB ->
                     handleTextColumn(column)
 
                 //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
@@ -450,7 +451,15 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
-            FloatGene(column.name)
+            if (column.precision >= 0){
+                /*
+                    set precision and boundary for DECIMAL
+                    https://dev.mysql.com/doc/refman/8.0/en/fixed-point-types.html
+                 */
+                val range = NumberCalculationUtil.boundaryDecimal(column.size, column.precision)
+                FloatGene(column.name, min= if (column.isUnsigned) 0.0f else range.first.toFloat(), max = range.second.toFloat(), precision = column.precision)
+            }else
+                FloatGene(column.name)
         }
     }
 

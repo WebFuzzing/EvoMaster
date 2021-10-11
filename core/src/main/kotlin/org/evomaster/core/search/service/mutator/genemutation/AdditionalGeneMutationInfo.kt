@@ -46,7 +46,7 @@ data class AdditionalGeneMutationInfo (
 
     fun copyFoInnerGene(impact: GeneImpact?, gene : Gene): AdditionalGeneMutationInfo{
         Lazy.assert {
-            effectiveHistory.size == this.effectiveHistory.size
+            effectiveHistory.size == this.effectiveHistory.size &&
             history.size == this.history.size
         }
         return AdditionalGeneMutationInfo(

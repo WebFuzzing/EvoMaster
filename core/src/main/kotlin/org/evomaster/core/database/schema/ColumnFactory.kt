@@ -24,7 +24,8 @@ object ColumnFactory {
                 enumValuesAsStrings = enumValuesForColumn,
                 similarToPatterns = similarToPatternsForColumn,
                 likePatterns = likePatternsForColumn,
-                databaseType = databaseType
+                databaseType = databaseType,
+                precision = columnDto.precision
         )
     }
 

@@ -2,12 +2,21 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.problem.rest.NumericConstrains
 
+import kotlin.math.min
+
+
 /**
  * Common superclass for all number genes (i.e. Float,Double,Integer,Long)
  */
 abstract class NumberGene<T : Number>(name: String, var value: T, var numericConstrains: NumericConstrains? = null) : Gene(name, mutableListOf()) {
 
+
+    var min: Number? = numericConstrains?.getMin()
+    var max: Number?  = numericConstrains?.getMax()
+
     override fun getChildren(): MutableList<Gene> = mutableListOf()
+
+    open fun isRangeSpecified() = min != null || max != null
 
     fun toInt(): Int =
             value.toInt()
@@ -24,5 +33,16 @@ abstract class NumberGene<T : Number>(name: String, var value: T, var numericCon
     fun toFloat(): Float =
             value.toFloat()
 
+
+    /**
+     * @return whether the [value] is between [min] and [max] if they are specified
+     */
+    override fun isValid() : Boolean{
+        if (max != null && value.toDouble() > max!!.toDouble())
+            return false
+        if (min != null && value.toDouble() < min!!.toDouble())
+            return false
+        return true
+    }
 
 }
