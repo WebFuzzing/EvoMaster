@@ -751,9 +751,51 @@ object GraphQLActionBuilder {
          */
         params.map { it.gene }.forEach { GeneUtils.preventCycles(it, true) }
 
+        params.map { it.gene }.forEach {
+
+            when {
+                it is OptionalGene && it.gene is ObjectGene -> handleAllCyclesInObjectFields(it.gene)
+
+                it is ArrayGene<*> && it.template is ObjectGene ->
+                    it.template.fields.forEach { f -> handleAllCyclesInObjectFields(f as ObjectGene) }
+
+                it is ObjectGene -> handleAllCyclesInObjectFields(it)
+            }
+        }
+
         //Create the action
         val action = GraphQLAction(actionId, methodName, type, params)
         actionCluster[action.getName()] = action
+
+    }
+
+
+    //For an obj gene with all fields as cycles
+     fun handleAllCyclesInObjectFields(gene: ObjectGene) {
+
+        if (gene.fields.all {
+                    (it is  OptionalGene && it.gene is CycleObjectGene)||
+                            (it is CycleObjectGene)
+
+        })  {
+            var p = gene.parent
+
+            loop@ while (p != null) {
+                when (p) {
+                    is OptionalGene -> {
+                        p.forbidSelection()
+                        break@loop
+                    }
+                    is ArrayGene<*> -> {
+                        p.forceToOnlyEmpty()
+                        break@loop
+                    }
+                    else -> p = p.parent
+
+                }
+            }
+
+        }
 
     }
 
