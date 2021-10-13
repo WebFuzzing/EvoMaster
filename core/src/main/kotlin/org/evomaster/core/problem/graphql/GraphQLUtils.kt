@@ -482,9 +482,8 @@ object GraphQLUtils {
             }
             getAllPathsFromEntryPoint(visitedVertex, stack, adjacent, graph, paths)
         }
-
-        val tempGraph =
-            mapOf<String, GraphInfo>()//The tempGraph is used because the function removeAll() will modify the initial graph structure
+        //The tempGraph is used because the function removeAll() will modify the initial graph structure
+        val tempGraph = mapOf<String, GraphInfo>()
 
         val adj = getAdjacent(current, tempGraph)
 
