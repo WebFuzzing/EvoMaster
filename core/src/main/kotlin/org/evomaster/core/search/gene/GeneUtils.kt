@@ -423,7 +423,8 @@ object GeneUtils {
             throw IllegalArgumentException("There should be at least 1 field, and they must be all optional or boolean")
         }
 
-        val selected = obj.fields.filter { it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template !is CycleObjectGene &&
+        //it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template !is CycleObjectGene &&
+        val selected = obj.fields.filter {
                 ( (it is OptionalGene && it.isActive) ||
                     (it is BooleanGene && it.value)) }
 
