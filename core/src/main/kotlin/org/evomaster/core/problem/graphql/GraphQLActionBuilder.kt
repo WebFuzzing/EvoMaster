@@ -754,14 +754,19 @@ object GraphQLActionBuilder {
         params.map { it.gene }.forEach {
 
             when {
-                it is OptionalGene && it.gene is ObjectGene -> handleAllCyclesInObjectFields(it.gene)
+                it is OptionalGene && it.gene is ObjectGene -> it.flatView().
+                forEach{g ->
+                    if (g is OptionalGene && g.gene is ObjectGene)  handleAllCyclesInObjectFields(g.gene)else if (g is ObjectGene) handleAllCyclesInObjectFields(g)}
 
                 it is ArrayGene<*> && it.template is ObjectGene ->
                     it.template.fields.forEach { f -> if (f is OptionalGene && f.gene is ObjectGene) handleAllCyclesInObjectFields(f.gene ) }
                 it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is ObjectGene   ->
                     it.gene.template.fields.forEach { f-> if (f is OptionalGene && f.gene is ObjectGene)  handleAllCyclesInObjectFields(f.gene)  }
 
-                it is ObjectGene -> handleAllCyclesInObjectFields(it)
+                it is ObjectGene -> it.flatView().
+                forEach{g ->
+                    if (g is OptionalGene && g.gene is ObjectGene)  handleAllCyclesInObjectFields(g.gene)else if (g is ObjectGene) handleAllCyclesInObjectFields(g)}
+
             }
         }
 
@@ -775,28 +780,31 @@ object GraphQLActionBuilder {
     //For an obj gene with all fields as cycles
      fun handleAllCyclesInObjectFields(gene: ObjectGene) {
 
-        if (gene.fields.all {
-                    (it is  OptionalGene && it.gene is CycleObjectGene)||
-                            (it is CycleObjectGene)
+        gene.flatView().forEach {
 
-        })  {
-            var p = gene.parent
+            if (gene.fields.all {
+                        (it is OptionalGene && it.gene is CycleObjectGene) ||
+                                (it is CycleObjectGene)
 
-            loop@ while (p != null) {
-                when (p) {
-                    is OptionalGene -> {
-                        p.forbidSelection()
-                        break@loop
+                    }) {
+                var p = gene.parent
+
+                loop@ while (p != null) {
+                    when (p) {
+                        is OptionalGene -> {
+                            p.forbidSelection()
+                            break@loop
+                        }
+                        is ArrayGene<*> -> {
+                            p.forceToOnlyEmpty()
+                            break@loop
+                        }
+                        else -> p = p.parent
+
                     }
-                    is ArrayGene<*> -> {
-                        p.forceToOnlyEmpty()
-                        break@loop
-                    }
-                    else -> p = p.parent
-
                 }
-            }
 
+            }
         }
 
     }
