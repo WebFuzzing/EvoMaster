@@ -757,7 +757,9 @@ object GraphQLActionBuilder {
                 it is OptionalGene && it.gene is ObjectGene -> handleAllCyclesInObjectFields(it.gene)
 
                 it is ArrayGene<*> && it.template is ObjectGene ->
-                    it.template.fields.forEach { f -> handleAllCyclesInObjectFields(f as ObjectGene) }
+                    it.template.fields.forEach { f -> if (f is OptionalGene && f.gene is ObjectGene) handleAllCyclesInObjectFields(f.gene ) }
+                it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is ObjectGene   ->
+                    it.gene.template.fields.forEach { f-> if (f is OptionalGene && f.gene is ObjectGene)  handleAllCyclesInObjectFields(f.gene)  }
 
                 it is ObjectGene -> handleAllCyclesInObjectFields(it)
             }
