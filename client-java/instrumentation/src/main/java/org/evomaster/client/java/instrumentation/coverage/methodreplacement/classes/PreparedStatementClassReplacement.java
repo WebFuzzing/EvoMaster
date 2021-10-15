@@ -15,6 +15,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.StatementClassReplacement.executeSql;
+
 public class PreparedStatementClassReplacement implements MethodReplacementClass {
 
     @Override
@@ -93,7 +95,7 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
     }
 
 
-    private static void handlePreparedStatement(PreparedStatement stmt) {
+    private static String handlePreparedStatement(PreparedStatement stmt) {
         if (stmt == null) {
             //nothing to do
         }
@@ -104,7 +106,8 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
                 this is likely a proxy, so we can skip it, as anyway we are going to
                 intercept the call to the delegate
              */
-            return;
+            //TODO Man: need to check with Andrea, shall we still execute this stmt?
+            return null;
         }
 
         /*
@@ -136,27 +139,28 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             sql = extractSqlFromH2PreparedStatement(stmt);
         }
 
-        //TODO see TODO in StatementClassReplacement
-        SqlInfo info = new SqlInfo(sql, false, false);
-        ExecutionTracer.addSqlInfo(info);
+//        //TODO see TODO in StatementClassReplacement
+//        SqlInfo info = new SqlInfo(sql, false, false);
+//        ExecutionTracer.addSqlInfo(info);
+        return sql;
     }
 
 
     @Replacement(type = ReplacementType.TRACKER)
     public static ResultSet executeQuery(PreparedStatement stmt) throws SQLException {
-        handlePreparedStatement(stmt);
-        return stmt.executeQuery();
+        String sql = handlePreparedStatement(stmt);
+        return executeSql(()-> stmt.executeQuery(), sql);
     }
 
     @Replacement(type = ReplacementType.TRACKER)
     public static int executeUpdate(PreparedStatement stmt) throws SQLException {
-        handlePreparedStatement(stmt);
-        return stmt.executeUpdate();
+        String sql = handlePreparedStatement(stmt);
+        return executeSql(()-> stmt.executeUpdate(), sql);
     }
 
     @Replacement(type = ReplacementType.TRACKER)
     public static boolean execute(PreparedStatement stmt) throws SQLException {
-        handlePreparedStatement(stmt);
-        return stmt.execute();
+        String sql = handlePreparedStatement(stmt);
+        return executeSql(()-> stmt.execute(), sql);
     }
 }
