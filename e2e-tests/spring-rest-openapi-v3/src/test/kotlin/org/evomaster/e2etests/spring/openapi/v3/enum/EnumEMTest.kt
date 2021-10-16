@@ -29,6 +29,10 @@ class EnumEMTest : SpringTestBase(){
                 100
         ) { args: MutableList<String> ->
 
+            //make sure enums are actually used, and not constraints solved with TT
+            args.add("--baseTaintAnalysisProbability")
+            args.add("0")
+
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
