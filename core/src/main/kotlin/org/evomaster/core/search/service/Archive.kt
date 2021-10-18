@@ -9,10 +9,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Solution
+import org.evomaster.core.search.*
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -50,6 +47,9 @@ class Archive<T> where T : Individual {
 
     @Inject
     private lateinit var tracker : ArchiveMutationTrackService
+
+    @Inject
+    private lateinit var executionInfoReporter: ExecutionInfoReporter
     /**
      * Key -> id of the target
      *
@@ -326,6 +326,11 @@ class Archive<T> where T : Individual {
      * @return true if the new individual was added to the archive
      */
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
+
+        /*
+            since every new individual would be evaluated with this fun, then plugin execution info reporter here
+         */
+        executionInfoReporter.sqlExecutionInfo(ei.individual.seeActions(), ei.fitness.databaseExecutions)
 
         val copy = ei.copy(tracker.getCopyFilterForEvalInd(ei))
 
