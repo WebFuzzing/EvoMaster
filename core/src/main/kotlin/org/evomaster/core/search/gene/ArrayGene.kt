@@ -172,14 +172,7 @@ class ArrayGene<T>(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "[" +
                 elements.map { g ->
-                    if (mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE ||
-                            mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE ||
-                            mode == GeneUtils.EscapeMode.GQL_INPUT_MODE ||
-                            mode == GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE ||
-                            mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE ||
-                            mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE ||
-                            mode == GeneUtils.EscapeMode.GQL_STR_VALUE) {
-
+                    if (mode?.let { GeneUtils.isGraphQLModes(it) } == true) {
                         if (g is EnumGene<*> || g is OptionalGene && g.gene is EnumGene<*>)
                             g.getValueAsRawString() else {
                             g.getValueAsPrintableString(previousGenes, mode, targetFormat)
