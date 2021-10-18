@@ -27,9 +27,14 @@ public class StatementClassReplacement implements MethodReplacementClass {
 
             Anyway, not needed till we support constraint solving for DB data, as then
             we can skip the branch distance computation
+
+            Man: skip null sql for e.g., "com.zaxxer.hikari.pool"
          */
-        SqlInfo info = new SqlInfo(sql, false, exception, executionTime);
-        ExecutionTracer.addSqlInfo(info);
+        if(sql != null){
+            SqlInfo info = new SqlInfo(sql, false, exception, executionTime);
+            ExecutionTracer.addSqlInfo(info);
+        }
+
     }
 
     @Replacement(type = ReplacementType.TRACKER)

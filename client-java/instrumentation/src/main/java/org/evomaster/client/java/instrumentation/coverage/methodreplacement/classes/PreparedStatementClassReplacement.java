@@ -106,7 +106,6 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
                 this is likely a proxy, so we can skip it, as anyway we are going to
                 intercept the call to the delegate
              */
-            //TODO Man: need to check with Andrea, shall we still execute this stmt?
             return null;
         }
 
