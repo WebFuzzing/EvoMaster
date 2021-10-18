@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.database.execution;
 
 /**
- * sql execution info in detial
+ * sql execution info in detail
  */
 public class SqlExecutionLogDto {
 

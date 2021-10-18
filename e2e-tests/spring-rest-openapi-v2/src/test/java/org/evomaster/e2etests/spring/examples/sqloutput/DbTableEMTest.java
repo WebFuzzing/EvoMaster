@@ -31,7 +31,7 @@ public class DbTableEMTest extends SpringTestBase {
                 1000,
                 (args) -> {
 
-                    String saveExecutedSQLToFile = "target/executionInfo/sql.txt";
+                    String saveExecutedSQLToFile = "target/executionInfo/org/db/sqloutput/sql.txt";
 
                     args.add("--outputExecutedSQL");
                     args.add("ALL_AT_END");
