@@ -30,7 +30,7 @@ class ExecutionInfoReporter {
         if (!hasHeader && sqlExecutionInfo.values.any { it.executionInfo.isNotEmpty() }){
             writeByChannel(
                     Paths.get(config.saveExecutedSQLToFile),
-                    getRowString(arrayOf("endpoint","sqlCommand","executionTime")))
+                    getRowString(arrayOf("endpoint","sqlCommand","executionTime"))+System.lineSeparator())
             hasHeader = true
         }
 
@@ -62,8 +62,8 @@ class ExecutionInfoReporter {
         sqlInfo.executionInfo.forEach {
             writeByChannel(
                    Paths.get(config.saveExecutedSQLToFile),
-                   getRowString(arrayOf(wrapWithQuotation(action), wrapWithQuotation(it.command), "${it.executionTime}")),
-                   setOf(StandardOpenOption.APPEND))
+                   getRowString(arrayOf(wrapWithQuotation(action), wrapWithQuotation(it.command), "${it.executionTime}"))+System.lineSeparator(),
+                   true)
         }
     }
 }
