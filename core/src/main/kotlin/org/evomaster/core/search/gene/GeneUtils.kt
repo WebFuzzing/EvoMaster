@@ -494,6 +494,13 @@ object GeneUtils {
         }
     }
 
+    fun isGraphQLModes(mode: EscapeMode) = mode == EscapeMode.BOOLEAN_SELECTION_MODE ||
+            mode == EscapeMode.BOOLEAN_SELECTION_NESTED_MODE ||
+            mode == EscapeMode.GQL_INPUT_MODE ||
+            mode == EscapeMode.GQL_INPUT_ARRAY_MODE ||
+            mode == EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE ||
+            mode == EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE ||
+            mode == EscapeMode.GQL_STR_VALUE
 
 }
 
