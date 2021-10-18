@@ -94,7 +94,11 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
         return sql;
     }
 
-
+    /**
+     *
+     * @param stmt a sql statement to be prepared
+     * @return a null if skip to handle the stmt
+     */
     private static String handlePreparedStatement(PreparedStatement stmt) {
         if (stmt == null) {
             //nothing to do

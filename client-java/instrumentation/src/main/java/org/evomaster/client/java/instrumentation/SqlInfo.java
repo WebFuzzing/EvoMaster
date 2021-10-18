@@ -31,8 +31,9 @@ public class SqlInfo implements Serializable {
      */
     private final boolean exception;
 
-    //Maybe could check execution time as well here?
-
+    /**
+     * execution time
+     */
     private final long executionTime;
 
 

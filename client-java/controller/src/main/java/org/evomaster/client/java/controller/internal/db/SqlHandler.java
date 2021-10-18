@@ -7,8 +7,10 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.instrumentation.SqlInfo;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -43,6 +45,7 @@ public class SqlHandler {
     private final Map<String, Set<String>> insertedData;
     private final Map<String, Set<String>> failedWhere;
     private final List<String> deletedData;
+    private final List<SqlExecutionLogDto> executedInfo;
 
     private int numberOfSqlCommands;
 
@@ -60,6 +63,7 @@ public class SqlHandler {
         insertedData = new ConcurrentHashMap<>();
         failedWhere = new ConcurrentHashMap<>();
         deletedData = new CopyOnWriteArrayList<>();
+        executedInfo = new CopyOnWriteArrayList<>();
 
         calculateHeuristics = true;
         numberOfSqlCommands = 0;
@@ -73,11 +77,22 @@ public class SqlHandler {
         insertedData.clear();
         failedWhere.clear();
         deletedData.clear();
+        executedInfo.clear();
+
         numberOfSqlCommands = 0;
     }
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    /**
+     * handle executed sql info
+     * @param sql to be handled
+     */
+    public void handle(SqlInfo sql) {
+        executedInfo.add(new SqlExecutionLogDto(sql.getCommand(), sql.getExecutionTime()));
+        handle(sql.getCommand());
     }
 
     public void handle(String sql) {
@@ -115,7 +130,7 @@ public class SqlHandler {
         executionDto.updatedData.putAll(updatedData);
         executionDto.deletedData.addAll(deletedData);
         executionDto.numberOfSqlCommands = this.numberOfSqlCommands;
-
+        executionDto.sqlExecutionLogDtoList.addAll(executedInfo);
         return executionDto;
     }
 
