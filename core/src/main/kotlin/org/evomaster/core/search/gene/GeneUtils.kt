@@ -308,20 +308,9 @@ object GeneUtils {
 
         for (c in cycles) {
 
-            var p = c.parent
-            loop@ while (p != null) {
-                when (p) {
-                    is OptionalGene -> {
-                        p.forbidSelection(); break@loop
-                    }
-                    is ArrayGene<*> -> {
-                        p.forceToOnlyEmpty(); break@loop
-                    }
-                    else -> p = p.parent
-                }
-            }
+            val prevented = tryToPreventSelection(c)
 
-            if (p == null) {
+            if (!prevented) {
                 val msg = "Could not prevent cycle in ${gene.name} gene"
                 if (force) {
                     throw RuntimeException(msg)
@@ -329,6 +318,26 @@ object GeneUtils {
                 log.warn(msg)
             }
         }
+    }
+
+    fun tryToPreventSelection(gene: Gene) : Boolean{
+        var p = gene.parent
+
+        loop@ while (p != null) {
+            when (p) {
+                is OptionalGene -> {
+                    p.forbidSelection()
+                    break@loop
+                }
+                is ArrayGene<*> -> {
+                    p.forceToOnlyEmpty()
+                    break@loop
+                }
+                else -> p = p.parent
+            }
+        }
+
+        return p != null
     }
 
     fun hasNonHandledCycles(gene: Gene): Boolean {

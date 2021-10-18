@@ -785,23 +785,11 @@ object GraphQLActionBuilder {
                             (it is CycleObjectGene)
 
                 }) {
-            var p = gene.parent
-
-            loop@ while (p != null) {
-                when (p) {
-                    is OptionalGene -> {
-                        p.forbidSelection()
-                        break@loop
-                    }
-                    is ArrayGene<*> -> {
-                        p.forceToOnlyEmpty()
-                        break@loop
-                    }
-                    else -> p = p.parent
-                }
-            }
+            GeneUtils.tryToPreventSelection(gene)
         }
     }
+
+
 
     private fun extractParams(
         state: TempState,
