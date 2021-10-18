@@ -103,6 +103,14 @@ public class StatementClassReplacement implements MethodReplacementClass {
         return executeSql(()-> caller.executeLargeUpdate(sql, columnNames), sql);
     }
 
+    /**
+     *
+     * @param executeStatement supplier that executes sql statements
+     * @param sql is string value of sql to be executed
+     * @param <T> is a type of returned value by [executeStatement]
+     * @return a value by [executeStatement]
+     * @throws SQLException
+     */
     public static <T> T executeSql(SqlExecutionSupplier<T, SQLException> executeStatement, String sql) throws SQLException{
 
         long start = System.currentTimeMillis();
