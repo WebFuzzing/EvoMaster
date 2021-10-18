@@ -28,7 +28,7 @@ public class BooleanClassReplacementTest {
         assertEquals(1, nonCoveredObjectives.size());
         String objectiveId = nonCoveredObjectives.iterator().next();
         double value = ExecutionTracer.getValue(objectiveId);
-        assertEquals(0, value);
+        assertEquals(DistanceHelper.H_NOT_NULL, value);
     }
 
     @Test
@@ -74,4 +74,5 @@ public class BooleanClassReplacementTest {
         boolean booleanValue = BooleanClassReplacement.valueOf("true", prefix);
         assertTrue(booleanValue);
     }
+
 }

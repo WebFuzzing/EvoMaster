@@ -369,8 +369,10 @@ export default function evomasterPlugin(
             additional branch will be added there.
 
          */
-        const consequent = t.arrowFunctionExpression([], exp.consequent, doesContainAwaitExpression(exp.consequent));
-        const alternate = t.arrowFunctionExpression([], exp.alternate, doesContainAwaitExpression(exp.alternate));
+        const consequentIsAwait = doesContainAwaitExpression(exp.consequent)
+        const consequent = t.arrowFunctionExpression([], exp.consequent, consequentIsAwait);
+        const alternateIsAwait = doesContainAwaitExpression(exp.alternate)
+        const alternate = t.arrowFunctionExpression([], exp.alternate, alternateIsAwait);
 
 
         objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
@@ -379,6 +381,11 @@ export default function evomasterPlugin(
             [consequent,
                 t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
         );
+
+        if (consequentIsAwait)
+            exp.consequent = t.awaitExpression(exp.consequent);
+
+
         statementCounter++;
 
         objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
@@ -387,6 +394,10 @@ export default function evomasterPlugin(
             [alternate,
                 t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
         );
+
+        if (alternateIsAwait)
+            exp.alternate = t.awaitExpression(exp.alternate);
+
         statementCounter++;
     }
 

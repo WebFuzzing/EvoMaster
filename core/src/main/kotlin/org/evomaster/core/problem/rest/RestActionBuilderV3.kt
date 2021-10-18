@@ -246,7 +246,8 @@ object RestActionBuilderV3 {
             "query" -> params.add(QueryParam(name, gene))
             "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
             "header" -> params.add(HeaderParam(name, gene))
-            //TODO "cookie"
+            "cookie" -> params // do nothing?
+            //TODO "cookie" does it need any special treatment? as anyway handled in auth configs
             else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
         }
     }

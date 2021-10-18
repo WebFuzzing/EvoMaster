@@ -6,12 +6,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
 ![CI](https://github.com/EMResearch/EvoMaster/workflows/CI/badge.svg)
-[![CircleCI](https://circleci.com/gh/EMResearch/EvoMaster.svg?style=svg)](https://circleci.com/gh/EMResearch/EvoMaster)
 [![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
-<!---
-Needs auth :(
-[[JaCoCo]](https://circleci.com/api/v1.1/project/github/arcuri82/evomaster/latest/artifacts/0/home/circleci/evomaster-build/report/target/site/jacoco-aggregate/index.html)
--->
 
 
 
@@ -139,6 +134,7 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 * More Info
     * [Academic papers related to EvoMaster](docs/publications.md)
     * [Slides of presentations/seminars](docs/presentations.md)
+    * [Replicating studies](docs/replicating_studies.md)
 
 
 

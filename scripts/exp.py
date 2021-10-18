@@ -123,7 +123,7 @@ MINUTES_PER_RUN = int(sys.argv[7])
 
 # How many scripts M we want the N jobs to be divided into.
 # Note: on cluster we can at most submit 400 scripts.
-# Also note that, in the same .sh script, there can be experiments only for a single SUT.
+# Also not that in the same .sh script there can be experiments only for a single SUT.
 NJOBS = int(sys.argv[8])
 
 
@@ -154,26 +154,40 @@ class Sut:
 
 
 
-### We need different settings based on whether we are running the
-### scripts on cluster or locally.
-if CLUSTER:
+# To ge the SUTs, you need in EMB to run the script "scripts/dist.py" to
+# generate a dist.zip file that you can upload on cluster.
+# Note: the values after the SUT names is multiplicative factor for how long
+# experiments should be run.
+# Depending on what experiments you are running, might want to de-select some
+# of the SUTs (eg, by commenting them out)
 
-    # To ge the SUTs, you need in EMB to run the script "scripts/dist.py" to
-    # generate a dist.zip file that you can upload on cluster.
-    # Note: the values after the SUT names is multiplicative factor for how long
-    # experiments should be run.
-    # Depending on what experiments you are running, might want to de-select some
-    # of the SUTs (eg, by commenting them out)
-
-    SUTS = [
+SUTS = [
+        # REST
         Sut("features-service", 1, JDK_8),
         Sut("scout-api", 2, JDK_8),
         Sut("proxyprint", 2, JDK_8),
         Sut("rest-ncs", 2, JDK_8),
         Sut("rest-scs", 1, JDK_8),
         Sut("rest-news", 1, JDK_8),
-        Sut("catwatch", 1, JDK_8)
-    ]
+        Sut("catwatch", 1, JDK_8),
+        Sut("restcountries", 2, JDK_8),
+        Sut("languagetool", 3, JDK_8),
+        # GRAPHQL
+        Sut("petclinic", 1, JDK_8),
+        Sut("patio-api", 1, JDK_11)
+        # Sut("ind0", 1, JDK_8),
+        # Sut("ocvn-rest", 1, JDK_8),
+        # Sut("ncs-js", 1, JS),
+        # Sut("scs-js", 1, JS)
+]
+
+# Specify if using any industrial case study
+USING_IND = False
+
+
+### We need different settings based on whether we are running the
+### scripts on cluster or locally.
+if CLUSTER:
 
     HOME = os.environ['HOME']
     EVOMASTER_DIR = HOME
@@ -183,13 +197,6 @@ if CLUSTER:
 
 ## Local configurations
 else:
-    # These SUTs requires Docker
-    SUTS = [
-        Sut("ind0", 1, JDK_8),
-        # Sut("ocvn-rest", 1, JDK_8),
-        # Sut("ncs-js", 1, JS),
-        # Sut("scs-js", 1, JS)
-    ]
 
     # You will need to define environment variables on your OS
     EVOMASTER_DIR = os.environ.get("EVOMASTER_DIR", "")
@@ -206,9 +213,10 @@ else:
     if not os.path.exists(CASESTUDY_DIR):
         raise Exception(CASESTUDY_DIR + " does not exist. Did you run script/dist.py?")
 
-    ind0_package = os.environ.get("SUT_PACKAGE_IND0", "")
-    if ind0_package == "":
-        raise Exception("You cannot run experiments on IND0 without specify target package to cover with SUT_PACKAGE_IND0 env variable")
+    if USING_IND:
+        ind0_package = os.environ.get("SUT_PACKAGE_IND0", "")
+        if ind0_package == "":
+            raise Exception("You cannot run experiments on IND0 without specify target package to cover with SUT_PACKAGE_IND0 env variable")
 
     LOGS_DIR = BASE_DIR
 
@@ -365,7 +373,8 @@ def createJobHead(port, sut, timeoutMinutes):
     command = ""
 
     if sut.platform == JDK_8 or sut.platform == JDK_11:
-        params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart)
+        params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart) + " " + getJavaCommand(sut)
+
         jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
         JAVA = getJavaCommand(sut)
         command = JAVA + jvm + " -jar " + sut.name + EM_POSTFIX + " " + params + " > " + sut_log + " 2>&1 &"
@@ -475,13 +484,13 @@ def createOneJob(state, sut, seed, config):
 
 
 def getJavaCommand(sut):
-        JAVA = "java "
-        if not CLUSTER:
-             if sut.platform == JDK_8:
-                    JAVA = "\"" + JAVA_HOME_8 +"\"/bin/java "
-             elif sut.platform == JDK_11:
-                    JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
-        return JAVA
+    JAVA = "java "
+    if not CLUSTER:
+        if sut.platform == JDK_8:
+            JAVA = "\"" + JAVA_HOME_8 +"\"/bin/java "
+        elif sut.platform == JDK_11:
+            JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
+    return JAVA
 
 
 def addJobBody(port, sut, seed, config):
@@ -605,12 +614,8 @@ def createJobs():
 
 
 class Config:
-     def __init__(self, useMethodReplacement, useNonIntegerReplacement, expandRestIndividuals, baseTaintAnalysisProbability):
-            self.useMethodReplacement = useMethodReplacement
-            self.useNonIntegerReplacement = useNonIntegerReplacement
-            self.expandRestIndividuals = expandRestIndividuals
-            self.baseTaintAnalysisProbability = baseTaintAnalysisProbability
-
+    i=42
+    # def __init__(self):
 
 
 
@@ -618,17 +623,13 @@ def customParameters(seed, config):
 
     params = ""
 
-
     ### Custom for these experiments
-    params += " --useMethodReplacement=" + str(config.useMethodReplacement)
-    params += " --useNonIntegerReplacement=" + str(config.useNonIntegerReplacement)
-    params += " --expandRestIndividuals=" + str(config.expandRestIndividuals)
-    params += " --baseTaintAnalysisProbability=" + str(config.baseTaintAnalysisProbability)
+    params += " "
 
     # For each experiment configuration, we MUST create a unique label, with also the seed used.
     # We need this to create unique file names for the generated test suites, so that EvoMaster
     # does not override already generated tests from experiment runs that have already finished.
-    label = str(config.useMethodReplacement) + "_" + str(int(config.baseTaintAnalysisProbability * 10))
+    label = ""
     params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
 
 
@@ -641,16 +642,10 @@ def getConfigs():
     # these configurations
    CONFIGS = []
 
-   if CLUSTER:
-           CONFIGS.append(Config(False, False, False, 0))
-           CONFIGS.append(Config(True, True, True, 0))
-#            CONFIGS.append(Config(True, True, True, 0.1))
-#            CONFIGS.append(Config(True, True, True, 0.5))
-           CONFIGS.append(Config(True, True, True, 0.9))
-   else:
-           CONFIGS.append(Config(False, False, False, 0))
-           CONFIGS.append(Config(True, True, True, 0))
-           CONFIGS.append(Config(True, True, True, 0.9))
+   CONFIGS.append(Config())
+
+#    if CLUSTER:
+#    else:
 
    return CONFIGS
 

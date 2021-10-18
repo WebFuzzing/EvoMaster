@@ -25,14 +25,14 @@ public class ObjectsClassReplacement implements MethodReplacementClass {
 
         Truthness t;
         if (result) {
-            t = new Truthness(1d, 0d);
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
         } else {
             if (left == null || right == null) {
                 t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
             } else {
                 double base = DistanceHelper.H_NOT_NULL;
                 double distance = DistanceHelper.getDistance(left, right);
-                double h = base + (1d - base) / (1d + distance);
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
         }
