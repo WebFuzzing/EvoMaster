@@ -4,10 +4,7 @@ import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.ArrayGene
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -15,6 +12,19 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 class RestActionBuilderV3Test{
+
+    @Test
+    fun testEnumYml(){
+
+        val map = loadAndAssertActions("/swagger/artificial/openapi-enum.yml", 2)
+        val get = map["GET:/api/enum"]!!
+        val post = map["POST:/api/enum"]!!
+
+        val getEnums = get.seeGenes().flatMap { it.flatView() }.filterIsInstance<EnumGene<*>>()
+        assertEquals(2, getEnums.size)
+        val postEnums = post.seeGenes().flatMap { it.flatView() }.filterIsInstance<EnumGene<*>>()
+        assertEquals(1, postEnums.size)
+    }
 
     @Test
     fun testParseDto(){
