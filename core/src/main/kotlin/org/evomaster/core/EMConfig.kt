@@ -1437,6 +1437,30 @@ class EMConfig {
             "Note that a negative number means all existing data would be sampled")
     var maximumExistingDataToSampleInDb = -1
 
+    @Experimental
+    @Cfg("Whether to output executed sql info")
+    var outputExecutedSQL = OutputExecutedSQL.NONE
+
+    enum class OutputExecutedSQL{
+        /**
+         * do not output executed sql info
+         */
+        NONE,
+        /**
+         * output all executed sql info at the end
+         */
+        ALL_AT_END,
+
+        /**
+         * output executed info once they were executed per test
+         */
+        ONCE_EXECUTED
+    }
+
+    @Experimental
+    @Cfg("Specify a path to save all executed sql commands to a file (default is 'sql.txt')")
+    var saveExecutedSQLToFile : String = "sql.txt"
+
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
