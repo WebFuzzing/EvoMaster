@@ -688,4 +688,20 @@ class GraphQLActionBuilderTest {
         assertEquals(1, actionCluster.size)
     }
 
+    @Test
+    fun handleAllCyclesInObjectFieldsTest() {
+
+        val objI=ObjectGene("obj2", listOf(OptionalGene("cyc",CycleObjectGene("a"),isActive = true)))
+
+        val obj =  OptionalGene("obj1",ObjectGene("obj1", listOf(objI)),isActive = true)
+
+        assertTrue(obj.isActive)
+
+        obj.flatView().forEach {if (it is ObjectGene)
+            GraphQLActionBuilder.handleAllCyclesInObjectFields(it)  }
+
+        assertTrue(!obj.isActive)
+
+    }
+
 }
