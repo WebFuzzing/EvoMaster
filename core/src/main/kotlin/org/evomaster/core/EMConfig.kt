@@ -940,7 +940,6 @@ class EMConfig {
     @Min(1.0)
     var tournamentSize = 10
 
-    @Experimental
     @Cfg("When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random")
     @Probability
     var probOfSmartSampling = 0.95
@@ -1087,12 +1086,10 @@ class EMConfig {
         ConArchive(true)
     }
 
-    @Experimental
     @Cfg("Specify whether to enable resource-based strategy to sample an individual during search. " +
             "Note that resource-based sampling is only applicable for REST problem with MIO algorithm.")
     var resourceSampleStrategy = ResourceSamplingStrategy.ConArchive
 
-    @Experimental
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
             "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
             "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
@@ -1108,7 +1105,6 @@ class EMConfig {
     @FilePath
     var dependencyFile = "dependencies.csv"
 
-    @Experimental
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
     var probOfApplySQLActionToCreateResources = 0.5
@@ -1145,7 +1141,6 @@ class EMConfig {
     @Probability(false)
     var probOfSelectFromDatabase = 0.1
 
-    @Experimental
     @Cfg("Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
     var doesApplyNameMatching = true
 
