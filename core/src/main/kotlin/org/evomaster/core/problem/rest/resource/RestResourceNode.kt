@@ -828,6 +828,10 @@ class RestResourceNode(
             }
         }
     }
+
+    override fun toString(): String {
+        return getName()
+    }
 }
 
 
