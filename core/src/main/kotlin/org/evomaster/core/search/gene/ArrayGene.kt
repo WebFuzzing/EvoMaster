@@ -173,7 +173,7 @@ class ArrayGene<T>(
         return "[" +
                 elements.map { g ->
                     if (GeneUtils.isGraphQLModes(mode)) {
-                        if (g is EnumGene<*> || g is OptionalGene && g.gene is EnumGene<*>)
+                        if (g is EnumGene<*> || (g is OptionalGene && g.gene is EnumGene<*>))
                             g.getValueAsRawString() else {
                             g.getValueAsPrintableString(previousGenes, mode, targetFormat)
                         }
