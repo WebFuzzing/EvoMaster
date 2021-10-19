@@ -940,9 +940,10 @@ class EMConfig {
     @Min(1.0)
     var tournamentSize = 10
 
+    @Experimental
     @Cfg("When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random")
     @Probability
-    var probOfSmartSampling = 0.5
+    var probOfSmartSampling = 0.95
 
     @Cfg("Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test")
     @Min(1.0)
@@ -1089,14 +1090,14 @@ class EMConfig {
     @Experimental
     @Cfg("Specify whether to enable resource-based strategy to sample an individual during search. " +
             "Note that resource-based sampling is only applicable for REST problem with MIO algorithm.")
-    var resourceSampleStrategy = ResourceSamplingStrategy.NONE
+    var resourceSampleStrategy = ResourceSamplingStrategy.ConArchive
 
     @Experimental
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
             "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
             "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
     @Probability
-    var probOfEnablingResourceDependencyHeuristics = 0.0
+    var probOfEnablingResourceDependencyHeuristics = 0.95
 
     @Experimental
     @Cfg("Specify whether to export derived dependencies among resources")
@@ -1110,7 +1111,7 @@ class EMConfig {
     @Experimental
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
-    var probOfApplySQLActionToCreateResources = 0.0
+    var probOfApplySQLActionToCreateResources = 0.5
 
     @Experimental
     @Cfg("When generating resource using SQL (e.g., sampler or mutator), how many new rows (max) to generate for the specific resource each time")
@@ -1146,7 +1147,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
-    var doesApplyNameMatching = false
+    var doesApplyNameMatching = true
 
     @Experimental
     @Cfg("Whether to employ NLP parser to process text. " +
@@ -1227,11 +1228,6 @@ class EMConfig {
 
     @Cfg("Whether to specialize sql gene selection to mutation")
     var specializeSQLGeneSelection = true
-
-    @Experimental
-    @Cfg("Specify a maximum mutation rate when enabling 'adaptiveMutationRate'")
-    @PercentageAsProbability(false)
-    var maxMutationRate = 0.9
 
     @Experimental
     @Cfg("Specify a starting percentage of genes of an individual to mutate")
