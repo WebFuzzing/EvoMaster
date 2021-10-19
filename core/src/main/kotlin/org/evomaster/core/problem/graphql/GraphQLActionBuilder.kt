@@ -203,6 +203,21 @@ object GraphQLActionBuilder {
         state.argsTables.addAll(state.tempArgsTables)
         state.tables =
             state.tables.distinctBy { Pair(it.tableType, it.tableField) }.toMutableList()//remove redundant elements
+
+        println("I am the table:////////////////////////////////////////////////////////////////////// ")
+        for (element in state.tables) {
+            println("{Table Name: ${element?.tableType}, " +
+                    "Field: ${element?.tableField}, " +
+                    "KindOfTableField: ${element?.kindOfTableField}, " +
+                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfTableFieldOptional}, " +
+                    "table field Type: ${element?.tableFieldType}, " +
+                    "KindOfTable field type : ${element?.kindOfTableFieldType} " +
+                    "IsKindOfKindOfTableTypeOptional?: ${element?.isKindOfTableFieldTypeOptional} " +
+                    "Enum?: ${element?.enumValues} " +
+                    "UnionTypes: ${element?.unionTypes} " +
+                    "InterfaceTypes: ${element?.interfaceTypes} ")
+        }
+        println(state.tables.size)
     }
 
     /*
@@ -1313,20 +1328,20 @@ object GraphQLActionBuilder {
         when (kindOfTableField?.toLowerCase()) {
             GqlConst.LIST -> {
                 val template = getReturnGene(
-                    state,
-                    tableType,
-                    kindOfTableFieldType,
-                    kindOfTableField,
-                    tableFieldType,
-                    history,
-                    isKindOfTableFieldTypeOptional,
-                    isKindOfTableFieldOptional,
-                    enumValues,
-                    methodName,
-                    unionTypes,
-                    interfaceTypes,
-                    accum,
-                    maxNumberOfGenes
+                        state,
+                        tableType,
+                        kindOfTableFieldType,
+                        kindOfTableField,
+                        tableFieldType,
+                        history,
+                        isKindOfTableFieldTypeOptional,
+                        isKindOfTableFieldOptional,
+                        enumValues,
+                        methodName,
+                        unionTypes,
+                        interfaceTypes,
+                        accum,
+                        maxNumberOfGenes
                 )
 
                 return OptionalGene(methodName, ArrayGene(tableType, template))//check the name
@@ -1416,16 +1431,6 @@ object GraphQLActionBuilder {
                     (OptionalGene(methodName, CycleObjectGene(methodName)))
                 }
             }
-            "int" ->
-                return OptionalGene(tableType, IntegerGene(tableType))
-            "string" ->
-                return OptionalGene(tableType, StringGene(tableType))
-            "float" ->
-                return OptionalGene(tableType, FloatGene(tableType))
-            "boolean" ->
-                return OptionalGene(tableType, BooleanGene(tableType))
-            "long" ->
-                return OptionalGene(tableType, LongGene(tableType))
             "null" ->
                 return getReturnGene(
                     state,
@@ -1443,12 +1448,11 @@ object GraphQLActionBuilder {
                     accum,
                     maxNumberOfGenes
                 )
-            "date" ->
-                return OptionalGene(tableType, DateGene(tableType))
+
             GqlConst.ENUM ->
                 return OptionalGene(tableType, EnumGene(tableType, enumValues))
             GqlConst.SCALAR ->
-                return getReturnGene(
+                return createScalarGene(
                     state,
                     tableFieldType,
                     tableType,
@@ -1464,8 +1468,7 @@ object GraphQLActionBuilder {
                     accum,
                     maxNumberOfGenes
                 )
-            "id" ->
-                return OptionalGene(tableType, StringGene(tableType))
+
 
             else ->
                 return OptionalGene(tableType, StringGene(tableType))
@@ -1501,7 +1504,7 @@ object GraphQLActionBuilder {
 
             if (ktfType.toLowerCase() == GqlConst.SCALAR) {
                 val field = element.tableField
-                val template = getReturnGene(
+                val template = createScalarGene(
                     state,
                     tableType,
                     element.tableFieldType,
@@ -1728,6 +1731,43 @@ object GraphQLActionBuilder {
 
     private fun checkDepth(count: Int, maxNumberOfGenes: Int): Boolean {
         return count <= maxNumberOfGenes
+    }
+
+    fun createScalarGene(state: TempState,
+                         tableFieldType: String,
+                         kindOfTableField: String?,
+                         kindOfTableFieldType: String,
+                         tableType: String,
+                         history: Deque<String>,
+                         isKindOfTableFieldTypeOptional: Boolean,
+                         isKindOfTableFieldOptional: Boolean,
+                         enumValues: MutableList<String>,
+                         methodName: String,
+                         unionTypes: MutableList<String>,
+                         interfaceTypes: MutableList<String>,
+                         accum: Int,
+                         maxNumberOfGenes: Int): Gene {
+
+        when (kindOfTableField?.toLowerCase()) {
+            "int" ->
+                return OptionalGene(tableType, IntegerGene(tableType))
+            "string" ->
+                return OptionalGene(tableType, StringGene(tableType))
+            "float" ->
+                return OptionalGene(tableType, FloatGene(tableType))
+            "boolean" ->
+                return OptionalGene(tableType, BooleanGene(tableType))
+            "long" ->
+                return OptionalGene(tableType, LongGene(tableType))
+            "date" ->
+                return OptionalGene(tableType, DateGene(tableType))
+            "id" ->
+                return OptionalGene(tableType, StringGene(tableType))
+            else ->
+                return OptionalGene(tableType, StringGene(tableType))// TODO check semantic
+        }
+
+
     }
 
 }
