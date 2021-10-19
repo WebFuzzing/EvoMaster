@@ -9,8 +9,6 @@ import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -456,6 +454,8 @@ public class HeuristicsCalculator {
             return getValue(((Parenthesis) exp).getExpression(), data);
         } else if (exp instanceof LongValue) {
             return ((LongValue) exp).getValue();
+        } else if (exp instanceof DoubleValue){
+            return ((DoubleValue) exp).getValue();
         } else if (exp instanceof StringValue) {
             return ((StringValue) exp).getNotExcapedValue();
         } else if (exp instanceof NullValue) {

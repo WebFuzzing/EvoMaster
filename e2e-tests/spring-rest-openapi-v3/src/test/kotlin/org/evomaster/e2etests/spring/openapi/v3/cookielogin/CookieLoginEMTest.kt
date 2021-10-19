@@ -13,7 +13,7 @@ class CookieLoginEMTest : SpringTestBase(){
         @BeforeAll
         @JvmStatic
         fun init() {
-            SpringTestBase.initClass(CookieLoginController())
+            initClass(CookieLoginController())
         }
     }
 

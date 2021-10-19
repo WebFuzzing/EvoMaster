@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.database.DbActionGeneBuilder
+import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.PetClinicCheckMain
@@ -279,7 +280,7 @@ internal class GeneUtilsTest {
         val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
         val b = OptionalGene("B",ObjectGene("B", listOf(BooleanGene("b1"), BooleanGene("b2"))))
 
-        val unionObj = ObjectGene("foo ${ObjectGene.interfaceTag}", listOf(a,b))
+        val unionObj = ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b))
 
         val res = unionObj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
@@ -293,7 +294,7 @@ internal class GeneUtilsTest {
         val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
         val b = OptionalGene("B",ObjectGene("B", listOf(BooleanGene("b1"), BooleanGene("b2"))))
 
-        val optionalUnionObj = OptionalGene("foo ${ObjectGene.interfaceTag}",ObjectGene("foo ${ObjectGene.interfaceTag}", listOf(a,b)))
+        val optionalUnionObj = OptionalGene("foo ${GqlConst.INTERFACE_TAG}",ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b)))
 
         val obj = ObjectGene("obj", listOf(optionalUnionObj))
 
@@ -321,9 +322,9 @@ internal class GeneUtilsTest {
     fun testInterfaceSelection(){
 
         val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
-        val b = OptionalGene("B ${ObjectGene.interfaceBaseTag}",ObjectGene("B ${ObjectGene.interfaceBaseTag}", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+        val b = OptionalGene("B ${GqlConst.INTERFACE_BASE_TAG}",ObjectGene("B ${GqlConst.INTERFACE_BASE_TAG}", listOf(BooleanGene("b1"), BooleanGene("b2"))))
 
-        val unionObj = ObjectGene("foo ${ObjectGene.interfaceTag}", listOf(a,b))
+        val unionObj = ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b))
 
         val res = unionObj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
                 .replace(" ", "") // remove empty space to make assertion less brittle
@@ -335,9 +336,9 @@ internal class GeneUtilsTest {
     fun testNestedInterfaceSelection(){
 
         val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
-        val b = OptionalGene("B ${ObjectGene.interfaceBaseTag}",ObjectGene("B${ObjectGene.interfaceBaseTag}", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+        val b = OptionalGene("B ${GqlConst.INTERFACE_BASE_TAG}",ObjectGene("B${GqlConst.INTERFACE_BASE_TAG}", listOf(BooleanGene("b1"), BooleanGene("b2"))))
 
-        val optionalUnionObj = OptionalGene("foo ${ObjectGene.interfaceTag}",ObjectGene("foo ${ObjectGene.interfaceTag}", listOf(a,b)))
+        val optionalUnionObj = OptionalGene("foo ${GqlConst.INTERFACE_TAG}",ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b)))
 
         val obj = ObjectGene("obj", listOf(optionalUnionObj))
 

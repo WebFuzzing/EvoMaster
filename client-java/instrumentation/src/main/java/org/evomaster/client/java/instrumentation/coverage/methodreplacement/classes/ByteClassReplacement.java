@@ -35,7 +35,7 @@ public class ByteClassReplacement implements MethodReplacementClass {
 
         try {
             byte res = Byte.parseByte(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1d, 0d));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1d, DistanceHelper.H_NOT_NULL));
             return res;
         } catch (RuntimeException e) {
             double h = NumberParsingUtils.parseByteHeuristic(input);
@@ -56,13 +56,13 @@ public class ByteClassReplacement implements MethodReplacementClass {
         if (anObject == null || !(anObject instanceof Byte)) {
             t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
-            Byte anoterByte = (Byte) anObject;
-            if (caller.equals(anoterByte)) {
-                t = new Truthness(1d, 0d);
+            Byte anotherByte = (Byte) anObject;
+            if (caller.equals(anotherByte)) {
+                t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
             } else {
-                final double base = DistanceHelper.H_NOT_NULL;
-                double distance = DistanceHelper.getDistanceToEquality(caller, anoterByte);
-                double h = base + ((1 - base) / (distance + 1));
+                double base = DistanceHelper.H_NOT_NULL;
+                double distance = DistanceHelper.getDistanceToEquality(caller, anotherByte);
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
         }

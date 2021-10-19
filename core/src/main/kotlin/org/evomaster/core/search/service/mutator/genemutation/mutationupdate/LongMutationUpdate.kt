@@ -7,7 +7,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class LongMutationUpdate(direction: Boolean, min: Long, max: Long, updateTimes : Int = 0, counter: Int = 0, reached: Boolean = false, latest : Long? = null, preferMin : Long= min, preferMax: Long = max)
-    : MutationBoundaryUpdate<Long>(direction, min, max, counter = counter, updateTimes = updateTimes, reached = reached, latest = latest, preferMin = preferMin, preferMax = preferMax), Comparable<LongMutationUpdate>{
+    : MutationBoundaryUpdate<Long>(direction, min, max, counter = counter, updateTimes = updateTimes, reached = reached, latest = latest, preferMin = preferMin, preferMax = preferMax, precision = null), Comparable<LongMutationUpdate>{
 
     constructor(direction: Boolean, min: Int, max: Int) : this(direction, min = min.toLong(), max = max.toLong())
 
@@ -72,8 +72,6 @@ class LongMutationUpdate(direction: Boolean, min: Long, max: Long, updateTimes :
             if (it < 0) throw IllegalStateException("preferMax < preferMin: $preferMax, $preferMin")
         }
     }
-
-    override fun copy(): LongMutationUpdate = LongMutationUpdate(direction,preferMin, preferMax, updateTimes, counter, reached, latest, preferMin, preferMax)
 
     override fun updateBoundary(current: Long, evaluatedResult: Int) {
         latest?:return

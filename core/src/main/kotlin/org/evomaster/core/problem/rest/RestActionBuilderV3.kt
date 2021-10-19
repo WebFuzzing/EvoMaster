@@ -246,7 +246,8 @@ object RestActionBuilderV3 {
             "query" -> params.add(QueryParam(name, gene))
             "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
             "header" -> params.add(HeaderParam(name, gene))
-            //TODO "cookie"
+            "cookie" -> params // do nothing?
+            //TODO "cookie" does it need any special treatment? as anyway handled in auth configs
             else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
         }
     }
@@ -425,7 +426,7 @@ object RestActionBuilderV3 {
          */
 
         //first check for "optional" format
-        when (format) {
+        when (format?.lowercase()) {
             "int32" -> return IntegerGene(name)
             "int64" -> return LongGene(name)
             "double" -> return DoubleGene(name)
@@ -443,8 +444,8 @@ object RestActionBuilderV3 {
         /*
                 If a format is not defined, the type should default to
                 the JSON Schema definition
-            */
-        when (type) {
+         */
+        when (type?.lowercase()) {
             "integer" -> return IntegerGene(name)
             "number" -> return DoubleGene(name)
             "boolean" -> return BooleanGene(name)

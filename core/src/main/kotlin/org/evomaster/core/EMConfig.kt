@@ -1440,6 +1440,12 @@ class EMConfig {
     var maxNumberOfGenes = defaultMaxNumberOfGenes
 
 
+    @Experimental
+    @Cfg("Specify a maximum number of existing data in the database to sample when SQL handling is enabled. " +
+            "Note that a negative number means all existing data would be sampled")
+    var maximumExistingDataToSampleInDb = -1
+
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds

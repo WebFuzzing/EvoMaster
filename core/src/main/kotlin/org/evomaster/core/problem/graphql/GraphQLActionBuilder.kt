@@ -7,6 +7,7 @@ import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.graphql.schema.*
 import org.evomaster.core.problem.graphql.schema.__TypeKind.*
 import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -23,14 +24,6 @@ object GraphQLActionBuilder {
         "__Schema", "__Directive", "__DirectiveLocation", "__EnumValue",
         "__Field", "__InputValue", "__Type", "__TypeKind"
     )
-
-    const val scalarTag = "scalar"
-    const val listTag = "list"
-    const val objectTag = "object"
-    const val unionTag = "union"
-    const val interfaceTag = "interface"
-    const val enumTag = "enum"
-    const val inputObjectTag = "input_object"
 
     data class TempState(
         /**
@@ -65,9 +58,15 @@ object GraphQLActionBuilder {
     ) {
 
         val state = TempState()
-
         val gson = Gson()
+        try {
+            gson.fromJson(schema, SchemaObj::class.java)
+        } catch (e: Exception) {
+            throw SutProblemException("Failed to start the SUT, please check the GraphQl endpoint")
+        }
+
         val schemaObj: SchemaObj = gson.fromJson(schema, SchemaObj::class.java)
+
 
         initTablesInfo(schemaObj, state)
 
@@ -76,7 +75,7 @@ object GraphQLActionBuilder {
                 /*
                 In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
                  */
-                if (element.tableType == "Mutation" || element.tableType == "Query" || element.tableType == "Root" || element.tableType == "QueryType") {
+                if (element.tableType?.toLowerCase() == GqlConst.MUTATION || element.tableType?.toLowerCase() == GqlConst.QUERY || element.tableType?.toLowerCase() == GqlConst.ROOT || element?.tableType?.toLowerCase() == GqlConst.QUERY_TYPE) {
                     handleOperation(
                         state,
                         actionCluster,
@@ -98,7 +97,7 @@ object GraphQLActionBuilder {
             }
         else if (schemaObj.data.__schema.queryType != null && schemaObj.data.__schema.mutationType == null)
             for (element in state.tables) {
-                if (element.tableType == "Query" || element.tableType == "Root" || element.tableType == "QueryType") {
+                if (element.tableType?.toLowerCase() == GqlConst.QUERY || element.tableType?.toLowerCase() == GqlConst.ROOT || element.tableType?.toLowerCase() == GqlConst.QUERY_TYPE) {
                     handleOperation(
                         state,
                         actionCluster,
@@ -120,7 +119,7 @@ object GraphQLActionBuilder {
             }
         else if (schemaObj.data.__schema.queryType == null && schemaObj.data.__schema.mutationType != null)
             for (element in state.tables) {
-                if (element.tableType == "Mutation") {
+                if (element.tableType?.toLowerCase() == GqlConst.MUTATION) {
                     handleOperation(
                         state,
                         actionCluster,
@@ -724,13 +723,13 @@ object GraphQLActionBuilder {
             return;
         }
         val type = when {
-            methodType.equals("QUERY", true) -> GQMethodType.QUERY
+            methodType.equals(GqlConst.QUERY, true) -> GQMethodType.QUERY
             /*
                In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
                 */
-            methodType.equals("Root", true) -> GQMethodType.QUERY
-            methodType.equals("QueryType", true) -> GQMethodType.QUERY
-            methodType.equals("MUTATION", true) -> GQMethodType.MUTATION
+            methodType.equals(GqlConst.ROOT, true) -> GQMethodType.QUERY
+            methodType.equals(GqlConst.QUERY_TYPE, true) -> GQMethodType.QUERY
+            methodType.equals(GqlConst.MUTATION, true) -> GQMethodType.MUTATION
             else -> {
                 //TODO log warn
                 return
@@ -933,7 +932,7 @@ object GraphQLActionBuilder {
     ): Gene {
 
         when (kindOfTableField?.toLowerCase()) {
-            listTag ->
+            GqlConst.LIST ->
                 return if (isKindOfTableFieldOptional) {
                     val template = getInputScalarListOrEnumListGene(
                         state, tableType, kindOfTableFieldType, kindOfTableField, tableFieldType, history,
@@ -982,7 +981,7 @@ object GraphQLActionBuilder {
                     OptionalGene(methodName, BooleanGene(methodName))
                 else
                     DateGene(methodName)
-            scalarTag ->
+            GqlConst.SCALAR ->
                 return getInputScalarListOrEnumListGene(
                     state, tableFieldType, tableType, kindOfTableFieldType, kindOfTableField, history,
                     isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, enumValues, methodName
@@ -992,17 +991,17 @@ object GraphQLActionBuilder {
                     OptionalGene(methodName, StringGene(methodName))
                 else
                     StringGene(methodName)
-            enumTag ->
+            GqlConst.ENUM ->
                 return if (isKindOfTableFieldTypeOptional)
                     OptionalGene(methodName, EnumGene(methodName, enumValues))
                 else
                     EnumGene(methodName, enumValues)
 
-            unionTag -> {
+            GqlConst.UNION -> {
                 LoggingUtil.uniqueWarn(log, "GQL does not support union in input type: $kindOfTableField")
                 return StringGene("Not supported type")
             }
-            interfaceTag -> {
+            GqlConst.INTERFACE -> {
                 LoggingUtil.uniqueWarn(log, "GQL does not support union in input type: $kindOfTableField")
                 return StringGene("Not supported type")
             }
@@ -1037,7 +1036,7 @@ object GraphQLActionBuilder {
     ): Gene {
 
         when (kindOfTableField?.toLowerCase()) {
-            listTag ->
+            GqlConst.LIST ->
                 return if (isKindOfTableFieldOptional) {
 
                     val template = getInputGene(
@@ -1075,7 +1074,7 @@ object GraphQLActionBuilder {
 
                     ArrayGene(methodName, template)
                 }
-            objectTag ->
+            GqlConst.OBJECT ->
                 return if (isKindOfTableFieldTypeOptional) {
                     val optObjGene = createObjectGene(
                         state, tableType, kindOfTableFieldType, history,
@@ -1089,7 +1088,7 @@ object GraphQLActionBuilder {
                         isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum,
                         maxNumberOfGenes
                     )
-            inputObjectTag ->
+            GqlConst.INPUT_OBJECT ->
                 return if (isKindOfTableFieldTypeOptional) {
                     val optInputObjGene = createInputObjectGene(
                         state, tableType, kindOfTableFieldType, history,
@@ -1146,12 +1145,12 @@ object GraphQLActionBuilder {
                     OptionalGene(tableType, DateGene(tableType))
                 else
                     DateGene(tableType)
-            enumTag ->
+            GqlConst.ENUM ->
                 return if (isKindOfTableFieldTypeOptional)
                     OptionalGene(tableType, EnumGene(tableType, enumValues))
                 else
                     EnumGene(tableType, enumValues)
-            scalarTag ->
+            GqlConst.SCALAR ->
                 return getInputGene(
                     state,
                     tableFieldType,
@@ -1172,11 +1171,11 @@ object GraphQLActionBuilder {
                 else
                     StringGene(tableType)
 
-            unionTag -> {
+            GqlConst.UNION -> {
                 LoggingUtil.uniqueWarn(log, " GQL does not support union in input type: $kindOfTableField")
                 return StringGene("Not supported type")
             }
-            interfaceTag -> {
+            GqlConst.INTERFACE -> {
                 LoggingUtil.uniqueWarn(log, "GQL does not support interface in input type: $kindOfTableField")
                 return StringGene("Not supported type")
             }
@@ -1206,7 +1205,7 @@ object GraphQLActionBuilder {
         for (element in state.argsTables) {
             if (element.tableType == tableType) {
 
-                if (element.kindOfTableFieldType.toString().toLowerCase() == scalarTag) {
+                if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.SCALAR) {
                     val field = element.tableField
                     val template = getInputGene(
                         state,
@@ -1224,7 +1223,7 @@ object GraphQLActionBuilder {
                     )
                     fields.add(template)
                 } else {
-                    if (element.kindOfTableField.toString().toLowerCase() == listTag) {
+                    if (element.kindOfTableField.toString().toLowerCase() == GqlConst.LIST) {
                         val template = getInputGene(
                             state,
                             element.tableFieldType,
@@ -1242,7 +1241,7 @@ object GraphQLActionBuilder {
 
                         fields.add(template)
                     } else
-                        if (element.kindOfTableFieldType.toString().toLowerCase() == inputObjectTag) {
+                        if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.INPUT_OBJECT) {
                             val template = getInputGene(
                                 state,
                                 element.tableFieldType,
@@ -1260,7 +1259,7 @@ object GraphQLActionBuilder {
 
                             fields.add(template)
 
-                        } else if (element.kindOfTableFieldType.toString().toLowerCase() == enumTag) {
+                        } else if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.ENUM) {
                             val field = element.tableField
                             val template = getInputGene(
                                 state,
@@ -1312,7 +1311,7 @@ object GraphQLActionBuilder {
 
 
         when (kindOfTableField?.toLowerCase()) {
-            listTag -> {
+            GqlConst.LIST -> {
                 val template = getReturnGene(
                     state,
                     tableType,
@@ -1332,7 +1331,7 @@ object GraphQLActionBuilder {
 
                 return OptionalGene(methodName, ArrayGene(tableType, template))//check the name
             }
-            objectTag -> {
+            GqlConst.OBJECT  -> {
                 accum += 1
                 return if (checkDepth(accum, maxNumberOfGenes)) {
                     history.addLast(tableType)
@@ -1353,7 +1352,7 @@ object GraphQLActionBuilder {
                     OptionalGene(tableType, CycleObjectGene(tableType))//TODO not correct
                 }
             }
-            unionTag -> {
+            GqlConst.UNION -> {
                 history.addLast(tableType)
                 return if (history.count { it == tableType } == 1) {
                     val optObjGene = createUnionObjectsGene(
@@ -1368,7 +1367,7 @@ object GraphQLActionBuilder {
                     (OptionalGene(methodName, CycleObjectGene(methodName)))
                 }
             }
-            interfaceTag -> {
+            GqlConst.INTERFACE -> {
                 history.addLast(tableType)
 
                 return if (history.count { it == tableType } == 1) {
@@ -1446,9 +1445,9 @@ object GraphQLActionBuilder {
                 )
             "date" ->
                 return OptionalGene(tableType, DateGene(tableType))
-            enumTag ->
+            GqlConst.ENUM ->
                 return OptionalGene(tableType, EnumGene(tableType, enumValues))
-            scalarTag ->
+            GqlConst.SCALAR ->
                 return getReturnGene(
                     state,
                     tableFieldType,
@@ -1500,7 +1499,7 @@ object GraphQLActionBuilder {
             val ktfType = element.kindOfTableFieldType.toString()
             val ktf = element.kindOfTableField.toString()
 
-            if (ktfType.toLowerCase() == scalarTag) {
+            if (ktfType.toLowerCase() == GqlConst.SCALAR) {
                 val field = element.tableField
                 val template = getReturnGene(
                     state,
@@ -1520,7 +1519,7 @@ object GraphQLActionBuilder {
                 )
                 fields.add(template)
             } else {
-                if (ktf.toLowerCase() == listTag) {
+                if (ktf.toLowerCase() == GqlConst.LIST) {
                     val template =
                         getReturnGene(
                             state,
@@ -1541,7 +1540,7 @@ object GraphQLActionBuilder {
 
                     fields.add(template)
                 } else
-                    if (ktfType.toLowerCase() == objectTag) {
+                    if (ktfType.toLowerCase() ==GqlConst.OBJECT) {
 
                         val template =
                             getReturnGene(
@@ -1564,7 +1563,7 @@ object GraphQLActionBuilder {
                         fields.add(template)
 
 
-                    } else if (ktfType.toLowerCase() == enumTag) {
+                    } else if (ktfType.toLowerCase() == GqlConst.ENUM) {
                         val field = element.tableField
                         val template = getReturnGene(
                             state,
@@ -1585,7 +1584,7 @@ object GraphQLActionBuilder {
 
                         fields.add(template)
 
-                    } else if (ktfType.toLowerCase() == unionTag) {
+                    } else if (ktfType.toLowerCase() == GqlConst.UNION) {
                         val template =
                             getReturnGene(
                                 state,
@@ -1607,7 +1606,7 @@ object GraphQLActionBuilder {
                         fields.add(template)
 
                     } else
-                        if (ktfType.toLowerCase() == interfaceTag) {
+                        if (ktfType.toLowerCase() == GqlConst.INTERFACE) {
                             val template =
                                 getReturnGene(
                                     state,

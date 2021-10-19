@@ -61,8 +61,8 @@ public class DbCleanerMySQLTest extends DbCleanerTestBase{
     }
 
     @Override
-    protected void clearDatabase(List<String> tablesToSkip) {
-        DbCleaner.clearDatabase(connection, DB_NAME, tablesToSkip, DatabaseType.MYSQL);
+    protected void clearDatabase(List<String> tablesToSkip, List<String> tableToClean) {
+        DbCleaner.clearDatabase(connection, DB_NAME, tablesToSkip, tableToClean, DatabaseType.MYSQL);
     }
 
 

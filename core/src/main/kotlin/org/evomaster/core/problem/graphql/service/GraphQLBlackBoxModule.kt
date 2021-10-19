@@ -19,6 +19,10 @@ class GraphQLBlackBoxModule(
                 .to(GraphQLSampler::class.java)
                 .asEagerSingleton()
 
+        bind(object : TypeLiteral<Sampler<*>>() {})
+            .to(GraphQLSampler::class.java)
+            .asEagerSingleton()
+
         bind(GraphQLSampler::class.java)
                 .asEagerSingleton()
 
