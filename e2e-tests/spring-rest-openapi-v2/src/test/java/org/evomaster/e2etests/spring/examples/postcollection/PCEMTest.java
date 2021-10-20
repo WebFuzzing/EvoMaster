@@ -25,7 +25,7 @@ public class PCEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "PcEM",
                 "org.bar.PcEM",
-                1_000,
+                2_000,
                 (args) -> {
 
                     Solution<RestIndividual> solution = initAndRun(args);
