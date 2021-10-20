@@ -50,10 +50,11 @@ class ResourceSampleMethodController {
             methods.getValue(SMdR).applicable = it.size > 2 && config.maxTestSize > 2
         }
 
-        /**
-         * if only S1iR is applicable, we recommend that maxTestSize is 1.
+        /*
+          if only S1iR is applicable, we recommend that maxTestSize is 1.
          */
-        if(methods.values.filter { it.applicable }.size == 1 ) config.maxTestSize = 1
+        if(methods.values.filter { it.applicable }.size == 1 && methods.getValue(S1iR).applicable)
+            config.maxTestSize = 1
     }
 
     private fun validateProbability() {
