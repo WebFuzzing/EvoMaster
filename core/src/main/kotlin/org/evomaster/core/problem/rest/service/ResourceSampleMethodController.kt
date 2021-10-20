@@ -43,7 +43,7 @@ class ResourceSampleMethodController {
     }
 
     private fun initApplicableStrategies(){
-        methods.getValue(S1iR).applicable = true
+        methods.getValue(S1iR).applicable = rm.getResourceCluster().values.any { it.hasIndependentAction() }
         rm.getResourceCluster().values.filter { r -> !r.isIndependent() }.let {
             methods.getValue(S1dR).applicable = it.isNotEmpty()
             methods.getValue(S2dR).applicable = it.size > 1 && config.maxTestSize > 1
