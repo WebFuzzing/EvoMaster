@@ -24,7 +24,7 @@ class DbTreeEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GQL_DbTreeEM",
             "org.foo.graphql.DbTreeEM",
-            1000
+            1500
         ) { args: MutableList<String> ->
 
             args.add("--problemType")

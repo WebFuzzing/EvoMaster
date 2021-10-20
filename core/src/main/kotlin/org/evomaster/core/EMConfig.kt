@@ -942,7 +942,7 @@ class EMConfig {
 
     @Cfg("When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random")
     @Probability
-    var probOfSmartSampling = 0.95
+    var probOfSmartSampling = 0.9
 
     @Cfg("Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test")
     @Min(1.0)
