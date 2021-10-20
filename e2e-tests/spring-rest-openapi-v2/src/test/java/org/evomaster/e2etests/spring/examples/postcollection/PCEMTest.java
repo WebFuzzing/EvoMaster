@@ -22,10 +22,12 @@ public class PCEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        defaultSeed = 45;
+
         runTestHandlingFlakyAndCompilation(
                 "PcEM",
                 "org.bar.PcEM",
-                2_000,
+                1_000,
                 (args) -> {
 
                     Solution<RestIndividual> solution = initAndRun(args);

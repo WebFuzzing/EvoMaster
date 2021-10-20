@@ -21,10 +21,13 @@ class DbTreeEMTest : SpringTestBase() {
 
     @Test
     fun testEM(){
+
+        defaultSeed = 0
+
         runTestHandlingFlakyAndCompilation(
             "GQL_DbTreeEM",
             "org.foo.graphql.DbTreeEM",
-            1500
+            1000
         ) { args: MutableList<String> ->
 
             args.add("--problemType")
