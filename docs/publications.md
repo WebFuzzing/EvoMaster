@@ -11,7 +11,7 @@ This explained in more details [here](replicating_studies.md).
 
 ### 2021
 
-* B. Marculescu, M. Zhand, A. Arcuri.
+* B. Marculescu, M. Zhang, A. Arcuri.
   *On the faults found in REST APIs by Automated Test Generation*.
   ACM Transactions on Software Engineering and Methodology (TOSEM). (*to appear*)
   [[PDF](publications/2021_tosem_faults.pdf)]
