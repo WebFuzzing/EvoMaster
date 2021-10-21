@@ -11,12 +11,17 @@ This explained in more details [here](replicating_studies.md).
 
 ### 2021
 
+* B. Marculescu, M. Zhand, A. Arcuri.
+  *On the faults found in REST APIs by Automated Test Generation*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM). (*to appear*)
+  [[PDF](publications/2021_tosem_faults.pdf)]
+  [[Scripts](exp/2021_tosem_faults.py)]
+
 * A. Martin-Lopez, A. Arcuri, S. Segura, A. Ruiz-Cortes.
   *Black-Box and White-Box Test Case Generation for RESTful APIs: Enemies or Allies?*
   IEEE International Symposium on Software Reliability Engineering (ISSRE). (*to appear*)
   [[PDF](publications/2021_issre.pdf)]
-
-  
+ 
 * M. Zhang, A. Arcuri.
   *Enhancing Resource-based Test Case Generation For RESTful APIs with SQL Handling*.
   Symposium on Search-based Software Engineering (SSBSE). 
