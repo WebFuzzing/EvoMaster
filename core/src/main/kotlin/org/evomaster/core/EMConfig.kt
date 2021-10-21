@@ -310,36 +310,6 @@ class EMConfig {
             throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
 
-        //resource related parameters
-//        if(problemType != ProblemType.DEFAULT) {
-//            if ((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
-//                    && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)) {
-//                throw IllegalArgumentException("Parameters (${
-//                    arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics", "exportDependencies")
-//                            .filterIndexed { index, _ ->
-//                                (index == 0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE) ||
-//                                        (index == 1 && (probOfApplySQLActionToCreateResources > 0.0)) ||
-//                                        (index == 2 && doesApplyNameMatching) ||
-//                                        (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
-//                                        (index == 4 && exportDependencies)
-//                            }.joinToString(" and ")
-//                }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
-//            }
-//        }
-
-        /*
-            resource-mio and sql configuration
-            TODO if required
-         */
-//        if (resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)) {
-//            throw IllegalArgumentException("Resource-mio does not support SQL strategies for the moment")
-//        }
-
-        //archive-based mutation
-//        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
-//            throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
-//        }
-
         if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && probOfArchiveMutation > 0 && !weightBasedMutationRate)
             throw IllegalArgumentException("When applying adaptive gene selection, weight-based mutation rate should be enabled")
 
@@ -1141,7 +1111,7 @@ class EMConfig {
     @Probability(false)
     var probOfSelectFromDatabase = 0.1
 
-    @Cfg("Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
+    @Cfg("Whether to apply text/name analysis to derive relationships between name entities, e.g., a resource identifier with a name of table")
     var doesApplyNameMatching = true
 
     @Experimental
