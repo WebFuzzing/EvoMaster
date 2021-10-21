@@ -77,7 +77,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
     private fun isMutationTypeApplicable(type: MutationType, ind : RestIndividual): Boolean{
         val delSize = ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size
         return when(type){
-            MutationType.ADD -> ind.seeActions().size < config.maxTestSize //&& !rm.cluster.doesCoverAll(ind)
+            MutationType.ADD -> ind.seeActions().size < config.maxTestSize && !rm.cluster.doesCoverAll(ind)
             MutationType.SWAP -> ind.extractSwapCandidates().isNotEmpty()
             MutationType.REPLACE -> !rm.cluster.doesCoverAll(ind) && delSize > 0
             MutationType.DELETE -> delSize > 0 && ind.getResourceCalls().size >=2
