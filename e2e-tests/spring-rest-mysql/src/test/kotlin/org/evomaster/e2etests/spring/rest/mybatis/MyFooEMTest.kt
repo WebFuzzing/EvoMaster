@@ -20,8 +20,6 @@ class MyFooEMTest : RestTestBase() {
     @Test
     fun testRunEM() {
 
-        defaultSeed = 0
-
         runTestHandlingFlakyAndCompilation(
             "MyFooEM",
             "org.bar.mysql.MyFooEM",
