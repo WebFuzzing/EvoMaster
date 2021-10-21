@@ -87,6 +87,13 @@ open class Impact(
         )
     }
 
+    /**
+     * @param noImpactTargets is a set of targets which has no changes with this mutation
+     * @param impactTargets is a set of targets which have any impact (either better or worse) with this mutation
+     * @param improvedTargets is a set of targets which have been improved with this mutation
+     * @param onlyManipulation specifies if only collect time of mutations
+     * @param num is a number of modifications with this mutation, e.g., hypermutation on genes in an individual
+     */
     fun countImpactAndPerformance(noImpactTargets: Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean, num: Int){
         shared.timesToManipulate += 1
         val hasImpact = impactTargets.isNotEmpty()
