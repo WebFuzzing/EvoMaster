@@ -100,9 +100,10 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
 
         String fullClassName = stmt.getClass().getName();
         if (fullClassName.startsWith("com.zaxxer.hikari.pool") ||
-        fullClassName.startsWith("org.apache.tomcat.jdbc.pool")) {
+        fullClassName.startsWith("org.apache.tomcat.jdbc.pool") ||
+        fullClassName.startsWith("com.sun.proxy")) {
             /*
-                this is likely a proxy, so we can skip it, as anyway we are going to
+                this is likely a proxy/wrapper, so we can skip it, as anyway we are going to
                 intercept the call to the delegate
              */
             return;
@@ -143,19 +144,19 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
     }
 
 
-    @Replacement(type = ReplacementType.TRACKER)
+    @Replacement(type = ReplacementType.TRACKER, isPure = false)
     public static ResultSet executeQuery(PreparedStatement stmt) throws SQLException {
         handlePreparedStatement(stmt);
         return stmt.executeQuery();
     }
 
-    @Replacement(type = ReplacementType.TRACKER)
+    @Replacement(type = ReplacementType.TRACKER, isPure = false)
     public static int executeUpdate(PreparedStatement stmt) throws SQLException {
         handlePreparedStatement(stmt);
         return stmt.executeUpdate();
     }
 
-    @Replacement(type = ReplacementType.TRACKER)
+    @Replacement(type = ReplacementType.TRACKER, isPure = false)
     public static boolean execute(PreparedStatement stmt) throws SQLException {
         handlePreparedStatement(stmt);
         return stmt.execute();

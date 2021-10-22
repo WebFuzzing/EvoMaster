@@ -30,6 +30,7 @@ public class ReplacementList {
                 new LongClassReplacement(),
                 new MapClassReplacement(),
                 new MatcherClassReplacement(),
+                new MethodClassReplacement(),
                 new ObjectsClassReplacement(),
                 new PatternClassReplacement(),
                 new PreparedStatementClassReplacement(),
