@@ -738,7 +738,9 @@
                         -->
                         <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
-                        <useSystemClassLoader>false</useSystemClassLoader>
+                        <!--  Commented out, as no longer using CircleCI-->
+                        <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
+                        <runOrder>alphabetical</runOrder>
                     </configuration>
                 </plugin>
 
