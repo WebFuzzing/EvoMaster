@@ -21,6 +21,8 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
              */
             System.setProperty("h2.objectCache", "false")
         }
+
+        private var dbID = 0
     }
 
     var dbconnection : Connection? = null
@@ -29,7 +31,7 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
     override fun startSut(): String {
         //lot of problem if using same H2 instance. see:
         //https://github.com/h2database/h2database/issues/227
-        val rand = nextInt()
+        val rand = dbID++ //nextInt()
 
         ctx = SpringApplication.run(applicationClass,
             "--server.port=0",
