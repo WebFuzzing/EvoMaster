@@ -105,7 +105,7 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
         }
 
         String fullClassName = stmt.getClass().getName();
-        if (fullClassName.startsWith("com.zaxxer.hikari.pool")) {
+        if (fullClassName.startsWith("com.zaxxer.hikari.pool") || fullClassName.startsWith("com.sun.proxy")) {
             /*
                 this is likely a proxy, so we can skip it, as anyway we are going to
                 intercept the call to the delegate
