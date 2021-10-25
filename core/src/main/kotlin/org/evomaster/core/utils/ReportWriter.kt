@@ -19,7 +19,7 @@ object ReportWriter {
     fun writeByChannel(path : Path, value :String, doAppend : Boolean = false){
 
         if (!doAppend){
-            if (!Files.exists(path.parent)) Files.createDirectories(path.parent)
+            if (path.parent != null && !Files.exists(path.parent)) Files.createDirectories(path.parent)
 
             if (!Files.exists(path)) {
                 Files.createFile(path)
