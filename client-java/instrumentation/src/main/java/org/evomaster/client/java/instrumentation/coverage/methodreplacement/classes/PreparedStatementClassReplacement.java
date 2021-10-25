@@ -142,12 +142,42 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             sql = extractSqlFromH2PreparedStatement(stmt);
         }
 
+        /*
+            handle db middleware, ie, zebra
+         */
+        if (fullClassName.startsWith("com.dianping.zebra")){
+            sql = extractSqlFromZebraPreparedStatement(stmt);
+        }
+
 //        //TODO see TODO in StatementClassReplacement
 //        SqlInfo info = new SqlInfo(sql, false, false);
 //        ExecutionTracer.addSqlInfo(info);
         return sql;
     }
 
+    private static String extractSqlFromZebraPreparedStatement(PreparedStatement stmt) {
+
+        Class<?> klass = stmt.getClass();
+        String className = klass.getName();
+        if (!checkZebraPreparedStatement(className)) {
+            throw new IllegalArgumentException("Invalid type: " + className);
+        }
+
+        try {
+            Field cf = klass.getDeclaredField("sql");
+            cf.setAccessible(true);
+            String sql = (String) cf.get(stmt);
+            return sql;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static boolean checkZebraPreparedStatement(String className){
+        return className.equals("com.dianping.zebra.group.jdbc.GroupPreparedStatement") ||
+                className.equals("com.dianping.zebra.shard.jdbc.ShardPreparedStatement") ||
+                className.equals("com.dianping.zebra.single.jdbc.SinglePreparedStatement");
+    }
 
     @Replacement(type = ReplacementType.TRACKER)
     public static ResultSet executeQuery(PreparedStatement stmt) throws SQLException {
