@@ -34,7 +34,7 @@ object TestSuiteSplitter {
         val errs = sol.individuals.filter {ind ->
             if (ind.individual is RestIndividual) {
                 ind.evaluatedActions().any {ac ->
-                    assessFailed(ac, oracles)
+                    assessFailed(ac, oracles, config)
                 }
             }
             else false
@@ -42,15 +42,15 @@ object TestSuiteSplitter {
 
         val splitResult = SplitResult()
 
-        if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) splitResult.splitOutcome = splitByCode(sol)
+        if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) splitResult.splitOutcome = splitByCode(sol, config)
 
         when(type){
             EMConfig.TestSuiteSplitType.NONE  -> splitResult.splitOutcome = listOf(sol)
             EMConfig.TestSuiteSplitType.CLUSTER -> {
-                val clusters = conductClustering(sol, oracles, metrics, splitResult)
-                splitByCluster(clusters, sol, oracles, splitResult)
+                val clusters = conductClustering(sol, oracles, config, metrics, splitResult)
+                splitByCluster(clusters, sol, oracles, splitResult, config)
             }
-            EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol)
+            EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol, config)
         }
 
         return splitResult
@@ -58,19 +58,20 @@ object TestSuiteSplitter {
 
     private fun conductClustering(solution: Solution<RestIndividual>,
                                   oracles: PartialOracles = PartialOracles(),
+                                  config: EMConfig,
                                   metrics: List<DistanceMetric<HttpWsCallResult>>,
                                   splitResult: SplitResult) : MutableMap<String, MutableList<MutableList<HttpWsCallResult>>> {
 
         val clusteringStart = System.currentTimeMillis()
         val errs = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
-                assessFailed(ac, oracles)
+                assessFailed(ac, oracles, config)
             }
         }.toMutableList()
 
         val clusterableActions = errs.flatMap {
             it.evaluatedActions().filter { ac ->
-                TestSuiteSplitter.assessFailed(ac, oracles)
+                TestSuiteSplitter.assessFailed(ac, oracles, config)
             }
         }.map { ac -> ac.result }
                 .filterIsInstance<HttpWsCallResult>()
@@ -93,6 +94,7 @@ object TestSuiteSplitter {
                 clusters[metric.getName()] = Clusterer.cluster(
                         //Solution(errs, solution.testSuiteName, Termination.SUMMARY),
                         clusteringSol,
+                        config,
                         epsilon = metric.getRecommendedEpsilon(),
                         oracles = oracles,
                         metric = metric)
@@ -144,11 +146,12 @@ object TestSuiteSplitter {
     private fun splitByCluster(clusters: MutableMap<String, MutableList<MutableList<HttpWsCallResult>>>,
                                solution: Solution<RestIndividual>,
                                oracles: PartialOracles,
-                               splitResult: SplitResult) : SplitResult {
+                               splitResult: SplitResult,
+                               config: EMConfig) : SplitResult {
 
         val errs = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
-                assessFailed(ac, oracles)
+                assessFailed(ac, oracles, config)
             }
         }.toMutableList()
 
@@ -175,7 +178,7 @@ object TestSuiteSplitter {
 
         val skipped = solution.individuals.filter { ind ->
             ind.evaluatedActions().any { ac ->
-                assessFailed(ac, oracles)
+                assessFailed(ac, oracles, config)
             }
         }.filterNot { ind ->
             ind.evaluatedActions().any { ac ->
@@ -209,10 +212,10 @@ object TestSuiteSplitter {
      * Nevertheless, it is up to individual test engineers to look at these test cases in more depth and decide
      * if any further action or investigation is required.
      */
-    private fun <T:Individual> splitByCode(solution: Solution<T>): List<Solution<T>>{
+    private fun <T:Individual> splitByCode(solution: Solution<T>, config: EMConfig): List<Solution<T>>{
         val s500 = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
-                assessFailed(ac, null)
+                assessFailed(ac, null, config)
 
             }
         }.toMutableList()
@@ -236,7 +239,15 @@ object TestSuiteSplitter {
         )
     }
 
-    fun assessFailed(action: EvaluatedAction, oracles: PartialOracles?): Boolean{
+    /***
+     * When the test suite is split into Successful and Failed tests, this function determines what a failed test
+     * is defined as.
+     * A test is a failure:
+     *  - if it has a call with a status code 500
+     *  - IF [PartialOracles] are selected, if the test contains a call that fails an expectation
+     *  (i.e. is selected for clustering by one of the partial oracles).
+     */
+    fun assessFailed(action: EvaluatedAction, oracles: PartialOracles?, config: EMConfig): Boolean{
         val codeSelect = if(action.result is HttpWsCallResult){
             val code = (action.result as HttpWsCallResult).getStatusCode()
             (code != null && code == 500)
@@ -245,7 +256,14 @@ object TestSuiteSplitter {
             // "remainder" subset - as they are neither errors, nor successful runs.
         } else false
 
-        val oracleSelect = oracles?.selectForClustering(action) ?: false
+
+        val oracleSelect = when{
+            !config.expectationsActive -> false
+            oracles!= null -> oracles.selectForClustering(action)
+            else -> false
+        }
+            //config.expectationsActive == false -> false
+            //else ->            oracles?.selectForClustering(action) ?: false
 
         return codeSelect || oracleSelect
     }
@@ -267,10 +285,11 @@ object TestSuiteSplitter {
      * if any further action or investigation is required.
      */
     private fun <T:Individual> splitByCluster(solution: Solution<T>,
-                                           oracles: PartialOracles = PartialOracles()): List<Solution<T>>{
+                                              oracles: PartialOracles = PartialOracles(),
+                                              config: EMConfig): List<Solution<T>>{
         val s500 = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
-                assessFailed(ac, oracles)
+                assessFailed(ac, oracles, config)
 
             }
         }.toMutableList()

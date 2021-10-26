@@ -1,5 +1,6 @@
 package org.evomaster.core.output
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.clustering.DBSCANClusterer
 import org.evomaster.core.output.clustering.metrics.DistanceMetric
 import org.evomaster.core.output.clustering.metrics.DistanceMetricErrorText
@@ -24,6 +25,7 @@ import org.evomaster.core.search.Solution
  */
 object Clusterer {
     fun cluster(solution: Solution<RestIndividual>,
+                config: EMConfig,
                 epsilon: Double = 0.6,
                 oracles: PartialOracles = PartialOracles(),
                 metric: DistanceMetric<HttpWsCallResult>): MutableList<MutableList<HttpWsCallResult>>{
@@ -33,7 +35,7 @@ object Clusterer {
          */
         val sol1 = solution.individuals.filter{
             it.evaluatedActions().any{ ac ->
-                TestSuiteSplitter.assessFailed(ac, oracles)
+                TestSuiteSplitter.assessFailed(ac, oracles, config)
             }
         }
 
@@ -44,7 +46,7 @@ object Clusterer {
 
         val clusterableActions = sol1.flatMap {
             it.evaluatedActions().filter { ac ->
-                TestSuiteSplitter.assessFailed(ac, oracles)
+                TestSuiteSplitter.assessFailed(ac, oracles, config)
             }
         }.map { ac -> ac.result }
                 .filterIsInstance<HttpWsCallResult>()
