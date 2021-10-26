@@ -102,19 +102,36 @@ public class SqlHandler {
             return;
         }
 
-        buffer.add(sql);
+        String sqlToHandle = formatSql(sql);
 
-        if (isSelect(sql)) {
-            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sql));
-        } else if(isDelete(sql)){
-            deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sql));
-        } else if(isInsert(sql)){
-            mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sql));
-        } else if(isUpdate(sql)){
-            mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));
+        buffer.add(sqlToHandle);
+
+        if (isSelect(sqlToHandle)) {
+            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sqlToHandle));
+        } else if(isDelete(sqlToHandle)){
+            deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sqlToHandle));
+        } else if(isInsert(sqlToHandle)){
+            mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sqlToHandle));
+        } else if(isUpdate(sqlToHandle)){
+            mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sqlToHandle));
         }
 
         numberOfSqlCommands++;
+    }
+
+    /**
+     *
+     * @param sql is an original sql command which might contain comments
+     * @return a formatted sql.
+     * Note that here if the sql could not be handled by CCJSqlParserUtil,
+     *          we return the original sql.
+     */
+    private String formatSql(String sql){
+        try {
+            return CCJSqlParserUtil.parse(sql).toString();
+        } catch (Exception e) {
+            return sql;
+        }
     }
 
     public ExecutionDto getExecutionDto() {
