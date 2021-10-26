@@ -41,7 +41,7 @@ open class ResourceSampler : AbstractRestSampler() {
         }
     }
 
-    override fun initAdHocInitialIndividuals() {
+    override fun customizeAdHocInitialIndividuals() {
 
         rm.initResourceNodes(actionCluster, sqlInsertBuilder)
 
