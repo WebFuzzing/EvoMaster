@@ -73,7 +73,6 @@ public class MethodClassReplacement implements MethodReplacementClass {
         Optional<Method> r = ReplacementUtils.chooseMethodFromCandidateReplacement(
                 isInSUT, name, desc, candidateClasses, false);
         if(! r.isPresent()){
-            toSkipCache.add(targetClassName);
             return caller.invoke(obj, args);
         }
 
