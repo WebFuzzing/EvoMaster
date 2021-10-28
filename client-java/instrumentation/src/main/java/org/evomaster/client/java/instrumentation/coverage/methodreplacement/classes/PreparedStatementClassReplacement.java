@@ -105,9 +105,11 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
         }
 
         String fullClassName = stmt.getClass().getName();
-        if (fullClassName.startsWith("com.zaxxer.hikari.pool") || fullClassName.startsWith("com.sun.proxy")) {
+        if (fullClassName.startsWith("com.zaxxer.hikari.pool") ||
+        fullClassName.startsWith("org.apache.tomcat.jdbc.pool") ||
+        fullClassName.startsWith("com.sun.proxy")) {
             /*
-                this is likely a proxy, so we can skip it, as anyway we are going to
+                this is likely a proxy/wrapper, so we can skip it, as anyway we are going to
                 intercept the call to the delegate
              */
             return null;
@@ -149,7 +151,7 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             sql = extractSqlFromZebraPreparedStatement(stmt);
         }
 
-//        //TODO see TODO in StatementClassReplacement
+        //TODO see TODO in StatementClassReplacement
 //        SqlInfo info = new SqlInfo(sql, false, false);
 //        ExecutionTracer.addSqlInfo(info);
         return sql;
@@ -179,19 +181,19 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
                 className.equals("com.dianping.zebra.single.jdbc.SinglePreparedStatement");
     }
 
-    @Replacement(type = ReplacementType.TRACKER)
+    @Replacement(type = ReplacementType.TRACKER, isPure = false)
     public static ResultSet executeQuery(PreparedStatement stmt) throws SQLException {
         String sql = handlePreparedStatement(stmt);
         return executeSql(()-> stmt.executeQuery(), sql);
     }
 
-    @Replacement(type = ReplacementType.TRACKER)
+    @Replacement(type = ReplacementType.TRACKER, isPure = false)
     public static int executeUpdate(PreparedStatement stmt) throws SQLException {
         String sql = handlePreparedStatement(stmt);
         return executeSql(()-> stmt.executeUpdate(), sql);
     }
 
-    @Replacement(type = ReplacementType.TRACKER)
+    @Replacement(type = ReplacementType.TRACKER, isPure = false)
     public static boolean execute(PreparedStatement stmt) throws SQLException {
         String sql = handlePreparedStatement(stmt);
         return executeSql(()-> stmt.execute(), sql);

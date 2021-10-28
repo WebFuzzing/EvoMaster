@@ -102,6 +102,13 @@ public class SqlHandler {
             return;
         }
 
+        numberOfSqlCommands++;
+
+        if(! ParserUtils.canParseSqlStatement(sql)){
+            SimpleLogger.warn("Cannot handle SQL statement: " + sql);
+            return;
+        }
+
         buffer.add(sql);
 
         if (isSelect(sql)) {
@@ -114,7 +121,6 @@ public class SqlHandler {
             mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));
         }
 
-        numberOfSqlCommands++;
     }
 
     public ExecutionDto getExecutionDto() {
