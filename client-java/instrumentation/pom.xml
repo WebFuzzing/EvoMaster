@@ -66,6 +66,7 @@
 
         <!--
             "Provided" dependencies.
+
             See ThirdPartyMethodReplacementClass for an explanation for why needed
             -->
         <dependency>
@@ -73,7 +74,14 @@
             <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
-
+        <!--
+            But at a certain point we went with full reflection, and scope "test",
+            at least for method replacements.
+            Unfortunately do not remember the main reason for it... but I do remember
+            some weird stuff with classes loaded when used inside methods before their
+            bytecode is executed (which would lead to crashes in the cases in which the
+            SUT did not provide such classes)
+        -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>

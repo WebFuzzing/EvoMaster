@@ -161,11 +161,6 @@
             </dependency>
             <dependency>
                 <groupId>org.evomaster</groupId>
-                <artifactId>evomaster-client-database-spy</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-client-java-instrumentation</artifactId>
                 <version>${project.version}</version>
                 <type>jar</type>
@@ -543,11 +538,6 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>1.4.197</version>
-            </dependency>
-            <dependency> <!-- Used to intercept SQL commands -->
-                <groupId>p6spy</groupId>
-                <artifactId>p6spy</artifactId>
-                <version>3.9.1</version>
             </dependency>
             <dependency>
                 <groupId>com.github.jsqlparser</groupId>
