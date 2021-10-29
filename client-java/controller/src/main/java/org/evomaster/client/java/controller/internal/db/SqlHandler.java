@@ -103,6 +103,14 @@ public class SqlHandler {
         }
 
         String sqlToHandle = formatSql(sql);
+        numberOfSqlCommands++;
+
+        if(! ParserUtils.canParseSqlStatement(sql)){
+            SimpleLogger.warn("Cannot handle SQL statement: " + sql);
+            return;
+        }
+
+        buffer.add(sql);
 
         buffer.add(sqlToHandle);
 
@@ -116,7 +124,6 @@ public class SqlHandler {
             mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sqlToHandle));
         }
 
-        numberOfSqlCommands++;
     }
 
     /**
