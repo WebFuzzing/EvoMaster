@@ -1300,7 +1300,7 @@ object GraphQLActionBuilder {
     }
 
     /**
-     *Extract the return gene: representing the return value in the GQL query/mutation.
+     * Extract the return gene: representing the return value in the GQL query/mutation.
      * From an implementation point of view, it represents a GQL return param. In contrast to input param, we can have only one return param.
      */
     private fun getReturnGene(
@@ -1450,7 +1450,20 @@ object GraphQLActionBuilder {
                 )
 
             GqlConst.ENUM ->
-                return OptionalGene(tableType, EnumGene(tableType, enumValues))
+                return createEnumGene(state,
+                        tableFieldType,
+                        tableType,
+                        kindOfTableFieldType,
+                        kindOfTableField,
+                        history,
+                        isKindOfTableFieldTypeOptional,
+                        isKindOfTableFieldOptional,
+                        enumValues,
+                        methodName,
+                        unionTypes,
+                        interfaceTypes,
+                        accum,
+                        maxNumberOfGenes)
             GqlConst.SCALAR ->
                 return createScalarGene(
                     state,
@@ -1468,8 +1481,6 @@ object GraphQLActionBuilder {
                     accum,
                     maxNumberOfGenes
                 )
-
-
             else ->
                 return OptionalGene(tableType, StringGene(tableType))
         }
@@ -1568,7 +1579,7 @@ object GraphQLActionBuilder {
 
                     } else if (ktfType.toLowerCase() == GqlConst.ENUM) {
                         val field = element.tableField
-                        val template = getReturnGene(
+                        val template = createEnumGene(
                             state,
                             tableType,
                             ktfType,
@@ -1767,6 +1778,23 @@ object GraphQLActionBuilder {
                 return OptionalGene(tableType, StringGene(tableType))// TODO check semantic
         }
 
+    }
+    fun createEnumGene(state: TempState,
+                       tableFieldType: String,
+                       kindOfTableField: String?,
+                       kindOfTableFieldType: String,
+                       tableType: String,
+                       history: Deque<String>,
+                       isKindOfTableFieldTypeOptional: Boolean,
+                       isKindOfTableFieldOptional: Boolean,
+                       enumValues: MutableList<String>,
+                       methodName: String,
+                       unionTypes: MutableList<String>,
+                       interfaceTypes: MutableList<String>,
+                       accum: Int,
+                       maxNumberOfGenes: Int): Gene {
+
+        return OptionalGene(tableType, EnumGene(tableType, enumValues))
 
     }
 
