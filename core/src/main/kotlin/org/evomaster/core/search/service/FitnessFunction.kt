@@ -78,10 +78,10 @@ abstract class FitnessFunction<T>  where T : Individual {
 
         time.averageOverheadMsBetweenTests.doStartTimer()
 
+        processMonitor.eval = ei
+
         time.newActionEvaluation(maxOf(1, a))
         time.newIndividualEvaluation()
-
-        processMonitor.eval = ei
 
         return ei
     }
