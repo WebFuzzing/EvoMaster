@@ -48,8 +48,6 @@ class Archive<T> where T : Individual {
     @Inject
     private lateinit var tracker : ArchiveMutationTrackService
 
-    @Inject
-    private lateinit var executionInfoReporter: ExecutionInfoReporter
     /**
      * Key -> id of the target
      *
@@ -326,11 +324,6 @@ class Archive<T> where T : Individual {
      * @return true if the new individual was added to the archive
      */
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
-
-        /*
-            since every new individual would be evaluated with this fun, then plugin execution info reporter here
-         */
-        executionInfoReporter.sqlExecutionInfo(ei.individual.seeActions(), ei.fitness.databaseExecutions)
 
         val copy = ei.copy(tracker.getCopyFilterForEvalInd(ei))
 
