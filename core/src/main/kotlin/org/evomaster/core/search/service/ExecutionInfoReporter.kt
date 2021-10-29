@@ -45,6 +45,9 @@ class ExecutionInfoReporter {
         }
     }
 
+    /**
+     * save all execution info at end of the search
+     */
     fun saveAll(){
         if (config.outputExecutedSQL == EMConfig.OutputExecutedSQL.ALL_AT_END){
             executedAction.forEachIndexed { index, s ->
