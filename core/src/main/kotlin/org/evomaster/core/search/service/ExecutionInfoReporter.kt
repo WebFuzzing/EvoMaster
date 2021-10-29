@@ -23,6 +23,12 @@ class ExecutionInfoReporter {
 
     private var hasHeader: Boolean = false
 
+    /**
+     * @param actions are endpoints to be executed
+     * @param sqlExecutionInfo are sql commands produced by the [actions]
+     *      key - the index of the actions
+     *      value - its corresponding database execution info
+     */
     fun sqlExecutionInfo(actions: List<Action>, sqlExecutionInfo: Map<Int, DatabaseExecution>){
 
         if (config.outputExecutedSQL == EMConfig.OutputExecutedSQL.NONE) return

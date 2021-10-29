@@ -102,6 +102,7 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
     private static String handlePreparedStatement(PreparedStatement stmt) {
         if (stmt == null) {
             //nothing to do
+            return null;
         }
 
         String fullClassName = stmt.getClass().getName();
