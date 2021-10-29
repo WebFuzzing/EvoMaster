@@ -29,14 +29,7 @@ public abstract class EmbeddedSutController extends SutController {
 
     @Override
     public final void setupForGeneratedTest(){
-        /*
-            We need to configure P6Spy for example, otherwise by default it will
-            generate an annoying spy.log file
-         */
-        String driverName = getDatabaseDriverName();
-        if(driverName != null) {
-            InstrumentingAgent.initP6Spy(driverName);
-        }
+        //In the past, we configured P6Spy here
     }
 
     @Override
