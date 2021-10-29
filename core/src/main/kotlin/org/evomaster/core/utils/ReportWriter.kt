@@ -8,7 +8,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 
-
+/**
+ * handle outputted reports, e.g., mutation log, sql log
+ */
 object ReportWriter {
 
     private val log: Logger = LoggerFactory.getLogger(ReportWriter::class.java)
