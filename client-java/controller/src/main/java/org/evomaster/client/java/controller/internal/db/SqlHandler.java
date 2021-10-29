@@ -102,15 +102,14 @@ public class SqlHandler {
             return;
         }
 
-        String sqlToHandle = formatSql(sql);
         numberOfSqlCommands++;
 
-        if(! ParserUtils.canParseSqlStatement(sql)){
+        String sqlToHandle = ParserUtils.formatSql(sql, null);
+
+        if(sqlToHandle == null){
             SimpleLogger.warn("Cannot handle SQL statement: " + sql);
             return;
         }
-
-        buffer.add(sql);
 
         buffer.add(sqlToHandle);
 
@@ -124,21 +123,6 @@ public class SqlHandler {
             mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sqlToHandle));
         }
 
-    }
-
-    /**
-     *
-     * @param sql is an original sql command which might contain comments
-     * @return a formatted sql.
-     * Note that here if the sql could not be handled by CCJSqlParserUtil,
-     *          we return the original sql.
-     */
-    private String formatSql(String sql){
-        try {
-            return CCJSqlParserUtil.parse(sql).toString();
-        } catch (Exception e) {
-            return sql;
-        }
     }
 
     public ExecutionDto getExecutionDto() {
