@@ -76,7 +76,7 @@ class EMConfig {
             val parser = OptionParser()
 
             parser.accepts("help", "Print this help documentation")
-                    .forHelp()
+                .forHelp()
 
             getConfigurationProperties().forEach { m ->
                 /*
@@ -92,12 +92,12 @@ class EMConfig {
                  */
 
                 val argTypeName = m.returnType.toString()
-                        .run { substring(lastIndexOf('.') + 1) }
+                    .run { substring(lastIndexOf('.') + 1) }
 
                 parser.accepts(m.name, getDescription(m).toString())
-                        .withRequiredArg()
-                        .describedAs(argTypeName)
-                        .defaultsTo(m.call(defaultInstance).toString())
+                    .withRequiredArg()
+                    .describedAs(argTypeName)
+                    .defaultsTo(m.call(defaultInstance).toString())
             }
 
             parser.formatHelpWith(MyHelpFormatter())
@@ -106,11 +106,11 @@ class EMConfig {
         }
 
         class ConfigDescription(
-                val text: String,
-                val constraints: String,
-                val enumExperimentalValues: String,
-                val enumValidValues: String,
-                val experimental: Boolean
+            val text: String,
+            val constraints: String,
+            val enumExperimentalValues: String,
+            val enumValidValues: String,
+            val experimental: Boolean
         ) {
             override fun toString(): String {
                 var description = text
@@ -143,7 +143,7 @@ class EMConfig {
         fun getDescription(m: KMutableProperty<*>): ConfigDescription {
 
             val cfg = (m.annotations.find { it is Cfg } as? Cfg)
-                    ?: throw IllegalArgumentException("Property ${m.name} is not annotated with @Cfg")
+                ?: throw IllegalArgumentException("Property ${m.name} is not annotated with @Cfg")
 
             val text = cfg.description.trim().run {
                 when {
@@ -185,7 +185,7 @@ class EMConfig {
 
             if (returnType.isEnum) {
                 val elements = returnType.getDeclaredMethod("values")
-                        .invoke(null) as Array<*>
+                    .invoke(null) as Array<*>
                 val experimentElements= elements.filter{ it is WithExperimentalOptions && it.isExperimental()}
                 val validElements= elements.filter{ it !is WithExperimentalOptions || !it.isExperimental()}
                 experimentalValues = experimentElements.joinToString(", ")
@@ -202,8 +202,8 @@ class EMConfig {
 
         fun getConfigurationProperties(): List<KMutableProperty<*>> {
             return EMConfig::class.members
-                    .filterIsInstance(KMutableProperty::class.java)
-                    .filter { it.annotations.any { it is Cfg } }
+                .filterIsInstance(KMutableProperty::class.java)
+                .filter { it.annotations.any { it is Cfg } }
         }
     }
 
@@ -291,7 +291,7 @@ class EMConfig {
                 throw IllegalArgumentException("Changing number of max actions, but stopping criterion is time")
             }
             StoppingCriterion.FITNESS_EVALUATIONS -> if (maxTimeInSeconds != defaultMaxTimeInSeconds ||
-                    maxTime != defaultMaxTime) {
+                maxTime != defaultMaxTime) {
                 throw IllegalArgumentException("Changing max time, but stopping criterion is based on fitness evaluations")
             }
         }
@@ -313,16 +313,16 @@ class EMConfig {
         //resource related parameters
         if(problemType != ProblemType.DEFAULT) {
             if ((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
-                    && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)) {
+                && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)) {
                 throw IllegalArgumentException("Parameters (${
                     arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics", "exportDependencies")
-                            .filterIndexed { index, _ ->
-                                (index == 0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE) ||
-                                        (index == 1 && (probOfApplySQLActionToCreateResources > 0.0)) ||
-                                        (index == 2 && doesApplyNameMatching) ||
-                                        (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
-                                        (index == 4 && exportDependencies)
-                            }.joinToString(" and ")
+                        .filterIndexed { index, _ ->
+                            (index == 0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE) ||
+                                    (index == 1 && (probOfApplySQLActionToCreateResources > 0.0)) ||
+                                    (index == 2 && doesApplyNameMatching) ||
+                                    (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
+                                    (index == 4 && exportDependencies)
+                        }.joinToString(" and ")
                 }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
             }
         }
@@ -354,8 +354,8 @@ class EMConfig {
         }
 
         if ((outputFilePrefix.contains("-") || outputFileSuffix.contains("-"))
-                    && outputFormat.isJavaOrKotlin()) { //TODO also for C#?
-             throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
+            && outputFormat.isJavaOrKotlin()) { //TODO also for C#?
+            throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
         }
 
         if (seedTestCases && seedTestCasesPath.isNullOrBlank()) {
@@ -456,7 +456,7 @@ class EMConfig {
 
     private fun updateProperty(options: OptionSet, m: KMutableProperty<*>) {
         val opt = options.valueOf(m.name)?.toString()
-                ?: throw IllegalArgumentException("Value not found for property ${m.name}")
+            ?: throw IllegalArgumentException("Value not found for property ${m.name}")
 
         val returnType = m.returnType.javaType as Class<*>
 
@@ -487,7 +487,7 @@ class EMConfig {
 
                 } else if (returnType.isEnum) {
                     val valueOfMethod = returnType.getDeclaredMethod("valueOf",
-                            java.lang.String::class.java)
+                        java.lang.String::class.java)
                     m.setter.call(this, valueOfMethod.invoke(null, opt))
 
                 } else {
@@ -504,29 +504,29 @@ class EMConfig {
     fun experimentalFeatures(): List<String> {
 
         val properties = getConfigurationProperties()
-                .filter { it.annotations.find { it is Experimental } != null }
-                .filter {
-                    val returnType = it.returnType.javaType as Class<*>
-                    when {
-                        java.lang.Boolean.TYPE.isAssignableFrom(returnType) -> it.getter.call(this) as Boolean
-                        it.annotations.find { p -> p is Probability && p.activating } != null -> (it.getter.call(this) as Double) > 0
-                        else -> false
-                    }
+            .filter { it.annotations.find { it is Experimental } != null }
+            .filter {
+                val returnType = it.returnType.javaType as Class<*>
+                when {
+                    java.lang.Boolean.TYPE.isAssignableFrom(returnType) -> it.getter.call(this) as Boolean
+                    it.annotations.find { p -> p is Probability && p.activating } != null -> (it.getter.call(this) as Double) > 0
+                    else -> false
                 }
-                .map { it.name }
+            }
+            .map { it.name }
 
         val enums = getConfigurationProperties()
-                .filter {
-                    val returnType = it.returnType.javaType as Class<*>
-                    if (returnType.isEnum) {
-                        val e = it.getter.call(this)
-                        val f = returnType.getField(e.toString())
-                        f.annotations.find { it is Experimental } != null
-                    } else {
-                        false
-                    }
+            .filter {
+                val returnType = it.returnType.javaType as Class<*>
+                if (returnType.isEnum) {
+                    val e = it.getter.call(this)
+                    val f = returnType.getField(e.toString())
+                    f.annotations.find { it is Experimental } != null
+                } else {
+                    false
                 }
-                .map { "${it.name}=${it.getter.call(this)}" }
+            }
+            .map { "${it.name}=${it.getter.call(this)}" }
 
         return properties.plus(enums)
     }
@@ -569,13 +569,13 @@ class EMConfig {
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class Probability(
-            /**
-             * Specify if this probability would activate a functionality if greater than 0.
-             * If not, it might still not be used, depending on other configurations.
-             * This is mainly needed when dealing with @Experimental probabilities that must
-             * be put to 0 if they would activate a new feature that is still unstable
-             */
-            val activating: Boolean = true
+        /**
+         * Specify if this probability would activate a functionality if greater than 0.
+         * If not, it might still not be used, depending on other configurations.
+         * This is mainly needed when dealing with @Experimental probabilities that must
+         * be put to 0 if they would activate a new feature that is still unstable
+         */
+        val activating: Boolean = true
     )
 
 
@@ -597,11 +597,11 @@ class EMConfig {
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class Important(
-            /**
-             * The lower value, the more importance.
-             * This only impact of options are sorted when displayed
-             */
-            val priority: Double
+        /**
+         * The lower value, the more importance.
+         * This only impact of options are sorted when displayed
+         */
+        val priority: Double
     )
 
     @Target(AnnotationTarget.PROPERTY)
@@ -722,9 +722,9 @@ class EMConfig {
     var algorithm = Algorithm.MIO
 
     /**
-    * Workaround for issues with annotations that can not be applied on ENUM values,
-    * like @Experimental
-    * */
+     * Workaround for issues with annotations that can not be applied on ENUM values,
+     * like @Experimental
+     * */
     interface WithExperimentalOptions{
         fun isExperimental() : Boolean
     }
@@ -760,8 +760,8 @@ class EMConfig {
     var testSuiteSplitType = TestSuiteSplitType.CLUSTER
 
     @Cfg("Generate an executive summary, containing an example of each category of potential fault found." +
-                    "NOTE: This option is only meaningful when used in conjuction with clustering. " +
-                    "This is achieved by turning the option --testSuiteSplitType to CLUSTER")
+            "NOTE: This option is only meaningful when used in conjuction with clustering. " +
+            "This is achieved by turning the option --testSuiteSplitType to CLUSTER")
     var executiveSummary = true
 
     @Experimental

@@ -73,7 +73,7 @@ class TestSuiteWriter {
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
-        if (!config.outputFormat.isJavaScript()) {
+        if (! config.outputFormat.isJavaScript()) {
             /*
                 In Java/Kotlin/C# the tests are inside a class, but not in JS
              */
@@ -117,7 +117,7 @@ class TestSuiteWriter {
             lines.add(testLines)
         }
 
-        if (!config.outputFormat.isJavaScript()) {
+        if (! config.outputFormat.isJavaScript()) {
             lines.deindent()
         }
 
@@ -293,11 +293,7 @@ class TestSuiteWriter {
             }
 
             if (config.expectationsActive) {
-                addImport(
-                    "org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler",
-                    lines,
-                    true
-                )
+                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
                 addImport("io.restassured.path.json.JsonPath", lines)
                 addImport("java.util.Arrays", lines)
@@ -345,7 +341,7 @@ class TestSuiteWriter {
     }
 
     private fun classFields(lines: Lines, format: OutputFormat) {
-        if (format.isCsharp()) {
+        if(format.isCsharp()){
             lines.addEmpty()
             addStatement("private $fixtureClass $fixture", lines)
             lines.addEmpty()

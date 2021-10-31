@@ -35,34 +35,39 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         initPopulation()
     }
 
+
     override fun searchOnce() {
+
+
         val n = config.populationSize
-        //new generation
 
-        val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
-        while (nextPop.size < n) {
+            //new generation
 
-            val x = selection()
-            val y = selection()
-            //x and y are copied
+            val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
-            if (randomness.nextBoolean(config.xoverProbability)) {
-                xover(x, y)
+            while (nextPop.size < n) {
+
+                val x = selection()
+                val y = selection()
+                //x and y are copied
+
+                if (randomness.nextBoolean(config.xoverProbability)) {
+                    xover(x, y)
+                }
+                mutate(x)
+                mutate(y)
+
+                nextPop.add(x)
+                nextPop.add(y)
+
+                if (!time.shouldContinueSearch()) {
+                    break
+                }
             }
-            mutate(x)
-            mutate(y)
 
-            nextPop.add(x)
-            nextPop.add(y)
-
-            if (!time.shouldContinueSearch()) {
-                break
-            }
-        }
-
-        population.clear()
-        population.addAll(nextPop)
+            population.clear()
+            population.addAll(nextPop)
     }
 
     private fun mutate(wts: WtsEvalIndividual<T>) {

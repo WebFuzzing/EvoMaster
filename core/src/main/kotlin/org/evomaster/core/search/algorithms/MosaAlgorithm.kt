@@ -3,6 +3,7 @@ package org.evomaster.core.search.algorithms
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchAlgorithm
 import org.evomaster.core.logging.LoggingUtil
 import java.util.ArrayList
@@ -38,28 +39,32 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
     }
 
     override fun searchOnce() {
-        //new generation
+
+
         val n = config.populationSize
 
-        val nextPop: MutableList<Data> = mutableListOf()
 
-        while (nextPop.size < n-1) {
+            //new generation
 
-            var ind = selection()
+            val nextPop: MutableList<Data> = mutableListOf()
 
-            getMutatator().mutateAndSave(ind, archive)
-                ?.let{nextPop.add(Data(it))}
+            while (nextPop.size < n-1) {
 
-            if (!time.shouldContinueSearch()) {
-                break
+                var ind = selection()
+
+                getMutatator().mutateAndSave(ind, archive)
+                    ?.let{nextPop.add(Data(it))}
+
+                if (!time.shouldContinueSearch()) {
+                    break
+                }
             }
-        }
-        // generate one random solution
-        var ie = sampleIndividual()
-        nextPop.add(Data(ie as EvaluatedIndividual))
+            // generate one random solution
+            var ie = sampleIndividual()
+            nextPop.add(Data(ie as EvaluatedIndividual))
 
-        population.addAll(nextPop)
-        sortPopulation()
+            population.addAll(nextPop)
+            sortPopulation()
     }
 
 

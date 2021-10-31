@@ -28,11 +28,11 @@ class TestSuiteWriterTest{
         override fun configure() {
             //point here is to avoid connections to SUT...
             bind(TestCaseWriter::class.java)
-                    .to(RestTestCaseWriter::class.java)
-                    .asEagerSingleton()
+                .to(RestTestCaseWriter::class.java)
+                .asEagerSingleton()
 
             bind(PartialOracles::class.java)
-                    .asEagerSingleton()
+                .asEagerSingleton()
         }
     }
 
@@ -41,8 +41,8 @@ class TestSuiteWriterTest{
     fun testEmptySuite(){
 
         val injector = LifecycleInjector.builder()
-                .withModules(BaseModule(), ReducedModule())
-                .build().createInjector()
+            .withModules(BaseModule(), ReducedModule())
+            .build().createInjector()
 
         val config = injector.getInstance(EMConfig::class.java)
         config.createTests = true
@@ -52,12 +52,11 @@ class TestSuiteWriterTest{
         config.outputFileSuffix = ""
 
         val solution = Solution<RestIndividual>(
-                mutableListOf(),
-                config.outputFilePrefix,
-                config.outputFileSuffix,
-                Termination.NONE
+            mutableListOf(),
+            config.outputFilePrefix,
+            config.outputFileSuffix,
+            Termination.NONE
         )
-
 
 
         //make sure we delete any existing folder from previous test runs
@@ -67,13 +66,14 @@ class TestSuiteWriterTest{
         //this is what used by Maven and IntelliJ
         val testClassFolder = File("target/test-classes")
         val expectedCompiledFile = testClassFolder.toPath()
-                .resolve("${config.outputFilePrefix}.class")
-                .toFile()
+            .resolve("${config.outputFilePrefix}.class")
+            .toFile()
         expectedCompiledFile.delete()
         assertFalse(expectedCompiledFile.exists())
 
 
         val writer = injector.getInstance(TestSuiteWriter::class.java)
+
 
         //write the test suite
         writer.writeTests(solution, FakeController::class.qualifiedName!!)
@@ -82,10 +82,10 @@ class TestSuiteWriterTest{
         assertFalse(expectedCompiledFile.exists())
 
         CompilerForTestGenerated.compile(
-                OutputFormat.KOTLIN_JUNIT_5,
-                srcFolder,
-                testClassFolder
-                )
+            OutputFormat.KOTLIN_JUNIT_5,
+            srcFolder,
+            testClassFolder
+        )
 
         //now the compiled file should exist
         assertTrue(expectedCompiledFile.exists())
