@@ -15,6 +15,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.StatementClassReplacement.executeSql;
+
 public class PreparedStatementClassReplacement implements MethodReplacementClass {
 
     @Override
@@ -92,10 +94,15 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
         return sql;
     }
 
-
-    private static void handlePreparedStatement(PreparedStatement stmt) {
+    /**
+     *
+     * @param stmt a sql statement to be prepared
+     * @return a null if skip to handle the stmt
+     */
+    private static String handlePreparedStatement(PreparedStatement stmt) {
         if (stmt == null) {
             //nothing to do
+            return null;
         }
 
         String fullClassName = stmt.getClass().getName();
@@ -106,7 +113,7 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
                 this is likely a proxy/wrapper, so we can skip it, as anyway we are going to
                 intercept the call to the delegate
              */
-            return;
+            return null;
         }
 
         /*
@@ -138,27 +145,58 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             sql = extractSqlFromH2PreparedStatement(stmt);
         }
 
+        /*
+            handle db middleware, ie, zebra
+         */
+        if (fullClassName.startsWith("com.dianping.zebra")){
+            sql = extractSqlFromZebraPreparedStatement(stmt);
+        }
+
         //TODO see TODO in StatementClassReplacement
-        SqlInfo info = new SqlInfo(sql, false, false);
-        ExecutionTracer.addSqlInfo(info);
+//        SqlInfo info = new SqlInfo(sql, false, false);
+//        ExecutionTracer.addSqlInfo(info);
+        return sql;
     }
 
+    private static String extractSqlFromZebraPreparedStatement(PreparedStatement stmt) {
+
+        Class<?> klass = stmt.getClass();
+        String className = klass.getName();
+        if (!checkZebraPreparedStatement(className)) {
+            throw new IllegalArgumentException("Invalid type: " + className);
+        }
+
+        try {
+            Field cf = klass.getDeclaredField("sql");
+            cf.setAccessible(true);
+            String sql = (String) cf.get(stmt);
+            return sql;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static boolean checkZebraPreparedStatement(String className){
+        return className.equals("com.dianping.zebra.group.jdbc.GroupPreparedStatement") ||
+                className.equals("com.dianping.zebra.shard.jdbc.ShardPreparedStatement") ||
+                className.equals("com.dianping.zebra.single.jdbc.SinglePreparedStatement");
+    }
 
     @Replacement(type = ReplacementType.TRACKER, isPure = false)
     public static ResultSet executeQuery(PreparedStatement stmt) throws SQLException {
-        handlePreparedStatement(stmt);
-        return stmt.executeQuery();
+        String sql = handlePreparedStatement(stmt);
+        return executeSql(()-> stmt.executeQuery(), sql);
     }
 
     @Replacement(type = ReplacementType.TRACKER, isPure = false)
     public static int executeUpdate(PreparedStatement stmt) throws SQLException {
-        handlePreparedStatement(stmt);
-        return stmt.executeUpdate();
+        String sql = handlePreparedStatement(stmt);
+        return executeSql(()-> stmt.executeUpdate(), sql);
     }
 
     @Replacement(type = ReplacementType.TRACKER, isPure = false)
     public static boolean execute(PreparedStatement stmt) throws SQLException {
-        handlePreparedStatement(stmt);
-        return stmt.execute();
+        String sql = handlePreparedStatement(stmt);
+        return executeSql(()-> stmt.execute(), sql);
     }
 }

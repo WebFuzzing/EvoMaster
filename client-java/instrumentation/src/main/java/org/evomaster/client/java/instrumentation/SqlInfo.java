@@ -10,6 +10,8 @@ import java.util.Objects;
  */
 public class SqlInfo implements Serializable {
 
+
+    public static transient long FAILURE_EXTIME = -1L;
     /**
      * The actual SQL string with the command that was executed
      */
@@ -29,13 +31,21 @@ public class SqlInfo implements Serializable {
      */
     private final boolean exception;
 
-    //Maybe could check execution time as well here?
+    /**
+     * execution time
+     */
+    private final long executionTime;
 
 
     public SqlInfo(String command, boolean noResult, boolean exception) {
+        this(command, noResult, exception, FAILURE_EXTIME);
+    }
+
+    public SqlInfo(String command, boolean noResult, boolean exception, long executionTime) {
         this.command = command;
         this.noResult = noResult;
         this.exception = exception;
+        this.executionTime = executionTime;
     }
 
     public String getCommand() {
@@ -62,4 +72,9 @@ public class SqlInfo implements Serializable {
     public int hashCode() {
         return Objects.hash(command, noResult, exception);
     }
+
+    public long getExecutionTime() {
+        return executionTime;
+    }
+
 }
