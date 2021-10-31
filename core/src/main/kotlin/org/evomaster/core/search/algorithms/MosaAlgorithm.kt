@@ -53,7 +53,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 var ind = selection()
 
                 getMutatator().mutateAndSave(ind, archive)
-                    ?.let{nextPop.add(Data(it))}
+                        ?.let{nextPop.add(Data(it))}
 
                 if (!time.shouldContinueSearch()) {
                     break
@@ -108,8 +108,8 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         if (remain > 0 && front!=null && front.isNotEmpty()) {
             subvectorDominance(notCovered, front)
             var front2 = front.sortedWith(compareBy<Data> { - it.crowdingDistance })
-                .toMutableList()
-            for (k in 0..remain - 1) {
+                     .toMutableList()
+           for (k in 0..remain - 1) {
                 population.add(front2[k])
             } // for
 
@@ -246,7 +246,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             return -1
 
         else (dominatesY)
-        return +1
+            return +1
     }
 
     private fun mosaPreferenceCriterion(notCovered: Set<Int>, list: List<Data>): HashSet<Data> {
@@ -259,7 +259,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                     // recall: maximization problem
                     chosen = data
                 } else if (data.ind.fitness.getHeuristic(t) == chosen.ind.fitness.getHeuristic(t)
-                    && data.ind.individual.size() < chosen.ind.individual.size()){
+                            && data.ind.individual.size() < chosen.ind.individual.size()){
                     // Secondary criterion based on tests lengths
                     chosen = data
                 }
@@ -306,6 +306,6 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
     private fun sampleIndividual(): EvaluatedIndividual<T>? {
 
         return ff.calculateCoverage(sampler.sample())
-            ?.also { archive.addIfNeeded(it) }
+                ?.also { archive.addIfNeeded(it) }
     }
 }

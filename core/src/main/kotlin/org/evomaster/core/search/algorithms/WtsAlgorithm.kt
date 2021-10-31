@@ -90,7 +90,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 val ind = wts.suite[i]
 
                 getMutatator().mutateAndSave(ind, archive)
-                    ?.let { wts.suite[i] = it }
+                        ?.let { wts.suite[i] = it }
             }
         }
     }
