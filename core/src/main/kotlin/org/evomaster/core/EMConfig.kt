@@ -106,11 +106,11 @@ class EMConfig {
         }
 
         class ConfigDescription(
-            val text: String,
-            val constraints: String,
-            val enumExperimentalValues: String,
-            val enumValidValues: String,
-            val experimental: Boolean
+                val text: String,
+                val constraints: String,
+                val enumExperimentalValues: String,
+                val enumValidValues: String,
+                val experimental: Boolean
         ) {
             override fun toString(): String {
                 var description = text
