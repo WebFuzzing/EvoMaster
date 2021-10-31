@@ -543,17 +543,17 @@ class DbActionUtilsTest {
     @Test
     fun testSortTableBasedFk(){
         val idColumn = Column("Id", ColumnDataType.INTEGER, 10,
-                primaryKey = true,
-                autoIncrement = true,
-                unique = false,
-                databaseType = DatabaseType.H2)
+            primaryKey = true,
+            autoIncrement = true,
+            unique = false,
+            databaseType = DatabaseType.H2)
         val table0 = Table("Table0", setOf(idColumn), setOf())
 
         val fkColumn = Column("Id", ColumnDataType.INTEGER, 10,
-                primaryKey = true,
-                autoIncrement = false,
-                unique = false,
-                databaseType = DatabaseType.H2)
+            primaryKey = true,
+            autoIncrement = false,
+            unique = false,
+            databaseType = DatabaseType.H2)
         val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTable = table0.name)
         val table1 = Table("Table1", setOf(fkColumn), setOf(foreignKey))
 

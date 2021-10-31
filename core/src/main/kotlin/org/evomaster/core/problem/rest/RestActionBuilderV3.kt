@@ -189,10 +189,10 @@ object RestActionBuilderV3 {
 
 
     private fun extractParams(
-                verb: HttpVerb,
-                restPath: RestPath,
-                operation: Operation,
-                swagger: OpenAPI
+            verb: HttpVerb,
+            restPath: RestPath,
+            operation: Operation,
+            swagger: OpenAPI
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
@@ -200,17 +200,17 @@ object RestActionBuilderV3 {
         removeDuplicatedParams(operation)
                 .forEach { p ->
 
-                     if(p.`$ref` != null){
-                         val param = getLocalParameter(swagger, p.`$ref`)
-                         if(param == null){
-                             log.warn("Failed to handle: ${p.`$ref`}")
-                         } else {
-                             handleParam(param, swagger, params)
-                         }
-                     } else {
-                         handleParam(p, swagger, params)
-                     }
-                 }
+                    if(p.`$ref` != null){
+                        val param = getLocalParameter(swagger, p.`$ref`)
+                        if(param == null){
+                            log.warn("Failed to handle: ${p.`$ref`}")
+                        } else {
+                            handleParam(param, swagger, params)
+                        }
+                    } else {
+                        handleParam(p, swagger, params)
+                    }
+                }
 
         handleBodyPayload(operation, verb, restPath, swagger, params)
 
@@ -406,16 +406,16 @@ object RestActionBuilderV3 {
                     }
 
                     val data : MutableList<Int> = schema.enum
-                                .map{ if(it is String) it.toInt() else it as Int}
-                                .toMutableList()
+                            .map{ if(it is String) it.toInt() else it as Int}
+                            .toMutableList()
                     return EnumGene(name, data.apply { add(42) })
                 }
                 "number" -> {
                     //if (format == "double" || format == "float") {
                     //TODO: Is it always casted as Double even for Float??? Need test
                     val data : MutableList<Double> = schema.enum
-                                .map{ if(it is String) it.toDouble() else it as Double}
-                                .toMutableList()
+                            .map{ if(it is String) it.toDouble() else it as Double}
+                            .toMutableList()
                     return EnumGene(name, data.apply { add(42.0) })
                 }
                 else -> log.warn("Cannot handle enum of type: $type")
@@ -732,9 +732,9 @@ object RestActionBuilderV3 {
                                 swagger
                         )
                         when (model) {
-                                //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
-                                is ObjectGene -> modelCluster.put(it.component1(), (model as ObjectGene))
-                                is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
+                            //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
+                            is ObjectGene -> modelCluster.put(it.component1(), (model as ObjectGene))
+                            is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
                         }
 
                     }
