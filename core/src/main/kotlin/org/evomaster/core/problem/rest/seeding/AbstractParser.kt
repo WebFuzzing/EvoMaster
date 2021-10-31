@@ -25,12 +25,9 @@ abstract class AbstractParser(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractParser::class.java)
-        private const val WARN_REQ_PARAM_MISSING =
-            "Required parameter {} was not found in a seeded request. Ignoring and keeping the parameter..."
-        private const val WARN_WRONG_VALUE =
-            "Attempt to set {} parameter {} with non-{} value {}. Ignoring and keeping the parameter the same..."
-        private const val WARN_WRONG_DATE_TIME =
-            "Attempt to set {} parameter {} with invalid {} {}. Ignoring and keeping the parameter the same..."
+        private const val WARN_REQ_PARAM_MISSING = "Required parameter {} was not found in a seeded request. Ignoring and keeping the parameter..."
+        private const val WARN_WRONG_VALUE = "Attempt to set {} parameter {} with non-{} value {}. Ignoring and keeping the parameter the same..."
+        private const val WARN_WRONG_DATE_TIME = "Attempt to set {} parameter {} with invalid {} {}. Ignoring and keeping the parameter the same..."
         private const val WARN_WRONG_JSON = "Failed to parse parameter {} as JSON"
     }
 
@@ -75,11 +72,7 @@ abstract class AbstractParser(
             is ArrayGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is MapGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is CycleObjectGene -> updateGeneWithParameterValue(
-                gene,
-                paramName,
-                paramValue
-            ) // Same as ObjectGene, should it differ?
+            is CycleObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue) // Same as ObjectGene, should it differ?
 
             else -> {
                 // ImmutableDataHolderGene should never happen
@@ -168,7 +161,6 @@ abstract class AbstractParser(
             Instead, we check the format with a regular expression and see if year, month
             and day are between EvoMaster genes' constraints.
          */
-        // TODO: Automatically parse the regex and store values on the vals
         val dateRegex = Regex("^\\d{4}-\\d{2}-\\d{2}$")
         if (paramValue.matches(dateRegex)) {
             val year = paramValue.substring(0, 4).toInt()
@@ -240,11 +232,7 @@ abstract class AbstractParser(
         return updateGenesRecursivelyWithParameterValue(gene.gene, gene.name, paramValue)
     }
 
-    protected fun updateGeneWithParameterValue(
-        gene: DisruptiveGene<*>,
-        paramName: String,
-        paramValue: String
-    ): Boolean {
+    protected fun updateGeneWithParameterValue(gene: DisruptiveGene<*>, paramName: String, paramValue: String): Boolean {
         return updateGenesRecursivelyWithParameterValue(gene.gene, gene.gene.name, paramValue)
     }
 
@@ -253,7 +241,6 @@ abstract class AbstractParser(
             Here we may have an array as a query/header/path/cookie parameter
             or inside a request body. In the first case, we assume the values
             are comma-separated.
-
             TODO: Support more serialization options. This involves not only different
              separators other than ',' (e.g., '|' and ' '), but also different parsing
              of the request. For example, in query parameters it is possible to have
@@ -261,7 +248,6 @@ abstract class AbstractParser(
              to "/endpoint?param=a,b,c". However, for this, it would be necessary to
              look for the serialization 'style' and 'explode' properties in the Swagger.
              Reference: https://swagger.io/docs/specification/serialization/
-
             TODO: Support nested objects and arrays in non-body parameters
          */
 
@@ -295,7 +281,6 @@ abstract class AbstractParser(
             TODO: Support objects in query/header/path/cookie parameters. Unlike for
              the ArrayGene, here we don't support any kind of object in parameters
              other than body ones.
-
             TODO: Support XML?
          */
 
@@ -345,9 +330,9 @@ abstract class AbstractParser(
     }
 
     private fun getJsonifiedString(element: Any?): String? {
-        return when (element) {
+        return when(element) {
             null -> null
-            is ArrayList<*>, is HashMap<*, *> -> ObjectMapper().writeValueAsString(element)
+            is ArrayList<*>, is HashMap<*,*> -> ObjectMapper().writeValueAsString(element)
             else -> element.toString()
         }
     }
@@ -374,7 +359,7 @@ abstract class AbstractParser(
     }
 
     private fun addGeneToMapGene(gene: MapGene<*>, elementGene: Gene) {
-        when (elementGene) {
+        when(elementGene) {
             is StringGene -> (gene as MapGene<StringGene>).addElements(elementGene)
             is BooleanGene -> (gene as MapGene<BooleanGene>).addElements(elementGene)
             is DoubleGene -> (gene as MapGene<DoubleGene>).addElements(elementGene)

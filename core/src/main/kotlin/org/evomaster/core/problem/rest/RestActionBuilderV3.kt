@@ -435,10 +435,9 @@ object RestActionBuilderV3 {
         when (format?.lowercase()) {
             "int32" -> return IntegerGene(name, numericConstrains = numericConstrains)
             "int64" -> return LongGene(name, numericConstrains = numericConstrains)
-
             // "double" -> return DoubleGene(name, numericConstrains = numericConstrains)
             "double" -> return DoubleGene(name)
-            // "float" -> return FloatGene(name, numericConstrains = numericConstrain s)
+            // "float" -> return FloatGene(name, numericConstrains = numericConstrains)
             "float" -> return FloatGene(name)
             "password" -> return StringGene(name) //nothing special to do, it is just a hint
             "binary" -> return StringGene(name) //does it need to be treated specially?
@@ -490,10 +489,10 @@ object RestActionBuilderV3 {
                     }
                     val template = getGene(name + "_item", arrayType, swagger, history, referenceClassDef = null)
 
-                    // Could still have an empty []
-                    // if (template is CycleObjectGene) {
-                    //     return CycleObjectGene("<array> ${template.name}")
-                    // }
+                    //Could still have an empty []
+//                    if (template is CycleObjectGene) {
+//                        return CycleObjectGene("<array> ${template.name}")
+//                    }
                     return ArrayGene(name, template)
                 } else {
                     LoggingUtil.uniqueWarn(log, "Invalid 'array' definition for '$name'")
@@ -504,7 +503,7 @@ object RestActionBuilderV3 {
                 return createObjectGene(name, schema, swagger, history, referenceClassDef)
             }
 
-            "file" -> return StringGene(name) // TODO: file is a hack. I want to find a more elegant way of dealing with it (BMR)
+            "file" -> return StringGene(name) //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
         }
 
         if (name == "body" && schema.properties?.isNotEmpty() == true) {
@@ -758,6 +757,7 @@ object RestActionBuilderV3 {
     }
 
 }
+
 
 class NumericConstrains(
     min: BigDecimal? = null, max: BigDecimal? = null, exclusiveMinimum: Boolean? = null,

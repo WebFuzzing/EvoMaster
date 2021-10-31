@@ -25,9 +25,9 @@ fun complete(numericConstrains: NumericConstrains?): NumericConstrains {
 }
 
 class IntegerGene(
-    name: String,
-    value: Int = 0,
-    numericConstrains: NumericConstrains? = null
+        name: String,
+        value: Int = 0,
+        numericConstrains: NumericConstrains? = null
 ) : NumberGene<Int>(name, value, complete(numericConstrains)) {
 
 

@@ -26,7 +26,8 @@ class LongGene(
     }
 
     override fun copyContent(): Gene {
-        return LongGene(name, value, numericConstrains)
+        val copy = LongGene(name, value, numericConstrains)
+        return copy
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -40,16 +41,12 @@ class LongGene(
             return
         }
 
-        var k = when {
-            randomness.nextBoolean(0.1) -> {
-                randomness.nextLong()
-            }
-            randomness.nextBoolean(0.1) -> {
-                randomness.nextInt().toLong()
-            }
-            else -> {
-                randomness.nextInt(1000).toLong()
-            }
+        var k = if (randomness.nextBoolean(0.1)) {
+            randomness.nextLong()
+        } else if (randomness.nextBoolean(0.1)) {
+            randomness.nextInt().toLong()
+        } else {
+            randomness.nextInt(1000).toLong()
         }
 
         while (forceNewValue && k == value) {
@@ -61,7 +58,7 @@ class LongGene(
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
         if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
             if (additionalGeneMutationInfo.hasHistory()){
                 try {
                     additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
