@@ -431,10 +431,11 @@ object RestActionBuilderV3 {
         )
 
 
-        // first check for "optional" format
-        when (format) {
+        //first check for "optional" format
+        when (format?.lowercase()) {
             "int32" -> return IntegerGene(name, numericConstrains = numericConstrains)
-             "int64" -> return LongGene(name, numericConstrains = numericConstrains)
+            "int64" -> return LongGene(name, numericConstrains = numericConstrains)
+
             // "double" -> return DoubleGene(name, numericConstrains = numericConstrains)
             "double" -> return DoubleGene(name)
             // "float" -> return FloatGene(name, numericConstrains = numericConstrain s)
@@ -450,10 +451,10 @@ object RestActionBuilderV3 {
         }
 
         /*
-            If a format is not defined, the type should default to
-            the JSON Schema definition
-        */
-        when (type) {
+                If a format is not defined, the type should default to
+                the JSON Schema definition
+         */
+        when (type?.lowercase()) {
             "integer" -> return IntegerGene(name, numericConstrains = numericConstrains)
             // "number" -> return DoubleGene(name, numericConstrains = numericConstrains)
             "number" -> return DoubleGene(name)

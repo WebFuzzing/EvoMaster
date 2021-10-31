@@ -87,6 +87,13 @@ public class SqlHandler {
             return;
         }
 
+        numberOfSqlCommands++;
+
+        if(! ParserUtils.canParseSqlStatement(sql)){
+            SimpleLogger.warn("Cannot handle SQL statement: " + sql);
+            return;
+        }
+
         buffer.add(sql);
 
         if (isSelect(sql)) {
@@ -99,7 +106,6 @@ public class SqlHandler {
             mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));
         }
 
-        numberOfSqlCommands++;
     }
 
     public ExecutionDto getExecutionDto() {
@@ -128,18 +134,19 @@ public class SqlHandler {
 
         buffer.stream()
                 .forEach(sql -> {
-                    /*
-                        Note: even if the Connection we got to analyze
-                        the DB is using P6Spy, that would not be a problem,
-                        as output SQL would not end up on the buffer instance
-                        we are iterating on (copy on write), and we clear
-                        the buffer after this loop.
-                     */
                     if (isSelect(sql) || isDelete(sql) || isUpdate(sql)) {
-                        double dist = computeDistance(sql);
+                        double dist;
+                        try {
+                             dist = computeDistance(sql);
+                        }catch (Exception e){
+                            SimpleLogger.error("FAILED TO COMPUTE HEURISTICS FOR SQL: " + sql);
+                            //assert false; //TODO put back once we update JSqlParser
+                            return;
+                        }
                         distances.add(new PairCommandDistance(sql, dist));
                     }
                 });
+
         //side effects on buffer is not important, as it is just a cache
         buffer.clear();
 

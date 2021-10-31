@@ -751,11 +751,45 @@ object GraphQLActionBuilder {
          */
         params.map { it.gene }.forEach { GeneUtils.preventCycles(it, true) }
 
+        /*
+        In some cases object gene (optional or not) with all fields as cycle object gene (optional or not) are generated.
+        So we need to deactivate it by looking into its ancestors (e.g., Optional set to false, Array set length to 0)
+         */
+        params.map { it.gene }.forEach {
+
+            when {
+                it is ObjectGene -> it.flatView().forEach { g ->
+                    if (g is OptionalGene && g.gene is ObjectGene) handleAllCyclesInObjectFields(g.gene) else if (g is ObjectGene) handleAllCyclesInObjectFields(g)
+                }
+                it is OptionalGene && it.gene is ObjectGene -> it.flatView().forEach { g ->
+                    if (g is OptionalGene && g.gene is ObjectGene) handleAllCyclesInObjectFields(g.gene) else if (g is ObjectGene) handleAllCyclesInObjectFields(g)
+                }
+                it is ArrayGene<*> && it.template is ObjectGene -> it.flatView().forEach { g ->
+                    it.template.fields.forEach { f -> if (f is OptionalGene && f.gene is ObjectGene) handleAllCyclesInObjectFields(f.gene) else if (f is ObjectGene) handleAllCyclesInObjectFields(f) }
+                }
+                it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is ObjectGene -> it.flatView().forEach { g ->
+                    it.gene.template.fields.forEach { f -> if (f is OptionalGene && f.gene is ObjectGene) handleAllCyclesInObjectFields(f.gene) else if (f is ObjectGene) handleAllCyclesInObjectFields(f) } }
+            }
+        }
+
         //Create the action
         val action = GraphQLAction(actionId, methodName, type, params)
         actionCluster[action.getName()] = action
 
     }
+
+    fun handleAllCyclesInObjectFields(gene: ObjectGene) {
+
+        if (gene.fields.all {
+                    (it is OptionalGene && it.gene is CycleObjectGene) ||
+                            (it is CycleObjectGene)
+
+                }) {
+            GeneUtils.tryToPreventSelection(gene)
+        }
+    }
+
+
 
     private fun extractParams(
         state: TempState,

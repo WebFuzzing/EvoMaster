@@ -23,7 +23,7 @@ class GQLCycleEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
                 "GQL_CycleEM",
                 "org.foo.graphql.CycleEM",
-                20
+                100
         ) { args: MutableList<String> ->
 
             args.add("--problemType")

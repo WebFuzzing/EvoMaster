@@ -46,7 +46,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         System.setOut(new PrintStream(new ByteArrayOutputStream()));
 
         try {
-            ExecutionDto dto = executeCommand(starter, "Delete FROM Foo");
+            ExecutionDto dto = executeCommand(starter, "Delete FROM Foo", true);
 
             assertNotNull(dto);
             assertNotNull(dto.deletedData);
@@ -66,7 +66,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
         try {
-            ExecutionDto dto = executeCommand(starter, "insert into Foo (x) values (42)");
+            ExecutionDto dto = executeCommand(starter, "insert into Foo (x) values (42)", true);
 
             assertNotNull(dto);
             assertNotNull(dto.insertedData);
@@ -87,7 +87,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
         try {
-            ExecutionDto dto = executeCommand(starter, "update Foo set x=42");
+            ExecutionDto dto = executeCommand(starter, "update Foo set x=42", true);
 
             assertNotNull(dto);
             assertNotNull(dto.updatedData);
@@ -100,7 +100,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
     }
 
 
-    default ExecutionDto executeCommand(InstrumentedSutStarter starter, String sqlCommand) throws SQLException {
+    default ExecutionDto executeCommand(InstrumentedSutStarter starter, String sqlCommand, boolean instrumented) throws SQLException {
         String url = startInstrumentedSutStarterAndNewTest(starter);
         ExecutionDto dto = getSqlExecutionDto(0, url);
 
@@ -108,7 +108,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
 
         startNewActionInSameTest(url, 1);
 
-        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand, instrumented);
 
         return getSqlExecutionDto(1, url);
     }
