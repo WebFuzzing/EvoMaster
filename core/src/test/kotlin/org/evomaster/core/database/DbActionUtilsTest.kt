@@ -22,16 +22,16 @@ class DbActionUtilsTest {
     fun testMultiColumnPrimaryKey() {
 
         val x = Column("x", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = false,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false,
+                databaseType = DatabaseType.H2)
 
         val y = Column("y", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = false,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false,
+                databaseType = DatabaseType.H2)
 
         val tableName = "ATable"
         val table = Table(tableName, setOf(x, y), setOf())
@@ -80,16 +80,16 @@ class DbActionUtilsTest {
             x as PK. but as it is easy to support, we just handle it
          */
         val x = Column("x", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = false,
-            unique = true,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = false,
+                unique = true,
+                databaseType = DatabaseType.H2)
 
         val y = Column("y", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = false,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false,
+                databaseType = DatabaseType.H2)
 
         val tableName = "ATable"
         val table = Table(tableName, setOf(x, y), setOf())
@@ -133,7 +133,7 @@ class DbActionUtilsTest {
     fun testNotRepeatedStringValues() {
 
         val uniqueColumn = Column("uniqueColumn", ColumnDataType.VARCHAR, 10, unique = true,
-            databaseType = DatabaseType.H2)
+                databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
@@ -157,7 +157,7 @@ class DbActionUtilsTest {
     fun testNotUniqueColumn() {
 
         val uniqueColumn = Column("uniqueColumn", ColumnDataType.VARCHAR, 10, unique = false,
-            databaseType = DatabaseType.H2)
+                databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
@@ -182,7 +182,7 @@ class DbActionUtilsTest {
     fun testRepeatedStringValues() {
 
         val uniqueColumn = Column("uniqueColumn", ColumnDataType.VARCHAR, 10, unique = true,
-            databaseType = DatabaseType.H2)
+                databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
@@ -211,7 +211,7 @@ class DbActionUtilsTest {
     fun testRepeatedStringValuesNoAttempts() {
 
         val uniqueColumn = Column("uniqueColumn", ColumnDataType.VARCHAR, 10, unique = true,
-            databaseType = DatabaseType.H2)
+                databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
@@ -239,7 +239,7 @@ class DbActionUtilsTest {
     fun testRepeatedBooleanValues() {
 
         val uniqueColumn = Column("uniqueColumn", ColumnDataType.BOOLEAN, 1, unique = true,
-            databaseType = DatabaseType.H2)
+                databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
@@ -267,7 +267,7 @@ class DbActionUtilsTest {
     fun testRepeatedIntegerValues() {
 
         val uniqueColumn = Column("uniqueColumn", ColumnDataType.INTEGER, 11, unique = true,
-            databaseType = DatabaseType.H2)
+                databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
@@ -307,7 +307,7 @@ class DbActionUtilsTest {
     fun testUnrecoverableActionList() {
 
         val uniqueColumn = Column("uniqueColumn", ColumnDataType.BOOLEAN, 1, unique = true,
-            databaseType = DatabaseType.H2)
+                databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
@@ -343,9 +343,9 @@ class DbActionUtilsTest {
     fun testPrimaryKey() {
 
         val uniqueColumn = Column("uniqueColumn", ColumnDataType.INTEGER, 11,
-            unique = false,
-            primaryKey = true,
-            databaseType = DatabaseType.H2)
+                unique = false,
+                primaryKey = true,
+                databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
@@ -375,9 +375,9 @@ class DbActionUtilsTest {
     fun testUniqueAutoIncrementPrimaryKey() {
 
         val uniqueColumn = Column("Id", ColumnDataType.INTEGER, 11,
-            unique = true,
-            autoIncrement = true,
-            databaseType = DatabaseType.H2)
+                unique = true,
+                autoIncrement = true,
+                databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(uniqueColumn), HashSet<ForeignKey>())
 
@@ -399,18 +399,18 @@ class DbActionUtilsTest {
     @Test
     fun testForeignKeyColumn() {
         val idColumn = Column("Id", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = false,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false,
+                databaseType = DatabaseType.H2)
 
         val table0 = Table("Table0", setOf(idColumn), setOf())
 
         val fkColumn = Column("Id", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = false,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false,
+                databaseType = DatabaseType.H2)
 
         val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTable = table0.name)
 
@@ -443,18 +443,18 @@ class DbActionUtilsTest {
     @Test
     fun testForeignKeyToAutoIncrement() {
         val idColumn = Column("Id", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = true,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = true,
+                unique = false,
+                databaseType = DatabaseType.H2)
 
         val table0 = Table("Table0", setOf(idColumn), setOf())
 
         val fkColumn = Column("Id", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = false,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false,
+                databaseType = DatabaseType.H2)
 
         val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTable = table0.name)
 
@@ -485,18 +485,18 @@ class DbActionUtilsTest {
     @Test
     fun testDuplicatedForeignKeyToAutoIncrement() {
         val idColumn = Column("Id", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = true,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = true,
+                unique = false,
+                databaseType = DatabaseType.H2)
 
         val table0 = Table("Table0", setOf(idColumn), setOf())
 
         val fkColumn = Column("Id", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = false,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false,
+                databaseType = DatabaseType.H2)
 
         val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTable = table0.name)
 
@@ -543,17 +543,17 @@ class DbActionUtilsTest {
     @Test
     fun testSortTableBasedFk(){
         val idColumn = Column("Id", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = true,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = true,
+                unique = false,
+                databaseType = DatabaseType.H2)
         val table0 = Table("Table0", setOf(idColumn), setOf())
 
         val fkColumn = Column("Id", ColumnDataType.INTEGER, 10,
-            primaryKey = true,
-            autoIncrement = false,
-            unique = false,
-            databaseType = DatabaseType.H2)
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false,
+                databaseType = DatabaseType.H2)
         val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTable = table0.name)
         val table1 = Table("Table1", setOf(fkColumn), setOf(foreignKey))
 

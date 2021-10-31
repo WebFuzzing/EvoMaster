@@ -19,8 +19,8 @@ import java.util.regex.Pattern
  * operation) and the Swagger specification.
  */
 abstract class AbstractParser(
-    protected val defaultRestCallActions: List<RestCallAction>,
-    protected val swagger: OpenAPI
+        protected val defaultRestCallActions: List<RestCallAction>,
+        protected val swagger: OpenAPI
 ) : Parser {
 
     companion object {
@@ -217,8 +217,8 @@ abstract class AbstractParser(
         val dateTimeRegex = "^(\\d{4}-\\d{2}-\\d{2})[ T](\\d{2}:\\d{2}:\\d{2}(.\\d{3}Z)?)$"
         if (paramValue.matches(Regex(dateTimeRegex))) {
             val matcher = Pattern
-                .compile(dateTimeRegex)
-                .matcher(paramValue)
+                    .compile(dateTimeRegex)
+                    .matcher(paramValue)
             matcher.find()
             updateGeneWithParameterValue(gene.date, paramName, matcher.group(1))
             updateGeneWithParameterValue(gene.time, paramName, matcher.group(2))
@@ -241,6 +241,7 @@ abstract class AbstractParser(
             Here we may have an array as a query/header/path/cookie parameter
             or inside a request body. In the first case, we assume the values
             are comma-separated.
+
             TODO: Support more serialization options. This involves not only different
              separators other than ',' (e.g., '|' and ' '), but also different parsing
              of the request. For example, in query parameters it is possible to have
@@ -248,6 +249,7 @@ abstract class AbstractParser(
              to "/endpoint?param=a,b,c". However, for this, it would be necessary to
              look for the serialization 'style' and 'explode' properties in the Swagger.
              Reference: https://swagger.io/docs/specification/serialization/
+
             TODO: Support nested objects and arrays in non-body parameters
          */
 
@@ -281,6 +283,7 @@ abstract class AbstractParser(
             TODO: Support objects in query/header/path/cookie parameters. Unlike for
              the ArrayGene, here we don't support any kind of object in parameters
              other than body ones.
+
             TODO: Support XML?
          */
 

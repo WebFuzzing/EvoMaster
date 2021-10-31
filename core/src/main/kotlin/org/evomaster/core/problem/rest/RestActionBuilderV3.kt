@@ -142,23 +142,23 @@ object RestActionBuilderV3 {
 
 
     private fun handleOperation(
-        actionCluster: MutableMap<String, Action>,
-        verb: HttpVerb,
-        restPath: RestPath,
-        operation: Operation,
-        swagger: OpenAPI,
-        doParseDescription: Boolean) {
+            actionCluster: MutableMap<String, Action>,
+            verb: HttpVerb,
+            restPath: RestPath,
+            operation: Operation,
+            swagger: OpenAPI,
+            doParseDescription: Boolean) {
 
         val params = extractParams(verb, restPath, operation, swagger)
         repairParams(params, restPath)
 
         val produces = operation.responses?.values //different response objects based on HTTP code
-            ?.filter { it.content != null && it.content.isNotEmpty() }
-            //each response can have different media-types
-            ?.flatMap { it.content.keys }
-            ?.toSet() // remove duplicates
-            ?.toList()
-            ?: listOf()
+                ?.filter { it.content != null && it.content.isNotEmpty() }
+                //each response can have different media-types
+                ?.flatMap { it.content.keys }
+                ?.toSet() // remove duplicates
+                ?.toList()
+                ?: listOf()
 
         val actionId = "$verb$restPath${idGenerator.incrementAndGet()}"
         val action = RestCallAction(actionId, verb, restPath, params, produces = produces)
@@ -189,28 +189,28 @@ object RestActionBuilderV3 {
 
 
     private fun extractParams(
-        verb: HttpVerb,
-        restPath: RestPath,
-        operation: Operation,
-        swagger: OpenAPI
+                verb: HttpVerb,
+                restPath: RestPath,
+                operation: Operation,
+                swagger: OpenAPI
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
 
         removeDuplicatedParams(operation)
-            .forEach { p ->
+                .forEach { p ->
 
-                if(p.`$ref` != null){
-                    val param = getLocalParameter(swagger, p.`$ref`)
-                    if(param == null){
-                        log.warn("Failed to handle: ${p.`$ref`}")
-                    } else {
-                        handleParam(param, swagger, params)
-                    }
-                } else {
-                    handleParam(p, swagger, params)
-                }
-            }
+                     if(p.`$ref` != null){
+                         val param = getLocalParameter(swagger, p.`$ref`)
+                         if(param == null){
+                             log.warn("Failed to handle: ${p.`$ref`}")
+                         } else {
+                             handleParam(param, swagger, params)
+                         }
+                     } else {
+                         handleParam(p, swagger, params)
+                     }
+                 }
 
         handleBodyPayload(operation, verb, restPath, swagger, params)
 
@@ -284,11 +284,11 @@ object RestActionBuilderV3 {
     }
 
     private fun handleBodyPayload(
-        operation: Operation,
-        verb: HttpVerb,
-        restPath: RestPath,
-        swagger: OpenAPI,
-        params: MutableList<Param>) {
+            operation: Operation,
+            verb: HttpVerb,
+            restPath: RestPath,
+            swagger: OpenAPI,
+            params: MutableList<Param>) {
 
         if (operation.requestBody == null) {
             return
@@ -354,11 +354,11 @@ object RestActionBuilderV3 {
     }
 
     private fun getGene(
-        name: String,
-        schema: Schema<*>,
-        swagger: OpenAPI,
-        history: Deque<String> = ArrayDeque<String>(),
-        referenceClassDef: String?
+            name: String,
+            schema: Schema<*>,
+            swagger: OpenAPI,
+            history: Deque<String> = ArrayDeque<String>(),
+            referenceClassDef: String?
     ): Gene {
 
         if (!schema.`$ref`.isNullOrBlank()) {
@@ -399,23 +399,23 @@ object RestActionBuilderV3 {
                 "integer" -> {
                     if (format == "int64") {
                         val data : MutableList<Long> = schema.enum
-                            .map{ if(it is String) it.toLong() else it as Long}
-                            .toMutableList()
+                                .map{ if(it is String) it.toLong() else it as Long}
+                                .toMutableList()
 
                         return EnumGene(name, (data).apply { add(42L) })
                     }
 
                     val data : MutableList<Int> = schema.enum
-                        .map{ if(it is String) it.toInt() else it as Int}
-                        .toMutableList()
+                                .map{ if(it is String) it.toInt() else it as Int}
+                                .toMutableList()
                     return EnumGene(name, data.apply { add(42) })
                 }
                 "number" -> {
                     //if (format == "double" || format == "float") {
                     //TODO: Is it always casted as Double even for Float??? Need test
                     val data : MutableList<Double> = schema.enum
-                        .map{ if(it is String) it.toDouble() else it as Double}
-                        .toMutableList()
+                                .map{ if(it is String) it.toDouble() else it as Double}
+                                .toMutableList()
                     return EnumGene(name, data.apply { add(42.0) })
                 }
                 else -> log.warn("Cannot handle enum of type: $type")
@@ -528,8 +528,8 @@ object RestActionBuilderV3 {
 
         val fields = schema.properties?.entries?.map {
             possiblyOptional(
-                getGene(it.key, it.value, swagger, history, referenceClassDef = null),
-                schema.required?.contains(it.key)
+                    getGene(it.key, it.value, swagger, history, referenceClassDef = null),
+                    schema.required?.contains(it.key)
             )
         } ?: listOf()
 
@@ -695,7 +695,7 @@ object RestActionBuilderV3 {
                     " were found in the schema"
             LoggingUtil.getInfoLogger().error(msg)
             endpointsToSkip.filter { !skipped.contains(it) }
-                .forEach { LoggingUtil.getInfoLogger().warn("Missing endpoint: $it") }
+                    .forEach { LoggingUtil.getInfoLogger().warn("Missing endpoint: $it") }
             throw SutProblemException(msg)
         }
 
@@ -726,18 +726,18 @@ object RestActionBuilderV3 {
 
         if (swagger.components?.schemas != null) {
             swagger.components.schemas
-                .forEach {
-                    val model = createObjectFromReference(it.key,
-                        it.component1(),
-                        swagger
-                    )
-                    when (model) {
-                        //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
-                        is ObjectGene -> modelCluster.put(it.component1(), (model as ObjectGene))
-                        is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
-                    }
+                    .forEach {
+                        val model = createObjectFromReference(it.key,
+                                it.component1(),
+                                swagger
+                        )
+                        when (model) {
+                                //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
+                                is ObjectGene -> modelCluster.put(it.component1(), (model as ObjectGene))
+                                is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
+                        }
 
-                }
+                    }
         }
     }
 
