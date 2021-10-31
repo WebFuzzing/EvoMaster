@@ -386,6 +386,11 @@ public class EMController {
             /*
                 Note: it is important that extra is computed before AdditionalInfo,
                 as heuristics on SQL might add new entries to String specializations
+
+                FIXME actually the String specialization would work only on Embedded, and
+                not on External :(
+                But, as anyway we are going to refactor it in Core at a later point, no need
+                to waste time for a tmp workaround
              */
             dto.extraHeuristics = noKillSwitch(() -> sutController.getExtraHeuristics());
 
