@@ -42,7 +42,7 @@ class LongGene(
         }
 
         var k = if (randomness.nextBoolean(0.1)) {
-            randomness.nextLong()
+                randomness.nextLong()
         } else if (randomness.nextBoolean(0.1)) {
             randomness.nextInt().toLong()
         } else {
