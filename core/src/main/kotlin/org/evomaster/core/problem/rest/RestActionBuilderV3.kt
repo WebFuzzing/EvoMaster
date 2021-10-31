@@ -60,48 +60,48 @@ object RestActionBuilderV3 {
         val basePath = getBasePathFromURL(swagger)
 
         swagger.paths
-            .filter { e ->
-                if (endpointsToSkip.contains(e.key)) {
-                    skipped.add(e.key)
-                    false
-                } else {
-                    true
+                .filter { e ->
+                    if (endpointsToSkip.contains(e.key)) {
+                        skipped.add(e.key)
+                        false
+                    } else {
+                        true
+                    }
                 }
-            }
-            .forEach { e ->
+                .forEach { e ->
 
-                /*
-                    In V2 there that a "host" and "basePath".
-                    In V3, this was replaced by a "servers" list of URLs.
-                    The "paths" are then appended to such URLs, which works
-                    like a "host+basePath"
-                 */
+                    /*
+                        In V2 there that a "host" and "basePath".
+                        In V3, this was replaced by a "servers" list of URLs.
+                        The "paths" are then appended to such URLs, which works
+                        like a "host+basePath"
+                     */
 
-                val restPath = RestPath(if (basePath == "/") e.key else (basePath + e.key))
+                    val restPath = RestPath(if (basePath == "/") e.key else (basePath + e.key))
 
-                if (e.value.`$ref` != null) {
-                    //TODO
-                    log.warn("Currently cannot handle \$ref: ${e.value.`$ref`}")
+                    if (e.value.`$ref` != null) {
+                        //TODO
+                        log.warn("Currently cannot handle \$ref: ${e.value.`$ref`}")
+                    }
+
+                    if (e.value.parameters != null && e.value.parameters.isNotEmpty()) {
+                        //TODO
+                        log.warn("Currently cannot handle 'path-scope' parameters")
+                    }
+
+                    if (!e.value.description.isNullOrBlank()) {
+                        //TODO should we do something with it for doParseDescription?
+                    }
+
+                    if (e.value.get != null) handleOperation(actionCluster, HttpVerb.GET, restPath, e.value.get, swagger, doParseDescription)
+                    if (e.value.post != null) handleOperation(actionCluster, HttpVerb.POST, restPath, e.value.post, swagger, doParseDescription)
+                    if (e.value.put != null) handleOperation(actionCluster, HttpVerb.PUT, restPath, e.value.put, swagger, doParseDescription)
+                    if (e.value.patch != null) handleOperation(actionCluster, HttpVerb.PATCH, restPath, e.value.patch, swagger, doParseDescription)
+                    if (e.value.options != null) handleOperation(actionCluster, HttpVerb.OPTIONS, restPath, e.value.options, swagger, doParseDescription)
+                    if (e.value.delete != null) handleOperation(actionCluster, HttpVerb.DELETE, restPath, e.value.delete, swagger, doParseDescription)
+                    if (e.value.trace != null) handleOperation(actionCluster, HttpVerb.TRACE, restPath, e.value.trace, swagger, doParseDescription)
+                    if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head, swagger, doParseDescription)
                 }
-
-                if (e.value.parameters != null && e.value.parameters.isNotEmpty()) {
-                    //TODO
-                    log.warn("Currently cannot handle 'path-scope' parameters")
-                }
-
-                if (!e.value.description.isNullOrBlank()) {
-                    //TODO should we do something with it for doParseDescription?
-                }
-
-                if (e.value.get != null) handleOperation(actionCluster, HttpVerb.GET, restPath, e.value.get, swagger, doParseDescription)
-                if (e.value.post != null) handleOperation(actionCluster, HttpVerb.POST, restPath, e.value.post, swagger, doParseDescription)
-                if (e.value.put != null) handleOperation(actionCluster, HttpVerb.PUT, restPath, e.value.put, swagger, doParseDescription)
-                if (e.value.patch != null) handleOperation(actionCluster, HttpVerb.PATCH, restPath, e.value.patch, swagger, doParseDescription)
-                if (e.value.options != null) handleOperation(actionCluster, HttpVerb.OPTIONS, restPath, e.value.options, swagger, doParseDescription)
-                if (e.value.delete != null) handleOperation(actionCluster, HttpVerb.DELETE, restPath, e.value.delete, swagger, doParseDescription)
-                if (e.value.trace != null) handleOperation(actionCluster, HttpVerb.TRACE, restPath, e.value.trace, swagger, doParseDescription)
-                if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head, swagger, doParseDescription)
-            }
 
         checkSkipped(skipped, endpointsToSkip, actionCluster)
     }

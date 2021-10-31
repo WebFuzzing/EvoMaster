@@ -188,7 +188,7 @@ class DbActionGeneBuilder {
     private fun handleYearColumn(column: Column): Gene {
         // Year(2) is not supported by mysql 8.0
         if (column.size == 2)
-            return IntegerGene(column.name, 16, NumericConstrains(0, 99))
+            return IntegerGene(column.name,16, NumericConstrains(0, 99))
 
         return IntegerGene(column.name, 2016, NumericConstrains(1901, 2155))
     }
@@ -368,20 +368,17 @@ class DbActionGeneBuilder {
     fun buildSqlTimestampGene(name: String): DateTimeGene {
         return DateTimeGene(
                 name = name,
-                date = DateGene(
-                    "date",
+                date = DateGene("date",
                     year = IntegerGene("year", 2016, NumericConstrains(1900, 2100)),
                     month = IntegerGene("month", 3, NumericConstrains(1, 12)),
                     day = IntegerGene("day", 12, NumericConstrains(1, 31)),
-                    onlyValidDates = true
-                ),
-                time = TimeGene(
-                    "time",
+                    onlyValidDates = true),
+                time = TimeGene("time",
                     hour = IntegerGene("hour", 0, NumericConstrains(0, 23)),
                     minute = IntegerGene("minute", 0, NumericConstrains(0, 59)),
                     second = IntegerGene("second", 0, NumericConstrains(0, 59))
                 ),
-                dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
+                dateTimeGeneFormat =  DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
         )
 
     }
