@@ -113,4 +113,12 @@ public abstract class ResourceMIOHWTestBase extends ResourceTestBase {
         args.add(""+applyName);
     }
 
+    protected void seedTestConfig(List<String> args){
+        args.add("--seedTestCases");
+        args.add("true");
+
+        args.add("--seedTestCasesPath");
+        args.add("src/test/resources/postman/resource.postman_collection.json");
+    }
+
 }

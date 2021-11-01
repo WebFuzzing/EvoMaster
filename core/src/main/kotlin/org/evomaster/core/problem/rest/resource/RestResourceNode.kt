@@ -411,11 +411,15 @@ class RestResourceNode(
     }
 
 
-    private fun handleHeadLocation(actions: List<RestCallAction>){
-        if (actions.size == 1) return
-        (1 until actions.size).reversed().forEach { i->
+    private fun handleHeadLocation(actions: List<RestCallAction>) : RestCallAction{
+
+        if (actions.size == 1) return actions.first()
+
+        (1 until actions.size).forEach { i->
             handleHeaderLocation(actions[i-1], actions[i])
         }
+
+        return actions.last()
     }
 
     private fun handleHeaderLocation(post: RestCallAction, target: RestCallAction){
@@ -459,12 +463,15 @@ class RestResourceNode(
         val results = mutableListOf<RestCallAction>()
         var status = ResourceStatus.NOT_NEEDED
         val first = ats.first()
+        var lastPost:RestCallAction? = null
         if (first == HttpVerb.POST){
             val post = getPostChain()
             if (post == null)
                 status = ResourceStatus.NOT_FOUND
             else{
                 results.addAll(post.createPostChain(randomness))
+                // handle header location
+                lastPost = handleHeadLocation(results)
                 if (!post.isComplete())
                     status = ResourceStatus.NOT_FOUND_DEPENDENT
                 else{
@@ -476,17 +483,20 @@ class RestResourceNode(
         }
 
         if (ats.size == 2){
-            results.add(createActionByVerb(ats[1], randomness))
+            val action = createActionByVerb(ats[1], randomness)
+            if (lastPost != null)
+                handleHeaderLocation(lastPost, action)
+            results.add(action)
         }else if (ats.size > 2){
             throw IllegalStateException("the size of action with $template should be less than 2, but it is ${ats.size}")
         }
 
-        // handle header location
-        handleHeadLocation(results)
-
         //append extra patch
         if (ats.last() == HttpVerb.PATCH && results.size +1 <= maxTestSize && randomness.nextBoolean(PROB_EXTRA_PATCH)){
-            results.add(results.last().copy() as RestCallAction)
+            val second =  results.last().copy() as RestCallAction
+            if (lastPost != null)
+                handleHeaderLocation(lastPost, second)
+            results.add(second)
         }
 
         if (results.size > maxTestSize){
@@ -827,6 +837,10 @@ class RestResourceNode(
                     (first() as PostCreationChain).confirmFailure()
             }
         }
+    }
+
+    override fun toString(): String {
+        return getName()
     }
 }
 

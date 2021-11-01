@@ -288,8 +288,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         }
         if (evaluatedMutation.isEffective()){
             /*
-                worse mutated might be added into archive if there exist space in population.
-                in this case, we only attempt to add individual into archive when it is not worse than current
+                we only attempt to add individual into archive when it is not worse than current
              */
             archive.addIfNeeded(mutated)
             return mutated
