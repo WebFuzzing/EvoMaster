@@ -33,11 +33,6 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-client-database-spy</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-instrumentation</artifactId>
             <version>${project.version}</version>
         </dependency>
