@@ -24,6 +24,6 @@ public class H2CheckPreparedStatementTest extends DatabaseH2TestInit{
 
         String res = PreparedStatementClassReplacement.extractSqlFromH2PreparedStatement(stmt);
 
-        assertEquals("SELECT * FROM Foo WHERE x=42 AND y='BAR' AND z=FALSE", res);
+        assertEquals("ELECT * FROM Foo WHERE x = 42 AND y = 'BAR' AND z = FALSE", res);
     }
 }
