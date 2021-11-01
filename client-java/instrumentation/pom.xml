@@ -34,6 +34,11 @@
             <artifactId>asm-commons</artifactId>
         </dependency>
 
+        <!--  handle sql command      -->
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>

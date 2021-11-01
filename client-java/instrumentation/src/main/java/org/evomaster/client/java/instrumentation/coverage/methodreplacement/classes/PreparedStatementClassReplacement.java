@@ -1,10 +1,15 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
-import org.evomaster.client.java.instrumentation.SqlInfo;
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.expression.JdbcParameter;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.util.deparser.ExpressionDeParser;
+import net.sf.jsqlparser.util.deparser.SelectDeParser;
+import net.sf.jsqlparser.util.deparser.StatementDeParser;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
-import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.Field;
@@ -71,13 +76,15 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
                     })
                     .collect(Collectors.toList());
 
-            return interpolateSqlString(sql, params);
+            return interpolateSqlStringWithJSqlParser(sql, params);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    // replaced by interpolateSqlStringWithJSqlParser
+    @Deprecated
     public static String interpolateSqlString(String sql, List<String> params) {
 
         long replacements = sql.chars().filter(it -> it=='?').count();
@@ -92,6 +99,41 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
         }
 
         return sql;
+    }
+
+
+    /**
+     * inspired by this example from https://stackoverflow.com/questions/46890089/how-can-i-purify-a-sql-query-and-replace-all-parameters-with-using-regex
+     * @param sql is an original sql command which might contain comments or be dynamic sql with parameters
+     * @param params are parameters which exists in the [sql]
+     * @return a interpolated sql.
+     * note that comments could also be removed with this function.
+     *
+     */
+    public static String interpolateSqlStringWithJSqlParser(String sql, List<String> params) {
+        StringBuilder sqlbuffer = new StringBuilder();
+
+        ExpressionDeParser expDeParser = new ExpressionDeParser() {
+            @Override
+            public void visit(JdbcParameter parameter) {
+                int index = parameter.getIndex();
+                this.getBuffer().append(params.get(index-1));
+            }
+        };
+        SelectDeParser selectDeparser = new SelectDeParser(expDeParser, sqlbuffer);
+        expDeParser.setSelectVisitor(selectDeparser);
+        expDeParser.setBuffer(sqlbuffer);
+        StatementDeParser stmtDeparser = new StatementDeParser(expDeParser, selectDeparser, sqlbuffer);
+
+        try {
+            Statement stmt = CCJSqlParserUtil.parse(sql);
+            stmt.accept(stmtDeparser);
+            return stmtDeparser.getBuffer().toString();
+        } catch (Exception e) {
+            // catch all kinds of exception here since there might exist problems in processing params
+            SimpleLogger.error("EvoMaster ERROR. Could not handle"+ sql + " with an error message :"+e.getMessage());
+            return null;
+        }
     }
 
     /**
