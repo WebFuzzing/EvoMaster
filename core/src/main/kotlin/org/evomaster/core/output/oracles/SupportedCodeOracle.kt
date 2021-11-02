@@ -113,7 +113,7 @@ class SupportedCodeOracle : ImplementedOracle() {
         val gens = individual.evaluatedActions().any {
             !supportedCode(it.action as RestCallAction, it.result as HttpWsCallResult)
         }
-        return false
+        return gens
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
