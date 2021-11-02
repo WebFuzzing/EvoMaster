@@ -1,6 +1,5 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
-import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.JdbcParameter;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
@@ -154,8 +153,10 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
 
         String fullClassName = stmt.getClass().getName();
         if (fullClassName.startsWith("com.zaxxer.hikari.pool") ||
-        fullClassName.startsWith("org.apache.tomcat.jdbc.pool") ||
-        fullClassName.startsWith("com.sun.proxy")) {
+                fullClassName.startsWith("org.apache.tomcat.jdbc.pool") ||
+                fullClassName.startsWith("com.sun.proxy") ||
+                checkZebraPreparedStatementWrapper(fullClassName) // zebra
+        ) {
             /*
                 this is likely a proxy/wrapper, so we can skip it, as anyway we are going to
                 intercept the call to the delegate
@@ -219,43 +220,40 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             cf.setAccessible(true);
             String sql = (String) cf.get(stmt);
 
-            if (className.equals("com.dianping.zebra.group.jdbc.GroupPreparedStatement") ||
-                    className.equals("com.dianping.zebra.single.jdbc.SinglePreparedStatement")){
-                Field paramfields = klass.getDeclaredField("params");
-                paramfields.setAccessible(true);
-                List<?> paramsValues = (List<?>) paramfields.get(stmt);
-                params = paramsValues.stream().map(p->{
-                            try {
-                                Method gvsm = p.getClass().getDeclaredMethod("getValues");
-                                gvsm.setAccessible(true);
-                                Object[] values = (Object[]) gvsm.invoke(p);
+            Field paramfields = klass.getDeclaredField("params");
+            paramfields.setAccessible(true);
+            List<?> paramsValues = (List<?>) paramfields.get(stmt);
+            params = paramsValues.stream().map(p->{
+                try {
+                    Method gvsm = p.getClass().getDeclaredMethod("getValues");
+                    gvsm.setAccessible(true);
+                    Object[] values = (Object[]) gvsm.invoke(p);
 
-                                /*
-                                    refer to https://dev.mysql.com/doc/refman/8.0/en/working-with-null.html
-                                 */
-                                if (values == null || values.length == 0)
-                                    return "NULL";
+                    /*
+                        refer to https://dev.mysql.com/doc/refman/8.0/en/working-with-null.html
+                     */
+                    if (values == null || values.length == 0)
+                        return "NULL";
 
-                                if (values.length == 1){
-                                    Object value = values[0];
-                                    if (value instanceof String){
-                                        return "'"+ value + "'";
-                                    }else if (value instanceof Number){
-                                        return value.toString();
-                                    }else {
-                                        SimpleLogger.error("EvoMaster ERROR. Could not handle param type in Zebra:"+value.getClass().getSimpleName());
-                                        return null;
-                                    }
-                                }else{
-                                    SimpleLogger.error("EvoMaster ERROR. Could not handle param which contains more than values");
-                                    return null;
-                                }
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
+                    if (values.length == 1){
+                        Object value = values[0];
+                        if (value instanceof String){
+                            return "'"+ value + "'";
+                        }else if (value instanceof Number){
+                            return value.toString();
+                        }else {
+                            SimpleLogger.error("EvoMaster ERROR. Could not handle param type in Zebra:"+value.getClass().getName());
+                            return null;
+                        }
+                    }else{
+                        SimpleLogger.error("EvoMaster ERROR. Could not handle param which contains more than values");
+                        return null;
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
 
-                        }).collect(Collectors.toList());;
-            }
+            }).collect(Collectors.toList());
 
             return interpolateSqlStringWithJSqlParser(sql, params);
         } catch (Exception e) {
@@ -263,10 +261,13 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
         }
     }
 
-    private static boolean checkZebraPreparedStatement(String className){
+    private static boolean checkZebraPreparedStatementWrapper(String className){
         return className.equals("com.dianping.zebra.group.jdbc.GroupPreparedStatement") ||
-                className.equals("com.dianping.zebra.shard.jdbc.ShardPreparedStatement") ||
-                className.equals("com.dianping.zebra.single.jdbc.SinglePreparedStatement");
+                className.equals("com.dianping.zebra.shard.jdbc.ShardPreparedStatement") ;
+    }
+
+    private static boolean checkZebraPreparedStatement(String className){
+        return className.equals("com.dianping.zebra.single.jdbc.SinglePreparedStatement");
     }
 
     @Replacement(type = ReplacementType.TRACKER, isPure = false)
