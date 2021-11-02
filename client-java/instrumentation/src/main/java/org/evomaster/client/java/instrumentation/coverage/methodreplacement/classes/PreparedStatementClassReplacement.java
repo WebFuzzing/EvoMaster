@@ -225,7 +225,7 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             List<?> paramsValues = (List<?>) paramfields.get(stmt);
             params = paramsValues.stream().map(p->{
                 try {
-                    Method gvsm = p.getClass().getDeclaredMethod("getValues");
+                    Method gvsm = p.getClass().getMethod("getValues");
                     gvsm.setAccessible(true);
                     Object[] values = (Object[]) gvsm.invoke(p);
 
