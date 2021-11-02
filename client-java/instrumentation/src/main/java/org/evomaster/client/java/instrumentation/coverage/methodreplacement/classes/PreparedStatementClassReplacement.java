@@ -193,11 +193,9 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             sql = extractSqlFromH2PreparedStatement(stmt);
         }
 
-        /*
-            handle db middleware, ie, zebra
-         */
+        // just check whether there exist any new update
         if (fullClassName.startsWith("com.dianping.zebra")){
-            sql = extractSqlFromZebraPreparedStatement(stmt);
+            throw new IllegalArgumentException("unsupported type for zebra: " + fullClassName);
         }
 
         //TODO see TODO in StatementClassReplacement
@@ -206,68 +204,10 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
         return sql;
     }
 
-    private static String extractSqlFromZebraPreparedStatement(PreparedStatement stmt) {
-
-        Class<?> klass = stmt.getClass();
-        String className = klass.getName();
-        if (!checkZebraPreparedStatement(className)) {
-            throw new IllegalArgumentException("unsupported type for zebra: " + className);
-        }
-
-        List<String> params = null;
-        try {
-            Field cf = klass.getDeclaredField("sql");
-            cf.setAccessible(true);
-            String sql = (String) cf.get(stmt);
-
-            Field paramfields = klass.getDeclaredField("params");
-            paramfields.setAccessible(true);
-            List<?> paramsValues = (List<?>) paramfields.get(stmt);
-            params = paramsValues.stream().map(p->{
-                try {
-                    Method gvsm = p.getClass().getMethod("getValues");
-                    gvsm.setAccessible(true);
-                    Object[] values = (Object[]) gvsm.invoke(p);
-
-                    /*
-                        refer to https://dev.mysql.com/doc/refman/8.0/en/working-with-null.html
-                     */
-                    if (values == null || values.length == 0)
-                        return "NULL";
-
-                    if (values.length == 1){
-                        Object value = values[0];
-                        if (value instanceof String){
-                            return "'"+ value + "'";
-                        }else if (value instanceof Number){
-                            return value.toString();
-                        }else {
-                            SimpleLogger.error("EvoMaster ERROR. Could not handle param type in Zebra:"+value.getClass().getName());
-                            return null;
-                        }
-                    }else{
-                        SimpleLogger.error("EvoMaster ERROR. Could not handle param which contains more than values");
-                        return null;
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-
-            }).collect(Collectors.toList());
-
-            return interpolateSqlStringWithJSqlParser(sql, params);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static boolean checkZebraPreparedStatementWrapper(String className){
         return className.equals("com.dianping.zebra.group.jdbc.GroupPreparedStatement") ||
-                className.equals("com.dianping.zebra.shard.jdbc.ShardPreparedStatement") ;
-    }
-
-    private static boolean checkZebraPreparedStatement(String className){
-        return className.equals("com.dianping.zebra.single.jdbc.SinglePreparedStatement");
+                className.equals("com.dianping.zebra.shard.jdbc.ShardPreparedStatement") ||
+                className.equals("com.dianping.zebra.single.jdbc.SinglePreparedStatement");
     }
 
     @Replacement(type = ReplacementType.TRACKER, isPure = false)
