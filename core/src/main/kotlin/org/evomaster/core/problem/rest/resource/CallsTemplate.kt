@@ -19,4 +19,6 @@ class CallsTemplate (
         var sizeAssured : Boolean= !template.contains("POST")
 ){
         fun isSingleAction() = !RestResourceTemplateHandler.isNotSingleAction(template)
+
+        override fun toString() = template
 }

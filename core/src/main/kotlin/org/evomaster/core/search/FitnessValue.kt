@@ -63,7 +63,7 @@ class FitnessValue(
      *
      * Value -> info on how the SQL database was accessed
      */
-    private val databaseExecutions: MutableMap<Int, DatabaseExecution> = mutableMapOf()
+    val databaseExecutions: MutableMap<Int, DatabaseExecution> = mutableMapOf()
 
     /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate

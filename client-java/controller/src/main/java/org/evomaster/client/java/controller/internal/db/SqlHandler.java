@@ -7,8 +7,10 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.instrumentation.SqlInfo;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -43,6 +45,7 @@ public class SqlHandler {
     private final Map<String, Set<String>> insertedData;
     private final Map<String, Set<String>> failedWhere;
     private final List<String> deletedData;
+    private final List<SqlExecutionLogDto> executedInfo;
 
     private int numberOfSqlCommands;
 
@@ -60,6 +63,7 @@ public class SqlHandler {
         insertedData = new ConcurrentHashMap<>();
         failedWhere = new ConcurrentHashMap<>();
         deletedData = new CopyOnWriteArrayList<>();
+        executedInfo = new CopyOnWriteArrayList<>();
 
         calculateHeuristics = true;
         numberOfSqlCommands = 0;
@@ -73,6 +77,8 @@ public class SqlHandler {
         insertedData.clear();
         failedWhere.clear();
         deletedData.clear();
+        executedInfo.clear();
+
         numberOfSqlCommands = 0;
     }
 
@@ -80,10 +86,26 @@ public class SqlHandler {
         this.connection = connection;
     }
 
+    /**
+     * handle executed sql info
+     * @param sql to be handled
+     */
+    public void handle(SqlInfo sql) {
+        executedInfo.add(new SqlExecutionLogDto(sql.getCommand(), sql.getExecutionTime()));
+        handle(sql.getCommand());
+    }
+
     public void handle(String sql) {
         Objects.requireNonNull(sql);
 
         if(!calculateHeuristics && !extractSqlExecution){
+            return;
+        }
+
+        numberOfSqlCommands++;
+
+        if(! ParserUtils.canParseSqlStatement(sql)){
+            SimpleLogger.warn("Cannot handle SQL statement: " + sql);
             return;
         }
 
@@ -99,7 +121,6 @@ public class SqlHandler {
             mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));
         }
 
-        numberOfSqlCommands++;
     }
 
     public ExecutionDto getExecutionDto() {
@@ -115,7 +136,7 @@ public class SqlHandler {
         executionDto.updatedData.putAll(updatedData);
         executionDto.deletedData.addAll(deletedData);
         executionDto.numberOfSqlCommands = this.numberOfSqlCommands;
-
+        executionDto.sqlExecutionLogDtoList.addAll(executedInfo);
         return executionDto;
     }
 
@@ -128,18 +149,19 @@ public class SqlHandler {
 
         buffer.stream()
                 .forEach(sql -> {
-                    /*
-                        Note: even if the Connection we got to analyze
-                        the DB is using P6Spy, that would not be a problem,
-                        as output SQL would not end up on the buffer instance
-                        we are iterating on (copy on write), and we clear
-                        the buffer after this loop.
-                     */
                     if (isSelect(sql) || isDelete(sql) || isUpdate(sql)) {
-                        double dist = computeDistance(sql);
+                        double dist;
+                        try {
+                             dist = computeDistance(sql);
+                        }catch (Exception e){
+                            SimpleLogger.error("FAILED TO COMPUTE HEURISTICS FOR SQL: " + sql);
+                            //assert false; //TODO put back once we update JSqlParser
+                            return;
+                        }
                         distances.add(new PairCommandDistance(sql, dist));
                     }
                 });
+
         //side effects on buffer is not important, as it is just a cache
         buffer.clear();
 
