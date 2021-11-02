@@ -119,10 +119,7 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
                 @Override
                 public void visit(JdbcParameter parameter) {
                     int index = parameter.getIndex();
-                    String value = params.get(index-1);
-                    if (value == null)
-                        value = "?";
-                    this.getBuffer().append(value);
+                    this.getBuffer().append(params.get(index-1));
                 }
             };
             SelectDeParser selectDeparser = new SelectDeParser(expDeParser, sqlbuffer);
@@ -135,7 +132,7 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             return stmtDeparser.getBuffer().toString();
         } catch (Exception e) {
             // catch all kinds of exception here since there might exist problems in processing params
-            SimpleLogger.error("EvoMaster ERROR. Could not handle"+ sql + " with an error message :"+e.getMessage());
+            SimpleLogger.error("EvoMaster ERROR. Could not handle "+ sql + " with an error message :"+e.getMessage());
             return sql;
         }
     }
