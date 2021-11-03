@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.internal;
 
+import com.sun.xml.internal.bind.v2.TODO;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
@@ -11,6 +12,7 @@ import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.GraphQlProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
@@ -180,7 +182,10 @@ public class EMController {
             GraphQlProblem p = (GraphQlProblem) info;
             dto.graphQLProblem = new GraphQLProblemDto();
             dto.graphQLProblem.endpoint = p.getEndpoint();
-        }else {
+        } else if(info instanceof RPCProblem){
+            RPCProblem rpcp = (RPCProblem) info;
+            //TODO
+        } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
