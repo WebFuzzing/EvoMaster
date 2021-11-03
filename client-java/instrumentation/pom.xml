@@ -148,6 +148,10 @@
                                     <pattern>dk.brics.automaton</pattern>
                                     <shadedPattern>shaded.dk.brics.automaton</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>com.github.jsqlparser</pattern>
+                                    <shadedPattern>shaded.com.github.jsqlparser</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
