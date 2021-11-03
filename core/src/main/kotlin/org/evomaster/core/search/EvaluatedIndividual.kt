@@ -430,6 +430,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         impactInfo!!.impactsOfStructure.countImpact(next, sizeChanged, noImpactTargets= noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
 
         if (impactInfo is ResourceImpactOfIndividual){
+            // count impact of changing size of resource
             impactInfo.countResourceSizeImpact(previous as RestIndividual, current = next.individual as RestIndividual, noImpactTargets= noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
         }
     }

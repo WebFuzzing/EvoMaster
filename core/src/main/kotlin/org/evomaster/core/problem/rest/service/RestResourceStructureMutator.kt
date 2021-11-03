@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
@@ -93,12 +94,39 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      * @param minSQLSize is a minimum number of db actions in order to apply the mutation
      */
     enum class MutationType(val minSize: Int, val minSQLSize : Int = 0){
+        /**
+         * remove a resource
+         */
         DELETE(2),
+
+        /**
+         * swap two resources
+         */
         SWAP(2),
+
+        /**
+         * add a new resource
+         */
         ADD(1),
+
+        /**
+         * replace current resource with another one
+         */
         REPLACE(1),
+
+        /**
+         * change a resource with different resource template
+         */
         MODIFY(1),
+
+        /**
+         * remove insertions to table
+         */
         SQL_REMOVE(1, 1),
+
+        /**
+         * add insertions to table
+         */
         SQL_ADD(1, 1)
     }
 
@@ -291,7 +319,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             }
         }
 
-        assert(sizeOfCalls == ind.getResourceCalls().size - 1)
+        Lazy.assert { sizeOfCalls == ind.getResourceCalls().size - 1 }
     }
 
     /**
