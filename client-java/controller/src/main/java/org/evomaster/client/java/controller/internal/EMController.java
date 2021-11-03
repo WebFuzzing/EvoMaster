@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.internal;
 
-import com.sun.xml.internal.bind.v2.TODO;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
