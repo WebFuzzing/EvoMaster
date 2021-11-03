@@ -19,4 +19,10 @@ public class RestProblemDto {
      * are not so interesting to test, and they can be very expensive to run.
      */
     public List<String> endpointsToSkip;
+
+    /**
+     * Full schema of the OpenAPI, as a text. If this is specified, then openApiUrl
+     * should not be set
+     */
+    public String openApiSchema;
 }

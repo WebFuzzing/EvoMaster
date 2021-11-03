@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
@@ -55,10 +56,20 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
-        val swaggerURL = infoDto.restProblem?.openApiUrl
-                ?: throw IllegalStateException("Missing information about the Swagger URL")
+        val problem = infoDto.restProblem
+                ?: throw java.lang.IllegalStateException("Missing problem definition object")
 
-        swagger = OpenApiAccess.getOpenAPI(swaggerURL)
+        val openApiURL = problem.openApiUrl
+        val openApiSchema = problem.openApiSchema
+
+        if(!openApiURL.isNullOrBlank()) {
+            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL)
+        } else if(! openApiSchema.isNullOrBlank()){
+            swagger = OpenApiAccess.getOpenApi(openApiSchema)
+        } else {
+            throw SutProblemException("No info on the OpenAPI schema was provided")
+        }
+
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
@@ -141,7 +152,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     private fun initForBlackBox() {
 
-        swagger = OpenApiAccess.getOpenAPI(configuration.bbSwaggerUrl)
+        swagger = OpenApiAccess.getOpenAPIFromURL(configuration.bbSwaggerUrl)
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }

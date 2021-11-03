@@ -182,6 +182,7 @@ public class EMController {
             dto.restProblem = new RestProblemDto();
             dto.restProblem.openApiUrl = rp.getOpenApiUrl();
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
+            dto.restProblem.openApiSchema = rp.getOpenApiSchema();
 
         } else if (info instanceof GraphQlProblem) {
             GraphQlProblem p = (GraphQlProblem) info;

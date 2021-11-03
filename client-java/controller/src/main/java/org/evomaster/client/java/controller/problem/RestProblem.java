@@ -55,4 +55,8 @@ public class RestProblem implements ProblemInfo{
     public List<String> getEndpointsToSkip() {
         return endpointsToSkip;
     }
+
+    public String getOpenApiSchema() {
+        return openApiSchema;
+    }
 }
