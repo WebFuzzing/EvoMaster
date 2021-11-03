@@ -308,20 +308,9 @@ object GeneUtils {
 
         for (c in cycles) {
 
-            var p = c.parent
-            loop@ while (p != null) {
-                when (p) {
-                    is OptionalGene -> {
-                        p.forbidSelection(); break@loop
-                    }
-                    is ArrayGene<*> -> {
-                        p.forceToOnlyEmpty(); break@loop
-                    }
-                    else -> p = p.parent
-                }
-            }
+            val prevented = tryToPreventSelection(c)
 
-            if (p == null) {
+            if (!prevented) {
                 val msg = "Could not prevent cycle in ${gene.name} gene"
                 if (force) {
                     throw RuntimeException(msg)
@@ -329,6 +318,26 @@ object GeneUtils {
                 log.warn(msg)
             }
         }
+    }
+
+    fun tryToPreventSelection(gene: Gene) : Boolean{
+        var p = gene.parent
+
+        loop@ while (p != null) {
+            when (p) {
+                is OptionalGene -> {
+                    p.forbidSelection()
+                    break@loop
+                }
+                is ArrayGene<*> -> {
+                    p.forceToOnlyEmpty()
+                    break@loop
+                }
+                else -> p = p.parent
+            }
+        }
+
+        return p != null
     }
 
     fun hasNonHandledCycles(gene: Gene): Boolean {
@@ -423,7 +432,10 @@ object GeneUtils {
             throw IllegalArgumentException("There should be at least 1 field, and they must be all optional or boolean")
         }
 
-        val selected = obj.fields.filter { (it is OptionalGene && it.isActive) || (it is BooleanGene && it.value) }
+        //it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template !is CycleObjectGene &&
+        val selected = obj.fields.filter {
+                ( (it is OptionalGene && it.isActive) ||
+                    (it is BooleanGene && it.value)) }
 
         if (selected.isNotEmpty()) {
             //it is fine, but we still need to make sure selected objects are fine
@@ -494,6 +506,13 @@ object GeneUtils {
         }
     }
 
+    fun isGraphQLModes(mode: EscapeMode?) = mode == EscapeMode.BOOLEAN_SELECTION_MODE ||
+            mode == EscapeMode.BOOLEAN_SELECTION_NESTED_MODE ||
+            mode == EscapeMode.GQL_INPUT_MODE ||
+            mode == EscapeMode.GQL_INPUT_ARRAY_MODE ||
+            mode == EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE ||
+            mode == EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE ||
+            mode == EscapeMode.GQL_STR_VALUE
 
 }
 

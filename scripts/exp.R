@@ -147,10 +147,12 @@ checkData <- function(name){
       cat("Project", proj, "\n")
       mask = dt$id == proj & dt$maxActionEvaluations == bud
 
+      data = dt$coveredTargets[mask]
+
       seconds = dt$elapsedSeconds[mask]
       cat("Time (seconds):", mean(seconds), "\n")
       cat("Runs: ", length(seconds), "\n")
-      cat("Coverage targets: ", mean(dt$coveredTargets[mask]), "\n")
+      cat("Coverage targets: ", mean(data), "(",min(data),"-",max(data),") \n")
       cat("\n\n")
     }
 

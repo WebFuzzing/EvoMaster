@@ -1,7 +1,6 @@
 package com.foo.graphql.db
 
 import com.foo.graphql.SpringController
-import com.p6spy.engine.spy.P6SpyDriver
 import org.evomaster.client.java.controller.db.DbCleaner
 import org.hibernate.dialect.H2Dialect
 import org.springframework.boot.SpringApplication
@@ -21,6 +20,8 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
              */
             System.setProperty("h2.objectCache", "false")
         }
+
+        private var dbID = 0
     }
 
     var dbconnection : Connection? = null
@@ -29,13 +30,12 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
     override fun startSut(): String {
         //lot of problem if using same H2 instance. see:
         //https://github.com/h2database/h2database/issues/227
-        val rand = nextInt()
+        val rand = dbID++ //nextInt()
 
         ctx = SpringApplication.run(applicationClass,
             "--server.port=0",
             "--graphql.tools.schema-location-pattern=**/${schemaName()}",
-            "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;",
-            "--spring.datasource.driver-class-name=" + P6SpyDriver::class.java.name,
+            "--spring.datasource.url=jdbc:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;",
             "--spring.jpa.database-platform=" + H2Dialect::class.java.name,
             "--spring.datasource.username=sa",
             "--spring.datasource.password",

@@ -57,4 +57,10 @@ public @interface Replacement {
      * in the third-party libraries.
      */
     UsageFilter usageFilter() default UsageFilter.ANY;
+
+    /**
+     * Whether the method has side-effects. This is important to chech if we can
+     * call it more than once without worries of changing a state
+     */
+    boolean isPure() default true;
 }
