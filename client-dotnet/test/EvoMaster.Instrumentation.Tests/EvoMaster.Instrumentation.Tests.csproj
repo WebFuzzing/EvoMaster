@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-<!--        <ProjectReference Include="..\..\src\EvoMaster.Instrumentation\EvoMaster.Instrumentation.csproj"/>-->
+        <!--        <ProjectReference Include="..\..\src\EvoMaster.Instrumentation\EvoMaster.Instrumentation.csproj"/>-->
         <ProjectReference Include="..\EvoMaster.Instrumentation.Examples\EvoMaster.Instrumentation.Examples.csproj"/>
     </ItemGroup>
 
@@ -31,28 +31,38 @@
         <None Remove="bin-temp\**"/>
     </ItemGroup>
 
+
+    <ItemGroup>
+        <TempDirectory Include="$(ProjectDir)bin-temp"/>
+        <OutputContent Include="$(OutputPath)*"/>
+        <TestRuntimeConfig Include="$(OutputPath)EvoMaster.Instrumentation.Tests.runtimeconfig.json"/>
+        <InstrumentationRuntimeConfig Include="$(OutputPath)EvoMaster.Instrumentation.runtimeconfig.json"/>
+    </ItemGroup>
+
     <Target Name="Instrument" AfterTargets="Build">
+        <!-- Remove temp folder in case it exists to make sure everything gets updated -->
+        <RemoveDir Directories="@(TempDirectory)"/>
+        <Copy SourceFiles="@(OutputContent)" DestinationFolder="@(TempDirectory)"/>
         
-        <!-- Remove temp folder in case it exists -->
-        <Exec Command="rm -rf $(ProjectDir)bin-temp"/>
-        <!-- Copy generated files after build into the temp directory, then generate the instrumented dll -->
-        <Exec Command="cp -a $(OutputPath). $(ProjectDir)bin-temp"/>
-        <!-- Run the instrumentation and specify bin-temp as output directory, 
-        but first create a runtimeconfig.json since it is needed for EvoMaster.Instrumentation.dll to be runnable -->
-        <Exec Command="cd $(OutputPath);cp EvoMaster.Instrumentation.Tests.runtimeconfig.json EvoMaster.Instrumentation.runtimeconfig.json;
-    dotnet EvoMaster.Instrumentation.dll $(ProjectDir)bin-temp/EvoMaster.Instrumentation.Examples.dll $(ProjectDir)bin-temp"/>
+        <!-- create a runtimeconfig.json because it is needed for EvoMaster.Instrumentation.dll to be runnable -->
+        <Copy SourceFiles="@(TestRuntimeConfig)" DestinationFiles="@(InstrumentationRuntimeConfig)"/>
 
-        <!-- Remove the non-instrumented SUT's dll since it prevents the execution of the instrumented dll as intended (no idea why so far)
-             Then rename the runtimeconfig.json to make the newly generated instrumented dll runnable-->
-        <Exec Command="cd $(ProjectDir)bin-temp;
-     rm EvoMaster.Instrumentation.Examples.dll EvoMaster.Instrumentation.Examples;
-      cp EvoMaster.Instrumentation.Tests.runtimeconfig.json InstrumentedSut.runtimeconfig.json;"/>
-
-        <!-- Fill the bin directory with contents from the temp folder -->
-        <Exec Command="rm -rf $(OutputPath)*;cp -a $(ProjectDir)bin-temp/. $(OutputPath)"/>
-        <!-- Rename the InstrumentedSut to the original name of the SUT (and its runtimeconfig.json as well)  -->
-        <Exec Command="cd $(OutputPath);mv InstrumentedSut.runtimeconfig.json EvoMaster.Instrumentation.Examples.runtimeconfig.json;mv InstrumentedSut.dll EvoMaster.Instrumentation.Examples.dll"/>
-        
+        <!-- Run the instrumentation and specify bin-temp as output directory -->
+        <Exec Command="cd $(OutputPath);
+                       dotnet EvoMaster.Instrumentation.dll @(TempDirectory)/EvoMaster.Instrumentation.Examples.dll @(TempDirectory)"/>
     </Target>
 
+    
+    <!-- This section is for enabling the test methods pass. The actual instrumentation is done before-->
+    <ItemGroup>
+        <TempContent Include="$(ProjectDir)bin-temp/."/>
+    </ItemGroup>
+    <Target Name="TestInstrumentation" AfterTargets="Build">
+        <!-- Fill the bin directory with contents from the temp folder -->
+        <Delete Files="@(OutputContent)"/>
+        <Exec Command="cp -a @(TempContent) $(OutputPath)"/>
+        <!-- Rename the InstrumentedSut to the original name of the SUT (and its runtimeconfig.json as well)  -->
+        <Exec Command="cd $(OutputPath);mv InstrumentedSut.runtimeconfig.json EvoMaster.Instrumentation.Examples.runtimeconfig.json;mv InstrumentedSut.dll EvoMaster.Instrumentation.Examples.dll"/>
+
+    </Target>
 </Project>
