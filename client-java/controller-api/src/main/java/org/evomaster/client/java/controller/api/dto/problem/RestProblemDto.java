@@ -8,9 +8,9 @@ import java.util.List;
 public class RestProblemDto {
 
     /**
-     * The full URL of where the Swagger JSON data can be located
+     * The full URL of where the Open/API schema can be located.
      */
-    public String swaggerJsonUrl;
+    public String openApiUrl;
 
     /**
      * When testing a REST API, there might be some endpoints that are not

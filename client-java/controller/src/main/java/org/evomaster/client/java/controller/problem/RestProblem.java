@@ -8,7 +8,7 @@ import java.util.List;
  */
 public class RestProblem implements ProblemInfo{
 
-    private final String swaggerJsonUrl;
+    private final String openApiUrl;
 
     private final List<String> endpointsToSkip;
 
@@ -22,14 +22,14 @@ public class RestProblem implements ProblemInfo{
      *       Here can specify a list of endpoints (as defined in the schema) to skip.
      */
     public RestProblem(String swaggerJsonUrl, List<String> endpointsToSkip) {
-        this.swaggerJsonUrl = swaggerJsonUrl;
+        this.openApiUrl = swaggerJsonUrl;
         this.endpointsToSkip = endpointsToSkip == null
                 ? new ArrayList<>()
                 : new ArrayList<>(endpointsToSkip);
     }
 
-    public String getSwaggerJsonUrl() {
-        return swaggerJsonUrl;
+    public String getOpenApiUrl() {
+        return openApiUrl;
     }
 
     public List<String> getEndpointsToSkip() {

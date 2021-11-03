@@ -55,7 +55,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
-        val swaggerURL = infoDto.restProblem?.swaggerJsonUrl
+        val swaggerURL = infoDto.restProblem?.openApiUrl
                 ?: throw IllegalStateException("Missing information about the Swagger URL")
 
         swagger = OpenApiAccess.getOpenAPI(swaggerURL)

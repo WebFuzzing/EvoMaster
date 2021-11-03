@@ -173,7 +173,7 @@ public class EMController {
         } else if (info instanceof RestProblem) {
             RestProblem rp = (RestProblem) info;
             dto.restProblem = new RestProblemDto();
-            dto.restProblem.swaggerJsonUrl = rp.getSwaggerJsonUrl();
+            dto.restProblem.openApiUrl = rp.getOpenApiUrl();
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
 
         } else if( info instanceof GraphQlProblem){
