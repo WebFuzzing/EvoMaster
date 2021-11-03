@@ -190,7 +190,12 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
             sql = extractSqlFromH2PreparedStatement(stmt);
         }
 
-        // just check whether there exist any new update
+        /*
+            all zebra prepared statements should be handled before this line
+            (see checkZebraPreparedStatementWrapper).
+            here, just check whether there exist any further update in zebra,
+            and throw an exception with unsupported type
+         */
         if (fullClassName.startsWith("com.dianping.zebra")){
             throw new IllegalArgumentException("unsupported type for zebra: " + fullClassName);
         }
