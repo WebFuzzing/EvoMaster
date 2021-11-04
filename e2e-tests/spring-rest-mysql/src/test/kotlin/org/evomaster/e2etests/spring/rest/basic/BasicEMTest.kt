@@ -25,10 +25,11 @@ class BasicEMTest : RestTestBase() {
     @Test
     fun testRunEM() {
 
+        val budget = 100;
         runTestHandlingFlakyAndCompilation(
             "BasicEM",
             "org.bar.mysql.BasicEM",
-            100
+            budget
         ) { args ->
 
             val saveExecutedSQLToFile = "target/executionInfo/org/bar/mysql/BasicEM/sql.txt"
@@ -47,13 +48,17 @@ class BasicEMTest : RestTestBase() {
 
             assertTrue(Files.exists(Paths.get(saveExecutedSQLToFile)))
 
-            // check if all INSERT are ignored
-            val ignoreInitSql = Files.readAllLines(Paths.get(saveExecutedSQLToFile)).none { s->
+            /*
+                200 status code indicates that the resource is created by evomaster,
+                then further check if all INSERT are ignored
+             */
+            val allSql = Files.readAllLines(Paths.get(saveExecutedSQLToFile))
+            // 100 actions + 1 header
+            assertEquals(budget + 1, allSql.size)
+            val ignoreInitSql = allSql.none { s->
                 s.contains("INSERT INTO X")
             }
-            // bug here
-            assertFalse(ignoreInitSql)
-
+            assertTrue(ignoreInitSql)
         }
     }
 

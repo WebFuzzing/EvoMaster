@@ -462,6 +462,8 @@ public class EMController {
     @PUT
     public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
 
+        // executingInitSql should be false when reaching here
+        assert (!ExecutionTracer.executingInitSql);
         /*
             Note: as PUT is idempotent, it can be repeated...
             so need to handle such possibility here
@@ -507,6 +509,8 @@ public class EMController {
 
         try {
 
+            ExecutionTracer.executingInitSql = true;
+
             SimpleLogger.debug("Received database command");
 
             Connection connection = noKillSwitch(() -> sutController.getConnection());
@@ -539,6 +543,7 @@ public class EMController {
             QueryResult queryResult = null;
             InsertionResultsDto insertionResultsDto = null;
 
+
             try {
                 if (dto.command != null) {
                     queryResult = SqlScriptRunner.execCommand(connection, dto.command);
@@ -570,6 +575,8 @@ public class EMController {
             String msg = "Thrown exception: " + e.getMessage();
             SimpleLogger.error(msg, e);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            ExecutionTracer.executingInitSql = false;
         }
     }
 }
