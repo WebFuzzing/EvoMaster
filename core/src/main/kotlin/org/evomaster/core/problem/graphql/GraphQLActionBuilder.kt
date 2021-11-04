@@ -203,21 +203,6 @@ object GraphQLActionBuilder {
         state.argsTables.addAll(state.tempArgsTables)
         state.tables =
             state.tables.distinctBy { Pair(it.tableType, it.tableField) }.toMutableList()//remove redundant elements
-
-        println("I am the table:////////////////////////////////////////////////////////////////////// ")
-        for (element in state.tables) {
-            println("{Table Name: ${element?.tableType}, " +
-                    "Field: ${element?.tableField}, " +
-                    "KindOfTableField: ${element?.kindOfTableField}, " +
-                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfTableFieldOptional}, " +
-                    "table field Type: ${element?.tableFieldType}, " +
-                    "KindOfTable field type : ${element?.kindOfTableFieldType} " +
-                    "IsKindOfKindOfTableTypeOptional?: ${element?.isKindOfTableFieldTypeOptional} " +
-                    "Enum?: ${element?.enumValues} " +
-                    "UnionTypes: ${element?.unionTypes} " +
-                    "InterfaceTypes: ${element?.interfaceTypes} ")
-        }
-        println(state.tables.size)
     }
 
     /*
@@ -777,8 +762,29 @@ object GraphQLActionBuilder {
         params.map { it.gene }.forEach { GeneUtils.preventCycles(it, true) }
 
         /*
-        prevent LimitObjectGene
+        In some cases object gene (optional or not) with all fields as cycle object gene (optional or not) are generated.
+        So we need to deactivate it by looking into its ancestors (e.g., Optional set to false, Array set length to 0)
          */
+        params.map { it.gene }.forEach {
+
+            when {
+                it is ObjectGene -> it.flatView().forEach { g ->
+                    if (g is OptionalGene && g.gene is ObjectGene) handleAllCyclesInObjectFields(g.gene) else if (g is ObjectGene) handleAllCyclesInObjectFields(g)
+                }
+                it is OptionalGene && it.gene is ObjectGene -> it.flatView().forEach { g ->
+                    if (g is OptionalGene && g.gene is ObjectGene) handleAllCyclesInObjectFields(g.gene) else if (g is ObjectGene) handleAllCyclesInObjectFields(g)
+                }
+                it is ArrayGene<*> && it.template is ObjectGene -> it.flatView().forEach { g ->
+                    it.template.fields.forEach { f -> if (f is OptionalGene && f.gene is ObjectGene) handleAllCyclesInObjectFields(f.gene) else if (f is ObjectGene) handleAllCyclesInObjectFields(f) }
+                }
+                it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is ObjectGene -> it.flatView().forEach { g ->
+                    it.gene.template.fields.forEach { f -> if (f is OptionalGene && f.gene is ObjectGene) handleAllCyclesInObjectFields(f.gene) else if (f is ObjectGene) handleAllCyclesInObjectFields(f) } }
+            }
+        }
+
+        /*
+       prevent LimitObjectGene
+        */
         params.map { it.gene }.forEach { GeneUtils.preventLimit(it, true) }
 
         //Create the action
@@ -786,6 +792,19 @@ object GraphQLActionBuilder {
         actionCluster[action.getName()] = action
 
     }
+
+    fun handleAllCyclesInObjectFields(gene: ObjectGene) {
+
+        if (gene.fields.all {
+                    (it is OptionalGene && it.gene is CycleObjectGene) ||
+                            (it is CycleObjectGene)
+
+                }) {
+            GeneUtils.tryToPreventSelection(gene)
+        }
+    }
+
+
 
     private fun extractParams(
         state: TempState,

@@ -20,7 +20,7 @@ public class StringsManualTest extends StringsTestBase {
         SutInfoDto dto = remoteController.getSutInfo();
 
         String swaggerJson = given().accept(Formats.JSON_V1)
-                .get(dto.restProblem.swaggerJsonUrl)
+                .get(dto.restProblem.openApiUrl)
                 .then()
                 .statusCode(200)
                 .extract().asString();

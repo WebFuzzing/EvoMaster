@@ -109,9 +109,9 @@ class RestIndividual(
     fun seeResource(filter: ResourceFilter) : List<String>{
         return when(filter){
             ResourceFilter.ALL -> seeInitializingActions().map { it.table.name }.plus(
-                getResourceCalls().map { it.getResourceNodeKey() }
+                getResourceCalls().map { it.getResourceKey() }
             )
-            ResourceFilter.NO_SQL -> getResourceCalls().map { it.getResourceNodeKey() }
+            ResourceFilter.NO_SQL -> getResourceCalls().map { it.getResourceKey() }
             ResourceFilter.ONLY_SQL -> seeInitializingActions().map { it.table.name }
             ResourceFilter.ONLY_SQL_EXISTING -> seeInitializingActions().filter { it.representExistingData }.map { it.table.name }
             ResourceFilter.ONLY_SQL_INSERTION -> seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
@@ -126,8 +126,14 @@ class RestIndividual(
 
     override fun size() = seeActions().size
 
+    /**
+     * @return actions which are REST actions
+     */
     override fun seeActions(): List<RestCallAction> = resourceCalls.flatMap { it.seeActions(NO_INIT) as List<RestCallAction> }
 
+    /**
+     * @return all Sql actions which could be in initialization or between rest actions.
+     */
     override fun seeDbActions(): List<DbAction> {
         return seeInitializingActions().plus(resourceCalls.flatMap { c-> c.seeActions(ONLY_SQL) as List<DbAction> })
     }
@@ -204,6 +210,9 @@ class RestIndividual(
         }
     }
 
+    /**
+     * @return all groups of actions for resource handling
+     */
     fun getResourceCalls() : List<RestResourceCalls> = resourceCalls.toList()
 
 
@@ -262,12 +271,12 @@ class RestIndividual(
 
     private fun validateSwap(first : Int, second : Int) : Boolean{
         val position = getResourceCalls()[first].shouldBefore.map { r ->
-            getResourceCalls().indexOfFirst { it.getAResourceKey() == r }
+            getResourceCalls().indexOfFirst { it.getResourceNodeKey() == r }
         }
 
         if(!position.none { it > second }) return false
 
-        getResourceCalls().subList(0, second).find { it.shouldBefore.contains(getResourceCalls()[second].getAResourceKey()) }?.let {
+        getResourceCalls().subList(0, second).find { it.shouldBefore.contains(getResourceCalls()[second].getResourceNodeKey()) }?.let {
             return getResourceCalls().indexOf(it) < first
         }
         return true

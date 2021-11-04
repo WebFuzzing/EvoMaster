@@ -42,6 +42,15 @@
 
     <profiles>
         <profile>
+            <id>Configs for JDK >= 17</id>
+            <activation>
+                <jdk>17</jdk>
+            </activation>
+            <properties>
+                <addOpens>--add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
+            </properties>
+        </profile>
+        <profile>
             <!--
                    This profile is needed when making a deployment to Maven Central.
                    Note: we upload only the client library, not the whole EvoMaster.
@@ -91,6 +100,7 @@
     </licenses>
 
     <properties>
+        <addOpens></addOpens> <!-- overridden in profile -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <kotlin.version>1.5.30</kotlin.version>
@@ -157,11 +167,6 @@
             <dependency>
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-client-java-controller-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.evomaster</groupId>
-                <artifactId>evomaster-client-database-spy</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -276,6 +281,15 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>30.1.1-jre</version>
+            </dependency>
+            <dependency>
+                <!--
+                    So dependencies bring this one here transitively... but old version of this one before
+                    3.11 do not play well with JDK 17+. So we force this version here
+                -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.12.0</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
@@ -544,11 +558,6 @@
                 <artifactId>h2</artifactId>
                 <version>1.4.197</version>
             </dependency>
-            <dependency> <!-- Used to intercept SQL commands -->
-                <groupId>p6spy</groupId>
-                <artifactId>p6spy</artifactId>
-                <version>3.9.1</version>
-            </dependency>
             <dependency>
                 <groupId>com.github.jsqlparser</groupId>
                 <artifactId>jsqlparser</artifactId>
@@ -722,10 +731,15 @@
                             TODO might not needed when using workaround like in ByteBuddy
                             of creating an external process to do the Agent attachment
                             https://github.com/raphw/byte-buddy/issues/295
+
+                            Fucking JDK 17!!! And fuck you JEP 403!!!
+                            https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
-                        <useSystemClassLoader>false</useSystemClassLoader>
+                        <!--  Commented out, as no longer using CircleCI-->
+                        <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
+                        <runOrder>alphabetical</runOrder>
                     </configuration>
                 </plugin>
 
@@ -738,7 +752,7 @@
                         <forkCount>1</forkCount>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
                     <executions>

@@ -88,6 +88,16 @@ public class AdditionalInfo implements Serializable {
 
     private String lastExecutingThread = null;
 
+    private final Set<SqlInfo> sqlInfoData = new CopyOnWriteArraySet<>();
+
+    public Set<SqlInfo> getSqlInfoData(){
+        return Collections.unmodifiableSet(sqlInfoData);
+    }
+
+    public void addSqlInfo(SqlInfo info){
+        sqlInfoData.add(info);
+    }
+
     public Set<String> getParsedDtoNamesView(){
         return Collections.unmodifiableSet(parsedDtoNames);
     }

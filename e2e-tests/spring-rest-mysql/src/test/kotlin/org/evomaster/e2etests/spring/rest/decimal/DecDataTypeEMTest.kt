@@ -28,20 +28,19 @@ class DecDataTypeEMTest : RestTestBase() {
         runTestHandlingFlakyAndCompilation(
             "DecDataTypeEM",
             "org.bar.mysql.DecDataTypeEM",
-            1000
+            300
         ) { args ->
 
-            defaultSeed = 42
+                val solution = initAndRun(args)
 
-            val solution = initAndRun(args)
+                assertTrue(solution.individuals.size >= 1)
 
-            assertTrue(solution.individuals.size >= 1)
+                assertTrue(areAllValidGene(solution.individuals))
 
-            assertTrue(areAllValidGene(solution.individuals))
+                assertHasAtLeastOne(solution, HttpVerb.GET, 400)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200)
+            }
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200)
-        }
     }
 
     private fun areAllValidGene(inds : MutableList<EvaluatedIndividual<RestIndividual>>): Boolean{

@@ -745,13 +745,27 @@ class GraphQLActionBuilderTest {
         assertEquals(1, actionCluster.size)
     }
 
+    @Test
+    fun handleAllCyclesInObjectFieldsTest() {
 
+        val objI=ObjectGene("obj2", listOf(OptionalGene("cyc",CycleObjectGene("a"),isActive = true)))
+
+        val obj =  OptionalGene("obj1",ObjectGene("obj1", listOf(objI)),isActive = true)
+
+        assertTrue(obj.isActive)
+
+        obj.flatView().forEach {if (it is ObjectGene)
+            GraphQLActionBuilder.handleAllCyclesInObjectFields(it)  }
+
+        assertTrue(!obj.isActive)
+
+    }
     @Test
     fun depthTest() {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/abstract2.json").readText()
 
-         val config = EMConfig()
+        val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.maxNumberOfGenes)
         assertEquals(2, actionCluster.size)
 
