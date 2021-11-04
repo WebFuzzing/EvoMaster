@@ -5,9 +5,9 @@ import java.util.regex.Pattern;
 
 public class TaintInputName {
 
-    private static final String PREFIX = "evomaster_";
+    private static final String PREFIX = "_EM_";
 
-    private static final String POSTFIX = "_input";
+    private static final String POSTFIX = "_XYZ_";
 
     private static final Pattern pattern = Pattern.compile("\\Q"+PREFIX+"\\E\\d+\\Q"+POSTFIX+"\\E");
 
@@ -46,5 +46,15 @@ public class TaintInputName {
             modified.
          */
         return PREFIX + id + POSTFIX;
+    }
+
+    /**
+     * One problem when using this type of taint, is that there can be constraints on the length
+     * of the strings... and the taint value might end up being longer than it :-(
+     * Not sure if there is really any simple workaround... but hopefully should be
+     * so rare that we can live with it
+     */
+    public static int getTaintNameMaxLength(){
+        return PREFIX.length() + POSTFIX.length() + 6;
     }
 }
