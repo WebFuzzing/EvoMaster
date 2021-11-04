@@ -28,7 +28,7 @@ public class TaintInputNameTest {
         assertFalse(TaintInputName.isTaintInput("evomaster__input"));
         assertFalse(TaintInputName.isTaintInput("evomaster_a_input"));
 
-        assertTrue(TaintInputName.isTaintInput("evomaster_42_input"));
+        assertTrue(TaintInputName.isTaintInput("_EM_42_XYZ_"));
     }
 
     @Test
