@@ -776,6 +776,11 @@ object GraphQLActionBuilder {
          */
         params.map { it.gene }.forEach { GeneUtils.preventCycles(it, true) }
 
+        /*
+        prevent LimitObjectGene
+         */
+        params.map { it.gene }.forEach { GeneUtils.preventLimit(it, true) }
+
         //Create the action
         val action = GraphQLAction(actionId, methodName, type, params)
         actionCluster[action.getName()] = action
@@ -1364,7 +1369,7 @@ object GraphQLActionBuilder {
                     }
 
                 } else {
-                    OptionalGene(tableType, CycleObjectGene(tableType))//TODO not correct
+                    OptionalGene(tableType, LimitObjectGene(tableType))
                 }
             }
             GqlConst.UNION -> {
@@ -1424,7 +1429,7 @@ object GraphQLActionBuilder {
                             ObjectGene("$methodName#INTERFACE#", interfaceAdditionalOptObjGene)
                         )
                     } else {
-                        OptionalGene(tableType, CycleObjectGene(tableType))//TODO not correct
+                        OptionalGene(tableType, LimitObjectGene(tableType))
                     }
                 } else {
                     history.removeLast()
@@ -1683,7 +1688,7 @@ object GraphQLActionBuilder {
                 history.removeLast()
                 fields.add(OptionalGene(objGeneTemplate.name, objGeneTemplate))
             } else {
-                fields.add(OptionalGene(elementInUnionTypes, CycleObjectGene(elementInUnionTypes)))//TODO Not correct
+                fields.add(OptionalGene(elementInUnionTypes, LimitObjectGene(elementInUnionTypes)))
             }
             accum = initAccum
         }
@@ -1729,9 +1734,9 @@ object GraphQLActionBuilder {
                 fields.add(
                     OptionalGene(
                         elementInInterfaceTypes,
-                        CycleObjectGene(elementInInterfaceTypes)
+                            LimitObjectGene(elementInInterfaceTypes)
                     )
-                )//TODO Not correct
+                )
             }
             accum = initAccum
         }
