@@ -32,6 +32,21 @@ public class TaintInputNameTest {
     }
 
     @Test
+    public void testInvalidNamePatterns(){
+        String prefix = "_EM_";
+        String postfix = "_XYZ_";
+
+        assertFalse(TaintInputName.isTaintInput("foo"));
+        assertFalse(TaintInputName.isTaintInput(""));
+        assertFalse(TaintInputName.isTaintInput(prefix));
+        assertFalse(TaintInputName.isTaintInput(prefix + postfix));
+        assertFalse(TaintInputName.isTaintInput(prefix+"a"+postfix));
+
+        assertTrue(TaintInputName.isTaintInput(prefix+"42"+postfix));
+    }
+
+
+    @Test
     public void testIncludes(){
 
         String name = TaintInputName.getTaintName(0);
