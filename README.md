@@ -12,7 +12,7 @@
 
 ### Summary 
 
-_EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is the first (2016) open-source AI-driven tool 
+_EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is the first (2016) open-source tool 
 that automatically *generates* system-level test cases
 for web/enterprise applications.
 This is related to [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing).

@@ -41,8 +41,6 @@ public abstract class SpringController extends EmbeddedSutController {
     }
 
 
-
-
     @Override
     public boolean isSutRunning() {
         return ctx != null && ctx.isRunning();

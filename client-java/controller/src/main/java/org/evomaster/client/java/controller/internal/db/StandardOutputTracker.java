@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.internal.db;
 
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
+import org.evomaster.client.java.databasespy.P6SpyFormatter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,7 +26,6 @@ import java.util.Objects;
  * <p>
  * This class can be used for any analyses of the SUT output
  */
-@Deprecated // we are now using testability transformations
 public class StandardOutputTracker extends ByteArrayOutputStream{
 
     private static final PrintStream DEFAULT_OUT = System.out;
@@ -75,7 +75,7 @@ public class StandardOutputTracker extends ByteArrayOutputStream{
 
         if (data != null) {
             Arrays.stream(data.split("\n"))
-                    //.filter(l -> l.startsWith(P6SpyFormatter.PREFIX))
+                    .filter(l -> l.startsWith(P6SpyFormatter.PREFIX))
                     .forEach(l -> {
                         handleSqlLine(sutController, l);
                     });
@@ -86,11 +86,11 @@ public class StandardOutputTracker extends ByteArrayOutputStream{
         Objects.requireNonNull(sc);
         Objects.requireNonNull(line);
 
-//        if(! line.startsWith(P6SpyFormatter.PREFIX)){
-//            throw new IllegalArgumentException("No P6Spy prefix");
-//        }
+        if(! line.startsWith(P6SpyFormatter.PREFIX)){
+            throw new IllegalArgumentException("No P6Spy prefix");
+        }
 
-        String sql = line; //line.substring(P6SpyFormatter.PREFIX.length());
+        String sql = line.substring(P6SpyFormatter.PREFIX.length());
 
         try {
             sc.handleSql(sql);

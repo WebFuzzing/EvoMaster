@@ -44,7 +44,6 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
         
         CIUtils.skipIfOnGA();
         CIUtils.skipIfOnCircleCI();
-        CIUtils.skipIfOnWindows();
 
         mssqlserver.start();
 
@@ -68,7 +67,6 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
 
         CIUtils.skipIfOnGA();
         CIUtils.skipIfOnCircleCI();
-        CIUtils.skipIfOnWindows();
 
         connection.close();
         mssqlserver.stop();

@@ -18,7 +18,9 @@ public abstract class DatabaseH2TestInit {
 
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
-        connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "");
+        InstrumentingAgent.initP6Spy("org.h2.Driver");
+
+        connection = DriverManager.getConnection("jdbc:p6spy:h2:mem:db_test", "sa", "");
     }
 
     @BeforeEach

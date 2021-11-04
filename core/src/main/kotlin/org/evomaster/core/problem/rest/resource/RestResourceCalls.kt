@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
 /**
  * the class is used to structure actions regarding resources.
  * @property template is a resource template, e.g., POST-GET
- * @property node is a resource node which creates [this] call. Note that [node] could null if it is not created by [ResourceSampler]
+ * @property node is a resource node which creates [this] call
  * @property actions is a sequence of actions in the [RestResourceCalls] that follows [template]
  * @property dbActions are used to initialize data for rest actions, either select from db or insert new data into db
  * @param withBinding specifies whether to build binding between rest genes
@@ -390,53 +390,25 @@ class RestResourceCalls(
         return candidates.first()
     }
 
-    /**
-     * @return the template of [this] resource handling
-     */
     fun extractTemplate() : String{
         return RestResourceTemplateHandler.getStringTemplateByCalls(this)
     }
 
     private fun getParamsInCall() : List<Param>  = actions.flatMap { it.parameters }
 
-    /**
-     * @return the resolved path of this resource handling based on values of params
-     *
-     */
     fun getResolvedKey() : String{
         return node?.path?.resolve(getParamsInCall())?: throw IllegalStateException("node is null")
     }
 
-    /**
-     * @return a path of resource handling
-     */
-    fun getResourceKey() : String {
-        if (node != null) return getResolvedKey()
-        if (actions.size == 1)
-            return actions.first().path.toString()
-        throw IllegalArgumentException("there are multiple rest actions in a call, but the call lacks the resource node")
-    }
+    fun getAResourceKey() : String = node?.path.toString()?: throw IllegalStateException("node is null")
 
-    /**
-     * @return the string of template of this resource handling
-     */
-    fun getRestTemplate() = template?.template?: RestResourceTemplateHandler.getStringTemplateByActions(actions)
+    fun getRestTemplate() = template?.template?: RestResourceTemplateHandler.getStringTemplateByActions(actions as MutableList<RestCallAction>)
 
-    /**
-     * @return the resource node of this resource handling
-     */
     fun getResourceNode() : RestResourceNode = node?:throw IllegalArgumentException("the individual does not have resource structure")
 
-    /**
-     * @return the path of resource node of this resource handling
-     */
     fun getResourceNodeKey() : String = getResourceNode().getName()
 
-    /**
-     * @return whether the resource handling is mutatable
-     *
-     * if the action is bounded with existing data from db, it is not mutable
-     */
+    // if the action is bounded with existing data from db, it is not mutable
     fun isMutable() = dbActions.none {
         it.representExistingData
     }

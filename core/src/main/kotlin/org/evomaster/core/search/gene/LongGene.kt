@@ -78,8 +78,8 @@ class LongGene(
         val delta = GeneUtils.getDelta(randomness, apc, delta())
 
         val sign = when{
-            max != null && (value >= max || ((value+delta) > max)) -> -1
-            min != null && (value <= min || ((value-delta) < min)) -> +1
+            max != null && value >= max -> -1
+            min != null && value <= min -> +1
             else -> randomness.choose(listOf(-1, +1))
         }
 

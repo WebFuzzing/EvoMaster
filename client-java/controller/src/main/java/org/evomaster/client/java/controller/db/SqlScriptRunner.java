@@ -3,7 +3,6 @@ package org.evomaster.client.java.controller.db;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.StatementClassReplacement;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.*;
@@ -349,25 +348,13 @@ public class SqlScriptRunner {
     }
 
     public static QueryResult execCommand(Connection conn, String command) throws SQLException {
-        return execCommand(conn, command, false);
-    }
-
-    public static QueryResult execCommand(Connection conn, String command, boolean instrumented) throws SQLException {
         Statement statement = conn.createStatement();
 
         SimpleLogger.debug("Executing DB command:");
         SimpleLogger.debug(command);
 
         try {
-            if(!instrumented) {
-                statement.execute(command);
-            } else {
-                /*
-                    this is needed only in the tests for EM itself... note that we cannot
-                    instrument classes in the org.evomaster package
-                 */
-                StatementClassReplacement.execute(statement, command);
-            }
+            statement.execute(command);
         } catch (SQLException e) {
             statement.close();
             String errText = String.format("Error executing '%s': %s", command, e.getMessage());

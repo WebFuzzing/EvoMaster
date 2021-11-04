@@ -6,7 +6,7 @@ namespace EvoMaster.Controller.Api {
         /**
          * The full URL of where the Swagger JSON data can be located
          */
-        public string OpenApiUrl { get; set; }
+        public string SwaggerJsonUrl { get; set; }
 
         /**
          * When testing a REST API, there might be some endpoints that are not

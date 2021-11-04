@@ -1,6 +1,7 @@
 package org.evomaster.core.logging
 
 import org.evomaster.client.java.controller.internal.db.WrappedPrintStream
+import org.evomaster.client.java.databasespy.P6SpyFormatter
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
@@ -45,7 +46,7 @@ class TestLoggingUtil {
 
             //as done by a separated thread, their ordering in the logs is not guaranteed, so we skip them
             val filtered = logs.split("\n")
-                //.filter { ! it.startsWith(P6SpyFormatter.PREFIX) }
+                .filter { ! it.startsWith(P6SpyFormatter.PREFIX) }
                 .joinToString("\n")
 
             return filtered

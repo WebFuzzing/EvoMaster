@@ -13,7 +13,7 @@ import net.sf.jsqlparser.statement.update.Update;
 public class ParserUtils {
 
     /**
-     * We only use the selects that refer to objects in the database that are meaningful for testing purposes,
+     * We only use the selects that refer to objects in the data base that are meaninful for testing purposes,
      * when code access to a sequence for example when getting the next id for a new object in the table,
      * then we don't want to use that select as a target.
      * @param sql
@@ -70,15 +70,5 @@ public class ParserUtils {
             throw new IllegalArgumentException("Invalid SQL statement: " + statement + "\n" + e.getMessage(), e);
         }
         return stmt;
-    }
-
-    public static boolean canParseSqlStatement(String statement){
-        try {
-            CCJSqlParserUtil.parse(statement);
-        } catch (Exception e) {
-            return false;
-        }
-
-        return true;
     }
 }

@@ -41,7 +41,7 @@ open class ResourceSampler : AbstractRestSampler() {
         }
     }
 
-    override fun customizeAdHocInitialIndividuals() {
+    override fun initAdHocInitialIndividuals() {
 
         rm.initResourceNodes(actionCluster, sqlInsertBuilder)
 
@@ -203,13 +203,7 @@ open class ResourceSampler : AbstractRestSampler() {
         var size = config.maxTestSize
         val candR = rm.getResourceCluster().filter { r -> r.value.isAnyAction() }
         while(size > 1 && executed.size < resourceSize){
-            val key = if(executed.size < resourceSize-1 && size > 2)
-                randomness.choose(depCand.keys.filter { !executed.contains(it) })
-            else if (candR.keys.any { !executed.contains(it) })
-                randomness.choose(candR.keys.filter { !executed.contains(it) })
-            else
-                randomness.choose(candR.keys)
-
+            val key = if(executed.size < resourceSize-1 && size > 2) randomness.choose(depCand.keys.filter { !executed.contains(it) }) else randomness.choose(candR.keys.filter { !executed.contains(it) })
             rm.sampleCall(key, true, resourceCalls, size)
             size -= resourceCalls.last().seeActionSize(ActionFilter.NO_SQL)
             executed.add(key)

@@ -36,11 +36,13 @@ public abstract class DatabaseMySQLTestInit {
 
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
+        InstrumentingAgent.initP6Spy("com.mysql.cj.jdbc.Driver");
+
         mysql.start();
 
         String host = mysql.getContainerIpAddress();
         int port = mysql.getMappedPort(PORT);
-        String url = "jdbc:mysql://"+host+":"+port+"/"+DB_NAME;
+        String url = "jdbc:p6spy:mysql://"+host+":"+port+"/"+DB_NAME;
 
         connection = DriverManager.getConnection(url, "test", "test");
     }

@@ -43,18 +43,17 @@ class ResourceSampleMethodController {
     }
 
     private fun initApplicableStrategies(){
-        methods.getValue(S1iR).applicable = rm.getResourceCluster().values.any { it.hasIndependentAction() }
+        methods.getValue(S1iR).applicable = true
         rm.getResourceCluster().values.filter { r -> !r.isIndependent() }.let {
             methods.getValue(S1dR).applicable = it.isNotEmpty()
             methods.getValue(S2dR).applicable = it.size > 1 && config.maxTestSize > 1
             methods.getValue(SMdR).applicable = it.size > 2 && config.maxTestSize > 2
         }
 
-        /*
-          if only S1iR is applicable, we recommend that maxTestSize is 1.
+        /**
+         * if only S1iR is applicable, we recommend that maxTestSize is 1.
          */
-        if(methods.values.filter { it.applicable }.size == 1 && methods.getValue(S1iR).applicable)
-            config.maxTestSize = 1
+        if(methods.values.filter { it.applicable }.size == 1 ) config.maxTestSize = 1
     }
 
     private fun validateProbability() {

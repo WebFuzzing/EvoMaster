@@ -392,13 +392,13 @@ public abstract class WsTestBase {
 
         remoteController = new RemoteController("localhost", controllerPort, true);
         boolean started = remoteController.startSUT();
-        assertTrue(started, "Failed to start the SUT");
+        assertTrue(started);
 
         SutInfoDto dto = remoteController.getSutInfo();
-        assertNotNull(dto, "Failed to get SUT info");
+        assertNotNull(dto);
 
         baseUrlOfSut = dto.baseUrlOfSUT;
-        assertNotNull(baseUrlOfSut, "No URL of the SUT was retrieved");
+        assertNotNull(baseUrlOfSut);
 
         System.out.println("Remote controller running on port " + controllerPort);
         System.out.println("SUT listening on " + baseUrlOfSut);

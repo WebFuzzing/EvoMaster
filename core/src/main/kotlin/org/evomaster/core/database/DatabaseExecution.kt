@@ -1,7 +1,6 @@
 package org.evomaster.core.database
 
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
-import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto
 
 /**
  * When a test case is executed, and the SUT does access a SQL database,
@@ -22,8 +21,7 @@ class DatabaseExecution(
         val insertedData: Map<String, Set<String>>,
         val failedWhere: Map<String, Set<String>>,
         val deletedData: List<String>,
-        val numberOfSqlCommands: Int,
-        val executionInfo: List<SqlExecutionInfo>
+        val numberOfSqlCommands: Int
 ) {
 
     companion object {
@@ -36,8 +34,7 @@ class DatabaseExecution(
                     cloneData(dto?.insertedData),
                     cloneData(dto?.failedWhere),
                     dto?.deletedData?.toList() ?: listOf(),
-                    dto?.numberOfSqlCommands ?: 0,
-                    cloneSqlExecutionInfo(dto?.sqlExecutionLogDtoList)
+                    dto?.numberOfSqlCommands ?: 0
             )
         }
 
@@ -61,14 +58,6 @@ class DatabaseExecution(
             }
 
             return data.toList()
-        }
-
-        private fun cloneSqlExecutionInfo(data: List<SqlExecutionLogDto>?): List<SqlExecutionInfo> {
-            if (data == null) {
-                return listOf()
-            }
-
-            return data.map { SqlExecutionInfo(it.command, it.executionTime) }
         }
 
         private fun cloneData(data: Map<String, Set<String>>?): Map<String, Set<String>> {

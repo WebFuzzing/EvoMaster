@@ -26,18 +26,6 @@ public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseT
 
 
     @Test
-    public void testWrongSyntax(){
-        assertThrows(Exception.class, () ->
-                SqlScriptRunner.execCommand(getConnection(),"CREATE TAB Foo (x INT)"));
-    }
-
-    @Test
-    public void testInsertEmpty() throws Exception{
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT auto_increment);");
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo() VALUES();");
-    }
-
-    @Test
     public void testLargeString() throws Exception{
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x CLOB);");

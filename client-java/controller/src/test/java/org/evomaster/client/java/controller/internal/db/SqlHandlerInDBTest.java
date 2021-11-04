@@ -45,19 +45,13 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
 
         System.setOut(new PrintStream(new ByteArrayOutputStream()));
 
-        String command = "DELETE FROM Foo";
         try {
-            ExecutionDto dto = executeCommand(starter, command, true);
+            ExecutionDto dto = executeCommand(starter, "Delete FROM Foo");
 
             assertNotNull(dto);
             assertNotNull(dto.deletedData);
             assertEquals(1, dto.deletedData.size());
             assertTrue(dto.deletedData.contains("Foo"));
-
-            // check info of executed sql
-            assertNotNull(dto.sqlExecutionLogDtoList);
-            assertEquals(1, dto.sqlExecutionLogDtoList.size());
-            assertEquals(command, dto.sqlExecutionLogDtoList.get(0).command);
 
         } finally {
             starter.stop();
@@ -70,18 +64,15 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
-        String command = "INSERT INTO Foo (x) VALUES (42)";
+
         try {
-            ExecutionDto dto = executeCommand(starter, command, true);
+            ExecutionDto dto = executeCommand(starter, "insert into Foo (x) values (42)");
 
             assertNotNull(dto);
             assertNotNull(dto.insertedData);
             assertEquals(1, dto.insertedData.size());
             assertTrue(dto.insertedData.containsKey("Foo"));
-            // check info of executed sql
-            assertNotNull(dto.sqlExecutionLogDtoList);
-            assertEquals(1, dto.sqlExecutionLogDtoList.size());
-            assertEquals(command, dto.sqlExecutionLogDtoList.get(0).command);
+
         } finally {
             starter.stop();
         }
@@ -94,25 +85,22 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
-        String command = "UPDATE Foo SET x = 42";
+
         try {
-            ExecutionDto dto = executeCommand(starter, command, true);
+            ExecutionDto dto = executeCommand(starter, "update Foo set x=42");
 
             assertNotNull(dto);
             assertNotNull(dto.updatedData);
             assertEquals(1, dto.updatedData.size());
             assertTrue(dto.updatedData.containsKey("Foo"));
-            // check info of executed sql
-            assertNotNull(dto.sqlExecutionLogDtoList);
-            assertEquals(1, dto.sqlExecutionLogDtoList.size());
-            assertEquals(command, dto.sqlExecutionLogDtoList.get(0).command);
+
         } finally {
             starter.stop();
         }
     }
 
 
-    default ExecutionDto executeCommand(InstrumentedSutStarter starter, String sqlCommand, boolean instrumented) throws SQLException {
+    default ExecutionDto executeCommand(InstrumentedSutStarter starter, String sqlCommand) throws SQLException {
         String url = startInstrumentedSutStarterAndNewTest(starter);
         ExecutionDto dto = getSqlExecutionDto(0, url);
 
@@ -120,7 +108,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
 
         startNewActionInSameTest(url, 1);
 
-        SqlScriptRunner.execCommand(getConnection(), sqlCommand, instrumented);
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
         return getSqlExecutionDto(1, url);
     }

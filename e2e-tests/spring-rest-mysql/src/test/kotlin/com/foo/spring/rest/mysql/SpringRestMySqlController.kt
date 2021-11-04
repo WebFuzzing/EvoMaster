@@ -1,5 +1,6 @@
 package com.foo.spring.rest.mysql
 
+import com.p6spy.engine.spy.P6SpyDriver
 import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
@@ -49,7 +50,7 @@ abstract class SpringRestMySqlController (
 
         val host = mysql.getContainerIpAddress()
         val port = mysql.getMappedPort(MYSQL_PORT)
-        val url = "jdbc:mysql://$host:$port/$MYSQL_DB_NAME"
+        val url = "jdbc:p6spy:mysql://$host:$port/$MYSQL_DB_NAME"
 
         connection = DriverManager.getConnection(url, "test", "test")
 
@@ -57,6 +58,7 @@ abstract class SpringRestMySqlController (
         ctx = SpringApplication.run(applicationClass,
             "--server.port=0",
             "--spring.datasource.url=$url",
+            "--spring.datasource.driver-class-name=" + P6SpyDriver::class.java.name,
             "--spring.jpa.database-platform="+ MySQL8Dialect::class.java.name,
             "--spring.datasource.username=test",
             "--spring.datasource.password=test",

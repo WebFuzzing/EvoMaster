@@ -1,12 +1,15 @@
 package org.evomaster.core.problem.rest.service
 
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.seeding.Parser
+import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -386,7 +389,7 @@ class RestSampler : AbstractRestSampler(){
     }
 
 
-    override fun customizeAdHocInitialIndividuals() {
+    override fun initAdHocInitialIndividuals() {
 
         adHocInitialIndividuals.clear()
 
@@ -396,6 +399,14 @@ class RestSampler : AbstractRestSampler(){
 
         authentications.forEach { auth ->
             createSingleCallOnEachEndpoint(auth)
+        }
+
+        // if test case seeding is enabled, add those test cases too
+
+        if (config.seedTestCases) {
+            val parser = getParser()
+            val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
+            adHocInitialIndividuals.addAll(seededTestCases.map { createIndividual(it) })
         }
     }
 
@@ -412,6 +423,15 @@ class RestSampler : AbstractRestSampler(){
                 }
     }
 
+    private fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+        return RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
+                ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
+    }
 
+    private fun getParser(): Parser {
+        return when(config.seedTestCasesFormat) {
+            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger)
+        }
+    }
 
 }

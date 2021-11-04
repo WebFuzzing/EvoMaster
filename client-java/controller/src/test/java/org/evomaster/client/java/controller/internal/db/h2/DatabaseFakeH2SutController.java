@@ -29,7 +29,7 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
 
     @Override
     public ProblemInfo getProblemInfo() {
-        return new RestProblem("http://notused", null);
+        return new RestProblem(null, null);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.examples.escape;
 
 import com.foo.rest.examples.spring.escapes.EscapeResponseDto;
+import com.foo.rest.examples.spring.namedresource.NamedResourceDto;
 import io.restassured.http.ContentType;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
@@ -23,7 +24,7 @@ public class EscapeManualTest extends EscapeTestBase {
         SutInfoDto dto = remoteController.getSutInfo();
 
         String swaggerJson = given().accept(Formats.JSON_V1)
-                .get(dto.restProblem.openApiUrl)
+                .get(dto.restProblem.swaggerJsonUrl)
                 .then()
                 .statusCode(200)
                 .extract().asString();

@@ -92,7 +92,7 @@ class RemoteControllerTest {
 
         val info = remote.getSutInfo()
         assertNotNull(info)
-        assertEquals(FAKE_SWAGGER, info!!.restProblem.openApiUrl)
+        assertEquals(FAKE_SWAGGER, info!!.restProblem.swaggerJsonUrl)
     }
 
     @Test

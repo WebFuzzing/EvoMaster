@@ -28,7 +28,10 @@ import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.MosaAlgorithm
 import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
-import org.evomaster.core.search.service.*
+import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.search.service.SearchAlgorithm
+import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
 import java.lang.reflect.InvocationTargetException
@@ -160,8 +163,6 @@ class Main {
             writeTests(injector, solution, controllerInfo)
 
             writeStatistics(injector, solution)
-
-            writeExecuteInfo(injector)
 
             val stc = injector.getInstance(SearchTimeController::class.java)
             val statistics = injector.getInstance(Statistics::class.java)
@@ -427,16 +428,6 @@ class Main {
             return dto
         }
 
-        fun writeExecuteInfo(injector: Injector){
-
-            val config = injector.getInstance(EMConfig::class.java)
-
-            if (config.outputExecutedSQL != EMConfig.OutputExecutedSQL.ALL_AT_END) {
-                return
-            }
-            val reporter = injector.getInstance(ExecutionInfoReporter::class.java)
-            reporter.saveAll()
-        }
 
          fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
 

@@ -17,7 +17,6 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
-import org.evomaster.core.utils.ReportWriter.writeByChannel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -212,8 +211,29 @@ class SearchProcessMonitor: SearchListener {
             writeByChannel(
                     Paths.get(getStepAsPath(index, true)),
                     info.map { it.first }.sorted().joinToString(System.lineSeparator()))
+
         }
+
+
     }
+
+    private fun writeByChannel(path : Path, value :String){
+        if (!Files.exists(path.parent)) Files.createDirectories(path.parent)
+        Files.createFile(path)
+        val buffer = ByteBuffer.wrap(value.toByteArray())
+        FileChannel.open(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE).run {
+            writeToChannel(this, buffer)
+        }
+
+    }
+
+    private fun writeToChannel(channel: FileChannel, buffer: ByteBuffer) {
+        while (buffer.hasRemaining()) {
+            channel.write(buffer)
+        }
+        channel.close()
+    }
+
 
    private fun getStepName(value: Int, isTargetFile: Boolean): String {
        val num = String.format("%0${config.maxActionEvaluations.toString().length}d", value)

@@ -42,7 +42,7 @@ abstract class ExtractTestBaseMySQL {
             mysql.start()
             val host = mysql.containerIpAddress
             val port = mysql.getMappedPort(MYSQL_PORT)
-            val url = "jdbc:mysql://$host:$port/$MYSQL_DB_NAME"
+            val url = "jdbc:p6spy:mysql://$host:$port/$MYSQL_DB_NAME"
 
             connection = DriverManager.getConnection(url, "test", "test")
         }

@@ -75,9 +75,6 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
         bind(PartialOracles::class.java)
                 .asEagerSingleton()
 
-        bind(ExecutionInfoReporter::class.java)
-                .asEagerSingleton()
-
         if(noTests){
             bind(TestCaseWriter::class.java)
                     .to(NoTestCaseWriter::class.java)

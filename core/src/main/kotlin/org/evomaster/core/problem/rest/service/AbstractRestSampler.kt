@@ -1,18 +1,16 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
-import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.seeding.Parser
-import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
+import org.evomaster.core.problem.rest.OpenApiAccess
+import org.evomaster.core.problem.rest.RestActionBuilderV3
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -56,20 +54,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
-        val problem = infoDto.restProblem
-                ?: throw java.lang.IllegalStateException("Missing problem definition object")
+        val swaggerURL = infoDto.restProblem?.swaggerJsonUrl
+                ?: throw IllegalStateException("Missing information about the Swagger URL")
 
-        val openApiURL = problem.openApiUrl
-        val openApiSchema = problem.openApiSchema
-
-        if(!openApiURL.isNullOrBlank()) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL)
-        } else if(! openApiSchema.isNullOrBlank()){
-            swagger = OpenApiAccess.getOpenApi(openApiSchema)
-        } else {
-            throw SutProblemException("No info on the OpenAPI schema was provided")
-        }
-
+        swagger = OpenApiAccess.getOpenAPI(swaggerURL)
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
@@ -95,28 +83,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
-    /**
-     * create AdHocInitialIndividuals
-     */
-    fun initAdHocInitialIndividuals(){
-        customizeAdHocInitialIndividuals()
 
-        // if test case seeding is enabled, add those test cases too
-        if (config.seedTestCases) {
-            val parser = getParser()
-            val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
-            adHocInitialIndividuals.addAll(seededTestCases.map { createIndividual(it) })
-        }
-    }
+    abstract fun initAdHocInitialIndividuals()
 
-    /**
-     * customize AdHocInitialIndividuals
-     */
-    abstract fun customizeAdHocInitialIndividuals()
-
-    /**
-     * post action after InitialIndividuals are crated
-     */
     open fun postInits(){
         //do nothing
     }
@@ -152,7 +121,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     private fun initForBlackBox() {
 
-        swagger = OpenApiAccess.getOpenAPIFromURL(configuration.bbSwaggerUrl)
+        swagger = OpenApiAccess.getOpenAPI(configuration.bbSwaggerUrl)
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
@@ -176,21 +145,5 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     override fun hasSpecialInit(): Boolean {
         return !adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
-    }
-
-    /**
-     * @return size of adHocInitialIndividuals
-     */
-    fun getSizeOfAdHocInitialIndividuals() = adHocInitialIndividuals.size
-
-    fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
-        return RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
-                ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
-    }
-
-    private fun getParser(): Parser {
-        return when(config.seedTestCasesFormat) {
-            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger)
-        }
     }
 }

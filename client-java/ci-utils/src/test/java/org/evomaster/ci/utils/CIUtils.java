@@ -4,12 +4,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class CIUtils {
 
-    public static void skipIfOnWindows(){
-        String os = System.getProperty("os.name");
-        assumeTrue(! os.toLowerCase().contains("window"));
-    }
-
-
     public static boolean isRunningGA(){
         String ci = System.getenv("CI_env");
         return ci != null && ci.trim().equalsIgnoreCase("githubaction");

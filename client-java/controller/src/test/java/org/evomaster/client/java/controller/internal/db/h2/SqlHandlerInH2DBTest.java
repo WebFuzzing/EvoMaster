@@ -29,7 +29,7 @@ public class SqlHandlerInH2DBTest extends DatabaseH2TestInit implements SqlHandl
 
         try {
 
-            ExecutionDto dto = executeCommand(starter, "SELECT currval('foo_id_seq')", true);
+            ExecutionDto dto = executeCommand(starter, "SELECT currval('foo_id_seq')");
 
             assertNotNull(dto);
             assertNotNull(dto.queriedData);

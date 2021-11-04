@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace EvoMaster.Controller.Problem {
   public class RestProblem : IProblemInfo {
 
-    private readonly string openApiUrl;
+    private readonly string swaggerJsonUrl;
 
     private readonly IList<string> endpointsToSkip;
 
@@ -13,15 +13,15 @@ namespace EvoMaster.Controller.Problem {
     ///are not so interesting to test, and they can be very expensive to run.
     ///Here can specify a list of endpoints (as defined in the schema) to skip.
     ///</param>
-    public RestProblem (string openApiUrl, IList<string> endpointsToSkip) {
-      this.openApiUrl = openApiUrl;
+    public RestProblem (string swaggerJsonUrl, IList<string> endpointsToSkip) {
+      this.swaggerJsonUrl = swaggerJsonUrl;
       this.endpointsToSkip = endpointsToSkip == null ?
         new List<string> () :
         new List<string> (endpointsToSkip);
     }
 
     public string GetSwaggerJsonUrl () {
-      return openApiUrl;
+      return swaggerJsonUrl;
     }
 
     public IList<string> GetEndpointsToSkip () {

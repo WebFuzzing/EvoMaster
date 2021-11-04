@@ -10,7 +10,6 @@ import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestCallAction;
 import org.evomaster.core.problem.rest.RestCallResult;
 import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.problem.rest.service.ResourceSampler;
 import org.evomaster.core.problem.rest.service.RestSampler;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.EvaluatedAction;
@@ -117,12 +116,8 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         RemoteController rc = injector.getInstance(RemoteController.class);
         rc.startANewSearch();
 
-        /*
-            start from creating and evaluating a random individual
-            default REST setting is changed to resource-based solution,
-            thus RestSampler needs to be changed to ResourceSampler
-         */
-        ResourceSampler sampler = injector.getInstance(ResourceSampler.class);
+        //start from creating and evaluating a random individual
+        RestSampler sampler = injector.getInstance(RestSampler.class);
         RestIndividual ind = sampler.sampleAtRandom();
 
         FitnessFunction<RestIndividual> ff = injector.getInstance(Key.get(
@@ -169,8 +164,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                     }
                 });
 
-        RestIndividual withSQL = (RestIndividual) ind.copy(); //new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, Traceable.DEFAULT_INDEX);
-        withSQL.seeInitializingActions().addAll(insertions);
+        RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, Traceable.DEFAULT_INDEX);
 
         ei = ff.calculateCoverage(withSQL, noDataFV.getViewOfData().keySet());
         assertNotNull(ei);
