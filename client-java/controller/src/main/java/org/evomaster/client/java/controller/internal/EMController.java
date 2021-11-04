@@ -183,7 +183,8 @@ public class EMController {
             dto.graphQLProblem.endpoint = p.getEndpoint();
         } else if(info instanceof RPCProblem){
             RPCProblem rpcp = (RPCProblem) info;
-            //TODO
+            dto.rpcProblem = new RestProblemDto();
+            //TODO RPC
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);
@@ -471,6 +472,10 @@ public class EMController {
 
             //this MUST not be inside a noKillSwitch, as it sets to false
             sutController.newAction(dto);
+
+            if (sutController.getProblemInfo() instanceof RPCProblem){
+                // TODO RPC execute action here and return its response
+            }
         }
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();

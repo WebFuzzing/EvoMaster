@@ -21,6 +21,12 @@ public class SutInfoDto {
     public GraphQLProblemDto graphQLProblem;
 
     /**
+     * If the SUT is a PRC-based service, here there will be the info
+     * on how to interact with it
+     */
+    public RestProblemDto rpcProblem;
+
+    /**
      * Whether the SUT is running or not
      */
     public Boolean isSutRunning;

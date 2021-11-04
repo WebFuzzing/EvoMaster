@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.problem.rpc;
+package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 import java.io.Serializable;
 import java.util.List;
