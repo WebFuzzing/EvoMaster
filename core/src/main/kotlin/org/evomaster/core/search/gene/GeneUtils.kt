@@ -331,6 +331,41 @@ object GeneUtils {
         }
     }
 
+    fun preventLimit(gene: Gene, force: Boolean = false) {
+
+        val limits = gene.flatView().filterIsInstance<LimitObjectGene>()
+        if (limits.isEmpty()) {
+            //nothing to do
+            return
+        }
+
+        for (c in limits) {
+
+            var p = c.parent
+            loop@ while (p != null) {
+                when (p) {
+                    is OptionalGene -> {
+                        p.forbidSelection(); break@loop
+                    }
+                    is ArrayGene<*> -> {
+                        p.forceToOnlyEmpty(); break@loop
+                    }
+                    else -> p = p.parent
+                }
+            }
+
+            if (p == null) {
+                val msg = "Could not prevent limit gene in ${gene.name} gene"
+                if (force) {
+                    throw RuntimeException(msg)
+                }
+                log.warn(msg)
+            }
+        }
+    }
+
+
+
     fun hasNonHandledCycles(gene: Gene): Boolean {
 
         val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
@@ -481,6 +516,9 @@ object GeneUtils {
                 }
             }
             is CycleObjectGene -> {
+                gene
+            }
+            is LimitObjectGene -> {
                 gene
             }
             is ObjectGene -> {
