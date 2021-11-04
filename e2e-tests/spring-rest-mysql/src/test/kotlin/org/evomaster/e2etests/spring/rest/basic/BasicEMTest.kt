@@ -6,8 +6,7 @@ import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.LongGene
 import org.evomaster.e2etests.utils.RestTestBase
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
@@ -47,6 +46,14 @@ class BasicEMTest : RestTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.GET, 200)
 
             assertTrue(Files.exists(Paths.get(saveExecutedSQLToFile)))
+
+            // check if all INSERT are ignored
+            val ignoreInitSql = Files.readAllLines(Paths.get(saveExecutedSQLToFile)).none { s->
+                s.contains("INSERT INTO X")
+            }
+            // bug here
+            assertFalse(ignoreInitSql)
+
         }
     }
 
