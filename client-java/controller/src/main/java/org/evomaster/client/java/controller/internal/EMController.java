@@ -461,9 +461,9 @@ public class EMController {
     @Consumes(MediaType.APPLICATION_JSON)
     @PUT
     public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
-
+        // man: shall I get the real info here? need to discuss
         // executingInitSql should be false when reaching here
-        assert (!ExecutionTracer.executingInitSql);
+        assert (!ExecutionTracer.isExecutingInitSql());
         /*
             Note: as PUT is idempotent, it can be repeated...
             so need to handle such possibility here
@@ -509,7 +509,7 @@ public class EMController {
 
         try {
 
-            ExecutionTracer.executingInitSql = true;
+            sutController.setExecutingInitSql(true);
 
             SimpleLogger.debug("Received database command");
 
@@ -576,7 +576,7 @@ public class EMController {
             SimpleLogger.error(msg, e);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         } finally {
-            ExecutionTracer.executingInitSql = false;
+            sutController.setExecutingInitSql(false);
         }
     }
 }

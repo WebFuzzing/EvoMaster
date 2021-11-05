@@ -71,4 +71,9 @@ public abstract class EmbeddedSutController extends SutController {
     public void setKillSwitch(boolean b) {
         ExecutionTracer.setKillSwitch(b);
     }
+
+    @Override
+    public void setExecutingInitSql(boolean executingInitSql) {
+        ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
 }
