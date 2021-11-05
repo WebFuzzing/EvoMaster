@@ -34,12 +34,53 @@ abstract class SearchAlgorithm<T> where T : Individual {
     @Inject(optional = true)
     private lateinit var mutator: Mutator<T>
 
+    private var lastSnapshot = 0
 
     protected fun getMutatator() : Mutator<T> {
         return mutator
     }
 
-    abstract fun search() : Solution<T>
+    /**
+     * This method does a single step in the search process, each algorithm must implement its own.
+     */
+    abstract fun searchOnce()
+
+    /**
+     * Here goes all the implementation needed for the algorithm to setup before running the search
+     */
+    abstract fun setupBeforeSearch()
+
+    /**
+     * This method does the full search invoking searchOnce() on each iteration.
+     * The method writeTestsSnapshot send as parameter is the code that is executed to write the obtained tests as snapshots.
+     * If writing snapshots of tests is enabled, then this method will be invoked when configured after running the searchOnce method.
+     */
+    fun search(writeTestsSnapshot: ((s: Solution<T>, snapshotTimestamp: String) -> Unit)? = null): Solution<T> {
+
+        time.startSearch()
+
+        setupBeforeSearch()
+
+        while (time.shouldContinueSearch()) {
+
+            searchOnce()
+
+            if (needsToSnapshot() && writeTestsSnapshot != null) {
+                lastSnapshot = time.getElapsedSeconds()
+                val partialSolution = archive.extractSolution()
+                writeTestsSnapshot(partialSolution, lastSnapshot.toString())
+            }
+        }
+
+        return archive.extractSolution()
+    }
+
+    private fun needsToSnapshot(): Boolean {
+        var isSnapshotEnabled = config.enableWriteSnapshotTests
+        var snapshotPeriod = config.writeSnapshotTestsIntervalInSeconds
+
+        return isSnapshotEnabled && time.getElapsedSeconds() - lastSnapshot > snapshotPeriod
+    }
 
     abstract fun getType() : EMConfig.Algorithm
 }
