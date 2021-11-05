@@ -508,6 +508,13 @@ public class EMController {
 
         try {
 
+            /*
+                ignore to collect sql created by evomaster for initialization
+                note that
+                    even if SqlScriptRunner.execCommand is not instrumented,
+                    it can refer to a proxy, and the proxy itself is likely
+                    going to be instrumented (as not in org.evomaster)
+             */
             sutController.setExecutingInitSql(true);
 
             SimpleLogger.debug("Received database command");
