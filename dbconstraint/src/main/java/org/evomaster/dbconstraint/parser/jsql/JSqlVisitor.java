@@ -321,9 +321,22 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
+    private static String QUOTE_CHAR = "\"";
+
+    private static boolean hasSurroundingQuotes(String str) {
+        return str.length()>1 && str.startsWith(QUOTE_CHAR) && str.endsWith(QUOTE_CHAR);
+    }
+
+    private static String removeSurroundingQuotes(String str) {
+        return str.substring(1,str.length()-1);
+    }
+
     @Override
     public void visit(Column column) {
         String columnName = column.getColumnName();
+        if (hasSurroundingQuotes(columnName)) {
+            columnName = removeSurroundingQuotes(columnName);
+        }
         if (column.getTable() != null) {
             String tableName = column.getTable().getName();
             stack.push(new SqlColumn(tableName, columnName));
