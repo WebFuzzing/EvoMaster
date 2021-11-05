@@ -461,7 +461,6 @@ public class EMController {
     @Consumes(MediaType.APPLICATION_JSON)
     @PUT
     public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
-        // man: shall I get the real info here? need to discuss
         // executingInitSql should be false when reaching here
         assert (!ExecutionTracer.isExecutingInitSql());
         /*

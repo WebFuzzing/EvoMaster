@@ -368,8 +368,8 @@ public abstract class ExternalSutController extends SutController {
     public void setExecutingInitSql(boolean executingInitSql) {
         checkInstrumentation();
         serverController.setExecutingInitSql(executingInitSql);
-        // Man: why there are two set, need to check
-        ExecutionTracer.setKillSwitch(executingInitSql);
+        // sync executingInitSql on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitSql(executingInitSql);
     }
 
     //-----------------------------------------
