@@ -144,7 +144,7 @@ class Main {
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)
 
-            val solution = run(injector)
+            val solution = run(injector, controllerInfo)
             val faults = solution.overall.potentialFoundFaults(idMapper)
 
             writeOverallProcessData(injector)
@@ -361,7 +361,7 @@ class Main {
             }
         }
 
-        fun run(injector: Injector): Solution<*> {
+        fun run(injector: Injector, controllerInfo: ControllerInfoDto?): Solution<*> {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -380,7 +380,10 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Starting to generate test cases")
 
-            return imp.search()
+            return imp.search { solution: Solution<*>,
+                                snapshotTimestamp: String ->
+                writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp)
+            }
         }
 
         private fun checkExperimentalSettings(injector: Injector) {
@@ -438,7 +441,50 @@ class Main {
             reporter.saveAll()
         }
 
-         fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
+        private fun writeTestsAsSnapshots(
+            injector: Injector,
+            solution: Solution<*>,
+            controllerInfoDto: ControllerInfoDto?,
+            snapshotTimestamp: String = ""
+        ) {
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.createTests) {
+                return
+            }
+
+            val n = solution.individuals.size
+            val tests = if (n == 1) "1 test" else "$n tests"
+
+            LoggingUtil.getInfoLogger().info("Going to save snapshot $tests to ${config.outputFolder}")
+
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+
+
+            if (config.problemType == EMConfig.ProblemType.REST) {
+
+                val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
+
+                solution.clusteringTime = splitResult.clusteringTime.toInt()
+                splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
+                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshotTimestamp) }
+
+                if (config.executiveSummary) {
+                    writeExecSummary(injector, controllerInfoDto, splitResult, snapshotTimestamp)
+                    //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
+                }
+            } else {
+                /*
+                    TODO refactor all the PartialOracle stuff that is meant for only REST
+                 */
+
+                writer.writeTests(solution, controllerInfoDto?.fullName, snapshotTimestamp)
+            }
+        }
+
+        fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?,
+                       snapshot: String = "") {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -459,7 +505,7 @@ class Main {
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
                 splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
+                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshot) }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult)
@@ -553,7 +599,8 @@ class Main {
 
         private fun writeExecSummary(injector: Injector,
                                      controllerInfoDto: ControllerInfoDto?,
-                                     splitResult: SplitResult) {
+                                     splitResult: SplitResult,
+                                     snapshotTimestamp: String = "") {
             val config = injector.getInstance(EMConfig::class.java)
 
             if (!config.createTests) {
@@ -562,10 +609,9 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             assert(controllerInfoDto == null || controllerInfoDto.fullName != null)
-            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName)
+            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName, snapshotTimestamp)
         }
     }
 }
-
 
 
