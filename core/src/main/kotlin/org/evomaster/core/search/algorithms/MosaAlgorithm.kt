@@ -29,16 +29,20 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         return EMConfig.Algorithm.MOSA
     }
 
-    override fun search(): Solution<T> {
-        time.startSearch()
+    override fun setupBeforeSearch() {
+
         population.clear()
 
         initPopulation()
         sortPopulation()
 
+    }
+
+    override fun searchOnce() {
+
+
         val n = config.populationSize
 
-        while (time.shouldContinueSearch()) {
 
             //new generation
 
@@ -61,9 +65,6 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             population.addAll(nextPop)
             sortPopulation()
-        }
-
-        return archive.extractSolution()
     }
 
 

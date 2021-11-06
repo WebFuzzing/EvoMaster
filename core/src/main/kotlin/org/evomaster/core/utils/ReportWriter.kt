@@ -23,11 +23,10 @@ object ReportWriter {
         if (!doAppend){
             if (path.parent != null && !Files.exists(path.parent)) Files.createDirectories(path.parent)
 
-            if (!Files.exists(path)) {
-                Files.createFile(path)
-            }else{
+            if (Files.exists(path))
                 log.warn("existing file ${path.toFile().absolutePath} will be replaced")
-            }
+            Files.deleteIfExists(path)
+            Files.createFile(path)
         }
 
         val options = if (!doAppend) setOf(StandardOpenOption.WRITE, StandardOpenOption.CREATE)
