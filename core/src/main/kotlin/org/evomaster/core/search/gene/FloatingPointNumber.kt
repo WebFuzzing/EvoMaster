@@ -13,13 +13,15 @@ import kotlin.math.pow
 abstract class FloatingPointNumber<T:Number>(
     name: String,
     value: T,
-    min: T? = null,
-    max: T? = null,
+    numericConstrains: NumericConstrains? = null,
+//    min: T? = null,
+//    max: T? = null,    min: T? = null,
+//    max: T? = null,
     /**
      * specified precision
      */
     val precision: Int?
-) : NumberGene<T>(name, value, NumericConstrains( min, max)){
+) : NumberGene<T>(name, value, numericConstrains){
 
 
     companion object{

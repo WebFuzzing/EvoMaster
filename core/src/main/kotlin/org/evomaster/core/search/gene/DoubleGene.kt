@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.rest.NumericConstrains
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -15,19 +16,28 @@ import org.slf4j.LoggerFactory
 
 class DoubleGene(name: String,
                  value: Double = 0.0,
-                 min: Double? = null,
-                 max: Double? = null,
+                 numericConstrains: NumericConstrains? = null,
+//                 min: Double? = null,
+//                 max: Double? = null,
                  /**
                   * specified precision
                   */
                  precision: Int? = null
-) : FloatingPointNumber<Double>(name, value, min, max, precision) {
+) : FloatingPointNumber<Double>(name, value, numericConstrains , precision) {
+
+    fun getMin(): Double? {
+        return min?.toDouble()
+    }
+
+    fun getMax(): Double? {
+        return max?.toDouble()
+    }
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(DoubleGene::class.java)
     }
 
-    override fun copyContent() = DoubleGene(name, value, min?.toDouble(), max?.toDouble(), precision)
+    override fun copyContent() = DoubleGene(name, value, numericConstrains, precision)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 

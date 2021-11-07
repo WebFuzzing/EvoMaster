@@ -435,10 +435,8 @@ object RestActionBuilderV3 {
         when (format?.lowercase()) {
             "int32" -> return IntegerGene(name, numericConstrains = numericConstrains)
             "int64" -> return LongGene(name, numericConstrains = numericConstrains)
-            // "double" -> return DoubleGene(name, numericConstrains = numericConstrains)
-            "double" -> return DoubleGene(name)
-            // "float" -> return FloatGene(name, numericConstrains = numericConstrains)
-            "float" -> return FloatGene(name)
+            "double" -> return DoubleGene(name, numericConstrains = numericConstrains)
+            "float" -> return FloatGene(name, numericConstrains = numericConstrains)
             "password" -> return StringGene(name) //nothing special to do, it is just a hint
             "binary" -> return StringGene(name) //does it need to be treated specially?
             "byte" -> return Base64StringGene(name)
@@ -455,8 +453,7 @@ object RestActionBuilderV3 {
          */
         when (type?.lowercase()) {
             "integer" -> return IntegerGene(name, numericConstrains = numericConstrains)
-            // "number" -> return DoubleGene(name, numericConstrains = numericConstrains)
-            "number" -> return DoubleGene(name)
+            "number" -> return DoubleGene(name, numericConstrains = numericConstrains)
             "boolean" -> return BooleanGene(name)
             "string" -> {
                 return if (schema.pattern == null) {
@@ -760,11 +757,11 @@ object RestActionBuilderV3 {
 
 
 class NumericConstrains(
-    min: BigDecimal? = null, max: BigDecimal? = null, exclusiveMinimum: Boolean? = null,
-    exclusiveMaximum: Boolean? = null, multipleOf: BigDecimal? = null
+    min: Number? = null, max: Number? = null, exclusiveMinimum: Boolean? = false,
+    exclusiveMaximum: Boolean? = false, multipleOf: BigDecimal? = null
 ) {
-    private var min: BigDecimal? = min;
-    private var max: BigDecimal? = max;
+    private var min: Number? = min;
+    private var max: Number? = max;
     private var exclusiveMinimum: Boolean? = exclusiveMinimum;
     private var exclusiveMaximum: Boolean? = exclusiveMaximum;
     private var multipleOf: BigDecimal? = multipleOf;
@@ -777,10 +774,16 @@ class NumericConstrains(
         if (min != null) {
             when (min) {
                 is Int -> {
-                    this.min = BigDecimal(min)
+                    this.min = min
                 }
                 is Long -> {
-                    this.min = BigDecimal(min)
+                    this.min = min
+                }
+                is Double -> {
+                    this.min = min
+                }
+                is Float -> {
+                    this.min = min
                 }
                 else -> {
                     log.warn("Not supported number type to generate Numeric Constrains")
@@ -790,10 +793,16 @@ class NumericConstrains(
         if (max != null) {
             when (max) {
                 is Int -> {
-                    this.max = BigDecimal(max)
+                    this.max = max
                 }
                 is Long -> {
-                    this.max = BigDecimal(max)
+                    this.max = max
+                }
+                is Double -> {
+                    this.max = max
+                }
+                is Float -> {
+                    this.max = max
                 }
                 else -> {
                     log.warn("Not supported number type to generate Numeric Constrains")
@@ -802,11 +811,11 @@ class NumericConstrains(
         }
     }
 
-    public fun getMin(): BigDecimal? {
+    public fun getMin(): Number? {
         return this.min
     }
 
-    public fun getMax(): BigDecimal? {
+    public fun getMax(): Number? {
         return this.max
     }
 

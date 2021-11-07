@@ -183,7 +183,7 @@ abstract class AbstractParser(
 
     private fun inRange(value: Int, numericConstrains: NumericConstrains): Boolean {
         return numericConstrains.getMax() != null && numericConstrains.getMin() != null &&
-                BigDecimal(value) <= numericConstrains.getMax() && BigDecimal(value) >= numericConstrains.getMin()
+                value <= numericConstrains.getMax() as Int && value >= numericConstrains.getMin() as Int
     }
 
     protected fun updateGeneWithParameterValue(gene: TimeGene, paramName: String, paramValue: String): Boolean {

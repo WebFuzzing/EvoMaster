@@ -23,7 +23,7 @@ class DisruptiveGeneImpactTest : GeneImpactTest() {
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
         geneToMutate as DisruptiveGene<IntegerGene>
         val gene = geneToMutate.gene
-        gene.value += if (gene.max != null && gene.value + 1 > gene.max!! as Int) -1 else 1
+        gene.value += if (gene.getMax() != null && gene.value + 1 > gene.getMax()!!) -1 else 1
         return MutatedGeneWithContext(previous = original, current = geneToMutate)
     }
 
