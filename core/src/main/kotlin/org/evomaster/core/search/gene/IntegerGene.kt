@@ -31,6 +31,14 @@ class IntegerGene(
 ) : NumberGene<Int>(name, value, complete(numericConstrains)) {
 
 
+    fun getMin(): Int? {
+        return min?.toInt()
+    }
+
+    fun getMax(): Int? {
+        return max?.toInt()
+    }
+
     companion object{
         private val log : Logger = LoggerFactory.getLogger(IntegerGene::class.java)
     }
