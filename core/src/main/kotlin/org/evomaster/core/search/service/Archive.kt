@@ -9,10 +9,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Solution
+import org.evomaster.core.search.*
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -50,6 +47,7 @@ class Archive<T> where T : Individual {
 
     @Inject
     private lateinit var tracker : ArchiveMutationTrackService
+
     /**
      * Key -> id of the target
      *
@@ -86,6 +84,13 @@ class Archive<T> where T : Individual {
 
 
     fun extractSolution(): Solution<T> {
+        val uniques = getUniquePopulation()
+
+        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
+    }
+
+
+    private fun getUniquePopulation(): MutableSet<EvaluatedIndividual<T>> {
 
         /*
             Note: no equals() is defined, so Set is based
@@ -104,7 +109,7 @@ class Archive<T> where T : Individual {
             }
         }
 
-        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
+        return uniques
     }
 
 

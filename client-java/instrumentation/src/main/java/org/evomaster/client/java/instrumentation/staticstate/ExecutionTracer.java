@@ -25,6 +25,11 @@ import java.util.stream.Collectors;
  */
 public class ExecutionTracer {
 
+    /**
+     * indicate whether now it is to execute sql initialized by evomaster
+     */
+    private static boolean executingInitSql = false;
+
     /*
         Careful if you change the signature of any of the
         methods in this class, as they are injected in the
@@ -99,6 +104,14 @@ public class ExecutionTracer {
 
     public static void setKillSwitch(boolean killSwitch) {
         ExecutionTracer.killSwitch = killSwitch;
+    }
+
+    public static boolean isExecutingInitSql() {
+        return executingInitSql;
+    }
+
+    public static void setExecutingInitSql(boolean executingInitSql) {
+        ExecutionTracer.executingInitSql = executingInitSql;
     }
 
     public static void setAction(Action action) {
@@ -230,7 +243,8 @@ public class ExecutionTracer {
     }
 
     public static void addSqlInfo(SqlInfo info){
-        getCurrentAdditionalInfo().addSqlInfo(info);
+        if (!executingInitSql)
+            getCurrentAdditionalInfo().addSqlInfo(info);
     }
 
     public static void markLastExecutedStatement(String lastLine, String lastMethod) {

@@ -151,7 +151,7 @@ public class SutControllerTest {
                 .get("/infoSUT")
                 .then()
                 .statusCode(200)
-                .body("data.restProblem.swaggerJsonUrl", is(SWAGGER_URL));
+                .body("data.restProblem.openApiUrl", is(SWAGGER_URL));
     }
 
     @Test

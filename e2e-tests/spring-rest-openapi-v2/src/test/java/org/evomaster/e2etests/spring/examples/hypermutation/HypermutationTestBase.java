@@ -22,11 +22,11 @@ public class HypermutationTestBase extends SpringTestBase {
             String geneId = ImpactUtils.Companion.generateGeneId(ind.getIndividual(), g);
             allImpacts.addAll(ind.getGeneImpact(geneId));
         }
-        List<Integer> x = allImpacts.stream().filter(s-> s.getId().contains("POST:/api/highweight/"+action+"::DisruptiveGene>x")).map(s-> s.getTimesToManipulate()).collect(Collectors.toList());
+        List<Integer> x = allImpacts.stream().filter(s-> s.getId().contains("POST:/api/highweight/"+action+"/{x}::DisruptiveGene>x")).map(s-> s.getTimesToManipulate()).collect(Collectors.toList());
         int maxX = Collections.max(x);
-        List<Integer> y = allImpacts.stream().filter(s-> s.getId().contains("POST:/api/highweight/"+action+"::y")).map(s-> s.getTimesToManipulate()).collect(Collectors.toList());
+        List<Integer> y = allImpacts.stream().filter(s-> s.getId().contains("POST:/api/highweight/"+action+"/{x}::y")).map(s-> s.getTimesToManipulate()).collect(Collectors.toList());
         int maxY = Collections.max(y);
-        List<Integer> z = allImpacts.stream().filter(s-> s.getId().contains("POST:/api/highweight/"+action+"::HighWeightDto>body")).map(s-> s.getTimesToManipulate()).collect(Collectors.toList());
+        List<Integer> z = allImpacts.stream().filter(s-> s.getId().contains("POST:/api/highweight/"+action+"/{x}::HighWeightDto>body")).map(s-> s.getTimesToManipulate()).collect(Collectors.toList());
         int maxZ = Collections.max(z);
         // z should be mutated more times than x and y
 
