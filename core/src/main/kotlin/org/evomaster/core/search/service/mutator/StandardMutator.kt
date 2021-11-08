@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
@@ -37,14 +38,16 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     override fun doesStructureMutation(individual : T): Boolean {
-        /**
-         * disable structure mutation (add/remove) during focus search
-         */
-        if (config.disableStructureMutationDuringFocusSearch && apc.doesFocusSearch()){return false}
+
+        val prob = when(config.structureMutationProbabilityStrategy){
+            EMConfig.StructureMutationProbabilityStrategy.SPECIFIED -> config.structureMutationProbability
+            EMConfig.StructureMutationProbabilityStrategy.DEACTIVATED_DURING_FOCUS_SEARCH -> 0.0
+            EMConfig.StructureMutationProbabilityStrategy.IMPACT_ADAPTIVE -> TODO()
+        }
 
         return structureMutator.canApplyStructureMutator(individual) &&
                 config.maxTestSize > 1 && // if the maxTestSize is 1, there is no point to do structure mutation
-                randomness.nextBoolean(config.structureMutationProbability)
+                randomness.nextBoolean(prob)
     }
 
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene> {

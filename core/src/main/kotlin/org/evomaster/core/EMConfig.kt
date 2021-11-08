@@ -1087,7 +1087,8 @@ class EMConfig {
     var probOfApplySQLActionToCreateResources = 0.5
 
     @Experimental
-    @Cfg("When generating resource using SQL (e.g., sampler or mutator), how many new rows (max) to generate for the specific resource each time")
+    @Cfg("When initializing resource using SQL for manipluating a size of resources, " +
+            "how many new rows (at maximum) to generate for the specific resource each time")
     @Min(0.0)
     var maxSqlInitActionsPerResource = 0
 
@@ -1107,6 +1108,28 @@ class EMConfig {
          */
         DPC
     }
+
+    enum class StructureMutationProbabilityStrategy{
+        /**
+         * apply the specified probability
+         */
+        SPECIFIED,
+
+        /**
+         * deactivated structure mutator when focused search starts
+         */
+        DEACTIVATED_DURING_FOCUS_SEARCH,
+
+        /**
+         * apply a probability which is adaptive to the impact
+         */
+        IMPACT_ADAPTIVE
+    }
+
+    @Experimental
+    @Cfg("Specify a strategy to handle a probability of applying structure mutator")
+    var structureMutationProbabilityStrategy = StructureMutationProbabilityStrategy.SPECIFIED
+
     @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
             "In other word, if the number is less than the specified, insertion is always applied.")
@@ -1324,10 +1347,6 @@ class EMConfig {
     @Cfg("Specify a path to save derived genes")
     @FilePath
     var impactFile = "impact.csv"
-
-    @Experimental
-    @Cfg("Specify whether to disable structure mutation during focus search")
-    var disableStructureMutationDuringFocusSearch = false
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
     @Probability
