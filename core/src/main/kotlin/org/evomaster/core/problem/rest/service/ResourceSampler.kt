@@ -10,6 +10,7 @@ import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -214,5 +215,19 @@ open class ResourceSampler : AbstractRestSampler() {
             size -= resourceCalls.last().seeActionSize(ActionFilter.NO_SQL)
             executed.add(key)
         }
+    }
+
+    override fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+        val resourceCalls = restCalls.map {
+            RestResourceCalls(
+                    node = rm.getResourceNodeFromCluster(it.path.toString()),
+                    actions = mutableListOf(it)
+            )
+        }.toMutableList()
+        return RestIndividual(
+                resourceCalls=resourceCalls,
+                sampleType = SampleType.SMART_RESOURCE,
+                trackOperator = if (config.trackingEnabled()) this else null,
+                index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
     }
 }
