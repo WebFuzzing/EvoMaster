@@ -42,7 +42,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val prob = when(config.structureMutationProbabilityStrategy){
             EMConfig.StructureMutationProbabilityStrategy.SPECIFIED -> config.structureMutationProbability
             EMConfig.StructureMutationProbabilityStrategy.DEACTIVATED_DURING_FOCUS_SEARCH -> 0.0
-            EMConfig.StructureMutationProbabilityStrategy.IMPACT_ADAPTIVE -> TODO()
+            EMConfig.StructureMutationProbabilityStrategy.IMPACT_ADAPTIVE ->
+                /*
+                    Man: initial idea.
+                    based on ActionStructureImpact, if there exist recent improvement achieved by structure mutator,
+                        we set config.structureMutationProbability
+                    otherwise, we set 0.0
+                 */
+                TODO()
         }
 
         return structureMutator.canApplyStructureMutator(individual) &&

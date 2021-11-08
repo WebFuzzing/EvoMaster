@@ -153,7 +153,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             //enable further actions for extracting
             update(currentWithTraces, mutated, mutatedGenes, result)
 
-            //save mutationInfo
+            //save mutationInfo which is only used for debugging
             archiveGeneMutator.saveMutatedGene(mutatedGenes, index = time.evaluatedIndividuals, individual = mutatedInd, evaluatedMutation = result, targets = targets)
             archive.saveSnapshot()
 
@@ -184,6 +184,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
              */
             current = saveMutation(result, archive, currentWithTraces, mutatedWithTraces)
 
+            //save impact info which is only used for debugging
             archiveGeneSelector.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,targetsInfo = targetsInfo, result = result, evaluatedIndividual = current)
 
             when(config.mutationTargetsSelectionStrategy){

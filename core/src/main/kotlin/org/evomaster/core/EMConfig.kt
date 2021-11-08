@@ -965,18 +965,12 @@ class EMConfig {
          * save evaluated individuals and Archive with a json format
          */
         JSON_ALL,
-//        /**
-//         * save Archive with a json format and save the evaluated individual with the specified test format
-//         */
-//        JSON_ARCHIVE_TEST_IND,
-//        /**
-//         * only save the evaluated individuals with json format
-//         */
-//        JSON_IND,
+
         /**
          * only save the evaluated individual with the specified test format
          */
         TEST_IND,
+
         /**
          * save covered targets with the specified target format and tests with the specified test format
          */

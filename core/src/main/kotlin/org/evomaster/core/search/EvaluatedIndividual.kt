@@ -198,7 +198,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                     it.wrapWithEvaluatedResults(evaluatedResult)
                 }
             }
-            TraceableElementCopyFilter.DEEP_TRACK -> throw IllegalArgumentException("there is no need to track individual when evaluated indivdual is tracked")
+            TraceableElementCopyFilter.DEEP_TRACK -> throw IllegalArgumentException("there is no need to track individual when evaluated individual is tracked")
             TraceableElementCopyFilter.WITH_TRACK ->{
                 // the copy includes tracking info, but it is no need to include tracking info for the element in the tracking.
                 return copy().also { it.wrapWithTracking(evaluatedResult, trackingHistory = tracking) }

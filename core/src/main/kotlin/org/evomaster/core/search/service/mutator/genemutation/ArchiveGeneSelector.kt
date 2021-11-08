@@ -88,7 +88,7 @@ class ArchiveGeneSelector {
             GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT))
             GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPROVEMENT))
             GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET))
-            GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT_WITH_E -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.E_IMPACT_DIVID_NO_IMPACT))
+            GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT_WITH_E -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.E_IMPACT_DIVIDE_NO_IMPACT))
 
             else -> {
                 throw IllegalArgumentException("invalid gene selection method: method cannot be NONE or adaptive, but $method")
@@ -191,7 +191,7 @@ class ArchiveGeneSelector {
         val value = impact.getDegree(property, targets, By.SUM, true) ?: return 1.0
 
         return when (property) {
-            ImpactProperty.TIMES_IMPACT, ImpactProperty.E_IMPACT_DIVID_NO_IMPACT -> value
+            ImpactProperty.TIMES_IMPACT, ImpactProperty.E_IMPACT_DIVIDE_NO_IMPACT -> value
             else -> 1.0 - value
         }
     }

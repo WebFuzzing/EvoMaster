@@ -36,13 +36,17 @@ open class Impact(
     fun getTimesToManipulate() = shared.timesToManipulate
     fun getDegree() = shared.degree
 
+    /**
+     * @return whether there exist any recent improvement
+     */
     fun recentImprovement() = getNoImprovementCounter().any { it.value < 2 }
 
     private fun getDegree(property: ImpactProperty, target: Int, singleImpactReward : Boolean) : Double?{
-        return   if (property == ImpactProperty.E_IMPACT_DIVID_NO_IMPACT) getValueByImpactProperty(property, target, singleImpactReward)
+        return   if (property == ImpactProperty.E_IMPACT_DIVIDE_NO_IMPACT) getValueByImpactProperty(property, target, singleImpactReward)
             else if (manipulateTimesForTargets(target, singleImpactReward) == 0.0) 1.0
             else getValueByImpactProperty(property, target, singleImpactReward)?.div(manipulateTimesForTargets(target, singleImpactReward))
     }
+
     private fun getCounter(property: ImpactProperty, target: Int, singleImpactReward : Boolean) : Double?{
         return if (getTimesToManipulate() == 0) 1.0 else getValueByImpactProperty(property, target, singleImpactReward)
     }
@@ -157,6 +161,11 @@ open class Impact(
     companion object{
         fun toCSVHeader() : List<String> = listOf("id", "degree", "timesToManipulate", "timesOfNoImpacts","timesOfImpact","noImpactFromImpact","noImprovement")
     }
+
+    /**
+     * @return a list of string which reflects impact info with the header i.e., [toCSVHeader]
+     * this is only used for debugging
+     */
     fun toCSVCell(targets : Set<Int>? = null) : List<String> = listOf(
             getId(),
             getDegree().toString(),
@@ -168,6 +177,9 @@ open class Impact(
             "NV:${getNoImprovementCounter().filter { targets?.contains(it.key)?:true }.map { "${it.key}->${it.value}" }.joinToString(";")}"
     )
 
+    /**
+     * @return max times of impacts across various targets
+     */
     fun getMaxImpact() : Double = shared.timesOfImpact.values.maxOrNull()?:0.0
 
     private fun getValueByImpactProperty(property: ImpactProperty, target : Int, singleImpactReward: Boolean) : Double?{
@@ -177,7 +189,7 @@ open class Impact(
             ImpactProperty.TIMES_IMPACT -> shared.timesOfImpact[target]?.times(singleReward(singleImpactReward))
             ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT -> specific.noImpactFromImpact[target]
             ImpactProperty.TIMES_CONS_NO_IMPROVEMENT -> specific.noImpactFromImpact[target]
-            ImpactProperty.E_IMPACT_DIVID_NO_IMPACT -> nl(target, divide = true)
+            ImpactProperty.E_IMPACT_DIVIDE_NO_IMPACT -> nl(target, divide = true)
             ImpactProperty.E_IMPACT_MINUS_NO_IMPACT -> nl(target, divide = false)
         }
     }
@@ -214,6 +226,7 @@ open class Impact(
  * @property timesToManipulate presents how many times [value] the element is manipulated
  * @property timesOfImpact presents how many times [value] the change of the element (i.e., Gene, structure of individual) impacts the [Archive] with regards to target id [key]
  * @property timesOfNoImpacts presents how many times [value] the change of the element (i.e., Gene, structure of individual) did not impact the [Archive]
+ * @property singleImpact presents whether ([value]) the impact on the target ([key]) is attributed by single modification.
  */
 class SharedImpactInfo(
         val id: String,
@@ -223,8 +236,6 @@ class SharedImpactInfo(
         val timesOfNoImpactWithTargets: MutableMap<Int, Double> = mutableMapOf(),
         val timesOfImpact: MutableMap<Int, Double> = mutableMapOf(),
         val singleImpact : MutableMap<Int, Boolean> = mutableMapOf()){
-
-
 
     fun copy() : SharedImpactInfo{
         return SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact.toMutableMap(), singleImpact.toMutableMap())
@@ -250,12 +261,39 @@ class SpecificImpactInfo(
 }
 
 enum class ImpactProperty{
+    /**
+     * get times of no impacts
+     */
     TIMES_NO_IMPACT,
+
+    /**
+     * get times of no impact with respect to targets
+     */
     TIMES_NO_IMPACT_WITH_TARGET,
+
+    /**
+     * get times of impact
+     */
     TIMES_IMPACT,
+
+    /**
+     * get times of continuous no impact
+     */
     TIMES_CONS_NO_IMPACT_FROM_IMPACT,
+
+    /**
+     * get times of continuous no improvement
+     */
     TIMES_CONS_NO_IMPROVEMENT,
-    E_IMPACT_DIVID_NO_IMPACT,
+
+    /**
+     * get a ratio of (times of impact)/(times of no impacts)
+     */
+    E_IMPACT_DIVIDE_NO_IMPACT,
+
+    /**
+     * get difference between (times of impact) and (times of no impact)
+     */
     E_IMPACT_MINUS_NO_IMPACT
 }
 
