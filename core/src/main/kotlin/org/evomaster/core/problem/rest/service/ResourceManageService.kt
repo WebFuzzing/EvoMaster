@@ -73,7 +73,7 @@ class ResourceManageService {
     /**
      * this function is used to initialized ad-hoc individuals for resource-based individual
      */
-    fun createAdHocIndividuals(auth: AuthenticationInfo, adHocInitialIndividuals : MutableList<RestIndividual>){
+    fun createAdHocIndividuals(auth: AuthenticationInfo, adHocInitialIndividuals : MutableList<RestIndividual>, maxTestSize: Int){
         val sortedResources = cluster.getCluster().values.sortedByDescending { it.getTokenMap().size }.asSequence()
 
         //GET, PATCH, DELETE
@@ -99,7 +99,7 @@ class ResourceManageService {
         sortedResources
                 .filter { it.actions.find { a -> a.verb == HttpVerb.POST } != null && it.getPostChain()?.actions?.run { this.size > 1 }?:false  }
                 .forEach { ar->
-                    ar.genPostChain(randomness, config.maxTestSize)?.let {call->
+                    ar.genPostChain(randomness, maxTestSize)?.let {call->
                         call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
                         adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
                     }
@@ -118,7 +118,7 @@ class ResourceManageService {
         sortedResources.forEach { ar->
             ar.getTemplates().values.filter { t-> RestResourceTemplateHandler.isNotSingleAction(t.template) }
                     .forEach {ct->
-                        val call = ar.sampleRestResourceCalls(ct.template, randomness, config.maxTestSize)
+                        val call = ar.sampleRestResourceCalls(ct.template, randomness, maxTestSize)
                         call.seeActions(ActionFilter.NO_SQL).forEach { if(it is RestCallAction) it.auth = auth }
                         adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
                     }

@@ -47,10 +47,10 @@ open class ResourceSampler : AbstractRestSampler() {
 
         adHocInitialIndividuals.clear()
 
-        rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals)
+        rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals, getMaxTestSizeDuringSampler())
 
         authentications.forEach { auth ->
-            rm.createAdHocIndividuals(auth, adHocInitialIndividuals)
+            rm.createAdHocIndividuals(auth, adHocInitialIndividuals, getMaxTestSizeDuringSampler())
         }
     }
 
@@ -59,13 +59,13 @@ open class ResourceSampler : AbstractRestSampler() {
     }
 
     override fun sampleAtRandom() : RestIndividual {
-        return sampleAtRandom(randomness.nextInt(1, config.maxTestSize))
+        return sampleAtRandom(randomness.nextInt(1, getMaxTestSizeDuringSampler()))
     }
 
     private fun sampleAtRandom(size : Int): RestIndividual {
-        assert(size <= config.maxTestSize)
+        assert(size <= getMaxTestSizeDuringSampler())
         val restCalls = mutableListOf<RestResourceCalls>()
-        val n = randomness.nextInt(1, config.maxTestSize)
+        val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())
 
         var left = n
         while(left > 0){
@@ -149,17 +149,17 @@ open class ResourceSampler : AbstractRestSampler() {
 
     private fun sampleIndependentAction(resourceCalls: MutableList<RestResourceCalls>){
         val key = randomness.choose(rm.getResourceCluster().filter { it.value.hasIndependentAction() }.keys)//selectAResource(randomness)
-        rm.sampleCall(key, false, resourceCalls, config.maxTestSize)
+        rm.sampleCall(key, false, resourceCalls, getMaxTestSizeDuringSampler())
     }
 
     private fun sampleOneResource(resourceCalls: MutableList<RestResourceCalls>){
         val key = selectAIndResourceHasNonInd(randomness)
-        rm.sampleCall(key, true, resourceCalls, config.maxTestSize)
+        rm.sampleCall(key, true, resourceCalls, getMaxTestSizeDuringSampler())
     }
 
     private fun sampleComResource(resourceCalls: MutableList<RestResourceCalls>, withDependency : Boolean){
         if(withDependency){
-            dm.sampleRelatedResources(resourceCalls, 2, config.maxTestSize)
+            dm.sampleRelatedResources(resourceCalls, 2, getMaxTestSizeDuringSampler())
         }else{
             sampleRandomComResource(resourceCalls)
         }
@@ -167,8 +167,8 @@ open class ResourceSampler : AbstractRestSampler() {
 
     private fun sampleManyResources(resourceCalls: MutableList<RestResourceCalls>, withDependency: Boolean){
         if(withDependency){
-            val num = randomness.nextInt(3, config.maxTestSize)
-            dm.sampleRelatedResources(resourceCalls, num, config.maxTestSize)
+            val num = randomness.nextInt(3, getMaxTestSizeDuringSampler())
+            dm.sampleRelatedResources(resourceCalls, num, getMaxTestSizeDuringSampler())
         }else{
             sampleManyResources(resourceCalls)
         }
@@ -187,7 +187,7 @@ open class ResourceSampler : AbstractRestSampler() {
         val candidates = rm.getResourceCluster().filter { !it.value.isIndependent() }.keys
         assert(candidates.size > 1)
         val keys = randomness.choose(candidates, 2)
-        var size = config.maxTestSize
+        var size = getMaxTestSizeDuringSampler()
         keys.forEach {
             rm.sampleCall(it, true, resourceCalls, size)
             size -= resourceCalls.last().seeActionSize(ActionFilter.NO_SQL)
@@ -200,7 +200,7 @@ open class ResourceSampler : AbstractRestSampler() {
         var resourceSize = randomness.nextInt(3, 5)
         if(resourceSize > depCand.size) resourceSize = depCand.size + 1
 
-        var size = config.maxTestSize
+        var size = getMaxTestSizeDuringSampler()
         val candR = rm.getResourceCluster().filter { r -> r.value.isAnyAction() }
         while(size > 1 && executed.size < resourceSize){
             val key = if(executed.size < resourceSize-1 && size > 2)

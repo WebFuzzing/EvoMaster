@@ -41,7 +41,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         val prob = when(config.structureMutationProbabilityStrategy){
             EMConfig.StructureMutationProbabilityStrategy.SPECIFIED -> config.structureMutationProbability
-            EMConfig.StructureMutationProbabilityStrategy.DEACTIVATED_DURING_FOCUS_SEARCH -> 0.0
+            EMConfig.StructureMutationProbabilityStrategy.DEACTIVATED_DURING_FOCUS_SEARCH -> if(apc.doesFocusSearch()) 0.0 else config.structureMutationProbability
             EMConfig.StructureMutationProbabilityStrategy.IMPACT_ADAPTIVE ->
                 /*
                     Man: initial idea.

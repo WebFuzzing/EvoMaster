@@ -21,6 +21,9 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
     @Inject
     protected lateinit var time : SearchTimeController
 
+    @Inject
+    protected lateinit var apc: AdaptiveParameterControl
+
     /**
      * Set of available actions that can be used to define a test case
      *
@@ -92,4 +95,12 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      * this can be used to provide feedback to sampler regarding a fitness of the sampled individual (i.e., [evi]).
      */
     open fun feedback(evi : EvaluatedIndividual<T>){}
+
+
+    fun getMaxTestSizeDuringSampler() : Int{
+        return when(config.maxTestSizeStrategy){
+            EMConfig.MaxTestSizeStrategy.SPECIFIED -> config.maxTestSize
+            EMConfig.MaxTestSizeStrategy.SPECIFIED_REDUCED_DURING_FOCUS_SEARCH -> if (apc.doesFocusSearch()) config.maxTestSizeDuringFocusSearch else config.maxTestSize
+        }
+    }
 }

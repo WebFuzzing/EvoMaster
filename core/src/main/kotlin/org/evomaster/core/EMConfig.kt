@@ -1124,6 +1124,27 @@ class EMConfig {
     @Cfg("Specify a strategy to handle a probability of applying structure mutator")
     var structureMutationProbabilityStrategy = StructureMutationProbabilityStrategy.SPECIFIED
 
+
+    enum class MaxTestSizeStrategy{
+        /**
+         * apply the specified max size of a test
+         */
+        SPECIFIED,
+
+        /**
+         * reduce a size of test to 1 when focused search starts
+         */
+        SPECIFIED_REDUCED_DURING_FOCUS_SEARCH
+    }
+
+    @Experimental
+    @Cfg("Specify a strategy to handle a max size of a test")
+    var maxTestSizeStrategy = MaxTestSizeStrategy.SPECIFIED
+
+    @Experimental
+    @Cfg("Specify a max size of a test when focused search starts")
+    var maxTestSizeDuringFocusSearch = 1
+
     @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
             "In other word, if the number is less than the specified, insertion is always applied.")
