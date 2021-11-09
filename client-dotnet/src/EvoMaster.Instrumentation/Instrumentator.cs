@@ -17,7 +17,8 @@ namespace EvoMaster.Instrumentation
         {
             if (string.IsNullOrEmpty(assembly)) throw new ArgumentNullException(assembly);
             if (string.IsNullOrEmpty(destination)) throw new ArgumentNullException(destination);
-
+            
+            //ReadSymbols is set true to enable getting line info
             var module =
                 ModuleDefinition.ReadModule(assembly, new ReaderParameters { ReadSymbols = true });
 
@@ -65,7 +66,7 @@ namespace EvoMaster.Instrumentation
                         if (lastReachedLine != 0)
                         {
                             //This is to prevent insertion of completed probe after branch opcode
-                            //Checking alreadyCompletedLines is in order to calling Completed probe in loops two times...
+                            //Checking alreadyCompletedLines is in order to control calling Completed probe in loops two times...
                             //However I'm not sure this will work in all cases, if it didn't work, we can try branchInstruction.Operand.Next
                             if (IsBranchInstruction(instruction.Previous) &&
                                 !alreadyCompletedLines.Contains(lastReachedLine))
@@ -133,7 +134,8 @@ namespace EvoMaster.Instrumentation
         private static bool IsBranchInstruction(Instruction instruction) =>
             instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
             instruction.OpCode != OpCodes.Box;
-
+        
+        //This method is called by the probe inserted after each covered line in the instrumented SUT
         public static void CompletedLine(string className, string methodName, int lineNo)
         {
             ObjectiveRecorder.RegisterTarget(ObjectiveNaming.LineObjectiveName(className, lineNo));

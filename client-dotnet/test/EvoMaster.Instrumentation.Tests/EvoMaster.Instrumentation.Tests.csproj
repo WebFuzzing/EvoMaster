@@ -32,37 +32,48 @@
     </ItemGroup>
 
 
+    <!-- Read all the comments below to get an understanding of what's happening for putting up the scaffolding
+         In Summary, what's happeing here is nothing but the instrumentation of the SUT and creating a new dll for it
+         For more details, read the codes & comments below
+     -->
     <ItemGroup>
+        <!-- You may only need to modify values for these two items based on the project names -->
+        <Sut Include="EvoMaster.Instrumentation.Examples.dll"/>
+        <CurrentRuntimeConfig Include="$(OutputPath)EvoMaster.Instrumentation.Tests.runtimeconfig.json"/>
+        
+        <!-- Don't need to touch these two lines -->
         <TempDirectory Include="$(ProjectDir)bin-temp"/>
-        <OutputContent Include="$(OutputPath)*"/>
-        <TestRuntimeConfig Include="$(OutputPath)EvoMaster.Instrumentation.Tests.runtimeconfig.json"/>
         <InstrumentationRuntimeConfig Include="$(OutputPath)EvoMaster.Instrumentation.runtimeconfig.json"/>
     </ItemGroup>
 
     <Target Name="Instrument" AfterTargets="Build">
+
         <!-- Remove temp folder in case it exists to make sure everything gets updated -->
         <RemoveDir Directories="@(TempDirectory)"/>
-        <Copy SourceFiles="@(OutputContent)" DestinationFolder="@(TempDirectory)"/>
         
+        <!-- We create a separate directory to save the instrumented dll in, because we should keep both the SUT and its instrumented version:
+         The original one is used to run the tests and the instrumented one is used during the search later -->
+        <Exec Command="cp -a $(OutputPath). @(TempDirectory)"/>
+
         <!-- create a runtimeconfig.json because it is needed for EvoMaster.Instrumentation.dll to be runnable -->
-        <Copy SourceFiles="@(TestRuntimeConfig)" DestinationFiles="@(InstrumentationRuntimeConfig)"/>
+        <Copy SourceFiles="@(CurrentRuntimeConfig)" DestinationFiles="@(InstrumentationRuntimeConfig)"/>
 
         <!-- Run the instrumentation and specify bin-temp as output directory -->
         <Exec Command="cd $(OutputPath);
-                       dotnet EvoMaster.Instrumentation.dll @(TempDirectory)/EvoMaster.Instrumentation.Examples.dll @(TempDirectory)"/>
+                       dotnet EvoMaster.Instrumentation.dll @(TempDirectory)/@(Sut) @(TempDirectory)"/>
     </Target>
 
-    
+
     <!-- This section is for enabling the test methods pass. The actual instrumentation is done before-->
     <ItemGroup>
         <TempContent Include="$(ProjectDir)bin-temp/."/>
     </ItemGroup>
     <Target Name="TestInstrumentation" AfterTargets="Build">
         <!-- Fill the bin directory with contents from the temp folder -->
-        <Delete Files="@(OutputContent)"/>
+        <Delete Files="$(OutputPath)\*.*"/>
         <Exec Command="cp -a @(TempContent) $(OutputPath)"/>
-        <!-- Rename the InstrumentedSut to the original name of the SUT (and its runtimeconfig.json as well)  -->
-        <Exec Command="cd $(OutputPath);mv InstrumentedSut.runtimeconfig.json EvoMaster.Instrumentation.Examples.runtimeconfig.json;mv InstrumentedSut.dll EvoMaster.Instrumentation.Examples.dll"/>
+        <!-- Rename the InstrumentedSut to the original name of the SUT  -->
+        <Exec Command="cd $(OutputPath);mv InstrumentedSut.dll @(Sut)"/>
 
     </Target>
 </Project>
