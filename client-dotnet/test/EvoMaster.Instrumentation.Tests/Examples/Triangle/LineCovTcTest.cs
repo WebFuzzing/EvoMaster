@@ -31,7 +31,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
         [InlineData(7, 6, 7, "Line_at_TriangleClassificationImpl_00030")]
         [InlineData(7, 6, 5, "Line_at_TriangleClassificationImpl_00033")]
         public void TestSpecificLineCoverage(int a, int b, int c, string returnLine)
-        {               
+        {
             ITriangleClassification tc = new TriangleClassificationImpl();
 
             ExecutionTracer.Reset();
@@ -51,7 +51,12 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
             Assert.Contains("Line_at_TriangleClassificationImpl_00034", ObjectiveRecorder.AllTargets);
         }
 
+        /// <summary>
+        /// This method checks not only if at least one line has been covered, but also if the valid input does not lead to invalid output.
+        /// In other words, we are checking if the SUT is not malfunctioning after being instrumented.
+        /// </summary>
         [Theory]
+        //for example in the case below, line 33 should not be covered
         [InlineData(-1, 0, 0, "Line_at_TriangleClassificationImpl_00033")]
         [InlineData(6, 6, 6, "Line_at_TriangleClassificationImpl_00011")]
         [InlineData(10, 6, 3, "Line_at_TriangleClassificationImpl_00016")]
@@ -69,6 +74,10 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
 
             tc.Classify(a, b, c);
 
+            //To check if at least one line is covered or not
+            Assert.True(ExecutionTracer.GetNumberOfObjectives() > 0);
+
+            //To make sure if the valid input is not giving any unexpected result
             Assert.DoesNotContain(returnLine, ObjectiveRecorder.AllTargets);
         }
     }
