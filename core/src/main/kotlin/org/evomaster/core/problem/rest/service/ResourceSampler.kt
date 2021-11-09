@@ -219,8 +219,10 @@ open class ResourceSampler : AbstractRestSampler() {
 
     override fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
         val resourceCalls = restCalls.map {
+            val node = rm.getResourceNodeFromCluster(it.path.toString())
             RestResourceCalls(
-                    node = rm.getResourceNodeFromCluster(it.path.toString()),
+                    template = node.getTemplate(it.verb.toString()),
+                    node = node,
                     actions = mutableListOf(it)
             )
         }.toMutableList()
