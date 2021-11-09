@@ -1081,7 +1081,7 @@ class EMConfig {
     var probOfApplySQLActionToCreateResources = 0.5
 
     @Experimental
-    @Cfg("When initializing resource using SQL for manipluating a size of resources, " +
+    @Cfg("When initializing resource using SQL for manipulating a size of resources, " +
             "how many new rows (at maximum) to generate for the specific resource each time")
     @Min(0.0)
     var maxSqlInitActionsPerResource = 0
@@ -1140,6 +1140,11 @@ class EMConfig {
     @Experimental
     @Cfg("Specify a strategy to handle a max size of a test")
     var maxTestSizeStrategy = MaxTestSizeStrategy.SPECIFIED
+
+    @Experimental
+    @Cfg("Specify whether to decide the resource-based structure mutator adaptively based on impacts during focused search." +
+            "Note that it only works when resource-based solution is enabled for solving REST problem")
+    var adaptiveResStructureMutatorSelectionFS = false
 
     @Experimental
     @Cfg("Specify a max size of a test at the beginning of search once DPC_INCREASING is enabled")

@@ -129,7 +129,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             if (log.isTraceEnabled){
                 log.trace("structure mutator will be applied")
             }
-            structureMutator.mutateStructure(copy, mutatedGene)
+            structureMutator.mutateStructure(copy, individual, mutatedGene, targets)
             return copy
         }
 

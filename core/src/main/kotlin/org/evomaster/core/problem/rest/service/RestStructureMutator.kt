@@ -60,7 +60,7 @@ class RestStructureMutator : HttpWsStructureMutator() {
 
 
 
-    override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
+    override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
         if (individual !is RestIndividual) {
             throw IllegalArgumentException("Invalid individual type")
         }

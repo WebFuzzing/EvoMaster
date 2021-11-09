@@ -21,6 +21,10 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
     val resourceSizeImpact: MutableMap<String, IntegerGeneImpact>
 
     /**
+     * impact of changing size of any resource in the individual
+     */
+    val anyResourceSizeImpact : IntegerGeneImpact
+    /**
      * impact of changing size of the table in the initialization of individual.
      *        note that here we do not consider the table in resource handling,
      *        since those could be handled by [resourceSizeImpact]
@@ -29,16 +33,26 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
      */
     val sqlTableSizeImpact: MutableMap<String, IntegerGeneImpact>
 
+    /**
+     * impact of changing size of any sql in the individual
+     */
+    val anySqlTableSizeImpact : IntegerGeneImpact
+
     constructor(
             initializationGeneImpacts: InitializationActionImpacts,
             actionGeneImpacts: MutableList<ImpactsOfAction>,
             impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize"),
             maxSqlInitActionsPerMissingData: Int,
             resourceSizeImpact: MutableMap<String, IntegerGeneImpact>,
-            sqlTableImpact: MutableMap<String, IntegerGeneImpact>
+            sqlTableImpact: MutableMap<String, IntegerGeneImpact>,
+            anyResourceSizeImpact: IntegerGeneImpact,
+            anySqlTableSizeImpact: IntegerGeneImpact
+
     ) : super(initializationGeneImpacts, actionGeneImpacts, impactsOfStructure, maxSqlInitActionsPerMissingData) {
         this.resourceSizeImpact = resourceSizeImpact
         this.sqlTableSizeImpact = sqlTableImpact
+        this.anyResourceSizeImpact = anyResourceSizeImpact
+        this.anySqlTableSizeImpact = anySqlTableSizeImpact
     }
 
     constructor(individual: RestIndividual, abstractInitializationGeneToMutate: Boolean, maxSqlInitActionsPerMissingData: Int, fitnessValue: FitnessValue?)
@@ -53,6 +67,8 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
                 putIfAbsent(d.table.name, IntegerGeneImpact("size"))
             }
         }
+        anyResourceSizeImpact = IntegerGeneImpact("anyResourceSizeImpact")
+        anySqlTableSizeImpact = IntegerGeneImpact("anySqlTableSizeImpact")
     }
 
     /**
@@ -69,7 +85,9 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
                 },
                 mutableMapOf<String, IntegerGeneImpact>().apply {
                     putAll(sqlTableSizeImpact.map { it.key to it.value.copy() })
-                }
+                },
+                anyResourceSizeImpact.copy(),
+                anySqlTableSizeImpact.copy()
         )
     }
 
@@ -87,7 +105,9 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
                 },
                 mutableMapOf<String, IntegerGeneImpact>().apply {
                     putAll(sqlTableSizeImpact.map { it.key to it.value.clone() })
-                }
+                },
+                anyResourceSizeImpact.clone(),
+                anySqlTableSizeImpact.clone()
         )
     }
 
@@ -97,18 +117,28 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
     fun countResourceSizeImpact(previous: RestIndividual, current: RestIndividual, noImpactTargets: Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean = false) {
         val currentRs = current.seeResource(RestIndividual.ResourceFilter.ALL)
         val previousRs = previous.seeResource(RestIndividual.ResourceFilter.ALL)
+        var anyResourceChange = false
         currentRs.toSet().forEach { cr ->
             val rImpact = resourceSizeImpact.getOrPut(cr){IntegerGeneImpact("size")}
             if (currentRs.count { it == cr } != previousRs.count { it == cr }) {
+                if (!anyResourceChange){
+                    anyResourceSizeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
+                    anyResourceChange = true
+                }
                 rImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
             }
         }
 
         val currentTs = current.seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
         val previousTs = previous.seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
+        var anySqlChange = false
         currentTs.toSet().forEach { cr ->
             val tImpact = sqlTableSizeImpact.getOrPut(cr){IntegerGeneImpact("size")}
             if (currentTs.count { it == cr } != previousTs.count { it == cr }) {
+                if (!anySqlChange){
+                    anySqlTableSizeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
+                    anySqlChange = true
+                }
                 tImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
             }
         }

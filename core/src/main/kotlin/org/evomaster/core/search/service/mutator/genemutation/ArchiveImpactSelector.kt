@@ -23,7 +23,7 @@ import kotlin.math.max
  * - mutate the selected genes based on their performance (i.e., results of fitness evaluation)
  * - besides, string mutation is designed regarding fitness evaluation using LeftAlignmentDistance
  */
-class ArchiveGeneSelector {
+class ArchiveImpactSelector {
 
     @Inject
     private lateinit var randomness: Randomness
@@ -110,7 +110,7 @@ class ArchiveGeneSelector {
 
     /**
      * this fun is used by [Archive] to sample an individual from population (i.e., [individuals])
-     * if [ArchiveGeneSelector.enableArchiveSelection] is true.
+     * if [ArchiveImpactSelector.enableArchiveSelection] is true.
      * In order to identify impacts of genes, we prefer to select an individual which has some impact info.
      */
     fun <T : Individual> selectIndividual(individuals: List<EvaluatedIndividual<T>>): EvaluatedIndividual<T> {

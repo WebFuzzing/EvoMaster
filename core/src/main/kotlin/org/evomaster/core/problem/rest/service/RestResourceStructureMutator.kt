@@ -7,6 +7,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
@@ -16,6 +17,8 @@ import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import kotlin.math.max
 import kotlin.math.min
 import org.slf4j.Logger
@@ -32,16 +35,51 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
     @Inject
     private lateinit var sampler : ResourceSampler
 
+    @Inject
+    protected lateinit var mwc : MutationWeightControl
+
+    @Inject
+    protected lateinit var archiveImpactSelector : ArchiveImpactSelector
+
     companion object{
         private val log : Logger = LoggerFactory.getLogger(RestResourceStructureMutator::class.java)
     }
 
-    override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
+    override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
         if(individual !is RestIndividual)
             throw IllegalArgumentException("Invalid individual type")
 
-        mutateRestResourceCalls(individual, mutatedGenes = mutatedGenes)
+        val mutationType = if (apc.doesFocusSearch() && config.adaptiveResStructureMutatorSelectionFS)
+            decideMutationType(evaluatedIndividual as EvaluatedIndividual<RestIndividual>, targets)
+        else null
+
+        mutateRestResourceCalls(individual, mutationType, mutatedGenes = mutatedGenes)
         if (config.trackingEnabled()) tag(individual, time.evaluatedIndividuals)
+    }
+
+    private fun decideMutationType(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, targets: Set<Int>) : MutationType{
+        // with adaptive structure mutator selection, we enable adding multiple same resource with rest action
+        val candidates = getAvailableMutator(evaluatedIndividual.individual, true)
+        val lengthMutator = candidates.filter {
+            it == MutationType.ADD || it == MutationType.DELETE || it == MutationType.SQL_ADD || it == MutationType.SQL_REMOVE
+        }
+        if (lengthMutator.isEmpty())
+            return randomness.choose(candidates)
+
+        val impact = ((evaluatedIndividual.impactInfo?:throw IllegalStateException("lack impact info"))
+                as? ResourceImpactOfIndividual)?:throw IllegalStateException("mismatched impact type, it should be ResourceImpactOfIndividual")
+        val impacts = lengthMutator.map { type ->
+            when (type) {
+                MutationType.ADD, MutationType.DELETE -> impact.anyResourceSizeImpact
+                MutationType.SQL_ADD, MutationType.SQL_REMOVE -> impact.anySqlTableSizeImpact
+                else -> throw IllegalStateException("$type should be handled before")
+            }
+        }
+
+        val weights = archiveImpactSelector.impactBasedOnWeights(impacts, targets)
+        val impactMap = lengthMutator.mapIndexed { index, type -> type to weights[index] }.toMap()
+        val types = mwc.selectSubsetWithWeight(impactMap, true, 1.0)
+        return if (types.size == 1) types.first() else randomness.choose(types)
     }
 
     override fun canApplyStructureMutator(individual: Individual): Boolean {
@@ -53,8 +91,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
 
     fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null, mutatedGenes: MutatedGeneSpecification? = null) {
 
-        val executedStructureMutator = specified?:
-            randomness.choose(getAvailableMutator(ind) )
+        val executedStructureMutator = specified?: randomness.choose(getAvailableMutator(ind))
 
         when(executedStructureMutator){
             MutationType.ADD -> handleAdd(ind, mutatedGenes)
@@ -67,18 +104,18 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         }
     }
 
-    private fun getAvailableMutator(ind: RestIndividual) : List<MutationType>{
+    private fun getAvailableMutator(ind: RestIndividual, allowMultipleSameResource: Boolean = false) : List<MutationType>{
         val num = ind.getResourceCalls().size
         val sqlNum = ind.seeResource(RestIndividual.ResourceFilter.ONLY_SQL_INSERTION).size
         return MutationType.values()
-            .filter {  num >= it.minSize && sqlNum >= it.minSQLSize && isMutationTypeApplicable(it, ind)}
+            .filter {  num >= it.minSize && sqlNum >= it.minSQLSize && isMutationTypeApplicable(it, ind, allowMultipleSameResource)}
 
     }
 
-    private fun isMutationTypeApplicable(type: MutationType, ind : RestIndividual): Boolean{
+    private fun isMutationTypeApplicable(type: MutationType, ind : RestIndividual, allowMultipleSameResource: Boolean): Boolean{
         val delSize = ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size
         return when(type){
-            MutationType.ADD -> ind.seeActions().size < config.maxTestSize && !rm.cluster.doesCoverAll(ind)
+            MutationType.ADD -> ind.seeActions().size < config.maxTestSize && (!rm.cluster.doesCoverAll(ind) || allowMultipleSameResource)
             MutationType.SWAP -> ind.extractSwapCandidates().isNotEmpty()
             MutationType.REPLACE -> !rm.cluster.doesCoverAll(ind) && delSize > 0
             MutationType.DELETE -> delSize > 0 && ind.getResourceCalls().size >=2

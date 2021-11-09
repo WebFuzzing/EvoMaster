@@ -27,7 +27,7 @@ class GraphQLStructureMutator : HttpWsStructureMutator() {
     private lateinit var sampler: GraphQLSampler
 
 
-    override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
+    override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
 
         if (individual !is GraphQLIndividual) {
             throw IllegalArgumentException("Invalid individual type")
