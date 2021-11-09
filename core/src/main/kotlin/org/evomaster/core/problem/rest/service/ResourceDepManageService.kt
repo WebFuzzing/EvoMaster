@@ -987,6 +987,10 @@ class ResourceDepManageService {
         return ind.seeInitializingActions().filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
+    fun identifyUnRelatedSqlTable(ind: RestIndividual) : Set<String>{
+        val actions = unRelatedSQL(ind)
+        return actions.map { it.table.name }.toSet()
+    }
     /**
      * add [num] related resources into [ind] with SQL
      * @param probability represent a probability of using identified dependent tables, otherwise employ the tables which are
@@ -996,24 +1000,33 @@ class ResourceDepManageService {
      * tracking of SQL execution.
      */
     fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 1.0) : List<List<DbAction>>{
+        val other = randomness.choose(identifyRelatedSQL(ind, probability))
+        return createDbActions(other, num)
+    }
+
+    /**
+     * @param probability represent a probability of using identified dependent tables, otherwise employ the tables which are
+     * not part of the current dbInitialization
+     */
+    fun identifyRelatedSQL(ind: RestIndividual, probability: Double = 1.0): Set<String>{
+
         val allrelated = getAllRelatedTables(ind)
 
-        val other = if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
+        if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
             val notincluded = allrelated.filterNot {
                 ind.seeInitializingActions().any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
             //prioritize notincluded related ones with a probability 0.8
-            if (notincluded.isNotEmpty() && randomness.nextBoolean(0.8)){
-                randomness.choose(notincluded)
-            }else randomness.choose(allrelated)
+            return if (notincluded.isNotEmpty() && randomness.nextBoolean(0.8)){
+                notincluded.toSet()
+            }else allrelated
         }else{
             val left = rm.getTableInfo().keys.filterNot {
                 ind.seeInitializingActions().any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
-            if (left.isNotEmpty() && randomness.nextBoolean()) randomness.choose(left)
-            else randomness.choose(rm.getTableInfo().keys)
+            return if (left.isNotEmpty() && randomness.nextBoolean()) left.toSet()
+            else rm.getTableInfo().keys
         }
-        return createDbActions(other, num)
     }
 
     fun createDbActions(name : String, num : Int) : List<List<DbAction>>{

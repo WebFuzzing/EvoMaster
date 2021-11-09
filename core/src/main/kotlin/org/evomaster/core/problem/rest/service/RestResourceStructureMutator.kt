@@ -16,6 +16,7 @@ import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
@@ -46,20 +47,23 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
     }
 
     override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
-        if(individual !is RestIndividual)
+        if(individual !is RestIndividual && evaluatedIndividual.individual is RestIndividual)
             throw IllegalArgumentException("Invalid individual type")
 
-        val mutationType = if (apc.doesFocusSearch() && config.adaptiveResStructureMutatorSelectionFS)
-            decideMutationType(evaluatedIndividual as EvaluatedIndividual<RestIndividual>, targets)
+        evaluatedIndividual as EvaluatedIndividual<RestIndividual>
+
+        val mutationType = if (doMutateSize())
+            decideMutationType(evaluatedIndividual, targets)
         else null
 
-        mutateRestResourceCalls(individual, mutationType, mutatedGenes = mutatedGenes)
+        mutateRestResourceCalls(individual as RestIndividual, mutationType, mutatedGenes = mutatedGenes, evaluatedIndividual, targets)
         if (config.trackingEnabled()) tag(individual, time.evaluatedIndividuals)
     }
 
     private fun decideMutationType(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, targets: Set<Int>) : MutationType{
         // with adaptive structure mutator selection, we enable adding multiple same resource with rest action
         val candidates = getAvailableMutator(evaluatedIndividual.individual, true)
+        // during focused search, we only involve the mutator which could change the size of resources
         val lengthMutator = candidates.filter {
             it == MutationType.ADD || it == MutationType.DELETE || it == MutationType.SQL_ADD || it == MutationType.SQL_REMOVE
         }
@@ -82,6 +86,13 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         return if (types.size == 1) types.first() else randomness.choose(types)
     }
 
+    /**
+     * @return if perform a modification on size
+     */
+    private fun doMutateSize() : Boolean{
+        return config.adaptiveResStructureMutatorSelectionFS && apc.doesFocusSearch() && (config.maxSizeOfHandlingResource > 0)
+    }
+
     override fun canApplyStructureMutator(individual: Individual): Boolean {
         if(individual !is RestIndividual)
             throw IllegalArgumentException("Invalid individual type")
@@ -89,7 +100,10 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         return super.canApplyStructureMutator(individual) && getAvailableMutator(individual).isNotEmpty()
     }
 
-    fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null, mutatedGenes: MutatedGeneSpecification? = null) {
+    fun mutateRestResourceCalls(ind: RestIndividual,
+                                specified : MutationType?=null,
+                                mutatedGenes: MutatedGeneSpecification? = null,
+                                evaluatedIndividual: EvaluatedIndividual<RestIndividual>?=null, targets: Set<Int>?=null) {
 
         val executedStructureMutator = specified?: randomness.choose(getAvailableMutator(ind))
 
@@ -100,7 +114,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             MutationType.REPLACE -> handleReplace(ind, mutatedGenes)
             MutationType.MODIFY -> handleModify(ind, mutatedGenes)
             MutationType.SQL_REMOVE -> handleRemoveSQL(ind, mutatedGenes)
-            MutationType.SQL_ADD -> handleAddSQL(ind, mutatedGenes)
+            MutationType.SQL_ADD -> handleAddSQL(ind, mutatedGenes, evaluatedIndividual, targets)
         }
     }
 
@@ -171,15 +185,40 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      * add resources with SQL to [ind]
      * a number of resources to be added is related to EMConfig.maxSqlInitActionsPerResource
      */
-    private fun handleAddSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
+    private fun handleAddSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?, evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, targets: Set<Int>?){
         if (config.maxSizeOfHandlingResource == 0)
             throw IllegalStateException("this method should not be invoked when config.maxSqlInitActionsPerResource is 0")
         val numOfResource = randomness.nextInt(1, rm.getMaxNumOfResourceSizeHandling())
-        val added = if (doesApplyDependencyHeuristics()) dm.addRelatedSQL(ind, numOfResource)
-                    else dm.createDbActions(randomness.choose(rm.getTableInfo().keys),numOfResource)
+        val candidates = if (doesApplyDependencyHeuristics()) dm.identifyRelatedSQL(ind) else rm.getTableInfo().keys
+        val selectedAdded = if (doMutateSize()){
+            adaptiveSelectResource(evaluatedIndividual, bySQL = true, candidates.toList(), targets)
+        }else{
+            randomness.choose(candidates)
+        }
+        val added = dm.createDbActions(selectedAdded, numOfResource)
 
         ind.addInitializingActions(actions = added.flatten())
         mutatedGenes?.addedDbActions?.addAll(added)
+    }
+
+
+    private fun adaptiveSelectResource(evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, bySQL: Boolean, candidates: List<String>, targets: Set<Int>?): String{
+        evaluatedIndividual?: throw IllegalStateException("lack of impact with specified evaluated individual")
+        targets?:throw IllegalStateException("targets must be specified if adaptive resource selection is applied")
+        if (evaluatedIndividual.impactInfo == null || evaluatedIndividual.impactInfo !is ResourceImpactOfIndividual)
+            throw IllegalStateException("lack of impact info or mismatched impact type (type: ${evaluatedIndividual.impactInfo?.javaClass?.simpleName?:"null"})")
+        val impacts = candidates.map {
+            if (bySQL){
+                evaluatedIndividual.impactInfo.sqlTableSizeImpact[it] ?:IntegerGeneImpact("size")
+            }else{
+                evaluatedIndividual.impactInfo.resourceSizeImpact[it] ?:IntegerGeneImpact("size")
+            }
+        }
+
+        val weights = archiveImpactSelector.impactBasedOnWeights(impacts, targets)
+        val impactMap = candidates.mapIndexed { index, type -> type to weights[index] }.toMap()
+        val selected = mwc.selectSubsetWithWeight(impactMap, true, 1.0)
+        return if (selected.size == 1) selected.first() else randomness.choose(selected)
     }
 
     /**
@@ -188,7 +227,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      * Man: shall we remove SQLs which represents existing data?
      * It might be useful to reduce the useless db genes.
      */
-    private fun handleRemoveSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
+    private fun handleRemoveSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?, evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, targets: Set<Int>?){
         // remove unrelated tables
         var candidates = if (doesApplyDependencyHeuristics()) dm.unRelatedSQL(ind) else ind.seeInitializingActions()
 
