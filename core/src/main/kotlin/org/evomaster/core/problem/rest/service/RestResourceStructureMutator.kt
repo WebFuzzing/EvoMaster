@@ -108,12 +108,12 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         val executedStructureMutator = specified?: randomness.choose(getAvailableMutator(ind))
 
         when(executedStructureMutator){
-            MutationType.ADD -> handleAdd(ind, mutatedGenes)
+            MutationType.ADD -> handleAdd(ind, mutatedGenes, evaluatedIndividual, targets)
             MutationType.DELETE -> handleDelete(ind, mutatedGenes)
             MutationType.SWAP -> handleSwap(ind, mutatedGenes)
             MutationType.REPLACE -> handleReplace(ind, mutatedGenes)
             MutationType.MODIFY -> handleModify(ind, mutatedGenes)
-            MutationType.SQL_REMOVE -> handleRemoveSQL(ind, mutatedGenes)
+            MutationType.SQL_REMOVE -> handleRemoveSQL(ind, mutatedGenes, evaluatedIndividual, targets)
             MutationType.SQL_ADD -> handleAddSQL(ind, mutatedGenes, evaluatedIndividual, targets)
         }
     }
@@ -229,13 +229,11 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      */
     private fun handleRemoveSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?, evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, targets: Set<Int>?){
         // remove unrelated tables
-        var candidates = if (doesApplyDependencyHeuristics()) dm.unRelatedSQL(ind) else ind.seeInitializingActions()
-
-        if (candidates.isEmpty())
-            candidates = ind.seeInitializingActions()
-
-        val num = randomness.nextInt(1, max(1, min(rm.getMaxNumOfResourceSizeHandling(), candidates.size -1)))
-        val remove = randomness.choose(candidates, num)
+        val candidates = if (doesApplyDependencyHeuristics()) dm.identifyUnRelatedSqlTable(ind) else ind.seeInitializingActions().map { it.table.name }
+        val selected = if (doMutateSize()) adaptiveSelectResource(evaluatedIndividual, true, candidates.toList(), targets) else randomness.choose(candidates)
+        val total = candidates.count { it == selected }
+        val num = randomness.nextInt(1, max(1, min(rm.getMaxNumOfResourceSizeHandling(), min(total, ind.seeInitializingActions().size - 1))))
+        val remove = randomness.choose(ind.seeInitializingActions().filter { it.table.name == selected }, num)
         val relatedRemove = mutableListOf<DbAction>()
         relatedRemove.addAll(remove)
         remove.forEach {
@@ -243,7 +241,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         }
         val set = relatedRemove.toSet().toMutableList()
         mutatedGenes?.removedDbActions?.addAll(set.map { it to ind.seeInitializingActions().indexOf(it) })
-        ind.removeAll(set)
+        ind.removeInitDbActions(set)
     }
 
     private fun getRelatedRemoveDbActions(ind: RestIndividual, remove : DbAction, relatedRemove: MutableList<DbAction>){
@@ -334,7 +332,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      * Note that if dependency is enabled,
      * the added resource can be its dependent resource with a probability i.e.,[config.probOfEnablingResourceDependencyHeuristics]
      */
-    private fun handleAdd(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
+    private fun handleAdd(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?, evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, targets: Set<Int>?){
         val auth = ind.seeActions().filterIsInstance<RestCallAction>().map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)

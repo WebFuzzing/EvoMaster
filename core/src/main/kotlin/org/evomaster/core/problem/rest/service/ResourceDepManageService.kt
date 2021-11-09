@@ -987,9 +987,9 @@ class ResourceDepManageService {
         return ind.seeInitializingActions().filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
-    fun identifyUnRelatedSqlTable(ind: RestIndividual) : Set<String>{
+    fun identifyUnRelatedSqlTable(ind: RestIndividual) : List<String>{
         val actions = unRelatedSQL(ind)
-        return actions.map { it.table.name }.toSet()
+        return if (actions.isNotEmpty()) actions.map { it.table.name } else ind.seeInitializingActions().map { it.table.name }
     }
     /**
      * add [num] related resources into [ind] with SQL
