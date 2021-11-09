@@ -1132,9 +1132,9 @@ class EMConfig {
         SPECIFIED,
 
         /**
-         * reduce a size of test to 1 when focused search starts
+         * gradually increasing a size of test until focused search
          */
-        SPECIFIED_REDUCED_DURING_FOCUS_SEARCH
+        DPC_INCREASING
     }
 
     @Experimental
@@ -1142,8 +1142,8 @@ class EMConfig {
     var maxTestSizeStrategy = MaxTestSizeStrategy.SPECIFIED
 
     @Experimental
-    @Cfg("Specify a max size of a test when focused search starts")
-    var maxTestSizeDuringFocusSearch = 1
+    @Cfg("Specify a max size of a test at the beginning of search once DPC_INCREASING is enabled")
+    var startingTestSize = 1
 
     @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
