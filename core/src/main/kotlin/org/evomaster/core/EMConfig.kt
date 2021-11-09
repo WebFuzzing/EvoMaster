@@ -14,7 +14,6 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Paths
-import java.util.logging.Logger
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -1081,24 +1080,23 @@ class EMConfig {
     var probOfApplySQLActionToCreateResources = 0.5
 
     @Experimental
-    @Cfg("When initializing resource using SQL for manipulating a size of resources, " +
-            "how many new rows (at maximum) to generate for the specific resource each time")
+    @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
     @Min(0.0)
-    var maxSqlInitActionsPerResource = 0
+    var maxSizeOfHandlingResource = 0
 
     @Experimental
     @Cfg("Specify a strategy to determinate a number of resources to be manipulated throughout the search.")
-    var employSqlNumResourceStrategy = SqlInitResourceStrategy.NONE
+    var employResourceSizeHandlingStrategy = SqlInitResourceStrategy.NONE
 
     enum class SqlInitResourceStrategy{
         NONE,
 
         /**
-         * determinate a number of resource to be manipulated at random between 1 and [maxSqlInitActionsPerResource]
+         * determinate a number of resource to be manipulated at random between 1 and [maxSizeOfHandlingResource]
          */
         RANDOM,
         /**
-         * adaptively decrease a number of resources to be manipulated from [maxSqlInitActionsPerResource] to 1
+         * adaptively decrease a number of resources to be manipulated from [maxSizeOfHandlingResource] to 1
          */
         DPC
     }

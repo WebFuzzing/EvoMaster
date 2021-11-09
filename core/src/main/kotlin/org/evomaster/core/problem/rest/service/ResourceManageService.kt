@@ -315,15 +315,15 @@ class ResourceManageService {
 
 
     /**
-     * @return a maximum number of resources to be manipulated in the initialization with SQL
+     * @return a maximum number of resources to be manipulated with action or sql
      *          e.g., we can add N resource or delete N resource in the initialization per time with e.g., structure mutator
      */
-    fun getSqlMaxNumOfResource() : Int {
-        if (config.maxSqlInitActionsPerResource == 0) return 0
-        return when(config.employSqlNumResourceStrategy){
+    fun getMaxNumOfResourceSizeHandling() : Int {
+        if (config.maxSizeOfHandlingResource == 0) return 0
+        return when(config.employResourceSizeHandlingStrategy){
             SqlInitResourceStrategy.NONE -> 0
-            SqlInitResourceStrategy.RANDOM -> config.maxSqlInitActionsPerResource
-            SqlInitResourceStrategy.DPC -> apc.getExploratoryValue(config.maxSqlInitActionsPerResource, 1)
+            SqlInitResourceStrategy.RANDOM -> config.maxSizeOfHandlingResource
+            SqlInitResourceStrategy.DPC -> apc.getExploratoryValue(config.maxSizeOfHandlingResource, 1)
         }
     }
 }

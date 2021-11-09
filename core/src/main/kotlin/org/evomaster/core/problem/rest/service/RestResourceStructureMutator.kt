@@ -119,8 +119,8 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             MutationType.SWAP -> ind.extractSwapCandidates().isNotEmpty()
             MutationType.REPLACE -> !rm.cluster.doesCoverAll(ind) && delSize > 0
             MutationType.DELETE -> delSize > 0 && ind.getResourceCalls().size >=2
-            MutationType.SQL_ADD -> config.maxSqlInitActionsPerResource != 0 && rm.getTableInfo().isNotEmpty()
-            MutationType.SQL_REMOVE -> config.maxSqlInitActionsPerResource != 0 && rm.getTableInfo().isNotEmpty() && ind.seeInitializingActions().isNotEmpty()
+            MutationType.SQL_ADD -> config.maxSizeOfHandlingResource != 0 && rm.getTableInfo().isNotEmpty()
+            MutationType.SQL_REMOVE -> config.maxSizeOfHandlingResource != 0 && rm.getTableInfo().isNotEmpty() && ind.seeInitializingActions().isNotEmpty()
             MutationType.MODIFY -> delSize > 0
         }
     }
@@ -172,9 +172,9 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      * a number of resources to be added is related to EMConfig.maxSqlInitActionsPerResource
      */
     private fun handleAddSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
-        if (config.maxSqlInitActionsPerResource == 0)
+        if (config.maxSizeOfHandlingResource == 0)
             throw IllegalStateException("this method should not be invoked when config.maxSqlInitActionsPerResource is 0")
-        val numOfResource = randomness.nextInt(1, rm.getSqlMaxNumOfResource())
+        val numOfResource = randomness.nextInt(1, rm.getMaxNumOfResourceSizeHandling())
         val added = if (doesApplyDependencyHeuristics()) dm.addRelatedSQL(ind, numOfResource)
                     else dm.createDbActions(randomness.choose(rm.getTableInfo().keys),numOfResource)
 
@@ -195,7 +195,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         if (candidates.isEmpty())
             candidates = ind.seeInitializingActions()
 
-        val num = randomness.nextInt(1, max(1, min(rm.getSqlMaxNumOfResource(), candidates.size -1)))
+        val num = randomness.nextInt(1, max(1, min(rm.getMaxNumOfResourceSizeHandling(), candidates.size -1)))
         val remove = randomness.choose(candidates, num)
         val relatedRemove = mutableListOf<DbAction>()
         relatedRemove.addAll(remove)
