@@ -147,8 +147,7 @@ There are 3 types of options:
 |`lastLineEpsilon`| __Double__. The Distance Metric Last Line may use several values for epsilon.During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results.Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8. *Constraints*: `min=0.0, max=1.0`. *Default value*: `0.8`.|
 |`maxLengthOfTraces`| __Int__. Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. Note that the value should be specified with a non-negative number or -1 (for tracking all history). *Constraints*: `min=-1.0`. *Default value*: `10`.|
 |`maxSqlInitActionsPerResource`| __Int__. When initializing resource using SQL for manipluating a size of resources, how many new rows (at maximum) to generate for the specific resource each time. *Constraints*: `min=0.0`. *Default value*: `0`.|
-|`maxTestSizeDuringFocusSearch`| __Int__. Specify a max size of a test when focused search starts. *Default value*: `1`.|
-|`maxTestSizeStrategy`| __Enum__. Specify a strategy to handle a max size of a test. *Valid values*: `SPECIFIED, SPECIFIED_REDUCED_DURING_FOCUS_SEARCH`. *Default value*: `SPECIFIED`.|
+|`maxTestSizeStrategy`| __Enum__. Specify a strategy to handle a max size of a test. *Valid values*: `SPECIFIED, DPC_INCREASING`. *Default value*: `SPECIFIED`.|
 |`maximumExistingDataToSampleInDb`| __Int__. Specify a maximum number of existing data in the database to sample when SQL handling is enabled. Note that a negative number means all existing data would be sampled. *Default value*: `-1`.|
 |`minRowOfTable`| __Int__. Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. In other word, if the number is less than the specified, insertion is always applied. *Constraints*: `min=0.0`. *Default value*: `10`.|
 |`mutatedGeneFile`| __String__. Specify a path to save mutation details which is useful for debugging mutation. *Default value*: `mutatedGeneInfo.csv`.|
@@ -168,6 +167,7 @@ There are 3 types of options:
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
 |`skipFailureSQLInTestFile`| __Boolean__. Whether to skip failed SQL commands in the generated test files. *Default value*: `false`.|
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
+|`startingTestSize`| __Int__. Specify a max size of a test at the beginning of search once DPC_INCREASING is enabled. *Default value*: `1`.|
 |`structureMutationProbabilityStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator. *Valid values*: `SPECIFIED, DEACTIVATED_DURING_FOCUS_SEARCH, IMPACT_ADAPTIVE`. *Default value*: `SPECIFIED`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|
