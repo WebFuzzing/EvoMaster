@@ -73,7 +73,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     /**
      * @return whether do a structure mutation
      */
-    abstract fun doesStructureMutation(individual : T) : Boolean
+    abstract fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>) : Boolean
 
     open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
 

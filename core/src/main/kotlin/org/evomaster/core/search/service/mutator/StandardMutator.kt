@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter
@@ -37,22 +38,25 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         private val log: Logger = LoggerFactory.getLogger(StandardMutator::class.java)
     }
 
-    override fun doesStructureMutation(individual : T): Boolean {
+    override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
 
         val prob = when(config.structureMutationProbabilityStrategy){
             EMConfig.StructureMutationProbabilityStrategy.SPECIFIED -> config.structureMutationProbability
             EMConfig.StructureMutationProbabilityStrategy.DEACTIVATED_DURING_FOCUS_SEARCH -> if(apc.doesFocusSearch()) 0.0 else config.structureMutationProbability
-            EMConfig.StructureMutationProbabilityStrategy.IMPACT_ADAPTIVE ->
-                /*
-                    Man: initial idea.
-                    based on ActionStructureImpact, if there exist recent improvement achieved by structure mutator,
-                        we set config.structureMutationProbability
-                    otherwise, we set 0.0
-                 */
-                TODO()
+            EMConfig.StructureMutationProbabilityStrategy.ADAPTIVE_WITH_IMPACT -> {
+                if (!apc.doesFocusSearch()) config.structureMutationProbability
+                else {
+                    val impact = (evaluatedIndividual.impactInfo?:throw IllegalStateException("lack of impact info"))
+                    if (impact.impactsOfStructure.recentImprovement()
+                            || impact.impactsOfStructure.sizeImpact.recentImprovement()
+                            || (impact is ResourceImpactOfIndividual && (impact.resourceSizeImpact.any { it.value.recentImprovement() } || impact.sqlTableSizeImpact.any { it.value.recentImprovement() }))
+                    ) config.structureMutationProbability
+                    else 0.0
+                }
+            }
         }
 
-        return structureMutator.canApplyStructureMutator(individual) &&
+        return structureMutator.canApplyStructureMutator(evaluatedIndividual.individual) &&
                 config.maxTestSize > 1 && // if the maxTestSize is 1, there is no point to do structure mutation
                 randomness.nextBoolean(prob)
     }
@@ -121,7 +125,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val copy = individual.individual.copy() as T
 
 
-        if(doesStructureMutation(individual.individual)){
+        if(doesStructureMutation(individual)){
             if (log.isTraceEnabled){
                 log.trace("structure mutator will be applied")
             }

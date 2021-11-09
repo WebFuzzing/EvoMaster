@@ -1117,7 +1117,7 @@ class EMConfig {
         /**
          * apply a probability which is adaptive to the impact
          */
-        IMPACT_ADAPTIVE
+        ADAPTIVE_WITH_IMPACT
     }
 
     @Experimental

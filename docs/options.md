@@ -168,6 +168,6 @@ There are 3 types of options:
 |`skipFailureSQLInTestFile`| __Boolean__. Whether to skip failed SQL commands in the generated test files. *Default value*: `false`.|
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`startingTestSize`| __Int__. Specify a max size of a test at the beginning of search once DPC_INCREASING is enabled. *Default value*: `1`.|
-|`structureMutationProbabilityStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator. *Valid values*: `SPECIFIED, DEACTIVATED_DURING_FOCUS_SEARCH, IMPACT_ADAPTIVE`. *Default value*: `SPECIFIED`.|
+|`structureMutationProbabilityStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator. *Valid values*: `SPECIFIED, DEACTIVATED_DURING_FOCUS_SEARCH, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|
