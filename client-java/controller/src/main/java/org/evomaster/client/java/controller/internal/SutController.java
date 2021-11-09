@@ -495,6 +495,7 @@ public abstract class SutController implements SutHandler {
 
     public abstract void setKillSwitch(boolean b);
 
+    public abstract void setExecutingInitSql(boolean executingInitSql);
 
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
 

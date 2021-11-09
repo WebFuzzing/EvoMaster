@@ -19,7 +19,16 @@ import javax.ws.rs.core.Response
  */
 object OpenApiAccess {
 
-    fun getOpenAPI(openApiUrl: String): OpenAPI {
+    fun getOpenApi(schemaText: String) : OpenAPI {
+        val schema = try {
+            OpenAPIParser().readContents(schemaText, null, null).openAPI
+        } catch (e: Exception) {
+            throw SutProblemException("Failed to parse OpenApi schema: $e")
+        }
+        return schema
+    }
+
+    fun getOpenAPIFromURL(openApiUrl: String): OpenAPI {
 
         //could be either JSON or YAML
        val data = if(openApiUrl.startsWith("http", true)){
@@ -28,13 +37,7 @@ object OpenApiAccess {
            readFromDisk(openApiUrl)
        }
 
-        val schema = try {
-            OpenAPIParser().readContents(data, null, null).openAPI
-        } catch (e: Exception) {
-            throw SutProblemException("Failed to parse OpenApi schema: $e")
-        }
-
-        return schema
+        return getOpenApi(data)
     }
 
     private fun readFromRemoteServer(openApiUrl: String) : String{
