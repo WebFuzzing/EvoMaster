@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.schema.Table
@@ -886,15 +887,24 @@ class ResourceDepManageService {
      * handle to select an non-dependent resource for deletion
      * @return a candidate, if none of a resource is deletable, return null
      */
-    fun handleDelNonDepResource(ind: RestIndividual): RestResourceCalls? {
+    fun handleDelNonDepResource(ind: RestIndividual): RestResourceCalls {
+        val candidates = identifyDelNonDepResource(ind)
+        Lazy.assert { candidates.isNotEmpty() }
+        return randomness.choose(candidates)
+    }
+
+    /**
+     * identify a set of non-dependent resource for deletion in [ind]
+     */
+    fun identifyDelNonDepResource(ind: RestIndividual): List<RestResourceCalls> {
         val candidates = ind.getResourceCalls().filter { it.isDeletable }.filter { cur ->
             !existsDependentResources(ind, cur)
         }
-        if (candidates.isEmpty()) return null
+        if (candidates.isEmpty()) return ind.getResourceCalls().filter(RestResourceCalls::isDeletable)
 
         val nodep = candidates.filter { isNonDepResources(ind, it)}
-        if (nodep.isNotEmpty()) return randomness.choose(nodep)
-        return randomness.choose(candidates)
+        if (nodep.isNotEmpty()) return nodep
+        return candidates
     }
 
 

@@ -128,12 +128,12 @@ There are 3 types of options:
 |`S2dR`| __Double__. Specify a probability to apply S2dR when resource sampling strategy is 'Customized'. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.25`.|
 |`SMdR`| __Double__. Specify a probability to apply SMdR when resource sampling strategy is 'Customized'. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.25`.|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
-|`adaptiveResStructureMutatorSelectionFS`| __Boolean__. Specify whether to decide the resource-based structure mutator adaptively based on impacts during focused search.Note that it only works when resource-based solution is enabled for solving REST problem. *Default value*: `false`.|
 |`archiveAfterMutationFile`| __String__. Specify a path to save archive after each mutation during search, only useful for debugging. *Default value*: `archive.csv`.|
 |`coveredTargetSortedBy`| __Enum__. Specify a format to organize the covered targets by the search. *Valid values*: `NAME, TEST`. *Default value*: `NAME`.|
 |`dependencyFile`| __String__. Specify a file that saves derived dependencies. *Default value*: `dependencies.csv`.|
 |`doCollectImpact`| __Boolean__. Specify whether to collect impact info that provides an option to enable of collecting impact info when archive-based gene selection is disable. *Default value*: `false`.|
 |`employResourceSizeHandlingStrategy`| __Enum__. Specify a strategy to determinate a number of resources to be manipulated throughout the search. *Valid values*: `NONE, RANDOM, DPC`. *Default value*: `NONE`.|
+|`enableAdaptiveResourceStructureMutation`| __Boolean__. Specify whether to decide the resource-based structure mutator and resource to be mutated adaptively based on impacts during focused search.Note that it only works when resource-based solution is enabled for solving REST problem. *Default value*: `false`.|
 |`enableNLPParser`| __Boolean__. Whether to employ NLP parser to process text. Note that to enable this parser, it is required to build the EvoMaster with the resource profile, i.e., mvn clean install -Presourceexp -DskipTests. *Default value*: `false`.|
 |`enableProcessMonitor`| __Boolean__. Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. This is only needed when running experiments with different parameter settings. *Default value*: `false`.|
 |`enableTrackIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals during the search. *Default value*: `false`.|
@@ -154,6 +154,7 @@ There are 3 types of options:
 |`mutatedGeneFile`| __String__. Specify a path to save mutation details which is useful for debugging mutation. *Default value*: `mutatedGeneInfo.csv`.|
 |`mutationTargetsSelectionStrategy`| __Enum__. Specify a strategy to select targets for evaluating mutation. *Valid values*: `FIRST_NOT_COVERED_TARGET, EXPANDED_UPDATED_NOT_COVERED_TARGET, UPDATED_NOT_COVERED_TARGET`. *Default value*: `FIRST_NOT_COVERED_TARGET`.|
 |`outputExecutedSQL`| __Enum__. Whether to output executed sql info. *Valid values*: `NONE, ALL_AT_END, ONCE_EXECUTED`. *Default value*: `NONE`.|
+|`probOfHandlingLength`| __Double__. Specify a probability of applying length handling. *Default value*: `0.0`.|
 |`probOfSelectFromDatabase`| __Double__. Specify a probability that enables selection (i.e., SELECT sql) of data from database instead of insertion (i.e., INSERT sql) for preparing resources for REST actions. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
 |`processFiles`| __String__. Specify a folder to save results when a search monitor is enabled. *Default value*: `process_data`.|
 |`processFormat`| __Enum__. Specify a format to save the process data. *Valid values*: `JSON_ALL, TEST_IND, TARGET_TEST_IND`. *Default value*: `JSON_ALL`.|
@@ -169,6 +170,6 @@ There are 3 types of options:
 |`skipFailureSQLInTestFile`| __Boolean__. Whether to skip failed SQL commands in the generated test files. *Default value*: `false`.|
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`startingTestSize`| __Int__. Specify a max size of a test at the beginning of search once DPC_INCREASING is enabled. *Default value*: `1`.|
-|`structureMutationProbabilityStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator. *Valid values*: `SPECIFIED, DEACTIVATED_DURING_FOCUS_SEARCH, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
+|`structureMutationProbDuringFS`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, DEACTIVATED_DURING_FOCUS_SEARCH, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|

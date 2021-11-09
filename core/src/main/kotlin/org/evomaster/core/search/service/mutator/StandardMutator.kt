@@ -40,10 +40,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
 
-        val prob = when(config.structureMutationProbabilityStrategy){
-            EMConfig.StructureMutationProbabilityStrategy.SPECIFIED -> config.structureMutationProbability
-            EMConfig.StructureMutationProbabilityStrategy.DEACTIVATED_DURING_FOCUS_SEARCH -> if(apc.doesFocusSearch()) 0.0 else config.structureMutationProbability
-            EMConfig.StructureMutationProbabilityStrategy.ADAPTIVE_WITH_IMPACT -> {
+        val prob = when(config.structureMutationProbDuringFS){
+            EMConfig.StructureMutationProbStrategy.SPECIFIED -> config.structureMutationProbability
+            EMConfig.StructureMutationProbStrategy.DEACTIVATED_DURING_FOCUS_SEARCH -> if(apc.doesFocusSearch()) 0.0 else config.structureMutationProbability
+            EMConfig.StructureMutationProbStrategy.ADAPTIVE_WITH_IMPACT -> {
                 if (!apc.doesFocusSearch()) config.structureMutationProbability
                 else {
                     val impact = (evaluatedIndividual.impactInfo?:throw IllegalStateException("lack of impact info"))

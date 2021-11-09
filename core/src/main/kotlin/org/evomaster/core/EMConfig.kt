@@ -1101,7 +1101,7 @@ class EMConfig {
         DPC
     }
 
-    enum class StructureMutationProbabilityStrategy{
+    enum class StructureMutationProbStrategy{
         /**
          * apply the specified probability
          */
@@ -1119,8 +1119,8 @@ class EMConfig {
     }
 
     @Experimental
-    @Cfg("Specify a strategy to handle a probability of applying structure mutator")
-    var structureMutationProbabilityStrategy = StructureMutationProbabilityStrategy.SPECIFIED
+    @Cfg("Specify a strategy to handle a probability of applying structure mutator during the focused search")
+    var structureMutationProbDuringFS = StructureMutationProbStrategy.SPECIFIED
 
 
     enum class MaxTestSizeStrategy{
@@ -1140,9 +1140,13 @@ class EMConfig {
     var maxTestSizeStrategy = MaxTestSizeStrategy.SPECIFIED
 
     @Experimental
-    @Cfg("Specify whether to decide the resource-based structure mutator adaptively based on impacts during focused search." +
+    @Cfg("Specify whether to decide the resource-based structure mutator and resource to be mutated adaptively based on impacts during focused search." +
             "Note that it only works when resource-based solution is enabled for solving REST problem")
-    var adaptiveResStructureMutatorSelectionFS = false
+    var enableAdaptiveResourceStructureMutation = false
+
+    @Experimental
+    @Cfg("Specify a probability of applying length handling")
+    var probOfHandlingLength = 0.0
 
     @Experimental
     @Cfg("Specify a max size of a test at the beginning of search once DPC_INCREASING is enabled")
