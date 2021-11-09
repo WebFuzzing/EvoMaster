@@ -24,6 +24,7 @@ import kotlin.math.max
 import kotlin.math.min
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.roundToInt
 
 class RestResourceStructureMutator : HttpWsStructureMutator() {
 
@@ -355,6 +356,40 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         if (max == 0){
             handleDelete(ind, mutatedGenes, evaluatedIndividual, targets, dohandleSize)
             return
+        }
+
+        if (dohandleSize){
+            // only add existing resource, and there is no need to bind handling between resources
+            val candnodes = ind.getResourceCalls().filter { it.node?.getTemplates()?.keys?.contains("POST") == true }.map { it.getResourceKey() }.toSet()
+            if (candnodes.isNotEmpty()){
+                val selected = if (config.enableAdaptiveResourceStructureMutation)
+                    adaptiveSelectResource(evaluatedIndividual, bySQL = false, candnodes.toList(), targets)
+                else randomness.choose(candnodes)
+
+                val node = rm.getResourceNodeFromCluster(selected)
+                val calls = node.sampleRestResourceCalls("POST", randomness, max)
+                val num =  randomness.nextInt(1, max(1, min(rm.getMaxNumOfResourceSizeHandling(), (max*1.0/calls.seeActionSize(NO_INIT)).roundToInt())))
+                (0 until num).forEach { pos->
+                    if (max > 0){
+                        val added = if (pos == 0) calls else node.sampleRestResourceCalls("POST", randomness, max)
+                        maintainAuth(auth, added)
+                        ind.addResourceCall( pos, added)
+
+                        added.apply {
+                            seeActions(ALL).forEach {
+                                mutatedGenes?.addRemovedOrAddedByAction(
+                                        it,
+                                        ind.seeActions(NO_INIT).indexOf(it),
+                                        false,
+                                        resourcePosition = pos
+                                )
+                            }
+                        }
+                        max -= added.seeActionSize(NO_INIT)
+                    }
+                }
+                return
+            }
         }
 
         val fromDependency = doesApplyDependencyHeuristics()
