@@ -97,6 +97,9 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
     open fun feedback(evi : EvaluatedIndividual<T>){}
 
 
+    /**
+     * get max test size during sampling
+     */
     fun getMaxTestSizeDuringSampler() : Int{
         return when(config.maxTestSizeStrategy){
             EMConfig.MaxTestSizeStrategy.SPECIFIED -> config.maxTestSize
