@@ -34,6 +34,11 @@
             <artifactId>asm-commons</artifactId>
         </dependency>
 
+        <!--  handle sql command      -->
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -142,6 +147,10 @@
                                 <relocation>
                                     <pattern>dk.brics.automaton</pattern>
                                     <shadedPattern>shaded.dk.brics.automaton</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.github.jsqlparser</pattern>
+                                    <shadedPattern>shaded.com.github.jsqlparser</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

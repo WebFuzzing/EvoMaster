@@ -84,6 +84,13 @@ class Archive<T> where T : Individual {
 
 
     fun extractSolution(): Solution<T> {
+        val uniques = getUniquePopulation()
+
+        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
+    }
+
+
+    private fun getUniquePopulation(): MutableSet<EvaluatedIndividual<T>> {
 
         /*
             Note: no equals() is defined, so Set is based
@@ -102,7 +109,7 @@ class Archive<T> where T : Individual {
             }
         }
 
-        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
+        return uniques
     }
 
 

@@ -1,10 +1,13 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import org.evomaster.client.java.instrumentation.SqlInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,7 +34,7 @@ public class StatementClassReplacement implements MethodReplacementClass {
             Man: skip null sql for e.g., "com.zaxxer.hikari.pool"
          */
         if(sql != null){
-            SqlInfo info = new SqlInfo(sql, false, exception, executionTime);
+            SqlInfo info = new SqlInfo(formatSql(sql), false, exception, executionTime);
             ExecutionTracer.addSqlInfo(info);
         }
 
@@ -134,6 +137,27 @@ public class StatementClassReplacement implements MethodReplacementClass {
     @FunctionalInterface
     public interface SqlExecutionSupplier<T, E extends Exception> {
         T get() throws E;
+    }
+
+    /**
+     *
+     * @param sql to format
+     * @return a formatted sql, e.g., removing comments
+     *
+     * Man: actually comments of prepared statement have been removed, this might be redundant for them.
+     *      TODO need to refactor the sql handling a bit
+     */
+    private static String formatSql(String sql){
+        try {
+            return CCJSqlParserUtil.parse(sql).toString();
+        } catch (JSQLParserException e) {
+            /*
+                Man: skip error log here since the sql would be checked when SqlHandler.computeDistance.
+                    in addition, log here would lead to some redundant errors about e.g., SET @@foreign_key_checks, ALTER TABLE flyway_schema_history
+             */
+            //SimpleLogger.error("SQL ERROR. Could not handle "+ sql + " with JSQLParserException, and the error message :"+e.getMessage());
+            return sql;
+        }
     }
 
 }

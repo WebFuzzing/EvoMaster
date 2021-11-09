@@ -45,7 +45,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
 
         System.setOut(new PrintStream(new ByteArrayOutputStream()));
 
-        String command = "Delete FROM Foo";
+        String command = "DELETE FROM Foo";
         try {
             ExecutionDto dto = executeCommand(starter, command, true);
 
@@ -70,7 +70,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
-        String command = "insert into Foo (x) values (42)";
+        String command = "INSERT INTO Foo (x) VALUES (42)";
         try {
             ExecutionDto dto = executeCommand(starter, command, true);
 
@@ -94,7 +94,7 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
-        String command = "update Foo set x=42";
+        String command = "UPDATE Foo SET x = 42";
         try {
             ExecutionDto dto = executeCommand(starter, command, true);
 
