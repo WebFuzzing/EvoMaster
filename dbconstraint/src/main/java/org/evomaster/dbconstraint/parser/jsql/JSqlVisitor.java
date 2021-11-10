@@ -334,6 +334,18 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
     @Override
     public void visit(Column column) {
         String columnName = column.getColumnName();
+
+        /**
+         * The SQL:1999 standard specifies that double quote (")
+         * (QUOTATION MARK) is used to delimit identifiers.
+         * Oracle, PostgreSQL, MySQL, MSSQL and SQlite all
+         * support " as the identifier delimiter.
+         * e.g.
+         * 'foo' is an SQL string
+         * "foo" is an SQL identifier (column/table/etc)
+         *
+         * https://stackoverflow.com/questions/2901453/sql-standard-to-escape-column-names
+         */
         if (hasSurroundingQuotes(columnName)) {
             columnName = removeSurroundingQuotes(columnName);
         }
