@@ -178,7 +178,7 @@ class ImpactUtils {
                 return list
             }
 
-            Lazy.assert { !fromInitialization }
+            Lazy.assert { actions.isEmpty() || !fromInitialization }
 
             individual.seeGenes().filter { mutatedGeneSpecification.mutatedGeneInfo().contains(it) }.forEach { g->
                 val id = generateGeneId(individual, g)
