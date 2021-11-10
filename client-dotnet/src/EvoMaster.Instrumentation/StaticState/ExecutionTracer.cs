@@ -5,10 +5,8 @@ using System.Linq;
 using System.Threading;
 using EvoMaster.Instrumentation_Shared;
 
-namespace EvoMaster.Instrumentation.StaticState
-{
-    public static class ExecutionTracer
-    {
+namespace EvoMaster.Instrumentation.StaticState {
+    public static class ExecutionTracer {
         /*
          * Key -> the unique descriptive id of the coverage objective
          *
@@ -56,16 +54,13 @@ namespace EvoMaster.Instrumentation.StaticState
          */
         private static volatile bool _killSwitch = false;
 
-        static ExecutionTracer()
-        {
+        static ExecutionTracer() {
             Reset();
         }
 
 
-        public static void Reset()
-        {
-            lock (_lock)
-            {
+        public static void Reset() {
+            lock (_lock) {
                 ObjectiveCoverage.Clear();
                 _actionIndex = 0;
                 AdditionalInfoList.Clear();
@@ -76,47 +71,38 @@ namespace EvoMaster.Instrumentation.StaticState
             }
         }
 
-        public static bool IsKillSwitch()
-        {
+        public static bool IsKillSwitch() {
             return _killSwitch;
         }
 
-        public static void SetAction(Action action)
-        {
-            lock (_lock)
-            {
+        public static void SetAction(Action action) {
+            lock (_lock) {
                 SetKillSwitch(false);
                 _expensiveOperation = 0;
-                if (action.GetIndex() != _actionIndex)
-                {
+                if (action.GetIndex() != _actionIndex) {
                     _actionIndex = action.GetIndex();
                     AdditionalInfoList.Add(new AdditionalInfo());
                 }
 
-                if (action.GetInputVariables() != null && action.GetInputVariables().Count != 0)
-                {
+                if (action.GetInputVariables() != null && action.GetInputVariables().Count != 0) {
                     _inputVariables = action.GetInputVariables();
                 }
             }
         }
 
-        public static void SetKillSwitch(bool killSwitch)
-        {
+        public static void SetKillSwitch(bool killSwitch) {
             ExecutionTracer._killSwitch = killSwitch;
         }
 
-        public static IList<AdditionalInfo> ExposeAdditionalInfoList()
-        {
+        public static IList<AdditionalInfo> ExposeAdditionalInfoList() {
             return AdditionalInfoList;
         }
 
 
         ///<summary>Report on the fact that a given line has been executed.</summary>
-        public static void ExecutedLine(string className, string methodName, string descriptor, int line)
-        {
+        public static void ExecutedLine(string className, string methodName, string descriptor, int line) {
             //This is done to prevent the SUT keep on executing code after a test case is evaluated
-            if (IsKillSwitch())
-            {
+            if (IsKillSwitch()) {
                 //TODO
                 // var initClass = Arrays.stream(Thread.CurrentThread..getStackTrace())
                 //     .anyMatch(e -> e.getMethodName().equals("<clinit>"));
@@ -145,8 +131,7 @@ namespace EvoMaster.Instrumentation.StaticState
             MarkLastExecutedStatement(lastLine, lastMethod);
         }
 
-        public static void MarkLastExecutedStatement(string lastLine, string lastMethod)
-        {
+        public static void MarkLastExecutedStatement(string lastLine, string lastMethod) {
             //TODO
             //GetCurrentAdditionalInfo().PushLastExecutedStatement(lastLine, lastMethod);
         }
@@ -157,26 +142,20 @@ namespace EvoMaster.Instrumentation.StaticState
         public static int GetNumberOfObjectives(string prefix) =>
             ObjectiveCoverage.Count(e => prefix == null || e.Key.StartsWith(prefix));
 
-        private static void UpdateObjective(string id, double value)
-        {
-            if (value < 0d || value > 1d)
-            {
+        private static void UpdateObjective(string id, double value) {
+            if (value < 0d || value > 1d) {
                 throw new ArgumentException("Invalid value " + value + " out of range [0,1]");
             }
 
             //In the same execution, a target could be reached several times, so we should keep track of the best value found so far
-            lock (_lock)
-            {
-                if (ObjectiveCoverage.ContainsKey(id))
-                {
+            lock (_lock) {
+                if (ObjectiveCoverage.ContainsKey(id)) {
                     var previous = ObjectiveCoverage[id].Value;
-                    if (value > previous)
-                    {
+                    if (value > previous) {
                         ObjectiveCoverage.Add(id, new TargetInfo(null, id, value, _actionIndex));
                     }
                 }
-                else
-                {
+                else {
                     ObjectiveCoverage.Add(id, new TargetInfo(null, id, value, _actionIndex));
                 }
             }
@@ -184,10 +163,8 @@ namespace EvoMaster.Instrumentation.StaticState
             ObjectiveRecorder.Update(id, value);
         }
 
-        private static AdditionalInfo GetCurrentAdditionalInfo()
-        {
-            lock (_lock)
-            {
+        private static AdditionalInfo GetCurrentAdditionalInfo() {
+            lock (_lock) {
                 return AdditionalInfoList[_actionIndex];
             }
         }

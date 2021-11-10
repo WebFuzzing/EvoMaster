@@ -1,7 +1,5 @@
-namespace EvoMaster.Controller.Api
-{
-  public class InsertionEntryDto {
-
+namespace EvoMaster.Controller.Api {
+    public class InsertionEntryDto {
         public string VariableName { get; set; }
 
         public string PrintableValue { get; set; }
@@ -12,6 +10,5 @@ namespace EvoMaster.Controller.Api
          * executed
          */
         public long? ForeignKeyToPreviouslyGeneratedRow { get; set; }
-
     }
 }

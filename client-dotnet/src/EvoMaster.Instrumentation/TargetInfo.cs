@@ -1,10 +1,8 @@
 using System;
 
-namespace EvoMaster.Instrumentation
-{
+namespace EvoMaster.Instrumentation {
     [Serializable]
-    public class TargetInfo
-    {
+    public class TargetInfo {
         public readonly int? MappedId;
 
         public readonly string DescriptiveId;
@@ -20,8 +18,7 @@ namespace EvoMaster.Instrumentation
          */
         public readonly int? ActionIndex;
 
-        public TargetInfo(int? mappedId, string descriptiveId, double? value, int? actionIndex)
-        {
+        public TargetInfo(int? mappedId, string descriptiveId, double? value, int? actionIndex) {
             MappedId = mappedId;
             DescriptiveId = descriptiveId;
             Value = value;

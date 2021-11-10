@@ -3,10 +3,8 @@ using System.Threading.Tasks;
 using RestApis.Tests.HelloWorld.Controller;
 using Xunit;
 
-namespace RestApis.Tests.HelloWorld
-{
-    public class HelloWorldTest
-    {
+namespace RestApis.Tests.HelloWorld {
+    public class HelloWorldTest {
         private static readonly HttpClient Client = new HttpClient();
 
 
@@ -14,8 +12,7 @@ namespace RestApis.Tests.HelloWorld
         [InlineData("helloworld", 200)]
         [InlineData("swagger", 200)]
         [InlineData("wrongUri", 404)]
-        public async Task StartApi_RetrunExpectedStatusCode(string uri, int expectedStatusCode)
-        {
+        public async Task StartApi_RetrunExpectedStatusCode(string uri, int expectedStatusCode) {
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController();
 
             var baseUrl = evoMasterController.StartSut();
@@ -24,12 +21,11 @@ namespace RestApis.Tests.HelloWorld
 
             evoMasterController.StopSut();
 
-            Assert.Equal(expectedStatusCode, (int) response.StatusCode);
+            Assert.Equal(expectedStatusCode, (int)response.StatusCode);
         }
 
         [Fact]
-        public async Task CallApiWhenStopped_Fail()
-        {
+        public async Task CallApiWhenStopped_Fail() {
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController();
 
             var baseUrl = evoMasterController.StartSut();
@@ -40,8 +36,7 @@ namespace RestApis.Tests.HelloWorld
         }
 
         [Fact]
-        public void StartApi_IsSutRunningShouldReturnTrue()
-        {
+        public void StartApi_IsSutRunningShouldReturnTrue() {
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController();
 
             evoMasterController.StartSut();
@@ -52,8 +47,7 @@ namespace RestApis.Tests.HelloWorld
         }
 
         [Fact]
-        public void StartAndStopApi_IsSutRunningShouldReturnFalse()
-        {
+        public void StartAndStopApi_IsSutRunningShouldReturnFalse() {
             EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController();
 
             evoMasterController.StartSut();

@@ -7,15 +7,13 @@ using System.Threading;
 using EvoMaster.Client.Util;
 using EvoMaster.Client.Util.Extensions;
 
-namespace EvoMaster.Instrumentation.StaticState
-{
+namespace EvoMaster.Instrumentation.StaticState {
     /**
  * Keep track of all objective coverage so far.
  * This is different from ExecutionTrace that is reset after
  * each test execution.
  */
-    public class ObjectiveRecorder
-    {
+    public class ObjectiveRecorder {
         /*
         * Key -> the unique id of the coverage objective
         * <br>
@@ -86,8 +84,7 @@ namespace EvoMaster.Instrumentation.StaticState
         /**
      * Reset all the static state in this class
      */
-        public static void Reset(bool alsoAtLoadTime)
-        {
+        public static void Reset(bool alsoAtLoadTime) {
             MaxObjectiveCoverage.Clear();
             _idMapping.Clear();
             _reversedIdMapping.Clear();
@@ -97,8 +94,7 @@ namespace EvoMaster.Instrumentation.StaticState
             //TODO: check
             Counter = 0;
 
-            if (alsoAtLoadTime)
-            {
+            if (alsoAtLoadTime) {
                 /*
                 Shouldn't always reset it, because
                 it is only computed at SUT classloading time
@@ -113,10 +109,8 @@ namespace EvoMaster.Instrumentation.StaticState
         /// This cannot be done with the added probes in the instrumentation, as what executed in the SUT depends on test data.
         /// </summary>
         /// <param name="target">A descriptive string representing the id of the target</param>
-        public static void RegisterTarget(string target)
-        {
-            if (target == null || string.IsNullOrEmpty(target))
-            {
+        public static void RegisterTarget(string target) {
+            if (target == null || string.IsNullOrEmpty(target)) {
                 throw new ArgumentException("Empty target name");
             }
 
@@ -124,32 +118,26 @@ namespace EvoMaster.Instrumentation.StaticState
         }
 
         /// <returns>A coverage value in [0,1]</returns>
-        public static double ComputeCoverage(string prefix)
-        {
+        public static double ComputeCoverage(string prefix) {
             var n = 0;
             var covered = 0;
 
-            foreach (var id in AllTargets)
-            {
-                if (!id.StartsWith(prefix))
-                {
+            foreach (var id in AllTargets) {
+                if (!id.StartsWith(prefix)) {
                     continue;
                 }
 
                 n++;
-                if (_idMapping.ContainsKey(id))
-                {
+                if (_idMapping.ContainsKey(id)) {
                     int numericId = _idMapping[id];
                     var h = MaxObjectiveCoverage[numericId];
-                    if (h == 1d)
-                    {
+                    if (h == 1d) {
                         covered++;
                     }
                 }
             }
 
-            if (n == 0)
-            {
+            if (n == 0) {
                 return 1d;
             }
 
@@ -173,49 +161,40 @@ namespace EvoMaster.Instrumentation.StaticState
         // }
 
 
-        public static IList<string> GetTargetsSeenFirstTime()
-        {
+        public static IList<string> GetTargetsSeenFirstTime() {
             return new List<string>(FirstTimeEncountered).AsReadOnly();
         }
 
 
-        public static void ClearFirstTimeEncountered()
-        {
+        public static void ClearFirstTimeEncountered() {
             FirstTimeEncountered.Clear();
         }
 
 
         ///<param name="descriptiveId">Descriptive Id of the objective/target</param>
         ///<param name="value">value of the coverage heuristic, in [0,1]</param>
-        public static void Update(string descriptiveId, double value)
-        {
+        public static void Update(string descriptiveId, double value) {
             if (descriptiveId == null) throw new ArgumentNullException();
-            if (value < 0d || value > 1)
-            {
+            if (value < 0d || value > 1) {
                 throw new ArgumentException("Invalid value " + value + " out of range [0,1]");
             }
 
             var id = GetMappedId(descriptiveId);
 
-            if (!MaxObjectiveCoverage.ContainsKey(id))
-            {
+            if (!MaxObjectiveCoverage.ContainsKey(id)) {
                 FirstTimeEncountered.Enqueue(descriptiveId);
                 MaxObjectiveCoverage.Add(id, value);
             }
-            else
-            {
+            else {
                 var old = MaxObjectiveCoverage[id];
-                if (value > old)
-                {
+                if (value > old) {
                     MaxObjectiveCoverage.Add(id, value);
                 }
             }
         }
 
-        public static int GetMappedId(string descriptiveId)
-        {
-            var id = _idMapping.ComputeIfAbsent(descriptiveId, k =>
-            {
+        public static int GetMappedId(string descriptiveId) {
+            var id = _idMapping.ComputeIfAbsent(descriptiveId, k => {
                 //int x = IdMappingCounter.getAndIncrement();
                 int x = IdMappingCounter;
                 Interlocked.Increment(ref IdMappingCounter);
@@ -229,17 +208,14 @@ namespace EvoMaster.Instrumentation.StaticState
         }
 
 
-        public static Dictionary<int, string> GetDescriptiveIds(ICollection<int> ids)
-        {
+        public static Dictionary<int, string> GetDescriptiveIds(ICollection<int> ids) {
             return ids.ToDictionary(id => id, GetDescriptiveId);
         }
 
-        public static string GetDescriptiveId(int id)
-        {
+        public static string GetDescriptiveId(int id) {
             var descriptiveId = _reversedIdMapping[id];
 
-            if (descriptiveId == null)
-            {
+            if (descriptiveId == null) {
                 throw new ArgumentException("Id '" + id + "' is not mapped");
             }
 

@@ -1,7 +1,6 @@
 using System;
 
-namespace EvoMaster.Instrumentation.Heuristic
-{
+namespace EvoMaster.Instrumentation.Heuristic {
     /**
  * 2 values: one for true, and one for false.
  * The values are in [0,1].
@@ -11,30 +10,24 @@ namespace EvoMaster.Instrumentation.Heuristic
  * The non-1 value represents how close the other option
  * would had been from being taken
  */
-    public class Truthness
-    {
+    public class Truthness {
         private readonly double _ofTrue;
         private readonly double _ofFalse;
 
-        public Truthness(double ofTrue, double ofFalse)
-        {
-            if (ofTrue < 0 || ofTrue > 1)
-            {
+        public Truthness(double ofTrue, double ofFalse) {
+            if (ofTrue < 0 || ofTrue > 1) {
                 throw new ArgumentException("Invalid value for ofTrue: " + ofTrue);
             }
 
-            if (ofFalse < 0 || ofFalse > 1)
-            {
+            if (ofFalse < 0 || ofFalse > 1) {
                 throw new ArgumentException("Invalid value for ofFalse: " + ofFalse);
             }
 
-            if (ofTrue != 1 && ofFalse != 1)
-            {
+            if (ofTrue != 1 && ofFalse != 1) {
                 throw new ArgumentException("At least one value should be equal to 1");
             }
 
-            if (ofTrue == 1 && ofFalse == 1)
-            {
+            if (ofTrue == 1 && ofFalse == 1) {
                 throw new ArgumentException("Values cannot be both equal to 1");
             }
 

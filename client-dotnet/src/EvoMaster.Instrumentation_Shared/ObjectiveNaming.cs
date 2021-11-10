@@ -3,10 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EvoMaster.Client.Util.Extensions;
 
-namespace EvoMaster.Instrumentation_Shared
-{
-    public class ObjectiveNaming
-    {
+namespace EvoMaster.Instrumentation_Shared {
+    public class ObjectiveNaming {
         /**
      * Prefix identifier for class coverage objectives.
      * A class is "covered" if at least one of its lines is executed.
@@ -65,15 +63,13 @@ namespace EvoMaster.Instrumentation_Shared
         //TODO: capacity 10_000
         private static readonly IDictionary<string, string> CacheClass = new ConcurrentDictionary<string, string>();
 
-        public static string ClassObjectiveName(string className)
-        {
+        public static string ClassObjectiveName(string className) {
             return CacheClass.ComputeIfAbsent(className, c => CLASS + "_" + ClassName.Get(c).GetFullNameWithDots());
             //string name = CLASS + "_" + ClassName.get(className).getFullNameWithDots();
             //return name;//.intern();
         }
 
-        public static string NumericComparisonObjectiveName(string id, int res)
-        {
+        public static string NumericComparisonObjectiveName(string id, int res) {
             var name = NUMERIC_COMPARISON + "_" + id + "_" + (res == 0 ? "EQ" : (res < 0 ? "LT" : "GT"));
             return name; //.intern();
         }
@@ -82,10 +78,10 @@ namespace EvoMaster.Instrumentation_Shared
         private static readonly IDictionary<string, IDictionary<int, string>> LineCache =
             new ConcurrentDictionary<string, IDictionary<int, string>>();
 
-        public static string LineObjectiveName(string className, int line)
-        {
+        public static string LineObjectiveName(string className, int line) {
             var map =
-                LineCache.ComputeIfAbsent(className, c => new ConcurrentDictionary<int, string>()); //TODO: capacity 1000
+                LineCache.ComputeIfAbsent(className,
+                    c => new ConcurrentDictionary<int, string>()); //TODO: capacity 1000
             return map.ComputeIfAbsent(line,
                 l => LINE + "_at_" + ClassName.Get(className).GetFullNameWithDots() + "_" + PadNumber(line));
 
@@ -97,8 +93,7 @@ namespace EvoMaster.Instrumentation_Shared
         private static readonly IDictionary<string, IDictionary<int, IDictionary<int, string>>> CacheSuccessCall =
             new ConcurrentDictionary<string, IDictionary<int, IDictionary<int, string>>>();
 
-        public static string SuccessCallObjectiveName(string className, int line, int index)
-        {
+        public static string SuccessCallObjectiveName(string className, int line, int index) {
             var m0 =
                 CacheSuccessCall.ComputeIfAbsent(className,
                     c => new ConcurrentDictionary<int, IDictionary<int, string>>()); //TODO: capacity 10_000
@@ -113,17 +108,14 @@ namespace EvoMaster.Instrumentation_Shared
 //        return name;//.intern();
         }
 
-        public static string MethodReplacementObjectiveNameTemplate(string className, int line, int index)
-        {
+        public static string MethodReplacementObjectiveNameTemplate(string className, int line, int index) {
             var name = METHOD_REPLACEMENT + "_at_" + ClassName.Get(className).GetFullNameWithDots() +
                        "_" + PadNumber(line) + "_" + index;
             return name; //.intern();
         }
 
-        public static string MethodReplacementObjectiveName(string template, bool result, ReplacementType type)
-        {
-            if (template == null || !template.StartsWith(METHOD_REPLACEMENT))
-            {
+        public static string MethodReplacementObjectiveName(string template, bool result, ReplacementType type) {
+            if (template == null || !template.StartsWith(METHOD_REPLACEMENT)) {
                 throw new ArgumentException("Invalid template for bool method replacement: " + template);
             }
 
@@ -137,8 +129,7 @@ namespace EvoMaster.Instrumentation_Shared
                 ConcurrentDictionary<string,
                     IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>(); //TODO: capacity 10_000
 
-        public static string BranchObjectiveName(string className, int line, int branchId, bool thenBranch)
-        {
+        public static string BranchObjectiveName(string className, int line, int branchId, bool thenBranch) {
             var m0 =
                 BranchCache.ComputeIfAbsent(className,
                     k => new ConcurrentDictionary<int,
@@ -146,19 +137,16 @@ namespace EvoMaster.Instrumentation_Shared
             var m1 = m0.ComputeIfAbsent(line,
                 k => new ConcurrentDictionary<int, IDictionary<bool, string>>()); //TODO: capacity 10
             var
-                m2 = m1.ComputeIfAbsent(branchId, k => new ConcurrentDictionary<bool,string>()); //TODO: capacity 2
+                m2 = m1.ComputeIfAbsent(branchId, k => new ConcurrentDictionary<bool, string>()); //TODO: capacity 2
 
-            return m2.ComputeIfAbsent(thenBranch, k =>
-            {
+            return m2.ComputeIfAbsent(thenBranch, k => {
                 var name = BRANCH + "_at_" +
                            ClassName.Get(className).GetFullNameWithDots()
                            + "_at_line_" + PadNumber(line) + "_position_" + branchId;
-                if (thenBranch)
-                {
+                if (thenBranch) {
                     name += TRUE_BRANCH;
                 }
-                else
-                {
+                else {
                     name += FALSE_BRANCH;
                 }
 
@@ -176,34 +164,27 @@ namespace EvoMaster.Instrumentation_Shared
 //        return name;//.intern();
         }
 
-        private static string PadNumber(int val)
-        {
-            if (val < 0)
-            {
+        private static string PadNumber(int val) {
+            if (val < 0) {
                 throw new ArgumentException("Negative number to pad");
             }
 
-            if (val < 10)
-            {
+            if (val < 10) {
                 return "0000" + val;
             }
 
-            if (val < 100)
-            {
+            if (val < 100) {
                 return "000" + val;
             }
 
-            if (val < 1_000)
-            {
+            if (val < 1_000) {
                 return "00" + val;
             }
 
-            if (val < 10_000)
-            {
+            if (val < 10_000) {
                 return "0" + val;
             }
-            else
-            {
+            else {
                 return "" + val;
             }
         }

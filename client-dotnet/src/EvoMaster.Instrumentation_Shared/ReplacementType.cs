@@ -1,7 +1,5 @@
-namespace EvoMaster.Instrumentation_Shared
-{
-    public enum ReplacementType
-    {
+namespace EvoMaster.Instrumentation_Shared {
+    public enum ReplacementType {
         //For methods that return boolean values
         BOOLEAN,
 

@@ -10,17 +10,14 @@ using DotNet.Testcontainers.Containers.Modules.Abstractions;
 using DotNet.Testcontainers.Containers.Modules.Databases;
 using Npgsql;
 
-namespace RestApis.Tests.Animals.Controller
-{
-    public class EmbeddedEvoMasterController : EmbeddedSutController
-    {
+namespace RestApis.Tests.Animals.Controller {
+    public class EmbeddedEvoMasterController : EmbeddedSutController {
         private bool _isSutRunning;
         private int _sutPort;
         private TestcontainerDatabase _database;
         private NpgsqlConnection _connection;
 
-        public static void Main(string[] args)
-        {
+        public static void Main(string[] args) {
             var embeddedEvoMasterController = new EmbeddedEvoMasterController();
 
             var instrumentedSutStarter = new InstrumentedSutStarter(embeddedEvoMasterController);
@@ -46,21 +43,18 @@ namespace RestApis.Tests.Animals.Controller
 
         public override bool IsSutRunning() => _isSutRunning;
 
-        public override void ResetStateOfSut()
-        {
+        public override void ResetStateOfSut() {
             DbCleaner.ClearDatabase_Postgres(_connection, null,
-                new List<string> {"Mammals"});
+                new List<string> { "Mammals" });
         }
 
-        public override string StartSut()
-        {
+        public override string StartSut() {
             //TODO: check this again
             var ephemeralPort = GetEphemeralTcpPort();
 
-            Task.Run(async () =>
-            {
+            Task.Run(async () => {
                 var connectionString = await StartContainerAsync();
-                RestApis.Animals.Program.Main(new[] {ephemeralPort.ToString(), connectionString});
+                RestApis.Animals.Program.Main(new[] { ephemeralPort.ToString(), connectionString });
             });
 
             WaitUntilSutIsRunning(ephemeralPort, 190);
@@ -72,13 +66,12 @@ namespace RestApis.Tests.Animals.Controller
             return $"http://localhost:{ephemeralPort}";
         }
 
-        public override void StopSut()
-        {
+        public override void StopSut() {
             RestApis.Animals.Program.Shutdown();
 
             //TODO
             _connection.Close();
-            
+
             _database.StopAsync().GetAwaiter().GetResult();
 
             _isSutRunning = false;
@@ -86,11 +79,9 @@ namespace RestApis.Tests.Animals.Controller
 
         protected int GetSutPort() => _sutPort;
 
-        private async Task<string> StartContainerAsync()
-        {
+        private async Task<string> StartContainerAsync() {
             var postgresBuilder = new TestcontainersBuilder<PostgreSqlTestcontainer>()
-                .WithDatabase(new PostgreSqlTestcontainerConfiguration
-                {
+                .WithDatabase(new PostgreSqlTestcontainerConfiguration {
                     Database = "AnimalsDatabase",
                     Username = "user",
                     Password = "password123"
@@ -102,7 +93,7 @@ namespace RestApis.Tests.Animals.Controller
 
             _connection = new NpgsqlConnection(_database.ConnectionString);
             await _connection.OpenAsync();
-            
+
             //No idea why the password is missing in the connection string
             return $"{_connection.ConnectionString};Password={_database.Password}";
         }
