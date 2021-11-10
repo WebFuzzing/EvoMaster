@@ -30,8 +30,10 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<RestIndividual>): Boolean {
 
         return super.doesStructureMutation(evaluatedIndividual)  &&
-                (!dm.onlyIndependentResource())  // if all resources are asserted independent, there is no point to do structure mutation
-                && dm.canMutateResource(evaluatedIndividual.individual)
+                (config.probOfHandlingLength> 0 ||
+                        ((!dm.onlyIndependentResource())  &&  // if all resources are asserted independent, there is no point to do structure mutation
+                                dm.canMutateResource(evaluatedIndividual.individual))
+                        )
     }
 
 

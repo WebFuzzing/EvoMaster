@@ -57,7 +57,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         return structureMutator.canApplyStructureMutator(evaluatedIndividual.individual) &&
-                config.maxTestSize > 1 && // if the maxTestSize is 1, there is no point to do structure mutation
+//                (config.maxTestSize > 1) && // if the maxTestSize is 1, there is no point to do structure mutation
                 randomness.nextBoolean(prob)
     }
 

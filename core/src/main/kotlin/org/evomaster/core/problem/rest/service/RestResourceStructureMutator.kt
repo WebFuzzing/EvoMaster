@@ -67,9 +67,9 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         // with adaptive structure mutator selection, we enable adding multiple same resource with rest action
         val candidates = getAvailableMutator(evaluatedIndividual.individual, true)
         // during focused search, we only involve the mutator which could change the size of resources
-        val lengthMutator = candidates.filter {
-            // relatively low probability of applying rest actions to manipulate length
-            it == MutationType.ADD && randomness.nextBoolean(0.2)
+        val lengthMutator = candidates.filterNot {
+            // relatively low probability (i.e., 0.2) of applying rest actions to manipulate length
+            it == MutationType.ADD && randomness.nextBoolean(0.8)
         }
         if (lengthMutator.isEmpty())
             return null
@@ -179,7 +179,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         /**
          * add insertions to table
          */
-        SQL_ADD(1, 1)
+        SQL_ADD(1, 0)
     }
 
     /**
@@ -189,7 +189,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
     private fun handleAddSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?, evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, targets: Set<Int>?){
         if (config.maxSizeOfHandlingResource == 0)
             throw IllegalStateException("this method should not be invoked when config.maxSqlInitActionsPerResource is 0")
-        val numOfResource = randomness.nextInt(1, rm.getMaxNumOfResourceSizeHandling())
+        val numOfResource = randomness.nextInt(1, max(1, rm.getMaxNumOfResourceSizeHandling()))
         val candidates = if (doesApplyDependencyHeuristics())
             dm.identifyRelatedSQL(ind)
         else
