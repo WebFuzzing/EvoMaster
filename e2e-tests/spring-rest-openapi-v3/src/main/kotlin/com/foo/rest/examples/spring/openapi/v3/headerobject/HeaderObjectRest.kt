@@ -13,9 +13,12 @@ import javax.servlet.http.HttpServletRequest
 open class HeaderObjectRest {
 
     @GetMapping
-    open fun get(@RequestHeader token: Token) : ResponseEntity<String> {
+//    open fun get(@RequestHeader token: Token) : ResponseEntity<String> {
+    open fun get(@RequestHeader token: String) : ResponseEntity<String> {
 
-        if(token.counter > 0 && token.x.length > 0) {
+        val _token = Gson().fromJson<Token>(token, Token::class.java)
+
+        if(_token.counter > 0 && _token.x.length > 0) {
             return ResponseEntity.ok("OK")
         }
 
