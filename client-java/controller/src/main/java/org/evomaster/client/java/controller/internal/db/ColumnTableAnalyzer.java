@@ -72,13 +72,10 @@ public class ColumnTableAnalyzer {
 
         Update stmt = (Update) ParserUtils.asStatement(update);
 
-        List<Table> tables = stmt.getTables();
-        if(tables!=null && !tables.isEmpty()){
-            for(Table t: tables){
-                handleTable(map, t);
-            }
+        Table table = stmt.getTable();
+        if(table!=null){
+            handleTable(map, table);
         } else {
-            //TODO all other cases
             throw new IllegalArgumentException("Cannot handle update: " + update);
         }
 

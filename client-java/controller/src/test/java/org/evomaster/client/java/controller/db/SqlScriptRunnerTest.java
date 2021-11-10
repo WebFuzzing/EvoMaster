@@ -34,7 +34,14 @@ public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseT
     @Test
     public void testInsertEmpty() throws Exception{
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT auto_increment);");
+
+        QueryResult before = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo");
+        assertTrue(before.isEmpty());
+
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo() VALUES();");
+
+        QueryResult after = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo");
+        assertFalse(after.isEmpty());
     }
 
     @Test

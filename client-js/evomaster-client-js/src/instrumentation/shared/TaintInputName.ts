@@ -1,8 +1,14 @@
 export class TaintInputName {
 
-    private static readonly PREFIX = "evomaster_";
+    /*
+        WARNING:
+        the naming here has to be kept in sync in ALL implementations of this class,
+        including Java, JS and C#
+     */
 
-    private static readonly POSTFIX = "_input";
+    private static readonly PREFIX = "_EM_";
+
+    private static readonly POSTFIX = "_XYZ_";
 
     //Pattern.compile("\\Q"+PREFIX+"\\E\\d+\\Q"+POSTFIX+"\\E");
     private static regex = TaintInputName.PREFIX + "\\d+" + TaintInputName.POSTFIX
