@@ -153,6 +153,7 @@ class ImpactUtils {
 
             if (actions.isNotEmpty()){
                 actions.forEach { a ->
+
                     val index = actions.indexOf(a)
                     val manipulated = mutatedGeneSpecification.isActionMutated(index, !fromInitialization)
                     if (manipulated){
