@@ -259,7 +259,8 @@ class RestResourceNode(
                 postCreation.confirmComplete()
         }
 
-        creations.add(postCreation)
+        if (postCreation.actions.isNotEmpty())
+            creations.add(postCreation)
     }
 
     private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){
