@@ -26,7 +26,11 @@ public class PCEMTest extends SpringTestBase {
             NOTE THAT
             default resource-based solution would have side effect on creating multiple resources in one test
             before size of resource is handled, we employ the solution without resource handling.
+
+            man: now enable it with adaptive length handling with structure mutator
          */
+
+        defaultSeed = 44;
 
         runTestHandlingFlakyAndCompilation(
                 "PcEM",
@@ -34,11 +38,11 @@ public class PCEMTest extends SpringTestBase {
                 1_000,
                 (args) -> {
 
-                    args.add("--probOfSmartSampling");
-                    args.add("0.5");
-                    args.add("--resourceSampleStrategy");
-                    args.add("NONE");
+                    args.add("--enableAdaptiveResourceStructureMutation");
+                    args.add("true");
 
+                    args.add("--probOfHandlingLength");
+                    args.add("0.5");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
