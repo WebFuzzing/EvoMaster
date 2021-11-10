@@ -149,7 +149,7 @@ class ImpactUtils {
 
             val actions = if (fromInitialization) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)
             val list = mutableListOf<MutatedGeneWithContext>()
-            if (actions.isEmpty()) return list
+//            if (actions.isEmpty()) return list
 
             if (actions.isNotEmpty()){
                 actions.forEach { a ->
