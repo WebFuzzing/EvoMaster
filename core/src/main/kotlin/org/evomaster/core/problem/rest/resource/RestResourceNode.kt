@@ -17,6 +17,8 @@ import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -153,7 +155,7 @@ class RestResourceNode(
         return dbactions.filterNot { it.representExistingData }.flatMap { db->
             val exclude = related.flatMap { r-> r?.getRelatedColumn(db.table.name)?.toList()?:listOf() }
             db.seeGenesForInsertion(exclude)
-        }.filter(Gene::isMutable)
+        }.filter{it.isMutable() && it !is SqlForeignKeyGene && it !is SqlPrimaryKeyGene}
     }
 
     /**
@@ -205,7 +207,7 @@ class RestResourceNode(
 
     //if only get
     fun isIndependent() : Boolean{
-        return templates.all { it.value.independent } && (creations.none { c->c.isComplete() } || resourceToTable.paramToTable.isEmpty())
+        return templates.all { it.value.independent } && (creations.none { c->c.isComplete() } && resourceToTable.paramToTable.isEmpty())
     }
 
     // if only post, the resource does not contain any independent action
