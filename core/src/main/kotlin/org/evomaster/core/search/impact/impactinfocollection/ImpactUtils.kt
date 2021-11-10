@@ -175,9 +175,6 @@ class ImpactUtils {
                         }
                     }
                 }
-                Lazy.assert {
-                    list.size == if (fromInitialization) mutatedGeneSpecification.mutatedDbGenes.size else mutatedGeneSpecification.mutatedGenes.size
-                }
                 return list
             }
 
@@ -187,9 +184,6 @@ class ImpactUtils {
                 val id = generateGeneId(individual, g)
                 val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
                 list.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = num))
-            }
-            Lazy.assert {
-                list.size == mutatedGeneSpecification.mutatedGenes.size
             }
             return list
         }

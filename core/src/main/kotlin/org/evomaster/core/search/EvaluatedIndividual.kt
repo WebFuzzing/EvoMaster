@@ -449,10 +449,14 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 impactInfo!!.getSQLExistingData() == individual.seeInitializingActions().count { it is DbAction && it.representExistingData }
             }
         }
+
+        var updated = 0
         // update rest action genes and/or sql genes
         mutatedGenes.mutatedActionOrDb().forEach { db->
             val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(
                     mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous, fromInitialization = db)
+
+            updated += mutatedGenesWithContext.size
 
             mutatedGenesWithContext.forEach {gc->
                 val impact = impactInfo!!.getGene(
@@ -471,6 +475,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 )
             }
         }
+
+        Lazy.assert { updated == mutatedGenes.numOfMutatedGeneInfo() }
     }
 
     /**
