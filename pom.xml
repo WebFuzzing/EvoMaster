@@ -126,7 +126,7 @@
         <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
         <jgrapht.version>0.8.3</jgrapht.version>
         <version.graphql-spring>11.1.0</version.graphql-spring>
-        <mysql.connector.java.version>8.0.23</mysql.connector.java.version>
+        <mysql.connector.java.version>8.0.27</mysql.connector.java.version>
         <mariadb.java.client.version>2.7.2</mariadb.java.client.version>
         <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
         <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
