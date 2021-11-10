@@ -5,6 +5,12 @@ import java.util.regex.Pattern;
 
 public class TaintInputName {
 
+    /*
+        WARNING:
+        the naming here has to be kept in sync in ALL implementations of this class,
+        including Java, JS and C#
+     */
+
     private static final String PREFIX = "_EM_";
 
     private static final String POSTFIX = "_XYZ_";
