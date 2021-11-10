@@ -364,6 +364,13 @@ public abstract class ExternalSutController extends SutController {
         ExecutionTracer.setKillSwitch(b);// store info locally as well, to avoid needing to do call to fetch current value
     }
 
+    @Override
+    public void setExecutingInitSql(boolean executingInitSql) {
+        checkInstrumentation();
+        serverController.setExecutingInitSql(executingInitSql);
+        // sync executingInitSql on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
 
     //-----------------------------------------
 

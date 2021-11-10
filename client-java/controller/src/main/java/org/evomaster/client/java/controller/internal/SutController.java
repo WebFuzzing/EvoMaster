@@ -215,11 +215,7 @@ public abstract class SutController implements SutHandler {
                         sqlHandler.handle(it);
                     } catch (Exception e){
                         SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getCommand());
-
-                        //FIXME put it back once JSqlParser is updated.
-                        //Unfortunately, JSqlParser is bugged, and valid things like following do crash
-                        //INSERT INTO Foo() VALUES()
-                        //assert false; //we should try to handle all cases in our tests
+                        assert false; //we should try to handle all cases in our tests
                     }
                 });
             }
@@ -495,6 +491,7 @@ public abstract class SutController implements SutHandler {
 
     public abstract void setKillSwitch(boolean b);
 
+    public abstract void setExecutingInitSql(boolean executingInitSql);
 
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
 

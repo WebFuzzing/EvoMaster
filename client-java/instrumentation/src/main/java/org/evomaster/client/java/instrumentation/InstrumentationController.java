@@ -40,6 +40,10 @@ public class InstrumentationController {
         ExecutionTracer.setKillSwitch(b);
     }
 
+    public static void setExecutingInitSql(boolean executingInitSql){
+        ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
+
     public static List<TargetInfo> getTargetInfos(Collection<Integer> ids){
 
         List<TargetInfo> list = new ArrayList<>();

@@ -151,8 +151,13 @@ public class StatementClassReplacement implements MethodReplacementClass {
         try {
             return CCJSqlParserUtil.parse(sql).toString();
         } catch (JSQLParserException e) {
-            SimpleLogger.error("SQL ERROR. Could not handle"+ sql + " with JSQLParserException, and the error message :"+e.getMessage());
+            /*
+                Man: skip error log here since the sql would be checked when SqlHandler.computeDistance.
+                    in addition, log here would lead to some redundant errors about e.g., SET @@foreign_key_checks, ALTER TABLE flyway_schema_history
+             */
+            //SimpleLogger.error("SQL ERROR. Could not handle "+ sql + " with JSQLParserException, and the error message :"+e.getMessage());
             return sql;
         }
     }
+
 }
