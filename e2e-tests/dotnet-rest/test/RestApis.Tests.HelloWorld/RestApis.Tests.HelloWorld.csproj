@@ -16,12 +16,13 @@
         <PackageReference Include="xunit" Version="2.4.0"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0"/>
         <PackageReference Include="coverlet.collector" Version="1.0.1"/>
-        <PackageReference Include="EvoMaster.Instrumentation" Version="1.1.1-SNAPSHOT"/>
-        <PackageReference Include="EvoMaster.Controller" Version="1.1.1-SNAPSHOT"/>
+<!--        <PackageReference Include="EvoMaster.Instrumentation" Version="1.1.1-SNAPSHOT"/>-->
+<!--        <PackageReference Include="EvoMaster.Controller" Version="1.1.1-SNAPSHOT"/>-->
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="../../src/RestApis.HelloWorld/RestApis.HelloWorld.csproj"/>
+        <ProjectReference Include="../../../../client-dotnet/src/EvoMaster.Controller/EvoMaster.Controller.csproj"/>
     </ItemGroup>
 
     <!-- TODO: uncomment these lines of code and check why shutting the instrumented SUT throws exception -->
