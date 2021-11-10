@@ -452,9 +452,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         var updated = 0
         // update rest action genes and/or sql genes
-        mutatedGenes.mutatedActionOrDb().forEach { db->
+        mutatedGenes.mutatedActionOrInit().forEach { isInit->
             val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(
-                    mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous, fromInitialization = db)
+                    mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous, isInit = isInit)
 
             updated += mutatedGenesWithContext.size
 
@@ -463,7 +463,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                         actionName = gc.action,
                         actionIndex = gc.position,
                         geneId = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, gc.current),
-                        fromInitialization = db
+                        fromInitialization = isInit
                 )?:throw IllegalArgumentException("mismatched impact info")
 
                 impact.countImpactWithMutatedGeneWithContext(

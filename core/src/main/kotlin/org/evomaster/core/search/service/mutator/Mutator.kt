@@ -169,7 +169,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val targetsInfo =
                 evaluateMutationInDetails(mutated = mutated, current = current, targets = targets, archive = archive)
 
-            if (config.isEnabledImpactCollection()){
+            if (config.isEnabledImpactCollection() ){
                 /*
                     update impact info regarding targets.
                     To avoid side-effect to impactful gene, remove covered targets

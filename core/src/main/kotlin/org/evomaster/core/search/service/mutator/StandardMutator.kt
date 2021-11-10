@@ -254,7 +254,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
         val position = when {
             isFromInit -> individual.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
-            individual.seeActions(filter).isEmpty() -> individual.seeGenes().indexOf(gene)
             else -> individual.seeActions(ActionFilter.NO_INIT).indexOfFirst { it.seeGenes().contains(gene) }
         }
 
@@ -262,7 +261,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             it.seeActions(ActionFilter.ALL).any { d-> d.seeGenes().contains(gene) }
         }
 
-        mutatedGene?.addMutatedGene(isFromInit || isDbInResourceCall, valueBeforeMutation = value, gene = gene, position = position, resourcePosition = resourcePosition)
+        mutatedGene?.addMutatedGene(isDb = isDbInResourceCall, isInit = isFromInit, valueBeforeMutation = value, gene = gene, position = position, resourcePosition = resourcePosition)
 
         val additionInfo = if(enableAGS || enableAGM){
             val id = ImpactUtils.generateGeneId(individual, gene)
