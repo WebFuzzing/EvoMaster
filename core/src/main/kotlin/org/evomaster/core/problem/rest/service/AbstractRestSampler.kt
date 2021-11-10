@@ -183,7 +183,17 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      */
     fun getSizeOfAdHocInitialIndividuals() = adHocInitialIndividuals.size
 
-    fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+    /**
+     * @return a list of adHocInitialIndividuals which have not been executed yet
+     *
+     * it is only used for debugging
+     */
+    fun getNotExecutedAdHocInitialIndividuals() = adHocInitialIndividuals.toList()
+
+    /**
+     * @return a created individual with specified actions, i.e., [restCalls]
+     */
+    open fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
         return RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
     }
