@@ -197,7 +197,7 @@ open class ResourceSampler : AbstractRestSampler() {
     private fun sampleManyResources(resourceCalls: MutableList<RestResourceCalls>){
         val executed = mutableListOf<String>()
         val depCand = rm.getResourceCluster().filter { r -> !r.value.isIndependent() }
-        var resourceSize = randomness.nextInt(3, 5)
+        var resourceSize = randomness.nextInt(3, if(config.maxResourceSize > 0) config.maxResourceSize else 5)
         if(resourceSize > depCand.size) resourceSize = depCand.size + 1
 
         var size = getMaxTestSizeDuringSampler()

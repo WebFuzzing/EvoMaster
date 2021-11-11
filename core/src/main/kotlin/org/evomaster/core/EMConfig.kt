@@ -1144,6 +1144,11 @@ class EMConfig {
     }
 
     @Experimental
+    @Cfg("Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources")
+    @Min(0.0)
+    var maxResourceSize = 0
+
+    @Experimental
     @Cfg("Specify a strategy to handle a probability of applying structure mutator during the focused search")
     var structureMutationProbStrategy = StructureMutationProbStrategy.SPECIFIED
 

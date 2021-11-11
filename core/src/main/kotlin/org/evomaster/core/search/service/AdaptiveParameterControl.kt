@@ -59,8 +59,8 @@ class AdaptiveParameterControl {
      * return a scaled value between [start] (from [startTime]) and [end] (until [threshold])
      */
     fun getDPCValue(start: Double, end: Double, startTime: Double, threshold: Double) : Double{
-        if (threshold <= startTime)
-            throw IllegalArgumentException("threshold ($threshold) could not be less than startTime ($startTime)")
+        if (threshold < startTime)
+            throw IllegalArgumentException("threshold ($threshold) should not be less than startTime ($startTime)")
 
         val passed: Double = time.percentageUsedBudget()
         if (passed < startTime)

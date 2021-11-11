@@ -106,7 +106,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             MutationType.SWAP -> ind.extractSwapCandidates().isNotEmpty() && (!handleSize)
             MutationType.REPLACE -> !rm.cluster.doesCoverAll(ind) && delSize > 0 && (!handleSize)
             MutationType.MODIFY -> delSize > 0 && (!handleSize)
-            MutationType.ADD -> ind.seeActions().size < config.maxTestSize && (!rm.cluster.doesCoverAll(ind) || handleSize)
+            MutationType.ADD -> ind.seeActions().size < config.maxTestSize && (!rm.cluster.doesCoverAll(ind) || handleSize) && (config.maxResourceSize == 0 || (ind.getResourceCalls().size < config.maxResourceSize) )
             MutationType.DELETE -> delSize > 0 && ind.getResourceCalls().size >=2
         }
     }
@@ -322,17 +322,20 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             return
         }
 
+
         if (dohandleSize){
             // only add existing resource, and there is no need to bind handling between resources
             val candnodes = ind.getResourceCalls().filter { it.node?.getTemplates()?.keys?.contains("POST") == true }.map { it.getResourceKey() }.toSet()
             if (candnodes.isNotEmpty()){
+                val maxAddtionalRes = if (config.maxResourceSize == 0) rm.getMaxNumOfResourceSizeHandling() else min(rm.getMaxNumOfResourceSizeHandling(),  config.maxResourceSize - ind.getResourceCalls().size)
+
                 val selected = if (config.enableAdaptiveResourceStructureMutation)
                     adaptiveSelectResource(evaluatedIndividual, bySQL = false, candnodes.toList(), targets)
                 else randomness.choose(candnodes)
 
                 val node = rm.getResourceNodeFromCluster(selected)
                 val calls = node.sampleRestResourceCalls("POST", randomness, max)
-                val num =  randomness.nextInt(1, max(1, min(rm.getMaxNumOfResourceSizeHandling(), (max*1.0/calls.seeActionSize(NO_INIT)).roundToInt())))
+                val num =  randomness.nextInt(1, max(1, min(maxAddtionalRes, (max*1.0/calls.seeActionSize(NO_INIT)).roundToInt())))
                 (0 until num).forEach { pos->
                     if (max > 0){
                         val added = if (pos == 0) calls else node.sampleRestResourceCalls("POST", randomness, max)
