@@ -217,6 +217,6 @@ abstract class HttpWsStructureMutator : StructureMutator(){
     abstract fun getSqlInsertBuilder() : SqlInsertBuilder?
 
     override fun canApplyInitStructureMutator(): Boolean {
-        return getSqlInsertBuilder() != null
+        return (config.initStructureMutationProbability > 0 && config.maxSizeOfMutatingInitAction > 0) && getSqlInsertBuilder() != null
     }
 }
