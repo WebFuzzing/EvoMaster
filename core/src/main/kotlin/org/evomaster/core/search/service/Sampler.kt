@@ -103,7 +103,8 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
     fun getMaxTestSizeDuringSampler() : Int{
         return when(config.maxTestSizeStrategy){
             EMConfig.MaxTestSizeStrategy.SPECIFIED -> config.maxTestSize
-            EMConfig.MaxTestSizeStrategy.DPC_INCREASING -> apc.getExploratoryValue(config.startingTestSize, config.maxTestSize)
+            EMConfig.MaxTestSizeStrategy.DPC_INCREASING -> apc.getExploratoryValue(config.dpcTargetTestSize, config.maxTestSize)
+            EMConfig.MaxTestSizeStrategy.DPC_DECREASING -> apc.getExploratoryValue(config.maxTestSize, config.dpcTargetTestSize)
         }
     }
 }

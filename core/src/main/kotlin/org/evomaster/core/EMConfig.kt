@@ -1132,7 +1132,12 @@ class EMConfig {
         /**
          * gradually increasing a size of test until focused search
          */
-        DPC_INCREASING
+        DPC_INCREASING,
+
+        /**
+         * gradually decreasing a size of test until focused search
+         */
+        DPC_DECREASING
     }
 
     @Experimental
@@ -1149,8 +1154,8 @@ class EMConfig {
     var probOfHandlingLength = 0.0
 
     @Experimental
-    @Cfg("Specify a max size of a test at the beginning of search once DPC_INCREASING is enabled")
-    var startingTestSize = 1
+    @Cfg("Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabeld")
+    var dpcTargetTestSize = 1
 
     @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
