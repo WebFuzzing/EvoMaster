@@ -558,7 +558,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
     override fun canApplyActionStructureMutator(individual: Individual): Boolean {
         individual as RestIndividual
         return super.canApplyActionStructureMutator(individual)  &&
-                (getAvailableMutator(individual, doEnableResourceSizeHandling()).isNotEmpty() ||
+                (getAvailableMutator(individual, doEnableResourceSizeHandling()).isNotEmpty() &&
                         ((!dm.onlyIndependentResource())  &&  // if all resources are asserted independent, there is no point to do structure mutation
                                 dm.canMutateResource(individual))
                         )
