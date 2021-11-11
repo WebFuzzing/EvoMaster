@@ -882,6 +882,12 @@ class EMConfig {
     @Min(0.0)
     var maxSizeOfMutatingInitAction = 0
 
+    // Man: need to check it with Andrea about whether we consider it as a generic option
+    @Experimental
+    @Cfg("Specify a probability of applying a smart structure mutator for initialization of the individual")
+    @Min(0.0)@Max(1.0)
+    var probOfSmartInitStructureMutator = 0.0
+
     enum class GeneMutationStrategy {
         ONE_OVER_N,
         ONE_OVER_N_BIASED_SQL

@@ -67,6 +67,17 @@ abstract class StructureMutator : TrackOperator {
     abstract fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?)
 
 
-    open fun canApplyStructureMutator(individual: Individual) : Boolean = individual.canMutateStructure()
+    fun canApplyStructureMutator(individual: Individual) : Boolean = canApplyInitStructureMutator() || canApplyActionStructureMutator(individual)
+
+    /**
+     * @return whether the init structure mutator is applicable.
+     * For instance, regarding rest, the mutator is not applicable if there is no db.
+     */
+    open fun canApplyInitStructureMutator() : Boolean = false
+
+    /**
+     * @return whether the action structure mutator is applicable.
+     */
+    open fun canApplyActionStructureMutator(individual: Individual) : Boolean = individual.canMutateStructure()
 
 }

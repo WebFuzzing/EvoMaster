@@ -27,16 +27,6 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
         super.postActionAfterMutation(mutatedIndividual, null)
     }
 
-    override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<RestIndividual>): Boolean {
-
-        return super.doesStructureMutation(evaluatedIndividual)  &&
-                (config.probOfHandlingLength> 0 ||
-                        ((!dm.onlyIndependentResource())  &&  // if all resources are asserted independent, there is no point to do structure mutation
-                                dm.canMutateResource(evaluatedIndividual.individual))
-                        )
-    }
-
-
     override fun genesToMutation(individual: RestIndividual, evi: EvaluatedIndividual<RestIndividual>, targets: Set<Int>): List<Gene> {
         val restGenes = individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(
             GeneFilter.NO_SQL
@@ -68,5 +58,4 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
          TODO Man update resource dependency after do standard mutation?
          */
     }
-
 }

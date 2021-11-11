@@ -79,8 +79,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @return whether you do a structure mutation on initialization if it exists
      */
     open fun doesInitStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
-        return evaluatedIndividual.individual.seeInitializingActions().isNotEmpty() && randomness.nextBoolean(config.initStructureMutationProbability)
+        return (!structureMutator.canApplyActionStructureMutator(evaluatedIndividual.individual))
+                || (structureMutator.canApplyInitStructureMutator() && randomness.nextBoolean(config.initStructureMutationProbability))
     }
+
     open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
 
     open fun update(previous: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation){}

@@ -128,12 +128,14 @@ abstract class HttpWsStructureMutator : StructureMutator(){
         Lazy.assert { individual is HttpWsIndividual }
         individual as HttpWsIndividual
 
-        Lazy.assert { individual.seeInitializingActions().isNotEmpty() }
-        val tables = individual.seeInitializingActions().map { it.table.name }
-
         /*
-            modify one table at once, and add/remove [n] rows for it. but never totally remove the table.
-         */
+           modify one table at once, and add/remove [n] rows for it. however, never totally remove the table.
+           note that if there is no any init sql, we randomly select one table to add.
+        */
+        val tables = individual.seeInitializingActions().map { it.table.name }.run {
+            ifEmpty { getSqlInsertBuilder()!!.getTableNames() }
+        }
+
         val table = randomness.choose(tables)
         val total = tables.count { it == table }
 
@@ -213,4 +215,8 @@ abstract class HttpWsStructureMutator : StructureMutator(){
     }
 
     abstract fun getSqlInsertBuilder() : SqlInsertBuilder?
+
+    override fun canApplyInitStructureMutator(): Boolean {
+        return getSqlInsertBuilder() != null
+    }
 }
