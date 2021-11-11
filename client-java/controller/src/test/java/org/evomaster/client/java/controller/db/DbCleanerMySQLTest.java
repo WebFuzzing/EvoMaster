@@ -19,7 +19,9 @@ public class DbCleanerMySQLTest extends DbCleanerTestBase{
 
     private static final int PORT = 3306;
 
-    public static final GenericContainer mysql = new GenericContainer("mysql:8.0.23")
+    private static final String MYSQL_VERSION = "8.0.27";
+
+    public static final GenericContainer mysql = new GenericContainer("mysql:" + MYSQL_VERSION)
             .withEnv(new HashMap<String, String>(){{
                 put("MYSQL_ROOT_PASSWORD", "root");
                 put("MYSQL_DATABASE", DB_NAME);
