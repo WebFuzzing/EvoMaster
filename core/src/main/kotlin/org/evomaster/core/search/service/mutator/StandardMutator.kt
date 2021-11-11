@@ -333,8 +333,4 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return additionInfo
     }
 
-    override fun doesInitStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
-        return evaluatedIndividual.individual.seeInitializingActions().isNotEmpty() && randomness.nextBoolean(config.initStructureMutationProbability)
-    }
-
 }

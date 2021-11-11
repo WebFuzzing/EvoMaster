@@ -1,13 +1,21 @@
 package org.evomaster.core.problem.httpws.service
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.rest.service.ResourceDepManageService
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.max
+import kotlin.math.min
 
 abstract class HttpWsStructureMutator : StructureMutator(){
 
@@ -117,6 +125,92 @@ abstract class HttpWsStructureMutator : StructureMutator(){
     }
 
     override fun mutateInitStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
-        TODO("Not yet implemented")
+        Lazy.assert { individual is HttpWsIndividual }
+        individual as HttpWsIndividual
+
+        Lazy.assert { individual.seeInitializingActions().isNotEmpty() }
+        val tables = individual.seeInitializingActions().map { it.table.name }
+
+        /*
+            modify one table at once, and add/remove [n] rows for it. but never totally remove the table.
+         */
+        val table = randomness.choose(tables)
+        val total = tables.count { it == table }
+
+        if (total == 1 || randomness.nextBoolean()){
+            // add action
+            val num = randomness.nextInt(1, max(1, getMaxSizeOfMutatingInitAction()))
+            val add = createInsertSqlAction(table, num)
+            handleInitSqlAddition(individual, add, mutatedGenes)
+
+        }else{
+            // remove action
+            val num = randomness.nextInt(1, max(1, min(total-1, getMaxSizeOfMutatingInitAction())))
+            val candidates = individual.seeInitializingActions().filter { it.table.name == table }
+            val remove = randomness.choose(candidates, num)
+
+            handleInitSqlRemoval(individual, remove, mutatedGenes)
+        }
     }
+
+    /**
+     * add specified actions (i.e., [add]) into initialization of [individual]
+     */
+    fun handleInitSqlAddition(individual: HttpWsIndividual, add: List<List<DbAction>>, mutatedGenes: MutatedGeneSpecification?){
+        individual.addInitializingActions(actions = add.flatten())
+        mutatedGenes?.addedDbActions?.addAll(add)
+    }
+
+    /**
+     * remove specified actions (i.e., [remove]) from initialization of [individual]
+     */
+    fun handleInitSqlRemoval(individual: HttpWsIndividual, remove: List<DbAction>, mutatedGenes: MutatedGeneSpecification?){
+        val relatedRemove = mutableListOf<DbAction>()
+        relatedRemove.addAll(remove)
+        remove.forEach {
+            getRelatedRemoveDbActions(individual, it, relatedRemove)
+        }
+        val set = relatedRemove.toSet().toMutableList()
+        mutatedGenes?.removedDbActions?.addAll(set.map { it to individual.seeInitializingActions().indexOf(it) })
+        individual.removeInitDbActions(set)
+    }
+
+    private fun getRelatedRemoveDbActions(ind: HttpWsIndividual, remove : DbAction, relatedRemove: MutableList<DbAction>){
+        val pks = remove.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
+        val index = ind.seeInitializingActions().indexOf(remove)
+        if (index < ind.seeInitializingActions().size - 1 && pks.isNotEmpty()){
+            val removeDbFKs = ind.seeInitializingActions().subList(index + 1, ind.seeInitializingActions().size).filter {
+                it.seeGenes().flatMap { g-> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
+                        .any {fk-> pks.any {pk->fk.uniqueIdOfPrimaryKey == pk.uniqueId} } }
+            relatedRemove.addAll(removeDbFKs)
+            removeDbFKs.forEach {
+                getRelatedRemoveDbActions(ind, it, relatedRemove)
+            }
+        }
+    }
+
+    /**
+     * @param name is the table name
+     * @param num is a number of table with [name] to be added
+     */
+    fun createInsertSqlAction(name : String, num : Int) : List<List<DbAction>>{
+        getSqlInsertBuilder() ?:throw IllegalStateException("attempt to create resource with SQL but the sqlBuilder is null")
+        if (num <= 0)
+            throw IllegalArgumentException("invalid num (i.e.,$num) for creating resource")
+
+        val list= (0 until num).map { getSqlInsertBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
+
+        if (ResourceDepManageService.log.isTraceEnabled){
+            ResourceDepManageService.log.trace("at createDbActions, {} insertions are added, and they are {}", list.size,
+                    list.flatten().joinToString(",") {
+                        it.getResolvedName()
+                    })
+        }
+
+        DbActionUtils.randomizeDbActionGenes(list.flatten(), randomness)
+        DbActionUtils.repairBrokenDbActionsList(list.flatten().toMutableList(), randomness)
+        return list
+    }
+
+    abstract fun getSqlInsertBuilder() : SqlInsertBuilder?
 }

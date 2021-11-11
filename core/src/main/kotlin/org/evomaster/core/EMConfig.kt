@@ -877,6 +877,11 @@ class EMConfig {
     @Probability
     var initStructureMutationProbability = 0.0
 
+    @Experimental
+    @Cfg("Specify a maximum number of handling (remove/add) init actions at once, e.g., add 3 init actions at most")
+    @Min(0.0)
+    var maxSizeOfMutatingInitAction = 0
+
     enum class GeneMutationStrategy {
         ONE_OVER_N,
         ONE_OVER_N_BIASED_SQL

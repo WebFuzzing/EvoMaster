@@ -2,7 +2,7 @@ package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -50,6 +50,10 @@ abstract class StructureMutator : TrackOperator {
      */
     abstract fun mutateInitStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>)
 
+    fun getMaxSizeOfMutatingInitAction(): Int{
+        Lazy.assert { config.maxSizeOfMutatingInitAction > 0 }
+        return apc.getExploratoryValue(config.maxSizeOfMutatingInitAction, 1)
+    }
 
     /**
      * Before the main "actions" (e.g, HTTP calls for web services and
@@ -64,6 +68,5 @@ abstract class StructureMutator : TrackOperator {
 
 
     open fun canApplyStructureMutator(individual: Individual) : Boolean = individual.canMutateStructure()
-
 
 }

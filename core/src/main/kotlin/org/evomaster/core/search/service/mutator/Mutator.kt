@@ -71,15 +71,16 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int> = setOf(), mutatedGenes: MutatedGeneSpecification?) : List<Gene>
 
     /**
-     * @return whether do a structure mutation
+     * @return whether you do a structure mutation
      */
     abstract fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>) : Boolean
 
     /**
-     * @return whether you do a structure mutation on initialization if it exist
+     * @return whether you do a structure mutation on initialization if it exists
      */
-    abstract fun doesInitStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>) : Boolean
-
+    open fun doesInitStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
+        return evaluatedIndividual.individual.seeInitializingActions().isNotEmpty() && randomness.nextBoolean(config.initStructureMutationProbability)
+    }
     open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
 
     open fun update(previous: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation){}

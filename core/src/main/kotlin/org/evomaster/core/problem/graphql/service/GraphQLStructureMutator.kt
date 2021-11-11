@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.graphql.service
 
 import com.google.inject.Inject
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
@@ -124,5 +125,9 @@ class GraphQLStructureMutator : HttpWsStructureMutator() {
             mutatedGenes?.addRemovedOrAddedByAction(sampledAction, chosen, false, chosen)
         }
 
+    }
+
+    override fun getSqlInsertBuilder(): SqlInsertBuilder? {
+        return sampler.sqlInsertBuilder
     }
 }

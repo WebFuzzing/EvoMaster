@@ -3,6 +3,8 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
@@ -182,6 +184,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         SQL_ADD(1, 0)
     }
 
+
     /**
      * add resources with SQL to [ind]
      * a number of resources to be added is related to EMConfig.maxSqlInitActionsPerResource
@@ -200,10 +203,9 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         }else{
             randomness.choose(candidates)
         }
-        val added = dm.createDbActions(selectedAdded, numOfResource)
+        val added = createInsertSqlAction(selectedAdded, numOfResource)
 
-        ind.addInitializingActions(actions = added.flatten())
-        mutatedGenes?.addedDbActions?.addAll(added)
+        handleInitSqlAddition(ind, added, mutatedGenes)
     }
 
 
@@ -239,28 +241,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         val total = candidates.count { it == selected }
         val num = randomness.nextInt(1, max(1, min(rm.getMaxNumOfResourceSizeHandling(), min(total, ind.seeInitializingActions().size - 1))))
         val remove = randomness.choose(ind.seeInitializingActions().filter { it.table.name == selected }, num)
-        val relatedRemove = mutableListOf<DbAction>()
-        relatedRemove.addAll(remove)
-        remove.forEach {
-            getRelatedRemoveDbActions(ind, it, relatedRemove)
-        }
-        val set = relatedRemove.toSet().toMutableList()
-        mutatedGenes?.removedDbActions?.addAll(set.map { it to ind.seeInitializingActions().indexOf(it) })
-        ind.removeInitDbActions(set)
-    }
-
-    private fun getRelatedRemoveDbActions(ind: RestIndividual, remove : DbAction, relatedRemove: MutableList<DbAction>){
-        val pks = remove.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
-        val index = ind.seeInitializingActions().indexOf(remove)
-        if (index < ind.seeInitializingActions().size - 1 && pks.isNotEmpty()){
-            val removeDbFKs = ind.seeInitializingActions().subList(index + 1, ind.seeInitializingActions().size).filter {
-                it.seeGenes().flatMap { g-> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
-                    .any {fk-> pks.any {pk->fk.uniqueIdOfPrimaryKey == pk.uniqueId} } }
-            relatedRemove.addAll(removeDbFKs)
-            removeDbFKs.forEach {
-                getRelatedRemoveDbActions(ind, it, relatedRemove)
-            }
-        }
+        handleInitSqlRemoval(ind, remove, mutatedGenes)
     }
 
     private fun doesApplyDependencyHeuristics() : Boolean{
@@ -587,4 +568,7 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         }
     }
 
+    override fun getSqlInsertBuilder(): SqlInsertBuilder? {
+        return sampler.sqlInsertBuilder
+    }
 }
