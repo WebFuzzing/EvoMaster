@@ -22,6 +22,7 @@ public class PCEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        defaultSeed = 45;
         /*
             NOTE THAT
             default resource-based solution would have side effect on creating multiple resources in one test
@@ -36,17 +37,10 @@ public class PCEMTest extends SpringTestBase {
                 1_000,
                 (args) -> {
 
-                    args.add("--enableAdaptiveResourceStructureMutation");
-                    args.add("true");
-
-                    args.add("--probOfHandlingLength");
+                    args.add("--probOfSmartSampling");
                     args.add("0.5");
-
-                    args.add("--maxSizeOfHandlingResource");
-                    args.add("5");
-
-                    args.add("--employResourceSizeHandlingStrategy");
-                    args.add("DPC");
+                    args.add("--resourceSampleStrategy");
+                    args.add("NONE");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

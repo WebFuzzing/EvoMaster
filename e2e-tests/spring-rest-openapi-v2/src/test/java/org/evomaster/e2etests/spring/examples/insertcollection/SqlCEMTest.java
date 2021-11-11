@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,17 +31,11 @@ public class SqlCEMTest extends SpringTestBase {
                 1_000,
                 (args) -> {
 
-                    args.add("--enableAdaptiveResourceStructureMutation");
-                    args.add("true");
-
-                    args.add("--probOfHandlingLength");
+                    args.add("--initStructureMutationProbability");
                     args.add("0.5");
 
-                    args.add("--maxSizeOfHandlingResource");
+                    args.add("--maxSizeOfMutatingInitAction");
                     args.add("5");
-
-                    args.add("--employResourceSizeHandlingStrategy");
-                    args.add("DPC");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
