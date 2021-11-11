@@ -2,6 +2,8 @@ package org.evomaster.core.problem.httpws.service
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
@@ -112,5 +114,9 @@ abstract class HttpWsStructureMutator : StructureMutator(){
                     }
                 }
         }
+    }
+
+    override fun mutateInitStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
+        TODO("Not yet implemented")
     }
 }

@@ -42,6 +42,16 @@ abstract class StructureMutator : TrackOperator {
 
 
     /**
+     *
+     * @param individual is the candidate individual whose initialization would be  mutated
+     * @param evaluatedIndividual contains additional info about the candidate [individual]
+     * @param mutatedGenes is used to specify what genes are mutated with this mutation
+     * @param targets indicates what targets to be optimized with this mutation
+     */
+    abstract fun mutateInitStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>)
+
+
+    /**
      * Before the main "actions" (e.g, HTTP calls for web services and
      * clicks on browsers), there can be a series of initializing actions
      * to control the environment of the SUT, like for example setting

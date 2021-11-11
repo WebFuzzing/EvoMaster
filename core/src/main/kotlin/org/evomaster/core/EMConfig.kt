@@ -872,6 +872,10 @@ class EMConfig {
     @Probability
     var structureMutationProbability = 0.5
 
+    @Experimental
+    @Cfg("Probability of applying a mutation that can change the structure of test's initialization if it has")
+    @Probability
+    var initStructureMutationProbability = 0.0
 
     enum class GeneMutationStrategy {
         ONE_OVER_N,

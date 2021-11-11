@@ -129,7 +129,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             if (log.isTraceEnabled){
                 log.trace("structure mutator will be applied")
             }
-            structureMutator.mutateStructure(copy, individual, mutatedGene, targets)
+            if (doesInitStructureMutation(individual))
+                structureMutator.mutateInitStructure(copy, individual, mutatedGene, targets)
+            else
+                structureMutator.mutateStructure(copy, individual, mutatedGene, targets)
             return copy
         }
 
@@ -328,6 +331,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         return additionInfo
+    }
+
+    override fun doesInitStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
+        return evaluatedIndividual.individual.seeInitializingActions().isNotEmpty() && randomness.nextBoolean(config.initStructureMutationProbability)
     }
 
 }
