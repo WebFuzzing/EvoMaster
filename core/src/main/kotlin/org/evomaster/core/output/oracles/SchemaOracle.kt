@@ -2,6 +2,7 @@ package org.evomaster.core.output.oracles
 
 import com.google.gson.Gson
 import io.swagger.v3.oas.models.media.*
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
@@ -271,14 +272,15 @@ class SchemaOracle : ImplementedOracle() {
         }
         val mapResponses = mutableMapOf<String, String>()
         specificPath?.responses?.forEach { key, value ->
-            value.content?.values?.map { cva ->
+            value.content?.values?.forEach { cva ->
                 //TODO: BMR the schema may need additions here
                 val valueSchema = cva.schema
-                val rez = when (valueSchema) {
-                    // valueSchema.items might be null with cyclostron sut
-                    is ArraySchema -> valueSchema.items?.`$ref` ?: valueSchema.items?.type
-                                ?:"".also {
-                        /*
+                if(valueSchema != null) {
+                    val rez = when (valueSchema) {
+                        // valueSchema.items might be null with cyclostron sut
+                        is ArraySchema -> valueSchema.items?.`$ref` ?: valueSchema.items?.type
+                        ?: "".also {
+                            /*
                             with cyclotron sut, a response of get /data/{key}/data is specified as
                             "responses": {
                               "200": {
@@ -288,21 +290,24 @@ class SchemaOracle : ImplementedOracle() {
                                 }
                               },
                          */
-                        log.warn("missing type of a response with Array schema {}", call.getName())
-                    }
-                    is MapSchema -> {
-                        when(cva.schema.additionalProperties) {
-                            is StringSchema -> (cva.schema.additionalProperties as StringSchema).type
-                            is ObjectSchema -> (cva.schema.additionalProperties as ObjectSchema).type
-                            else -> (cva.schema.additionalProperties as Schema<*>).`$ref` ?: ""
+                            log.warn("missing type of a response with Array schema {}", call.getName())
                         }
+                        is MapSchema -> {
+                            when (cva.schema.additionalProperties) {
+                                is StringSchema -> (cva.schema.additionalProperties as StringSchema).type
+                                is ObjectSchema -> (cva.schema.additionalProperties as ObjectSchema).type
+                                else -> (cva.schema.additionalProperties as Schema<*>).`$ref` ?: ""
+                            }
+                        }
+                        is StringSchema -> valueSchema.type ?: ""
+                        is IntegerSchema -> valueSchema.format ?: ""
+                        is ObjectSchema -> ""
+                        else -> valueSchema.`$ref` ?: ""
                     }
-                    is StringSchema -> valueSchema.type ?: ""
-                    is IntegerSchema -> valueSchema.format ?: ""
-                    is ObjectSchema -> ""
-                    else -> valueSchema.`$ref` ?: ""
+                    mapResponses[key] = rez!!.split("/").last()
+                } else {
+                    LoggingUtil.uniqueWarn(log, "Missing schema definition for response in ${call.path}")
                 }
-                mapResponses.put(key, rez!!.split("/").last())
             }
         }
 

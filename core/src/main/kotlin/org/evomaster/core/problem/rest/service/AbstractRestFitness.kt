@@ -206,8 +206,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
                     handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
-                    handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
-
+                    if(config.expectationsActive) {
+                        handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
+                    }
                 }
     }
 
