@@ -98,8 +98,7 @@ public class SqlNameContext {
             return delete.getTable().getName();
         } else if(statement instanceof Update){
             Update update = (Update) statement;
-            //TODO: can it really have more than 1???
-            return update.getTables().get(0).getName();
+            return update.getTable().getName();
         }else {
             throw new IllegalArgumentException("Cannot handle table name for: " + statement);
         }

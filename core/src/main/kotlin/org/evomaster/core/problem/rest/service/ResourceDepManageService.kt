@@ -1112,7 +1112,7 @@ class ResourceDepManageService {
      * if [dbActions] is empty, return all derived related table
      */
     fun extractRelatedTablesForCall(call: RestResourceCalls, dbActions: MutableList<DbAction> = mutableListOf(), withSql : Boolean): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
-        val paramsInfo = call.getResourceNode().getPossiblyBoundParams(call.template!!.template, withSql)
+        val paramsInfo = call.getResourceNode().getPossiblyBoundParams(call.getRestTemplate(), withSql)
         return SimpleDeriveResourceBinding.generateRelatedTables(paramsInfo, call, dbActions)
     }
 
