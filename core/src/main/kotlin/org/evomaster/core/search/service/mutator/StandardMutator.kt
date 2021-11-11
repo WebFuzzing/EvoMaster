@@ -40,9 +40,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
 
-        val prob = when(config.structureMutationProbDuringFS){
+        val prob = when(config.structureMutationProbStrategy){
             EMConfig.StructureMutationProbStrategy.SPECIFIED -> config.structureMutationProbability
-            EMConfig.StructureMutationProbStrategy.DEACTIVATED_DURING_FOCUS_SEARCH -> if(apc.doesFocusSearch()) 0.0 else config.structureMutationProbability
+            EMConfig.StructureMutationProbStrategy.SPECIFIED_FS -> if(apc.doesFocusSearch()) config.structureMutationProFS else config.structureMutationProbability
+            EMConfig.StructureMutationProbStrategy.DPC_TO_SPECIFIED_BEFORE_FS -> apc.getExploratoryValue(config.structureMutationProbability, config.structureMutationProFS)
+            EMConfig.StructureMutationProbStrategy.DPC_TO_SPECIFIED_AFTER_FS -> apc.getDPCValue(config.structureMutationProbability, config.structureMutationProFS, config.focusedSearchActivationTime, 1.0)
             EMConfig.StructureMutationProbStrategy.ADAPTIVE_WITH_IMPACT -> {
                 if (!apc.doesFocusSearch()) config.structureMutationProbability
                 else {

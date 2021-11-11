@@ -1125,7 +1125,17 @@ class EMConfig {
         /**
          * deactivated structure mutator when focused search starts
          */
-        DEACTIVATED_DURING_FOCUS_SEARCH,
+        SPECIFIED_FS,
+
+        /**
+         * gradually update the structure mutator probability from [structureMutationProbability] to [structureMutationProFS] before focused search
+         */
+        DPC_TO_SPECIFIED_BEFORE_FS,
+
+        /**
+         * gradually update the structure mutator probability from [structureMutationProbability] to [structureMutationProFS] after focused search
+         */
+        DPC_TO_SPECIFIED_AFTER_FS,
 
         /**
          * apply a probability which is adaptive to the impact
@@ -1135,8 +1145,12 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a strategy to handle a probability of applying structure mutator during the focused search")
-    var structureMutationProbDuringFS = StructureMutationProbStrategy.SPECIFIED
+    var structureMutationProbStrategy = StructureMutationProbStrategy.SPECIFIED
 
+    @Experimental
+    @Cfg("Specify a probability of applying structure mutator during the focused search")
+    @Min(0.0)@Max(1.0)
+    var structureMutationProFS = 0.0
 
     enum class MaxTestSizeStrategy{
         /**
