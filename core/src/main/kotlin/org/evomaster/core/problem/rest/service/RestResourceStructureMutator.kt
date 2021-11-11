@@ -84,7 +84,6 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         val impacts = lengthMutator.map { type ->
             when (type) {
                 MutationType.ADD, MutationType.DELETE -> impact.anyResourceSizeImpact
-                MutationType.SQL_ADD, MutationType.SQL_REMOVE -> impact.anySqlTableSizeImpact
                 else -> throw IllegalStateException("$type should be handled before")
             }
         }
@@ -115,8 +114,6 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             MutationType.SWAP -> handleSwap(ind, mutatedGenes)
             MutationType.REPLACE -> handleReplace(ind, mutatedGenes)
             MutationType.MODIFY -> handleModify(ind, mutatedGenes)
-            MutationType.SQL_REMOVE -> handleRemoveSQL(ind, mutatedGenes, evaluatedIndividual, targets)
-            MutationType.SQL_ADD -> handleAddSQL(ind, mutatedGenes, evaluatedIndividual, targets)
         }
     }
 
@@ -136,9 +133,6 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
             MutationType.MODIFY -> delSize > 0 && (!handleSize)
             MutationType.ADD -> ind.seeActions().size < config.maxTestSize && (!rm.cluster.doesCoverAll(ind) || handleSize)
             MutationType.DELETE -> delSize > 0 && ind.getResourceCalls().size >=2
-            // SQL_ADD and SQL_REMOVE are enabled only if handling size is enabled
-            MutationType.SQL_ADD -> handleSize && rm.getTableInfo().isNotEmpty()
-            MutationType.SQL_REMOVE -> handleSize && rm.getTableInfo().isNotEmpty() && ind.seeInitializingActions().isNotEmpty()
         }
     }
 
@@ -171,17 +165,21 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         /**
          * change a resource with different resource template
          */
-        MODIFY(1),
+        MODIFY(1)
+    }
 
-        /**
-         * remove insertions to table
-         */
-        SQL_REMOVE(1, 1),
+    override fun mutateInitStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
+        if(individual !is RestIndividual && evaluatedIndividual.individual is RestIndividual)
+            throw IllegalArgumentException("Invalid individual type")
 
-        /**
-         * add insertions to table
-         */
-        SQL_ADD(1, 0)
+        individual as RestIndividual
+        evaluatedIndividual as EvaluatedIndividual<RestIndividual>
+
+        if (randomness.nextBoolean()){
+            handleAddSQL(individual, mutatedGenes, evaluatedIndividual, targets)
+        }else{
+            handleRemoveSQL(individual, mutatedGenes, evaluatedIndividual, targets)
+        }
     }
 
 
