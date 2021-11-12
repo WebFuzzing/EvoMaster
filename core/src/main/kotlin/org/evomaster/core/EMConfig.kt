@@ -1399,6 +1399,14 @@ class EMConfig {
     @Cfg("Whether to skip failed SQL commands in the generated test files")
     var skipFailureSQLInTestFile = false
 
+    val defaultMaxNumberOfGenes = 10
+
+    @Experimental
+    @Cfg("Maximum number of genes in mutations/queries to be evaluated;" +
+            "this is to avoid issues when dealing with huge graphs in GraphQL")
+    @Min(1.0)
+    var maxNumberOfGenes = defaultMaxNumberOfGenes
+
 
     @Experimental
     @Cfg("Specify a maximum number of existing data in the database to sample when SQL handling is enabled. " +
