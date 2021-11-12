@@ -176,7 +176,12 @@
             <scope>test</scope>
         </dependency>
 
-
+        <!--thrift RPC test-->
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
