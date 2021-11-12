@@ -202,6 +202,10 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.KILL_SWITCH, b);
     }
 
+    public boolean setExecutingInitSql(boolean executingInitSql) {
+        return sendWithDataAndExpectACK(Command.EXECUTING_INIT_SQL, executingInitSql);
+    }
+
     public synchronized List<TargetInfo> getTargetsInfo(Collection<Integer> ids) {
         boolean sent = sendCommand(Command.TARGETS_INFO);
         if (!sent) {

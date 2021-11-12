@@ -132,7 +132,8 @@ class ResourceManageService {
      */
     fun handleAddResource(ind : RestIndividual, maxTestSize : Int) : RestResourceCalls {
         val existingRs = ind.getResourceCalls().map { it.getResourceNodeKey() }
-        val candidate = randomness.choose(getResourceCluster().filterNot { r-> existingRs.contains(r.key) }.keys)
+        val nonExistingRs = getResourceCluster().filterNot { r-> existingRs.contains(r.key) }.keys
+        val candidate = if (nonExistingRs.isNotEmpty()) randomness.choose(nonExistingRs) else randomness.choose(existingRs)
         return cluster.getResourceNode(candidate)!!.sampleAnyRestResourceCalls(randomness,maxTestSize )
     }
 

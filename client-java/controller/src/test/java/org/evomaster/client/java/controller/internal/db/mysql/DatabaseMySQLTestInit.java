@@ -22,7 +22,9 @@ public abstract class DatabaseMySQLTestInit {
 
     private static final int PORT = 3306;
 
-    public static final GenericContainer mysql = new GenericContainer("mysql:8.0.23")
+    private static final String MYSQL_VERSION = "8.0.27";
+
+    public static final GenericContainer mysql = new GenericContainer("mysql:" + MYSQL_VERSION)
             .withEnv(new HashMap<String, String>(){{
                 put("MYSQL_ROOT_PASSWORD", "root");
                 put("MYSQL_DATABASE", DB_NAME);
@@ -36,13 +38,11 @@ public abstract class DatabaseMySQLTestInit {
 
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
-        InstrumentingAgent.initP6Spy("com.mysql.cj.jdbc.Driver");
-
         mysql.start();
 
         String host = mysql.getContainerIpAddress();
         int port = mysql.getMappedPort(PORT);
-        String url = "jdbc:p6spy:mysql://"+host+":"+port+"/"+DB_NAME;
+        String url = "jdbc:mysql://"+host+":"+port+"/"+DB_NAME;
 
         connection = DriverManager.getConnection(url, "test", "test");
     }

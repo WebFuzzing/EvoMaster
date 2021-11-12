@@ -17,7 +17,7 @@ public class AdaptiveHypermutationTest extends HypermutationTestBase {
     @BeforeAll
     public static void initClass() throws Exception {
 
-        SpringTestBase.initClass(new HighWeightRestController(Arrays.asList("/api/highweight/differentWeight")));
+        SpringTestBase.initClass(new HighWeightRestController(Arrays.asList("/api/highweight/differentWeight/{x}")));
     }
 
     @Test
@@ -26,7 +26,7 @@ public class AdaptiveHypermutationTest extends HypermutationTestBase {
         runTestHandlingFlakyAndCompilation(
                 "hypermtation/TestLowWeightHighImpact",
                 "org.adaptivehypermuation.LowWeightHighImpactTest",
-                2000,
+                3000,
                 true,
                 (args) -> {
 

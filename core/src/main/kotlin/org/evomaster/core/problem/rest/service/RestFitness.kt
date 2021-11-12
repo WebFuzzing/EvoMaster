@@ -56,7 +56,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             if (log.isTraceEnabled){
                 log.trace("handle rest action at index {}, and the action is {}, and the genes are",
                     i,
-                    if (a is RestCallAction)  "${a.verb}:${a.resolvedPath()}" else a.getName(),
+                    "${a.verb}:${a.resolvedPath()}",
                     a.seeGenes().joinToString(","){
                         "${it::class.java.simpleName}:${
                             try {

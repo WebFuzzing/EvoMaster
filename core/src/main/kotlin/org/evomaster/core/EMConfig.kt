@@ -310,36 +310,6 @@ class EMConfig {
             throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
 
-        //resource related parameters
-        if(problemType != ProblemType.DEFAULT) {
-            if ((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
-                    && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)) {
-                throw IllegalArgumentException("Parameters (${
-                    arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics", "exportDependencies")
-                            .filterIndexed { index, _ ->
-                                (index == 0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE) ||
-                                        (index == 1 && (probOfApplySQLActionToCreateResources > 0.0)) ||
-                                        (index == 2 && doesApplyNameMatching) ||
-                                        (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
-                                        (index == 4 && exportDependencies)
-                            }.joinToString(" and ")
-                }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
-            }
-        }
-
-        /*
-            resource-mio and sql configuration
-            TODO if required
-         */
-//        if (resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)) {
-//            throw IllegalArgumentException("Resource-mio does not support SQL strategies for the moment")
-//        }
-
-        //archive-based mutation
-//        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
-//            throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
-//        }
-
         if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && probOfArchiveMutation > 0 && !weightBasedMutationRate)
             throw IllegalArgumentException("When applying adaptive gene selection, weight-based mutation rate should be enabled")
 
@@ -875,6 +845,13 @@ class EMConfig {
     @FilePath
     var extraHeuristicsFile = "extra_heuristics.csv"
 
+    @Experimental
+    @Cfg("Enable to print snapshots of the generated tests during the search in an interval defined in snapshotsInterval.")
+    var enableWriteSnapshotTests = false
+
+    @Experimental
+    @Cfg("The size (in seconds) of the interval that the snapshots will be printed, if enabled.")
+    var writeSnapshotTestsIntervalInSeconds = 3600 // ie, 1 hour
 
     enum class SecondaryObjectiveStrategy {
         AVG_DISTANCE,
@@ -942,7 +919,7 @@ class EMConfig {
 
     @Cfg("When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random")
     @Probability
-    var probOfSmartSampling = 0.5
+    var probOfSmartSampling = 0.95
 
     @Cfg("Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test")
     @Min(1.0)
@@ -1086,17 +1063,15 @@ class EMConfig {
         ConArchive(true)
     }
 
-    @Experimental
     @Cfg("Specify whether to enable resource-based strategy to sample an individual during search. " +
             "Note that resource-based sampling is only applicable for REST problem with MIO algorithm.")
-    var resourceSampleStrategy = ResourceSamplingStrategy.NONE
+    var resourceSampleStrategy = ResourceSamplingStrategy.ConArchive
 
-    @Experimental
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
             "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
             "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
     @Probability
-    var probOfEnablingResourceDependencyHeuristics = 0.0
+    var probOfEnablingResourceDependencyHeuristics = 0.95
 
     @Experimental
     @Cfg("Specify whether to export derived dependencies among resources")
@@ -1107,10 +1082,9 @@ class EMConfig {
     @FilePath
     var dependencyFile = "dependencies.csv"
 
-    @Experimental
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
-    var probOfApplySQLActionToCreateResources = 0.0
+    var probOfApplySQLActionToCreateResources = 0.5
 
     @Experimental
     @Cfg("When generating resource using SQL (e.g., sampler or mutator), how many new rows (max) to generate for the specific resource each time")
@@ -1144,9 +1118,8 @@ class EMConfig {
     @Probability(false)
     var probOfSelectFromDatabase = 0.1
 
-    @Experimental
-    @Cfg("Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
-    var doesApplyNameMatching = false
+    @Cfg("Whether to apply text/name analysis to derive relationships between name entities, e.g., a resource identifier with a name of table")
+    var doesApplyNameMatching = true
 
     @Experimental
     @Cfg("Whether to employ NLP parser to process text. " +
@@ -1227,11 +1200,6 @@ class EMConfig {
 
     @Cfg("Whether to specialize sql gene selection to mutation")
     var specializeSQLGeneSelection = true
-
-    @Experimental
-    @Cfg("Specify a maximum mutation rate when enabling 'adaptiveMutationRate'")
-    @PercentageAsProbability(false)
-    var maxMutationRate = 0.9
 
     @Experimental
     @Cfg("Specify a starting percentage of genes of an individual to mutate")
@@ -1430,6 +1398,36 @@ class EMConfig {
     @Experimental
     @Cfg("Whether to skip failed SQL commands in the generated test files")
     var skipFailureSQLInTestFile = false
+
+
+    @Experimental
+    @Cfg("Specify a maximum number of existing data in the database to sample when SQL handling is enabled. " +
+            "Note that a negative number means all existing data would be sampled")
+    var maximumExistingDataToSampleInDb = -1
+
+    @Experimental
+    @Cfg("Whether to output executed sql info")
+    var outputExecutedSQL = OutputExecutedSQL.NONE
+
+    enum class OutputExecutedSQL{
+        /**
+         * do not output executed sql info
+         */
+        NONE,
+        /**
+         * output all executed sql info at the end
+         */
+        ALL_AT_END,
+
+        /**
+         * output executed info once they were executed per test
+         */
+        ONCE_EXECUTED
+    }
+
+    @Experimental
+    @Cfg("Specify a path to save all executed sql commands to a file (default is 'sql.txt')")
+    var saveExecutedSQLToFile : String = "sql.txt"
 
 
     fun timeLimitInSeconds(): Int {

@@ -30,8 +30,11 @@ public class ReplacementList {
                 new LongClassReplacement(),
                 new MapClassReplacement(),
                 new MatcherClassReplacement(),
+                new MethodClassReplacement(),
                 new ObjectsClassReplacement(),
                 new PatternClassReplacement(),
+                new PreparedStatementClassReplacement(),
+                new StatementClassReplacement(),
                 new StringClassReplacement(),
                 new ShortClassReplacement(),
                 new ServletRequestClassReplacement(),
@@ -64,6 +67,11 @@ public class ReplacementList {
                             prefixes.add("java.lang.");
                             prefixes.add("java.util.");
                             prefixes.add("java.time.");
+
+                            //we don't just use java.sql. as that seems to give issue (see previous comments)
+                            prefixes.add("java.sql.Statement");
+                            prefixes.add("java.sql.CallableStatement");
+                            prefixes.add("java.sql.PreparedStatement");
 
                             boolean jdk = prefixes.stream().anyMatch(k -> targetClassName.startsWith(k)) &&
                                         prefixes.stream().anyMatch(k -> t.getTargetClassName().startsWith(k));

@@ -123,7 +123,7 @@ namespace EvoMaster.Controller.Controllers {
             else if (info is RestProblem) {
                 RestProblem rp = (RestProblem)info;
                 dto.RestProblem = new RestProblemDto();
-                dto.RestProblem.SwaggerJsonUrl = rp.GetSwaggerJsonUrl();
+                dto.RestProblem.OpenApiUrl = rp.GetSwaggerJsonUrl();
                 dto.RestProblem.EndpointsToSkip = rp.GetEndpointsToSkip();
             }
             else {

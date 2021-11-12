@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.graphql.errors
 import com.foo.graphql.errors.ErrorsController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
+import org.evomaster.e2etests.spring.graphql.errors.ErrorsInStatisticsUtil.checkErrorsInStatistics
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -49,7 +50,7 @@ class ErrorsEMTest : SpringTestBase() {
             assertAnyWithErrors(solution)
 
             existErrorAndSuccessTarget(targetFile)
-            checkErrorsInStatistics(statFile, 1, 1, 1)
+            checkErrorsInStatistics(statFile, 1, 1, 1, -1, 1)
         }
     }
 
@@ -59,24 +60,6 @@ class ErrorsEMTest : SpringTestBase() {
 
         val targets = file.readText()
         assertTrue(targets.contains("GQL_ERRORS_ACTION:") && targets.contains("GQL_NO_ERRORS:") && targets.contains("GQL_ERRORS_LINE"), targets)
-    }
-
-    private fun checkErrorsInStatistics(path: String, num: Int, numLine: Int, numFaults: Int){
-        val file = File(path)
-        assertTrue(file.exists())
-        val stats = file.readLines()
-        val header = stats.first().split(",")
-        val results = stats[1].split(",")
-
-        assertEquals(2, stats.size)
-        val actual = results[header.indexOf("gqlErrors")].toInt()
-        assertEquals(num, actual)
-
-        val actualLine = results[header.indexOf("gqlErrorsPerLines")].toInt()
-        assertEquals(numLine, actualLine)
-
-        val actualfaults = results[header.indexOf("potentialFaults")].toInt()
-        assertEquals(numFaults, actualfaults)
     }
 
 }

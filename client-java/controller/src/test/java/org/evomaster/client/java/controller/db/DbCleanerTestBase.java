@@ -18,7 +18,10 @@ public abstract class DbCleanerTestBase {
 
     protected abstract Connection getConnection();
 
-    protected abstract void clearDatabase(List<String> tablesToSkip);
+    protected void clearDatabase(List<String> tablesToSkip){
+        clearDatabase(tablesToSkip, null);
+    }
+    protected abstract void clearDatabase(List<String> tablesToSkip, List<String> tableToClean);
 
     protected abstract DatabaseType getDbType();
 
@@ -33,6 +36,31 @@ public abstract class DbCleanerTestBase {
 
         SqlScriptRunner.execCommand(getConnection(), command);
         assertThrows(Exception.class, () -> clearDatabase(Arrays.asList("Bar")));
+    }
+
+    @Test
+    public void testTableToClean() throws Exception{
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x int);");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(y int);");
+
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (42)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (66)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (y) VALUES (77)");
+
+
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;");
+        assertEquals(2, res.seeRows().size());
+        res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;");
+        assertEquals(1, res.seeRows().size());
+
+        //Bar should be reset, but not Foo
+        clearDatabase(null, Arrays.asList("Foo"));
+
+        res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;");
+        assertEquals(0, res.seeRows().size());
+        res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;");
+        assertEquals(1, res.seeRows().size());
     }
 
     @Test

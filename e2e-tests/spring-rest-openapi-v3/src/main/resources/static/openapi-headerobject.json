@@ -1,0 +1,65 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/headerobject": {
+      "get": {
+        "tags": [
+          "header-object-rest"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Token": {
+        "required": [
+          "counter",
+          "x"
+        ],
+        "type": "object",
+        "properties": {
+          "counter": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "x": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

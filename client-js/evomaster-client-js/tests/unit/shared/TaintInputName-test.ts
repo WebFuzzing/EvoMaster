@@ -18,7 +18,7 @@ test("test invalid names", () => {
     expect(TaintInputName.isTaintInput("evomaster__input")).toBe(false);
     expect(TaintInputName.isTaintInput("evomaster_a_input")).toBe(false);
 
-    expect(TaintInputName.isTaintInput("evomaster_42_input")).toBe(true);
+    expect(TaintInputName.isTaintInput("_EM_42_XYZ_")).toBe(true);
 });
 
 test("test includes", () => {

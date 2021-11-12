@@ -59,7 +59,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
                     val matchedPropertyMap = allTables.flatMap { t->t.value.columns.filter { c-> !ParamUtil.isGeneralName(c.name) }.map { c->Pair(t.value.name, c.name) } }
                         .map { p-> Pair(p.first, Pair(p.second,StringSimilarityComparator.stringSimilarityScore(p.second, token))) }.asSequence().sortedBy { e->e.second.second }
 
-                    if(matchedMap.lastOrNull() != null && matchedPropertyMap.last().second.second >= StringSimilarityComparator.SimilarityThreshold){
+                    if(matchedPropertyMap.lastOrNull() != null && matchedPropertyMap.last().second.second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedPropertyMap.filter { it.second.second == matchedPropertyMap.last().second.second }.forEach {
                             resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
                                 mutableListOf()

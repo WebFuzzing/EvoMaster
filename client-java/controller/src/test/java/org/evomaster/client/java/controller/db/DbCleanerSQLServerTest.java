@@ -44,6 +44,7 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
         
         CIUtils.skipIfOnGA();
         CIUtils.skipIfOnCircleCI();
+        CIUtils.skipIfOnWindows();
 
         mssqlserver.start();
 
@@ -67,6 +68,7 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
 
         CIUtils.skipIfOnGA();
         CIUtils.skipIfOnCircleCI();
+        CIUtils.skipIfOnWindows();
 
         connection.close();
         mssqlserver.stop();
@@ -85,8 +87,8 @@ public class DbCleanerSQLServerTest extends DbCleanerTestBase{
     }
 
     @Override
-    protected void clearDatabase(List<String> tablesToSkip) {
-        DbCleaner.clearDatabase(connection, tablesToSkip, getDbType());
+    protected void clearDatabase(List<String> tablesToSkip, List<String> tableToClean) {
+        DbCleaner.clearDatabase(connection, tablesToSkip, tableToClean, getDbType());
     }
 
     @Override

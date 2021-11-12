@@ -5,12 +5,12 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.LongGene
-import org.evomaster.core.search.gene.StringGene
 import org.evomaster.e2etests.utils.RestTestBase
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
+import java.nio.file.Paths
 
 class BasicEMTest : RestTestBase() {
 
@@ -25,17 +25,40 @@ class BasicEMTest : RestTestBase() {
     @Test
     fun testRunEM() {
 
+        val budget = 100;
         runTestHandlingFlakyAndCompilation(
             "BasicEM",
             "org.bar.mysql.BasicEM",
-            100
+            budget
         ) { args ->
+
+            val saveExecutedSQLToFile = "target/executionInfo/org/bar/mysql/BasicEM/sql.txt"
+
+            args.add("--outputExecutedSQL")
+            args.add("ALL_AT_END")
+            args.add("--saveExecutedSQLToFile")
+            args.add(saveExecutedSQLToFile)
+
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 400)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200)
+
+            assertTrue(Files.exists(Paths.get(saveExecutedSQLToFile)))
+
+            /*
+                200 status code indicates that the resource is created by evomaster,
+                then further check if all INSERT are ignored
+             */
+            val allSql = Files.readAllLines(Paths.get(saveExecutedSQLToFile))
+            // 100 actions + 1 header
+            assertEquals(budget + 1, allSql.size)
+            val ignoreInitSql = allSql.none { s->
+                s.contains("INSERT INTO X")
+            }
+            assertTrue(ignoreInitSql)
         }
     }
 

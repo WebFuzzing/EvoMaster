@@ -7,7 +7,7 @@
     -->
 
     <!--  Enable logs that can be printed only once  -->
-    <turboFilter class="org.evomaster.core.logging.UniqueTurboFilter" />
+<!--    <turboFilter class="org.evomaster.core.logging.UniqueTurboFilter" />-->
 
     <appender name="REGULAR_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

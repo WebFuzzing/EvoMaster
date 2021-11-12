@@ -15,8 +15,9 @@ import java.util.List;
  */
 public class DbCleanerPostgresTest extends DbCleanerTestBase{
 
+    private static final String POSTGRES_VERSION = "14";
 
-    private static final GenericContainer postgres = new GenericContainer("postgres:9")
+    private static final GenericContainer postgres = new GenericContainer("postgres:" + POSTGRES_VERSION)
             .withExposedPorts(5432)
             .withEnv("POSTGRES_HOST_AUTH_METHOD","trust");
 
@@ -56,8 +57,8 @@ public class DbCleanerPostgresTest extends DbCleanerTestBase{
     }
 
     @Override
-    protected void clearDatabase(List<String> tablesToSkip) {
-        DbCleaner.clearDatabase_Postgres(connection, "public", tablesToSkip);
+    protected void clearDatabase(List<String> tablesToSkip, List<String> tableToClean) {
+        DbCleaner.clearDatabase_Postgres(connection, "public", tablesToSkip, tableToClean);
     }
 
     @Override

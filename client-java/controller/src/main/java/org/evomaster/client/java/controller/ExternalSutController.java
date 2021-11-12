@@ -8,7 +8,6 @@ import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.client.java.databasespy.P6SpyFormatter;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.external.JarAgentLocator;
@@ -171,10 +170,10 @@ public abstract class ExternalSutController extends SutController {
             int port = serverController.startServer();
             command.add("-D" + InputProperties.EXTERNAL_PORT_PROP + "=" + port);
 
-            String driver = getDatabaseDriverName();
-            if (driver != null && !driver.isEmpty()) {
-                command.add("-D" + InputProperties.SQL_DRIVER + "=" + driver);
-            }
+//            String driver = getDatabaseDriverName();
+//            if (driver != null && !driver.isEmpty()) {
+//                command.add("-D" + InputProperties.SQL_DRIVER + "=" + driver);
+//            }
 
             String jarPath = JarAgentLocator.getAgentJarPath();
             if (jarPath == null) {
@@ -365,6 +364,13 @@ public abstract class ExternalSutController extends SutController {
         ExecutionTracer.setKillSwitch(b);// store info locally as well, to avoid needing to do call to fetch current value
     }
 
+    @Override
+    public void setExecutingInitSql(boolean executingInitSql) {
+        checkInstrumentation();
+        serverController.setExecutingInitSql(executingInitSql);
+        // sync executingInitSql on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
 
     //-----------------------------------------
 
@@ -428,9 +434,9 @@ public abstract class ExternalSutController extends SutController {
 
                         String line = scanner.nextLine();
 
-                        if(line.startsWith(P6SpyFormatter.PREFIX)){
-                            StandardOutputTracker.handleSqlLine(this, line);
-                        }
+//                        if(line.startsWith(P6SpyFormatter.PREFIX)){
+//                            StandardOutputTracker.handleSqlLine(this, line);
+//                        }
 
                         if(!muted) {
                             SimpleLogger.info("SUT: " + line);

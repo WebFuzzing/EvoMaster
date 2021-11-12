@@ -19,7 +19,9 @@ public class DbCleanerMySQLTest extends DbCleanerTestBase{
 
     private static final int PORT = 3306;
 
-    public static final GenericContainer mysql = new GenericContainer("mysql:8.0.23")
+    private static final String MYSQL_VERSION = "8.0.27";
+
+    public static final GenericContainer mysql = new GenericContainer("mysql:" + MYSQL_VERSION)
             .withEnv(new HashMap<String, String>(){{
                 put("MYSQL_ROOT_PASSWORD", "root");
                 put("MYSQL_DATABASE", DB_NAME);
@@ -61,8 +63,8 @@ public class DbCleanerMySQLTest extends DbCleanerTestBase{
     }
 
     @Override
-    protected void clearDatabase(List<String> tablesToSkip) {
-        DbCleaner.clearDatabase(connection, DB_NAME, tablesToSkip, DatabaseType.MYSQL);
+    protected void clearDatabase(List<String> tablesToSkip, List<String> tableToClean) {
+        DbCleaner.clearDatabase(connection, DB_NAME, tablesToSkip, tableToClean, DatabaseType.MYSQL);
     }
 
 

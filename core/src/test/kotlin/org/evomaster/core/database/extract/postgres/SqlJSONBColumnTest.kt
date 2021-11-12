@@ -99,9 +99,10 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
         val jsonString = jsonDataValue.value
 
-        assertTrue(jsonString.contains("\"stringValue\": \"Hello World\""))
-        assertTrue(jsonString.contains("\"booleanValue\": false"))
-        assertTrue(jsonString.contains("\"integerValue\": 0"))
+        assertNotNull(jsonString)
+        assertTrue(jsonString!!.contains("\"stringValue\": \"Hello World\""))
+        assertTrue(jsonString!!.contains("\"booleanValue\": false"))
+        assertTrue(jsonString!!.contains("\"integerValue\": 0"))
 
     }
 
@@ -145,7 +146,8 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
         val jsonString = jsonDataValue.value
 
-        assertTrue(jsonString.contains("\"doubleValue\": %s".format(Math.PI)))
+        assertNotNull(jsonString)
+        assertTrue(jsonString!!.contains("\"doubleValue\": %s".format(Math.PI)))
 
     }
 

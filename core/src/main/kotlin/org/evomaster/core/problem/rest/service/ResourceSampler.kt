@@ -10,6 +10,7 @@ import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -41,7 +42,7 @@ open class ResourceSampler : AbstractRestSampler() {
         }
     }
 
-    override fun initAdHocInitialIndividuals() {
+    override fun customizeAdHocInitialIndividuals() {
 
         rm.initResourceNodes(actionCluster, sqlInsertBuilder)
 
@@ -203,10 +204,32 @@ open class ResourceSampler : AbstractRestSampler() {
         var size = config.maxTestSize
         val candR = rm.getResourceCluster().filter { r -> r.value.isAnyAction() }
         while(size > 1 && executed.size < resourceSize){
-            val key = if(executed.size < resourceSize-1 && size > 2) randomness.choose(depCand.keys.filter { !executed.contains(it) }) else randomness.choose(candR.keys.filter { !executed.contains(it) })
+            val key = if(executed.size < resourceSize-1 && size > 2)
+                randomness.choose(depCand.keys.filter { !executed.contains(it) })
+            else if (candR.keys.any { !executed.contains(it) })
+                randomness.choose(candR.keys.filter { !executed.contains(it) })
+            else
+                randomness.choose(candR.keys)
+
             rm.sampleCall(key, true, resourceCalls, size)
             size -= resourceCalls.last().seeActionSize(ActionFilter.NO_SQL)
             executed.add(key)
         }
+    }
+
+    override fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+        val resourceCalls = restCalls.map {
+            val node = rm.getResourceNodeFromCluster(it.path.toString())
+            RestResourceCalls(
+                    template = node.getTemplate(it.verb.toString()),
+                    node = node,
+                    actions = mutableListOf(it)
+            )
+        }.toMutableList()
+        return RestIndividual(
+                resourceCalls=resourceCalls,
+                sampleType = SampleType.SMART_RESOURCE,
+                trackOperator = if (config.trackingEnabled()) this else null,
+                index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
     }
 }

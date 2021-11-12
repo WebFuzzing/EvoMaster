@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(path = "/api/highweight")
 public class HighWeightRest {
 
-    @PostMapping(value = "/differentWeight", consumes = "application/json")
+    @PostMapping(value = "/differentWeight/{x}", consumes = "application/json")
     public ResponseEntity differentWeight(@PathVariable(name = "x") Integer x, @RequestParam(required = true) String y, @RequestBody HighWeightDto z){
 
         String response = "";
@@ -25,7 +25,7 @@ public class HighWeightRest {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping(value = "/lowWeightHighCoverage", consumes = "application/json")
+    @PostMapping(value = "/lowWeightHighCoverage/{x}", consumes = "application/json")
     public ResponseEntity lowWeightHighCoverage(@PathVariable(name = "x") Integer x, @RequestParam(required = true) String y, @RequestBody HighWeightDto z){
 
         String response = "";

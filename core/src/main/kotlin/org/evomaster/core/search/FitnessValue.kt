@@ -63,7 +63,7 @@ class FitnessValue(
      *
      * Value -> info on how the SQL database was accessed
      */
-    private val databaseExecutions: MutableMap<Int, DatabaseExecution> = mutableMapOf()
+    val databaseExecutions: MutableMap<Int, DatabaseExecution> = mutableMapOf()
 
     /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
@@ -153,13 +153,15 @@ class FitnessValue(
     }
 
     fun gqlErrors(idMapper: IdMapper, withLine : Boolean): List<String>{
-        return targets.keys
+        // GQLErrors would be >0 when it is initialed, so we count it when it is covered.
+        return targets.filter { it.value.distance == MAX_VALUE }.keys
                 .filter { idMapper.isGQLErrors(it, withLine) }
                 .map { idMapper.getDescriptiveId(it) }
     }
 
     fun gqlNoErrors(idMapper: IdMapper): List<String>{
-        return targets.keys
+        // GQLNoErrors would be >0 when it is initialed, so we count it when it is covered.
+        return targets.filter { it.value.distance == MAX_VALUE }.keys
                 .filter { idMapper.isGQLNoErrors(it) }
                 .map { idMapper.getDescriptiveId(it) }
     }

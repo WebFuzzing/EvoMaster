@@ -163,6 +163,7 @@ public abstract class SutController implements SutHandler {
      *
      * @param sql command as a string
      */
+    @Deprecated
     public final void handleSql(String sql) {
         Objects.requireNonNull(sql);
 
@@ -200,6 +201,25 @@ public abstract class SutController implements SutHandler {
     public final ExtraHeuristicsDto computeExtraHeuristics() {
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
+
+        if(sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution()){
+            /*
+                TODO refactor, once we move SQL analysis into Core
+             */
+            List<AdditionalInfo> list = getAdditionalInfoList();
+            if(!list.isEmpty()) {
+                AdditionalInfo last = list.get(list.size() - 1);
+                last.getSqlInfoData().stream().forEach(it -> {
+//                    String sql = it.getCommand();
+                    try {
+                        sqlHandler.handle(it);
+                    } catch (Exception e){
+                        SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getCommand());
+                        assert false; //we should try to handle all cases in our tests
+                    }
+                });
+            }
+        }
 
         if(sqlHandler.isCalculateHeuristics()) {
             sqlHandler.getDistances().stream()
@@ -255,23 +275,26 @@ public abstract class SutController implements SutHandler {
      *
      * @return false if the verification failed
      */
+    @Deprecated
     public final boolean verifySqlConnection(){
 
-        Connection connection = getConnection();
-        if(connection == null
-                //check does not make sense for External
-                || !(this instanceof EmbeddedSutController)){
-            return true;
-        }
+        return true;
 
-        /*
-            bit hacky/brittle, but seems there is no easy way to check if a connection is
-            using P6Spy.
-            However, the name of driver's package would appear when doing a toString on it
-         */
-        String info = connection.toString();
-
-        return info.contains("p6spy");
+//        Connection connection = getConnection();
+//        if(connection == null
+//                //check does not make sense for External
+//                || !(this instanceof EmbeddedSutController)){
+//            return true;
+//        }
+//
+//        /*
+//            bit hacky/brittle, but seems there is no easy way to check if a connection is
+//            using P6Spy.
+//            However, the name of driver's package would appear when doing a toString on it
+//         */
+//        String info = connection.toString();
+//
+//        return info.contains("p6spy");
     }
 
 
@@ -422,8 +445,12 @@ public abstract class SutController implements SutHandler {
      * This is needed for when we intercept SQL commands with P6Spy
      *
      * @return {@code null} if the SUT does not use any SQL database
+     * @deprecated this method is no longer needed
      */
-    public abstract String getDatabaseDriverName();
+    @Deprecated
+    public String getDatabaseDriverName(){
+        throw new IllegalStateException("This deprecated method should never be called");
+    }
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 
@@ -464,6 +491,7 @@ public abstract class SutController implements SutHandler {
 
     public abstract void setKillSwitch(boolean b);
 
+    public abstract void setExecutingInitSql(boolean executingInitSql);
 
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
 

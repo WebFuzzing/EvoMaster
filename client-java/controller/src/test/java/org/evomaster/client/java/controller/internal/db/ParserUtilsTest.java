@@ -1,0 +1,45 @@
+package org.evomaster.client.java.controller.internal.db;
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class ParserUtilsTest {
+
+    @Disabled //TODO see https://github.com/JSQLParser/JSqlParser/issues/420
+    @Test
+    public void testEscapeInput(){
+
+        assertTrue(ParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE '$a' ESCAPE '$'"));
+        assertTrue(ParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE  ?1 ESCAPE '$'"));
+        assertTrue(ParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE '$a' ESCAPE ?1"));
+        assertTrue(ParserUtils.canParseSqlStatement("SELECT * FROM Foo WHERE x LIKE ?1 ESCAPE ?2"));
+    }
+
+    @Disabled //TODO see https://github.com/JSQLParser/JSqlParser/issues/1405
+    @Test
+    public void testRestartSequence(){
+
+        String sql = "ALTER SEQUENCE SYSTEM_SEQUENCE_40560F88_80C4_4F3B_BDAA_D18CC8D5C5AA RESTART WITH 1";
+
+        boolean parsed = ParserUtils.canParseSqlStatement(sql);
+
+        assertTrue(parsed);
+    }
+
+    @Disabled
+    @Test
+    public void testEmptyInsertValue(){
+
+        /*
+            this is accepted by H2, although it does not seem to be valid according to the
+            SQL syntax. so i guess it is fine that JSqlParser does not handle it
+         */
+        String sql = "INSERT INTO Foo() VALUES()";
+
+        boolean parsed = ParserUtils.canParseSqlStatement(sql);
+
+        assertTrue(parsed);
+    }
+}
