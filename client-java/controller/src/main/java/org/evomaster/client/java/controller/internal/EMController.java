@@ -483,9 +483,7 @@ public class EMController {
             //this MUST not be inside a noKillSwitch, as it sets to false
             sutController.newAction(dto);
 
-            if (sutController.getProblemInfo() instanceof RPCProblem){
-                // TODO RPC execute action here and return its response
-            }
+            // TODO RPC execute action here and return its response
         }
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
