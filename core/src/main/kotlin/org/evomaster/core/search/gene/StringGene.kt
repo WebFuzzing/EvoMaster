@@ -288,6 +288,11 @@ class StringGene(
     }
 
     fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness, allGenes: List<Gene>) : Boolean{
+
+        if(TaintInputName.getTaintNameMaxLength() > maxLength){
+            return false
+        }
+
         val minPforTaint = 0.1
         val tp = apc.getBaseTaintAnalysisProbability(minPforTaint)
 

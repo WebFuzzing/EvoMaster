@@ -28,8 +28,23 @@ public class TaintInputNameTest {
         assertFalse(TaintInputName.isTaintInput("evomaster__input"));
         assertFalse(TaintInputName.isTaintInput("evomaster_a_input"));
 
-        assertTrue(TaintInputName.isTaintInput("evomaster_42_input"));
+        assertTrue(TaintInputName.isTaintInput("_EM_42_XYZ_"));
     }
+
+    @Test
+    public void testInvalidNamePatterns(){
+        String prefix = "_EM_";
+        String postfix = "_XYZ_";
+
+        assertFalse(TaintInputName.isTaintInput("foo"));
+        assertFalse(TaintInputName.isTaintInput(""));
+        assertFalse(TaintInputName.isTaintInput(prefix));
+        assertFalse(TaintInputName.isTaintInput(prefix + postfix));
+        assertFalse(TaintInputName.isTaintInput(prefix+"a"+postfix));
+
+        assertTrue(TaintInputName.isTaintInput(prefix+"42"+postfix));
+    }
+
 
     @Test
     public void testIncludes(){
