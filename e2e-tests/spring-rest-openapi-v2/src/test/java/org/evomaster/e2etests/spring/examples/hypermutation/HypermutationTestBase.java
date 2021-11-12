@@ -1,21 +1,11 @@
 package org.evomaster.e2etests.spring.examples.hypermutation;
 
-import org.evomaster.core.problem.rest.RestCallAction;
 import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.search.Action;
-import org.evomaster.core.search.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
-import org.evomaster.core.search.Individual;
-import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact;
-import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class HypermutationTestBase extends SpringTestBase {
 
