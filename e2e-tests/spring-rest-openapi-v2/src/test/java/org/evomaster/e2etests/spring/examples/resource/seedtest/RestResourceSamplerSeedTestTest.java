@@ -12,8 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashSet;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RestResourceSamplerSeedTestTest extends ResourceMIOHWTestBase {
 
@@ -28,6 +27,8 @@ public class RestResourceSamplerSeedTestTest extends ResourceMIOHWTestBase {
         ResourceSampler sampler = injector.getInstance(ResourceSampler.class);
         assertEquals(13, sampler.getSizeOfAdHocInitialIndividuals());
 
+        sampler.getNotExecutedAdHocInitialIndividuals().forEach(s-> s.getResourceCalls().forEach(r-> assertNotNull(r.getResourceNode())));
+
     }
 
     @Test
@@ -39,7 +40,7 @@ public class RestResourceSamplerSeedTestTest extends ResourceMIOHWTestBase {
 
         ResourceSampler sampler = injector.getInstance(ResourceSampler.class);
         assertEquals(12, sampler.getSizeOfAdHocInitialIndividuals());
-
+        sampler.getNotExecutedAdHocInitialIndividuals().forEach(s-> s.getResourceCalls().forEach(r-> assertNotNull(r.getResourceNode())));
     }
 
 }

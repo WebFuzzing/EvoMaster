@@ -24,7 +24,9 @@ abstract class ExtractTestBaseMySQL {
 
         private const val MYSQL_PORT = 3306
 
-        private val mysql = KGenericContainer("mysql:8.0.23")
+        private const val MYSQL_VERSION = "8.0.27";
+
+        private val mysql = KGenericContainer("mysql:$MYSQL_VERSION")
         .withEnv(
             mutableMapOf(
                 "MYSQL_ROOT_PASSWORD" to "root",

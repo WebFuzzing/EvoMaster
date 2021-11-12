@@ -29,16 +29,18 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         return EMConfig.Algorithm.WTS
     }
 
-
-    override fun search(): Solution<T> {
-
-        time.startSearch()
+    override fun setupBeforeSearch() {
         population.clear()
 
         initPopulation()
+    }
+
+
+    override fun searchOnce() {
+
+
         val n = config.populationSize
 
-        while (time.shouldContinueSearch()) {
 
             //new generation
 
@@ -66,9 +68,6 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             population.clear()
             population.addAll(nextPop)
-        }
-
-        return archive.extractSolution()
     }
 
     private fun mutate(wts: WtsEvalIndividual<T>) {

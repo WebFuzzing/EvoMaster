@@ -21,7 +21,9 @@ abstract class SpringRestPostgresController(
 
     protected var ctx: ConfigurableApplicationContext? = null
 
-    private val postgres : GenericContainer<*> = GenericContainer<Nothing>("postgres:9")
+    private val POSTGRES_VERSION:String = "14";
+
+    private val postgres : GenericContainer<*> = GenericContainer<Nothing>("postgres:$POSTGRES_VERSION" )
             .apply{withExposedPorts(5432)}
             .apply{withEnv("POSTGRES_HOST_AUTH_METHOD","trust")}
 

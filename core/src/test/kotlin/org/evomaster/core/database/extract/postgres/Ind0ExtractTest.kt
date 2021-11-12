@@ -43,7 +43,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
         assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(status = ANY (ARRAY['A'::text, 'B'::text]))") });
         assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("((status = 'B'::text) = (p_at IS NOT NULL))") });
         assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("((f_id ~~ 'hi'::text) OR (f_id ~~ '%foo%'::text) OR (f_id ~~ '%foo%x%'::text) OR (f_id ~~ '%bar%'::text) OR (f_id ~~ '%bar%y%'::text) OR (f_id ~~ '%hello%'::text))") });
-        assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(w_id ~ similar_escape('/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?'::text, NULL::text))") });
+        assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(w_id ~ similar_to_escape('/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?'::text))") });
 
         // constraints on Y table
         assertTrue(schema.tables.first { it.name == "y" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(status = ANY (ARRAY['A'::text, 'B'::text, 'C'::text, 'D'::text, 'E'::text]))") });

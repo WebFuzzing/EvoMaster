@@ -454,7 +454,7 @@ object RestActionBuilderV3 {
                     StringGene(name)
                 } else {
                     try {
-                        RegexHandler.createGeneForEcma262(schema.pattern)
+                        RegexHandler.createGeneForEcma262(schema.pattern).apply { this.name = name }
                     } catch (e: Exception) {
                         /*
                             TODO: if the Regex is syntactically invalid, we should warn

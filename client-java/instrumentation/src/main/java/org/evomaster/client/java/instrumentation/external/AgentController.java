@@ -85,6 +85,10 @@ public class AgentController {
                         handleKillSwitch();
                         sendCommand(Command.ACK);
                         break;
+                    case EXECUTING_INIT_SQL:
+                        handleExecutingInitSql();
+                        sendCommand(Command.ACK);
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -133,6 +137,16 @@ public class AgentController {
             InstrumentationController.setKillSwitch(killSwitch);
         } catch (Exception e){
             SimpleLogger.error("Failure in handling kill-switch: "+e.getMessage());
+        }
+    }
+
+    private static void handleExecutingInitSql() {
+        try {
+            Object msg = in.readObject();
+            Boolean executingInitSql = (Boolean) msg;
+            InstrumentationController.setExecutingInitSql(executingInitSql);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-init-sql: "+e.getMessage());
         }
     }
 

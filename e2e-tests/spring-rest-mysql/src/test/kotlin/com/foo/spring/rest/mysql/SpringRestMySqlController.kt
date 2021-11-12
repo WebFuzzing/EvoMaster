@@ -24,7 +24,9 @@ abstract class SpringRestMySqlController (
 
     private var ctx: ConfigurableApplicationContext? = null
 
-    private val mysql: GenericContainer<*> = GenericContainer<Nothing>("mysql:8.0.23")
+    private val MYSQL_VERSION =  "8.0.27"
+
+    private val mysql: GenericContainer<*> = GenericContainer<Nothing>("mysql:$MYSQL_VERSION")
         .apply { withEnv(object : HashMap<String?, String?>() {
             init {
                 put("MYSQL_ROOT_PASSWORD", "root")
