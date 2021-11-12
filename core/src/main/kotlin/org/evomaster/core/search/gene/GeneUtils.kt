@@ -495,6 +495,9 @@ object GeneUtils {
             is CycleObjectGene -> {
                 gene
             }
+            is LimitObjectGene -> {
+                gene
+            }
             is ObjectGene -> {
                 //need to look at each field
                 ObjectGene(gene.name, gene.fields.map { handleBooleanSelection(it) })
