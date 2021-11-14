@@ -18,10 +18,6 @@ import org.slf4j.LoggerFactory
 class FloatGene(name: String,
                 value: Float = 0.0f,
                 numericConstrains: NumericConstrains? = null,
-//                /** Inclusive */
-//                min : Float? = null,
-//                /** Inclusive */
-//                max : Float? = null,
                 /**
                  * specified precision
                  */
