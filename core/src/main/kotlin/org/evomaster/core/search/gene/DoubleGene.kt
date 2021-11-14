@@ -17,21 +17,11 @@ import org.slf4j.LoggerFactory
 class DoubleGene(name: String,
                  value: Double = 0.0,
                  numericConstrains: NumericConstrains? = null,
-//                 min: Double? = null,
-//                 max: Double? = null,
                  /**
                   * specified precision
                   */
                  precision: Int? = null
 ) : FloatingPointNumber<Double>(name, value, numericConstrains , precision) {
-
-    fun getMin(): Double? {
-        return min?.toDouble()
-    }
-
-    fun getMax(): Double? {
-        return max?.toDouble()
-    }
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(DoubleGene::class.java)
@@ -42,8 +32,8 @@ class DoubleGene(name: String,
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         var rand = randomness.nextDouble()
-        if (isRangeSpecified() && ((rand < (min?.toDouble() ?: Double.MIN_VALUE)) || (rand > (max?.toDouble() ?: Double.MAX_VALUE)))){
-            rand = randomness.nextDouble(min?.toDouble() ?: Double.MIN_VALUE, max?.toDouble() ?: Double.MAX_VALUE)
+        if (isRangeSpecified() && ((rand < getMinimum()) || (rand > getMaximum()))){
+            rand = randomness.nextDouble(getMinimum(), getMaximum())
         }
         value = getFormattedValue(rand)
 

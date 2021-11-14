@@ -14,9 +14,6 @@ abstract class FloatingPointNumber<T:Number>(
     name: String,
     value: T,
     numericConstrains: NumericConstrains? = null,
-//    min: T? = null,
-//    max: T? = null,    min: T? = null,
-//    max: T? = null,
     /**
      * specified precision
      */

@@ -30,6 +30,15 @@ class LongGene(
         return copy
     }
 
+
+    fun getMinimum(): Long {
+        return min?.toLong() ?: Long.MIN_VALUE
+    }
+
+    fun getMaximum(): Long {
+        return max?.toLong() ?: Long.MAX_VALUE
+    }
+
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         /*
@@ -37,7 +46,7 @@ class LongGene(
             we employ [randomness.randomizeBoundedIntAndLong] for randomizing long that is same as randomizing int
          */
         if (isRangeSpecified()){
-            value = randomness.randomizeBoundedIntAndLong(value, min?.toLong() ?: Long.MIN_VALUE, max?.toLong() ?: Long.MAX_VALUE, forceNewValue)
+            value = randomness.randomizeBoundedIntAndLong(value, getMinimum(), getMaximum(), forceNewValue)
             return
         }
 
@@ -141,7 +150,7 @@ class LongGene(
     private fun delta() : Long{
         return if (isRangeSpecified()){
             try{
-                min(Long.MAX_VALUE, Math.subtractExact(max?.toLong() ?: Long.MAX_VALUE, min?.toLong() ?: Long.MIN_VALUE))
+                min(Long.MAX_VALUE, Math.subtractExact(getMaximum(), getMinimum()))
             }catch (e : ArithmeticException) {
                 Long.MAX_VALUE
             }

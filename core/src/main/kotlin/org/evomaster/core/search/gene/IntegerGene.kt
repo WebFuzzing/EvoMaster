@@ -63,7 +63,7 @@ class IntegerGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        value = randomness.randomizeBoundedIntAndLong(value.toLong(), min!!.toLong(), max!!.toLong(), forceNewValue).toInt()
+        value = randomness.randomizeBoundedIntAndLong(value.toLong(), getMinimum().toLong(), getMaximum().toLong(), forceNewValue).toInt()
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
@@ -83,22 +83,22 @@ class IntegerGene(
         }
 
         //check maximum range. no point in having a delta greater than such range
-        val range = max!!.toLong() - min!!.toLong()
+        val range = getMaximum().toLong() - getMinimum().toLong()
 
         //choose an i for 2^i modification
         val delta = getDelta(randomness, apc, range)
 
         val sign = when (value) {
-            max!! -> -1
-            min!! -> +1
+            getMaximum() -> -1
+            getMinimum() -> +1
             else -> randomness.choose(listOf(-1, +1))
         }
 
         val res: Long = (value.toLong()) + (sign * delta)
 
         value = when {
-            res > max!!.toLong() -> max!!.toInt()
-            res < min!!.toLong() -> min!!.toInt()
+            res > getMaximum().toLong() -> getMaximum().toInt()
+            res < getMinimum().toLong() -> getMinimum().toInt()
             else -> res.toInt()
         }
 
