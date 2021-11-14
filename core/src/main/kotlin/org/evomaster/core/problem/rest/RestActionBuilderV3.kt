@@ -425,15 +425,18 @@ object RestActionBuilderV3 {
             TODO constraints like min/max
          */
 
+        val minLength: Int = schema.minLength
+        val maxLength: Int = schema.maxLength
+
         //first check for "optional" format
         when (format?.lowercase()) {
             "int32" -> return IntegerGene(name)
             "int64" -> return LongGene(name)
             "double" -> return DoubleGene(name)
             "float" -> return FloatGene(name)
-            "password" -> return StringGene(name) //nothing special to do, it is just a hint
-            "binary" -> return StringGene(name) //does it need to be treated specially?
-            "byte" -> return Base64StringGene(name)
+            "password" -> return StringGene(name = name, minLength = minLength, maxLength = maxLength) //nothing special to do, it is just a hint
+            "binary" -> return StringGene(name = name, minLength = minLength, maxLength = maxLength) //does it need to be treated specially?
+            "byte" -> return Base64StringGene(name = name, data = StringGene(name = name, minLength = minLength, maxLength = maxLength))
             "date" -> return DateGene(name)
             "date-time" -> return DateTimeGene(name)
             else -> if (format != null) {
@@ -451,7 +454,7 @@ object RestActionBuilderV3 {
             "boolean" -> return BooleanGene(name)
             "string" -> {
                 return if (schema.pattern == null) {
-                    StringGene(name)
+                    StringGene(name, minLength = minLength, maxLength = maxLength)
                 } else {
                     try {
                         RegexHandler.createGeneForEcma262(schema.pattern).apply { this.name = name }
@@ -464,7 +467,7 @@ object RestActionBuilderV3 {
                             When 100% support, then tell user that it is his/her fault
                          */
                         LoggingUtil.uniqueWarn(log, "Cannot handle regex: ${schema.pattern}")
-                        StringGene(name)
+                        StringGene(name, minLength = minLength, maxLength = maxLength)
                     }
                 }
             }
@@ -494,7 +497,8 @@ object RestActionBuilderV3 {
                 return createObjectGene(name, schema, swagger, history, referenceClassDef)
             }
 
-            "file" -> return StringGene(name) //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
+            //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
+            "file" -> return StringGene(name, minLength = minLength, maxLength = maxLength)
         }
 
         if (name == "body" && schema.properties?.isNotEmpty() == true) {
@@ -506,7 +510,7 @@ object RestActionBuilderV3 {
 
         if (type == null && format == null) {
             LoggingUtil.uniqueWarn(log, "No type/format information provided for '$name'. Defaulting to 'string'")
-            return StringGene(name)
+            return StringGene(name, minLength = minLength, maxLength = maxLength)
         }
 
         throw IllegalArgumentException("Cannot handle combination $type/$format")
@@ -556,7 +560,7 @@ object RestActionBuilderV3 {
 
         if (fields.isEmpty()) {
             log.warn("No fields for object definition: $name")
-            return MapGene(name, StringGene(name + "_field"))
+            return MapGene(name, StringGene(name + "_field", minLength = schema.minLength, maxLength = schema.maxLength))
         }
 
         /*
