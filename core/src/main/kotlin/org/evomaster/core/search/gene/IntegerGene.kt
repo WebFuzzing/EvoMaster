@@ -31,12 +31,12 @@ class IntegerGene(
 ) : NumberGene<Int>(name, value, complete(numericConstrains)) {
 
 
-    fun getMin(): Int? {
-        return min?.toInt()
+    fun getMinimum(): Int {
+        return min?.toInt() ?: Int.MIN_VALUE
     }
 
-    fun getMax(): Int? {
-        return max?.toInt()
+    fun getMaximum(): Int {
+        return max?.toInt() ?: Int.MAX_VALUE
     }
 
     companion object{

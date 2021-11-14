@@ -131,15 +131,15 @@ class TimeGene(
     }
 
     private fun isValidHourRange(gene: IntegerGene): Boolean {
-        return gene.getMin() == 0 && gene.getMax() == 23
+        return gene.getMinimum() == 0 && gene.getMaximum() == 23
     }
 
     private fun isValidMinuteRange(gene: IntegerGene): Boolean {
-        return gene.getMin() == 0 && gene.getMax() == 59
+        return gene.getMinimum() == 0 && gene.getMaximum() == 59
     }
 
     private fun isValidSecondRange(gene: IntegerGene): Boolean {
-        return gene.getMin() == 0 && gene.getMax() == 59
+        return gene.getMinimum() == 0 && gene.getMaximum() == 59
     }
 
 

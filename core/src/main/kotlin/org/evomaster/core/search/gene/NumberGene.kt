@@ -12,7 +12,9 @@ abstract class NumberGene<T : Number>(name: String, var value: T, var numericCon
 
 
     var min: Number? = numericConstrains?.getMin()
-    var max: Number?  = numericConstrains?.getMax()
+    var max: Number? = numericConstrains?.getMax()
+    var exclusiveMinimum: Boolean = numericConstrains?.getExclusiveMinimum() ?: false
+    var exclusiveMaximum: Boolean = numericConstrains?.getExclusiveMaximum() ?: false
 
     override fun getChildren(): MutableList<Gene> = mutableListOf()
 
@@ -38,10 +40,18 @@ abstract class NumberGene<T : Number>(name: String, var value: T, var numericCon
      * @return whether the [value] is between [min] and [max] if they are specified
      */
     override fun isValid() : Boolean{
-        if (max != null && value.toDouble() > max!!.toDouble())
-            return false
-        if (min != null && value.toDouble() < min!!.toDouble())
-            return false
+        if (max != null){
+            if (!exclusiveMaximum && value.toDouble() > max!!.toDouble())
+                return false
+            else if (exclusiveMaximum && value.toDouble() >= max!!.toDouble())
+                return false
+        }
+        if (min != null) {
+            if (!exclusiveMinimum && value.toDouble() < min!!.toDouble())
+                return false
+            else if (!exclusiveMinimum && value.toDouble() <= min!!.toDouble())
+                return false
+        }
         return true
     }
 

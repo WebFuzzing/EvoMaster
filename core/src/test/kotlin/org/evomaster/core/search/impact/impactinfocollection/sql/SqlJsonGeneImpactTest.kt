@@ -51,7 +51,7 @@ class SqlJsonGeneImpactTest : GeneImpactTest() {
                     f1.value = f1.value + "a"
             }
             mutationTag == 2 || (mutationTag == 0 && !p)-> {
-                if (f2.getMax() != null && f2.value + 1 > f2.getMax()!!)
+                if (f2.getMaximum() != null && f2.value + 1 > f2.getMaximum()!!)
                     f2.value -= 1
                 else
                     f2.value += 1

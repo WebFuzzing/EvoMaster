@@ -64,8 +64,8 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
             (dc1 as FloatGene).apply {
                 assertNotNull(precision)
                 assertEquals(2, precision)
-                assertEquals(-99999999.99f, this.getMin())
-                assertEquals(99999999.99f, this.getMax())
+                assertEquals(-99999999.99f, this.getMinimum())
+                assertEquals(99999999.99f, this.getMaximum())
             }
 
             val dc2 = this[3]
@@ -73,8 +73,8 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
             (dc2 as FloatGene).apply {
                 assertNotNull(precision)
                 assertEquals(3, precision)
-                assertEquals(-99.999f, this.getMin())
-                assertEquals(99.999f, this.getMax())
+                assertEquals(-99.999f, this.getMinimum())
+                assertEquals(99.999f, this.getMaximum())
             }
 
             val dc3 = this[4]
@@ -82,8 +82,8 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
             (dc3 as FloatGene).apply {
                 assertNotNull(precision)
                 assertEquals(1, precision)
-                assertEquals(-9.9f, this.getMin())
-                assertEquals(9.9f, this.getMax())
+                assertEquals(-9.9f, this.getMinimum())
+                assertEquals(9.9f, this.getMaximum())
             }
 
             val dc4 = this[5]
@@ -91,23 +91,23 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
             (dc4 as FloatGene).apply {
                 assertNotNull(precision)
                 assertEquals(1, precision)
-                assertEquals(0.0f, this.getMin())
-                assertEquals(9.9f, this.getMax())
+                assertEquals(0.0f, this.getMinimum())
+                assertEquals(9.9f, this.getMaximum())
             }
 
             val tc1 = this[6]
             assertTrue(tc1 is IntegerGene)
             (tc1 as IntegerGene).apply {
-                assertEquals(Byte.MIN_VALUE.toInt(), this.getMin())
-                assertEquals(Byte.MAX_VALUE.toInt(), this.getMax())
+                assertEquals(Byte.MIN_VALUE.toInt(), this.getMinimum())
+                assertEquals(Byte.MAX_VALUE.toInt(), this.getMaximum())
             }
 
 
             val tc2 = this[7]
             assertTrue(tc2 is IntegerGene)
             (tc2 as IntegerGene).apply {
-                assertEquals(0, this.getMin())
-                assertEquals(255, this.getMax())
+                assertEquals(0, this.getMinimum())
+                assertEquals(255, this.getMaximum())
             }
 
 

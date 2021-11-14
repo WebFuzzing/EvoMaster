@@ -29,14 +29,6 @@ class FloatGene(name: String,
 ) : FloatingPointNumber<Float>(name, value, numericConstrains, precision) {
 
 
-    fun getMin(): Float? {
-        return min?.toFloat()
-    }
-
-    fun getMax(): Float? {
-        return max?.toFloat()
-    }
-
     companion object{
         private val log : Logger = LoggerFactory.getLogger(FloatGene::class.java)
     }
@@ -46,8 +38,8 @@ class FloatGene(name: String,
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         var rand = randomness.nextFloat()
-        if (isRangeSpecified() && ((rand < (min?.toFloat() ?: Float.MIN_VALUE)) || (rand > (max?.toFloat() ?: Float.MAX_VALUE)))){
-            rand = randomness.nextDouble((min?.toFloat() ?: Float.MIN_VALUE).toDouble(), (max?.toFloat() ?: Float.MAX_VALUE).toDouble()).toFloat()
+        if (isRangeSpecified() && ((rand < getMinimum()) || (rand > getMaximum()))){
+            rand = randomness.nextDouble(getMinimum().toDouble(), getMaximum().toDouble()).toFloat()
         }
         value = getFormattedValue(rand)
 
