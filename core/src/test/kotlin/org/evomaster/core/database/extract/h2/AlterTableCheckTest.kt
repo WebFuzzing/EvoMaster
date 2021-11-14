@@ -29,7 +29,7 @@ class AlterTableCheckTest : ExtractTestBaseH2() {
         assertTrue(schema.tables.first { it.name == "PEOPLE" }.columns.any { it.name == "AGE" });
 
         assertEquals(1, schema.tables.first { it.name == "PEOPLE" }.tableCheckExpressions.size)
-        assertEquals("(AGE <= 100)", schema.tables.first { it.name == "PEOPLE" }.tableCheckExpressions[0].sqlCheckExpression)
+        assertEquals("(\"AGE\" <= 100)", schema.tables.first { it.name == "PEOPLE" }.tableCheckExpressions[0].sqlCheckExpression)
 
     }
 }

@@ -26,7 +26,7 @@ public class AdaptiveHypermutationTest extends HypermutationTestBase {
         runTestHandlingFlakyAndCompilation(
                 "hypermtation/TestLowWeightHighImpact",
                 "org.adaptivehypermuation.LowWeightHighImpactTest",
-                2000,
+                3000,
                 true,
                 (args) -> {
 

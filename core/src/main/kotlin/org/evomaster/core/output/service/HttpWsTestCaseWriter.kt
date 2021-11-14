@@ -181,7 +181,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .filter { !(call.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
                 .forEach {
-                    lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
+                    val x = it.gene.getValueAsRawString()
+                    lines.add(".$set(\"${it.name}\", \"${GeneUtils.applyEscapes(x, GeneUtils.EscapeMode.BODY, format)}\")")
                 }
 
         val cookieLogin = call.auth.cookieLogin
