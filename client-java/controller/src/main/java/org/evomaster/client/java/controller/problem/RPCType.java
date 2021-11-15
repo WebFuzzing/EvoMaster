@@ -9,5 +9,6 @@ public enum RPCType {
      * e.g., return is response, and parameters are inputs
      */
     GENERAL,
+    THRIFT,
     gRPC
 }

@@ -15,7 +15,7 @@ public class RPCProblem implements ProblemInfo{
     private final RPCType type;
 
     public RPCProblem(List<String> interfaceDefinitions) {
-        this(interfaceDefinitions, RPCType.GENERAL);
+        this(interfaceDefinitions, RPCType.THRIFT);
     }
 
     public RPCProblem(List<String> interfaceDefinitions, RPCType type) {

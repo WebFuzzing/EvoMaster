@@ -1,15 +1,18 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.EnumType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.MapType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.PrimitiveOrWrapperType;
 import org.evomaster.client.java.controller.problem.RPCType;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
+import javax.lang.model.type.ArrayType;
+import java.lang.reflect.*;
+import java.nio.ByteBuffer;
+import java.util.*;
 
 /**
  * created by manzhang on 2021/11/4
@@ -17,46 +20,105 @@ import java.util.stream.Collectors;
 public class RPCEndpointsBuilder {
 
     /**
-     *
      * @param interfaceName the name of interface
-     * @param type is the type of RPC, e.g., gRPC, Thrift
+     * @param rpcType          is the type of RPC, e.g., gRPC, Thrift
      * @return an interface schema for evomaster to access
      */
-    public static InterfaceSchema build(String interfaceName, RPCType type){
+    public static InterfaceSchema build(String interfaceName, RPCType rpcType) {
         List<EndpointSchema> endpoints = new ArrayList<>();
-        InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints);
-
-        return schema;
+        try {
+            Class<?> interfaze = Class.forName(interfaceName);
+            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints);
+            for (Method m : interfaze.getDeclaredMethods()) {
+                endpoints.add(build(schema, m, rpcType));
+            }
+            return schema;
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("cannot find the interface with the name (" + interfaceName + ") and the error message is " + e.getMessage());
+        }
     }
 
-    private static EndpointSchema build(Method method, RPCType type){
-        List<ParamSchema> requestParams = new ArrayList<>();
-//        EndpointSchema endpoint = new EndpointSchema(method.getName())
+    private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType) {
+        List<NamedTypedValue> requestParams = new ArrayList<>();
+
+        for (Parameter p : method.getParameters()) {
+            requestParams.add(build(schema, p, rpcType));
+        }
+        NamedTypedValue response = null;
+        if (!method.getReturnType().equals(Void.TYPE)) {
+            response = build(schema, method.getReturnType(), method.getGenericReturnType(), null, rpcType);
+        }
+
+        return new EndpointSchema(method.getName(), requestParams, response);
+    }
+
+    private static NamedTypedValue build(InterfaceSchema schema, Parameter parameter, RPCType type) {
+        String name = parameter.getName();
+        Class<?> clazz = parameter.getType();
+        return build(schema, clazz, parameter.getParameterizedType(), name, type);
+    }
+
+    private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType) {
+
+        if (PrimitiveOrWrapperType.isPrimitiveOrTypes(clazz)) {
+            return PrimitiveOrWrapperParam.build(name, clazz);
+        } else if (clazz == String.class) {
+            return new StringParam(name);
+        } else if (clazz.isEnum()) {
+            String [] items = Arrays.stream(clazz.getEnumConstants()).map(Object::toString).toArray(String[]::new);
+            EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items);
+            EnumParam param = new EnumParam(name, enumType);
+            //register this type in the schema
+            schema.registerType(enumType.copy());
+            return param;
+        } else if (clazz.isArray()){
+            if (rpcType == RPCType.THRIFT)
+                throw new RuntimeException("Array should not exist in Thrift service");
+            Type type = ((GenericArrayType)genericType).getGenericComponentType();
+            Class<?> templateClazz = getTemplateClass(type);
+            NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType);
+            CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template);
+            return new ArrayParam(name, ctype);
+        } else if (clazz == ByteBuffer.class){
+            // handle binary of thrift
+            return new ByteBufferParam(name);
+        } else if (clazz.isAssignableFrom(List.class) || clazz.isAssignableFrom(Set.class)){
+            if (genericType == null)
+                throw new RuntimeException("genericType should not be null for List and Set class");
+            Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+            Class<?> templateClazz = getTemplateClass(type);
+            NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType);
+            CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template);
+            if (clazz.isAssignableFrom(List.class))
+                return new ListParam(name, ctype);
+            else
+                return new SetParam(name, ctype);
+        } else if (clazz.isAssignableFrom(Map.class)){
+            if (genericType == null)
+                throw new RuntimeException("genericType should not be null for List and Set class");
+            Type keyType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+            Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
+
+            Class<?> keyTemplateClazz = getTemplateClass(keyType);
+            NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType);
+
+            Class<?> valueTemplateClazz = getTemplateClass(valueType);
+            NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType);
+            MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), keyTemplate, valueTemplate);
+            return new MapParam(name, mtype);
+        } else {
+            // object
+            System.out.println(clazz);
+        }
 
         return null;
     }
 
-    private static ParamSchema build(Parameter parameter){
-        String name = parameter.getName();
-        Class<?> clazz = parameter.getType();
-        return build(clazz, name);
-    }
-
-    private static ParamSchema build(Class<?> clazz, String name){
-       if (PrimitiveOrWrapperParamSchema.isPrimitiveOrTypes(clazz)){
-            return new PrimitiveOrWrapperParamSchema(clazz.getSimpleName(), name);
-       }else if (clazz.isArray()){
-
-       }else if (clazz.isEnum()){
-           return new EnumParamSchema(name, Arrays.stream(clazz.getEnumConstants()).map(Object::toString).collect(Collectors.toList()));
-       }else if (clazz == String.class){
-           return new StringParamSchema(name);
-       }else if(clazz.isAssignableFrom(Collection.class)){
-
-       }else {
-            // handle object
-       }
-
-       return null;
+    private static Class<?> getTemplateClass(Type type){
+        if (type instanceof ParameterizedType){
+            return  (Class<?>) ((ParameterizedType)type).getRawType();
+        }else if (type instanceof Class)
+            return  (Class<?>) type;
+        throw new RuntimeException("unhanded type:"+ type);
     }
 }

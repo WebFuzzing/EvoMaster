@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Database
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.GraphQlProblem;
@@ -483,7 +484,9 @@ public class EMController {
             //this MUST not be inside a noKillSwitch, as it sets to false
             sutController.newAction(dto);
 
-            // TODO RPC execute action here and return its response
+            if (dto instanceof RPCActionDto){
+                // TODO RPC execute action here and return its response
+            }
         }
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
