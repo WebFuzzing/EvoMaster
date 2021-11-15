@@ -1,16 +1,12 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.ObjectType;
-
-import java.util.List;
+import java.lang.reflect.Field;
 
 /**
  * created by manzhang on 2021/11/3
  */
 public class ObjectParam extends NamedTypedValue<ObjectType, Object> {
-
-    private List<NamedTypedValue> fields;
 
     public ObjectParam(String name, ObjectType type) {
         super(name, type);
@@ -18,6 +14,22 @@ public class ObjectParam extends NamedTypedValue<ObjectType, Object> {
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
-        throw new IllegalStateException("NOT IMPLEMENTED");
+        String clazzName = getType().getFullTypeName();
+        Class<?> clazz = Class.forName(clazzName);
+        try {
+            Object instance = clazz.newInstance();
+            Field[] fs = clazz.getDeclaredFields();
+            for (int i = 0; i<fs.length; i++ ){
+                Field f = fs[i];
+                NamedTypedValue v = getType().getFields().get(i);
+                f.setAccessible(true);
+                f.set(instance, v.newInstance());
+            }
+            return instance;
+        } catch (InstantiationException e) {
+            throw new RuntimeException("fail to construct the class:"+clazzName);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("fail to access the class:"+clazzName);
+        }
     }
 }
