@@ -14,4 +14,12 @@ public class MapType extends TypeSchema{
         this.keyTemplate = keyTemplate;
         this.valueTemplate = valueTemplate;
     }
+
+    public NamedTypedValue getKeyTemplate() {
+        return keyTemplate;
+    }
+
+    public NamedTypedValue getValueTemplate() {
+        return valueTemplate;
+    }
 }

@@ -13,4 +13,7 @@ public class CollectionType extends TypeSchema{
         this.template = template;
     }
 
+    public NamedTypedValue getTemplate() {
+        return template;
+    }
 }
