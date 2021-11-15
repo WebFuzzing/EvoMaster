@@ -1475,36 +1475,14 @@ object GraphQLActionBuilder {
                 )
 
             GqlConst.ENUM ->
-                return createEnumGene(state,
-                        tableFieldType,
-                        tableType,
-                        kindOfTableFieldType,
+                return createEnumGene(
                         kindOfTableField,
-                        history,
-                        isKindOfTableFieldTypeOptional,
-                        isKindOfTableFieldOptional,
                         enumValues,
-                        methodName,
-                        unionTypes,
-                        interfaceTypes,
-                        accum,
-                        maxNumberOfGenes)
+                        )
             GqlConst.SCALAR ->
                 return createScalarGene(
-                        state,
-                        tableFieldType,
                         tableType,
-                        kindOfTableFieldType,
-                        kindOfTableField,
-                        history,
-                        isKindOfTableFieldTypeOptional,
-                        isKindOfTableFieldOptional,
-                        enumValues,
-                        methodName,
-                        unionTypes,
-                        interfaceTypes,
-                        accum,
-                        maxNumberOfGenes
+                        kindOfTableFieldType
                 )
             else ->
                 return OptionalGene(tableType, StringGene(tableType))
@@ -1541,20 +1519,8 @@ object GraphQLActionBuilder {
             if (ktfType.toLowerCase() == GqlConst.SCALAR) {
                 val field = element.tableField
                 val template = createScalarGene(
-                        state,
-                        tableType,
                         element.tableFieldType,
-                        kindOfTableFieldType,
-                        field,
-                        history,
-                        element.isKindOfTableFieldTypeOptional,
-                        isKindOfTableFieldOptional,
-                        element.enumValues,
-                        methodName,
-                        element.unionTypes,
-                        element.interfaceTypes,
-                        accum,
-                        maxNumberOfGenes
+                        kindOfTableFieldType
                 )
                 fields.add(template)
             } else {
@@ -1605,20 +1571,8 @@ object GraphQLActionBuilder {
                     } else if (ktfType.toLowerCase() == GqlConst.ENUM) {
                         val field = element.tableField
                         val template = createEnumGene(
-                                state,
-                                tableType,
-                                ktfType,
-                                kindOfTableFieldType,
                                 field,
-                                history,
-                                element.isKindOfTableFieldTypeOptional,
-                                isKindOfTableFieldOptional,
                                 element.enumValues,
-                                methodName,
-                                element.unionTypes,
-                                element.interfaceTypes,
-                                accum,
-                                maxNumberOfGenes
                         )
 
                         fields.add(template)
@@ -1769,20 +1723,10 @@ object GraphQLActionBuilder {
         return count <= maxNumberOfGenes
     }
 
-    fun createScalarGene(state: TempState,
-                         tableFieldType: String,
-                         kindOfTableField: String?,
-                         kindOfTableFieldType: String,
-                         tableType: String,
-                         history: Deque<String>,
-                         isKindOfTableFieldTypeOptional: Boolean,
-                         isKindOfTableFieldOptional: Boolean,
-                         enumValues: MutableList<String>,
-                         methodName: String,
-                         unionTypes: MutableList<String>,
-                         interfaceTypes: MutableList<String>,
-                         accum: Int,
-                         maxNumberOfGenes: Int): Gene {
+    private fun createScalarGene(
+        kindOfTableField: String?,
+        tableType: String,
+    ): Gene {
 
         when (kindOfTableField?.toLowerCase()) {
             "int" ->
@@ -1804,23 +1748,12 @@ object GraphQLActionBuilder {
         }
 
     }
-    fun createEnumGene(state: TempState,
-                       tableFieldType: String,
-                       kindOfTableField: String?,
-                       kindOfTableFieldType: String,
-                       tableType: String,
-                       history: Deque<String>,
-                       isKindOfTableFieldTypeOptional: Boolean,
-                       isKindOfTableFieldOptional: Boolean,
-                       enumValues: MutableList<String>,
-                       methodName: String,
-                       unionTypes: MutableList<String>,
-                       interfaceTypes: MutableList<String>,
-                       accum: Int,
-                       maxNumberOfGenes: Int): Gene {
+    private fun createEnumGene(
+        tableType: String,
+        enumValues: MutableList<String>,
+    ): Gene {
 
         return OptionalGene(tableType, EnumGene(tableType, enumValues))
-
     }
 
 }
