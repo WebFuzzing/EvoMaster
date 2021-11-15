@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.db.QueryResult;
@@ -192,7 +193,7 @@ public class EMController {
             dto.graphQLProblem.endpoint = p.getEndpoint();
         } else if(info instanceof RPCProblem){
             RPCProblem rpcp = (RPCProblem) info;
-            dto.rpcProblem = new RestProblemDto();
+            dto.rpcProblem = new RPCProblemDto();
             //TODO RPC
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();

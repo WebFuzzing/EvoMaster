@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 
@@ -24,7 +25,7 @@ public class SutInfoDto {
      * If the SUT is a PRC-based service, here there will be the info
      * on how to interact with it
      */
-    public RestProblemDto rpcProblem;
+    public RPCProblemDto rpcProblem;
 
     /**
      * Whether the SUT is running or not
