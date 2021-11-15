@@ -1,18 +1,21 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
+
 import java.util.List;
 
 /**
  * created by manzhang on 2021/11/15
  */
 public class ObjectType extends TypeSchema {
-    private final List<String> names;
-    private final List<TypeSchema> types;
+    private final List<NamedTypedValue> fields;
 
-
-    public ObjectType(String type, String fullTypeName, List<String> names, List<TypeSchema> types) {
+    public ObjectType(String type, String fullTypeName, List<NamedTypedValue> fields) {
         super(type, fullTypeName);
-        this.names = names;
-        this.types = types;
+        this.fields = fields;
+    }
+
+    public List<NamedTypedValue> getFields() {
+        return fields;
     }
 }

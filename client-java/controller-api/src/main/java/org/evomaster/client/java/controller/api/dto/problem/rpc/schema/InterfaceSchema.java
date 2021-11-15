@@ -33,6 +33,10 @@ public final class InterfaceSchema implements Serializable {
             typeCollections.put(typeName, type.copy());
     }
 
+    public TypeSchema getTypeOrNull(String name){
+        return typeCollections.get(name);
+    }
+
     public List<EndpointSchema> getEndpoints(){
         return endpoints;
     }

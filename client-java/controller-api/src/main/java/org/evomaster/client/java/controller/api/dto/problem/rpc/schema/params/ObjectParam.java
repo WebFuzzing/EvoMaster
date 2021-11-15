@@ -12,13 +12,12 @@ public class ObjectParam extends NamedTypedValue<ObjectType, Object> {
 
     private List<NamedTypedValue> fields;
 
-    public ObjectParam(String name, ObjectType type, List<NamedTypedValue> fields) {
+    public ObjectParam(String name, ObjectType type) {
         super(name, type);
-        this.fields = fields;
     }
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
-        return null;
+        throw new IllegalStateException("NOT IMPLEMENTED");
     }
 }
