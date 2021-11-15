@@ -1,28 +1,24 @@
-package org.evomaster.client.java.controller.api.dto.problem.rpc;
+package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types;
 
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * created by manzhang on 2021/11/3
- *
+ * created by manzhang on 2021/11/15
  */
-public final class PrimitiveOrWrapperParamSchema extends ParamSchema{
+public class PrimitiveOrWrapperType extends TypeSchema {
+
     private final boolean isWrapper;
-    public PrimitiveOrWrapperParamSchema(String type, String name, boolean isWrapper) {
-        super(type, type, name);
+
+    public PrimitiveOrWrapperType(String type, String fullTypeName, boolean isWrapper) {
+        super(type, fullTypeName);
         if (!isPrimitiveOrTypes(type))
             throw new IllegalStateException("the type is not Primitive Or Wrapper class: "+ type);
         this.isWrapper = isWrapper;
     }
 
-    public PrimitiveOrWrapperParamSchema(String type, String name){
-        this(type, name, types.indexOf(type) >=8);
-    }
-
-    @Override
-    public ParamSchema copy() {
-        return new PrimitiveOrWrapperParamSchema(getType(), getName(), isWrapper);
+    public PrimitiveOrWrapperType(String type, String fullTypeName){
+        this(type, fullTypeName, types.indexOf(type) >=8);
     }
 
     private final static List<String> types = Arrays.asList("int","byte","short","long","float","double","boolean","char","Integer","Byte","Short","Long","Float","Double","Boolean","Character");
