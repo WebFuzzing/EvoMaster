@@ -1496,8 +1496,8 @@ object GraphQLActionBuilder {
             GqlConst.SCALAR ->
                 return createScalarGene(
                     tableType,
-                    kindOfTableFieldType
-                )
+                    kindOfTableField,
+                    )
             else ->
                 return OptionalGene(tableType, StringGene(tableType))
         }
@@ -1534,7 +1534,7 @@ object GraphQLActionBuilder {
                 val field = element.tableField
                 val template = createScalarGene(
                     element.tableFieldType,
-                    kindOfTableFieldType
+                    field,
                 )
                 fields.add(template)
             } else {
@@ -1586,7 +1586,7 @@ object GraphQLActionBuilder {
                         val field = element.tableField
                         val template = createEnumGene(
                             field,
-                            element.enumValues,
+                            element.enumValues
                         )
 
                         fields.add(template)
@@ -1737,7 +1737,7 @@ object GraphQLActionBuilder {
         return count <= maxNumberOfGenes
     }
 
-    private fun createScalarGene(
+    fun createScalarGene(
         kindOfTableField: String?,
         tableType: String,
     ): Gene {
@@ -1769,6 +1769,7 @@ object GraphQLActionBuilder {
     ): Gene {
 
         return OptionalGene(tableType, EnumGene(tableType, enumValues))
+
     }
 
 }
