@@ -1744,7 +1744,7 @@ object GraphQLActionBuilder {
             "id" ->
                 return OptionalGene(tableType, StringGene(tableType))
             else ->
-                return OptionalGene(tableType, StringGene(tableType))// TODO check semantic
+                return OptionalGene(tableType, StringGene(tableType))
         }
 
     }
