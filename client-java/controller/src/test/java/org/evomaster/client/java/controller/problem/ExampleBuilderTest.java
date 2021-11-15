@@ -3,7 +3,9 @@ package org.evomaster.client.java.controller.problem;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CycleObjectType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.MapType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.ObjectType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -22,7 +24,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 4;
+        return 5;
     }
 
     @Override
@@ -101,6 +103,30 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         NamedTypedValue vtemplate = ((MapType) mapTemplate.getType()).getValueTemplate();
         assertTrue(vtemplate instanceof StringParam);
+
+    }
+
+
+    @Test
+    public void testObjResponse(){
+
+        EndpointSchema endpoint = getOneEndpoint("objResponse");
+        assertEquals(0, endpoint.getRequestParams().size());
+
+        assertNotNull(endpoint.getResponse());
+        NamedTypedValue param = endpoint.getResponse();
+        assertTrue(param instanceof ObjectParam);
+        assertTrue(param.getType() instanceof ObjectType);
+
+        List<NamedTypedValue> fs = ((ObjectType) param.getType()).getFields();
+        assertEquals(4, fs.size());
+        assertTrue(fs.get(0) instanceof StringParam);
+        assertTrue(fs.get(1) instanceof IntParam);
+        assertTrue(fs.get(2) instanceof DoubleParam);
+        assertTrue(fs.get(3) instanceof ObjectParam);
+
+        ObjectParam fs3 = (ObjectParam) fs.get(3);
+        assertTrue(fs3.getType().getFields().get(3).getType() instanceof CycleObjectType);
 
     }
 

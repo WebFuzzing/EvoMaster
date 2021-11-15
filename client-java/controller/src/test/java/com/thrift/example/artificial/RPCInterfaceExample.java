@@ -16,4 +16,6 @@ public interface RPCInterfaceExample {
 
     public void listAndMap(List<Map<String, String>> args0);
 
+    public ObjectResponse objResponse();
+
 }
