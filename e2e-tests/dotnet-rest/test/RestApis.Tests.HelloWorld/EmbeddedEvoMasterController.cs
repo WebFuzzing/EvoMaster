@@ -1,16 +1,23 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using EvoMaster.Controller;
 using EvoMaster.Controller.Api;
 using EvoMaster.Controller.Problem;
 
-namespace RestApis.Tests.HelloWorld.Controller {
+namespace RestApis.Tests.HelloWorld {
     public class EmbeddedEvoMasterController : EmbeddedSutController {
         private bool isSutRunning;
         private int sutPort;
 
         public static void Main(string[] args) {
+            
             var embeddedEvoMasterController = new EmbeddedEvoMasterController();
+
+            if (args.Length > 0) {
+                var controllerPort = Int32.Parse(args[0]);
+                embeddedEvoMasterController.SetControllerPort(controllerPort);
+            }
 
             var instrumentedSutStarter = new InstrumentedSutStarter(embeddedEvoMasterController);
 

@@ -1,6 +1,5 @@
 ﻿using System.Net.Http;
 using System.Threading.Tasks;
-using RestApis.Tests.HelloWorld.Controller;
 using Xunit;
 
 namespace RestApis.Tests.HelloWorld {

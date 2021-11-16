@@ -5,6 +5,6 @@ namespace RestApis.HelloWorld.Controllers {
     [Route("[controller]")]
     public class HelloWorldController : ControllerBase {
         [HttpGet]
-        public IActionResult Get() => Ok("Hello World");
+        public IActionResult Get() => Ok("HelloWorld");
     }
 }

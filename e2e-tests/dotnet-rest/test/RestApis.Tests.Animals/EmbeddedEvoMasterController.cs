@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EvoMaster.Controller;
@@ -18,7 +19,13 @@ namespace RestApis.Tests.Animals.Controller {
         private NpgsqlConnection _connection;
 
         public static void Main(string[] args) {
+            
             var embeddedEvoMasterController = new EmbeddedEvoMasterController();
+
+            if (args.Length > 0) {
+                var controllerPort = Int32.Parse(args[0]);
+                embeddedEvoMasterController.SetControllerPort(controllerPort);
+            }
 
             var instrumentedSutStarter = new InstrumentedSutStarter(embeddedEvoMasterController);
 
