@@ -685,7 +685,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
                     lines.add("expect($responseVariableName.body$fieldPath).toBe($toPrint);")
                 } else {
                     assert(format.isCsharp())
-                    lines.add("Assert.True($responseVariableName$fieldPath == $toPrint);")
+                    if(fieldPath!=".traceId" || !lines.toString().contains("status == 400"))
+                        lines.add("Assert.True($responseVariableName$fieldPath == $toPrint);")
                 }
             }
             return
