@@ -75,6 +75,7 @@ experiments/target/
 [Bb]in/
 [Oo]bj/
 bin-temp/
+e2e-tests/dotnet-rest/test/*/generated/
 *.dll
 client-dotnet/src/*/Properties/
 e2e-tests/*/Properties/
