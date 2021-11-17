@@ -138,7 +138,8 @@ class DbActionGeneBuilder {
                  * Could be any kind of binary data... so let's just use a string,
                  * which also simplifies when needing generate the test files
                  */
-                ColumnDataType.BLOB ->
+                ColumnDataType.BLOB,
+                ColumnDataType.BYTEA ->
                     handleBLOBColumn(column)
 
 

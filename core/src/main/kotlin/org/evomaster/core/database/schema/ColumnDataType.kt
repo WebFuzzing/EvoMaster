@@ -200,9 +200,9 @@ enum class ColumnDataType(dataTypeName: String) {
     // https://www.postgresql.org/docs/current/typeconv-query.html
     BPCHAR("bpchar"),
 
-
-
-    ;
+    // POSTGRES
+    // https://www.postgresql.org/docs/14/datatype-binary.html
+    BYTEA("bytea");
 
     fun shouldBePrintedInQuotes(): Boolean {
         /*
