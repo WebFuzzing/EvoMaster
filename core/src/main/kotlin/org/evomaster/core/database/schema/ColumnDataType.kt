@@ -195,6 +195,12 @@ enum class ColumnDataType(dataTypeName: String) {
     // https://www.postgresql.org/docs/14/datatype-money.html
     MONEY("money"),
 
+    // POSTGRES
+    // The bpchar column type stands for blank-padded char
+    // https://www.postgresql.org/docs/current/typeconv-query.html
+    BPCHAR("bpchar"),
+
+
 
     ;
 

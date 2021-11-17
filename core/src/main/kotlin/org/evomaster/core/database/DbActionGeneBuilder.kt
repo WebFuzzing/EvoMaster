@@ -93,7 +93,14 @@ class DbActionGeneBuilder {
                  * N could be as large as Integer.MAX_VALUE
                  */
                 ColumnDataType.ARRAY_VARCHAR, //FIXME need general solution for arrays
-                ColumnDataType.TINYTEXT, ColumnDataType.TEXT, ColumnDataType.VARCHAR, ColumnDataType.CLOB, ColumnDataType.MEDIUMTEXT, ColumnDataType.LONGBLOB, ColumnDataType.MEDIUMBLOB, ColumnDataType.TINYBLOB ->
+                ColumnDataType.TINYTEXT,
+                ColumnDataType.TEXT,
+                ColumnDataType.VARCHAR,
+                ColumnDataType.CLOB,
+                ColumnDataType.MEDIUMTEXT,
+                ColumnDataType.LONGBLOB,
+                ColumnDataType.MEDIUMBLOB,
+                ColumnDataType.TINYBLOB ->
                     handleTextColumn(column)
 
                 //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
@@ -168,6 +175,9 @@ class DbActionGeneBuilder {
 
                 ColumnDataType.MONEY ->
                     handleMoneyColumn(column)
+
+                ColumnDataType.BPCHAR ->
+                    handleTextColumn(column, isFixedLength = true)
 
 
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
@@ -302,7 +312,7 @@ class DbActionGeneBuilder {
         }
     }
 
-    private fun handleTextColumn(column: Column): Gene {
+    private fun handleTextColumn(column: Column, isFixedLength: Boolean = false): Gene {
         return if (column.enumValuesAsStrings != null) {
             if (column.enumValuesAsStrings.isEmpty()) {
                 throw IllegalArgumentException("the list of enumerated values cannot be empty")
@@ -319,7 +329,12 @@ class DbActionGeneBuilder {
                 val likePatterns = column.likePatterns
                 buildLikeRegexGene(columnName, likePatterns, databaseType = column.databaseType)
             } else {
-                StringGene(name = column.name, minLength = 0, maxLength = column.size)
+                val columnMinLength = if (isFixedLength) {
+                    column.size
+                } else {
+                    0
+                }
+                StringGene(name = column.name, minLength = columnMinLength, maxLength = column.size)
             }
         }
     }
