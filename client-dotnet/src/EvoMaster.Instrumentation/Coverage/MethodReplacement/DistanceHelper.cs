@@ -12,6 +12,7 @@ public class DistanceHelper {
 
 
     //2^16=65536, max distance for a char
+    //Like on JVM, this applies to .NET as well
     public static readonly int MAX_CHAR_DISTANCE = 65_536;
 
 
