@@ -128,6 +128,8 @@ class DbActionGeneBuilder {
                 ColumnDataType.DATETIME ->
                     DateTimeGene(column.name)
 
+
+
                 ColumnDataType.YEAR ->
                     handleYearColumn(column)
 
@@ -180,6 +182,8 @@ class DbActionGeneBuilder {
                 ColumnDataType.BPCHAR ->
                     handleTextColumn(column, isFixedLength = true)
 
+                ColumnDataType.INTERVAL ->
+                    IntervalGene(column.name)
 
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }

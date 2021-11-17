@@ -1,7 +1,9 @@
 package org.evomaster.core.database.extract.postgres
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.DoubleGene
 import org.evomaster.core.search.gene.FloatGene
@@ -27,7 +29,7 @@ class NumericTypesExtractTest : ExtractTestBasePostgres() {
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.toLowerCase())
+        assertEquals("public", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
         val builder = SqlInsertBuilder(schema)
@@ -55,5 +57,9 @@ class NumericTypesExtractTest : ExtractTestBasePostgres() {
         assertTrue(genes[7] is SqlAutoIncrementGene) // smallserial
         assertTrue(genes[8] is SqlAutoIncrementGene) // serial
         assertTrue(genes[9] is SqlAutoIncrementGene) // bigserial
+
+        val dbCommandDto = DbActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+
     }
 }

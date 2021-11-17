@@ -1,7 +1,9 @@
 package org.evomaster.core.database.extract.postgres
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -60,6 +62,15 @@ class CharacterTypesExtractTest : ExtractTestBasePostgres() {
         assertTrue(genes[4] is StringGene) // text
         assertEquals(0, (genes[4] as StringGene).minLength)
         assertEquals(Int.MAX_VALUE, (genes[4] as StringGene).maxLength)
+
+        (genes[0] as StringGene).value = "f"
+        (genes[1] as StringGene).value = "f"
+        (genes[2] as StringGene).value = "f"
+        (genes[3] as StringGene).value = "f"
+        (genes[4] as StringGene).value = "f"
+
+        val dbCommandDto = DbActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }
 }

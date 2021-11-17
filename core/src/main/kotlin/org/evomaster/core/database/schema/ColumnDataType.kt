@@ -202,7 +202,11 @@ enum class ColumnDataType(dataTypeName: String) {
 
     // POSTGRES
     // https://www.postgresql.org/docs/14/datatype-binary.html
-    BYTEA("bytea");
+    BYTEA("bytea"),
+
+    // POSTGRES
+    // https://www.postgresql.org/docs/14/datatype-datetime.html
+    INTERVAL("interval");
 
     fun shouldBePrintedInQuotes(): Boolean {
         /*
