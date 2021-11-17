@@ -189,7 +189,12 @@ enum class ColumnDataType(dataTypeName: String) {
     // https://www.postgresql.org/docs/14/datatype-numeric.html
     FLOAT4("float4"),
     FLOAT8("float8"),
-    SMALLSERIAL("smallserial")
+    SMALLSERIAL("smallserial"),
+
+    // POSTGRES
+    // https://www.postgresql.org/docs/14/datatype-money.html
+    MONEY("money"),
+
 
     ;
 
