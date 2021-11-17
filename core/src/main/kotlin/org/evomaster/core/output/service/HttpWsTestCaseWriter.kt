@@ -743,7 +743,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         }
 
         if(format.isCsharp()){
-            return "Assert.True(await $responseVariableName.Content.ReadAsStringAsync() == \"\" );"
+            return "Assert.True(string.IsNullOrEmpty(await $responseVariableName.Content.ReadAsStringAsync()));"
         }
 
        throw IllegalStateException("Unsupported format $format")
