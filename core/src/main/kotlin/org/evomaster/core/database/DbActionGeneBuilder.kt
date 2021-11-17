@@ -135,7 +135,7 @@ class DbActionGeneBuilder {
                     handleBLOBColumn(column)
 
 
-                ColumnDataType.REAL ->
+                ColumnDataType.REAL, ColumnDataType.FLOAT4, ColumnDataType.FLOAT8 ->
                     handleRealColumn(column)
 
 

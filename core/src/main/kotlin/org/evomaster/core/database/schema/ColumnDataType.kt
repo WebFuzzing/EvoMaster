@@ -183,7 +183,13 @@ enum class ColumnDataType(dataTypeName: String) {
 
     //TODO tmp for dealing with arrays of chars in patio-api. would need more general solution, see:
     //https://www.postgresql.org/docs/9.1/arrays.html
-    ARRAY_VARCHAR("_VARCHAR")
+    ARRAY_VARCHAR("_VARCHAR"),
+
+    // POSTGRES
+    // https://www.postgresql.org/docs/14/datatype-numeric.html
+    FLOAT4("float4"),
+    FLOAT8("float8"),
+    SMALLSERIAL("smallserial")
 
     ;
 
