@@ -1415,7 +1415,7 @@ object GraphQLActionBuilder {
                         maxNumberOfGenes
                     )
                     history.removeLast()
-                    OptionalGene("$methodName"+GqlConst.UNION_TAG, optObjGene)
+                    OptionalGene(methodName+GqlConst.UNION_TAG, optObjGene)
                 } else {
                     history.removeLast()
                     (OptionalGene(methodName, CycleObjectGene(methodName)))
@@ -1455,12 +1455,12 @@ object GraphQLActionBuilder {
                         )
 
                         //merge basic interface fields with additional interface fields
-                        interfaceAdditionalOptObjGene.add(OptionalGene("$methodName#BASE#", interfaceBaseOptObjGene))
+                        interfaceAdditionalOptObjGene.add(OptionalGene(methodName+GqlConst.INTERFACE_BASE_TAG, interfaceBaseOptObjGene))
 
                         //will return a single optional object gene with optional basic interface fields and optional additional interface fields
                         OptionalGene(
-                            "$methodName#INTERFACE#",
-                            ObjectGene("$methodName#INTERFACE#", interfaceAdditionalOptObjGene)
+                            methodName+GqlConst.INTERFACE_TAG,
+                            ObjectGene(methodName+GqlConst.INTERFACE_TAG, interfaceAdditionalOptObjGene)
                         )
                     } else {
                         OptionalGene(tableType, LimitObjectGene(tableType))
@@ -1680,7 +1680,7 @@ object GraphQLActionBuilder {
             }
             accum = initAccum
         }
-        return ObjectGene("$methodName#UNION#", fields, tableType)
+        return ObjectGene(methodName+GqlConst.UNION_TAG, fields, tableType)
     }
 
     private fun createInterfaceObjectGene(
