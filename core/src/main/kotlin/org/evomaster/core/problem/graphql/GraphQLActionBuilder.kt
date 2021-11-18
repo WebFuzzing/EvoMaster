@@ -1415,7 +1415,7 @@ object GraphQLActionBuilder {
                         maxNumberOfGenes
                     )
                     history.removeLast()
-                    OptionalGene("$methodName#UNION#", optObjGene)
+                    OptionalGene("$methodName"+GqlConst.UNION_TAG, optObjGene)
                 } else {
                     history.removeLast()
                     (OptionalGene(methodName, CycleObjectGene(methodName)))
@@ -1438,7 +1438,7 @@ object GraphQLActionBuilder {
 
                         interfaceBaseOptObjGene = interfaceBaseOptObjGene as ObjectGene
 
-                        interfaceBaseOptObjGene.name = interfaceBaseOptObjGene.name.plus("#BASE#")
+                        interfaceBaseOptObjGene.name = interfaceBaseOptObjGene.name.plus(GqlConst.INTERFACE_BASE_TAG)
 
                         accum = initAccum //because #Base# and additional interface fields are in the same level
 
