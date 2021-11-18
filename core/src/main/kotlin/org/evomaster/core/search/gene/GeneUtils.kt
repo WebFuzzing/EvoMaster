@@ -350,20 +350,9 @@ object GeneUtils {
 
         for (c in limits) {
 
-            var p = c.parent
-            loop@ while (p != null) {
-                when (p) {
-                    is OptionalGene -> {
-                        p.forbidSelection(); break@loop
-                    }
-                    is ArrayGene<*> -> {
-                        p.forceToOnlyEmpty(); break@loop
-                    }
-                    else -> p = p.parent
-                }
-            }
+            val prevented = tryToPreventSelection(c)
 
-            if (p == null) {
+            if (!prevented) {
                 val msg = "Could not prevent limit gene in ${gene.name} gene"
                 if (force) {
                     throw RuntimeException(msg)
