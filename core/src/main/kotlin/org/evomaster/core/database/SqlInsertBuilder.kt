@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory
 
 
 class SqlInsertBuilder(
-        schemaDto: DbSchemaDto,
-        private val dbExecutor: DatabaseExecutor? = null
+    schemaDto: DbSchemaDto,
+    private val dbExecutor: DatabaseExecutor? = null
 ) {
 
     /**
@@ -83,7 +83,7 @@ class SqlInsertBuilder(
 
                 var upperBoundForColumn: Int? = findUpperBound(tableConstraints, c)
 
-                val enumValuesForColumn: List<String>? = findEnumValuesForColumn(tableConstraints, c)
+                val enumValuesForColumn: List<String>? = findEnumValuesForColumn(tableConstraints, c, schemaDto)
 
                 val similarToPatternsForColumn: List<String>? = findSimilarToPatternsForColumn(tableConstraints, c)
 
@@ -102,8 +102,10 @@ class SqlInsertBuilder(
 
                 val likePatternsForColumn = findLikePatternsForColumn(tableConstraints, c)
 
-                val column = createColumnFromDto(c, lowerBoundForColumn, upperBoundForColumn, enumValuesForColumn,
-                        similarToPatternsForColumn, likePatternsForColumn, databaseType)
+                val column = createColumnFromDto(
+                    c, lowerBoundForColumn, upperBoundForColumn, enumValuesForColumn,
+                    similarToPatternsForColumn, likePatternsForColumn, databaseType
+                )
 
                 columns.add(column)
             }
@@ -120,7 +122,7 @@ class SqlInsertBuilder(
             for (f in t.foreignKeys) {
 
                 tableToColumns[f.targetTable]
-                        ?: throw IllegalArgumentException("Foreign key for non-existent table ${f.targetTable}")
+                    ?: throw IllegalArgumentException("Foreign key for non-existent table ${f.targetTable}")
 
                 val sourceColumns = mutableSetOf<Column>()
 
@@ -131,7 +133,7 @@ class SqlInsertBuilder(
                     //        ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
 
                     val c = tableToColumns[t.name]!!.find { it.name.equals(cname, ignoreCase = true) }
-                            ?: throw IllegalArgumentException("Issue in foreign key: table ${t.name} does not have a column called $cname")
+                        ?: throw IllegalArgumentException("Issue in foreign key: table ${t.name} does not have a column called $cname")
                     sourceColumns.add(c)
                 }
 
@@ -142,21 +144,26 @@ class SqlInsertBuilder(
         }
 
         for (t in schemaDto.tables) {
-            val table = Table(t.name,
-                    tableToColumns[t.name]!!,
-                    tableToForeignKeys[t.name]!!,
-                    tableToConstraints[t.name]!!)
+            val table = Table(
+                t.name,
+                tableToColumns[t.name]!!,
+                tableToForeignKeys[t.name]!!,
+                tableToConstraints[t.name]!!
+            )
             tables[t.name] = table
         }
     }
 
-    private fun findUpperLoweBoundOfRangeConstraints(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): Pair<Int?, Int?> {
+    private fun findUpperLoweBoundOfRangeConstraints(
+        tableConstraints: MutableList<TableConstraint>,
+        c: ColumnDto
+    ): Pair<Int?, Int?> {
         val rangeConstraints = filterRangeConstraints(tableConstraints, c.name)
         val minRangeValue: Int?
         val maxRangeValue: Int?
         if (rangeConstraints.isNotEmpty()) {
-            minRangeValue = rangeConstraints.map { c -> c.minValue }.maxOrNull()!!.toInt()
-            maxRangeValue = rangeConstraints.map { c -> c.maxValue }.minOrNull()!!.toInt()
+            minRangeValue = rangeConstraints.map { constr -> constr.minValue }.maxOrNull()!!.toInt()
+            maxRangeValue = rangeConstraints.map { constr -> constr.maxValue }.minOrNull()!!.toInt()
         } else {
             minRangeValue = null
             maxRangeValue = null
@@ -166,10 +173,13 @@ class SqlInsertBuilder(
         return Pair(minRangeValue, maxRangeValue)
     }
 
-    private fun findSimilarToPatternsForColumn(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): List<String>? {
+    private fun findSimilarToPatternsForColumn(
+        tableConstraints: MutableList<TableConstraint>,
+        c: ColumnDto
+    ): List<String>? {
         val similarToConstraints = filterSimilarToConstraints(tableConstraints, c.name)
         val similarToPatterns = if (similarToConstraints.isNotEmpty())
-            similarToConstraints.map { c -> c.pattern }.toList()
+            similarToConstraints.map { constr -> constr.pattern }.toList()
         else
             null
 
@@ -177,24 +187,38 @@ class SqlInsertBuilder(
         return similarToPatterns
     }
 
-    private fun findEnumValuesForColumn(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): List<String>? {
+    private fun findEnumValuesForColumn(
+        tableConstraints: MutableList<TableConstraint>,
+        c: ColumnDto,
+        schemaDto: DbSchemaDto
+    ): List<String>? {
         val enumConstraints = filterEnumConstraints(tableConstraints, c.name)
         val enumValuesAsStrings = if (enumConstraints.isNotEmpty())
             enumConstraints
-                    .map { c -> c.valuesAsStrings.toMutableList() }
-                    .reduce { acc, it -> acc.apply { retainAll(it) } }
+                .map { constr -> constr.valuesAsStrings.toMutableList() }
+                .reduce { acc, it -> acc.apply { retainAll(it) } }
         else
             null
 
         tableConstraints.removeAll(enumConstraints)
-        return enumValuesAsStrings
+
+        /**
+         * We assume that values of the enumerated type declaration
+         * are a superset of the values in the constraint (if any).
+         * In other words, the disjoint is empty.
+         */
+        if (c.isEnumeratedType && enumValuesAsStrings.isNullOrEmpty()) {
+            return schemaDto.postgresEnumeraredTypes.find { it.name.equals(c.type) }!!.values
+        } else {
+            return enumValuesAsStrings
+        }
     }
 
     private fun findUpperBound(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): Int? {
         val upperBounds = filterUpperBoundConstraints(tableConstraints, c.name)
 
         val upperBound = if (upperBounds.isNotEmpty())
-            upperBounds.map { c -> c.upperBound.toInt() }.minOrNull()
+            upperBounds.map { constr -> constr.upperBound.toInt() }.minOrNull()
         else
             null
 
@@ -206,7 +230,7 @@ class SqlInsertBuilder(
         val lowerBounds = findLowerBounds(tableConstraints, c.name)
 
         val lowerBound = if (lowerBounds.isNotEmpty())
-            lowerBounds.map { c -> c.lowerBound.toInt() }.maxOrNull()
+            lowerBounds.map { constr -> constr.lowerBound.toInt() }.maxOrNull()
         else
             null
 
@@ -231,56 +255,74 @@ class SqlInsertBuilder(
         return likePatterns
     }
 
-    private fun findLowerBounds(tableConstraints: List<TableConstraint>, columnName: String): List<LowerBoundConstraint> {
+    private fun findLowerBounds(
+        tableConstraints: List<TableConstraint>,
+        columnName: String
+    ): List<LowerBoundConstraint> {
         return tableConstraints
-                .asSequence()
-                .filterIsInstance<LowerBoundConstraint>()
-                .filter { c -> c.columnName.equals(columnName, true) }
-                .toList()
+            .asSequence()
+            .filterIsInstance<LowerBoundConstraint>()
+            .filter { c -> c.columnName.equals(columnName, true) }
+            .toList()
     }
 
-    private fun filterSimilarToConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<SimilarToConstraint> {
+    private fun filterSimilarToConstraints(
+        tableConstraints: List<TableConstraint>,
+        columnName: String
+    ): List<SimilarToConstraint> {
         return tableConstraints
-                .asSequence()
-                .filterIsInstance<SimilarToConstraint>()
-                .filter { c -> c.columnName.equals(columnName, true) }
-                .toList()
+            .asSequence()
+            .filterIsInstance<SimilarToConstraint>()
+            .filter { c -> c.columnName.equals(columnName, true) }
+            .toList()
     }
 
-    private fun filterLikeConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<LikeConstraint> {
+    private fun filterLikeConstraints(
+        tableConstraints: List<TableConstraint>,
+        columnName: String
+    ): List<LikeConstraint> {
         return tableConstraints
-                .asSequence()
-                .filterIsInstance<LikeConstraint>()
-                .filter { c -> c.columnName.equals(columnName, true) }
-                .toList()
-    }
-
-
-    private fun filterUpperBoundConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<UpperBoundConstraint> {
-        return tableConstraints
-                .asSequence()
-                .filterIsInstance<UpperBoundConstraint>()
-                .filter { c -> c.columnName.equals(columnName, true) }
-                .toList()
-
-    }
-
-    private fun filterRangeConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<RangeConstraint> {
-        return tableConstraints
-                .asSequence()
-                .filterIsInstance<RangeConstraint>()
-                .filter { c -> c.columnName.equals(columnName, true) }
-                .toList()
-
+            .asSequence()
+            .filterIsInstance<LikeConstraint>()
+            .filter { c -> c.columnName.equals(columnName, true) }
+            .toList()
     }
 
 
-    private fun filterEnumConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<EnumConstraint> {
+    private fun filterUpperBoundConstraints(
+        tableConstraints: List<TableConstraint>,
+        columnName: String
+    ): List<UpperBoundConstraint> {
         return tableConstraints
-                .filter { c -> c is EnumConstraint }
-                .map { c -> c as EnumConstraint }
-                .filter { c -> c.columnName.equals(columnName, true) }
-                .toList()
+            .asSequence()
+            .filterIsInstance<UpperBoundConstraint>()
+            .filter { c -> c.columnName.equals(columnName, true) }
+            .toList()
+
+    }
+
+    private fun filterRangeConstraints(
+        tableConstraints: List<TableConstraint>,
+        columnName: String
+    ): List<RangeConstraint> {
+        return tableConstraints
+            .asSequence()
+            .filterIsInstance<RangeConstraint>()
+            .filter { c -> c.columnName.equals(columnName, true) }
+            .toList()
+
+    }
+
+
+    private fun filterEnumConstraints(
+        tableConstraints: List<TableConstraint>,
+        columnName: String
+    ): List<EnumConstraint> {
+        return tableConstraints
+            .filter { c -> c is EnumConstraint }
+            .map { c -> c as EnumConstraint }
+            .filter { c -> c.columnName.equals(columnName, true) }
+            .toList()
     }
 
     private fun getConstraintDatabaseType(currentDatabaseType: DatabaseType): ConstraintDatabaseType {
@@ -301,19 +343,20 @@ class SqlInsertBuilder(
         for (sqlCheckExpression in t.tableCheckExpressions) {
             val builder = TableConstraintBuilder()
             val constraintDatabaseType = getConstraintDatabaseType(this.databaseType)
-            val tableConstraint = builder.translateToConstraint(tableName, sqlCheckExpression.sqlCheckExpression, constraintDatabaseType)
+            val tableConstraint =
+                builder.translateToConstraint(tableName, sqlCheckExpression.sqlCheckExpression, constraintDatabaseType)
             tableConstraints.add(tableConstraint)
         }
         return tableConstraints
     }
 
-    fun isTable(tableName: String) = tables[tableName.toUpperCase()] != null || tables[tableName.toLowerCase()] != null
+    fun isTable(tableName: String) = tables[tableName.uppercase()] != null || tables[tableName.lowercase()] != null
 
     private fun getTable(tableName: String): Table {
         return tables[tableName]
-                ?: tables[tableName.toUpperCase()]
-                ?: tables[tableName.toLowerCase()]
-                ?: throw IllegalArgumentException("No table called $tableName")
+            ?: tables[tableName.uppercase()]
+            ?: tables[tableName.lowercase()]
+            ?: throw IllegalArgumentException("No table called $tableName")
     }
 
     /**
@@ -335,23 +378,23 @@ class SqlInsertBuilder(
      * test cases manually for EM
      */
     fun createSqlInsertionAction(
-            tableName: String,
-            /**
-             * Which columns to create data for. Default is all, ie *.
-             * Notice that more columns might be added, eg, to satisfy non-null
-             * and PK constraints
-             */
-            columnNames: Set<String> = setOf("*"),
-            /**
-             * used to avoid infinite recursion
-             */
-            history : MutableList<String> = mutableListOf(),
-            /**
-             *   When adding new insertions due to FK constraints, specify if
-             *   should get all columns for those new insertions, or just the minimal
-             *   needed to satisfy all the constraints
-             */
-            forceAll : Boolean = false
+        tableName: String,
+        /**
+         * Which columns to create data for. Default is all, ie *.
+         * Notice that more columns might be added, eg, to satisfy non-null
+         * and PK constraints
+         */
+        columnNames: Set<String> = setOf("*"),
+        /**
+         * used to avoid infinite recursion
+         */
+        history: MutableList<String> = mutableListOf(),
+        /**
+         *   When adding new insertions due to FK constraints, specify if
+         *   should get all columns for those new insertions, or just the minimal
+         *   needed to satisfy all the constraints
+         */
+        forceAll: Boolean = false
     ): List<DbAction> {
 
         history.add(tableName)
@@ -387,7 +430,7 @@ class SqlInsertBuilder(
         }
 
         val insertion = DbAction(table, selectedColumns, counter++)
-        if (log.isTraceEnabled){
+        if (log.isTraceEnabled) {
             log.trace("create an insertion which is {} and the counter is ", insertion.getResolvedName(), counter)
         }
 
@@ -397,19 +440,19 @@ class SqlInsertBuilder(
 
             val target = fk.targetTable
             val n = history.filter { it.equals(target, true) }.count()
-            if(n >= 3 && fk.sourceColumns.all{it.nullable}){
+            if (n >= 3 && fk.sourceColumns.all { it.nullable }) {
                 //TODO as a configurable parameter in EMConfig?
                 continue
             }
 
-            val pre = if(forceAll) {
+            val pre = if (forceAll) {
                 createSqlInsertionAction(target, setOf("*"), history, true)
             } else {
                 createSqlInsertionAction(target, setOf(), history, false)
             }
             actions.addAll(0, pre)
         }
-        if (log.isTraceEnabled){
+        if (log.isTraceEnabled) {
             log.trace("create insertions and current size is", actions.size)
         }
         return actions
@@ -448,7 +491,7 @@ class SqlInsertBuilder(
             dto.command = sql
 
             val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
-                    ?: continue
+                ?: continue
 
             result.rows.forEach { r ->
 
@@ -485,28 +528,34 @@ class SqlInsertBuilder(
      * @return DbAction has all values of columns in the row regarding [pkValues]
      *
      */
-    fun extractExistingByCols(tableName: String, pkValues: DataRowDto, columnIds: List<String> = mutableListOf()): DbAction {
+    fun extractExistingByCols(
+        tableName: String,
+        pkValues: DataRowDto,
+        columnIds: List<String> = mutableListOf()
+    ): DbAction {
 
         if (dbExecutor == null) {
             throw IllegalStateException("No Database Executor registered for this object")
         }
 
         val table = tables.values.find { it.name.equals(tableName, ignoreCase = true) }
-                ?: throw  IllegalArgumentException("cannot find the table by name $tableName")
+            ?: throw  IllegalArgumentException("cannot find the table by name $tableName")
 
 
-        val pks = if (columnIds.isNotEmpty()) table.columns.filter { columnIds.contains(it.name) } else table.columns.filter { it.primaryKey }
+        val pks =
+            if (columnIds.isNotEmpty()) table.columns.filter { columnIds.contains(it.name) } else table.columns.filter { it.primaryKey }
         val cols = table.columns.toList()
 
-        var row: DataRowDto? = null
+        val row: DataRowDto?
         if (pks.isNotEmpty()) {
 
 
             val condition = SQLGenerator.composeAndConditions(
-                    SQLGenerator.genConditions(
-                            pks.map { it.name }.toTypedArray(),
-                            pkValues.columnData,
-                            table)
+                SQLGenerator.genConditions(
+                    pks.map { it.name }.toTypedArray(),
+                    pkValues.columnData,
+                    table
+                )
             )
 
             val sql = SQLGenerator.genSelect(cols.map { it.name }.toTypedArray(), table, condition)
@@ -515,7 +564,7 @@ class SqlInsertBuilder(
             dto.command = sql
 
             val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
-                    ?: throw IllegalArgumentException("rows regarding pks can not be found")
+                ?: throw IllegalArgumentException("rows regarding pks can not be found")
             if (result.rows.size != 1) {
                 log.warn("there exist more than one rows (${result.rows.size}) with pkValues $condition")
             }
@@ -536,7 +585,12 @@ class SqlInsertBuilder(
                 val inQuotes = cols[i].type.shouldBePrintedInQuotes()
 
                 val gene = if (cols[i].primaryKey) {
-                    SqlPrimaryKeyGene(colName, table.name, ImmutableDataHolderGene(colName, row.columnData[i], inQuotes), id)
+                    SqlPrimaryKeyGene(
+                        colName,
+                        table.name,
+                        ImmutableDataHolderGene(colName, row.columnData[i], inQuotes),
+                        id
+                    )
                 } else {
                     ImmutableDataHolderGene(colName, row.columnData[i], inQuotes)
                 }
@@ -547,7 +601,6 @@ class SqlInsertBuilder(
         return DbAction(table, pks.toSet(), id, genes, true)
 
     }
-
 
 
     /**
@@ -569,7 +622,7 @@ class SqlInsertBuilder(
             dto.command = sql
 
             val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
-                    ?: continue
+                ?: continue
             dataInDB.getOrPut(table.name) { result.rows.map { it }.toMutableList() }
         }
     }
@@ -586,13 +639,13 @@ class SqlInsertBuilder(
     }
 
 
-    private fun formatSelect(columnNames: List<String>, tableName: String): String{
+    private fun formatSelect(columnNames: List<String>, tableName: String): String {
         return "SELECT ${columnNames.joinToString(",") { formatNameInSql(it) }} FROM ${formatNameInSql(tableName)}"
     }
 
-    private fun formatNameInSql(name: String) : String{
-        return when{
-            databaseType == DatabaseType.MYSQL || name == SQLKey.ALL.key  -> name
+    private fun formatNameInSql(name: String): String {
+        return when {
+            databaseType == DatabaseType.MYSQL || name == SQLKey.ALL.key -> name
             else -> "\"$name\""
         }
     }

@@ -4,10 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.evomaster.client.java.controller.internal.db.constraint.*;
 import org.evomaster.client.java.utils.SimpleLogger;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -28,11 +25,22 @@ public class SchemaExtractor {
             for (ColumnDto column : table.columns) {
                 checkForeignKeyToAutoIncrementPresent(schema, table, column);
                 checkForeignKeyToAutoIncrementMissing(schema, table, column);
+                checkEnumeratedTypeIsDefined(schema, table, column);
             }
 
         }
 
         return true;
+    }
+
+    private static void checkEnumeratedTypeIsDefined(DbSchemaDto schema, TableDto table, ColumnDto column) {
+        if (column.isEnumeratedType) {
+            if (schema.postgresEnumeraredTypes.stream().noneMatch(k -> k.name.equals(column.type))) {
+                throw new IllegalArgumentException("Missing enumerated type declaration for type " + column.type
+                        + " in column " + column.name
+                        + " of table " + table.name);
+            }
+        }
     }
 
     private static void checkForeignKeyToAutoIncrementMissing(DbSchemaDto schema, TableDto table, ColumnDto column) {
@@ -140,7 +148,7 @@ public class SchemaExtractor {
             dt = DatabaseType.DERBY;
         } else if (protocol.contains(":postgresql")) {
             dt = DatabaseType.POSTGRES;
-        } else if (protocol.contains(":mysql")){
+        } else if (protocol.contains(":mysql")) {
             //https://dev.mysql.com/doc/refman/8.0/en/connecting-using-uri-or-key-value-pairs.html#connecting-using-uri
             dt = DatabaseType.MYSQL;
         }
@@ -150,31 +158,12 @@ public class SchemaExtractor {
         /*
             schema name
          */
-        switch (dt){
-            case MYSQL:
-                // schema is database name in mysql
-                schemaDto.name = connection.getCatalog();
-                break;
-            default:{
-                try {
-                    schemaDto.name = connection.getSchema();
-                } catch (Exception | AbstractMethodError e) {
-                /*
-                    In remote sessions, getSchema might fail.
-                    We do not do much with it anyway (at least for
-                    now), so not a big deal...
-                    Furthermore, some drivers might be compiled to Java 6,
-                    whereas getSchema was introduced in Java 7
-                 */
-                    schemaDto.name = "public";
-                }
+        schemaDto.name = getSchemaName(connection, dt);
 
-                //see https://www.progress.com/blogs/jdbc-tutorial-extracting-database-metadata-via-jdbc-driver
-                schemaDto.name = schemaDto.name.toUpperCase();
-            }
+        if (dt.equals(DatabaseType.POSTGRES)) {
+            Map<String, Set<String>> enumLabels = getPostgresEnumTypes(connection);
+            addPostgresEnumTypesToSchema(schemaDto, enumLabels);
         }
-
-
 
         ResultSet tables = md.getTables(null, schemaDto.name, null, new String[]{"TABLE"});
 
@@ -221,13 +210,70 @@ public class SchemaExtractor {
         return schemaDto;
     }
 
+    private static String getSchemaName(Connection connection, DatabaseType dt) throws SQLException {
+        String schemaName;
+        if (dt.equals(DatabaseType.MYSQL)) {
+
+            // schema is database name in mysql
+            schemaName = connection.getCatalog();
+        } else {
+            try {
+                schemaName = connection.getSchema();
+            } catch (Exception | AbstractMethodError e) {
+                /*
+                    In remote sessions, getSchema might fail.
+                    We do not do much with it anyway (at least for
+                    now), so not a big deal...
+                    Furthermore, some drivers might be compiled to Java 6,
+                    whereas getSchema was introduced in Java 7
+                 */
+                schemaName = "public";
+            }
+
+            //see https://www.progress.com/blogs/jdbc-tutorial-extracting-database-metadata-via-jdbc-driver
+            schemaName = schemaName.toUpperCase();
+        }
+        return schemaName;
+    }
+
+    private static Map<String, Set<String>> getPostgresEnumTypes(Connection connection) throws SQLException {
+        String query = "SELECT t.typname, e.enumlabel\n" +
+                "FROM pg_type AS t\n" +
+                "   JOIN pg_enum AS e ON t.oid = e.enumtypid\n" +
+                "ORDER BY e.enumsortorder;";
+        Map<String, Set<String>> enumLabels = new HashMap<>();
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet enumTypeValues = stmt.executeQuery(query);
+            while (enumTypeValues.next()) {
+                String typeName = enumTypeValues.getString("typname");
+                String enumLabel = enumTypeValues.getString("enumlabel");
+                if (!enumLabels.containsKey(typeName)) {
+                    enumLabels.put(typeName, new HashSet<>());
+                }
+                enumLabels.get(typeName).add(enumLabel);
+            }
+        }
+        return enumLabels;
+    }
+
+    private static void addPostgresEnumTypesToSchema(DbSchemaDto schemaDto, Map<String, Set<String>> enumLabels) {
+        enumLabels.forEach(
+                (k, v) -> {
+                    EnumeratedTypeDto enumeratedTypeDto = new EnumeratedTypeDto();
+                    enumeratedTypeDto.name = k;
+                    enumeratedTypeDto.values = new ArrayList<>(v);
+                    schemaDto.postgresEnumeraredTypes.add(enumeratedTypeDto);
+                }
+        );
+    }
+
 
     /**
      * Adds a unique constraint to the corresponding ColumnDTO for the selected table.column pair.
      * Requires the ColumnDTO to be contained in the TableDTO.
      * If the column DTO is not contained, a IllegalArgumentException is thrown.
      *
-     * @param tableDto the DTO of the table
+     * @param tableDto   the DTO of the table
      * @param columnName the name of the column to add the unique constraint on
      **/
     public static void addUniqueConstraintToColumn(TableDto tableDto, String columnName) {
@@ -260,6 +306,10 @@ public class SchemaExtractor {
         for (DbTableConstraint constraint : constraintList) {
             String tableName = constraint.getTableName();
             TableDto tableDto = schemaDto.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);
+
+            if (tableDto==null) {
+                throw new NullPointerException("TableDto for table " + tableName + " was not found in the schemaDto");
+            }
 
             if (constraint instanceof DbTableCheckExpression) {
                 TableCheckExpressionDto constraintDto = new TableCheckExpressionDto();
@@ -299,7 +349,7 @@ public class SchemaExtractor {
 
         while (rsPK.next()) {
             String pkColumnName = rsPK.getString("COLUMN_NAME");
-            int positionInPrimaryKey = (int) rsPK.getShort("KEY_SEQ");
+            int positionInPrimaryKey = rsPK.getShort("KEY_SEQ");
             pks.add(pkColumnName);
             int pkIndex = positionInPrimaryKey - 1;
             primaryKeySequence.put(pkIndex, pkColumnName);
@@ -320,7 +370,7 @@ public class SchemaExtractor {
             columnDto.name = columns.getString("COLUMN_NAME");
 
             if (columnNames.contains(columnDto.name)) {
-                /**
+                /*
                  * Perhaps we should throw a more specific exception than IllegalArgumentException
                  */
                 throw new IllegalArgumentException("Cannot handle repeated column " + columnDto.name + " in table " + tableDto.name);
@@ -332,11 +382,11 @@ public class SchemaExtractor {
             String typeAsString = columns.getString("TYPE_NAME");
             columnDto.size = columns.getInt("COLUMN_SIZE");
 
-            switch (schemaDto.databaseType){
+            switch (schemaDto.databaseType) {
                 case MYSQL:
                     // numeric https://dev.mysql.com/doc/refman/8.0/en/numeric-type-syntax.html
                     String[] attrs = typeAsString.split(" ");
-                    if(attrs.length == 0)
+                    if (attrs.length == 0)
                         throw new IllegalStateException("missing type info of the column");
                     columnDto.type = attrs[0];
                     columnDto.isUnsigned = attrs.length > 1 && IntStream
@@ -350,6 +400,13 @@ public class SchemaExtractor {
                      */
                     if (columnDto.type.equals("DECIMAL"))
                         columnDto.precision = columns.getInt("DECIMAL_DIGITS");
+                    break;
+                case POSTGRES:
+                    columnDto.type = typeAsString;
+                    columnDto.nullable = columns.getBoolean("IS_NULLABLE");
+                    columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
+                    columnDto.isEnumeratedType = schemaDto.postgresEnumeraredTypes.stream()
+                            .anyMatch(k -> k.name.equals(typeAsString));
                     break;
                 default:
                     // might need to support unsigned property of numeric in other types of db
@@ -398,20 +455,18 @@ public class SchemaExtractor {
     }
 
     /**
-     * @return  a table DTO for a particular table name
+     * @return a table DTO for a particular table name
      */
     private static TableDto getTable(DbSchemaDto schema, String tableName) {
-        TableDto tableDto = schema.tables.stream()
+        return schema.tables.stream()
                 .filter(t -> t.name.equalsIgnoreCase(tableName))
                 .findFirst().orElse(null);
-        return tableDto;
     }
 
     private static ColumnDto getColumn(TableDto table, String columnName) {
-        ColumnDto columnDto = table.columns.stream()
+        return table.columns.stream()
                 .filter(c -> c.name.equalsIgnoreCase(columnName))
                 .findFirst().orElse(null);
-        return columnDto;
     }
 
 
@@ -429,15 +484,15 @@ public class SchemaExtractor {
         Objects.requireNonNull(columnName);
 
         // is this column among the declared FKs?
-        if (!tableDto.foreignKeys.stream()
-                .anyMatch(fk -> fk.sourceColumns.stream()
+        if (tableDto.foreignKeys.stream()
+                .noneMatch(fk -> fk.sourceColumns.stream()
                         .anyMatch(s -> s.equalsIgnoreCase(columnName)))) {
             return false;
         }
 
         ColumnDto columnDto = getColumn(tableDto, columnName);
 
-        if (columnDto.autoIncrement == true) {
+        if (columnDto.autoIncrement) {
             // Assuming here that a FK cannot be auto-increment
             return false;
         }
