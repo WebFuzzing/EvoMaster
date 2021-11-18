@@ -1,5 +1,5 @@
 {
-  "swagger": "2.0",
+  "swagger": "3.0",
   "info": {
     "description": "Expectation test - Expect tests",
     "version": "1.0",
@@ -165,6 +165,9 @@
           },
           "404": {
             "description": "Not Found"
+          },
+          "default": {
+            "description": "Default Response"
           }
         },
         "deprecated": false
