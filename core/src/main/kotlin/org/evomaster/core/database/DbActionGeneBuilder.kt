@@ -9,6 +9,10 @@ import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.geometric.*
+import org.evomaster.core.search.gene.network.CidrGene
+import org.evomaster.core.search.gene.network.InetGene
+import org.evomaster.core.search.gene.network.MacAddr8Gene
+import org.evomaster.core.search.gene.network.MacAddrGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
@@ -205,6 +209,18 @@ class DbActionGeneBuilder {
 
                 ColumnDataType.CIRCLE ->
                     CircleGene(column.name)
+
+                ColumnDataType.CIDR ->
+                    CidrGene(column.name)
+
+                ColumnDataType.INET ->
+                    InetGene(column.name)
+
+                ColumnDataType.MACADDR ->
+                    MacAddrGene(column.name)
+
+                ColumnDataType.MACADDR8 ->
+                    MacAddr8Gene(column.name)
 
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }

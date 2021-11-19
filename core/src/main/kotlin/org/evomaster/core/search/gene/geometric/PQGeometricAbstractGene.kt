@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene.geometric
 
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -16,10 +15,6 @@ abstract class PQGeometricAbstractGene(
     protected val q: PointGene,
     val doNotAllowSamePoints: Boolean = false
 ) : Gene(name, mutableListOf(p, q)) {
-
-    companion object {
-        val log: Logger = LoggerFactory.getLogger(PQGeometricAbstractGene::class.java)
-    }
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(p, q)
 

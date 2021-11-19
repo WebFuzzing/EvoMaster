@@ -215,7 +215,13 @@ enum class ColumnDataType(dataTypeName: String) {
     BOX("box"),
     PATH("path"),
     POLYGON("polygon"),
-    CIRCLE("circle");
+    CIRCLE("circle"),
+
+    // https://www.postgresql.org/docs/14/datatype-net-types.html
+    CIDR("cidr"),
+    INET("inet"),
+    MACADDR("macaddr"),
+    MACADDR8("macaddr8");
 
     fun shouldBePrintedInQuotes(): Boolean {
         /*
