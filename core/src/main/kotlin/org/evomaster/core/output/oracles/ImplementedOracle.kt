@@ -92,7 +92,8 @@ abstract class ImplementedOracle {
         val basePath = RestActionBuilderV3.getBasePathFromURL(swagger)
 
         val possibleItems = objectGenerator.getSwagger().paths.filter{ e ->
-            call.path.toString().contentEquals(basePath+e.key)
+            call.path.toString().contentEquals(e.key)
+            //call.path.toString().contentEquals(basePath+e.key)
         }
 
         val result = when (possibleItems.size){
