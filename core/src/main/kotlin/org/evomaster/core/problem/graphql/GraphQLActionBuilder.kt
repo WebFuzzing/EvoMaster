@@ -142,7 +142,7 @@ object GraphQLActionBuilder {
                 continue
             }
 
-            for (elementInfields in elementIntypes.fields) {
+            for (elementInfields in elementIntypes.fields.orEmpty()) {
                 /**
                  * extracting tables
                  */
@@ -513,7 +513,7 @@ object GraphQLActionBuilder {
                 if (elementInTable.kindOfTableFieldType == UNION) {
                     for (elementInUnion in elementInTable.unionTypes) {//for each object in the union
                         if ((elementIntypes.kind == OBJECT) && (elementIntypes.name == elementInUnion)) {
-                            for (elementInfields in elementIntypes.fields) {//Construct the table elements for this object
+                            for (elementInfields in elementIntypes.fields.orEmpty()) {//Construct the table elements for this object
                                 val tableElement = Table()
                                 tableElement.tableField = elementInfields.name//eg:Page
 
