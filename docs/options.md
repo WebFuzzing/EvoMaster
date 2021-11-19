@@ -40,6 +40,9 @@ There are 3 types of options:
 |`bbSwaggerUrl`| __String__. When in black-box mode for REST APIs, specify where the Swagger schema can be downloaded from. *Constraints*: `URL`. *Default value*: `""`.|
 |`bbTargetUrl`| __String__. When in black-box mode, specify the URL of where the SUT can be reached. In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema. In GraphQL, this will point to the entry point of the API. *Constraints*: `URL`. *Default value*: `""`.|
 |`ratePerMinute`| __Int__. Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards an external service, might want to limit the number of calls to avoid bombarding such service (which could end up becoming equivalent to a DoS attack). A value of zero or negative means that no limiter is applied. This is needed only for black-box testing of remote services. *Default value*: `0`.|
+|`header0`| __String__. In black-box testing, we still need to deal with authentication of the HTTP request. With this parameter it is possible to specify a HTTP header that is going to be add to all requests. This should be provided in the form _name:value_. If more than 1 header is needed, use as well the other options _header1_ and _header2_. *Constraints*: `regex (.+:.+)|(^$)`. *Default value*: `""`.|
+|`header1`| __String__. See documentation of _header0_. *Constraints*: `regex (.+:.+)|(^$)`. *Default value*: `""`.|
+|`header2`| __String__. See documentation of _header0_. *Constraints*: `regex (.+:.+)|(^$)`. *Default value*: `""`.|
 
 ## Internal Command-Line Options
 

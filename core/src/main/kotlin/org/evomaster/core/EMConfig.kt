@@ -37,6 +37,8 @@ class EMConfig {
 
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
+        private const val headerRegex = "(.+:.+)|(^$)"
+
         fun validateOptions(args: Array<String>): OptionParser {
 
             val config = EMConfig()
@@ -676,6 +678,25 @@ class EMConfig {
             " A value of zero or negative means that no limiter is applied." +
             " This is needed only for black-box testing of remote services.")
     var ratePerMinute = 0
+
+    @Important(4.0)
+    @Regex(headerRegex)
+    @Cfg("In black-box testing, we still need to deal with authentication of the HTTP request." +
+            " With this parameter it is possible to specify a HTTP header that is going to be add to all requests." +
+            " This should be provided in the form _name:value_. If more than 1 header is needed, use as well the" +
+            " other options _header1_ and _header2_.")
+    var header0 = ""
+
+    @Important(4.1)
+    @Regex(headerRegex)
+    @Cfg("See documentation of _header0_.")
+    var header1 = ""
+
+    @Important(4.2)
+    @Regex(headerRegex)
+    @Cfg("See documentation of _header0_.")
+    var header2 = ""
+
 
     //-------- other options -------------
 

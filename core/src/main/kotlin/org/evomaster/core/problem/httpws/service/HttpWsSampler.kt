@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.httpws.service
 
+import org.evomaster.client.java.controller.api.dto.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
@@ -64,46 +66,71 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
         }
     }
 
+
+    protected fun addAuthFromConfig(){
+
+        val headers = listOf(config.header0, config.header1, config.header2)
+
+        if(headers.all { it.isBlank() }){
+            return //nothing to do
+        }
+
+        val dto = AuthenticationDto()
+        headers.forEach {
+            val k = it.indexOf(":")
+            val name = it.substring(0, k)
+            val content = it.substring(k+1)
+            dto.headers.add(HeaderDto(name, content))
+        }
+
+        handleAuthInfo(dto)
+    }
+
     protected fun setupAuthentication(infoDto: SutInfoDto) {
+
+        addAuthFromConfig()
 
         val info = infoDto.infoForAuthentication ?: return
 
-        info.forEach { i ->
-            if (i.name == null || i.name.isBlank()) {
-                log.warn("Missing name in authentication info")
-                return@forEach
-            }
+        info.forEach { handleAuthInfo(it) }
+    }
 
-            val headers: MutableList<AuthenticationHeader> = mutableListOf()
-
-            i.headers.forEach loop@{ h ->
-                val name = h.name?.trim()
-                val value = h.value?.trim()
-                if (name == null || value == null) {
-                    log.warn("Invalid header in ${i.name}")
-                    return@loop
-                }
-
-                headers.add(AuthenticationHeader(name, value))
-            }
-
-            val cookieLogin = if(i.cookieLogin != null){
-                CookieLogin.fromDto(i.cookieLogin)
-            } else {
-                null
-            }
-
-            val jsonTokenPostLogin = if(i.jsonTokenPostLogin != null){
-                JsonTokenPostLogin.fromDto(i.jsonTokenPostLogin)
-            } else {
-                null
-            }
-
-
-            val auth = AuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
-
-            authentications.add(auth)
+    private fun handleAuthInfo(i: AuthenticationDto) {
+        if (i.name == null || i.name.isBlank()) {
+            log.warn("Missing name in authentication info")
+            return
         }
+
+        val headers: MutableList<AuthenticationHeader> = mutableListOf()
+
+        i.headers.forEach loop@{ h ->
+            val name = h.name?.trim()
+            val value = h.value?.trim()
+            if (name == null || value == null) {
+                log.warn("Invalid header in ${i.name}")
+                return@loop
+            }
+
+            headers.add(AuthenticationHeader(name, value))
+        }
+
+        val cookieLogin = if (i.cookieLogin != null) {
+            CookieLogin.fromDto(i.cookieLogin)
+        } else {
+            null
+        }
+
+        val jsonTokenPostLogin = if (i.jsonTokenPostLogin != null) {
+            JsonTokenPostLogin.fromDto(i.jsonTokenPostLogin)
+        } else {
+            null
+        }
+
+
+        val auth = AuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
+
+        authentications.add(auth)
+        return
     }
 
     protected fun updateConfigForTestOutput(infoDto: SutInfoDto) {
