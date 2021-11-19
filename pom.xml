@@ -122,7 +122,7 @@
         <testcontainers.version>1.16.0</testcontainers.version>
         <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
         <antlr.version>4.9.2</antlr.version>
-        <nlp.version>3.9.2</nlp.version>
+        <nlp.version>4.3.1</nlp.version>
         <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
         <jgrapht.version>0.8.3</jgrapht.version>
         <version.graphql-spring>11.1.0</version.graphql-spring>
