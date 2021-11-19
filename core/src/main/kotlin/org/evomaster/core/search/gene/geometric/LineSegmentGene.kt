@@ -26,10 +26,6 @@ class LineSegmentGene(
         q.copyContent() as PointGene
     )
 
-
-
-
-
     override fun copyValueFrom(other: Gene) {
         if (other !is LineSegmentGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -45,7 +41,6 @@ class LineSegmentGene(
         return this.p.containsSameValueAs(other.p)
                 && this.q.containsSameValueAs(other.q)
     }
-
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

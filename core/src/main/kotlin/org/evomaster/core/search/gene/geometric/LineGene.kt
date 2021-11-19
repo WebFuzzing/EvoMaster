@@ -12,8 +12,16 @@ import org.slf4j.LoggerFactory
 
 class LineGene(
     name: String,
-    p: PointGene = PointGene("p"),
-    q: PointGene = PointGene("q")
+    p: PointGene = PointGene(
+        "p",
+        x = FloatGene("x", value = 0.0f),
+        y = FloatGene("y", value = 0.0f)
+    ),
+    q: PointGene = PointGene(
+        "q",
+        x = FloatGene("x", value = 1.0f),
+        y = FloatGene("y", value = 1.0f)
+    )
 ) : PQGeometricAbstractGene(name, p, q) {
 
     companion object {
@@ -42,7 +50,6 @@ class LineGene(
                 && this.q.containsSameValueAs(other.q)
     }
 
-
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is LineGene -> {
@@ -56,5 +63,13 @@ class LineGene(
         }
     }
 
-
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+        super.randomize(randomness, forceNewValue, allGenes)
+        /*
+         * Lines cannot contain the same p,q points
+         */
+        if (p.x.equals(q.x) && p.y.equals(q.y)) {
+            p.x.value = p.x.value + 1
+        }
+    }
 }

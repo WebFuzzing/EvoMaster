@@ -57,16 +57,6 @@ class GeometricTypesExtractTest : ExtractTestBasePostgres() {
         q.x.value = 1.0f
         q.y.value = 1.0f
 
-        val pathGene = genes[4] as PathGene
-        pathGene.points.addElements(PointGene("p1"))
-        pathGene.points.addElements(PointGene("p2"))
-        pathGene.points.addElements(PointGene("p3"))
-
-        val polygonGene = genes[5] as PolygonGene
-        polygonGene.points.addElements(PointGene("p1"))
-        polygonGene.points.addElements(PointGene("p2"))
-        polygonGene.points.addElements(PointGene("p3"))
-
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 

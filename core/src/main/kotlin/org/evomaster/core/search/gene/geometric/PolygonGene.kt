@@ -19,6 +19,13 @@ class PolygonGene(
         val log: Logger = LoggerFactory.getLogger(PolygonGene::class.java)
     }
 
+    init {
+        /*
+         * Polygons must be non-empty lists
+         */
+        points.addElements(PointGene("p1"))
+    }
+
     override fun getChildren(): MutableList<Gene> = mutableListOf(points)
 
     override fun copyContent(): Gene = PolygonGene(
@@ -28,6 +35,12 @@ class PolygonGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         points.randomize(randomness, forceNewValue, allGenes)
+        /*
+         *  A geometric polygon must be always a non-empty list
+         */
+        if (points.getAllElements().isEmpty()) {
+            points.addElements(PointGene("p"))
+        }
     }
 
     override fun candidatesInternalGenes(
