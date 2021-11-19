@@ -6,12 +6,21 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class IntervalGene(
     name: String,
     val days: IntegerGene = IntegerGene(name = "days", min = 0),
-    val time: TimeGene = TimeGene("hoursMinutesAndSeconds", timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT)
+    val time: TimeGene = TimeGene(
+        "hoursMinutesAndSeconds",
+        timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
+    )
 ) : Gene(name, mutableListOf(days, time)) {
+
+    companion object {
+        val log: Logger = LoggerFactory.getLogger(IntervalGene::class.java)
+    }
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(days, time)
 
@@ -82,19 +91,17 @@ class IntervalGene(
     override fun innerGene(): List<Gene> = listOf(days, time)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when{
+        return when {
             gene is IntervalGene -> {
                 days.bindValueBasedOn(gene.days) &&
                         time.bindValueBasedOn(gene.time)
             }
-           else -> {
-                LoggingUtil.uniqueWarn(DateTimeGene.log, "cannot bind IntervalGene with ${gene::class.java.simpleName}")
+            else -> {
+                LoggingUtil.uniqueWarn(log, "cannot bind IntervalGene with ${gene::class.java.simpleName}")
                 false
             }
         }
     }
-
-
 
 
 }

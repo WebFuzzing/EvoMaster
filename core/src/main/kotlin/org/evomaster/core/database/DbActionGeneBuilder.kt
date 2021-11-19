@@ -8,6 +8,7 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.geometric.*
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
@@ -129,7 +130,6 @@ class DbActionGeneBuilder {
                     DateTimeGene(column.name)
 
 
-
                 ColumnDataType.YEAR ->
                     handleYearColumn(column)
 
@@ -184,6 +184,27 @@ class DbActionGeneBuilder {
 
                 ColumnDataType.INTERVAL ->
                     IntervalGene(column.name)
+
+                ColumnDataType.POINT ->
+                    PointGene(column.name)
+
+                ColumnDataType.LINE ->
+                    LineGene(column.name)
+
+                ColumnDataType.LSEG ->
+                    LineSegmentGene(column.name)
+
+                ColumnDataType.BOX ->
+                    BoxGene(column.name)
+
+                ColumnDataType.PATH ->
+                    PathGene(column.name)
+
+                ColumnDataType.POLYGON ->
+                    PolygonGene(column.name)
+
+                ColumnDataType.CIRCLE ->
+                    CircleGene(column.name)
 
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }

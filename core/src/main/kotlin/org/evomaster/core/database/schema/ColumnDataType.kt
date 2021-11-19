@@ -206,7 +206,16 @@ enum class ColumnDataType(dataTypeName: String) {
 
     // POSTGRES
     // https://www.postgresql.org/docs/14/datatype-datetime.html
-    INTERVAL("interval");
+    INTERVAL("interval"),
+
+    // https://www.postgresql.org/docs/14/datatype-geometric.html
+    POINT("point"),
+    LINE("line"),
+    LSEG("lseg"),
+    BOX("box"),
+    PATH("path"),
+    POLYGON("polygon"),
+    CIRCLE("circle");
 
     fun shouldBePrintedInQuotes(): Boolean {
         /*
