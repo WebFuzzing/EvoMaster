@@ -221,7 +221,11 @@ enum class ColumnDataType(dataTypeName: String) {
     CIDR("cidr"),
     INET("inet"),
     MACADDR("macaddr"),
-    MACADDR8("macaddr8");
+    MACADDR8("macaddr8"),
+
+    // https://www.postgresql.org/docs/14/datatype-textsearch.html
+    TSVECTOR("tsvector"),
+    TSQUERY("tsquery");
 
     fun shouldBePrintedInQuotes(): Boolean {
         /*

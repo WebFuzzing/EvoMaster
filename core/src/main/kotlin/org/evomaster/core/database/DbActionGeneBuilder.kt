@@ -20,6 +20,8 @@ import org.evomaster.core.search.gene.network.MacAddrGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
+import org.evomaster.core.search.gene.textsearch.TextSearchQueryGene
+import org.evomaster.core.search.gene.textsearch.TextSearchVectorGene
 import org.evomaster.core.utils.NumberCalculationUtil
 import kotlin.math.pow
 
@@ -225,6 +227,12 @@ class DbActionGeneBuilder {
 
                 ColumnDataType.MACADDR8 ->
                     MacAddr8Gene(column.name)
+
+                ColumnDataType.TSVECTOR ->
+                    TextSearchVectorGene(column.name)
+
+                ColumnDataType.TSQUERY ->
+                    TextSearchQueryGene(column.name)
 
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
