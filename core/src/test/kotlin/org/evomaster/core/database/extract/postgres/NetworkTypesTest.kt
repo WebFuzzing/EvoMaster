@@ -5,17 +5,12 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.geometric.*
-import org.evomaster.core.search.gene.network.CidrGene
-import org.evomaster.core.search.gene.network.InetGene
-import org.evomaster.core.search.gene.network.MacAddr8Gene
-import org.evomaster.core.search.gene.network.MacAddrGene
-import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.sql.network.SqlCidrGene
+import org.evomaster.core.search.gene.sql.network.SqlInetGene
+import org.evomaster.core.search.gene.sql.network.SqlMacAddr8Gene
+import org.evomaster.core.search.gene.sql.network.SqlMacAddrGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import org.postgresql.geometric.*
 import org.postgresql.util.PGobject
 
 /**
@@ -49,10 +44,10 @@ class NetworkTypesTest : ExtractTestBasePostgres() {
         val genes = actions[0].seeGenes()
 
         assertEquals(4, genes.size)
-        assertTrue(genes[0] is CidrGene)
-        assertTrue(genes[1] is InetGene)
-        assertTrue(genes[2] is MacAddrGene)
-        assertTrue(genes[3] is MacAddr8Gene)
+        assertTrue(genes[0] is SqlCidrGene)
+        assertTrue(genes[1] is SqlInetGene)
+        assertTrue(genes[2] is SqlMacAddrGene)
+        assertTrue(genes[3] is SqlMacAddr8Gene)
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
