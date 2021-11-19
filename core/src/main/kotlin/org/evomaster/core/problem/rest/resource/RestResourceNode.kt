@@ -243,11 +243,12 @@ class RestResourceNode(
         }
 
         if(post != null){
-            postCreation.actions.add(0, post)
-            if ((post).path.hasVariablePathParameters() &&
-                    (!post.path.isLastElementAParameter()) ||
-                    post.path.getVariableNames().size >= 2) {
-                nextCreationPoints(post.path, postCreation)
+            val copyp = post.copyContent() as RestCallAction
+            postCreation.actions.add(0, copyp)
+            if ((copyp).path.hasVariablePathParameters() &&
+                    (!copyp.path.isLastElementAParameter()) ||
+                    copyp.path.getVariableNames().size >= 2) {
+                nextCreationPoints(copyp.path, postCreation)
             }else
                 postCreation.confirmComplete()
         }else{
@@ -337,11 +338,11 @@ class RestResourceNode(
 
     /**
      * sample a rest resource with one action based on the specified [verb]
-     * if [verb] is null, select the action at random
+     * if [verb] is null, select an action at random from available [actions] in this node
      */
     fun sampleOneAction(verb : HttpVerb? = null, randomness: Randomness) : RestResourceCalls{
-        val al = if(verb != null) getActionByHttpVerb(actions, verb) else randomness.choose(actions).copy() as RestCallAction
-        return sampleOneAction(al!!, randomness)
+        val al = if(verb != null) getActionByHttpVerb(actions, verb) else randomness.choose(actions)
+        return sampleOneAction(al!!.copyContent() as RestCallAction, randomness)
     }
 
     /**
