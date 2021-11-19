@@ -12,7 +12,7 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeIntervalGene
 import org.evomaster.core.search.gene.datetime.TimeGene
-import org.evomaster.core.search.gene.geometric.*
+import org.evomaster.core.search.gene.sql.geometric.*
 import org.evomaster.core.search.gene.sql.network.SqlCidrGene
 import org.evomaster.core.search.gene.sql.network.SqlInetGene
 import org.evomaster.core.search.gene.sql.network.SqlMacAddr8Gene
@@ -196,25 +196,25 @@ class DbActionGeneBuilder {
                     TimeIntervalGene(column.name)
 
                 ColumnDataType.POINT ->
-                    PointGene(column.name)
+                    SqlPointGene(column.name)
 
                 ColumnDataType.LINE ->
-                    LineGene(column.name)
+                    SqlLineGene(column.name)
 
                 ColumnDataType.LSEG ->
-                    LineSegmentGene(column.name)
+                    SqlLineSegmentGene(column.name)
 
                 ColumnDataType.BOX ->
-                    BoxGene(column.name)
+                    SqlBoxGene(column.name)
 
                 ColumnDataType.PATH ->
-                    PathGene(column.name)
+                    SqlPathGene(column.name)
 
                 ColumnDataType.POLYGON ->
-                    PolygonGene(column.name)
+                    SqlPolygonGene(column.name)
 
                 ColumnDataType.CIRCLE ->
-                    CircleGene(column.name)
+                    SqlCircleGene(column.name)
 
                 ColumnDataType.CIDR ->
                     SqlCidrGene(column.name)

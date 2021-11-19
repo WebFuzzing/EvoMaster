@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.geometric
+package org.evomaster.core.search.gene.sql.geometric
 
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
@@ -10,37 +10,27 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class PolygonGene(
+class SqlCircleGene(
     name: String,
-    val points: ArrayGene<PointGene> = ArrayGene(name = "points", template = PointGene("p"))
-) : Gene(name, mutableListOf(points)) {
+    val c: SqlPointGene = SqlPointGene(name = "c"),
+    val r: FloatGene = FloatGene(name = "r")
+) : Gene(name, mutableListOf(c, r)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(PolygonGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlCircleGene::class.java)
     }
 
-    init {
-        /*
-         * Polygons must be non-empty lists
-         */
-        points.addElements(PointGene("p1"))
-    }
+    override fun getChildren(): MutableList<Gene> = mutableListOf(c, r)
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(points)
-
-    override fun copyContent(): Gene = PolygonGene(
+    override fun copyContent(): Gene = SqlCircleGene(
         name,
-        points.copyContent() as ArrayGene<PointGene>
+        c.copyContent() as SqlPointGene,
+        r.copyContent()
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, forceNewValue, allGenes)
-        /*
-         *  A geometric polygon must be always a non-empty list
-         */
-        if (points.getAllElements().isEmpty()) {
-            points.addElements(PointGene("p"))
-        }
+        c.randomize(randomness, forceNewValue, allGenes)
+        r.randomize(randomness, forceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -51,7 +41,7 @@ class PolygonGene(
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        return listOf(points)
+        return listOf(c, r)
     }
 
     override fun getValueAsPrintableString(
@@ -60,49 +50,44 @@ class PolygonGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return "\" (  ${
-            points.getAllElements()
-                .map { it.getValueAsRawString() }
-                .joinToString(" , ")
-        } ) \""
+        return "\" ( ${c.getValueAsRawString()} , ${r.getValueAsRawString()} ) \""
     }
 
     override fun getValueAsRawString(): String {
-        return "( ${
-            points.getAllElements()
-                .map { it.getValueAsRawString() }
-                .joinToString(" , ")
-        } ) "
+        return "(${c.getValueAsRawString()} , ${r.getValueAsRawString()})"
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is PolygonGene) {
+        if (other !is SqlCircleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.points.copyValueFrom(other.points)
+        this.c.copyValueFrom(other.c)
+        this.r.copyValueFrom(other.r)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is PolygonGene) {
+        if (other !is SqlCircleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.points.containsSameValueAs(other.points)
+        return this.c.containsSameValueAs(other.c)
+                && this.r.containsSameValueAs(other.r)
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(points.flatView(excludePredicate))
+            listOf(this).plus(c.flatView(excludePredicate)).plus(r.flatView(excludePredicate))
     }
 
-    override fun innerGene(): List<Gene> = listOf(points)
+    override fun innerGene(): List<Gene> = listOf(c,r)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is PolygonGene -> {
-                points.bindValueBasedOn(gene.points)
+            gene is SqlCircleGene -> {
+                c.bindValueBasedOn(gene.c) &&
+                        r.bindValueBasedOn(gene.r)
             }
             else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
+                LoggingUtil.uniqueWarn(log, "cannot bind CircleGene with ${gene::class.java.simpleName}")
                 false
             }
         }

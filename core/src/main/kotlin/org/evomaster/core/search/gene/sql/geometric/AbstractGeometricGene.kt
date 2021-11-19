@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.geometric
+package org.evomaster.core.search.gene.sql.geometric
 
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.output.OutputFormat
@@ -6,13 +6,11 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
-abstract class PQGeometricAbstractGene(
+abstract class AbstractGeometricGene(
     name: String,
-    protected val p: PointGene,
-    protected val q: PointGene,
+    protected val p: SqlPointGene,
+    protected val q: SqlPointGene,
     val doNotAllowSamePoints: Boolean = false
 ) : Gene(name, mutableListOf(p, q)) {
 

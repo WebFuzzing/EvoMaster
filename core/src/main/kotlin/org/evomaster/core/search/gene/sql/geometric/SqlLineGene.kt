@@ -1,41 +1,37 @@
-package org.evomaster.core.search.gene.geometric
+package org.evomaster.core.search.gene.sql.geometric
 
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class LineGene(
+class SqlLineGene(
     name: String,
-    p: PointGene = PointGene(
+    p: SqlPointGene = SqlPointGene(
         "p",
         x = FloatGene("x", value = 0.0f),
         y = FloatGene("y", value = 0.0f)
     ),
-    q: PointGene = PointGene(
+    q: SqlPointGene = SqlPointGene(
         "q",
         x = FloatGene("x", value = 1.0f),
         y = FloatGene("y", value = 1.0f)
     )
-) : PQGeometricAbstractGene(name, p, q) {
+) : AbstractGeometricGene(name, p, q) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(LineGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlLineGene::class.java)
     }
 
-    override fun copyContent(): Gene = LineGene(
+    override fun copyContent(): Gene = SqlLineGene(
         name,
-        p.copyContent() as PointGene,
-        q.copyContent() as PointGene
+        p.copyContent() as SqlPointGene,
+        q.copyContent() as SqlPointGene
     )
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is LineGene) {
+        if (other !is SqlLineGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.p.copyValueFrom(other.p)
@@ -43,7 +39,7 @@ class LineGene(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is LineGene) {
+        if (other !is SqlLineGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.p.containsSameValueAs(other.p)
@@ -52,7 +48,7 @@ class LineGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is LineGene -> {
+            gene is SqlLineGene -> {
                 p.bindValueBasedOn(gene.p) &&
                         q.bindValueBasedOn(gene.q)
             }

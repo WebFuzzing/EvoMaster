@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.geometric
+package org.evomaster.core.search.gene.sql.geometric
 
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
@@ -10,37 +10,27 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class PathGene(
+class SqlPointGene(
     name: String,
-    val points: ArrayGene<PointGene> = ArrayGene(name = "points", template = PointGene("p"))
-) : Gene(name, mutableListOf(points)) {
+    val x: FloatGene = FloatGene(name = "x"),
+    val y: FloatGene = FloatGene(name = "y")
+) : Gene(name, mutableListOf(x, y)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(PathGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlPointGene::class.java)
     }
 
-    init {
-        /*
-         * Paths must be non-empty lists
-         */
-        points.addElements(PointGene("p1"))
-    }
+    override fun getChildren(): MutableList<Gene> = mutableListOf(x, y)
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(points)
-
-    override fun copyContent(): Gene = PathGene(
+    override fun copyContent(): Gene = SqlPointGene(
         name,
-        points.copyContent() as ArrayGene<PointGene>
+        x.copyContent(),
+        y.copyContent()
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, forceNewValue, allGenes)
-        /*
-         * A geometric path must be always a non-empty list
-         */
-        if (points.getAllElements().isEmpty()) {
-            points.addElements(PointGene("p"))
-        }
+        x.randomize(randomness, forceNewValue, allGenes)
+        y.randomize(randomness, forceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -51,7 +41,7 @@ class PathGene(
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        return listOf(points)
+        return listOf(x, y)
     }
 
     override fun getValueAsPrintableString(
@@ -60,49 +50,44 @@ class PathGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return "\" ( ${
-            points.getAllElements()
-                .map { it.getValueAsRawString() }
-                .joinToString(" , ")
-        } ) \""
+        return "\" (${x.getValueAsRawString()} , ${y.getValueAsRawString()}) \""
     }
 
     override fun getValueAsRawString(): String {
-        return "( ${
-            points.getAllElements()
-                .map { it.getValueAsRawString() }
-                .joinToString(" , ")
-        } ) "
+        return "(${x.getValueAsRawString()} , ${y.getValueAsRawString()})"
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is PathGene) {
+        if (other !is SqlPointGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.points.copyValueFrom(other.points)
+        this.x.copyValueFrom(other.x)
+        this.y.copyValueFrom(other.y)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is PathGene) {
+        if (other !is SqlPointGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.points.containsSameValueAs(other.points)
+        return this.x.containsSameValueAs(other.x)
+                && this.y.containsSameValueAs(other.y)
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(points.flatView(excludePredicate))
+            listOf(this).plus(x.flatView(excludePredicate)).plus(y.flatView(excludePredicate))
     }
 
-    override fun innerGene(): List<Gene> = listOf(points)
+    override fun innerGene(): List<Gene> = listOf(x, y)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is PathGene -> {
-                points.bindValueBasedOn(gene.points)
+            gene is SqlPointGene -> {
+                x.bindValueBasedOn(gene.x) &&
+                        y.bindValueBasedOn(gene.y)
             }
             else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
+                LoggingUtil.uniqueWarn(log, "cannot bind PointGene with ${gene::class.java.simpleName}")
                 false
             }
         }

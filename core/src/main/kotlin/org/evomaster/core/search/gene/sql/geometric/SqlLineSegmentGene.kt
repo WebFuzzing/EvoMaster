@@ -1,33 +1,28 @@
-package org.evomaster.core.search.gene.geometric
+package org.evomaster.core.search.gene.sql.geometric
 
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.service.AdaptiveParameterControl
-import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class BoxGene(
+class SqlLineSegmentGene(
     name: String,
-    p: PointGene = PointGene("p"),
-    q: PointGene = PointGene("q")
-) : PQGeometricAbstractGene(name, p, q) {
+    p: SqlPointGene = SqlPointGene("p"),
+    q: SqlPointGene = SqlPointGene("q")
+) : AbstractGeometricGene(name, p, q) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(BoxGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlLineSegmentGene::class.java)
     }
 
-    override fun copyContent(): Gene = BoxGene(
+    override fun copyContent(): Gene = SqlLineSegmentGene(
         name,
-        p.copyContent() as PointGene,
-        q.copyContent() as PointGene
+        p.copyContent() as SqlPointGene,
+        q.copyContent() as SqlPointGene
     )
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is BoxGene) {
+        if (other !is SqlLineSegmentGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.p.copyValueFrom(other.p)
@@ -35,7 +30,7 @@ class BoxGene(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is BoxGene) {
+        if (other !is SqlLineSegmentGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.p.containsSameValueAs(other.p)
@@ -44,7 +39,7 @@ class BoxGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is BoxGene -> {
+            gene is SqlLineSegmentGene -> {
                 p.bindValueBasedOn(gene.p) &&
                         q.bindValueBasedOn(gene.q)
             }
