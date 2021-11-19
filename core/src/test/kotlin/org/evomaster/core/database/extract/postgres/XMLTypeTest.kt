@@ -5,23 +5,29 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.search.gene.ArrayGene
+import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeIntervalGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.sql.SqlUUIDGene
+import org.evomaster.core.search.gene.sql.SqlXMLGene
+import org.evomaster.core.search.gene.textsearch.TextSearchQueryGene
+import org.evomaster.core.search.gene.textsearch.TextSearchVectorGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 /**
  * Created by jgaleotti on 07-May-19.
  */
-class DatetimeTypesExtractTest : ExtractTestBasePostgres() {
+class XMLTypeTest : ExtractTestBasePostgres() {
 
-    override fun getSchemaLocation() = "/sql_schema/postgres_datetime_types.sql"
+    override fun getSchemaLocation() = "/sql_schema/postgres_xml_type.sql"
 
 
     @Test
-    fun testDatetimeTypes() {
+    fun testXMLType() {
 
         val schema = SchemaExtractor.extract(connection)
 
@@ -32,26 +38,16 @@ class DatetimeTypesExtractTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction(
-            "DatetimeTypes", setOf(
-                "timestampColumn",
-                "timestampWithTimeZoneColumn",
-                "dateColumn",
-                "timeColumn",
-                "timeWithTimeZoneColumn",
-                "intervalColumn"
+            "XMLType", setOf(
+                "xmlColumn"
             )
         )
 
         val genes = actions[0].seeGenes()
 
-        assertEquals(6, genes.size)
+        assertEquals(1, genes.size)
 
-        assertTrue(genes[0] is DateTimeGene)
-        assertTrue(genes[1] is DateTimeGene)
-        assertTrue(genes[2] is DateGene)
-        assertTrue(genes[3] is TimeGene)
-        assertTrue(genes[4] is TimeGene)
-        assertTrue(genes[5] is TimeIntervalGene)
+        assertTrue(genes[0] is SqlXMLGene)
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)

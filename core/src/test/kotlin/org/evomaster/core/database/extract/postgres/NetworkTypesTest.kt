@@ -21,7 +21,7 @@ import org.postgresql.util.PGobject
 /**
  * Created by jgaleotti on 07-May-19.
  */
-class NetworkTypesExtractTest : ExtractTestBasePostgres() {
+class NetworkTypesTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/postgres_network_types.sql"
 

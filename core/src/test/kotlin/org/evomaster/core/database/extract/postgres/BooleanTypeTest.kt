@@ -14,13 +14,13 @@ import org.junit.jupiter.api.Test
 /**
  * Created by jgaleotti on 07-May-19.
  */
-class EnumeratedTypesExtractTest : ExtractTestBasePostgres() {
+class BooleanTypeTest : ExtractTestBasePostgres() {
 
-    override fun getSchemaLocation() = "/sql_schema/postgres_enumerated_types.sql"
+    override fun getSchemaLocation() = "/sql_schema/postgres_boolean_type.sql"
 
 
     @Test
-    fun testEnumeratedTypes() {
+    fun testBooleanType() {
 
         val schema = SchemaExtractor.extract(connection)
 
@@ -31,15 +31,15 @@ class EnumeratedTypesExtractTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction(
-            "EnumeratedTypes", setOf(
-                "enumColumn"
+            "BooleanType", setOf(
+                "booleanColumn"
             )
         )
 
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is EnumGene<*>)
+        assertTrue(genes[0] is BooleanGene)
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)

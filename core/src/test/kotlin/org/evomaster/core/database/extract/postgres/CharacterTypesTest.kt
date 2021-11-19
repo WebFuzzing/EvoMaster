@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 /**
  * Created by jgaleotti on 07-May-19.
  */
-class CharacterTypesExtractTest : ExtractTestBasePostgres() {
+class CharacterTypesTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/postgres_character_types.sql"
 

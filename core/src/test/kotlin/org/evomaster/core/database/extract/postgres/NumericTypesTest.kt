@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test
 /**
  * Created by jgaleotti on 07-May-19.
  */
-class NumericTypesExtractTest : ExtractTestBasePostgres() {
+class NumericTypesTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/postgres_numeric_types.sql"
 

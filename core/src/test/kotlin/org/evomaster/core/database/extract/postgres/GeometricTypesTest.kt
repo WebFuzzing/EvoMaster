@@ -16,7 +16,7 @@ import org.postgresql.geometric.*
 /**
  * Created by jgaleotti on 07-May-19.
  */
-class GeometricTypesExtractTest : ExtractTestBasePostgres() {
+class GeometricTypesTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/postgres_geometric_types.sql"
 
