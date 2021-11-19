@@ -1,10 +1,9 @@
 package org.evomaster.core.search.impact.impactinfocollection.value.date
 
-import org.evomaster.core.search.gene.DateGene
+import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
-import kotlin.math.log
 
 /**
  * created by manzh on 2019-09-09

@@ -5,9 +5,10 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeIntervalGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -50,7 +51,7 @@ class DatetimeTypesExtractTest : ExtractTestBasePostgres() {
         assertTrue(genes[2] is DateGene)
         assertTrue(genes[3] is TimeGene)
         assertTrue(genes[4] is TimeGene)
-        assertTrue(genes[5] is IntervalGene)
+        assertTrue(genes[5] is TimeIntervalGene)
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)

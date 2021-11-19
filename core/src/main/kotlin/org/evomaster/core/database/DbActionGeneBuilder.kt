@@ -8,6 +8,10 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeIntervalGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.geometric.*
 import org.evomaster.core.search.gene.network.CidrGene
 import org.evomaster.core.search.gene.network.InetGene
@@ -187,7 +191,7 @@ class DbActionGeneBuilder {
                     handleTextColumn(column, isFixedLength = true)
 
                 ColumnDataType.INTERVAL ->
-                    IntervalGene(column.name)
+                    TimeIntervalGene(column.name)
 
                 ColumnDataType.POINT ->
                     PointGene(column.name)

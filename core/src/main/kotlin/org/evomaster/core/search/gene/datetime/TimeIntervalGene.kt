@@ -1,7 +1,10 @@
-package org.evomaster.core.search.gene
+package org.evomaster.core.search.gene.datetime
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -9,7 +12,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class IntervalGene(
+class TimeIntervalGene(
     name: String,
     val days: IntegerGene = IntegerGene(name = "days", min = 0),
     val time: TimeGene = TimeGene(
@@ -19,12 +22,12 @@ class IntervalGene(
 ) : Gene(name, mutableListOf(days, time)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(IntervalGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(TimeIntervalGene::class.java)
     }
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(days, time)
 
-    override fun copyContent(): Gene = IntervalGene(
+    override fun copyContent(): Gene = TimeIntervalGene(
         name,
         days.copyContent() as IntegerGene,
         time.copyContent() as TimeGene
@@ -68,7 +71,7 @@ class IntervalGene(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is IntervalGene) {
+        if (other !is TimeIntervalGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.days.copyValueFrom(other.days)
@@ -76,7 +79,7 @@ class IntervalGene(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is IntervalGene) {
+        if (other !is TimeIntervalGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.days.containsSameValueAs(other.days)
@@ -92,7 +95,7 @@ class IntervalGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is IntervalGene -> {
+            gene is TimeIntervalGene -> {
                 days.bindValueBasedOn(gene.days) &&
                         time.bindValueBasedOn(gene.time)
             }

@@ -10,6 +10,7 @@ import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.*
 import org.slf4j.Logger
@@ -69,7 +70,7 @@ object GraphQLActionBuilder {
                 /*
                 In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
                  */
-                if (element.tableType?.toLowerCase() == GqlConst.MUTATION || element.tableType?.toLowerCase() == GqlConst.QUERY || element.tableType?.toLowerCase() == GqlConst.ROOT || element?.tableType?.toLowerCase() == GqlConst.QUERY_TYPE) {
+                if (element.tableType?.lowercase() == GqlConst.MUTATION || element.tableType?.lowercase() == GqlConst.QUERY || element.tableType?.lowercase() == GqlConst.ROOT || element.tableType?.lowercase() == GqlConst.QUERY_TYPE) {
                     handleOperation(
                         state,
                         actionCluster,
@@ -90,7 +91,7 @@ object GraphQLActionBuilder {
             }
         else if (schemaObj.data.__schema.queryType != null && schemaObj.data.__schema.mutationType == null)
             for (element in state.tables) {
-                if (element.tableType?.toLowerCase() == GqlConst.QUERY || element.tableType?.toLowerCase() == GqlConst.ROOT || element.tableType?.toLowerCase() == GqlConst.QUERY_TYPE) {
+                if (element.tableType?.lowercase() == GqlConst.QUERY || element.tableType?.lowercase() == GqlConst.ROOT || element.tableType?.lowercase() == GqlConst.QUERY_TYPE) {
                     handleOperation(
                         state,
                         actionCluster,
@@ -111,7 +112,7 @@ object GraphQLActionBuilder {
             }
         else if (schemaObj.data.__schema.queryType == null && schemaObj.data.__schema.mutationType != null)
             for (element in state.tables) {
-                if (element.tableType?.toLowerCase() == GqlConst.MUTATION) {
+                if (element.tableType?.lowercase() == GqlConst.MUTATION) {
                     handleOperation(
                         state,
                         actionCluster,
@@ -141,7 +142,7 @@ object GraphQLActionBuilder {
                 continue
             }
 
-            for (elementInfields in elementIntypes.fields.orEmpty()) {
+            for (elementInfields in elementIntypes.fields) {
                 /**
                  * extracting tables
                  */
@@ -512,7 +513,7 @@ object GraphQLActionBuilder {
                 if (elementInTable.kindOfTableFieldType == UNION) {
                     for (elementInUnion in elementInTable.unionTypes) {//for each object in the union
                         if ((elementIntypes.kind == OBJECT) && (elementIntypes.name == elementInUnion)) {
-                            for (elementInfields in elementIntypes.fields.orEmpty()) {//Construct the table elements for this object
+                            for (elementInfields in elementIntypes.fields) {//Construct the table elements for this object
                                 val tableElement = Table()
                                 tableElement.tableField = elementInfields.name//eg:Page
 
@@ -706,11 +707,11 @@ object GraphQLActionBuilder {
     ) {
         if (methodName == null) {
             log.warn("Skipping operation, as no method name is defined.")
-            return;
+            return
         }
         if (methodType == null) {
             log.warn("Skipping operation, as no method type is defined.")
-            return;
+            return
         }
         val type = when {
             methodType.equals(GqlConst.QUERY, true) -> GQMethodType.QUERY
@@ -868,12 +869,12 @@ object GraphQLActionBuilder {
             )
 
             //Remove primitive types (scalar and enum) from return params
-            if (gene.name.toLowerCase() != "scalar"
+            if (gene.name.lowercase() != "scalar"
                 && !(gene is OptionalGene && gene.gene.name == "scalar")
-                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.name.toLowerCase() == "scalar")
-                && !(gene is ArrayGene<*> && gene.template.name.toLowerCase() == "scalar")
-                && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.name.toLowerCase() == "scalar")
-                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template.name.toLowerCase() == "scalar")
+                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.name.lowercase() == "scalar")
+                && !(gene is ArrayGene<*> && gene.template.name.lowercase() == "scalar")
+                && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.name.lowercase() == "scalar")
+                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template.name.lowercase() == "scalar")
                 //enum cases
                 && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>)
                 && !(gene is ArrayGene<*> && gene.template is EnumGene<*>)
@@ -905,12 +906,12 @@ object GraphQLActionBuilder {
             )
 
             //Remove primitive types (scalar and enum) from return params
-            if (gene.name.toLowerCase() != "scalar"
+            if (gene.name.lowercase() != "scalar"
                 && !(gene is OptionalGene && gene.gene.name == "scalar")
-                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.name.toLowerCase() == "scalar")
-                && !(gene is ArrayGene<*> && gene.template.name.toLowerCase() == "scalar")
-                && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.name.toLowerCase() == "scalar")
-                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template.name.toLowerCase() == "scalar")
+                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.name.lowercase() == "scalar")
+                && !(gene is ArrayGene<*> && gene.template.name.lowercase() == "scalar")
+                && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.name.lowercase() == "scalar")
+                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template.name.lowercase() == "scalar")
                 //enum cases
                 && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>)
                 && !(gene is ArrayGene<*> && gene.template is EnumGene<*>)
@@ -950,7 +951,7 @@ object GraphQLActionBuilder {
         methodName: String
     ): Gene {
 
-        when (kindOfTableField?.toLowerCase()) {
+        when (kindOfTableField?.lowercase()) {
             GqlConst.LIST ->
                 return if (isKindOfTableFieldOptional) {
                     val template = getInputScalarListOrEnumListGene(
@@ -1053,7 +1054,7 @@ object GraphQLActionBuilder {
         interfaceTypes: MutableList<String>
     ): Gene {
 
-        when (kindOfTableField?.toLowerCase()) {
+        when (kindOfTableField?.lowercase()) {
             GqlConst.LIST ->
                 return if (isKindOfTableFieldOptional) {
 
@@ -1220,7 +1221,7 @@ object GraphQLActionBuilder {
         for (element in state.argsTables) {
             if (element.tableType == tableType) {
 
-                if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.SCALAR) {
+                if (element.kindOfTableFieldType.toString().lowercase() == GqlConst.SCALAR) {
                     val field = element.tableField
                     val template = getInputGene(
                         state,
@@ -1238,7 +1239,7 @@ object GraphQLActionBuilder {
                     )
                     fields.add(template)
                 } else {
-                    if (element.kindOfTableField.toString().toLowerCase() == GqlConst.LIST) {
+                    if (element.kindOfTableField.toString().lowercase() == GqlConst.LIST) {
                         val template = getInputGene(
                             state,
                             element.tableFieldType,
@@ -1256,7 +1257,7 @@ object GraphQLActionBuilder {
 
                         fields.add(template)
                     } else
-                        if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.INPUT_OBJECT) {
+                        if (element.kindOfTableFieldType.toString().lowercase() == GqlConst.INPUT_OBJECT) {
                             val template = getInputGene(
                                 state,
                                 element.tableFieldType,
@@ -1274,7 +1275,7 @@ object GraphQLActionBuilder {
 
                             fields.add(template)
 
-                        } else if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.ENUM) {
+                        } else if (element.kindOfTableFieldType.toString().lowercase() == GqlConst.ENUM) {
                             val field = element.tableField
                             val template = getInputGene(
                                 state,
@@ -1318,7 +1319,7 @@ object GraphQLActionBuilder {
         interfaceTypes: MutableList<String>
     ): Gene {
 
-        when (kindOfTableField?.toLowerCase()) {
+        when (kindOfTableField?.lowercase()) {
             GqlConst.LIST -> {
                 val template = getReturnGene(
                     state,
@@ -1472,7 +1473,7 @@ object GraphQLActionBuilder {
 
         for (element in state.tables) {
             if (element.tableType == tableType) {
-                if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.SCALAR) {
+                if (element.kindOfTableFieldType.toString().lowercase() == GqlConst.SCALAR) {
                     val field = element.tableField
                     val template = getReturnGene(
                         state,
@@ -1490,7 +1491,7 @@ object GraphQLActionBuilder {
                     )
                     fields.add(template)
                 } else {
-                    if (element.kindOfTableField.toString().toLowerCase() == GqlConst.LIST) {
+                    if (element.kindOfTableField.toString().lowercase() == GqlConst.LIST) {
                         val template =
                             getReturnGene(
                                 state,
@@ -1509,7 +1510,7 @@ object GraphQLActionBuilder {
 
                         fields.add(template)
                     } else
-                        if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.OBJECT) {
+                        if (element.kindOfTableFieldType.toString().lowercase() == GqlConst.OBJECT) {
                             val template =
                                 getReturnGene(
                                     state,
@@ -1528,7 +1529,7 @@ object GraphQLActionBuilder {
 
                             fields.add(template)
 
-                        } else if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.ENUM) {
+                        } else if (element.kindOfTableFieldType.toString().lowercase() == GqlConst.ENUM) {
                             val field = element.tableField
                             val template = getReturnGene(
                                 state,
@@ -1547,7 +1548,7 @@ object GraphQLActionBuilder {
 
                             fields.add(template)
 
-                        } else if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.UNION) {
+                        } else if (element.kindOfTableFieldType.toString().lowercase() == GqlConst.UNION) {
                             val template =
                                 getReturnGene(
                                     state,
@@ -1567,7 +1568,7 @@ object GraphQLActionBuilder {
                             fields.add(template)
 
                         } else
-                            if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.INTERFACE) {
+                            if (element.kindOfTableFieldType.toString().lowercase() == GqlConst.INTERFACE) {
                                 val template =
                                     getReturnGene(
                                         state,

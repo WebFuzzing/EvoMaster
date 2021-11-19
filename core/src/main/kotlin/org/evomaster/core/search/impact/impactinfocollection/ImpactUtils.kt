@@ -17,6 +17,9 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.*
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.impact.impactinfocollection.regex.*
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -136,7 +139,7 @@ class ImpactUtils {
 
 
             Lazy.assert{
-                mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size
+                mutatedGenesWithContext.values.sumOf { it.size } == mutatedGenes.size
             }
             return mutatedGenesWithContext
         }

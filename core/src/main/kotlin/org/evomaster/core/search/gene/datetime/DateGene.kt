@@ -1,8 +1,8 @@
-package org.evomaster.core.search.gene
+package org.evomaster.core.search.gene.datetime
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -90,7 +90,12 @@ class DateGene(
     override fun getValueAsRawString(): String {
         return when (dateGeneFormat) {
             DateGeneFormat.ISO_LOCAL_DATE_FORMAT -> GeneUtils.let {
-                "${it.padded(year.value, 4)}-${it.padded(month.value, 2)}-${it.padded(day.value, 2)}"
+                "${GeneUtils.padded(year.value, 4)}-${GeneUtils.padded(month.value, 2)}-${
+                    GeneUtils.padded(
+                        day.value,
+                        2
+                    )
+                }"
             }
         }
     }

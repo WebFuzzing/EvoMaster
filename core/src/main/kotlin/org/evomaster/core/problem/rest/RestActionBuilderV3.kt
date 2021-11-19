@@ -14,6 +14,8 @@ import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -232,7 +234,7 @@ object RestActionBuilderV3 {
                             would lead to 2 variables, or any other char that does affect the
                             structure of the URL, like '.'
                          */
-            gene = StringGene(gene.name, (gene as StringGene).value, 1, (gene as StringGene).maxLength, listOf('/', '.'))
+            gene = StringGene(gene.name, gene.value, 1, gene.maxLength, listOf('/', '.'))
         }
 
         if (p.required != true && p.`in` != "path" && gene !is OptionalGene) {
@@ -724,7 +726,7 @@ object RestActionBuilderV3 {
                         )
                         when (model) {
                             //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
-                            is ObjectGene -> modelCluster.put(it.component1(), (model as ObjectGene))
+                            is ObjectGene -> modelCluster.put(it.component1(), model)
                             is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
                         }
 

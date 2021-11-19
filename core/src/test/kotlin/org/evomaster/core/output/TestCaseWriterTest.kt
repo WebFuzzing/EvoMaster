@@ -13,10 +13,10 @@ import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResou
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -1064,8 +1064,8 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
             groups = mutableListOf(
-                (mutableListOf(fooInsertion) to mutableListOf(fooAction as RestCallAction)),
-                (mutableListOf(barInsertion) to mutableListOf(barAction as RestCallAction))
+                (mutableListOf(fooInsertion) to mutableListOf(fooAction)),
+                (mutableListOf(barInsertion) to mutableListOf(barAction))
             )
         )
 
@@ -1195,8 +1195,8 @@ public void test() throws Exception {
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
             groups = mutableListOf(
-                (mutableListOf<DbAction>() to mutableListOf(fooAction as RestCallAction)),
-                (mutableListOf<DbAction>() to mutableListOf(barAction as RestCallAction))
+                (mutableListOf<DbAction>() to mutableListOf(fooAction)),
+                (mutableListOf<DbAction>() to mutableListOf(barAction))
             )
         )
 

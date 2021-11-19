@@ -1,8 +1,11 @@
-package org.evomaster.core.search.gene
+package org.evomaster.core.search.gene.datetime
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -92,12 +95,22 @@ class TimeGene(
         return when (timeGeneFormat) {
             TimeGeneFormat.ISO_LOCAL_DATE_FORMAT -> {
                 GeneUtils.let {
-                    "${it.padded(hour.value, 2)}:${it.padded(minute.value, 2)}:${it.padded(second.value, 2)}"
+                    "${GeneUtils.padded(hour.value, 2)}:${
+                        GeneUtils.padded(
+                            minute.value,
+                            2
+                        )
+                    }:${GeneUtils.padded(second.value, 2)}"
                 }
             }
             TimeGeneFormat.TIME_WITH_MILLISECONDS -> {
                 GeneUtils.let {
-                    "${it.padded(hour.value, 2)}:${it.padded(minute.value, 2)}:${it.padded(second.value, 2)}.000Z"
+                    "${GeneUtils.padded(hour.value, 2)}:${
+                        GeneUtils.padded(
+                            minute.value,
+                            2
+                        )
+                    }:${GeneUtils.padded(second.value, 2)}.000Z"
                 }
             }
         }
@@ -160,7 +173,7 @@ class TimeGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when{
-            gene is TimeGene->{
+            gene is TimeGene ->{
                 hour.bindValueBasedOn(gene.hour) &&
                         second.bindValueBasedOn(gene.minute) &&
                         minute.bindValueBasedOn(gene.second)

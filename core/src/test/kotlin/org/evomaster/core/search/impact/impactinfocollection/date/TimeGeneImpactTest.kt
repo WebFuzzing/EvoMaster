@@ -2,7 +2,7 @@ package org.evomaster.core.search.impact.impactinfocollection.date
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.TimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.ImpactOptions

@@ -1,15 +1,15 @@
-package org.evomaster.core.search.gene
+package org.evomaster.core.search.gene.datetime
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -20,10 +20,10 @@ import org.slf4j.LoggerFactory
  * https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
  */
 open class DateTimeGene(
-        name: String,
-        val date: DateGene = DateGene("date"),
-        val time: TimeGene = TimeGene("time"),
-        val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
+    name: String,
+    val date: DateGene = DateGene("date"),
+    val time: TimeGene = TimeGene("time"),
+    val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
 ) : Gene(name, mutableListOf(date, time)) {
 
     enum class DateTimeGeneFormat {
@@ -80,10 +80,20 @@ open class DateTimeGene(
 
     override fun getValueAsRawString(): String {
         val formattedDate = GeneUtils.let {
-            "${it.padded(date.year.value, 4)}-${it.padded(date.month.value, 2)}-${it.padded(date.day.value, 2)}"
+            "${GeneUtils.padded(date.year.value, 4)}-${
+                GeneUtils.padded(
+                    date.month.value,
+                    2
+                )
+            }-${GeneUtils.padded(date.day.value, 2)}"
         }
         val formattedTime = GeneUtils.let {
-            "${it.padded(time.hour.value, 2)}:${it.padded(time.minute.value, 2)}:${it.padded(time.second.value, 2)}"
+            "${GeneUtils.padded(time.hour.value, 2)}:${
+                GeneUtils.padded(
+                    time.minute.value,
+                    2
+                )
+            }:${GeneUtils.padded(time.second.value, 2)}"
         }
         return when (dateTimeGeneFormat) {
             DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT -> {
