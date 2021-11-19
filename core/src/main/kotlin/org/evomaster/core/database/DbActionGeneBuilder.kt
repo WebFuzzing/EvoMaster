@@ -234,6 +234,9 @@ class DbActionGeneBuilder {
                 ColumnDataType.TSQUERY ->
                     TextSearchQueryGene(column.name)
 
+                ColumnDataType.JSONPATH ->
+                    SqlJSONPathGene(column.name)
+
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
 
