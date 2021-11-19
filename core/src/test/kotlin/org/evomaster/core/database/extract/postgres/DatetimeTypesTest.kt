@@ -7,7 +7,7 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.datetime.TimeIntervalGene
+import org.evomaster.core.search.gene.sql.time.SqlTimeIntervalGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -51,7 +51,7 @@ class DatetimeTypesTest : ExtractTestBasePostgres() {
         assertTrue(genes[2] is DateGene)
         assertTrue(genes[3] is TimeGene)
         assertTrue(genes[4] is TimeGene)
-        assertTrue(genes[5] is TimeIntervalGene)
+        assertTrue(genes[5] is SqlTimeIntervalGene)
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)

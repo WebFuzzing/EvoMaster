@@ -5,14 +5,9 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.ArrayGene
 import org.evomaster.core.search.gene.StringGene
-import org.evomaster.core.search.gene.datetime.DateGene
-import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.datetime.TimeIntervalGene
-import org.evomaster.core.search.gene.datetime.TimeGene
-import org.evomaster.core.search.gene.textsearch.TextSearchQueryGene
-import org.evomaster.core.search.gene.textsearch.TextSearchVectorGene
+import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
+import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -46,15 +41,15 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
 
         assertEquals(2, genes.size)
 
-        assertTrue(genes[0] is TextSearchVectorGene)
-        assertTrue(genes[1] is TextSearchQueryGene)
+        assertTrue(genes[0] is SqlTextSearchVectorGene)
+        assertTrue(genes[1] is SqlTextSearchQueryGene)
 
-        val textSearchVectorGene = genes[0] as TextSearchVectorGene
+        val textSearchVectorGene = genes[0] as SqlTextSearchVectorGene
         val textSearchVectorElementGene = StringGene("textLexeme")
         textSearchVectorElementGene.value = "bar"
         textSearchVectorGene.textLexemes.addElements(textSearchVectorElementGene)
 
-        val textSearchQueryGene = genes[1] as TextSearchQueryGene
+        val textSearchQueryGene = genes[1] as SqlTextSearchQueryGene
         val textSearchQueryElementGene = StringGene("queryLexeme")
         textSearchQueryElementGene.value = "bar"
         textSearchQueryGene.queryLexemes.addElements(textSearchQueryElementGene)

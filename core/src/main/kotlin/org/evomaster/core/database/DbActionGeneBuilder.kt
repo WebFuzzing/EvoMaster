@@ -10,7 +10,7 @@ import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.datetime.TimeIntervalGene
+import org.evomaster.core.search.gene.sql.time.SqlTimeIntervalGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.sql.geometric.*
 import org.evomaster.core.search.gene.sql.network.SqlCidrGene
@@ -20,8 +20,8 @@ import org.evomaster.core.search.gene.sql.network.SqlMacAddrGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
-import org.evomaster.core.search.gene.textsearch.TextSearchQueryGene
-import org.evomaster.core.search.gene.textsearch.TextSearchVectorGene
+import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
+import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
 import org.evomaster.core.utils.NumberCalculationUtil
 import kotlin.math.pow
 
@@ -193,7 +193,7 @@ class DbActionGeneBuilder {
                     handleTextColumn(column, isFixedLength = true)
 
                 ColumnDataType.INTERVAL ->
-                    TimeIntervalGene(column.name)
+                    SqlTimeIntervalGene(column.name)
 
                 ColumnDataType.POINT ->
                     SqlPointGene(column.name)
@@ -229,10 +229,10 @@ class DbActionGeneBuilder {
                     SqlMacAddr8Gene(column.name)
 
                 ColumnDataType.TSVECTOR ->
-                    TextSearchVectorGene(column.name)
+                    SqlTextSearchVectorGene(column.name)
 
                 ColumnDataType.TSQUERY ->
-                    TextSearchQueryGene(column.name)
+                    SqlTextSearchQueryGene(column.name)
 
                 ColumnDataType.JSONPATH ->
                     SqlJSONPathGene(column.name)

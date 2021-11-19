@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.textsearch
+package org.evomaster.core.search.gene.sql.textsearch
 
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
@@ -10,13 +10,13 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class TextSearchVectorGene(
+class SqlTextSearchVectorGene(
     name: String,
     val textLexemes: ArrayGene<StringGene> = ArrayGene(name = "textLexemes", template = StringGene("p"))
 ) : Gene(name, mutableListOf(textLexemes)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(TextSearchVectorGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlTextSearchVectorGene::class.java)
     }
 
     init {
@@ -28,7 +28,7 @@ class TextSearchVectorGene(
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(textLexemes)
 
-    override fun copyContent(): Gene = TextSearchVectorGene(
+    override fun copyContent(): Gene = SqlTextSearchVectorGene(
         name,
         textLexemes.copyContent() as ArrayGene<StringGene>
     )
@@ -76,14 +76,14 @@ class TextSearchVectorGene(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is TextSearchVectorGene) {
+        if (other !is SqlTextSearchVectorGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.textLexemes.copyValueFrom(other.textLexemes)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is TextSearchVectorGene) {
+        if (other !is SqlTextSearchVectorGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.textLexemes.containsSameValueAs(other.textLexemes)
@@ -98,7 +98,7 @@ class TextSearchVectorGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is TextSearchVectorGene -> {
+            gene is SqlTextSearchVectorGene -> {
                 textLexemes.bindValueBasedOn(gene.textLexemes)
             }
             else -> {

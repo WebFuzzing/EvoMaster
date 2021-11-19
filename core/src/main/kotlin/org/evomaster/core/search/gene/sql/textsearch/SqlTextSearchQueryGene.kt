@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.textsearch
+package org.evomaster.core.search.gene.sql.textsearch
 
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
@@ -10,13 +10,13 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class TextSearchQueryGene(
+class SqlTextSearchQueryGene(
     name: String,
     val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes", template = StringGene("p"))
 ) : Gene(name, mutableListOf(queryLexemes)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(TextSearchQueryGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlTextSearchQueryGene::class.java)
     }
 
     init {
@@ -28,7 +28,7 @@ class TextSearchQueryGene(
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(queryLexemes)
 
-    override fun copyContent(): Gene = TextSearchQueryGene(
+    override fun copyContent(): Gene = SqlTextSearchQueryGene(
         name,
         queryLexemes.copyContent() as ArrayGene<StringGene>
     )
@@ -76,14 +76,14 @@ class TextSearchQueryGene(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is TextSearchQueryGene) {
+        if (other !is SqlTextSearchQueryGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.queryLexemes.copyValueFrom(other.queryLexemes)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is TextSearchQueryGene) {
+        if (other !is SqlTextSearchQueryGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.queryLexemes.containsSameValueAs(other.queryLexemes)
@@ -98,7 +98,7 @@ class TextSearchQueryGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is TextSearchQueryGene -> {
+            gene is SqlTextSearchQueryGene -> {
                 queryLexemes.bindValueBasedOn(gene.queryLexemes)
             }
             else -> {

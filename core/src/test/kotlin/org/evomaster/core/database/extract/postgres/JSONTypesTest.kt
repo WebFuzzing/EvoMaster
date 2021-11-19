@@ -5,19 +5,8 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.ArrayGene
-import org.evomaster.core.search.gene.MapGene
-import org.evomaster.core.search.gene.StringGene
-import org.evomaster.core.search.gene.datetime.DateGene
-import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.datetime.TimeIntervalGene
-import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.sql.SqlJSONGene
 import org.evomaster.core.search.gene.sql.SqlJSONPathGene
-import org.evomaster.core.search.gene.sql.SqlUUIDGene
-import org.evomaster.core.search.gene.sql.SqlXMLGene
-import org.evomaster.core.search.gene.textsearch.TextSearchQueryGene
-import org.evomaster.core.search.gene.textsearch.TextSearchVectorGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
