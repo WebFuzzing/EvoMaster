@@ -510,12 +510,14 @@ class TestCaseWriter {
 
     private fun handlePythonResponseContents(lines: Lines, res: RestCallResult, resVarName: String) {
         val bodyString = res.getBody()
+        val code = res.getStatusCode()
+        lines.add("assert $resVarName.status_code == $code")
         if (bodyString.isNullOrBlank()) {
-            lines.add("assert not($resVarName.text)")
+            lines.add("assert not($resVarName.get_data(as_text=True))")
         } else {
             val type = res.getBodyType()!!
             val escapedText = GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
-            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
+            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("json")) {
                 if (configuration.blackBox) {
                     lines.add("assert $resVarName.json() == json.loads(\"$escapedText\")")
                 } else {
@@ -681,7 +683,7 @@ class TestCaseWriter {
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
                 format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
-                format.isPython() -> lines.add("headers['Content-Type'] = ${bodyParam.contentType()}")
+                format.isPython() -> lines.add("headers['Content-Type'] = \"${bodyParam.contentType()}\"")
             }
 
             if (bodyParam.isJson()) {
@@ -698,7 +700,17 @@ class TestCaseWriter {
                 }
 
                 if (format.isPython()) {
-                    lines.add("body = ${bodyLines.joinToString()}")
+                    if (bodyLines.size == 1) {
+                        lines.add("body = ${bodyLines.first()}")
+                    } else {
+                        lines.add("body = ${bodyLines.first()} + \\")
+                        lines.indented {
+                            (1 until bodyLines.lastIndex).forEach { i ->
+                                lines.add("${bodyLines[i]} + \\")
+                            }
+                            lines.add("${bodyLines.last()}")
+                        }
+                    }
                 } else {
                     if (bodyLines.size == 1) {
                         lines.add(".$send(${bodyLines.first()})")
@@ -781,7 +793,7 @@ class TestCaseWriter {
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .forEach {
                     if (format.isPython()) {
-                        lines.add("headers[\"${it.name}\"] = \"${it.gene.getValueAsPrintableString(targetFormat = format)}\"")
+                        lines.add("headers[\"${it.name}\"] = ${it.gene.getValueAsPrintableString(targetFormat = format)}")
                     } else {
                         lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
                     }

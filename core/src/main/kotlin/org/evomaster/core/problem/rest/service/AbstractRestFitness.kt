@@ -33,6 +33,7 @@ import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
+import java.net.SocketTimeoutException
 import java.net.URL
 import javax.annotation.PostConstruct
 import javax.ws.rs.ProcessingException
@@ -464,6 +465,11 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                      */
                     log.warn("TCP connection to SUT problem: ${e.cause!!.message}")
                     rcr.setTcpProblem(true)
+                    return false
+                }
+                e.cause is IllegalArgumentException -> {
+                    // Handle Illegal character(s) in message header value
+                    log.error("Unexpected IllegalArgumentException on REST call", e)
                     return false
                 }
                 else -> throw e
