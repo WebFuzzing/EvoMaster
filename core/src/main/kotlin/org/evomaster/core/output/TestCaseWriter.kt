@@ -255,6 +255,7 @@ class TestCaseWriter {
 
         if (format.isPython()) {
             handleHeaders(call, lines)
+            handleBody(call, lines)
             lines.add(getAcceptHeader(call, res))
         }
 
@@ -277,7 +278,6 @@ class TestCaseWriter {
             }
             format.isPython() -> {
                 handleVerb(baseUrlOfSut, call, lines)
-                // TODO PYTHON: handleBody(call, lines)
                 lines.deindent(2)
             }
         }
@@ -434,7 +434,7 @@ class TestCaseWriter {
         if (format.isPython()) {
             lines.append(",")
             lines.indented {
-                lines.add("headers=headers")
+                lines.add("headers=headers, data=body")
             }
         }
         lines.append(")")
@@ -668,7 +668,12 @@ class TestCaseWriter {
         val send = when {
             format.isJavaOrKotlin() -> "body"
             format.isJavaScript() -> "send"
+            format.isPython() -> ""
             else -> throw IllegalArgumentException("Format not supported $format")
+        }
+
+        if (format.isPython()) {
+            lines.add("body = {}")
         }
 
         if (bodyParam != null && bodyParam is BodyParam) {
@@ -676,6 +681,7 @@ class TestCaseWriter {
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
                 format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
+                format.isPython() -> lines.add("headers['Content-Type'] = ${bodyParam.contentType()}")
             }
 
             if (bodyParam.isJson()) {
@@ -691,24 +697,33 @@ class TestCaseWriter {
                     "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
                 }
 
-                if (bodyLines.size == 1) {
-                    lines.add(".$send(${bodyLines.first()})")
+                if (format.isPython()) {
+                    lines.add("body = ${bodyLines.joinToString()}")
                 } else {
-                    lines.add(".$send(${bodyLines.first()} + ")
-                    lines.indented {
-                        (1 until bodyLines.lastIndex).forEach { i ->
-                            lines.add("${bodyLines[i]} + ")
+                    if (bodyLines.size == 1) {
+                        lines.add(".$send(${bodyLines.first()})")
+                    } else {
+                        lines.add(".$send(${bodyLines.first()} + ")
+                        lines.indented {
+                            (1 until bodyLines.lastIndex).forEach { i ->
+                                lines.add("${bodyLines[i]} + ")
+                            }
+                            lines.add("${bodyLines.last()})")
                         }
-                        lines.add("${bodyLines.last()})")
                     }
                 }
 
             } else if (bodyParam.isTextPlain()) {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
-                if (body != "\"\"") {
-                    lines.add(".$send($body)")
+
+                if (format.isPython()) {
+                    lines.add("body = $body")
                 } else {
-                    lines.add(".$send(\"${"""\"\""""}\")")
+                    if (body != "\"\"") {
+                        lines.add(".$send($body)")
+                    } else {
+                        lines.add(".$send(\"${"""\"\""""}\")")
+                    }
                 }
 
                 //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
@@ -717,7 +732,12 @@ class TestCaseWriter {
 
             } else if (bodyParam.isForm()) {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED, targetFormat = format)
-                lines.add(".$send(\"$body\")")
+
+                if (format.isPython()) {
+                    lines.add("body = $body")
+                } else {
+                    lines.add(".$send(\"$body\")")
+                }
 
             } else {
                 //TODO XML
