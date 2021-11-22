@@ -1401,7 +1401,7 @@ class EMConfig {
     val defaultTreeDepth = 11
 
     @Experimental
-    @Cfg("Maximum number of genes in mutations/queries to be evaluated;" +
+    @Cfg("Maximum tree depth in mutations/queries to be evaluated;" +
             "this is to avoid issues when dealing with huge graphs in GraphQL")
     @Min(1.0)
     var treeDepth = defaultTreeDepth
