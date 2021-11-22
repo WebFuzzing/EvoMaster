@@ -33,23 +33,6 @@ def run_instrumented(package_prefix, flask_module, flask_app):
 
 
 @evomaster.command()
-@click.option('--package-prefix', '-p', multiple=True,
-              help='package prefix to measure code coverage')
-@click.option('--flask-module', '-m', required=True,
-              help='module name where the flask application is defined')
-@click.option('--flask-app', '-a', default='app',
-              help='flask app defined in flask-module')
-def run_em(package_prefix, flask_module, flask_app):
-    from evomaster_client.controller.em_app import run_em
-    config = {
-        'package_prefixes_to_cover': package_prefix,
-        'flask_module': flask_module,
-        'flask_app': flask_app
-    }
-    run_em({}, sut_handler=FlaskHandler(config))
-
-
-@evomaster.command()
 @click.option('--handler-module', '-m', required=True,
               help='overriden embedded handler class name')
 @click.option('--handler-class', '-c', required=True,

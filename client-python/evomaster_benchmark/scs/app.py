@@ -62,7 +62,6 @@ class Pat(Resource):
 @ns.route('/regex/<path:txt>')
 class Regex(Resource):
     def get(self, txt):
-        print(txt)
         return regex(txt)
 
 

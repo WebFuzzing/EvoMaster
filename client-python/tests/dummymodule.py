@@ -42,3 +42,6 @@ def dummy_truthness(x):
     if x > 10 and not(x < 12):
         return True
     return False
+
+def dummy_call(x):
+    return dummy_boolean()

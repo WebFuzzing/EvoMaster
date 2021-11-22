@@ -28,6 +28,7 @@ def dummymodule():
 
 
 def test_import_hook(dummymodule):
-    dummymodule.dummy_print('test_import_hook SUCCESS')
-    dummymodule.dummy_compare(1,2)
-    dummymodule.dummy_truthness(12)
+    print(dummymodule.dummy_print('test_import_hook SUCCESS'))
+    print(dummymodule.dummy_compare(1, 2))
+    print(f"dummy_truthness: {dummymodule.dummy_truthness(12)}")
+    print(dummymodule.dummy_call(1))

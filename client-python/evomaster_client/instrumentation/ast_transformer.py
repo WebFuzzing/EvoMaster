@@ -71,9 +71,9 @@ class AstTransformer(ast.NodeTransformer):
                 ast.Expr(value=ast.Call(func=ast.Name("entering_statement", ast.Load()),
                          args=[ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
                          keywords=[])),
-                ast.Expr(value=ast.Call(func=ast.Name("completing_statement", ast.Load()),
-                         args=[node.value, ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
-                         keywords=[])),
+                ast.Return(value=ast.Call(func=ast.Name("completing_statement", ast.Load()),
+                           args=[node.value, ast.Str(self.module), ast.Num(node.lineno), ast.Num(self.statement_counter)],
+                           keywords=[])),
             ]
 
         return [

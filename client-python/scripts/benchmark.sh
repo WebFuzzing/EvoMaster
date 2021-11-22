@@ -6,9 +6,9 @@ EVOMASTER_TIME="30m"
 
 for SEED in {1..5}
 do
-    for APP in 'ncs' 'scs'
+    for APP in 'ncs' 'scs' 'news'
     do
-        for LEVEL in 0 1 2 3
+        for LEVEL in 0 1 2
         do
             # Prepare workdirs
             GENERATED_DIR="generated/$APP/$LEVEL"
@@ -18,9 +18,12 @@ do
             echo $! > save_pid.txt
             PID="$(cat save_pid.txt)"
 
-            TESTS_DIR="$GENERATED_DIR/$PID/tests"
-            LOGS_DIR="$GENERATED_DIR/$PID/logs"
-            COVERAGE_DIR="$GENERATED_DIR/$PID/coverage"
+            SEED=$(python -c 'import random; rng = random.SystemRandom(); print(rng.randint(1, 2**31-1))');
+            echo "Using randomly generated seed: $SEED"
+
+            TESTS_DIR="$GENERATED_DIR/$SEED/tests"
+            LOGS_DIR="$GENERATED_DIR/$SEED/logs"
+            COVERAGE_DIR="$GENERATED_DIR/$SEED/coverage"
             mkdir -p $TESTS_DIR
             mkdir -p $LOGS_DIR
             mkdir -p $COVERAGE_DIR
