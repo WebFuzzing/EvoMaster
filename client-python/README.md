@@ -43,3 +43,9 @@ Running generated tests
 ```
 python -m pytest tests/generated/path/to/test
 ```
+
+Packaging
+```
+python -m build
+python -m twine upload dist/*
+```
