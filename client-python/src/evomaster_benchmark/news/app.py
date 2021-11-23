@@ -8,6 +8,7 @@ from evomaster_benchmark.news.model import db, News
 
 app = Flask(__name__)
 app.config['RESTX_MASK_SWAGGER'] = False
+app.url_map.strict_slashes = False
 
 api = Api(app)
 cs = api.namespace('countries', description='API for country data')

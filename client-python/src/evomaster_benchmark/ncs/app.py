@@ -5,6 +5,7 @@ from evomaster_benchmark.ncs.views import triangle_classify, bessj, expint, fish
 
 app = Flask(__name__)
 app.config['RESTX_MASK_SWAGGER'] = False
+app.url_map.strict_slashes = False
 
 api = Api(app)
 ns = api.namespace('api', description='NCS api')
