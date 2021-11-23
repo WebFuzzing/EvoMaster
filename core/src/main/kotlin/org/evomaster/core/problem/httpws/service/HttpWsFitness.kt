@@ -470,6 +470,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
             return true
         }
 
+        val startingIndex = allDbActions.indexOfLast { it.representExistingData } + 1
         val dto = try {
             DbActionTransformer.transform(allDbActions, sqlIdMap, previous)
         }catch (e : IllegalArgumentException){
@@ -486,10 +487,10 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
         val map = sqlResults?.idMapping
         val executedResults = sqlResults?.executionResults
 
-        if (executedResults?.size?:0 > allDbActions.size)
+        if ((executedResults?.size?:0) > allDbActions.size)
             throw IllegalStateException("incorrect insertion execution results (${executedResults!!.size}) which is more than the size of insertions (${allDbActions.size}).")
         executedResults?.forEachIndexed { index, b ->
-            dbresults[index].setInsertExecutionResult(b)
+            dbresults[startingIndex+index].setInsertExecutionResult(b)
         }
         previous.addAll(allDbActions)
 
