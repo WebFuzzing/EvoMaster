@@ -1,5 +1,7 @@
 package org.evomaster.core.output.service
 
+import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.output.Lines
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
@@ -7,18 +9,44 @@ import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
 
 class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
 
     companion object {
         private val log = LoggerFactory.getLogger(GraphQLTestCaseWriter::class.java)
     }
+
+    @Inject(optional = true)
+    protected lateinit var rc: RemoteController
+
+    protected lateinit var infoDto: SutInfoDto
+
+    @PostConstruct
+    protected fun initialize() {
+
+        log.debug("Initializing {}", GraphQLTestCaseWriter::class.simpleName)
+        if (!config.blackBox || config.bbExperiments) {
+            rc.checkConnection()
+
+            val started = rc.startSUT()
+            if (!started) {
+                throw SutProblemException("Failed to start the system under test")
+            }
+
+            infoDto = rc.getSutInfo()
+                ?: throw SutProblemException("Failed to retrieve the info about the system under test")
+        }
+        log.debug("Done initializing {}", GraphQLTestCaseWriter::class.simpleName)
+    }
+
 
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>){
         if (ind.individual is GraphQLIndividual) {
@@ -111,8 +139,9 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                 lines.append("$baseUrlOfSut + \"")
             }
 
-            val path = "/graphql"  //FIXME not hardcoded
-            lines.append("${GeneUtils.applyEscapes(path, mode = GeneUtils.EscapeMode.NONE, format = format)}\"")
+           val path= infoDto.graphQLProblem?.endpoint?.removePrefix(infoDto.baseUrlOfSUT)
+
+            lines.append("${path?.let { GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.NONE, format = format) }}\"")
         }
 
         lines.append(")")
