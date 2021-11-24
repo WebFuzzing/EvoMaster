@@ -1042,10 +1042,10 @@ class TestCaseWriterTest {
     @Test
     fun testDbInBetween() {
         val fooId = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
-        val foo = Table("Foo", setOf(fooId), HashSet<ForeignKey>())
+        val foo = Table("Foo", setOf(fooId), setOf())
 
         val fkId = Column("fkId", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
-        val bar = Table("Bar", setOf(fooId, fkId), HashSet<ForeignKey>())
+        val bar = Table("Bar", setOf(fooId, fkId), setOf())
 
         val pkGeneUniqueId = 12345L
 
@@ -1115,10 +1115,10 @@ public void test() throws Exception {
     @Test
     fun testDbInBetweenSkipFailure() {
         val fooId = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
-        val foo = Table("Foo", setOf(fooId), HashSet<ForeignKey>())
+        val foo = Table("Foo", setOf(fooId), setOf())
 
         val fkId = Column("fkId", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
-        val bar = Table("Bar", setOf(fooId, fkId), HashSet<ForeignKey>())
+        val bar = Table("Bar", setOf(fooId, fkId), setOf())
 
         val pkGeneUniqueId = 12345L
 
