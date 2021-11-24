@@ -7,7 +7,6 @@ import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -20,7 +19,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         private val log = LoggerFactory.getLogger(GraphQLTestCaseWriter::class.java)
     }
 
-    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>){
+    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<String>){
         if (ind.individual is GraphQLIndividual) {
             ind.evaluatedActions().forEach { a ->
                 handleSingleCall(a, lines, baseUrlOfSut)

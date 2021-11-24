@@ -1093,7 +1093,7 @@ public void test() throws Exception {
                 .get(baseUrlOfSut + "/foo");
     } catch(Exception e){
     }
-    List<InsertionDto> insertions1 = sql().insertInto("Bar", 1002L)
+    List<InsertionDto> insertions1 = sql(insertions0).insertInto("Bar", 1002L)
             .d("Id", "42")
             .d("fkId", "42")
         .dtos();

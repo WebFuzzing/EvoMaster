@@ -3,8 +3,6 @@ package org.evomaster.core.output
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
-import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedDbAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
@@ -19,25 +17,38 @@ import org.evomaster.core.search.gene.sql.SqlWrapperGene
  */
 object SqlWriter {
 
+    /**
+     * generate sql insert actions into test case based on [dbInitialization]
+     * @param format is the format of tests to be generated
+     * @param dbInitialization contains the db actions to be generated
+     * @param lines is used to save generated textual lines with respects to [dbInitialization]
+     * @param allDbInitialization are all db actions in this test
+     * @param groupIndex specifies an index of a group of this [dbInitialization]
+     * @param insertionVars is a list of previous variable names of the db actions
+     * @param skipFailure specifies whether to skip failure tests
+     */
     fun handleDbInitialization(
-        format: OutputFormat,
-        dbInitialization: List<EvaluatedDbAction>,
-        lines: Lines,
-        allDbInitialization: List<DbAction> = dbInitialization.map { it.action },
-        groupIndex: String ="",
-        skipFailure : Boolean) {
+            format: OutputFormat,
+            dbInitialization: List<EvaluatedDbAction>,
+            lines: Lines,
+            allDbInitialization: List<DbAction> = dbInitialization.map { it.action },
+            groupIndex: String ="",
+            insertionVars: MutableList<String>,
+            skipFailure: Boolean) {
 
         if (dbInitialization.isEmpty() || dbInitialization.none { !it.action.representExistingData && (!skipFailure || it.result.getInsertExecutionResult())}) {
             return
         }
 
+        val insertionVar = "insertions${groupIndex}"
+        val previousVar = insertionVars.joinToString(",") { it }
         dbInitialization
                 .filter { !it.action.representExistingData && (!skipFailure || it.result.getInsertExecutionResult())}
                 .forEachIndexed { index, evaluatedDbAction ->
 
                     lines.add(when {
-                        index == 0 && format.isJava() -> "List<InsertionDto> insertions${groupIndex} = sql()"
-                        index == 0 && format.isKotlin() -> "val insertions${groupIndex} = sql()"
+                        index == 0 && format.isJava() -> "List<InsertionDto> $insertionVar = sql($previousVar)"
+                        index == 0 && format.isKotlin() -> "val $insertionVar = sql($previousVar)"
                         else -> ".and()"
                     } + ".insertInto(\"${evaluatedDbAction.action.table.name}\", ${evaluatedDbAction.action.geInsertionId()}L)")
 
@@ -75,8 +86,11 @@ object SqlWriter {
 
         lines.deindent()
 
-        lines.add("controller.execInsertionsIntoDatabase(insertions${groupIndex})")
+        lines.add("controller.execInsertionsIntoDatabase($insertionVar)")
         lines.appendSemicolon(format)
+
+        insertionVars.add(insertionVar)
+
     }
 
     private fun getPrintableValue(format: OutputFormat, g: Gene): String {
