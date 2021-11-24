@@ -34,15 +34,12 @@ open class ImpactsOfIndividual(
         /**
          * a history of structures of [this] with best fitness
          */
-        val impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize"),
-
-        val maxSqlInitActionsPerMissingData: Int
+        val impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize")
 ) {
 
-    constructor(individual: Individual, abstractInitializationGeneToMutate: Boolean, maxSqlInitActionsPerMissingData: Int, fitnessValue: FitnessValue?) : this(
+    constructor(individual: Individual, abstractInitializationGeneToMutate: Boolean,  fitnessValue: FitnessValue?) : this(
             initializationGeneImpacts = InitializationActionImpacts(abstractInitializationGeneToMutate),//individual.seeInitializingActions().map { a -> ImpactsOfAction(a) }.toMutableList(),
-            actionGeneImpacts = if (individual.seeActions(ActionFilter.NO_INIT).isEmpty()) mutableListOf(ImpactsOfAction(individual, individual.seeGenes())) else individual.seeActions(ActionFilter.NO_INIT).map { a -> ImpactsOfAction(a) }.toMutableList(),
-            maxSqlInitActionsPerMissingData = maxSqlInitActionsPerMissingData
+            actionGeneImpacts = if (individual.seeActions(ActionFilter.NO_INIT).isEmpty()) mutableListOf(ImpactsOfAction(individual, individual.seeGenes())) else individual.seeActions(ActionFilter.NO_INIT).map { a -> ImpactsOfAction(a) }.toMutableList()
     ) {
         if (fitnessValue != null) {
             impactsOfStructure.updateStructure(individual, fitnessValue)
@@ -60,8 +57,7 @@ open class ImpactsOfIndividual(
         return ImpactsOfIndividual(
                 initializationGeneImpacts.copy(),
                 actionGeneImpacts.map { it.copy() }.toMutableList(),
-                impactsOfStructure.copy(),
-                maxSqlInitActionsPerMissingData
+                impactsOfStructure.copy()
         )
     }
 
@@ -74,8 +70,7 @@ open class ImpactsOfIndividual(
         return ImpactsOfIndividual(
                 initializationGeneImpacts.clone(),
                 actionGeneImpacts.map { it.clone() }.toMutableList(),
-                impactsOfStructure.clone(),
-                maxSqlInitActionsPerMissingData
+                impactsOfStructure.clone()
         )
     }
 

@@ -42,21 +42,20 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
             initializationGeneImpacts: InitializationActionImpacts,
             actionGeneImpacts: MutableList<ImpactsOfAction>,
             impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize"),
-            maxSqlInitActionsPerMissingData: Int,
             resourceSizeImpact: MutableMap<String, IntegerGeneImpact>,
             sqlTableImpact: MutableMap<String, IntegerGeneImpact>,
             anyResourceSizeImpact: IntegerGeneImpact,
             anySqlTableSizeImpact: IntegerGeneImpact
 
-    ) : super(initializationGeneImpacts, actionGeneImpacts, impactsOfStructure, maxSqlInitActionsPerMissingData) {
+    ) : super(initializationGeneImpacts, actionGeneImpacts, impactsOfStructure) {
         this.resourceSizeImpact = resourceSizeImpact
         this.sqlTableSizeImpact = sqlTableImpact
         this.anyResourceSizeImpact = anyResourceSizeImpact
         this.anySqlTableSizeImpact = anySqlTableSizeImpact
     }
 
-    constructor(individual: RestIndividual, abstractInitializationGeneToMutate: Boolean, maxSqlInitActionsPerMissingData: Int, fitnessValue: FitnessValue?)
-            : super(individual, abstractInitializationGeneToMutate, maxSqlInitActionsPerMissingData, fitnessValue) {
+    constructor(individual: RestIndividual, abstractInitializationGeneToMutate: Boolean, fitnessValue: FitnessValue?)
+            : super(individual, abstractInitializationGeneToMutate, fitnessValue) {
         resourceSizeImpact = mutableMapOf<String, IntegerGeneImpact>().apply {
             individual.seeResource(RestIndividual.ResourceFilter.ALL).forEach { r->
                 putIfAbsent(r, IntegerGeneImpact("size"))
@@ -79,7 +78,6 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
                 initializationGeneImpacts.copy(),
                 actionGeneImpacts.map { it.copy() }.toMutableList(),
                 impactsOfStructure.copy(),
-                maxSqlInitActionsPerMissingData,
                 mutableMapOf<String, IntegerGeneImpact>().apply {
                     putAll(resourceSizeImpact.map { it.key to it.value.copy() })
                 },
@@ -99,7 +97,6 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
                 initializationGeneImpacts.clone(),
                 actionGeneImpacts.map { it.clone() }.toMutableList(),
                 impactsOfStructure.clone(),
-                maxSqlInitActionsPerMissingData,
                 mutableMapOf<String, IntegerGeneImpact>().apply {
                     putAll(resourceSizeImpact.map { it.key to it.value.clone() })
                 },

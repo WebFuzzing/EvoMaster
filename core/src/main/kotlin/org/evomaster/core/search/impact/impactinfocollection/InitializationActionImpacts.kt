@@ -107,12 +107,13 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
             if (last){
                 if (anyRemove && keep.isNotEmpty()){
                     val newTemplate = generateTemplateKey(keep.map { completeSequence[it].actionName?:""})
-                    keep.forEachIndexed { index, i ->
-                        indexMap[i] = newTemplate to index
+                    keep.forEachIndexed { index, j ->
+                        indexMap[j] = newTemplate to index
                     }
                     template.putIfAbsent(newTemplate, keep.map { k->
-                        ImpactsOfAction(removed.find { it.second == i }?.first
-                                ?: throw IllegalStateException("cannot find removed dbactions at $i"))
+//                        ImpactsOfAction(removed.find { it.second == i }?.first
+//                                ?: throw IllegalStateException("cannot find removed dbactions at $i"))
+                        completeSequence[k]
                     })
                 }
                 anyRemove = false
@@ -121,6 +122,9 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
         }
 
         completeSequence.removeAll(removedImpacts)
+        removedIndex.reversed().forEach {
+            indexMap.removeAt(it)
+        }
 
         //handle template
         val removeTemplates = template.filter {
@@ -148,6 +152,10 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
         template.putIfAbsent(key, insertions.map { a-> ImpactsOfAction(a) })
         if (enableImpactOnDuplicatedTimes)
             templateDuplicateTimes.putIfAbsent(key, Impact(id = key))
+
+        if (completeSequence.size != indexMap.size){
+            System.out.println()
+        }
     }
 
     fun updateInitializationImpactsAtBeginning(addedInsertions: List<List<Action>>, existingDataSize : Int){

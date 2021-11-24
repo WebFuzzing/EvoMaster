@@ -87,9 +87,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                     index = index,
                     impactInfo = if ((config.isEnabledImpactCollection())){
                         if(individual is RestIndividual && config.isEnabledResourceDependency())
-                            ResourceImpactOfIndividual(individual, config.abstractInitializationGeneToMutate, config.maxSqlInitActionsPerMissingData, fitness)
+                            ResourceImpactOfIndividual(individual, config.abstractInitializationGeneToMutate, fitness)
                         else
-                            ImpactsOfIndividual(individual, config.abstractInitializationGeneToMutate, config.maxSqlInitActionsPerMissingData, fitness)
+                            ImpactsOfIndividual(individual, config.abstractInitializationGeneToMutate, fitness)
                     }
                     else
                         null)
