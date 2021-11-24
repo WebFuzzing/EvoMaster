@@ -67,7 +67,7 @@ abstract class TestCaseWriter {
 
         lines.indented {
             val ind = test.test
-            val insertionVars = mutableListOf<String>()
+            val insertionVars = mutableListOf<Pair<String, String>>()
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars)
         }
@@ -84,9 +84,9 @@ abstract class TestCaseWriter {
      * Before starting to make actions (eg HTTP calls in web apis), check if we need to declare any field, ie variable,
      * for this test.
      */
-    protected abstract fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<String>)
+    protected abstract fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>)
 
-    protected abstract fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<String>)
+    protected abstract fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>)
 
     protected abstract fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String)
 

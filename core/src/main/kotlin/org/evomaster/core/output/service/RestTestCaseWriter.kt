@@ -44,7 +44,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 || ((call as RestCallAction).saveLocation && !res.stopping)
     }
 
-    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<String>) {
+    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
         super.handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
 
         if (shouldCheckExpectations()) {
@@ -83,10 +83,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
     }
 
-    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<String>){
+    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>){
         //SQL actions are generated in between
         if (ind.individual is RestIndividual) {
-            var previous : String?= null
             ind.evaluatedResourceActions().forEachIndexed { index, c ->
                 // db
                 if (c.first.isNotEmpty())

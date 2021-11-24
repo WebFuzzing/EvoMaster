@@ -33,7 +33,7 @@ object SqlWriter {
             lines: Lines,
             allDbInitialization: List<DbAction> = dbInitialization.map { it.action },
             groupIndex: String ="",
-            insertionVars: MutableList<String>,
+            insertionVars: MutableList<Pair<String, String>>,
             skipFailure: Boolean) {
 
         if (dbInitialization.isEmpty() || dbInitialization.none { !it.action.representExistingData && (!skipFailure || it.result.getInsertExecutionResult())}) {
@@ -41,7 +41,9 @@ object SqlWriter {
         }
 
         val insertionVar = "insertions${groupIndex}"
-        val previousVar = insertionVars.joinToString(",") { it }
+        val insertionVarResult = "${insertionVar}result"
+        val previousVar = insertionVars.joinToString(", ") { it.first }
+        val previousVarResults = insertionVars.joinToString(", ") { it.second }
         dbInitialization
                 .filter { !it.action.representExistingData && (!skipFailure || it.result.getInsertExecutionResult())}
                 .forEachIndexed { index, evaluatedDbAction ->
@@ -86,10 +88,11 @@ object SqlWriter {
 
         lines.deindent()
 
-        lines.add("controller.execInsertionsIntoDatabase($insertionVar)")
+
+        lines.add("InsertionResultsDto $insertionVarResult = controller.execInsertionsIntoDatabase(${if (previousVarResults.isBlank()) insertionVar else "$insertionVar, $previousVarResults"})")
         lines.appendSemicolon(format)
 
-        insertionVars.add(insertionVar)
+        insertionVars.add(insertionVar to insertionVarResult)
 
     }
 

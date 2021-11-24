@@ -554,7 +554,7 @@ public class EMController {
                 if (dto.command != null) {
                     queryResult = SqlScriptRunner.execCommand(connection, dto.command);
                 } else {
-                    insertionResultsDto = SqlScriptRunner.execInsert(connection, dto.insertions);
+                    insertionResultsDto = SqlScriptRunner.execInsert(connection, dto.insertions, dto.previousInsertionResults);
 
                 }
             } catch (Exception e) {

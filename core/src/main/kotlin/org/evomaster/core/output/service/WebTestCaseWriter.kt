@@ -11,7 +11,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 
 abstract class WebTestCaseWriter : TestCaseWriter() {
 
-    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<String>) {
+    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
 
         CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
         TokenWriter.handleGettingTokens(format,ind, lines, baseUrlOfSut, this)

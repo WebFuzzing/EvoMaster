@@ -19,7 +19,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         private val log = LoggerFactory.getLogger(GraphQLTestCaseWriter::class.java)
     }
 
-    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<String>){
+    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>){
         if (ind.individual is GraphQLIndividual) {
             ind.evaluatedActions().forEach { a ->
                 handleSingleCall(a, lines, baseUrlOfSut)

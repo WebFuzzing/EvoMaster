@@ -3,6 +3,7 @@ package org.evomaster.core.problem.httpws.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.DatabaseExecution
@@ -482,6 +483,9 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
                 throw e
         }
         dto.idCounter = StaticCounter.getAndIncrease()
+        if (sqlIdMap.isNotEmpty()){
+            dto.previousInsertionResults = arrayOf(InsertionResultsDto().apply { idMapping = sqlIdMap })
+        }
 
         val sqlResults = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
         val map = sqlResults?.idMapping
