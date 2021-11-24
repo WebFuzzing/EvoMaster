@@ -88,8 +88,11 @@ object SqlWriter {
 
         lines.deindent()
 
-
-        lines.add("InsertionResultsDto $insertionVarResult = controller.execInsertionsIntoDatabase(${if (previousVarResults.isBlank()) insertionVar else "$insertionVar, $previousVarResults"})")
+        lines.add(when{
+            format.isJava() -> "InsertionResultsDto "
+            format.isKotlin() -> "val "
+            else -> throw IllegalStateException("Not support sql insertions generation for $format")
+        } + "$insertionVarResult = controller.execInsertionsIntoDatabase(${if (previousVarResults.isBlank()) insertionVar else "$insertionVar, $previousVarResults"})")
         lines.appendSemicolon(format)
 
         insertionVars.add(insertionVar to insertionVarResult)
