@@ -1477,7 +1477,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Whether to skip failed SQL commands in the generated test files")
-    var skipFailureSQLInTestFile = false
+    var skipFailureSQLInTestFile = true
 
 
     @Experimental

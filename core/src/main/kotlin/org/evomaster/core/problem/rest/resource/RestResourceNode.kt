@@ -242,7 +242,7 @@ class RestResourceNode(
                 posts[0]
             }
             else -> null
-        }
+        }?.copyContent() as? RestCallAction
 
         if(post != null){
             postCreation.actions.add(0, post)
@@ -264,7 +264,7 @@ class RestResourceNode(
     }
 
     private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){
-        val post = chooseClosestAncestor(path, listOf(HttpVerb.POST))
+        val post = chooseClosestAncestor(path, listOf(HttpVerb.POST))?.copyContent() as? RestCallAction
         if(post != null){
             postCreationChain.actions.add(0, post)
             if (post.path.hasVariablePathParameters() &&
@@ -340,11 +340,11 @@ class RestResourceNode(
 
     /**
      * sample a rest resource with one action based on the specified [verb]
-     * if [verb] is null, select the action at random
+     * if [verb] is null, select an action at random from available [actions] in this node
      */
     fun sampleOneAction(verb : HttpVerb? = null, randomness: Randomness) : RestResourceCalls{
-        val al = if(verb != null) getActionByHttpVerb(actions, verb) else randomness.choose(actions).copy() as RestCallAction
-        return sampleOneAction(al!!, randomness)
+        val al = if(verb != null) getActionByHttpVerb(actions, verb) else randomness.choose(actions)
+        return sampleOneAction(al!!.copyContent() as RestCallAction, randomness)
     }
 
     /**
@@ -561,7 +561,7 @@ class RestResourceNode(
             ancestors.find { it.path.toString() == path.toString() }
         }
         ar?.let{
-            val others = hasWithVerbs(it.ancestors.flatMap { it.actions }.filterIsInstance<RestCallAction>(), verbs)
+            val others = hasWithVerbs(it.ancestors.flatMap { it.actions }, verbs)
             if(others.isEmpty()) return null
             return chooseLongestPath(others)
         }

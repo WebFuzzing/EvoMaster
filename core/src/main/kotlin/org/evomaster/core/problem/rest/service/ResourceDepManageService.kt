@@ -273,12 +273,11 @@ class ResourceDepManageService {
                     /*
                      TODO Man should only apply on POST Action? how about others?
                      */
-                    val post = r.actions.first { it.verb == HttpVerb.POST } as RestCallAction
+                    val post = r.actions.first { it.verb == HttpVerb.POST }
                     post.tokens.forEach { _, u ->
                         resourceCluster.getCluster().values.forEach { or ->
                             if (or != r) {
                                 or.actions
-                                        .filterIsInstance<RestCallAction>()
                                         .flatMap { it.tokens.values.filter { t -> t.fromDefinition && t.isDirect && t.isType } }
                                         .filter { ot ->
                                             StringSimilarityComparator.isSimilar(u.getKey(), ot.getKey())

@@ -55,10 +55,9 @@ class SupportedCodeOracle : ImplementedOracle() {
             }
             val supportedCode = supportedCodes.joinToString(", ")
 
-            if(supportedCode.equals("default", ignoreCase = true)
-                    || supportedCode.equals("")){
+            if(supportedCode.equals("")){
                 lines.add("/*")
-                lines.add(" Note: The default code seems to be the only one defined. https://swagger.io/docs/specification/describing-responses/.")
+                lines.add(" Note: No supported codes appear to be defined. https://swagger.io/docs/specification/describing-responses/.")
                 lines.add(" This is somewhat unexpected, so the code below is likely to lead to a failed expectation")
                 lines.add("*/")
                 when {
@@ -76,7 +75,7 @@ class SupportedCodeOracle : ImplementedOracle() {
     fun supportedCode(call: RestCallAction, res: HttpWsCallResult): Boolean{
         val code = res.getStatusCode().toString()
         val validCodes = getSupportedCode(call)
-        return validCodes.contains(code)
+        return (validCodes.contains(code) || validCodes.contains("default"))
     }
 
     fun getSupportedCode(call: RestCallAction): MutableSet<String>{
@@ -113,7 +112,7 @@ class SupportedCodeOracle : ImplementedOracle() {
         val gens = individual.evaluatedActions().any {
             !supportedCode(it.action as RestCallAction, it.result as HttpWsCallResult)
         }
-        return false
+        return gens
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
