@@ -30,12 +30,4 @@ public class DatabaseCommandDto {
      * come in this list AFTER Y.
      */
     public List<InsertionDto> insertions = new ArrayList<>();
-
-
-    /**
-     * Some insertions might be executed previously
-     * in order to avoid missing pk info in this [insertions],
-     * results of previously executed insertions are specified here
-     */
-    public InsertionResultsDto[] previousInsertionResults;
 }

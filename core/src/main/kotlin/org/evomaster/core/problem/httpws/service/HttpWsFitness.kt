@@ -483,9 +483,6 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
                 throw e
         }
         dto.idCounter = StaticCounter.getAndIncrease()
-        if (sqlIdMap.isNotEmpty()){
-            dto.previousInsertionResults = arrayOf(InsertionResultsDto().apply { idMapping = sqlIdMap })
-        }
 
         val sqlResults = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
         val map = sqlResults?.idMapping
