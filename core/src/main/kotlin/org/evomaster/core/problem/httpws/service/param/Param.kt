@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.param
+package org.evomaster.core.problem.httpws.service.param
 
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
@@ -14,7 +14,7 @@ abstract class Param(val name: String, val gene : Gene, children: List<Structura
         }
     }
 
-    final override fun copy(): Param{
+    final override fun copy(): Param {
         val copy = super.copy()
         if (copy !is Param)
             throw IllegalStateException("mismatched type: the type should be Param, but it is ${this::class.java.simpleName}")
