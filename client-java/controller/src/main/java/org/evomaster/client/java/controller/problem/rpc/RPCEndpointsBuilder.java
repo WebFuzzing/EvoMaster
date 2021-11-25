@@ -74,7 +74,11 @@ public class RPCEndpointsBuilder {
             if (rpcType == RPCType.THRIFT)
                 throw new RuntimeException("Array should not exist in Thrift service");
             if (!(genericType instanceof  GenericArrayType)){
-                throw new RuntimeException("genericType is "+ genericType.getTypeName() + " "+genericType.getClass().getName()+" clazz is"+clazz.getName());
+                String warnInfo = "genericType is "+ genericType.getTypeName() + " "+ genericType.getClass().getName()
+                        + " clazz is " + clazz.getName()
+                        + " param is " + name
+                        + " depth is " + String.join(",", depth);
+                throw new RuntimeException(warnInfo);
             }
             Type type = ((GenericArrayType)genericType).getGenericComponentType();
             Class<?> templateClazz = getTemplateClass(type);
