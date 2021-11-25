@@ -83,9 +83,19 @@ abstract class TestCaseWriter {
     /**
      * Before starting to make actions (eg HTTP calls in web apis), check if we need to declare any field, ie variable,
      * for this test.
+     * @param lines are generated lines which save the generated test scripts
+     * @param ind is the final individual (ie test) to be generated into the test scripts
+     * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
      */
     protected abstract fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>)
 
+    /**
+     * handle action call generation
+     * @param lines are generated lines which save the generated test scripts
+     * @param baseUrlOfSut is the base url of sut
+     * @param ind is the final individual (ie test) to be generated into the test scripts
+     * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
+     */
     protected abstract fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>)
 
     protected abstract fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String)

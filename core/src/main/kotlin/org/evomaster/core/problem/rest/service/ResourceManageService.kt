@@ -216,7 +216,7 @@ class ResourceManageService {
                     previousDbActions = bindWith?.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>} ?: listOf())
 
                 if(!created){
-                    LoggingUtil.uniqueWarn(log, "resource creation for $resourceKey fails")
+                    LoggingUtil.uniqueWarn(log, "it is unlikely to prepare a resource for $resourceKey with SQL/REST action")
                 }else{
                     call.status =  ResourceStatus.CREATED_SQL
                 }

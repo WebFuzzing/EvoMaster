@@ -18,7 +18,7 @@ import java.nio.file.StandardOpenOption
 import kotlin.math.max
 
 /**
- * Archive-based mutator which handle
+ * Archive impact-based mutator which handle
  * - archive-based gene selection to mutate
  * - mutate the selected genes based on their performance (i.e., results of fitness evaluation)
  * - besides, string mutation is designed regarding fitness evaluation using LeftAlignmentDistance
@@ -126,7 +126,13 @@ class ArchiveImpactSelector {
         return noVisit
     }
 
-
+    /**
+     * extract values of [impacts] based on the specified [targets] and [properties] of impacts
+     * @param impacts to be extracted
+     * @param targets to be optimized
+     * @param properties are properties of impacts, e.g., times Of NoImpact, times of impacts
+     * @param usingCounter specifies whether to employ the counter (ie, times) to extract impacts, otherwise degree ([0.0, 1.0] times/total)
+     */
     fun impactBasedOnWeights(impacts : List<Impact>, targets: Set<Int>, properties: Array<ImpactProperty>, usingCounter: Boolean? = null) : Array<Double>{
 
         val values : List<MutableList<Double>> = impacts.map { impact ->
@@ -235,6 +241,10 @@ class ArchiveImpactSelector {
         }
     }
 
+    /**
+     * save impact info
+     * NOTE THAT it is only used for debugging
+     */
     fun saveImpactSnapshot(index : Int, checkedTargets: Set<Int>, targetsInfo : Map<Int, EvaluatedMutation>, result: EvaluatedMutation, evaluatedIndividual: EvaluatedIndividual<*>) {
         if (!config.isEnabledImpactCollection()) return
         if(!config.saveImpactAfterMutation) return

@@ -24,7 +24,7 @@ object SqlWriter {
      * @param lines is used to save generated textual lines with respects to [dbInitialization]
      * @param allDbInitialization are all db actions in this test
      * @param groupIndex specifies an index of a group of this [dbInitialization]
-     * @param insertionVars is a list of previous variable names of the db actions
+     * @param insertionVars is a list of previous variable names of the db actions (Pair.first) and corresponding results (Pair.second)
      * @param skipFailure specifies whether to skip failure tests
      */
     fun handleDbInitialization(

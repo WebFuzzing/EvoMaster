@@ -61,6 +61,7 @@ class ImpactUtils {
                 is SqlUUIDGene -> SqlUUIDGeneImpact(id, gene)
                 is SqlPrimaryKeyGene -> SqlPrimaryKeyGeneImpact(id, gene)
                 is SqlForeignKeyGene -> SqlForeignKeyGeneImpact(id)
+                is SqlAutoIncrementGene -> GeneImpact(id)
                 // regex
                 is RegexGene -> RegexGeneImpact(id, gene)
                 is DisjunctionListRxGene -> DisjunctionListRxGeneImpact(id, gene)
