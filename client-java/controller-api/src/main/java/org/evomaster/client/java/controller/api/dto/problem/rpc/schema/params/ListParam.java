@@ -1,15 +1,13 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.TypeSchema;
 
-import java.lang.reflect.Array;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- *
- * thrift -> ArrayList (see https://thrift.apache.org/docs/types#containers)
+ * thrift
+ *  ArrayList (see https://thrift.apache.org/docs/types#containers)
  */
 public class ListParam extends NamedTypedValue<CollectionType, List>{
     List<NamedTypedValue> values;

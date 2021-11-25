@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- *
- * thrift -> HashMap (see https://thrift.apache.org/docs/types#containers)
+ * thrift
+ *  HashMap (see https://thrift.apache.org/docs/types#containers)
  */
 public class MapParam extends NamedTypedValue<MapType, Map>{
     List<NamedTypedValue> keys;
