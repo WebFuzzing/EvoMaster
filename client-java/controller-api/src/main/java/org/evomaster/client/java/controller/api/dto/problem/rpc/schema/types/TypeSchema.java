@@ -1,11 +1,17 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types;
 
 /**
- * created by manzhang on 2021/11/15
+ * type schema
  */
 public class TypeSchema {
 
+    /**
+     * simple name of the type
+     */
     private final String type;
+    /**
+     * full name of the type, ie, including full package path
+     */
     private final String fullTypeName;
 
     public TypeSchema(String type, String fullTypeName){

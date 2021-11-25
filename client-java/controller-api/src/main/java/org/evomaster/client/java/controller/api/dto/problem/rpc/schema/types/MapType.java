@@ -3,10 +3,16 @@ package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
 
 /**
- * created by manzhang on 2021/11/15
+ * map type
  */
 public class MapType extends TypeSchema{
+    /**
+     * template of keys of the map
+     */
     private final NamedTypedValue keyTemplate;
+    /**
+     * template of values of the map
+     */
     private final NamedTypedValue valueTemplate;
 
     public MapType(String type, String fullTypeName, NamedTypedValue keyTemplate, NamedTypedValue valueTemplate) {

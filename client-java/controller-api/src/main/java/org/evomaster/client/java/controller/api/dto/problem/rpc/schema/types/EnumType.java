@@ -1,10 +1,14 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types;
 
 /**
- * created by manzhang on 2021/11/15
+ * enumeration
  */
 public class EnumType extends TypeSchema {
 
+    /**
+     * items in this enumeration
+     * here we only collect name of the items
+     */
     private final String[] items;
 
     public EnumType(String type, String fullTypeName, String[] items) {

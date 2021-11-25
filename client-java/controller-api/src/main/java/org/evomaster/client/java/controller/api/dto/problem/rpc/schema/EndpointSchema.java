@@ -6,11 +6,22 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * created by manzhang on 2021/11/3
+ * endpoint dto for RPC service
  */
 public final class EndpointSchema implements Serializable {
+    /**
+     * name of the endpoint
+     */
     private final String name;
+
+    /**
+     * request params of the endpoint
+     */
     private final List<NamedTypedValue> requestParams;
+
+    /**
+     * response of the endpoint
+     */
     private final NamedTypedValue response;
 
     //TODO handle throw exception of the method

@@ -4,10 +4,14 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * created by manzhang on 2021/11/15
+ * primitive types
  */
 public class PrimitiveOrWrapperType extends TypeSchema {
 
+    /**
+     * represent if the type is wrapper
+     * for instance, isWrapper for Integer is true and for int is false
+     */
     private final boolean isWrapper;
 
     public PrimitiveOrWrapperType(String type, String fullTypeName, boolean isWrapper) {

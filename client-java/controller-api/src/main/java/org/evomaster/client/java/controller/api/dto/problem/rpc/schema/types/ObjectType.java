@@ -5,9 +5,12 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.Na
 import java.util.List;
 
 /**
- * created by manzhang on 2021/11/15
+ * object type
  */
 public class ObjectType extends TypeSchema {
+    /**
+     * a list of fields of the object
+     */
     private final List<NamedTypedValue> fields;
 
     public ObjectType(String type, String fullTypeName, List<NamedTypedValue> fields) {

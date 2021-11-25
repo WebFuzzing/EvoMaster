@@ -9,10 +9,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * created by manzhang on 2021/11/3
+ * schema dto of the RCP service
  */
 public final class InterfaceSchema implements Serializable {
+    /**
+     * name of the interface
+     */
     private final String name;
+
+    /**
+     * a list of available endpoints in the service
+     */
     private List<EndpointSchema> endpoints;
 
     /**
