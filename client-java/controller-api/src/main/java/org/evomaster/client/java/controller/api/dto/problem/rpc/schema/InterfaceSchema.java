@@ -23,7 +23,7 @@ public final class InterfaceSchema implements Serializable {
     private List<EndpointSchema> endpoints;
 
     /**
-     * key is the name of type
+     * key is the full name of type
      * value is one example
      */
     private Map<String, TypeSchema> typeCollections = new HashMap<>();
@@ -52,4 +52,11 @@ public final class InterfaceSchema implements Serializable {
         return endpoints.stream().filter(s-> s.getName().equals(name)).collect(Collectors.toList());
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public Map<String, TypeSchema> getTypeCollections() {
+        return typeCollections;
+    }
 }
