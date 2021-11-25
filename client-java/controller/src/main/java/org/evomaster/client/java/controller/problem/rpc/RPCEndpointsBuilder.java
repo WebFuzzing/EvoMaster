@@ -73,6 +73,9 @@ public class RPCEndpointsBuilder {
         } else if (clazz.isArray()){
             if (rpcType == RPCType.THRIFT)
                 throw new RuntimeException("Array should not exist in Thrift service");
+            if (!(genericType instanceof  GenericArrayType)){
+                throw new RuntimeException("genericType is "+ genericType.getTypeName());
+            }
             Type type = ((GenericArrayType)genericType).getGenericComponentType();
             Class<?> templateClazz = getTemplateClass(type);
             NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
