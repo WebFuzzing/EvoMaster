@@ -10,6 +10,8 @@ public interface RPCInterfaceExample {
 
     public void array(List<String>[] args0);
 
+    public void arrayboolean(boolean[] args0);
+
     public void list(List<String> args0);
 
     public void map(Map<String, String> args0);

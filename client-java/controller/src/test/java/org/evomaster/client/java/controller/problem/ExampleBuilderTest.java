@@ -25,7 +25,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 5;
+        return 6;
     }
 
     @Override
@@ -52,6 +52,19 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertTrue(template.getType() instanceof CollectionType);
         assertTrue(((CollectionType) template.getType()).getTemplate() instanceof StringParam);
 
+    }
+
+    @Test
+    public void testArrayBoolean(){
+
+        EndpointSchema endpoint = getOneEndpoint("arrayboolean");
+        assertNull(endpoint.getResponse());
+        assertEquals(1, endpoint.getRequestParams().size());
+        NamedTypedValue param = endpoint.getRequestParams().get(0);
+        assertTrue(param instanceof ArrayParam);
+        assertTrue(param.getType() instanceof CollectionType);
+        NamedTypedValue template = ((CollectionType) param.getType()).getTemplate();
+        assertTrue(template instanceof BooleanParam);
     }
 
     @Test
@@ -120,11 +133,13 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertTrue(param.getType() instanceof ObjectType);
 
         List<NamedTypedValue> fs = ((ObjectType) param.getType()).getFields();
-        assertEquals(4, fs.size());
+        assertEquals(6, fs.size());
         assertTrue(fs.get(0) instanceof StringParam);
         assertTrue(fs.get(1) instanceof IntParam);
         assertTrue(fs.get(2) instanceof DoubleParam);
         assertTrue(fs.get(3) instanceof ObjectParam);
+        assertTrue(fs.get(4) instanceof ArrayParam);
+        assertTrue(fs.get(5) instanceof ArrayParam);
 
         ObjectParam fs3 = (ObjectParam) fs.get(3);
         assertTrue(fs3.getType().getFields().get(3).getType() instanceof CycleObjectType);

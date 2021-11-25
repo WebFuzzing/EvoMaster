@@ -55,83 +55,94 @@ public class RPCEndpointsBuilder {
     }
 
     private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth) {
-
         depth.add(clazz.getName());
         NamedTypedValue namedValue = null;
 
-        if (PrimitiveOrWrapperType.isPrimitiveOrTypes(clazz)) {
-            namedValue = PrimitiveOrWrapperParam.build(name, clazz);
-        } else if (clazz == String.class) {
-            namedValue = new StringParam(name);
-        } else if (clazz.isEnum()) {
-            String [] items = Arrays.stream(clazz.getEnumConstants()).map(Object::toString).toArray(String[]::new);
-            EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items);
-            EnumParam param = new EnumParam(name, enumType);
-            //register this type in the schema
-            schema.registerType(enumType.copy());
-            namedValue = param;
-        } else if (clazz.isArray()){
-            if (rpcType == RPCType.THRIFT)
-                throw new RuntimeException("Array should not exist in Thrift service");
-            if (!(genericType instanceof  GenericArrayType)){
-                String warnInfo = "genericType is "+ genericType.getTypeName() + " "+ genericType.getClass().getName()
-                        + " clazz is " + clazz.getName()
-                        + " param is " + name
-                        + " depth is " + String.join(",", depth);
-                throw new RuntimeException(warnInfo);
-            }
-            Type type = ((GenericArrayType)genericType).getGenericComponentType();
-            Class<?> templateClazz = getTemplateClass(type);
-            NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
-            CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template);
-            namedValue = new ArrayParam(name, ctype);
-        } else if (clazz == ByteBuffer.class){
-            // handle binary of thrift
-            namedValue = new ByteBufferParam(name);
-        } else if (clazz.isAssignableFrom(List.class) || clazz.isAssignableFrom(Set.class)){
-            if (genericType == null)
-                throw new RuntimeException("genericType should not be null for List and Set class");
-            Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-            Class<?> templateClazz = getTemplateClass(type);
-            NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
-            CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template);
-            if (clazz.isAssignableFrom(List.class))
-                namedValue = new ListParam(name, ctype);
-            else
-                namedValue = new SetParam(name, ctype);
-        } else if (clazz.isAssignableFrom(Map.class)){
-            if (genericType == null)
-                throw new RuntimeException("genericType should not be null for List and Set class");
-            Type keyType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-            Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
-            Class<?> keyTemplateClazz = getTemplateClass(keyType);
-            NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth);
+        try{
 
-            Class<?> valueTemplateClazz = getTemplateClass(valueType);
-            NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth);
-            MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), keyTemplate, valueTemplate);
-            namedValue = new MapParam(name, mtype);
-        } else {
-
-            long cycleSize = depth.stream().filter(s-> s.equals(clazz.getName())).count();
-
-            if (cycleSize < 3){
-                List<NamedTypedValue> fields = new ArrayList<>();
-                for(Field f: clazz.getDeclaredFields()){
-                    if (doSkipReflection(f.getName()))
-                        continue;
-                    NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth);
-                    fields.add(field);
+            if (PrimitiveOrWrapperType.isPrimitiveOrTypes(clazz)) {
+                namedValue = PrimitiveOrWrapperParam.build(name, clazz);
+            } else if (clazz == String.class) {
+                namedValue = new StringParam(name);
+            } else if (clazz.isEnum()) {
+                String [] items = Arrays.stream(clazz.getEnumConstants()).map(Object::toString).toArray(String[]::new);
+                EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items);
+                EnumParam param = new EnumParam(name, enumType);
+                //register this type in the schema
+                schema.registerType(enumType.copy());
+                namedValue = param;
+            } else if (clazz.isArray()){
+                if (rpcType == RPCType.THRIFT)
+                    throw new RuntimeException("Array should not exist in Thrift service");
+                Type type = null;
+                Class<?> templateClazz = null;
+                if (genericType instanceof GenericArrayType){
+                    type = ((GenericArrayType)genericType).getGenericComponentType();
+                    templateClazz = getTemplateClass(type);
+                }else {
+                    templateClazz = clazz.getComponentType();
                 }
-                ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields);
-                schema.registerType(otype);
-                namedValue = new ObjectParam(name, otype);
-            }else {
-                CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName());
-                namedValue = new ObjectParam(name, otype);
+
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
+                CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template);
+                namedValue = new ArrayParam(name, ctype);
+
+            } else if (clazz == ByteBuffer.class){
+                // handle binary of thrift
+                namedValue = new ByteBufferParam(name);
+            } else if (clazz.isAssignableFrom(List.class) || clazz.isAssignableFrom(Set.class)){
+                if (genericType == null)
+                    throw new RuntimeException("genericType should not be null for List and Set class");
+                Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+                Class<?> templateClazz = getTemplateClass(type);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
+                CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template);
+                if (clazz.isAssignableFrom(List.class))
+                    namedValue = new ListParam(name, ctype);
+                else
+                    namedValue = new SetParam(name, ctype);
+            } else if (clazz.isAssignableFrom(Map.class)){
+                if (genericType == null)
+                    throw new RuntimeException("genericType should not be null for List and Set class");
+                Type keyType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+                Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
+
+                Class<?> keyTemplateClazz = getTemplateClass(keyType);
+                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth);
+
+                Class<?> valueTemplateClazz = getTemplateClass(valueType);
+                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth);
+                MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), keyTemplate, valueTemplate);
+                namedValue = new MapParam(name, mtype);
+            } else {
+                if (clazz.getName().startsWith("java")){
+                    throw new RuntimeException("NOT handle "+clazz.getName()+" class in java");
+                }
+
+                long cycleSize = depth.stream().filter(s-> s.equals(clazz.getName())).count();
+
+                if (cycleSize < 3){
+                    List<NamedTypedValue> fields = new ArrayList<>();
+                    for(Field f: clazz.getDeclaredFields()){
+                        if (doSkipReflection(f.getName()))
+                            continue;
+                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth);
+                        fields.add(field);
+                    }
+                    ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields);
+                    schema.registerType(otype);
+                    namedValue = new ObjectParam(name, otype);
+                }else {
+                    CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName());
+                    namedValue = new ObjectParam(name, otype);
+                }
             }
+        }catch (ClassCastException e){
+            throw new RuntimeException(String.format("fail to perform reflection on param/field: %s; class: %s; genericType: %s; class of genericType: %s; depth: %s; error info:%s",
+                    name, clazz.getName(), genericType==null?"null":genericType.getTypeName(), genericType==null?"null":genericType.getClass().getName(), String.join(",", depth), e.getMessage()));
         }
+
 
 
         return namedValue;
@@ -154,4 +165,5 @@ public class RPCEndpointsBuilder {
     private static boolean doSkipReflection(String name){
         return name.equals("$jacocoData");
     }
+
 }
