@@ -9,12 +9,14 @@ import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.GraphQlProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.RestProblem;
+import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -194,7 +196,11 @@ public class EMController {
         } else if(info instanceof RPCProblem){
             RPCProblem rpcp = (RPCProblem) info;
             dto.rpcProblem = new RPCProblemDto();
-            //TODO RPC
+            List<InterfaceSchema> schemas = new ArrayList<>();
+            for (String interfaceName: rpcp.getInterfaceDefinitions()){
+                schemas.add(RPCEndpointsBuilder.build(interfaceName, rpcp.getType()));
+            }
+            dto.rpcProblem.schemas = schemas;
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);

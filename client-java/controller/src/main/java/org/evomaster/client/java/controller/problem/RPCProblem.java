@@ -26,4 +26,8 @@ public class RPCProblem implements ProblemInfo{
     public List<String> getInterfaceDefinitions() {
         return interfaceDefinitions;
     }
+
+    public RPCType getType() {
+        return type;
+    }
 }

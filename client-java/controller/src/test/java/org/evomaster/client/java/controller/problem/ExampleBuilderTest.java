@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.problem;
 
-import org.evomaster.ci.utils.CIUtils;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
