@@ -119,6 +119,8 @@ public class RPCEndpointsBuilder {
             if (cycleSize < 3){
                 List<NamedTypedValue> fields = new ArrayList<>();
                 for(Field f: clazz.getDeclaredFields()){
+                    if (doSkipReflection(f.getName()))
+                        continue;
                     NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth);
                     fields.add(field);
                 }
@@ -141,5 +143,9 @@ public class RPCEndpointsBuilder {
         }else if (type instanceof Class)
             return  (Class<?>) type;
         throw new RuntimeException("unhanded type:"+ type);
+    }
+
+    private static boolean doSkipReflection(String name){
+        return name.equals("$jacocoData");
     }
 }

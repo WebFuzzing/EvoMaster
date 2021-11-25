@@ -41,13 +41,6 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     @Test
     public void testArray(){
 
-        /*
-            TODO Man: for handing Array parameter
-            there is a weird problem which could not be reproduced on Mac as following:
-            java.lang.ClassCastException: class java.lang.Class cannot be cast to class java.lang.reflect.GenericArrayType
-         */
-        CIUtils.skipIfOnGA();
-
         EndpointSchema endpoint = getOneEndpoint("array");
         assertNull(endpoint.getResponse());
         assertEquals(1, endpoint.getRequestParams().size());
