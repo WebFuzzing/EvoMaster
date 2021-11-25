@@ -132,7 +132,9 @@ abstract class HttpWsStructureMutator : StructureMutator(){
            modify one table at once, and add/remove [n] rows for it. however, never totally remove the table.
            note that if there is no any init sql, we randomly select one table to add.
         */
-        val tables = individual.seeInitializingActions().map { it.table.name }.run {
+
+        val candidatesToMutate = individual.seeInitializingActions().filterNot { it.representExistingData }
+        val tables = candidatesToMutate.map { it.table.name }.run {
             ifEmpty { getSqlInsertBuilder()!!.getTableNames() }
         }
 
@@ -148,7 +150,7 @@ abstract class HttpWsStructureMutator : StructureMutator(){
         }else{
             // remove action
             val num = randomness.nextInt(1, max(1, min(total-1, getMaxSizeOfMutatingInitAction())))
-            val candidates = individual.seeInitializingActions().filter { it.table.name == table }
+            val candidates = candidatesToMutate.filter { it.table.name == table }
             val remove = randomness.choose(candidates, num)
 
             handleInitSqlRemoval(individual, remove, mutatedGenes)
@@ -172,7 +174,7 @@ abstract class HttpWsStructureMutator : StructureMutator(){
         remove.forEach {
             getRelatedRemoveDbActions(individual, it, relatedRemove)
         }
-        val set = relatedRemove.toSet().toMutableList()
+        val set = relatedRemove.filterNot { it.representExistingData }.toSet().toMutableList()
         mutatedGenes?.removedDbActions?.addAll(set.map { it to individual.seeInitializingActions().indexOf(it) })
         individual.removeInitDbActions(set)
     }
