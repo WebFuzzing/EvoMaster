@@ -991,14 +991,14 @@ class ResourceDepManageService {
     /**
      * @return a list of db actions of [ind] which are possibly not related to rest actions of [ind]
      */
-    fun unRelatedSQL(ind: RestIndividual) : List<DbAction>{
+    fun unRelatedSQL(ind: RestIndividual, candidates: List<DbAction>?) : List<DbAction>{
         val allrelated = getAllRelatedTables(ind)
-        return ind.seeInitializingActions().filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
+        return (candidates?:ind.seeInitializingActions().filterNot { it.representExistingData }).filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
-    fun identifyUnRelatedSqlTable(ind: RestIndividual) : List<String>{
-        val actions = unRelatedSQL(ind)
-        return if (actions.isNotEmpty()) actions.map { it.table.name } else ind.seeInitializingActions().map { it.table.name }
+    fun identifyUnRelatedSqlTable(ind: RestIndividual, candidates: List<DbAction>?) : List<String>{
+        val actions = unRelatedSQL(ind, candidates)
+        return if (actions.isNotEmpty()) actions.map { it.table.name } else ind.seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
     }
     /**
      * add [num] related resources into [ind] with SQL

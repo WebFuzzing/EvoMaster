@@ -212,18 +212,20 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
      * It might be useful to reduce the useless db genes.
      */
     private fun handleRemoveSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?, evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, targets: Set<Int>?){
+        val availableToRemove = ind.seeInitializingActions().filterNot { it.representExistingData }
+
         // remove unrelated tables
         val candidates = if (doesApplyDependencyHeuristics())
-            dm.identifyUnRelatedSqlTable(ind)
-        else ind.seeInitializingActions().map { it.table.name }
+            dm.identifyUnRelatedSqlTable(ind, availableToRemove)
+        else availableToRemove.map { it.table.name }
 
         val selected = if (config.enableAdaptiveResourceStructureMutation)
             adaptiveSelectResource(evaluatedIndividual, true, candidates.toList(), targets)
         else randomness.choose(candidates)
 
         val total = candidates.count { it == selected }
-        val num = randomness.nextInt(1, max(1, min(getMaxSizeOfMutatingInitAction(), min(total, ind.seeInitializingActions().size - 1))))
-        val remove = randomness.choose(ind.seeInitializingActions().filter { it.table.name == selected }, num)
+        val num = randomness.nextInt(1, max(1, min(getMaxSizeOfMutatingInitAction(), min(total, availableToRemove.size - 1))))
+        val remove = randomness.choose(availableToRemove.filter { it.table.name == selected }, num)
         handleInitSqlRemoval(ind, remove, mutatedGenes)
     }
 

@@ -85,14 +85,21 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
         }
     }
 
+    /**
+     * append impacts of newly added insertions
+     */
     fun appendInitialization(addedInsertions: List<List<Action>>){
         addedInsertions.forEach { t->
             addedInitialization(t, completeSequence, indexMap)
         }
     }
 
+    /**
+     * remove impacts of actions in initialization of the individual
+     * @param removed to be removed, a list of Dbaction to its index
+     */
     fun removeInitialization(removed: List<Pair<DbAction, Int>>){
-        val removedIndex = removed.map { it.second }.sorted()
+        val removedIndex = removed.map { it.second - existingSQLData}.sorted()
         val removedImpacts = removedIndex.map { completeSequence[it] }
 
         val keep = mutableListOf<Int>()
@@ -152,12 +159,11 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
         template.putIfAbsent(key, insertions.map { a-> ImpactsOfAction(a) })
         if (enableImpactOnDuplicatedTimes)
             templateDuplicateTimes.putIfAbsent(key, Impact(id = key))
-
-        if (completeSequence.size != indexMap.size){
-            System.out.println()
-        }
     }
 
+    /**
+     * add impacts of newly added insertions at the beginning of the initalization (ie index is 0)
+     */
     fun updateInitializationImpactsAtBeginning(addedInsertions: List<List<Action>>, existingDataSize : Int){
         updateSizeOfExistingData(existingDataSize)
 
@@ -170,6 +176,9 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
         completeSequence.addAll(0, newCompleteSequence)
     }
 
+    /**
+     * init current initializationImpact based on the specified [impact]
+     */
     fun initInitializationActions(impact: InitializationActionImpacts) {
         //initPreCheck()
         clone(impact)
@@ -312,15 +321,23 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
         return template[templateInfo.first]?.get(templateInfo.second)
     }
 
+    /**
+     * @return the original size of the impacts
+     */
     fun getOriginalSize(includeExistingSQLData : Boolean = true) = completeSequence.size + if (includeExistingSQLData) existingSQLData else 0
 
+    /**
+     * @return the size of the impacts
+     * Note that if the init action are abstracted one, it could be less than the value obtained by [getOriginalSize]
+     */
     fun getSize(): Int {
         if (abstract) return template.size
         return completeSequence.size
     }
 
-    fun getFullSize() = getSize() + existingSQLData
-
+    /**
+     * @return all impacts of actions
+     */
     fun getAll(): List<ImpactsOfAction> {
         if (abstract) return template.values.flatten()
         return completeSequence
