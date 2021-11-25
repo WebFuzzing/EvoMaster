@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Obj
 import java.lang.reflect.Field;
 
 /**
- * created by manzhang on 2021/11/3
+ * object param
  */
 public class ObjectParam extends NamedTypedValue<ObjectType, Object> {
 

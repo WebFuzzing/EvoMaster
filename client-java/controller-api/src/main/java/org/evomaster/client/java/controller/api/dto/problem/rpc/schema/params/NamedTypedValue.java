@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Typ
 import java.io.Serializable;
 
 /**
- * created by manzhang on 2021/11/3
+ * a named instance of the type with its value, eg Param/Field
  */
 public abstract class NamedTypedValue<T extends TypeSchema, V> implements Serializable {
 
@@ -14,8 +14,17 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> implements Serial
         ind1 uses javax-validation
      */
 
+    /**
+     * name of the instance, eg param name
+     */
     private final String name;
+    /**
+     * its type
+     */
     private final T type;
+    /**
+     * its value
+     */
     private V value;
 
     public NamedTypedValue(String name, T type) {

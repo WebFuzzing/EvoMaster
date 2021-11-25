@@ -1,10 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.MapType;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.TypeSchema;
 
 import java.util.AbstractMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -15,8 +13,8 @@ import java.util.stream.IntStream;
  *  HashMap (see https://thrift.apache.org/docs/types#containers)
  */
 public class MapParam extends NamedTypedValue<MapType, Map>{
-    List<NamedTypedValue> keys;
-    List<NamedTypedValue> values;
+    public List<NamedTypedValue> keys;
+    public List<NamedTypedValue> values;
 
     public MapParam(String name, MapType type) {
         super(name, type);

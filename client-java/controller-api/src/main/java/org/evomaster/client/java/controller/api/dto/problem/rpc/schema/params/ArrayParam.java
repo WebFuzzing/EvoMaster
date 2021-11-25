@@ -6,10 +6,10 @@ import java.lang.reflect.Array;
 import java.util.List;
 
 /**
- * created by manzhang on 2021/11/15
+ * array param
  */
 public class ArrayParam extends NamedTypedValue<CollectionType, Array>{
-    List<NamedTypedValue> values;
+    public List<NamedTypedValue> values;
 
     public ArrayParam(String name, CollectionType type) {
         super(name, type);

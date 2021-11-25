@@ -1,10 +1,9 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.EnumType;
 
 /**
- * created by manzhang on 2021/11/3
+ * enum parameter
  */
 public class EnumParam extends NamedTypedValue<EnumType, Integer> {
 

@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 /**
- * created by manzhang on 2021/11/15
+ * boolean param
  */
 public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     public BooleanParam(String name, String type, String fullTypeName) {

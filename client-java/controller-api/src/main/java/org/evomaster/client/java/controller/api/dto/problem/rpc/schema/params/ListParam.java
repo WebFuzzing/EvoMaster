@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
  *  ArrayList (see https://thrift.apache.org/docs/types#containers)
  */
 public class ListParam extends NamedTypedValue<CollectionType, List>{
-    List<NamedTypedValue> values;
+    public List<NamedTypedValue> values;
 
     public ListParam(String name, CollectionType type) {
         super(name, type);

@@ -3,7 +3,7 @@ package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 /**
- * created by manzhang on 2021/11/15
+ * char param
  */
 public class CharParam extends PrimitiveOrWrapperParam<Character> {
     public CharParam(String name, String type, String fullTypeName) {
