@@ -14,7 +14,6 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Paths
-import java.util.logging.Logger
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -1398,6 +1397,14 @@ class EMConfig {
     @Experimental
     @Cfg("Whether to skip failed SQL commands in the generated test files")
     var skipFailureSQLInTestFile = false
+
+    val defaultTreeDepth = 11
+
+    @Experimental
+    @Cfg("Maximum tree depth in mutations/queries to be evaluated;" +
+            "this is to avoid issues when dealing with huge graphs in GraphQL")
+    @Min(1.0)
+    var treeDepth = defaultTreeDepth
 
 
     @Experimental
