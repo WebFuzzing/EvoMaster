@@ -9,7 +9,8 @@ import java.util.stream.Collectors;
 
 /**
  *
- * thrift -> HashSet (see https://thrift.apache.org/docs/types#containers)
+ * thrift
+ *     HashSet (see https://thrift.apache.org/docs/types#containers)
  */
 public class SetParam extends NamedTypedValue<CollectionType, Set>{
     Set<NamedTypedValue> values;
