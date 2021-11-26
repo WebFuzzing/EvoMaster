@@ -1,7 +1,10 @@
 package org.evomaster.core.problem.rpc
 
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.httpws.service.HttpWsIndividual
+import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
@@ -24,23 +27,37 @@ class RPCIndividual(
 ) : HttpWsIndividual(dbInitialization, trackOperator, index, actions) {
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
-        TODO("Not yet implemented")
+        return when (filter) {
+            GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
+            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
+            GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(DbAction::seeGenes)
+        }
     }
 
     override fun size(): Int {
-        TODO("Not yet implemented")
+        return actions.size
+    }
+
+    override fun canMutateStructure(): Boolean = true
+
+    override fun seeActions(filter: ActionFilter) : List<out Action>{
+        return when(filter){
+            ActionFilter.ALL -> seeInitializingActions().plus(actions)
+            ActionFilter.NO_INIT, ActionFilter.NO_SQL -> seeActions()
+            ActionFilter.ONLY_SQL, ActionFilter.INIT -> seeInitializingActions()
+        }
     }
 
     override fun seeActions(): List<RPCCallAction> {
-        TODO("Not yet implemented")
+        return actions
     }
 
     override fun verifyInitializationActions(): Boolean {
-        TODO("Not yet implemented")
+        return DbActionUtils.verifyActions(seeInitializingActions())
     }
 
-    override fun getChildren(): List<out StructuralElement> {
-        TODO("Not yet implemented")
+    override fun getChildren(): List<StructuralElement> {
+        return seeInitializingActions().plus(actions)
     }
 
     /**
