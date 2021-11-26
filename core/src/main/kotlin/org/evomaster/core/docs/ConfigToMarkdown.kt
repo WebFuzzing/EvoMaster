@@ -10,7 +10,7 @@ import kotlin.reflect.jvm.javaType
  * Class used to generate Markdown documentation for [EMConfig]
  */
 object ConfigToMarkdown {
-
+fix ^$ escape
     private val defaultInstance = EMConfig()
 
     @JvmStatic

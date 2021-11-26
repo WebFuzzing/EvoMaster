@@ -681,8 +681,8 @@ class EMConfig {
 
     @Important(4.0)
     @Regex(headerRegex)
-    @Cfg("In black-box testing, we still need to deal with authentication of the HTTP request." +
-            " With this parameter it is possible to specify a HTTP header that is going to be add to all requests." +
+    @Cfg("In black-box testing, we still need to deal with authentication of the HTTP requests." +
+            " With this parameter it is possible to specify a HTTP header that is going to be added to most requests." +
             " This should be provided in the form _name:value_. If more than 1 header is needed, use as well the" +
             " other options _header1_ and _header2_.")
     var header0 = ""
