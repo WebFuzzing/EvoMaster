@@ -60,7 +60,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         actionCluster.clear()
         //val skip = getEndpointsToSkip(swagger, infoDto) //TODO maybe in future wants to support
 
-        GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster)
+        GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster, config.treeDepth)
 
         setupAuthentication(infoDto)
 
@@ -80,9 +80,11 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         val iq = IntrospectiveQuery()
         val schema = iq.fetchSchema(gqlEndpoint)
 
+        addAuthFromConfig()
+
         actionCluster.clear()
 
-        GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster)
+        GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster, config.treeDepth)
     }
 
 
