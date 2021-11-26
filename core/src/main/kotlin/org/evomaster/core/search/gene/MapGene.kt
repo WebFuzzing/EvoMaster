@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -82,10 +83,7 @@ class MapGene<K, V>(
         log.trace("Randomizing MapGene")
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
-            val gene = template.copy() as PairGene<K, V>
-//            gene.parent = this
-            gene.randomize(randomness, false)
-            gene.name = "key_${keyCounter++}"
+            val gene = addRandomElement(randomness, false)
             elements.add(gene)
         }
         addChildren(elements)
@@ -125,12 +123,7 @@ class MapGene<K, V>(
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
-            val gene = template.copy() as PairGene<K, V>
-//            gene.parent = this
-            gene.randomize(randomness, false)
-            val keyName = "key_${keyCounter++}"
-            gene.name = keyName
-            gene.first.name = keyName
+            val gene = addRandomElement(randomness, false)
             elements.add(gene)
             addChild(gene)
         } else {
@@ -187,15 +180,50 @@ class MapGene<K, V>(
         elements.clear()
     }
 
+    /**
+     * remove [element] to [elements]
+     */
     fun removeElements(element: PairGene<K, V>){
         elements.remove(element)
         element.removeThisFromItsBindingGenes()
     }
 
+    /**
+     * add [element] to [elements]
+     */
     fun addElements(element: PairGene<K, V>){
         elements.add(element)
         addChild(element)
     }
 
+    /**
+     * @return all elements
+     */
     fun getAllElements() = elements
+
+    private fun containsKey(pairGene: PairGene<K, V>): Boolean{
+        val geneValue = ParamUtil.getValueGene(pairGene.first)
+        if (geneValue is IntegerGene || geneValue is StringGene || geneValue is LongGene){
+            return elements.any { ParamUtil.getValueGene(it.first).containsSameValueAs(geneValue) }
+        }
+        return false
+    }
+
+    private fun addRandomElement(randomness: Randomness, forceNewValue: Boolean) : PairGene<K, V>{
+        val keyName = "key_${keyCounter++}"
+
+        val gene = template.copy() as PairGene<K, V>
+        gene.randomize(randomness, forceNewValue)
+
+        gene.name = keyName
+        gene.first.name = keyName
+        gene.second.name = keyName
+
+        if (containsKey(gene)){
+            // try one more time
+            gene.first.randomize(randomness, true, elements.map { it.first })
+        }
+
+        return gene
+    }
 }
