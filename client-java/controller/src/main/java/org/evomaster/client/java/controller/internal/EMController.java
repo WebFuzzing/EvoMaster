@@ -197,7 +197,7 @@ public class EMController {
             RPCProblem rpcp = (RPCProblem) info;
             dto.rpcProblem = new RPCProblemDto();
             List<InterfaceSchema> schemas = new ArrayList<>();
-            for (String interfaceName: rpcp.getInterfaceDefinitions()){
+            for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
                 schemas.add(RPCEndpointsBuilder.build(interfaceName, rpcp.getType()));
             }
             dto.rpcProblem.schemas = schemas;
@@ -493,6 +493,9 @@ public class EMController {
 
             if (dto instanceof RPCActionDto){
                 // TODO RPC execute action here and return its response
+                Object response = sutController.executeAction((RPCActionDto) dto);
+
+                // convert the response to dto, and send back to core
             }
         }
 

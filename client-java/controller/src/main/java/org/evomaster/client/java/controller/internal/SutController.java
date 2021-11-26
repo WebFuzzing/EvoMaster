@@ -8,11 +8,14 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.api.ControllerConstants;
@@ -26,6 +29,8 @@ import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -335,6 +340,25 @@ public abstract class SutController implements SutHandler {
         newActionSpecificHandler(dto);
     }
 
+    /**
+     * execute a RPC request with specified client
+     * @param dto is the action DTO to be executed
+     */
+    public final Object executeAction(RPCActionDto dto){
+        Object client = ((RPCProblem)getProblemInfo()).getClient(dto.interfaceId);
+        try {
+            Method method = client.getClass().getDeclaredMethod(dto.rpcCall.getName());
+            Object[] params = new Object[dto.rpcCall.getRequestParams().size()];
+
+            for (int i = 0; i < params.length; i++){
+                params[i] = dto.rpcCall.getRequestParams().get(i).newInstance();
+            }
+
+            return method.invoke(client, params);
+        } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException e) {
+            throw new RuntimeException("RPC ACTION EXECUTION ERROR: fail to execute a RPC request with "+ e.getMessage());
+        }
+    }
 
     public abstract void newTestSpecificHandler();
 
