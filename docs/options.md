@@ -160,7 +160,7 @@ There are 3 types of options:
 |`outputExecutedSQL`| __Enum__. Whether to output executed sql info. *Valid values*: `NONE, ALL_AT_END, ONCE_EXECUTED`. *Default value*: `NONE`.|
 |`probOfHandlingLength`| __Double__. Specify a probability of applying length handling. *Default value*: `0.0`.|
 |`probOfSelectFromDatabase`| __Double__. Specify a probability that enables selection (i.e., SELECT sql) of data from database instead of insertion (i.e., INSERT sql) for preparing resources for REST actions. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
-|`probOfSmartInitStructureMutator`| __Double__. Specify a probability of applying a smart structure mutator for initialization of the individual. *Constraints*: `min=0.0, max=1.0`. *Default value*: `0.0`.|
+|`probOfSmartInitStructureMutator`| __Double__. Specify a probability of applying a smart structure mutator for initialization of the individual. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`processFiles`| __String__. Specify a folder to save results when a search monitor is enabled. *Default value*: `process_data`.|
 |`processFormat`| __Enum__. Specify a format to save the process data. *Valid values*: `JSON_ALL, TEST_IND, TARGET_TEST_IND`. *Default value*: `JSON_ALL`.|
 |`processInterval`| __Double__. Specify how often to save results when a search monitor is enabled, and 0.0 presents to record all evaluated individual. *Constraints*: `min=0.0, max=50.0`. *Default value*: `0.0`.|
@@ -174,7 +174,7 @@ There are 3 types of options:
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
 |`skipFailureSQLInTestFile`| __Boolean__. Whether to skip failed SQL commands in the generated test files. *Default value*: `true`.|
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
-|`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `min=0.0, max=1.0`. *Default value*: `0.0`.|
+|`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`treeDepth`| __Int__. Maximum tree depth in mutations/queries to be evaluated;this is to avoid issues when dealing with huge graphs in GraphQL. *Constraints*: `min=1.0`. *Default value*: `11`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
