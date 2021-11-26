@@ -1,8 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.collection
 
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.MapGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.ImpactOptions
@@ -15,7 +13,7 @@ import kotlin.random.Random
  * created by manzh on 2019-10-10
  */
 class MapGeneImpactTest : GeneImpactTest(){
-    val map = listOf(1,2,3).map { IntegerGene(it.toString(), value = it) }.toMutableList()
+    val map = listOf(1,2,3).map { PairGene.createStringPairGene(IntegerGene(it.toString(), value = it))  }.toMutableList()
     var counter = 3
 
     fun generateKey() :Int{
@@ -23,7 +21,7 @@ class MapGeneImpactTest : GeneImpactTest(){
         return counter
     }
     override fun getGene(): Gene {
-        return MapGene("map", template = map.first(), elements = map)
+        return MapGene("map", template = map.first() , elements = map)
     }
 
     override fun checkImpactType(impact: GeneImpact) {
@@ -31,7 +29,7 @@ class MapGeneImpactTest : GeneImpactTest(){
     }
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
-        geneToMutate as MapGene<IntegerGene>
+        geneToMutate as MapGene<StringGene, IntegerGene>
 
         val p = Random.nextBoolean()
 
@@ -39,7 +37,7 @@ class MapGeneImpactTest : GeneImpactTest(){
             mutationTag == 1 || (mutationTag == 0 && p)->{
                 val index = Random.nextInt(0, geneToMutate.getAllElements().size)
                 geneToMutate.getAllElements()[index].apply {
-                    value += if (value + 1> max) -1 else 1
+                    second.value += if (second.value + 1> second.max) -1 else 1
                 }
             }
             mutationTag == 2 || (mutationTag == 0 && !p)->{
@@ -47,7 +45,7 @@ class MapGeneImpactTest : GeneImpactTest(){
                     geneToMutate.getAllElements().removeAt(0)
                 else{
                     val key = generateKey()
-                    geneToMutate.getAllElements().add(IntegerGene(key.toString(), key))
+                    geneToMutate.getAllElements().add(PairGene.createStringPairGene(IntegerGene(key.toString(), key)))
                 }
             }
         }

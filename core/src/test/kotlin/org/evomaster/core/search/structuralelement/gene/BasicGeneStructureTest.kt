@@ -203,21 +203,21 @@ class MapGeneIntStructureTest : GeneStructuralElementBaseTest() {
 
     override fun getCopyFromTemplate(): Gene = MapGene(
         "foo",
-        template = DoubleGene("foo"),
+        template = PairGene.createStringPairGene(DoubleGene("foo")),
         maxSize = 20,
-        elements = (0 until copyTemplateSize).map { DoubleGene("foo", it.toDouble()) }.toMutableList())
+        elements = (0 until copyTemplateSize).map { PairGene.createStringPairGene(DoubleGene("foo", it.toDouble())) }.toMutableList())
 
     override fun assertCopyFrom(base: Gene) {
-        assertTrue(base is MapGene<*>)
-        assertEquals(copyTemplateSize, (base as MapGene<*>).getAllElements().size)
+        assertTrue(base is MapGene<*, *>)
+        assertEquals(copyTemplateSize, (base as MapGene<*, *>).getAllElements().size)
         assertChildren(base, copyTemplateSize)
     }
 
-    override fun getStructuralElement(): MapGene<DoubleGene> = MapGene(
+    override fun getStructuralElement(): MapGene<StringGene,  DoubleGene> = MapGene(
         "foo",
-        template = DoubleGene("foo"),
+        template = PairGene.createStringPairGene(DoubleGene("foo")),
         maxSize = 20,
-        elements = (0 until size).map { DoubleGene("foo", it.toDouble()) }.toMutableList())
+        elements = (0 until size).map { PairGene.createStringPairGene(DoubleGene("foo", it.toDouble())) }.toMutableList())
 
     override fun getExpectedChildrenSize(): Int  = size
 }
