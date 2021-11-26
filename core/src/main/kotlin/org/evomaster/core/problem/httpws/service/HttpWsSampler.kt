@@ -83,6 +83,8 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
             dto.headers.add(HeaderDto(name, content))
         }
 
+        dto.name = "Fixed Headers"
+
         handleAuthInfo(dto)
     }
 
@@ -98,6 +100,7 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
     private fun handleAuthInfo(i: AuthenticationDto) {
         if (i.name == null || i.name.isBlank()) {
             log.warn("Missing name in authentication info")
+            FIXME
             return
         }
 
