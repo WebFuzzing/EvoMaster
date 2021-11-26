@@ -313,6 +313,7 @@ abstract class AbstractParser(
 //                elementGene.parent = gene
                 if (updateGenesRecursivelyWithParameterValue(elementValueGene, elementValueGene.name, getJsonifiedString(value))){
                     val pairGene = PairGene.createStringPairGene(elementValueGene)
+                    pairGene.first.value = key
                     addGeneToMapGene(gene, pairGene)
                 }else if (res)
                     res = false
