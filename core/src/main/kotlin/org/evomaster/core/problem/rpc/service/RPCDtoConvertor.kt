@@ -7,6 +7,10 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.*
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.ObjectType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.httpws.service.param.Param
+import org.evomaster.core.problem.rpc.RPCAction
+import org.evomaster.core.problem.rpc.param.PRCInputParam
+import org.evomaster.core.problem.rpc.param.PRCReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
@@ -37,6 +41,9 @@ class RPCDtoConvertor {
      */
     private val typeCache = mutableMapOf<String, Gene>()
 
+    /**
+     * reset [actionCluster] based on interface schemas specified in [problem]
+     */
     fun initActionCluster(problem: RPCProblemDto, actionCluster: MutableMap<String, Action>){
 
         problem.schemas.forEach { i->
@@ -45,16 +52,47 @@ class RPCDtoConvertor {
             }
         }
 
+        actionCluster.clear()
         problem.schemas.forEach { i->
             i.endpoints.forEach{e->
                 actionSchemaCluster.putIfAbsent(actionName(i.name, e.name), e)
-                TODO("set ")
+                val name = actionName(i.name, e.name)
+                if (actionCluster.containsKey(name))
+                    throw IllegalStateException("$name exists in the actionCluster")
+                actionCluster[name] = processEndpoint(name, e)
             }
         }
     }
 
-    private fun actionName(interfaceName: String, endpointName: String) = "$interfaceName:$endpointName"
+    private fun processEndpoint(name: String, endpointSchema: EndpointSchema) : RPCAction{
+        val params = mutableListOf<Param>()
 
+        endpointSchema.requestParams.forEach { p->
+            val gene = handleDtoParam(p).run {
+                if (p.isNullable)
+                    OptionalGene(this.name, this)
+                else
+                    this
+            }
+            params.add(PRCInputParam(p.name, gene))
+        }
+
+        // response would be used for assertion generation
+        if (endpointSchema.response != null){
+            // return should be nullable
+            Lazy.assert {
+                endpointSchema.response.isNullable
+            }
+            val gene = OptionalGene(endpointSchema.response.name, handleDtoParam(endpointSchema.response))
+            params.add(PRCReturnParam(endpointSchema.response.name, gene))
+        }
+        /*
+            TODO Man exception and auth
+         */
+        return RPCAction(name, params)
+    }
+
+    private fun actionName(interfaceName: String, endpointName: String) = "$interfaceName:$endpointName"
 
     private fun handleDtoParam(param: NamedTypedValue<*,*>): Gene{
         return when(param){
@@ -77,7 +115,7 @@ class RPCDtoConvertor {
         val key = handleDtoParam(param.type.keyTemplate)
         val value = handleDtoParam(param.type.valueTemplate)
 //        return MapGene(param.name, key, value)
-        TODO()
+        TODO("wait until map-extend branch is merged")
     }
 
 
@@ -116,7 +154,13 @@ class RPCDtoConvertor {
     }
 
     private fun handleObjectType(type: ObjectType): Gene{
-        val fields = type.fields.map { handleDtoParam(it) }
+        val fields = type.fields.map {
+            val gene = handleDtoParam(it)
+            if (it.isNullable)
+                OptionalGene(gene.name, gene)
+            else
+                gene
+        }
         return ObjectGene(type.type, fields, refType = type.fullTypeName)
     }
 

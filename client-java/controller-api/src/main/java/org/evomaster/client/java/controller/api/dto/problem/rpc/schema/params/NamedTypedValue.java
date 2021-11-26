@@ -9,23 +9,30 @@ import java.io.Serializable;
  */
 public abstract class NamedTypedValue<T extends TypeSchema, V> implements Serializable {
 
-    /*
-        TODO handle constraints
-        ind1 uses javax-validation
-     */
-
     /**
      * name of the instance, eg param name
      */
     private final String name;
+
     /**
      * its type
      */
     private final T type;
+
     /**
      * its value
      */
     private V value;
+
+    /**
+     * represent whether this value is nullable
+     */
+    private boolean isNullable;
+
+    /*
+        TODO handle constraints
+        ind1 uses javax-validation
+     */
 
     public NamedTypedValue(String name, T type) {
         this.name = name;
@@ -48,5 +55,13 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> implements Serial
 
     public void setValue(V value) {
         this.value = value;
+    }
+
+    public void setNullable(boolean nullable) {
+        isNullable = nullable;
+    }
+
+    public boolean isNullable() {
+        return isNullable;
     }
 }

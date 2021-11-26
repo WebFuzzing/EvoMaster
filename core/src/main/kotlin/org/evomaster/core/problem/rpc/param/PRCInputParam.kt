@@ -4,6 +4,6 @@ import org.evomaster.core.problem.httpws.service.param.Param
 import org.evomaster.core.search.gene.Gene
 
 /**
- * params in return
+ * params in requests
  */
-class PRCReturnParam (name: String, gene: Gene): Param(name, gene)
+class PRCInputParam (name: String, gene: Gene): Param(name, gene)

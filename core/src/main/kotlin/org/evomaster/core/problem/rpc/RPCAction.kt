@@ -11,8 +11,11 @@ import org.evomaster.core.search.gene.Gene
  * created by manzhang on 2021/11/25
  */
 class RPCAction(
-        val interfaceName: String,
+        val id: String,
         parameters: MutableList<Param>,
+        /**
+         * TODO check auth here
+         */
         auth: AuthenticationInfo = NoAuth(),
 ) : HttpWsAction(auth, parameters)  {
     override fun getName(): String {
