@@ -17,11 +17,27 @@ class PairGene<F,S>(
 
     companion object{
 
-        fun <T:Gene> createStringPairGene(gene: T) : PairGene<StringGene, T>{
-            return PairGene(gene.name, StringGene(gene.name), gene)
+        /**
+         * create simple pair gene based on [gene]
+         * first is a StringGene and its name is based on the name of [gene]
+         * second is [gene]
+         * @param gene is the second of the pair
+         * @param isFixedFirst specifies whether the first is fixed value.
+         */
+        fun <T:Gene> createStringPairGene(gene: T, isFixedFirst: Boolean = false) : PairGene<StringGene, T>{
+            val key = StringGene(gene.name)
+            if (isFixedFirst)
+                key.value = gene.name
+            return PairGene(gene.name, key, gene).also { it.isFirstMutable = !isFixedFirst }
         }
 
     }
+
+    /**
+     *
+     * whether the [first] is mutable
+     */
+    var isFirstMutable = true
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         first.randomize(randomness, forceNewValue, allGenes)
@@ -29,9 +45,7 @@ class PairGene<F,S>(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return """
-               "${first.getValueAsPrintableString(targetFormat = targetFormat)}":${second.getValueAsPrintableString(targetFormat = targetFormat)}
-               """
+        return "${first.getValueAsPrintableString(targetFormat = targetFormat)}:${second.getValueAsPrintableString(targetFormat = targetFormat)}"
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{

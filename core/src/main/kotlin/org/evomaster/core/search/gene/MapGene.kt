@@ -29,6 +29,8 @@ class MapGene<K, V>(
 ) : CollectionGene, Gene(name, elements)
         where K : Gene, V: Gene {
 
+    constructor(name : String, key: K, value: V, maxSize: Int): this(name, PairGene("template", key, value), maxSize)
+
     private var keyCounter = 0
 
     init {
@@ -137,14 +139,32 @@ class MapGene<K, V>(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "{" +
                 elements.filter { f ->
-                    (f.first !is CycleObjectGene && (f.first !is OptionalGene || f.first.isActive)) &&
-                            (f.second !is CycleObjectGene && (f.second !is OptionalGene || f.second.isActive))
-                }.map { f -> f.getValueAsPrintableString(targetFormat = targetFormat)
+                    isPrintable(f)
+                }.map {f->
+                    """
+                    ${getKeyValueAsPrintableString(f.first, targetFormat)}:${f.second.getValueAsPrintableString(targetFormat = targetFormat)}
+                    """
                 }.joinToString(",") +
                 "}"
     }
 
+    private fun getKeyValueAsPrintableString(key: Gene, targetFormat: OutputFormat?): String {
+        val keyString = key.getValueAsPrintableString(targetFormat = targetFormat)
+        if (!keyString.startsWith("\""))
+            return "\"$keyString\""
+        return keyString
+    }
 
+    private fun isPrintable(pairGene: PairGene<K, V>): Boolean {
+        val keyT = ParamUtil.getValueGene(pairGene.first)
+        val valueT = pairGene.second
+        return (keyT is LongGene || keyT is StringGene || keyT is IntegerGene) &&
+                (valueT !is CycleObjectGene && (valueT !is OptionalGene || valueT.isActive))
+    }
+
+    override fun isPrintable(): Boolean {
+        return isPrintable(template)
+    }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
         return if (excludePredicate(this)) listOf(this)
@@ -201,8 +221,15 @@ class MapGene<K, V>(
      */
     fun getAllElements() = elements
 
-    private fun containsKey(pairGene: PairGene<K, V>): Boolean{
+    /**
+     * @return whether the key of [pairGene] exists in [elements] of this map
+     */
+    fun containsKey(pairGene: PairGene<K, V>): Boolean{
         val geneValue = ParamUtil.getValueGene(pairGene.first)
+        /*
+            currently we only support Integer, String and LongGene
+            TODO support other types if needed
+         */
         if (geneValue is IntegerGene || geneValue is StringGene || geneValue is LongGene){
             return elements.any { ParamUtil.getValueGene(it.first).containsSameValueAs(geneValue) }
         }

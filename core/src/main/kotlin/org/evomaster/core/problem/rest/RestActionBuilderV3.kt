@@ -548,7 +548,7 @@ object RestActionBuilderV3 {
              */
 
             if (fields.isEmpty()) {
-                return MapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null)))
+                return MapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null), isFixedFirst = true))
             }
         }
 
@@ -556,7 +556,7 @@ object RestActionBuilderV3 {
 
         if (fields.isEmpty()) {
             log.warn("No fields for object definition: $name")
-            return MapGene(name, PairGene.createStringPairGene(StringGene(name + "_field")))
+            return MapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
         }
 
         /*
