@@ -548,6 +548,7 @@ object RestActionBuilderV3 {
              */
 
             if (fields.isEmpty()) {
+                // here, the first of pairgene should not be mutable
                 return MapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null), isFixedFirst = true))
             }
         }
@@ -556,6 +557,7 @@ object RestActionBuilderV3 {
 
         if (fields.isEmpty()) {
             log.warn("No fields for object definition: $name")
+            // here, the first of pairgene should not be mutable
             return MapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
         }
 

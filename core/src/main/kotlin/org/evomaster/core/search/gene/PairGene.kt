@@ -12,7 +12,12 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 class PairGene<F,S>(
         name: String,
         val first: F,
-        val second : S
+        val second : S,
+        /**
+         *
+         * whether the [first] is mutable
+         */
+        val isFirstMutable : Boolean = true
 ):Gene(name, listOf(first, second)) where F: Gene, S: Gene{
 
     companion object{
@@ -28,16 +33,12 @@ class PairGene<F,S>(
             val key = StringGene(gene.name)
             if (isFixedFirst)
                 key.value = gene.name
-            return PairGene(gene.name, key, gene).also { it.isFirstMutable = !isFixedFirst }
+            return PairGene(gene.name, key, gene, isFirstMutable = !isFixedFirst)
         }
 
     }
 
-    /**
-     *
-     * whether the [first] is mutable
-     */
-    var isFirstMutable = true
+
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         first.randomize(randomness, forceNewValue, allGenes)
@@ -85,11 +86,11 @@ class PairGene<F,S>(
 
 
     override fun copyContent(): Gene {
-        return PairGene(name, first.copyContent(), second.copyContent())
+        return PairGene(name, first.copyContent(), second.copyContent(), isFirstMutable)
     }
 
     override fun isMutable(): Boolean {
-        return (first.isMutable()) || second.isMutable()
+        return (first.isMutable() && isFirstMutable) || second.isMutable()
     }
 
     override fun isPrintable(): Boolean {
@@ -98,7 +99,7 @@ class PairGene<F,S>(
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         val list = mutableListOf<Gene>()
-        if (first.isMutable())
+        if (first.isMutable() && isFirstMutable)
             list.add(first)
         if (second.isMutable())
             list.add(second)
@@ -106,6 +107,6 @@ class PairGene<F,S>(
     }
 
     override fun mutationWeight(): Double {
-        return first.mutationWeight() + second.mutationWeight()
+        return (if (isFirstMutable) first.mutationWeight() else 0.0) + second.mutationWeight()
     }
 }

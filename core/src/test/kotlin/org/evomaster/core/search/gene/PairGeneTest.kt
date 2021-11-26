@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 
 /**
@@ -19,5 +20,16 @@ class PairGeneTest {
                 "1:\"foo\"",
                 pairGene.getValueAsPrintableString()
         )
+    }
+
+    @Test
+    fun testMutableAndCopy(){
+        val intGene = IntegerGene("int1", 1)
+        val pairGene = PairGene.createStringPairGene(intGene, true)
+
+        assertFalse(pairGene.isFirstMutable)
+
+        val copy = pairGene.copy() as PairGene<StringGene, IntegerGene>
+        assertFalse(copy.isFirstMutable)
     }
 }
