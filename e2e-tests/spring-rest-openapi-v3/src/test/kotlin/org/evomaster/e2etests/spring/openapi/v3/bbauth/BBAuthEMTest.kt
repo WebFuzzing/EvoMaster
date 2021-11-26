@@ -42,6 +42,10 @@ class BBAuthEMTest : SpringTestBase() {
             args.add("--header2")
             args.add("Authorization:token")
 
+            //make sure we do not solve it via taint analysis
+            args.add("--baseTaintAnalysisProbability")
+            args.add("0")
+
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
