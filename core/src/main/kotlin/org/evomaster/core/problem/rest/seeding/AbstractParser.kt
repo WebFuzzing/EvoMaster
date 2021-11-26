@@ -69,7 +69,7 @@ abstract class AbstractParser(
             is DisruptiveGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ArrayGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is MapGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is MapGene<*, *> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is CycleObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue) // Same as ObjectGene, should it differ?
 
             else -> {
@@ -293,7 +293,7 @@ abstract class AbstractParser(
         return res
     }
 
-    protected fun updateGeneWithParameterValue(gene: MapGene<*>, paramName: String, paramValue: String): Boolean {
+    protected fun updateGeneWithParameterValue(gene: MapGene<*, *>, paramName: String, paramValue: String): Boolean {
         /*
             TODO: Same comment as in ObjectGene
          */
@@ -308,12 +308,13 @@ abstract class AbstractParser(
             if (elements.size > MapGene.MAX_SIZE)
                 gene.maxSize = elements.size
             elements.forEach { (key, value) ->
-                val elementGene = gene.template.copy()
-                elementGene.name = key as String
+                val elementValueGene = gene.template.second.copy()
+                elementValueGene.name = key as String
 //                elementGene.parent = gene
-                if (updateGenesRecursivelyWithParameterValue(elementGene, elementGene.name, getJsonifiedString(value)))
-                    addGeneToMapGene(gene, elementGene)
-                else if (res)
+                if (updateGenesRecursivelyWithParameterValue(elementValueGene, elementValueGene.name, getJsonifiedString(value))){
+                    val pairGene = PairGene.createStringPairGene(elementValueGene)
+                    addGeneToMapGene(gene, pairGene)
+                }else if (res)
                     res = false
             }
         } catch (ex: JsonProcessingException) {
@@ -348,28 +349,28 @@ abstract class AbstractParser(
             is DisruptiveGene<*> -> (gene as ArrayGene<DisruptiveGene<*>>).addElements(elementGene)
             is ArrayGene<*> -> (gene as ArrayGene<ArrayGene<*>>).addElements(elementGene)
             is ObjectGene -> (gene as ArrayGene<ObjectGene>).addElements(elementGene)
-            is MapGene<*> -> (gene as ArrayGene<MapGene<*>>).addElements(elementGene)
+            is MapGene<*, *> -> (gene as ArrayGene<MapGene<*, *>>).addElements(elementGene)
         }
     }
 
-    private fun addGeneToMapGene(gene: MapGene<*>, elementGene: Gene) {
-        when(elementGene) {
-            is StringGene -> (gene as MapGene<StringGene>).addElements(elementGene)
-            is BooleanGene -> (gene as MapGene<BooleanGene>).addElements(elementGene)
-            is DoubleGene -> (gene as MapGene<DoubleGene>).addElements(elementGene)
-            is FloatGene -> (gene as MapGene<FloatGene>).addElements(elementGene)
-            is IntegerGene -> (gene as MapGene<IntegerGene>).addElements(elementGene)
-            is LongGene -> (gene as MapGene<LongGene>).addElements(elementGene)
-            is Base64StringGene -> (gene as MapGene<Base64StringGene>).addElements(elementGene)
-            is EnumGene<*> -> (gene as MapGene<EnumGene<*>>).addElements(elementGene)
-            is DateGene -> (gene as MapGene<DateGene>).addElements(elementGene)
-            is TimeGene -> (gene as MapGene<TimeGene>).addElements(elementGene)
-            is DateTimeGene -> (gene as MapGene<DateTimeGene>).addElements(elementGene)
-            is OptionalGene -> (gene as MapGene<OptionalGene>).addElements(elementGene)
-            is DisruptiveGene<*> -> (gene as MapGene<DisruptiveGene<*>>).addElements(elementGene)
-            is ArrayGene<*> -> (gene as MapGene<ArrayGene<*>>).addElements(elementGene)
-            is ObjectGene -> (gene as MapGene<ObjectGene>).addElements(elementGene)
-            is MapGene<*> -> (gene as MapGene<MapGene<*>>).addElements(elementGene)
+    private fun addGeneToMapGene(gene: MapGene<*, *>, elementGene: PairGene<StringGene, *>) {
+        when(elementGene.second) {
+            is StringGene -> (gene as MapGene<StringGene, StringGene>).addElements(elementGene as PairGene<StringGene, StringGene>)
+            is BooleanGene -> (gene as MapGene<StringGene, BooleanGene>).addElements(elementGene as PairGene<StringGene, BooleanGene>)
+            is DoubleGene -> (gene as MapGene<StringGene, DoubleGene>).addElements(elementGene as PairGene<StringGene, DoubleGene>)
+            is FloatGene -> (gene as MapGene<StringGene, FloatGene>).addElements(elementGene as PairGene<StringGene, FloatGene>)
+            is IntegerGene -> (gene as MapGene<StringGene, IntegerGene>).addElements(elementGene as PairGene<StringGene, IntegerGene>)
+            is LongGene -> (gene as MapGene<StringGene, LongGene>).addElements(elementGene as PairGene<StringGene, LongGene>)
+            is Base64StringGene -> (gene as MapGene<StringGene, Base64StringGene>).addElements(elementGene as PairGene<StringGene, Base64StringGene>)
+            is EnumGene<*> -> (gene as MapGene<StringGene, EnumGene<*>>).addElements(elementGene as PairGene<StringGene, EnumGene<*>>)
+            is DateGene -> (gene as MapGene<StringGene, DateGene>).addElements(elementGene as PairGene<StringGene, DateGene>)
+            is TimeGene -> (gene as MapGene<StringGene, TimeGene>).addElements(elementGene as PairGene<StringGene, TimeGene>)
+            is DateTimeGene -> (gene as MapGene<StringGene, DateTimeGene>).addElements(elementGene as PairGene<StringGene, DateTimeGene>)
+            is OptionalGene -> (gene as MapGene<StringGene, OptionalGene>).addElements(elementGene as PairGene<StringGene, OptionalGene>)
+            is DisruptiveGene<*> -> (gene as MapGene<StringGene, DisruptiveGene<*>>).addElements(elementGene as PairGene<StringGene, DisruptiveGene<*>>)
+            is ArrayGene<*> -> (gene as MapGene<StringGene, ArrayGene<*>>).addElements(elementGene as PairGene<StringGene, ArrayGene<*>>)
+            is ObjectGene -> (gene as MapGene<StringGene, ObjectGene>).addElements(elementGene as PairGene<StringGene, ObjectGene>)
+            is MapGene<*, *> -> (gene as MapGene<StringGene, MapGene<*, *>>).addElements(elementGene as PairGene<StringGene, MapGene<*, *>>)
         }
     }
 

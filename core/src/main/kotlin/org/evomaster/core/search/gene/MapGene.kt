@@ -20,13 +20,13 @@ import org.slf4j.LoggerFactory
  * Keys should be of any basic type, and should be modifiable.
  *
  */
-class MapGene<T>(
+class MapGene<K, V>(
         name: String,
-        val template: T,
+        val template: PairGene<K, V>,
         var maxSize: Int = MAX_SIZE,
-        private var elements: MutableList<T> = mutableListOf()
+        private var elements: MutableList<PairGene<K, V>> = mutableListOf()
 ) : CollectionGene, Gene(name, elements)
-        where T : Gene {
+        where K : Gene, V: Gene {
 
     private var keyCounter = 0
 
@@ -42,29 +42,29 @@ class MapGene<T>(
         const val MAX_SIZE = 5
     }
 
-    override fun getChildren(): MutableList<T> {
+    override fun getChildren(): MutableList<PairGene<K, V>> {
         return elements
     }
 
     override fun copyContent(): Gene {
-        return MapGene<T>(name,
-                template.copyContent() as T,
+        return MapGene(name,
+                template.copyContent() as PairGene<K, V>,
                 maxSize,
-                elements.map { e -> e.copyContent() as T }.toMutableList()
+                elements.map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
         )
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is MapGene<*>) {
+        if (other !is MapGene<*,*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         clearElements()
-        this.elements = other.elements.map { e -> e.copyContent() as T }.toMutableList()
+        this.elements = other.elements.map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
         addChildren(this.elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is MapGene<*>) {
+        if (other !is MapGene<*,*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.elements.size == other.elements.size
@@ -82,7 +82,7 @@ class MapGene<T>(
         log.trace("Randomizing MapGene")
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
-            val gene = template.copy() as T
+            val gene = template.copy() as PairGene<K, V>
 //            gene.parent = this
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
@@ -125,10 +125,12 @@ class MapGene<T>(
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
-            val gene = template.copy() as T
+            val gene = template.copy() as PairGene<K, V>
 //            gene.parent = this
             gene.randomize(randomness, false)
-            gene.name = "key_${keyCounter++}"
+            val keyName = "key_${keyCounter++}"
+            gene.name = keyName
+            gene.first.name = keyName
             elements.add(gene)
             addChild(gene)
         } else {
@@ -142,15 +144,14 @@ class MapGene<T>(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "{" +
                 elements.filter { f ->
-                    f !is CycleObjectGene &&
-                            (f !is OptionalGene || f.isActive)
-                }.map { f ->
-                    """
-                    "${f.name}":${f.getValueAsPrintableString(targetFormat = targetFormat)}
-                    """
+                    (f.first !is CycleObjectGene && (f.first !is OptionalGene || f.first.isActive)) &&
+                            (f.second !is CycleObjectGene && (f.second !is OptionalGene || f.second.isActive))
+                }.map { f -> f.getValueAsPrintableString(targetFormat = targetFormat)
                 }.joinToString(",") +
                 "}"
     }
+
+
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
         return if (excludePredicate(this)) listOf(this)
@@ -171,9 +172,9 @@ class MapGene<T>(
         Note that value binding cannot be performed on the [elements]
      */
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if(gene is MapGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
+        if(gene is MapGene<*,*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             clearElements()
-            elements = gene.elements.mapNotNull { it.copyContent() as? T }.toMutableList()
+            elements = gene.elements.mapNotNull { it.copyContent() as? PairGene<K, V> }.toMutableList()
             addChildren(elements)
             return true
         }
@@ -186,12 +187,12 @@ class MapGene<T>(
         elements.clear()
     }
 
-    fun removeElements(element: T){
+    fun removeElements(element: PairGene<K, V>){
         elements.remove(element)
         element.removeThisFromItsBindingGenes()
     }
 
-    fun addElements(element: T){
+    fun addElements(element: PairGene<K, V>){
         elements.add(element)
         addChild(element)
     }
