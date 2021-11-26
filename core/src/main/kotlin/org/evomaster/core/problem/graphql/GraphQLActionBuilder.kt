@@ -1295,7 +1295,7 @@ object GraphQLActionBuilder {
 
                         fields.add(template)
                     } else
-                        if (element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.INPUT_OBJECT) {
+                        if (element.kindOfTableFieldType.toString().lowercase() == GqlConst.INPUT_OBJECT) {
                             val template = getInputGene(
                                 state,
                                 element.tableFieldType,
