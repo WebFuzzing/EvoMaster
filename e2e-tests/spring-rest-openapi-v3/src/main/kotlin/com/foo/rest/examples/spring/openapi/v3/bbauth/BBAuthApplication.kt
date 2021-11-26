@@ -29,7 +29,7 @@ open class BBAuthApplication {
                  @RequestHeader("Authorization") auth: String,
     ) : ResponseEntity<String> {
 
-        if(foo == "0" && bar == "42" && auth == "token")
+        if(foo == "foo" && bar == "42" && auth == "token")
             return ResponseEntity.ok("OK")
 
         return ResponseEntity.status(400).build()

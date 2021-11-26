@@ -38,7 +38,7 @@ class BBAuthEMTest : SpringTestBase() {
             args.add("--header0")
             args.add("X-FOO:foo")
             args.add("--header1")
-            args.add("X-BAR:bar")
+            args.add("X-BAR:42")
             args.add("--header2")
             args.add("Authorization:token")
 

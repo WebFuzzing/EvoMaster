@@ -99,9 +99,7 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
 
     private fun handleAuthInfo(i: AuthenticationDto) {
         if (i.name == null || i.name.isBlank()) {
-            log.warn("Missing name in authentication info")
-            FIXME
-            return
+            throw SutProblemException("Missing name in authentication info")
         }
 
         val headers: MutableList<AuthenticationHeader> = mutableListOf()
@@ -110,8 +108,7 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
             val name = h.name?.trim()
             val value = h.value?.trim()
             if (name == null || value == null) {
-                log.warn("Invalid header in ${i.name}")
-                return@loop
+                throw SutProblemException("Invalid header in ${i.name}, $name:$value")
             }
 
             headers.add(AuthenticationHeader(name, value))
