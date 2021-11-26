@@ -29,7 +29,7 @@ class DateGene(
     val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
     val onlyValidDates: Boolean = false,
     val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
-) : Gene(name, mutableListOf(year, month, day)) {
+) : Comparable<DateGene>, Gene(name, mutableListOf(year, month, day)) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(DateGene::class.java)
@@ -186,5 +186,9 @@ class DateGene(
         } else if (day.value > 31) {
             day.value = 31
         }
+    }
+
+    override fun compareTo(other: DateGene): Int {
+        TODO("Not yet implemented")
     }
 }

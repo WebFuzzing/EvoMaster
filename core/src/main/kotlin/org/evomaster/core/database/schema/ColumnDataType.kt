@@ -248,7 +248,16 @@ enum class ColumnDataType(dataTypeName: String) {
     TSQUERY("TSQUERY"),
 
     // https://www.postgresql.org/docs/14/datatype-json.html#DATATYPE-JSONPATH
-    JSONPATH("JSONPATH");
+    JSONPATH("JSONPATH"),
+
+
+    // https://www.postgresql.org/docs/14/rangetypes.html
+    INT4RANGE("INT4RANGE"),
+    INT8RANGE("INT8RANGE"),
+    NUMRANGE("NUMRANGE"),
+    TSRANGE("TSRANGE"),
+    TSTZRANGE("TSTZRANGE"),
+    DATERANGE("DATERANGE");
 
     fun shouldBePrintedInQuotes(): Boolean {
         /*

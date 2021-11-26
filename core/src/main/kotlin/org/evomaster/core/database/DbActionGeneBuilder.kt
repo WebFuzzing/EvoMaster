@@ -237,6 +237,15 @@ class DbActionGeneBuilder {
                 ColumnDataType.JSONPATH ->
                     SqlJSONPathGene(column.name)
 
+                ColumnDataType.INT4RANGE ->
+                    SqlNumericRangeGene(column.name, template = IntegerGene("bound"))
+
+                ColumnDataType.INT8RANGE ->
+                    SqlNumericRangeGene(column.name, template = LongGene("bound"))
+
+                ColumnDataType.NUMRANGE ->
+                    SqlNumericRangeGene(column.name, template = FloatGene("bound"))
+
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
 
