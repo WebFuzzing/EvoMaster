@@ -10,7 +10,7 @@ import org.evomaster.core.search.gene.Gene
 /**
  * created by manzhang on 2021/11/25
  */
-class RPCAction(
+class RPCCallAction(
         val id: String,
         parameters: MutableList<Param>,
         /**

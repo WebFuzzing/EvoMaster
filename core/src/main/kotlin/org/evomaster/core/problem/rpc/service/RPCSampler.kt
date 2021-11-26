@@ -7,7 +7,7 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
-import org.evomaster.core.problem.rpc.RPCAction
+import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
@@ -76,7 +76,7 @@ class RPCSampler: HttpWsSampler<RPCIndividual>() {
 
     override fun sampleAtRandom(): RPCIndividual {
         val len = randomness.nextInt(1, config.maxTestSize)
-        val actions = (0 until len).map { sampleRandomAction(0.05) as RPCAction }
+        val actions = (0 until len).map { sampleRandomAction(0.05) as RPCCallAction }
         return createRPCIndividual(actions.toMutableList())
     }
 
@@ -102,9 +102,9 @@ class RPCSampler: HttpWsSampler<RPCIndividual>() {
 
     private fun createSingleCallIndividualOnEachAction(auth: AuthenticationInfo) {
         actionCluster.asSequence()
-                .filter { a -> a.value is RPCAction }
+                .filter { a -> a.value is RPCCallAction }
                 .forEach { a ->
-                    val copy = a.value.copy() as RPCAction
+                    val copy = a.value.copy() as RPCCallAction
                     copy.auth = auth
                     randomizeActionGenes(copy)
                     val ind = createRPCIndividual(mutableListOf(copy))
@@ -112,7 +112,7 @@ class RPCSampler: HttpWsSampler<RPCIndividual>() {
                 }
     }
 
-    private fun createRPCIndividual(actions : MutableList<RPCAction>) : RPCIndividual{
+    private fun createRPCIndividual(actions : MutableList<RPCCallAction>) : RPCIndividual{
         // enable tracking in rpc
         return RPCIndividual(actions, trackOperator = if(config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1)
     }

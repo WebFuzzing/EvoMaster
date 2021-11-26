@@ -2,13 +2,14 @@ package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.EndpointSchema
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.*
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.ObjectType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.httpws.service.param.Param
-import org.evomaster.core.problem.rpc.RPCAction
+import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.param.PRCInputParam
 import org.evomaster.core.problem.rpc.param.PRCReturnParam
 import org.evomaster.core.search.Action
@@ -64,7 +65,11 @@ class RPCDtoConvertor {
         }
     }
 
-    private fun processEndpoint(name: String, endpointSchema: EndpointSchema) : RPCAction{
+    fun transformActionDto(action: RPCCallAction, index: Int) : RPCActionDto{
+        TODO("")
+    }
+
+    private fun processEndpoint(name: String, endpointSchema: EndpointSchema) : RPCCallAction{
         val params = mutableListOf<Param>()
 
         endpointSchema.requestParams.forEach { p->
@@ -89,7 +94,7 @@ class RPCDtoConvertor {
         /*
             TODO Man exception and auth
          */
-        return RPCAction(name, params)
+        return RPCCallAction(name, params)
     }
 
     private fun actionName(interfaceName: String, endpointName: String) = "$interfaceName:$endpointName"

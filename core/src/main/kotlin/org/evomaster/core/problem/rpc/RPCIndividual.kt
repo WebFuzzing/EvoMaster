@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rpc
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.httpws.service.HttpWsIndividual
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.tracer.TrackOperator
@@ -14,7 +13,7 @@ class RPCIndividual(
         /**
          * actions of the individual
          */
-        val actions: MutableList<RPCAction>,
+        val actions: MutableList<RPCCallAction>,
         /*
             TODO might add sample type here as REST (check later)
          */
@@ -31,7 +30,7 @@ class RPCIndividual(
         TODO("Not yet implemented")
     }
 
-    override fun seeActions(): List<out Action> {
+    override fun seeActions(): List<RPCCallAction> {
         TODO("Not yet implemented")
     }
 
