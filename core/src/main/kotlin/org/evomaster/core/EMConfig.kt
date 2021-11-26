@@ -1479,6 +1479,14 @@ class EMConfig {
     @Cfg("Whether to skip failed SQL commands in the generated test files")
     var skipFailureSQLInTestFile = true
 
+    val defaultTreeDepth = 11
+
+    @Experimental
+    @Cfg("Maximum tree depth in mutations/queries to be evaluated;" +
+            "this is to avoid issues when dealing with huge graphs in GraphQL")
+    @Min(1.0)
+    var treeDepth = defaultTreeDepth
+
 
     @Experimental
     @Cfg("Specify a maximum number of existing data in the database to sample when SQL handling is enabled. " +
