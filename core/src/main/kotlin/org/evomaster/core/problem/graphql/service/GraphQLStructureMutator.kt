@@ -49,41 +49,8 @@ class GraphQLStructureMutator : HttpWsStructureMutator() {
         if (config.trackingEnabled()) tag(individual, time.evaluatedIndividuals)
     }
 
-    /*
-        TODO
-        Man: this might be put into [HttpWsStructureMutator] as it is same with [RestStructureMutator],
-            but there exist some problems to return sampler when handing generic type
-     */
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
-
-        if (!config.shouldGenerateSqlData()) {
-            return
-        }
-
-        val ind = individual.individual as? GraphQLIndividual
-            ?: throw IllegalArgumentException("Invalid individual type")
-
-        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
-            //TODO likely to remove/change once we ll support VIEWs
-            .filter { sampler.canInsertInto(it.key) }
-
-        if (fw.isEmpty()) {
-            return
-        }
-
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
-
-        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
-        ind.repairInitializationActions(randomness)
-
-        // update impact based on added genes
-        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                mutatedGenes,
-                old,
-                addedInsertions
-            )
-        }
+        addInitializingActions(individual, mutatedGenes, sampler)
     }
 
     private fun mutateForRandomType(ind: GraphQLIndividual, mutatedGenes: MutatedGeneSpecification?) {

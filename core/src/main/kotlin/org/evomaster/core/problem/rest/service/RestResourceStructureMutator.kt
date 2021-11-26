@@ -402,38 +402,8 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         }
     }
 
-    /**
-     * for ResourceRestIndividual, dbaction(s) has been distributed to each resource call [ResourceRestCalls]
-     */
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
-        if (!config.shouldGenerateSqlData()) {
-            return
-        }
-
-        val ind = individual.individual as? RestIndividual
-            ?: throw IllegalArgumentException("Invalid individual type")
-
-        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
-            //TODO likely to remove/change once we ll support VIEWs
-            .filter { sampler.canInsertInto(it.key) }
-
-        if (fw.isEmpty()) {
-            return
-        }
-
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
-
-        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
-
-        ind.repairInitializationActions(randomness)
-        // update impact based on added genes
-        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                mutatedGenes,
-                old,
-                addedInsertions
-            )
-        }
+        addInitializingActions(individual, mutatedGenes, sampler)
     }
 
     private fun maintainAuth(authInfo: AuthenticationInfo?, mutated: RestResourceCalls){

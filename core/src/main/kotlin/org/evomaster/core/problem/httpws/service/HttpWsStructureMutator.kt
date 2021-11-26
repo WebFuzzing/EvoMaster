@@ -1,7 +1,9 @@
 package org.evomaster.core.problem.httpws.service
 
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
@@ -13,6 +15,36 @@ abstract class HttpWsStructureMutator : StructureMutator(){
         private val log: Logger = LoggerFactory.getLogger(HttpWsStructureMutator::class.java)
     }
 
+    fun<T : HttpWsIndividual> addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: HttpWsSampler<T>) {
+        if (!config.shouldGenerateSqlData()) {
+            return
+        }
+
+        val ind = individual.individual as? T
+                ?: throw IllegalArgumentException("Invalid individual type")
+
+        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
+                //TODO likely to remove/change once we ll support VIEWs
+                .filter { sampler.canInsertInto(it.key) }
+
+        if (fw.isEmpty()) {
+            return
+        }
+
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
+
+        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
+
+        ind.repairInitializationActions(randomness)
+        // update impact based on added genes
+        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                    mutatedGenes,
+                    old,
+                    addedInsertions
+            )
+        }
+    }
 
     fun<T : HttpWsIndividual> handleFailedWhereSQL(
         ind: T, fw: Map<String, Set<String>>,
