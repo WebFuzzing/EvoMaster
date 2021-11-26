@@ -3,7 +3,11 @@ package org.evomaster.core.problem.rpc.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
+import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
+import org.evomaster.core.problem.rpc.RPCAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
@@ -29,6 +33,9 @@ class RPCSampler: HttpWsSampler<RPCIndividual>() {
     @Inject
     protected lateinit var convertor: RPCDtoConvertor
 
+
+    protected val adHocInitialIndividuals: MutableList<RPCIndividual> = mutableListOf()
+
     @PostConstruct
     fun initialize() {
         log.debug("Initializing {}", RPCSampler::class.simpleName)
@@ -44,8 +51,6 @@ class RPCSampler: HttpWsSampler<RPCIndividual>() {
             throw SutProblemException("Failed to start the system under test")
         }
 
-
-
         val infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
@@ -54,28 +59,61 @@ class RPCSampler: HttpWsSampler<RPCIndividual>() {
 
         convertor.initActionCluster(problem, actionCluster)
 
-        //TODO Man: need to check whether we need following for RPC
+        setupAuthentication(infoDto)
+        initSqlInfo(infoDto)
 
-//        setupAuthentication(infoDto)
-//        initSqlInfo(infoDto)
-//
-//        initAdHocInitialIndividuals()
-//
-//        postInits()
-//
-//        updateConfigForTestOutput(infoDto)
-//
-//        partialOracles.setupForRest(swagger)
+        initAdHocInitialIndividuals()
 
         log.debug("Done initializing {}", RPCSampler::class.simpleName)
-
     }
 
     override fun initSqlInfo(infoDto: SutInfoDto) {
-        TODO("Not yet implemented")
+        if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
+            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
+            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
+        }
     }
 
     override fun sampleAtRandom(): RPCIndividual {
-        TODO("Not yet implemented")
+        val len = randomness.nextInt(1, config.maxTestSize)
+        val actions = (0 until len).map { sampleRandomAction(0.05) as RPCAction }
+        return createRPCIndividual(actions.toMutableList())
+    }
+
+    /*
+        TODO Man: smart sampling for RPC
+     */
+
+    //  init a sequence of individual
+    private fun initAdHocInitialIndividuals(){
+        // create one action per individual with/without auth
+        adHocInitialIndividuals.clear()
+        createSingleCallIndividualOnEachAction(NoAuth())
+
+        authentications.forEach { a->
+            createSingleCallIndividualOnEachAction(a)
+        }
+
+        if (config.seedTestCases){
+            // TODO handle seeded individual
+            throw IllegalStateException("Seeding test cases is not support for RPC yet.")
+        }
+    }
+
+    private fun createSingleCallIndividualOnEachAction(auth: AuthenticationInfo) {
+        actionCluster.asSequence()
+                .filter { a -> a.value is RPCAction }
+                .forEach { a ->
+                    val copy = a.value.copy() as RPCAction
+                    copy.auth = auth
+                    randomizeActionGenes(copy)
+                    val ind = createRPCIndividual(mutableListOf(copy))
+                    adHocInitialIndividuals.add(ind)
+                }
+    }
+
+    private fun createRPCIndividual(actions : MutableList<RPCAction>) : RPCIndividual{
+        // enable tracking in rpc
+        return RPCIndividual(actions, trackOperator = if(config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1)
     }
 }

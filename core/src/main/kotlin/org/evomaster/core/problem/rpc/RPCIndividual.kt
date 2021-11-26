@@ -15,6 +15,9 @@ class RPCIndividual(
          * actions of the individual
          */
         val actions: MutableList<RPCAction>,
+        /*
+            TODO might add sample type here as REST (check later)
+         */
         dbInitialization: MutableList<DbAction> = mutableListOf(),
         trackOperator: TrackOperator? = null,
         index : Int = -1

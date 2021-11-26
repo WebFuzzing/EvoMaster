@@ -406,7 +406,6 @@ class RestSampler : AbstractRestSampler(){
                     val copy = a.value.copy() as RestCallAction
                     copy.auth = auth
                     randomizeActionGenes(copy)
-                    randomizeActionGenes(copy, false)
                     val ind = createIndividual(mutableListOf(copy))
                     adHocInitialIndividuals.add(ind)
                 }
