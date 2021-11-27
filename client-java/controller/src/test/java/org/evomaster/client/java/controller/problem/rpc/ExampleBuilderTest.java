@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.problem;
+package org.evomaster.client.java.controller.problem.rpc;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.*;
@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Col
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CycleObjectType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.MapType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.ObjectType;
+import org.evomaster.client.java.controller.problem.RPCType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

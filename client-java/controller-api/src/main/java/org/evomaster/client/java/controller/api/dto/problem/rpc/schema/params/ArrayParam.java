@@ -8,8 +8,7 @@ import java.util.List;
 /**
  * array param
  */
-public class ArrayParam extends NamedTypedValue<CollectionType, Array>{
-    public List<NamedTypedValue> values;
+public class ArrayParam extends NamedTypedValue<CollectionType, List<NamedTypedValue>>{
 
     public ArrayParam(String name, CollectionType type) {
         super(name, type);
@@ -17,7 +16,7 @@ public class ArrayParam extends NamedTypedValue<CollectionType, Array>{
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
-        return values.stream().map(v-> {
+        return getValue().stream().map(v-> {
             try {
                 return v.newInstance();
             } catch (ClassNotFoundException e) {

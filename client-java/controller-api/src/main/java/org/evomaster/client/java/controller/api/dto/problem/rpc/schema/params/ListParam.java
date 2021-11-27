@@ -9,8 +9,7 @@ import java.util.stream.Collectors;
  * thrift
  *  ArrayList (see https://thrift.apache.org/docs/types#containers)
  */
-public class ListParam extends NamedTypedValue<CollectionType, List>{
-    public List<NamedTypedValue> values;
+public class ListParam extends NamedTypedValue<CollectionType, List<NamedTypedValue>>{
 
     public ListParam(String name, CollectionType type) {
         super(name, type);
@@ -18,7 +17,7 @@ public class ListParam extends NamedTypedValue<CollectionType, List>{
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
-        return values.stream().map(v-> {
+        return getValue().stream().map(v-> {
             try {
                 return v.newInstance();
             } catch (ClassNotFoundException e) {

@@ -12,9 +12,7 @@ import java.util.stream.IntStream;
  * thrift
  *  HashMap (see https://thrift.apache.org/docs/types#containers)
  */
-public class MapParam extends NamedTypedValue<MapType, Map>{
-    public List<NamedTypedValue> keys;
-    public List<NamedTypedValue> values;
+public class MapParam extends NamedTypedValue<MapType, Map<NamedTypedValue, NamedTypedValue>>{
 
     public MapParam(String name, MapType type) {
         super(name, type);
@@ -22,15 +20,12 @@ public class MapParam extends NamedTypedValue<MapType, Map>{
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
-        if (keys.size() != values.size())
-            throw new IllegalStateException(String.format("mismatched size of keys (%d) and values (%d)", keys.size(), values.size()));
-
-        return IntStream.range(0, keys.size()).mapToObj(i-> {
-                    try {
-                        return new AbstractMap.SimpleEntry<>(keys.get(i).newInstance(), values.get(i).newInstance());
-                    } catch (ClassNotFoundException e) {
-                        throw new RuntimeException(String.format("MapParam: could not create new instance for key and value (%s,%s)", keys.get(i).getValue().toString(), values.get(i).getType()));
-                    }
+        return getValue().entrySet().stream().map(i-> {
+            try {
+                return new AbstractMap.SimpleEntry<>(i.getValue().newInstance(), i.getValue().newInstance());
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(String.format("MapParam: could not create new instance for key and value (%s,%s)", i.getKey().toString(), i.getValue().getType()));
+            }
         }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

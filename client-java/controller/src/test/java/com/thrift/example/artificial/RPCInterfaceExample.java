@@ -8,15 +8,15 @@ import java.util.Map;
  */
 public interface RPCInterfaceExample {
 
-    public void array(List<String>[] args0);
+    public GenericResponse array(List<String>[] args0);
 
-    public void arrayboolean(boolean[] args0);
+    public GenericResponse arrayboolean(boolean[] args0);
 
-    public void list(List<String> args0);
+    public GenericResponse list(List<String> args0);
 
-    public void map(Map<String, String> args0);
+    public GenericResponse map(Map<String, String> args0);
 
-    public void listAndMap(List<Map<String, String>> args0);
+    public GenericResponse listAndMap(List<Map<String, String>> args0);
 
     public ObjectResponse objResponse();
 

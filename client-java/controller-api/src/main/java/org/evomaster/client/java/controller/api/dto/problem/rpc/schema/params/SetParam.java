@@ -12,8 +12,7 @@ import java.util.stream.Collectors;
  * thrift
  *     HashSet (see https://thrift.apache.org/docs/types#containers)
  */
-public class SetParam extends NamedTypedValue<CollectionType, Set>{
-    public Set<NamedTypedValue> values;
+public class SetParam extends NamedTypedValue<CollectionType, Set<NamedTypedValue>>{
 
     public SetParam(String name, CollectionType type) {
         super(name, type);
@@ -21,7 +20,7 @@ public class SetParam extends NamedTypedValue<CollectionType, Set>{
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
-        return values.stream().map(v-> {
+        return getValue().stream().map(v-> {
             try {
                 return v.newInstance();
             } catch (ClassNotFoundException e) {
