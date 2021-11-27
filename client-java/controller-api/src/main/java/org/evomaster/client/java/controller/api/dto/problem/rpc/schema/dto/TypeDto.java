@@ -18,5 +18,10 @@ public class TypeDto {
      *  an example of the type
      */
     public ParamDto example;
+
+    /**
+     * fixed items in this types
+     */
+    public String[] fixedItems;
 }
 

@@ -34,4 +34,9 @@ public class ByteBufferParam extends NamedTypedValue<CollectionType, ByteBuffer>
         dto.type.example = getType().getTemplate().getDto();
         return dto;
     }
+
+    @Override
+    public ByteBufferParam copyStructure() {
+        return new ByteBufferParam(getName());
+    }
 }

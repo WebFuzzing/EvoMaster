@@ -38,4 +38,9 @@ public class SetParam extends NamedTypedValue<CollectionType, Set<NamedTypedValu
         dto.type.example = getType().getTemplate().getDto();
         return dto;
     }
+
+    @Override
+    public SetParam copyStructure() {
+        return new SetParam(getName(), getType());
+    }
 }

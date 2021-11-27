@@ -11,6 +11,6 @@ public class RPCInterfaceSchemaDto {
 
     public List<RPCActionDto> endpoints;
 
-    public List<TypeDto> types;
+    public List<ParamDto> types;
 
 }

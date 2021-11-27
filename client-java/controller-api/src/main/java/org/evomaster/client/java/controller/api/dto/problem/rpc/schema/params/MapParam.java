@@ -38,4 +38,9 @@ public class MapParam extends NamedTypedValue<MapType, Map<NamedTypedValue, Name
         dto.type.example = getType().getTemplate().getDto();
         return dto;
     }
+
+    @Override
+    public MapParam copyStructure() {
+        return new MapParam(getName(), getType());
+    }
 }

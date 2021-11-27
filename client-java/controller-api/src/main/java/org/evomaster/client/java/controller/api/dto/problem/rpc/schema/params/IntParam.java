@@ -26,4 +26,9 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
             dto.type.type = RPCSupportedDataType.P_INT;
         return dto;
     }
+
+    @Override
+    public IntParam copyStructure() {
+        return new IntParam(getName(), getType());
+    }
 }

@@ -33,4 +33,9 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
             dto.type.type = RPCSupportedDataType.P_BYTE;
         return dto;
     }
+
+    @Override
+    public ByteParam copyStructure() {
+        return new ByteParam(getName(), getType());
+    }
 }

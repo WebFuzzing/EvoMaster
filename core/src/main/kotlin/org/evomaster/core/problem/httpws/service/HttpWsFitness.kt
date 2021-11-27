@@ -363,8 +363,11 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
     }
 
     protected fun registerNewAction(action: Action, index: Int){
+        rc.registerNewAction(getActionDto(action, index))
+    }
 
-        rc.registerNewAction(ActionDto().apply {
+    protected fun getActionDto(action: Action, index: Int): ActionDto{
+        return ActionDto().apply {
             this.index = index
             //for now, we only include specialized regex
             this.inputVariables = action.seeGenes()
@@ -372,7 +375,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
                     .filterIsInstance<StringGene>()
                     .filter { it.getSpecializationGene() != null && it.getSpecializationGene() is RegexGene }
                     .map { it.getSpecializationGene()!!.getValueAsRawString()}
-        })
+        }
     }
 
     protected fun updateFitnessAfterEvaluation(targets: Set<Int>, individual: T, fv: FitnessValue) : TestResultsDto?{

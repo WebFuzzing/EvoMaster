@@ -25,4 +25,9 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
             dto.type.type = RPCSupportedDataType.P_LONG;
         return dto;
     }
+
+    @Override
+    public LongParam copyStructure() {
+        return new LongParam(getName(), getType());
+    }
 }

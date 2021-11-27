@@ -28,4 +28,9 @@ public class ParamDto {
      */
     public List<ParamDto> innerContent;
 
+    /**
+     * whether the param could be null
+     */
+    public boolean isNullable;
+
 }

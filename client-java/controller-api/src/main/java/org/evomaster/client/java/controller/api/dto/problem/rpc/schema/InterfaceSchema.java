@@ -1,10 +1,11 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.TypeSchema;
 
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +27,15 @@ public final class InterfaceSchema{
 
     /**
      * key is the full name of type
-     * value is one example
+     * value is its type schema
      */
     private Map<String, TypeSchema> typeCollections = new HashMap<>();
+
+    /**
+     * key is the full name of type
+     * value is one example of param with the TypeSchema
+     */
+    private Map<String, NamedTypedValue> objParamCollections = new HashMap<>();
 
 
     public InterfaceSchema(String name, List<EndpointSchema> endpoints) {
@@ -36,10 +43,13 @@ public final class InterfaceSchema{
         this.endpoints = endpoints;
     }
 
-    public void registerType(TypeSchema type){
+    public void registerType(TypeSchema type, NamedTypedValue param){
         String typeName = type.getFullTypeName();
-        if (!typeCollections.containsKey(typeName))
-            typeCollections.put(typeName, type.copy());
+        if (!typeCollections.containsKey(typeName)){
+            typeCollections.put(typeName, type);
+            objParamCollections.put(param.getType().getFullTypeName(), param);
+        }
+
     }
 
     public TypeSchema getTypeOrNull(String name){
@@ -65,7 +75,8 @@ public final class InterfaceSchema{
     public RPCInterfaceSchemaDto getDto(){
         RPCInterfaceSchemaDto dto = new RPCInterfaceSchemaDto();
         dto.interfaceId = this.getName();
-        dto.types = typeCollections.values().stream().map(TypeSchema::getDto).collect(Collectors.toList());
+        List<ParamDto> typeParams = new ArrayList<>();
+        dto.types = typeParams;
         dto.endpoints = endpoints.stream().map(EndpointSchema::getDto).collect(Collectors.toList());
         return dto;
     }

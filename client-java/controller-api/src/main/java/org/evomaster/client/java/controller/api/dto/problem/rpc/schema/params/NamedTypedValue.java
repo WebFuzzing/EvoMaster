@@ -72,4 +72,6 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         dto.type = type.getDto();
         return dto;
     }
+
+    public abstract NamedTypedValue<T, V> copyStructure();
 }

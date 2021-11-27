@@ -70,7 +70,7 @@ public class RPCEndpointsBuilder {
                 EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items);
                 EnumParam param = new EnumParam(name, enumType);
                 //register this type in the schema
-                schema.registerType(enumType.copy());
+                schema.registerType(enumType.copy(), param.copyStructure());
                 namedValue = param;
             } else if (clazz.isArray()){
 
@@ -130,8 +130,9 @@ public class RPCEndpointsBuilder {
                         fields.add(field);
                     }
                     ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields);
-                    schema.registerType(otype);
-                    namedValue = new ObjectParam(name, otype);
+                    ObjectParam oparam = new ObjectParam(name, otype);
+                    schema.registerType(otype.copy(), oparam);
+                    namedValue = oparam;
                 }else {
                     CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName());
                     namedValue = new ObjectParam(name, otype);

@@ -15,4 +15,9 @@ public class StringParam extends NamedTypedValue<StringType, String> {
     public Object newInstance() {
         return getValue();
     }
+
+    @Override
+    public StringParam copyStructure() {
+        return new StringParam(getName());
+    }
 }

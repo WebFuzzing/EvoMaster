@@ -18,4 +18,9 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     public Object newInstance() throws ClassNotFoundException {
         return new AbstractMap.SimpleEntry<>(getValue().getKey().newInstance(), getValue().getKey().newInstance());
     }
+
+    @Override
+    public PairParam copyStructure() {
+        return new PairParam(getType());
+    }
 }

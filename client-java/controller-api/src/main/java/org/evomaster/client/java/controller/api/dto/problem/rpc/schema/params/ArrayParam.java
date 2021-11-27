@@ -34,4 +34,11 @@ public class ArrayParam extends NamedTypedValue<CollectionType, List<NamedTypedV
         dto.type.example = getType().getTemplate().getDto();
         return dto;
     }
+
+    @Override
+    public ArrayParam copyStructure() {
+        return new ArrayParam(getName(), getType());
+    }
+
+
 }

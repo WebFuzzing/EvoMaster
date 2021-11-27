@@ -7,14 +7,17 @@ import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
+import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -315,7 +318,7 @@ class RemoteController() : DatabaseExecutor {
      * then add execution results into [actionResults]
      * @return whether the execution fails
      */
-    fun executeNewRPCAction(actionDto: RPCActionDto, actionResults: MutableList<ActionResult>) : Boolean{
+    fun executeNewRPCAction(actionDto: ActionDto, actionResults: MutableList<ActionResult>) : Boolean{
 
         val response = makeHttpCall {
             getWebTarget()

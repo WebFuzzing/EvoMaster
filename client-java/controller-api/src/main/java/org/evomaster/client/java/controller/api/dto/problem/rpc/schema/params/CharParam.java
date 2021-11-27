@@ -25,4 +25,9 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
             dto.type.type = RPCSupportedDataType.P_CHAR;
         return dto;
     }
+
+    @Override
+    public CharParam copyStructure() {
+        return new CharParam(getName(), getType());
+    }
 }

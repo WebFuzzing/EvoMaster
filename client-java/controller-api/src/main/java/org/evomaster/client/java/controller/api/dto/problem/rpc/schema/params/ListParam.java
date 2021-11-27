@@ -35,4 +35,9 @@ public class ListParam extends NamedTypedValue<CollectionType, List<NamedTypedVa
         dto.type.example = getType().getTemplate().getDto();
         return dto;
     }
+
+    @Override
+    public ListParam copyStructure() {
+        return new ListParam(getName(), getType());
+    }
 }

@@ -18,4 +18,9 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
         String value = getType().getItems()[getValue()];
         return Enum.valueOf(clazz, value);
     }
+
+    @Override
+    public EnumParam copyStructure() {
+        return new EnumParam(getName(), getType());
+    }
 }

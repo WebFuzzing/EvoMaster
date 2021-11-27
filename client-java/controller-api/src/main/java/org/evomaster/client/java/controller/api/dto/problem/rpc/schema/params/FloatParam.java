@@ -25,4 +25,9 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
             dto.type.type = RPCSupportedDataType.P_FLOAT;
         return dto;
     }
+
+    @Override
+    public FloatParam copyStructure() {
+        return new FloatParam(getName(), getType());
+    }
 }

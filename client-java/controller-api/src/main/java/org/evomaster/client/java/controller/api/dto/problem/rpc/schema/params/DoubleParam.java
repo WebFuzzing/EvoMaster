@@ -25,4 +25,9 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
             dto.type.type = RPCSupportedDataType.P_DOUBLE;
         return dto;
     }
+
+    @Override
+    public DoubleParam copyStructure() {
+        return new DoubleParam(getName(), getType());
+    }
 }

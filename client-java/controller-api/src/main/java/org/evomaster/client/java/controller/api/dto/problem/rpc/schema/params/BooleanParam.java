@@ -25,4 +25,9 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
             dto.type.type = RPCSupportedDataType.P_BOOLEAN;
         return dto;
     }
+
+    @Override
+    public BooleanParam copyStructure() {
+        return new BooleanParam(getName(), getType());
+    }
 }
