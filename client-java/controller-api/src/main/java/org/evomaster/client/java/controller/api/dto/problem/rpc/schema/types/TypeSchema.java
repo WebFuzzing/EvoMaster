@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.TypeDto;
+
 /**
  * type schema
  */
@@ -30,5 +32,11 @@ public class TypeSchema {
 
     public TypeSchema copy(){
         return new TypeSchema(type, fullTypeName);
+    }
+
+    public TypeDto getDto(){
+        TypeDto dto = new TypeDto();
+        dto.fullTypeName = fullTypeName;
+        return dto;
     }
 }

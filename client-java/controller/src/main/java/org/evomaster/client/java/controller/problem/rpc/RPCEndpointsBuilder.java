@@ -73,8 +73,7 @@ public class RPCEndpointsBuilder {
                 schema.registerType(enumType.copy());
                 namedValue = param;
             } else if (clazz.isArray()){
-                if (rpcType == RPCType.THRIFT)
-                    throw new RuntimeException("Array should not exist in Thrift service");
+
                 Type type = null;
                 Class<?> templateClazz = null;
                 if (genericType instanceof GenericArrayType){
@@ -113,7 +112,7 @@ public class RPCEndpointsBuilder {
 
                 Class<?> valueTemplateClazz = getTemplateClass(valueType);
                 NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth);
-                MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), keyTemplate, valueTemplate);
+                MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate)));
                 namedValue = new MapParam(name, mtype);
             } else {
                 if (clazz.getName().startsWith("java")){

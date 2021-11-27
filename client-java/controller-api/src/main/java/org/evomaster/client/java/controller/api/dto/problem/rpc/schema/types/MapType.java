@@ -9,23 +9,15 @@ public class MapType extends TypeSchema{
     /**
      * template of keys of the map
      */
-    private final NamedTypedValue keyTemplate;
-    /**
-     * template of values of the map
-     */
-    private final NamedTypedValue valueTemplate;
+    private final NamedTypedValue template;
 
-    public MapType(String type, String fullTypeName, NamedTypedValue keyTemplate, NamedTypedValue valueTemplate) {
+
+    public MapType(String type, String fullTypeName, NamedTypedValue template) {
         super(type, fullTypeName);
-        this.keyTemplate = keyTemplate;
-        this.valueTemplate = valueTemplate;
+        this.template = template;
     }
 
-    public NamedTypedValue getKeyTemplate() {
-        return keyTemplate;
-    }
-
-    public NamedTypedValue getValueTemplate() {
-        return valueTemplate;
+    public NamedTypedValue getTemplate() {
+        return template;
     }
 }

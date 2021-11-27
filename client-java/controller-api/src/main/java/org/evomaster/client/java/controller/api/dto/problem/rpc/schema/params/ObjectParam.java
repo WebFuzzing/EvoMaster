@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.ObjectType;
 import java.lang.reflect.Field;
 
@@ -32,4 +34,5 @@ public class ObjectParam extends NamedTypedValue<ObjectType, Object> {
             throw new RuntimeException("fail to access the class:"+clazzName);
         }
     }
+
 }

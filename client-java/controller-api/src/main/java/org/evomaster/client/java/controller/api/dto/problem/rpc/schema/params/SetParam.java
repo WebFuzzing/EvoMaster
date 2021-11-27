@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.TypeSchema;
 
@@ -27,5 +29,13 @@ public class SetParam extends NamedTypedValue<CollectionType, Set<NamedTypedValu
                 throw new RuntimeException("ArrayParam: could not create new instance for value:"+v.getType());
             }
         }).collect(Collectors.toSet());
+    }
+
+    @Override
+    public ParamDto getDto() {
+        ParamDto dto = super.getDto();
+        dto.type.type = RPCSupportedDataType.SET;
+        dto.type.example = getType().getTemplate().getDto();
+        return dto;
     }
 }

@@ -2,10 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.*;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CycleObjectType;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.MapType;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.ObjectType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.problem.RPCType;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +39,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     public void testArray(){
 
         EndpointSchema endpoint = getOneEndpoint("array");
-        assertNull(endpoint.getResponse());
+        assertNotNull(endpoint.getResponse());
         assertEquals(1, endpoint.getRequestParams().size());
         NamedTypedValue param = endpoint.getRequestParams().get(0);
         assertTrue(param instanceof ArrayParam);
@@ -51,6 +48,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertTrue(template instanceof ListParam);
         assertTrue(template.getType() instanceof CollectionType);
         assertTrue(((CollectionType) template.getType()).getTemplate() instanceof StringParam);
+        System.out.println(param.getDto());
 
     }
 
@@ -58,7 +56,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     public void testArrayBoolean(){
 
         EndpointSchema endpoint = getOneEndpoint("arrayboolean");
-        assertNull(endpoint.getResponse());
+        assertNotNull(endpoint.getResponse());
         assertEquals(1, endpoint.getRequestParams().size());
         NamedTypedValue param = endpoint.getRequestParams().get(0);
         assertTrue(param instanceof ArrayParam);
@@ -71,7 +69,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     public void testList(){
 
         EndpointSchema endpoint = getOneEndpoint("list");
-        assertNull(endpoint.getResponse());
+        assertNotNull(endpoint.getResponse());
         assertEquals(1, endpoint.getRequestParams().size());
         NamedTypedValue param = endpoint.getRequestParams().get(0);
         assertTrue(param instanceof ListParam);
@@ -85,15 +83,19 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     public void testMap(){
 
         EndpointSchema endpoint = getOneEndpoint("map");
-        assertNull(endpoint.getResponse());
+        assertNotNull(endpoint.getResponse());
         assertEquals(1, endpoint.getRequestParams().size());
         NamedTypedValue param = endpoint.getRequestParams().get(0);
         assertTrue(param instanceof MapParam);
         assertTrue(param.getType() instanceof MapType);
-        NamedTypedValue ktemplate = ((MapType) param.getType()).getKeyTemplate();
+
+        NamedTypedValue pairTemplate = ((MapType) param.getType()).getTemplate();
+        assertTrue(pairTemplate instanceof PairParam);
+
+        NamedTypedValue ktemplate = ((PairType) pairTemplate.getType()).getFirstTemplate();
         assertTrue(ktemplate instanceof StringParam);
 
-        NamedTypedValue vtemplate = ((MapType) param.getType()).getValueTemplate();
+        NamedTypedValue vtemplate = ((PairType) pairTemplate.getType()).getSecondTemplate();
         assertTrue(vtemplate instanceof StringParam);
 
     }
@@ -102,7 +104,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     public void testListAndMap(){
 
         EndpointSchema endpoint = getOneEndpoint("listAndMap");
-        assertNull(endpoint.getResponse());
+        assertNotNull(endpoint.getResponse());
         assertEquals(1, endpoint.getRequestParams().size());
         NamedTypedValue param = endpoint.getRequestParams().get(0);
 
@@ -112,10 +114,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         assertTrue(mapTemplate instanceof MapParam);
         assertTrue(mapTemplate.getType() instanceof MapType);
-        NamedTypedValue ktemplate = ((MapType) mapTemplate.getType()).getKeyTemplate();
+
+        NamedTypedValue pairTemplate = ((MapType) mapTemplate.getType()).getTemplate();
+        assertTrue(pairTemplate instanceof PairParam);
+
+        NamedTypedValue ktemplate = ((PairType) pairTemplate.getType()).getFirstTemplate();
         assertTrue(ktemplate instanceof StringParam);
 
-        NamedTypedValue vtemplate = ((MapType) mapTemplate.getType()).getValueTemplate();
+        NamedTypedValue vtemplate = ((PairType) pairTemplate.getType()).getSecondTemplate();
         assertTrue(vtemplate instanceof StringParam);
 
     }

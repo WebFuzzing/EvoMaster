@@ -8,8 +8,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.InterfaceSchema;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.GraphQlProblem;
@@ -196,9 +196,9 @@ public class EMController {
         } else if(info instanceof RPCProblem){
             RPCProblem rpcp = (RPCProblem) info;
             dto.rpcProblem = new RPCProblemDto();
-            List<InterfaceSchema> schemas = new ArrayList<>();
+            List<RPCInterfaceSchemaDto> schemas = new ArrayList<>();
             for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
-                schemas.add(RPCEndpointsBuilder.build(interfaceName, rpcp.getType()));
+                schemas.add(RPCEndpointsBuilder.build(interfaceName, rpcp.getType()).getDto());
             }
             dto.rpcProblem.schemas = schemas;
         } else {
@@ -491,9 +491,9 @@ public class EMController {
             //this MUST not be inside a noKillSwitch, as it sets to false
             sutController.newAction(dto);
 
-            if (dto instanceof RPCActionDto){
+            if (dto.rpcCall != null){
                 // TODO RPC execute action here and return its response
-                Object response = sutController.executeAction((RPCActionDto) dto);
+                Object response = sutController.executeAction(dto.rpcCall);
 
                 // convert the response to dto, and send back to core
             }

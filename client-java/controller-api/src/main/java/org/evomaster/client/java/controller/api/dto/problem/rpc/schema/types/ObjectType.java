@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.TypeDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
 
 import java.util.List;
@@ -20,5 +22,12 @@ public class ObjectType extends TypeSchema {
 
     public List<NamedTypedValue> getFields() {
         return fields;
+    }
+
+    @Override
+    public TypeDto getDto() {
+        TypeDto dto = super.getDto();
+        dto.type = RPCSupportedDataType.CUSTOM_OBJECT;
+        return dto;
     }
 }

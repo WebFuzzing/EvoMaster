@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 /**
@@ -20,5 +22,15 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
 
     public ByteParam(String name, PrimitiveOrWrapperType type) {
         super(name, type);
+    }
+
+    @Override
+    public ParamDto getDto() {
+        ParamDto dto = super.getDto();
+        if (getType().isWrapper)
+            dto.type.type = RPCSupportedDataType.BYTE;
+        else
+            dto.type.type = RPCSupportedDataType.P_BYTE;
+        return dto;
     }
 }

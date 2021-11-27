@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.TypeSchema;
 
 import java.io.Serializable;
@@ -7,7 +8,7 @@ import java.io.Serializable;
 /**
  * a named instance of the type with its value, eg Param/Field
  */
-public abstract class NamedTypedValue<T extends TypeSchema, V> implements Serializable {
+public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
     /**
      * name of the instance, eg param name
@@ -63,5 +64,12 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> implements Serial
 
     public boolean isNullable() {
         return isNullable;
+    }
+
+    public ParamDto getDto(){
+        ParamDto dto = new ParamDto();
+        dto.name = name;
+        dto.type = type.getDto();
+        return dto;
     }
 }

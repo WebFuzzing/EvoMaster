@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.problem;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.InterfaceSchema;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
 
 import java.util.List;
 
@@ -11,5 +11,5 @@ public class RPCProblemDto {
     /**
      * a list of accessible endpoints grouped by interface
      */
-    public List<InterfaceSchema> schemas;
+    public List<RPCInterfaceSchemaDto> schemas;
 }

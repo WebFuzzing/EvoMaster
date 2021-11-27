@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.TypeDto;
+
 /**
  * string type
  */
@@ -10,5 +13,12 @@ public class StringType extends TypeSchema {
 
     public StringType() {
         super(STRING_TYPE_NAME, FULL_STRING_TYPE_NAME);
+    }
+
+    @Override
+    public TypeDto getDto() {
+        TypeDto dto = super.getDto();
+        dto.type = RPCSupportedDataType.STRING;
+        return dto;
     }
 }

@@ -12,7 +12,7 @@ public class PrimitiveOrWrapperType extends TypeSchema {
      * represent if the type is wrapper
      * for instance, isWrapper for Integer is true and for int is false
      */
-    private final boolean isWrapper;
+    public final boolean isWrapper;
 
     public PrimitiveOrWrapperType(String type, String fullTypeName, boolean isWrapper) {
         super(type, fullTypeName);

@@ -5,11 +5,10 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.EndpointSchema;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
@@ -347,17 +346,22 @@ public abstract class SutController implements SutHandler {
     public final Object executeAction(RPCActionDto dto){
         Object client = ((RPCProblem)getProblemInfo()).getClient(dto.interfaceId);
         try {
-            Method method = client.getClass().getDeclaredMethod(dto.rpcCall.getName());
-            Object[] params = new Object[dto.rpcCall.getRequestParams().size()];
+            EndpointSchema endpoint = getEndpointSchema(dto);
+            Method method = client.getClass().getDeclaredMethod(endpoint.getName());
+            Object[] params = new Object[endpoint.getRequestParams().size()];
 
             for (int i = 0; i < params.length; i++){
-                params[i] = dto.rpcCall.getRequestParams().get(i).newInstance();
+                params[i] = endpoint.getRequestParams().get(i).newInstance();
             }
 
             return method.invoke(client, params);
         } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("RPC ACTION EXECUTION ERROR: fail to execute a RPC request with "+ e.getMessage());
         }
+    }
+
+    private EndpointSchema getEndpointSchema(RPCActionDto dto){
+        throw new RuntimeException("NOT IMPLEMENT getEndpointSchema");
     }
 
     public abstract void newTestSpecificHandler();

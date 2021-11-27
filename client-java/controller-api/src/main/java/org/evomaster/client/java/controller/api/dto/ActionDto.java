@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,4 +23,9 @@ public class ActionDto {
      * to check how such values are used in the SUT
      */
     public List<String> inputVariables = new ArrayList<>();
+
+    /**
+     *
+     */
+    public RPCActionDto rpcCall;
 }

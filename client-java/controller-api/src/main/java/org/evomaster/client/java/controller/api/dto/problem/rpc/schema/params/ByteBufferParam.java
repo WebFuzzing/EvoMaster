@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
 
 import java.nio.ByteBuffer;
@@ -23,5 +25,13 @@ public class ByteBufferParam extends NamedTypedValue<CollectionType, ByteBuffer>
     @Override
     public Object newInstance() throws ClassNotFoundException {
         return getValue();
+    }
+
+    @Override
+    public ParamDto getDto() {
+        ParamDto dto = super.getDto();
+        dto.type.type = RPCSupportedDataType.BYTEBUFFER;
+        dto.type.example = getType().getTemplate().getDto();
+        return dto;
     }
 }

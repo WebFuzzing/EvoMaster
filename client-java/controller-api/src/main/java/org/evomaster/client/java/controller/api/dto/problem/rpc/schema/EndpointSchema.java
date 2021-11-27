@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
 
 import java.io.Serializable;
@@ -8,7 +9,7 @@ import java.util.List;
 /**
  * endpoint dto for RPC service
  */
-public final class EndpointSchema implements Serializable {
+public final class EndpointSchema {
     /**
      * name of the endpoint
      */
@@ -42,5 +43,11 @@ public final class EndpointSchema implements Serializable {
 
     public NamedTypedValue getResponse() {
         return response;
+    }
+
+    public RPCActionDto getDto(){
+        RPCActionDto dto = new RPCActionDto();
+
+        return dto;
     }
 }

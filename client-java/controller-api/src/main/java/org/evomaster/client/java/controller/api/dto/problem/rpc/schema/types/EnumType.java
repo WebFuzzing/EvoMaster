@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.TypeDto;
+
 /**
  * enumeration
  */
@@ -18,5 +21,12 @@ public class EnumType extends TypeSchema {
 
     public String[] getItems() {
         return items;
+    }
+
+    @Override
+    public TypeDto getDto() {
+        TypeDto dto = super.getDto();
+        dto.type = RPCSupportedDataType.ENUM;
+        return dto;
     }
 }

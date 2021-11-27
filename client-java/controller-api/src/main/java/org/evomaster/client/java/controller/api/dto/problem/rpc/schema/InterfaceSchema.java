@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.TypeSchema;
 
 import java.io.Serializable;
@@ -11,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * schema dto of the RCP service
  */
-public final class InterfaceSchema implements Serializable {
+public final class InterfaceSchema{
     /**
      * name of the interface
      */
@@ -58,5 +60,13 @@ public final class InterfaceSchema implements Serializable {
 
     public Map<String, TypeSchema> getTypeCollections() {
         return typeCollections;
+    }
+
+    public RPCInterfaceSchemaDto getDto(){
+        RPCInterfaceSchemaDto dto = new RPCInterfaceSchemaDto();
+        dto.interfaceId = this.getName();
+        dto.types = typeCollections.values().stream().map(TypeSchema::getDto).collect(Collectors.toList());
+        dto.endpoints = endpoints.stream().map(EndpointSchema::getDto).collect(Collectors.toList());
+        return dto;
     }
 }
