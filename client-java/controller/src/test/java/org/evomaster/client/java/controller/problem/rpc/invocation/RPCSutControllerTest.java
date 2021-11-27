@@ -2,7 +2,6 @@ package org.evomaster.client.java.controller.problem.rpc.invocation;
 
 import io.restassured.RestAssured;
 import org.evomaster.client.java.controller.api.Formats;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -13,6 +12,7 @@ import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * created by manzhang on 2021/11/27
@@ -21,7 +21,7 @@ public class RPCSutControllerTest {
 
     public final static FakeSutController rpcController = new FakeSutController();
 
-    private static List<InterfaceSchema> interfaceSchemas;
+    private static List<RPCInterfaceSchemaDto> interfaceSchemas;
 
     @BeforeAll
     public static void initClass() {
@@ -34,15 +34,13 @@ public class RPCSutControllerTest {
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
 
-        List<RPCInterfaceSchemaDto> schemaDtos = given()
+        interfaceSchemas = given()
                 .accept(Formats.JSON_V1)
                 .get("/infoSUT")
                 .then()
                 .statusCode(200)
                 .body("data.isSutRunning", is(false))
                 .extract().body().jsonPath().getList("data.rpcProblem.schemas.", RPCInterfaceSchemaDto.class);
-
-        System.out.println(schemaDtos);
     }
 
     @AfterAll
@@ -52,7 +50,7 @@ public class RPCSutControllerTest {
 
     @Test
     public void testSutInfoAndSchema(){
-
+        assertEquals(1, interfaceSchemas.size());
     }
 
 //    @Test

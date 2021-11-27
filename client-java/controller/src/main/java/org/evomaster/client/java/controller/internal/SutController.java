@@ -8,13 +8,16 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.EndpointSchema;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
+import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.api.ControllerConstants;
@@ -59,6 +62,11 @@ public abstract class SutController implements SutHandler {
      * For each action in a test, keep track of the extra heuristics, if any
      */
     private final List<ExtraHeuristicsDto> extras = new CopyOnWriteArrayList<>();
+
+    /**
+     * a map of  interface schemas for RPC service under test
+     */
+    private final Map<String, InterfaceSchema> rpcInterfaceSchema = new HashMap<>();
 
     private int actionIndex = -1;
 
@@ -270,6 +278,28 @@ public abstract class SutController implements SutHandler {
         }
 
         return schemaDto;
+    }
+
+    public final Map<String, InterfaceSchema> extractRPCSchema(){
+        if (rpcInterfaceSchema != null)
+            return rpcInterfaceSchema;
+
+        if (!(getProblemInfo() instanceof RPCProblem)){
+            SimpleLogger.error("Problem ("+getProblemInfo().getClass().getSimpleName()+") is not RPC but request RPC schema.");
+            return null;
+        }
+        try {
+            RPCProblem rpcp = (RPCProblem) getProblemInfo();
+            for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
+                InterfaceSchema schema = RPCEndpointsBuilder.build(interfaceName, rpcp.getType());
+                rpcInterfaceSchema.put(interfaceName, schema);
+            }
+        }catch (Exception e){
+            SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
+            return null;
+        }
+
+        return rpcInterfaceSchema;
     }
 
 

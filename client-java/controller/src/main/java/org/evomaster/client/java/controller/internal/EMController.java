@@ -194,11 +194,14 @@ public class EMController {
             dto.graphQLProblem = new GraphQLProblemDto();
             dto.graphQLProblem.endpoint = p.getEndpoint();
         } else if(info instanceof RPCProblem){
-            RPCProblem rpcp = (RPCProblem) info;
             dto.rpcProblem = new RPCProblemDto();
+            Map<String, InterfaceSchema> rpcSchemas = sutController.extractRPCSchema();
+            if (rpcSchemas == null){
+                return Response.status(500).entity(WrappedResponseDto.withError("Fail to extract RPC interface schema")).build();
+            }
             List<RPCInterfaceSchemaDto> schemas = new ArrayList<>();
-            for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
-                schemas.add(RPCEndpointsBuilder.build(interfaceName, rpcp.getType()).getDto());
+            for (InterfaceSchema s: rpcSchemas.values()){
+                schemas.add(s.getDto());
             }
             dto.rpcProblem.schemas = schemas;
         } else {
