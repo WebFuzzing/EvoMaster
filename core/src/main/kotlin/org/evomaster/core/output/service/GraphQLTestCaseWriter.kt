@@ -139,7 +139,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                 lines.append("$baseUrlOfSut + \"")
             }
 
-           val path= infoDto.graphQLProblem?.endpoint?.removePrefix(infoDto.baseUrlOfSUT)
+           val path= infoDto.graphQLProblem?.endpoint
 
             lines.append("${path?.let { GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.NONE, format = format) }}\"")
         }
