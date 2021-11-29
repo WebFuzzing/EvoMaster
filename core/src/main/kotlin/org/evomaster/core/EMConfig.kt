@@ -14,7 +14,6 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Paths
-import java.util.logging.Logger
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -36,6 +35,8 @@ class EMConfig {
     companion object {
 
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
+
+        private const val headerRegex = "(.+:.+)|(^$)"
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -676,6 +677,25 @@ class EMConfig {
             " A value of zero or negative means that no limiter is applied." +
             " This is needed only for black-box testing of remote services.")
     var ratePerMinute = 0
+
+    @Important(4.0)
+    @Regex(headerRegex)
+    @Cfg("In black-box testing, we still need to deal with authentication of the HTTP requests." +
+            " With this parameter it is possible to specify a HTTP header that is going to be added to most requests." +
+            " This should be provided in the form _name:value_. If more than 1 header is needed, use as well the" +
+            " other options _header1_ and _header2_.")
+    var header0 = ""
+
+    @Important(4.1)
+    @Regex(headerRegex)
+    @Cfg("See documentation of _header0_.")
+    var header1 = ""
+
+    @Important(4.2)
+    @Regex(headerRegex)
+    @Cfg("See documentation of _header0_.")
+    var header2 = ""
+
 
     //-------- other options -------------
 
@@ -1398,6 +1418,14 @@ class EMConfig {
     @Experimental
     @Cfg("Whether to skip failed SQL commands in the generated test files")
     var skipFailureSQLInTestFile = false
+
+    val defaultTreeDepth = 11
+
+    @Experimental
+    @Cfg("Maximum tree depth in mutations/queries to be evaluated;" +
+            "this is to avoid issues when dealing with huge graphs in GraphQL")
+    @Min(1.0)
+    var treeDepth = defaultTreeDepth
 
 
     @Experimental
