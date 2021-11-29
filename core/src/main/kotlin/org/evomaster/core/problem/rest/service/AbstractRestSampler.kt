@@ -162,12 +162,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         initAdHocInitialIndividuals()
 
+        addAuthFromConfig()
+
         /*
             TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
          */
         partialOracles.setupForRest(swagger)
 
-        log.debug("Done initializing {}", RestSampler::class.simpleName)
+        log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
     fun getOpenAPI(): OpenAPI{

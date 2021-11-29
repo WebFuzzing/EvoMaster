@@ -175,7 +175,11 @@ object ConfigToMarkdown {
             buffer.append(".")
         }
         if(description.constraints.isNotBlank()){
-            buffer.append(" *Constraints*: `${description.constraints}`.")
+            /*
+                see https://stackoverflow.com/questions/17319940/how-to-escape-a-pipe-char-in-a-code-statement-in-a-markdown-table
+                GitHub supports it, but current IDEA Viewer does not
+             */
+            buffer.append(" *Constraints*: `${description.constraints.replace("|","\\|")}`.")
         }
 
         if (description.enumValidValues.isNotBlank()) {
