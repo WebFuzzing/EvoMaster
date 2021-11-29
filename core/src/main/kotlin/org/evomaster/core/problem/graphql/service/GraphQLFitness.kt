@@ -394,7 +394,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val uri = if (config.blackBox) {
             config.bbTargetUrl
         } else {
-             infoDto.graphQLProblem.endpoint
+            infoDto.baseUrlOfSUT.plus(infoDto.graphQLProblem.endpoint)
         }
         val fullUri = GeneUtils.applyEscapes(uri, GeneUtils.EscapeMode.URI, configuration.outputFormat)
 
