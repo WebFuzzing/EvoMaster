@@ -4,6 +4,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace EvoMaster.Client.Util {
+    //This class has been added because there's no pre-defined data structure for concurrent hashsets in .net (at the time of writing this)
+    //But luckily .net contains ConcurrentDictionary and ConcurrentHashSet is nothing but a wrapper around ConcurrentDictionary
+    //The inserted value is of type byte which is always set to zero
     public class ConcurrentHashSet<T> : ICollection<T>, IReadOnlyCollection<T> {
         private readonly ConcurrentDictionary<T, byte> _dictionary = new ConcurrentDictionary<T, byte>();
         public int Count => _dictionary.Keys.Count;
