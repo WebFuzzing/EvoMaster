@@ -116,4 +116,13 @@ class FloatGene(name: String,
     override fun getMaximum(): Float {
         return max?: Float.MAX_VALUE
     }
+
+    override fun compareTo(other: ComparableGene): Int {
+        if (other !is FloatGene) {
+            throw ClassCastException("Cannot compare FloatGene to ${other::javaClass} instance")
+        }
+        return this.toFloat().compareTo(other.toFloat())
+    }
+
+
 }

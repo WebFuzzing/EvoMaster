@@ -238,13 +238,20 @@ class DbActionGeneBuilder {
                     SqlJSONPathGene(column.name)
 
                 ColumnDataType.INT4RANGE ->
-                    SqlNumericRangeGene(column.name, template = IntegerGene("bound"))
+                    SqlRangeGene(column.name, template = IntegerGene("bound"))
 
                 ColumnDataType.INT8RANGE ->
-                    SqlNumericRangeGene(column.name, template = LongGene("bound"))
+                    SqlRangeGene(column.name, template = LongGene("bound"))
 
                 ColumnDataType.NUMRANGE ->
-                    SqlNumericRangeGene(column.name, template = FloatGene("bound"))
+                    SqlRangeGene(column.name, template = FloatGene("bound"))
+
+                ColumnDataType.DATERANGE ->
+                    SqlRangeGene(column.name, template = DateGene("bound"))
+
+                ColumnDataType.TSRANGE, ColumnDataType.TSTZRANGE ->
+                    SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
+
 
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
@@ -483,7 +490,7 @@ class DbActionGeneBuilder {
     }
 
     private fun handleTimestampColumn(column: Column): DateTimeGene {
-        return if (column.enumValuesAsStrings != null) {
+        if (column.enumValuesAsStrings != null) {
             throw RuntimeException("Unsupported enum in TIMESTAMP. Please implement")
         } else {
             return buildSqlTimestampGene(column.name)

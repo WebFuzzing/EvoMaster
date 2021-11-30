@@ -15,27 +15,27 @@ import org.slf4j.LoggerFactory
  *  https://www.postgresql.org/docs/14/rangetypes.html
  *  A representation of numeric range type.
  */
-class SqlNumericRangeGene<T>(
+class SqlRangeGene<T>(
     /**
      * The name of this gene
      */
     name: String,
 
-    private val template: NumberGene<T>,
+    private val template: T,
 
     private val isLeftClosed: BooleanGene = BooleanGene("isLeftClosed"),
 
-    private val left: NumberGene<T> = template.copyContent() as NumberGene<T>,
+    private val left: T = template.copyContent() as T,
 
-    private val right: NumberGene<T> = template.copyContent() as NumberGene<T>,
+    private val right: T = template.copyContent() as T,
 
     private val isRightClosed: BooleanGene = BooleanGene("isRightClosed")
 
 ) : Gene(name, mutableListOf(isLeftClosed, left, right, isRightClosed))
-        where T : Number {
+        where T : ComparableGene {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(SqlNumericRangeGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlRangeGene::class.java)
     }
 
     init {
@@ -54,54 +54,53 @@ class SqlNumericRangeGene<T>(
      * to UpperBound
      */
     private fun isLeftLessThanEqualToRight(): Boolean {
-        return left.value.toDouble() <= right.value.toDouble()
+        return left <= right
     }
 
     private fun swapLeftRightValues() {
-        val previousLeftValue = left.value
-        left.value = right.value
-        right.value = previousLeftValue
+        val copyOfLeftGene = left.copy()
+        left.copyValueFrom(right)
+        right.copyValueFrom(copyOfLeftGene)
     }
 
     override fun getChildren(): MutableList<Gene> =
         mutableListOf(isLeftClosed, left, right, isRightClosed)
 
     override fun copyContent(): Gene {
-        return SqlNumericRangeGene<T>(
+        return SqlRangeGene<T>(
             name = name,
-            template = template.copyContent() as NumberGene<T>,
+            template = template.copyContent() as T,
             isLeftClosed = isLeftClosed.copyContent() as BooleanGene,
-            left = left.copyContent() as NumberGene<T>,
-            right = right.copyContent() as NumberGene<T>,
+            left = left.copyContent() as T,
+            right = right.copyContent() as T,
             isRightClosed = isRightClosed.copyContent() as BooleanGene
         )
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlNumericRangeGene<*>) {
+        if (other !is SqlRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        isRightClosed.value = other.isLeftClosed.value
-        left.value = other.left.value as T
-        right.value = other.right.value as T
-        isRightClosed.value = other.isRightClosed.value
+        isLeftClosed.copyValueFrom(other.isLeftClosed)
+        left.copyValueFrom(other.left)
+        right.copyValueFrom(other.right)
+        isRightClosed.copyValueFrom(other.isRightClosed)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlNumericRangeGene<*>) {
+        if (other !is SqlRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return isRightClosed.value.equals(other.isRightClosed.value)
-                && left.value.equals(other.left.value)
-                && right.value.equals(other.right.value)
-                && isRightClosed.value.equals(other.isRightClosed.value)
+        return isLeftClosed.containsSameValueAs(other.isRightClosed)
+                && left.containsSameValueAs(other.left)
+                && right.containsSameValueAs(other.right)
+                && isRightClosed.containsSameValueAs(other.isRightClosed)
     }
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-
-        log.trace("Randomizing SqlNumericRangeGene")
+        log.trace("Randomizing SqlRangeGene")
         val genes: List<Gene> = listOf(isRightClosed, left, right, isRightClosed)
         val index = randomness.nextInt(genes.size)
         genes[index].randomize(randomness, forceNewValue, allGenes)
@@ -132,7 +131,7 @@ class SqlNumericRangeGene<T>(
 
     private fun isEmpty(): Boolean {
         return (isLeftOpen() || isRightOpen()) &&
-                left.value.equals(right.value)
+                left.containsSameValueAs(right)
     }
 
     override fun getValueAsPrintableString(
@@ -167,7 +166,7 @@ class SqlNumericRangeGene<T>(
         listOf(isLeftClosed, left, right, isRightClosed)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlNumericRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {
+        if (gene is SqlRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {
             this.isLeftClosed.bindValueBasedOn(gene.isLeftClosed)
             this.left.bindValueBasedOn(gene.left)
             this.right.bindValueBasedOn(gene.right)
