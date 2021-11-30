@@ -10,7 +10,13 @@ using Mono.Cecil.Rocks;
 namespace EvoMaster.Instrumentation {
     public class Instrumentator {
         private MethodReference _probe;
-
+        
+        /// <summary>
+        /// This method instruments an assembly file and saves its instrumented version in the specified destination directory
+        /// </summary>
+        /// <param name="assembly">Name of the file to be instrumented</param>
+        /// <param name="destination">Directory where the instrumented file should be copied in</param>
+        /// <exception cref="ArgumentNullException"></exception>
         public void Instrument(string assembly, string destination) {
             if (string.IsNullOrEmpty(assembly)) throw new ArgumentNullException(assembly);
             if (string.IsNullOrEmpty(destination)) throw new ArgumentNullException(destination);
@@ -18,7 +24,9 @@ namespace EvoMaster.Instrumentation {
             //ReadSymbols is set true to enable getting line info
             var module =
                 ModuleDefinition.ReadModule(assembly, new ReaderParameters { ReadSymbols = true });
-
+            
+            //TODO: check file extension
+            
             _probe =
                 module.ImportReference(
                     typeof(Instrumentator).GetMethod(name: "CompletedLine",
@@ -126,6 +134,7 @@ namespace EvoMaster.Instrumentation {
 
             //TODO: description
             ExecutionTracer.ExecutedLine(className, methodName, "desc", lineNo);
+            Console.WriteLine($"******* Executed Line: {lineNo} at Method: {methodName} at Class: {className}");
         }
     }
 }

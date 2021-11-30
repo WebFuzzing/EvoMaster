@@ -15,7 +15,14 @@ public class DistanceHelper {
     //Like on JVM, this applies to .NET as well
     public static readonly int MAX_CHAR_DISTANCE = 65_536;
 
-
+    /// <summary>
+    /// Increase the distance by the given delta. It makes sure to handle possible
+    ///numeric overflows. In this latter case the max value is returned, ie, we
+    /// guarantee that the returned value is not lower than the given input distance.
+    /// </summary>
+    /// <param name="distance"></param>
+    /// <param name="delta"></param>
+    /// <returns></returns>
     public static double IncreasedDistance(double distance, double delta) {
         if (!double.IsFinite(distance) || distance == double.MaxValue) {
             return distance;
@@ -24,7 +31,7 @@ public class DistanceHelper {
         if (distance > (double.MaxValue - delta)) {
             return double.MaxValue;
         }
-
+        
         return distance + delta;
     }
 
