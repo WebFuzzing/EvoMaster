@@ -47,5 +47,14 @@ internal class MapGeneTest{
         assertTrue(map.containsKey(s3))
         intKey3.value = 3
         assertFalse(map.containsKey(s3))
+
+        val intKey4 = IntegerGene("key_4", 1)
+        val strValue4 = strValue1.copyContent() as StringGene
+        strValue4.value = "bar"
+        val s4 = PairGene("key_4", intKey4, strValue4)
+        assertTrue(map.containsKey(s4))
+        map.addElements(s4)
+        //replace the existing pair with s4
+        assertTrue(map.getValueAsPrintableString(targetFormat = targetFormat).contains("\"1\":\"bar\"", ignoreCase = true))
     }
 }

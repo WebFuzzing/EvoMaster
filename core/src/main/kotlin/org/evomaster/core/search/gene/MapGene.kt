@@ -201,17 +201,26 @@ class MapGene<K, V>(
     }
 
     /**
-     * remove [element] to [elements]
+     * remove an existing element [element] (key to value) from [elements]
      */
     fun removeElements(element: PairGene<K, V>){
-        elements.remove(element)
-        element.removeThisFromItsBindingGenes()
+        if (elements.contains(element)){
+            elements.remove(element)
+            element.removeThisFromItsBindingGenes()
+        }else{
+            log.warn("the specified element (${if (element.isPrintable()) element.getValueAsPrintableString() else "not printable"})) does not exist in this map")
+        }
     }
 
     /**
-     * add [element] to [elements]
+     * add [element] (key to value) to [elements],
+     * if the key of [element] exists in [elements],
+     * we replace the existing one with [element]
      */
     fun addElements(element: PairGene<K, V>){
+        getElementsBy(element).forEach { e->
+            removeElements(e)
+        }
         elements.add(element)
         addChild(element)
     }
@@ -225,15 +234,22 @@ class MapGene<K, V>(
      * @return whether the key of [pairGene] exists in [elements] of this map
      */
     fun containsKey(pairGene: PairGene<K, V>): Boolean{
+        return getElementsBy(pairGene).isNotEmpty()
+    }
+
+    /**
+     * @return a list of elements from [elements] which has the same key with [pairGene]
+     */
+    private fun getElementsBy(pairGene: PairGene<K, V>): List<PairGene<K, V>>{
         val geneValue = ParamUtil.getValueGene(pairGene.first)
         /*
             currently we only support Integer, String and LongGene
             TODO support other types if needed
          */
         if (geneValue is IntegerGene || geneValue is StringGene || geneValue is LongGene){
-            return elements.any { ParamUtil.getValueGene(it.first).containsSameValueAs(geneValue) }
+            return elements.filter { ParamUtil.getValueGene(it.first).containsSameValueAs(geneValue) }
         }
-        return false
+        return listOf()
     }
 
     private fun addRandomElement(randomness: Randomness, forceNewValue: Boolean) : PairGene<K, V>{
