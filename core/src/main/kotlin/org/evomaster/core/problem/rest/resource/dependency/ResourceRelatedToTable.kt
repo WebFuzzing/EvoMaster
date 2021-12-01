@@ -232,7 +232,7 @@ abstract class ParamRelatedToTable (
 
     val confirmedColumn : MutableSet<String> = mutableSetOf()
 
-    open fun getRelatedColumn(table: String) : Set<String>?  = derivedMap[table].run { if (this == null) null else setOf(this.targetMatched)  }
+    open fun getRelatedColumn(table: String) : Set<String>?  = derivedMap.filterKeys { it.equals(table, ignoreCase = true) }.values.firstOrNull().run { if (this == null) null else setOf(this.targetMatched)  }
 }
 
 /**

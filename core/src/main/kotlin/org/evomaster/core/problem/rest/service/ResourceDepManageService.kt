@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.schema.Table
@@ -272,12 +273,11 @@ class ResourceDepManageService {
                     /*
                      TODO Man should only apply on POST Action? how about others?
                      */
-                    val post = r.actions.first { it.verb == HttpVerb.POST } as RestCallAction
+                    val post = r.actions.first { it.verb == HttpVerb.POST }
                     post.tokens.forEach { _, u ->
                         resourceCluster.getCluster().values.forEach { or ->
                             if (or != r) {
                                 or.actions
-                                        .filterIsInstance<RestCallAction>()
                                         .flatMap { it.tokens.values.filter { t -> t.fromDefinition && t.isDirect && t.isType } }
                                         .filter { ot ->
                                             StringSimilarityComparator.isSimilar(u.getKey(), ot.getKey())
@@ -886,15 +886,24 @@ class ResourceDepManageService {
      * handle to select an non-dependent resource for deletion
      * @return a candidate, if none of a resource is deletable, return null
      */
-    fun handleDelNonDepResource(ind: RestIndividual): RestResourceCalls? {
+    fun handleDelNonDepResource(ind: RestIndividual): RestResourceCalls {
+        val candidates = identifyDelNonDepResource(ind)
+        Lazy.assert { candidates.isNotEmpty() }
+        return randomness.choose(candidates)
+    }
+
+    /**
+     * identify a set of non-dependent resource for deletion in [ind]
+     */
+    fun identifyDelNonDepResource(ind: RestIndividual): List<RestResourceCalls> {
         val candidates = ind.getResourceCalls().filter { it.isDeletable }.filter { cur ->
             !existsDependentResources(ind, cur)
         }
-        if (candidates.isEmpty()) return null
+        if (candidates.isEmpty()) return ind.getResourceCalls().filter(RestResourceCalls::isDeletable)
 
         val nodep = candidates.filter { isNonDepResources(ind, it)}
-        if (nodep.isNotEmpty()) return randomness.choose(nodep)
-        return randomness.choose(candidates)
+        if (nodep.isNotEmpty()) return nodep
+        return candidates
     }
 
 
@@ -982,11 +991,15 @@ class ResourceDepManageService {
     /**
      * @return a list of db actions of [ind] which are possibly not related to rest actions of [ind]
      */
-    fun unRelatedSQL(ind: RestIndividual) : List<DbAction>{
+    fun unRelatedSQL(ind: RestIndividual, candidates: List<DbAction>?) : List<DbAction>{
         val allrelated = getAllRelatedTables(ind)
-        return ind.seeInitializingActions().filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
+        return (candidates?:ind.seeInitializingActions().filterNot { it.representExistingData }).filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
     }
 
+    fun identifyUnRelatedSqlTable(ind: RestIndividual, candidates: List<DbAction>?) : List<String>{
+        val actions = unRelatedSQL(ind, candidates)
+        return if (actions.isNotEmpty()) actions.map { it.table.name } else ind.seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
+    }
     /**
      * add [num] related resources into [ind] with SQL
      * @param probability represent a probability of using identified dependent tables, otherwise employ the tables which are
@@ -996,24 +1009,33 @@ class ResourceDepManageService {
      * tracking of SQL execution.
      */
     fun addRelatedSQL(ind: RestIndividual, num: Int, probability: Double = 1.0) : List<List<DbAction>>{
+        val other = randomness.choose(identifyRelatedSQL(ind, probability))
+        return createDbActions(other, num)
+    }
+
+    /**
+     * @param probability represent a probability of using identified dependent tables, otherwise employ the tables which are
+     * not part of the current dbInitialization
+     */
+    fun identifyRelatedSQL(ind: RestIndividual, probability: Double = 1.0): Set<String>{
+
         val allrelated = getAllRelatedTables(ind)
 
-        val other = if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
+        if (allrelated.isNotEmpty() && randomness.nextBoolean(probability)){
             val notincluded = allrelated.filterNot {
                 ind.seeInitializingActions().any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
             //prioritize notincluded related ones with a probability 0.8
-            if (notincluded.isNotEmpty() && randomness.nextBoolean(0.8)){
-                randomness.choose(notincluded)
-            }else randomness.choose(allrelated)
+            return if (notincluded.isNotEmpty() && randomness.nextBoolean(0.8)){
+                notincluded.toSet()
+            }else allrelated
         }else{
             val left = rm.getTableInfo().keys.filterNot {
                 ind.seeInitializingActions().any { d-> it.equals(d.table.name, ignoreCase = true) }
             }
-            if (left.isNotEmpty() && randomness.nextBoolean()) randomness.choose(left)
-            else randomness.choose(rm.getTableInfo().keys)
+            return if (left.isNotEmpty() && randomness.nextBoolean()) left.toSet()
+            else rm.getTableInfo().keys
         }
-        return createDbActions(other, num)
     }
 
     fun createDbActions(name : String, num : Int) : List<List<DbAction>>{

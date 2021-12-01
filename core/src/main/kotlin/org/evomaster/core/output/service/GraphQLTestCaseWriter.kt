@@ -1,7 +1,6 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.output.Lines
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
@@ -10,17 +9,12 @@ import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.httpws.service.HttpWsIndividual
-import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.slf4j.LoggerFactory
-import javax.annotation.PostConstruct
 
 class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
 
@@ -31,9 +25,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     @Inject
     protected lateinit var httpWsFitness: HttpWsFitness<Individual>
 
-
-
-    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>){
+    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>){
         if (ind.individual is GraphQLIndividual) {
             ind.evaluatedActions().forEach { a ->
                 handleSingleCall(a, lines, baseUrlOfSut)

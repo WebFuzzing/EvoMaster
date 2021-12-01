@@ -90,7 +90,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
     override fun sampleAtRandom(): GraphQLIndividual {
         val actions = mutableListOf<GraphQLAction>()
-        val n = randomness.nextInt(1, config.maxTestSize)
+        val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())
 
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05) as GraphQLAction)

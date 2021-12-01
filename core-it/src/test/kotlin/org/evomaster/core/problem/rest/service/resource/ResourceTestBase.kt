@@ -99,8 +99,12 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
         config.probOfEnablingResourceDependencyHeuristics = probOfDep
 
-        val schemaDto = SchemaExtractor.extract(connection)
-        val sqlBuilder = SqlInsertBuilder(schemaDto, getDatabaseExecutor())
+        var sqlBuilder : SqlInsertBuilder? = null
+        if (doesInvolveDatabase){
+            val schemaDto = SchemaExtractor.extract(connection)
+            sqlBuilder = SqlInsertBuilder(schemaDto, getDatabaseExecutor())
+        }
+
 
         sampler.initialize(getSwaggerLocation(), skip, sqlBuilder)
 

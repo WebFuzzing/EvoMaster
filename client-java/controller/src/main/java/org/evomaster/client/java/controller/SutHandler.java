@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
 
 import java.util.List;
@@ -79,5 +80,5 @@ public interface SutHandler {
      *
      * @param insertions DTOs for each insertion to execute
      */
-    void execInsertionsIntoDatabase(List<InsertionDto> insertions);
+    InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous);
 }

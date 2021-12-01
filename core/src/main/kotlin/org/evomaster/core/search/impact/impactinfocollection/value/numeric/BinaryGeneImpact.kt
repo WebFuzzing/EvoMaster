@@ -3,7 +3,7 @@ package org.evomaster.core.search.impact.impactinfocollection.value.numeric
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.*
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 
 /**
  * created by manzh on 2019-09-09
@@ -53,7 +53,7 @@ class BinaryGeneImpact (
 
     override fun maxTimesOfNoImpact(): Int = 3
 
-    fun determinateSelect(minManipulatedTimes : Int, preferTrue : Boolean, times : Double, targets: Set<Int>, selector: ArchiveGeneSelector) : Boolean{
+    fun determinateSelect(minManipulatedTimes : Int, preferTrue : Boolean, times : Double, targets: Set<Int>, selector: ArchiveImpactSelector) : Boolean{
         if (shared.timesToManipulate < minManipulatedTimes) return preferTrue
         if (trueValue.getTimesToManipulate() == 0) return true
         if (falseValue.getTimesToManipulate() == 0) return false

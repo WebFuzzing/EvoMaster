@@ -20,6 +20,7 @@ import org.evomaster.core.search.gene.Gene
 data class MutatedGeneSpecification (
         val mutatedGenes : MutableList<MutatedGene> = mutableListOf(),
         val mutatedDbGenes : MutableList<MutatedGene> = mutableListOf(),
+        val mutatedInitGenes : MutableList<MutatedGene> = mutableListOf(),
 
         //SQL handling
         val addedInitializationGenes : MutableList<Gene> = mutableListOf(),
@@ -40,12 +41,14 @@ data class MutatedGeneSpecification (
         mutatedIndividual = individual
     }
 
-    fun addMutatedGene(isDb : Boolean, valueBeforeMutation : String, gene : Gene, position : Int?, resourcePosition: Int? = null){
-        if (isDb){
-            mutatedDbGenes.add(MutatedGene(valueBeforeMutation, gene, actionPosition=position, resourcePosition = resourcePosition))
+    fun addMutatedGene(isDb : Boolean, isInit : Boolean, valueBeforeMutation : String, gene : Gene, position : Int?, resourcePosition: Int? = null){
+        (if (isInit)
+            mutatedInitGenes
+        else if (isDb){
+            mutatedDbGenes
         }else{
-            mutatedGenes.add(MutatedGene(valueBeforeMutation, gene, actionPosition=position, resourcePosition = resourcePosition))
-        }
+            mutatedGenes
+        }).add(MutatedGene(valueBeforeMutation, gene, actionPosition=position, resourcePosition = resourcePosition))
     }
 
     fun addRemovedOrAddedByAction(action: Action, position: Int?, removed : Boolean, resourcePosition: Int?){
@@ -66,25 +69,26 @@ data class MutatedGeneSpecification (
         )
     }
 
-    fun isActionMutated(actionIndex : Int, isRest: Boolean) : Boolean{
-        if (isRest)
-            return mutatedGenes.any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
+    fun isActionMutated(actionIndex : Int, isInit: Boolean) : Boolean{
+        if (isInit)
+            return mutatedInitGenes.any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
 
-        return mutatedDbGenes.any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
+        return (mutatedGenes.plus(mutatedDbGenes)).any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
     }
 
     fun getRemoved(isRest : Boolean) =
-        (if (isRest) mutatedGenes else mutatedDbGenes).filter { it.type == MutatedType.REMOVE}
+        (if (isRest) mutatedGenes else (mutatedInitGenes.plus(mutatedDbGenes))).filter { it.type == MutatedType.REMOVE}
 
-    fun getAdded(isRest : Boolean) = (if (isRest) mutatedGenes else mutatedDbGenes).filter { it.type == MutatedType.ADD}
-    fun getMutated(isRest : Boolean) = (if (isRest) mutatedGenes else mutatedDbGenes).filter { it.type == MutatedType.MODIFY}
+    fun getAdded(isRest : Boolean) = (if (isRest) mutatedGenes else (mutatedInitGenes.plus(mutatedDbGenes))).filter { it.type == MutatedType.ADD}
+    fun getMutated(isRest : Boolean) = (if (isRest) mutatedGenes else (mutatedInitGenes.plus(mutatedDbGenes))).filter { it.type == MutatedType.MODIFY}
     fun getSwap() = mutatedGenes.filter { it.type == MutatedType.SWAP }
 
 
     fun mutatedGeneInfo() = mutatedGenes.map { it.gene }
+    fun mutatedInitGeneInfo() = mutatedInitGenes.map { it.gene }
     fun mutatedDbGeneInfo() = mutatedDbGenes.map { it.gene }
 
-    fun numOfMutatedGeneInfo() = mutatedGenes.size + mutatedDbGenes.size
+    fun numOfMutatedGeneInfo() = mutatedGenes.size + mutatedDbGenes.size+ mutatedInitGenes.size
 
     fun didAddInitializationGenes() = addedInitializationGenes.isNotEmpty() || addedExistingDataInitialization.isNotEmpty()
 
@@ -107,13 +111,13 @@ data class MutatedGeneSpecification (
 
     // add, remove, swap, add_sql, remove_sql
     fun didStructureMutation() =  mutatedGenes.any { it.type != MutatedType.MODIFY }
-            || mutatedDbGenes.any { it.type != MutatedType.MODIFY }
+            || (mutatedInitGenes.plus(mutatedDbGenes)).any { it.type != MutatedType.MODIFY }
             || addedDbActions.isNotEmpty() || removedDbActions.isNotEmpty()
 
-    fun isMutated(gene: Gene) = mutatedDbGenes.any { it.gene == gene }
+    fun isMutated(gene: Gene) = (mutatedInitGenes.plus(mutatedDbGenes)).any { it.gene == gene }
             || mutatedGenes.any { it.gene == gene }
             || addedDbActions.flatten().any { it.seeGenes().contains(gene) }
             || removedDbActions.map { it.first }.any { it.seeGenes().contains(gene) }
 
-    fun mutatedActionOrDb() = setOf(mutatedGenes.isEmpty(), mutatedDbGenes.isNotEmpty())
+    fun mutatedActionOrInit() = setOf((mutatedGenes.plus(mutatedDbGenes)).isEmpty(), mutatedInitGenes.isNotEmpty())
 }

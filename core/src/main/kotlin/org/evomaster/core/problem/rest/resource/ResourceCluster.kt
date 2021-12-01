@@ -160,23 +160,33 @@ class ResourceCluster {
         val added = mutableListOf<DbAction>()
         val preTables = previous.filter { !isInsertion || !it.representExistingData }.map { it.table.name }.toMutableList()
 
-        if (!isInsertion && (forceSynDataInDb || dataInDB.isEmpty()) )
-            syncDataInDb(sqlInsertBuilder)
+
+        if (!isInsertion && sorted.none { t-> (getDataInDb(t.name)?.size?: 0) > 0 }){
+            if (forceSynDataInDb)
+                syncDataInDb(sqlInsertBuilder)
+            if (sorted.none { t-> (getDataInDb(t.name)?.size?: 0) > 0 }){
+                return mutableListOf()
+            }
+        }
 
         sorted.forEach { t->
             if (!doNotCreateDuplicatedAction || preTables.none { p-> p.equals(t.name, ignoreCase = true) }){
-                val select = !isInsertion && getDataInDb(t.name)?.size?:0 > 0
-                val action = if (select){
-                    val candidates = getDataInDb(t.name)!!
-                    val row = randomness.choose(candidates)
-                    listOf(sqlInsertBuilder.extractExistingByCols(t.name, row))
+                val action = if (!isInsertion){
+                    if ((getDataInDb(t.name)?.size ?: 0) == 0) null
+                    else{
+                        val candidates = getDataInDb(t.name)!!
+                        val row = randomness.choose(candidates)
+                        listOf(sqlInsertBuilder.extractExistingByCols(t.name, row))
+                    }
                 } else{
                     sqlInsertBuilder.createSqlInsertionAction(t.name).also {
                         it.forEach { a-> a.randomize(randomness,false, it) }
                     }
                 }
-                added.addAll(action)
-                preTables.addAll(action.filter { !isInsertion || !it.representExistingData }.map { it.table.name })
+                if (action != null){
+                    added.addAll(action)
+                    preTables.addAll(action.filter { !isInsertion || !it.representExistingData }.map { it.table.name })
+                }
             }
         }
 
