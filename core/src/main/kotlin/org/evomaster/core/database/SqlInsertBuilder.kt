@@ -208,7 +208,7 @@ class SqlInsertBuilder(
          * In other words, the disjoint is empty.
          */
         if (c.isEnumeratedType && enumValuesAsStrings.isNullOrEmpty()) {
-            return schemaDto.postgresEnumeraredTypes.find { it.name.equals(c.type) }!!.values
+            return schemaDto.enumeraredTypes.find { it.name.equals(c.type) }!!.values
         } else {
             return enumValuesAsStrings
         }

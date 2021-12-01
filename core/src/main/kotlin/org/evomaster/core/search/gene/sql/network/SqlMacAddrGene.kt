@@ -12,14 +12,23 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * https://www.postgresql.org/docs/14/datatype-net-types.html#DATATYPE-MACADDR
+ * Gene type for 6 and 8 byte MAC addresses.
+ */
 class SqlMacAddrGene(
     name: String,
-    val octets: List<IntegerGene> = List(MACADDR6_SIZE)
+    numberOfOctets: Int = MACADDR6_SIZE,
+    private val octets: List<IntegerGene> = List(numberOfOctets)
     { i -> IntegerGene("b$i", min = 0, max = 255) }
 ) : Gene(name, octets.toMutableList()) {
 
     companion object {
-        val MACADDR6_SIZE = 6
+
+        const val MACADDR6_SIZE = 6
+
+        const val MACADDR8_SIZE = 8
+
         val log: Logger = LoggerFactory.getLogger(SqlMacAddrGene::class.java)
     }
 
@@ -116,5 +125,7 @@ class SqlMacAddrGene(
         }
         return result
     }
+
+    fun size() = octets.size
 
 }

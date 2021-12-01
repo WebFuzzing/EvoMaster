@@ -15,6 +15,19 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * https://www.postgresql.org/docs/14/datatype-json.html#DATATYPE-JSONPATH
+ * Gene for JSON path information.
+ * The semantics of SQL/JSON path predicates and operators generally follow SQL.
+ * At the same time, to provide a natural way of working with JSON data, SQL/JSON
+ * path syntax uses some JavaScript conventions:
+ *   - Dot (.) is used for member access.
+ *   - Square brackets ([]) are used for array access.
+ *   - SQL/JSON arrays are 0-relative, unlike regular SQL arrays that start from 1.
+ *
+ * The jsonpath type implements support for the SQL/JSON path language in PostgreSQL to
+ * efficiently query JSON data.
+ */
 class SqlJSONPathGene(
     name: String,
     val pathExpression: StringGene = StringGene(name)

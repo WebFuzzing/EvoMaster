@@ -7,7 +7,6 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.sql.network.SqlCidrGene
 import org.evomaster.core.search.gene.sql.network.SqlInetGene
-import org.evomaster.core.search.gene.sql.network.SqlMacAddr8Gene
 import org.evomaster.core.search.gene.sql.network.SqlMacAddrGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -47,7 +46,10 @@ class NetworkTypesTest : ExtractTestBasePostgres() {
         assertTrue(genes[0] is SqlCidrGene)
         assertTrue(genes[1] is SqlInetGene)
         assertTrue(genes[2] is SqlMacAddrGene)
-        assertTrue(genes[3] is SqlMacAddr8Gene)
+        assertTrue(genes[3] is SqlMacAddrGene)
+
+        assertEquals(SqlMacAddrGene.MACADDR6_SIZE, (genes[2] as SqlMacAddrGene).size())
+        assertEquals(SqlMacAddrGene.MACADDR8_SIZE, (genes[3] as SqlMacAddrGene).size())
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)

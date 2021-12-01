@@ -35,7 +35,7 @@ public class SchemaExtractor {
 
     private static void checkEnumeratedTypeIsDefined(DbSchemaDto schema, TableDto table, ColumnDto column) {
         if (column.isEnumeratedType) {
-            if (schema.postgresEnumeraredTypes.stream().noneMatch(k -> k.name.equals(column.type))) {
+            if (schema.enumeraredTypes.stream().noneMatch(k -> k.name.equals(column.type))) {
                 throw new IllegalArgumentException("Missing enumerated type declaration for type " + column.type
                         + " in column " + column.name
                         + " of table " + table.name);
@@ -262,7 +262,7 @@ public class SchemaExtractor {
                     EnumeratedTypeDto enumeratedTypeDto = new EnumeratedTypeDto();
                     enumeratedTypeDto.name = k;
                     enumeratedTypeDto.values = new ArrayList<>(v);
-                    schemaDto.postgresEnumeraredTypes.add(enumeratedTypeDto);
+                    schemaDto.enumeraredTypes.add(enumeratedTypeDto);
                 }
         );
     }
@@ -405,7 +405,7 @@ public class SchemaExtractor {
                     columnDto.type = typeAsString;
                     columnDto.nullable = columns.getBoolean("IS_NULLABLE");
                     columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
-                    columnDto.isEnumeratedType = schemaDto.postgresEnumeraredTypes.stream()
+                    columnDto.isEnumeratedType = schemaDto.enumeraredTypes.stream()
                             .anyMatch(k -> k.name.equals(typeAsString));
                     break;
                 default:

@@ -15,7 +15,6 @@ import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.sql.geometric.*
 import org.evomaster.core.search.gene.sql.network.SqlCidrGene
 import org.evomaster.core.search.gene.sql.network.SqlInetGene
-import org.evomaster.core.search.gene.sql.network.SqlMacAddr8Gene
 import org.evomaster.core.search.gene.sql.network.SqlMacAddrGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -226,7 +225,7 @@ class DbActionGeneBuilder {
                     SqlMacAddrGene(column.name)
 
                 ColumnDataType.MACADDR8 ->
-                    SqlMacAddr8Gene(column.name)
+                    SqlMacAddrGene(column.name, numberOfOctets = SqlMacAddrGene.MACADDR8_SIZE)
 
                 ColumnDataType.TSVECTOR ->
                     SqlTextSearchVectorGene(column.name)
