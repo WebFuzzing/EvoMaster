@@ -41,7 +41,7 @@ public class RPCEndpointsBuilder {
         }
         NamedTypedValue response = null;
         if (!method.getReturnType().equals(Void.TYPE)) {
-            response = build(schema, method.getReturnType(), method.getGenericReturnType(), null, rpcType, new ArrayList<>());
+            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>());
         }
 
         return new EndpointSchema(method.getName(), requestParams, response);

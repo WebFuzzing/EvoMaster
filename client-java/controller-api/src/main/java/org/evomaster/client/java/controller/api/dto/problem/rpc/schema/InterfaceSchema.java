@@ -101,6 +101,7 @@ public final class InterfaceSchema{
         List<ParamDto> typeParams = new ArrayList<>();
         dto.types = typeParams;
         dto.endpoints = endpoints.stream().map(EndpointSchema::getDto).collect(Collectors.toList());
+        dto.endpoints.forEach(e-> e.interfaceId = dto.interfaceId);
         return dto;
     }
 }

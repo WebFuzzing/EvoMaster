@@ -49,6 +49,7 @@ public final class EndpointSchema {
 
     public RPCActionDto getDto(){
         RPCActionDto dto = new RPCActionDto();
+        dto.actionId = name;
         dto.requestParams = requestParams.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         if (response != null)
             dto.responseParam = response.getDto();

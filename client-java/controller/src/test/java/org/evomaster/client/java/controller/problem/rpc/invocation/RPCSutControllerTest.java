@@ -69,8 +69,8 @@ public class RPCSutControllerTest {
         dto.requestParams.get(5).jsonValue = ""+ Byte.parseByte("42");
         dto.requestParams.get(6).jsonValue = ""+ false;
         dto.requestParams.get(7).jsonValue = ""+ Short.parseShort("42");
-        Object result = rpcController.executeAction(dto);
-        System.out.println(result);
+        String result = (String)rpcController.executeAction(dto);
+        assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", result);
     }
 
 //    @Test

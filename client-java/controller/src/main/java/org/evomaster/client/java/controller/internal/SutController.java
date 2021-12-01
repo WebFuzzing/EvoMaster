@@ -281,7 +281,7 @@ public abstract class SutController implements SutHandler {
     }
 
     public final Map<String, InterfaceSchema> extractRPCSchema(){
-        if (rpcInterfaceSchema != null)
+        if (!rpcInterfaceSchema.isEmpty())
             return rpcInterfaceSchema;
 
         if (!(getProblemInfo() instanceof RPCProblem)){
@@ -386,12 +386,22 @@ public abstract class SutController implements SutHandler {
      */
     private final Object executeRPCEndpoint(Object client, EndpointSchema endpoint){
         try {
-            Method method = client.getClass().getDeclaredMethod(endpoint.getName());
+
+            if (endpoint.getRequestParams().isEmpty()){
+                Method method = client.getClass().getDeclaredMethod(endpoint.getName());
+                return method.invoke(client);
+            }
+
             Object[] params = new Object[endpoint.getRequestParams().size()];
+            Class<?>[] types = new Class<?>[endpoint.getRequestParams().size()];
+
 
             for (int i = 0; i < params.length; i++){
                 params[i] = endpoint.getRequestParams().get(i).newInstance();
+                types[i] = params[i].getClass();
             }
+
+            Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);
 
             return method.invoke(client, params);
         } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException e) {
@@ -402,7 +412,6 @@ public abstract class SutController implements SutHandler {
     private EndpointSchema getEndpointSchema(RPCActionDto dto){
         InterfaceSchema interfaceSchema = rpcInterfaceSchema.get(dto.interfaceId);
         EndpointSchema endpointSchema = interfaceSchema.getOneEndpoint(dto).copyStructure();
-        // set value
         endpointSchema.setValue(dto);
         return endpointSchema;
     }
