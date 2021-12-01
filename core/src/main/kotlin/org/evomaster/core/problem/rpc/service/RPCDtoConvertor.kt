@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto
@@ -11,11 +10,10 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.httpws.service.param.Param
 import org.evomaster.core.problem.rpc.RPCCallAction
-import org.evomaster.core.problem.rpc.param.PRCInputParam
-import org.evomaster.core.problem.rpc.param.PRCReturnParam
+import org.evomaster.core.problem.rpc.param.RPCInputParam
+import org.evomaster.core.problem.rpc.param.RPCReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.regex.RegexGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -67,11 +65,42 @@ class RPCDtoConvertor {
         }
     }
 
-    fun transformActionDto(action: RPCCallAction, index: Int) : RPCActionDto {
+    fun transformActionDto(action: RPCCallAction) : RPCActionDto {
         // generate RPCActionDto
-        val rpc = RPCActionDto()
-        TODO("")
+        val rpcAction = actionSchemaCluster[action.id]?.copy()?: throw IllegalStateException("cannot find the ${action.id} in actionSchemaCluster")
 
+        action.parameters.forEach { p->
+            if (p is RPCInputParam){
+                p.seeGenes().forEach { g->
+                    val paramDto = rpcAction.requestParams.find{ r-> r.name == g.name}?:throw IllegalStateException("cannot find param with a name, ${g.name}")
+                    transformGeneToParamDto(g, paramDto)
+                }
+            }
+        }
+
+        return rpcAction
+    }
+
+    private fun transformGeneToParamDto(gene: Gene, dto: ParamDto){
+        when(gene){
+            is IntegerGene -> dto.jsonValue = gene.value.toString()
+            is DoubleGene -> dto.jsonValue = gene.value.toString()
+            is FloatGene -> dto.jsonValue = gene.value.toString()
+            is BooleanGene -> dto.jsonValue = gene.value.toString()
+            is StringGene -> dto.jsonValue = gene.value
+            is EnumGene<*> -> dto.jsonValue = gene.index.toString()
+            is ArrayGene<*> -> {
+                val template = dto.type.example?.copy()?:throw IllegalStateException("a template for an array is null")
+                val innerContent = gene.getAllElements().map {
+                    val copy = template.copy()
+                    transformGeneToParamDto(it, copy)
+                    copy
+                }
+                dto.innerContent = innerContent
+            }
+            else -> TODO("")
+
+        }
     }
 
     private fun processEndpoint(name: String, endpointSchema: RPCActionDto) : RPCCallAction{
@@ -84,7 +113,7 @@ class RPCDtoConvertor {
                 else
                     this
             }
-            params.add(PRCInputParam(p.name, gene))
+            params.add(RPCInputParam(p.name, gene))
         }
 
         // response would be used for assertion generation
@@ -94,7 +123,7 @@ class RPCDtoConvertor {
                 endpointSchema.responseParam.isNullable
             }
             val gene = OptionalGene(endpointSchema.responseParam.name, handleDtoParam(endpointSchema.responseParam))
-            params.add(PRCReturnParam(endpointSchema.responseParam.name, gene))
+            params.add(RPCReturnParam(endpointSchema.responseParam.name, gene))
         }
         /*
             TODO Man exception and auth
@@ -107,12 +136,13 @@ class RPCDtoConvertor {
     private fun handleDtoParam(param: ParamDto): Gene{
         return when(param.type.type){
             RPCSupportedDataType.P_INT, RPCSupportedDataType.INT -> IntegerGene(param.name)
-            RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN, RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> BooleanGene(param.name)
+            RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> BooleanGene(param.name)
             RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR -> StringGene(param.name, value="", maxLength = 1, minLength = 0)
             RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> DoubleGene(param.name)
             RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> FloatGene(param.name)
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> LongGene(param.name)
             RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT -> IntegerGene(param.name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
+            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> IntegerGene(param.name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt())
             RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> StringGene(param.name)
             RPCSupportedDataType.ENUM -> handleEnumParam(param)
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param)

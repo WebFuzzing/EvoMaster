@@ -36,7 +36,7 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
         run loop@{
             individual.seeActions().forEachIndexed { index, action->
                 val dto = getActionDto(action, index)
-                val rpc = convertor.transformActionDto(action, index)
+                val rpc = convertor.transformActionDto(action)
                 dto.rpcCall = rpc
                 val ok = rc.executeNewRPCAction(dto, actionResults)
                 if (!ok) return@loop

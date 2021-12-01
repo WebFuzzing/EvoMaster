@@ -18,19 +18,21 @@ class RPCCallAction(
          */
         auth: AuthenticationInfo = NoAuth(),
 ) : HttpWsAction(auth, parameters)  {
+
     override fun getName(): String {
-        TODO("Not yet implemented")
+        return id
     }
 
     override fun seeGenes(): List<out Gene> {
-        TODO("Not yet implemented")
+        return parameters.flatMap { it.seeGenes() }
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
     override fun copyContent(): StructuralElement {
-        TODO("Not yet implemented")
+        val p = parameters.asSequence().map(Param::copyContent).toMutableList()
+        return RPCCallAction(id, p, auth)
     }
 }

@@ -6,4 +6,4 @@ import org.evomaster.core.search.gene.Gene
 /**
  * params in return
  */
-class PRCReturnParam (name: String, gene: Gene): Param(name, gene)
+class RPCReturnParam (name: String, gene: Gene): Param(name, gene)
