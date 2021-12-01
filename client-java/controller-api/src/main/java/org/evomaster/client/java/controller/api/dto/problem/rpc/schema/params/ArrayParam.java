@@ -19,6 +19,7 @@ public class ArrayParam extends NamedTypedValue<CollectionType, List<NamedTypedV
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
+        if (getValue() == null) return null;
         return getValue().stream().map(v-> {
             try {
                 return v.newInstance();
@@ -48,7 +49,7 @@ public class ArrayParam extends NamedTypedValue<CollectionType, List<NamedTypedV
             NamedTypedValue t = getType().getTemplate();
             List<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
                 NamedTypedValue v = t.copyStructure();
-                t.setValue(s);
+                v.setValue(s);
                 return v;
             }).collect(Collectors.toList());
             setValue(values);

@@ -48,7 +48,7 @@ public class ListParam extends NamedTypedValue<CollectionType, List<NamedTypedVa
             NamedTypedValue t = getType().getTemplate();
             List<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
                 NamedTypedValue v = t.copyStructure();
-                t.setValue(s);
+                v.setValue(s);
                 return v;
             }).collect(Collectors.toList());
             setValue(values);

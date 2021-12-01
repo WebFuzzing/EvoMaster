@@ -69,4 +69,12 @@ public final class EndpointSchema {
                 response == null? null: response.copyStructure()
         );
     }
+
+    public void setValue(RPCActionDto dto){
+        if (dto.requestParams != null){
+            IntStream.range(0, dto.requestParams.size()).forEach(s-> requestParams.get(s).setValue(dto.requestParams.get(s)));
+        }
+        if (dto.responseParam != null)
+            response.setValue(dto.responseParam);
+    }
 }

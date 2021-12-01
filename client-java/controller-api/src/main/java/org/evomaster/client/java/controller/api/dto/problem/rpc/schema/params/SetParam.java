@@ -50,7 +50,7 @@ public class SetParam extends NamedTypedValue<CollectionType, Set<NamedTypedValu
             NamedTypedValue t = getType().getTemplate();
             Set<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
                 NamedTypedValue v = t.copyStructure();
-                t.setValue(s);
+                v.setValue(s);
                 return v;
             }).collect(Collectors.toSet());
             setValue(values);

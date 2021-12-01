@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * created by manzhang on 2021/11/27
@@ -32,5 +33,19 @@ public class ParamDto {
      * whether the param could be null
      */
     public boolean isNullable;
+
+    /**
+     * create a copy
+     */
+    public ParamDto copy(){
+        ParamDto copy = new ParamDto();
+        copy.name = name;
+        copy.type = type;
+        copy.isNullable = isNullable;
+        if (innerContent != null)
+            copy.innerContent = innerContent.stream().map(ParamDto::copy).collect(Collectors.toList());
+        copy.jsonValue = jsonValue;
+        return copy;
+    }
 
 }
