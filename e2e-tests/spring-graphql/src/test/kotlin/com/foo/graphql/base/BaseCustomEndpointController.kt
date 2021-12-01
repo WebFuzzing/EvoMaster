@@ -21,6 +21,6 @@ class BaseCustomEndpointController : SpringController(GQLBaseApplication::class.
     }
 
     override fun getProblemInfo(): ProblemInfo {
-        return GraphQlProblem("${getBaseURL()}/graphqlv2")
+        return GraphQlProblem("/graphqlv2")
     }
 }
