@@ -26,10 +26,6 @@ class GQLBaseCEEMTest : SpringTestBase() {
                 "org.foo.graphql.BaseCEEM",
                 20
         ) { args: MutableList<String> ->
-
-            args.add("--problemType")
-            args.add(EMConfig.ProblemType.GRAPHQL.toString())
-
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
