@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using EvoMaster.Instrumentation_Shared;
 using EvoMaster.Instrumentation.StaticState;
+using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -10,7 +11,12 @@ using Mono.Cecil.Rocks;
 namespace EvoMaster.Instrumentation {
     public class Instrumentator {
         private MethodReference _probe;
-        
+        private readonly ILogger _logger;
+
+        public Instrumentator(ILogger<Instrumentator> logger) {
+            _logger = logger;
+        }
+
         /// <summary>
         /// This method instruments an assembly file and saves its instrumented version in the specified destination directory
         /// </summary>
@@ -24,9 +30,9 @@ namespace EvoMaster.Instrumentation {
             //ReadSymbols is set true to enable getting line info
             var module =
                 ModuleDefinition.ReadModule(assembly, new ReaderParameters { ReadSymbols = true });
-            
+
             //TODO: check file extension
-            
+
             _probe =
                 module.ImportReference(
                     typeof(Instrumentator).GetMethod(name: "CompletedLine",
@@ -102,7 +108,8 @@ namespace EvoMaster.Instrumentation {
             }
 
             module.Write($"{destination}/InstrumentedSut.dll");
-            Console.WriteLine($"Instrumented File Saved at \"{destination}\"");
+            
+            _logger.LogInformation($"Instrumented File Saved Successfully at \"{destination}\"");
         }
 
         private int InsertVisitLineProbe(Instruction instruction, ILProcessor ilProcessor,
@@ -134,7 +141,6 @@ namespace EvoMaster.Instrumentation {
 
             //TODO: description
             ExecutionTracer.ExecutedLine(className, methodName, "desc", lineNo);
-            Console.WriteLine($"******* Executed Line: {lineNo} at Method: {methodName} at Class: {className}");
         }
     }
 }
