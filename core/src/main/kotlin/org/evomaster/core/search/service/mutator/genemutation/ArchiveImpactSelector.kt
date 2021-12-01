@@ -18,12 +18,12 @@ import java.nio.file.StandardOpenOption
 import kotlin.math.max
 
 /**
- * Archive-based mutator which handle
+ * Archive impact-based mutator which handle
  * - archive-based gene selection to mutate
  * - mutate the selected genes based on their performance (i.e., results of fitness evaluation)
  * - besides, string mutation is designed regarding fitness evaluation using LeftAlignmentDistance
  */
-class ArchiveGeneSelector {
+class ArchiveImpactSelector {
 
     @Inject
     private lateinit var randomness: Randomness
@@ -88,7 +88,7 @@ class ArchiveGeneSelector {
             GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT))
             GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPROVEMENT))
             GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET))
-            GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT_WITH_E -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.E_IMPACT_DIVID_NO_IMPACT))
+            GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT_WITH_E -> impactBasedOnWeights(impacts, targets = targets, properties = arrayOf(ImpactProperty.E_IMPACT_DIVIDE_NO_IMPACT))
 
             else -> {
                 throw IllegalArgumentException("invalid gene selection method: method cannot be NONE or adaptive, but $method")
@@ -110,7 +110,7 @@ class ArchiveGeneSelector {
 
     /**
      * this fun is used by [Archive] to sample an individual from population (i.e., [individuals])
-     * if [ArchiveGeneSelector.enableArchiveSelection] is true.
+     * if [ArchiveImpactSelector.enableArchiveSelection] is true.
      * In order to identify impacts of genes, we prefer to select an individual which has some impact info.
      */
     fun <T : Individual> selectIndividual(individuals: List<EvaluatedIndividual<T>>): EvaluatedIndividual<T> {
@@ -126,7 +126,13 @@ class ArchiveGeneSelector {
         return noVisit
     }
 
-
+    /**
+     * extract values of [impacts] based on the specified [targets] and [properties] of impacts
+     * @param impacts to be extracted
+     * @param targets to be optimized
+     * @param properties are properties of impacts, e.g., times Of NoImpact, times of impacts
+     * @param usingCounter specifies whether to employ the counter (ie, times) to extract impacts, otherwise degree ([0.0, 1.0] times/total)
+     */
     fun impactBasedOnWeights(impacts : List<Impact>, targets: Set<Int>, properties: Array<ImpactProperty>, usingCounter: Boolean? = null) : Array<Double>{
 
         val values : List<MutableList<Double>> = impacts.map { impact ->
@@ -191,7 +197,7 @@ class ArchiveGeneSelector {
         val value = impact.getDegree(property, targets, By.SUM, true) ?: return 1.0
 
         return when (property) {
-            ImpactProperty.TIMES_IMPACT, ImpactProperty.E_IMPACT_DIVID_NO_IMPACT -> value
+            ImpactProperty.TIMES_IMPACT, ImpactProperty.E_IMPACT_DIVIDE_NO_IMPACT -> value
             else -> 1.0 - value
         }
     }
@@ -235,6 +241,10 @@ class ArchiveGeneSelector {
         }
     }
 
+    /**
+     * save impact info
+     * NOTE THAT it is only used for debugging
+     */
     fun saveImpactSnapshot(index : Int, checkedTargets: Set<Int>, targetsInfo : Map<Int, EvaluatedMutation>, result: EvaluatedMutation, evaluatedIndividual: EvaluatedIndividual<*>) {
         if (!config.isEnabledImpactCollection()) return
         if(!config.saveImpactAfterMutation) return

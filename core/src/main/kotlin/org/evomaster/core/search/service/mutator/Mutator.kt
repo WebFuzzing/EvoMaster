@@ -10,7 +10,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
@@ -41,7 +41,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     private lateinit var tracker : ArchiveMutationTrackService
 
     @Inject
-    protected lateinit var archiveGeneSelector : ArchiveGeneSelector
+    protected lateinit var archiveGeneSelector : ArchiveImpactSelector
 
     @Inject
     protected lateinit var archiveGeneMutator : ArchiveGeneMutator
@@ -71,9 +71,17 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int> = setOf(), mutatedGenes: MutatedGeneSpecification?) : List<Gene>
 
     /**
-     * @return whether do a structure mutation
+     * @return whether you do a structure mutation
      */
-    abstract fun doesStructureMutation(individual : T) : Boolean
+    abstract fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>) : Boolean
+
+    /**
+     * @return whether you do a structure mutation on initialization if it exists
+     */
+    open fun doesInitStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
+        return (!structureMutator.canApplyActionStructureMutator(evaluatedIndividual.individual))
+                || (structureMutator.canApplyInitStructureMutator() && randomness.nextBoolean(config.initStructureMutationProbability))
+    }
 
     open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
 
@@ -153,7 +161,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             //enable further actions for extracting
             update(currentWithTraces, mutated, mutatedGenes, result)
 
-            //save mutationInfo
+            //save mutationInfo which is only used for debugging
             archiveGeneMutator.saveMutatedGene(mutatedGenes, index = time.evaluatedIndividuals, individual = mutatedInd, evaluatedMutation = result, targets = targets)
             archive.saveSnapshot()
 
@@ -169,7 +177,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val targetsInfo =
                 evaluateMutationInDetails(mutated = mutated, current = current, targets = targets, archive = archive)
 
-            if (config.isEnabledImpactCollection()){
+            if (config.isEnabledImpactCollection() ){
                 /*
                     update impact info regarding targets.
                     To avoid side-effect to impactful gene, remove covered targets
@@ -184,6 +192,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
              */
             current = saveMutation(result, archive, currentWithTraces, mutatedWithTraces)
 
+            //save impact info which is only used for debugging
             archiveGeneSelector.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,targetsInfo = targetsInfo, result = result, evaluatedIndividual = current)
 
             when(config.mutationTargetsSelectionStrategy){

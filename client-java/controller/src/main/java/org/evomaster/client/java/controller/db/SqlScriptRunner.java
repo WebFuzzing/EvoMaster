@@ -152,13 +152,14 @@ public class SqlScriptRunner {
      *
      * @param conn a JDBC connection to the database
      * @param insertions the SQL insertions to execute
+     * @param previous the results of previously executed SQL insertions
      *
      * @return a map from InsertionDto id to id of auto-generated primary
      * keys in the database (if any was generated).
      * If an InsertionDto has no id, we will not keep track of any auto-generated
      * value for it.
      */
-    public static InsertionResultsDto execInsert(Connection conn, List<InsertionDto> insertions) throws SQLException {
+    public static InsertionResultsDto execInsert(Connection conn, List<InsertionDto> insertions, InsertionResultsDto... previous) throws SQLException {
 
         if (insertions == null || insertions.isEmpty()) {
             throw new IllegalArgumentException("No data to insert");
@@ -168,6 +169,11 @@ public class SqlScriptRunner {
 
         //From DTO Insertion Id to generated Id in database
         Map<Long, Long> map = new HashMap<>();
+        if (previous!=null){
+            Arrays.stream(previous).forEach(p->{
+                map.putAll(p.idMapping);
+            });
+        }
 
         List<Boolean> sqlResults = new ArrayList<>(Collections.nCopies(insertions.size(), false));
 

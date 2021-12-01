@@ -23,6 +23,8 @@ public class HypermutationTest extends HypermutationTestBase {
     @Test
     public void testRunHypermutation() throws Throwable {
 
+        defaultSeed = 0;
+
         runTestHandlingFlakyAndCompilation(
                 "hypermtation/TestHyperweight",
                 "org.adaptivehypermuation.HyperWeightTest",

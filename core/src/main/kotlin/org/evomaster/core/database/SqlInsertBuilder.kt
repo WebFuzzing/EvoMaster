@@ -649,4 +649,9 @@ class SqlInsertBuilder(
             else -> "\"$name\""
         }
     }
+
+    /**
+     * get names of all tables
+     */
+    fun getTableNames() = tables.keys
 }

@@ -11,7 +11,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
@@ -26,7 +26,7 @@ class ImpactMutationWeightControlTest {
     private lateinit var apc: AdaptiveParameterControl
     private lateinit var mwc: MutationWeightControl
     private lateinit var randomness: Randomness
-    private lateinit var ags : ArchiveGeneSelector
+    private lateinit var ags : ArchiveImpactSelector
 
     @BeforeEach
     fun init(){
@@ -39,7 +39,7 @@ class ImpactMutationWeightControlTest {
         time = injector.getInstance(SearchTimeController::class.java)
         apc = injector.getInstance(AdaptiveParameterControl::class.java)
         mwc = injector.getInstance(MutationWeightControl::class.java)
-        ags = injector.getInstance(ArchiveGeneSelector::class.java)
+        ags = injector.getInstance(ArchiveImpactSelector::class.java)
 
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         config.focusedSearchActivationTime = 0.5

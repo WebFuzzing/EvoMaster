@@ -11,7 +11,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 
 abstract class WebTestCaseWriter : TestCaseWriter() {
 
-    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>) {
+    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
 
         CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
         TokenWriter.handleGettingTokens(format,ind, lines, baseUrlOfSut, this)
@@ -21,12 +21,13 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
         if(initializingActionResults.any { (it as? DbActionResult)  == null})
             throw IllegalStateException("the type of results are expected as DbActionResults")
 
+
         if (ind.individual.seeInitializingActions().isNotEmpty()) {
             SqlWriter.handleDbInitialization(
                     format,
                     initializingActions.indices.map {
                         EvaluatedDbAction(initializingActions[it], initializingActionResults[it] as DbActionResult) },
-                    lines, skipFailure = config.skipFailureSQLInTestFile)
+                    lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
     }
 }
