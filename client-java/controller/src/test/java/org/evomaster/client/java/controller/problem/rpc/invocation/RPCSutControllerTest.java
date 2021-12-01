@@ -2,12 +2,14 @@ package org.evomaster.client.java.controller.problem.rpc.invocation;
 
 import io.restassured.RestAssured;
 import org.evomaster.client.java.controller.api.Formats;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 import static io.restassured.RestAssured.given;
@@ -51,6 +53,24 @@ public class RPCSutControllerTest {
     @Test
     public void testSutInfoAndSchema(){
         assertEquals(1, interfaceSchemas.size());
+    }
+
+    @Test
+    public void testSimpleWrapPrimitiveEndpoint(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionId.equals("simpleWrapPrimitive")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(8, dto.requestParams.size());
+        dto.requestParams.get(0).jsonValue = ""+42;
+        dto.requestParams.get(1).jsonValue = ""+4.2f;
+        dto.requestParams.get(2).jsonValue = ""+42L;
+        dto.requestParams.get(3).jsonValue = ""+4.2;
+        dto.requestParams.get(4).jsonValue = ""+'x';
+        dto.requestParams.get(5).jsonValue = ""+ Byte.parseByte("42");
+        dto.requestParams.get(6).jsonValue = ""+ false;
+        dto.requestParams.get(7).jsonValue = ""+ Short.parseShort("42");
+        Object result = rpcController.executeAction(dto);
+        System.out.println(result);
     }
 
 //    @Test

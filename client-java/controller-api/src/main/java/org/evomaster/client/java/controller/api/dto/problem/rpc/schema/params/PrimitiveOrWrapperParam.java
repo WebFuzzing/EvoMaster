@@ -30,6 +30,8 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
             return new CharParam(name, clazz.getSimpleName(), clazz.getName());
         if (clazz == Byte.class || clazz == byte.class)
             return new ByteParam(name, clazz.getSimpleName(), clazz.getName());
+        if (clazz == Short.class || clazz == short.class)
+            return new ShortParam(name, clazz.getSimpleName(), clazz.getName());
         throw new RuntimeException("PrimitiveOrWrapperParam: unhandled type "+ clazz.getName());
     }
 

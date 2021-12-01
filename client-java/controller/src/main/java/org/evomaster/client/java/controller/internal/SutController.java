@@ -403,10 +403,8 @@ public abstract class SutController implements SutHandler {
         InterfaceSchema interfaceSchema = rpcInterfaceSchema.get(dto.interfaceId);
         EndpointSchema endpointSchema = interfaceSchema.getOneEndpoint(dto).copyStructure();
         // set value
-
-
-
-        throw new RuntimeException("NOT IMPLEMENT getEndpointSchema");
+        endpointSchema.setValue(dto);
+        return endpointSchema;
     }
 
     public abstract void newTestSpecificHandler();

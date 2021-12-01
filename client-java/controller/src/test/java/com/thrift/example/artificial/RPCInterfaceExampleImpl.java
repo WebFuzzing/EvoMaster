@@ -10,6 +10,16 @@ import java.util.stream.Collectors;
  */
 public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     @Override
+    public String simplePrimitive(int argInt, float argfloat, long arglong, double argdouble, char argchar, byte argbyte, boolean argboolean, short argshort) {
+        return "int:"+argInt+",float:"+argfloat+",long:"+arglong+",double:"+argdouble+",char:"+argchar+",byte:"+argbyte+",boolean:"+argboolean+",short:"+argshort;
+    }
+
+    @Override
+    public String simpleWrapPrimitive(Integer argInt, Float argfloat, Long arglong, Double argdouble, Character argchar, Byte argbyte, Boolean argboolean, Short argshort) {
+        return "int:"+argInt+",float:"+argfloat+",long:"+arglong+",double:"+argdouble+",char:"+argchar+",byte:"+argbyte+",boolean:"+argboolean+",short:"+argshort;
+    }
+
+    @Override
     public GenericResponse array(List<String>[] args0) {
         GenericResponse response = new GenericResponse();
         response.info = Arrays.stream(args0).map(s-> String.join(",", s)).collect(Collectors.joining(";"));

@@ -8,6 +8,10 @@ import java.util.Map;
  */
 public interface RPCInterfaceExample {
 
+    public String simplePrimitive(int argInt, float argfloat, long arglong, double argdouble, char argchar, byte argbyte, boolean argboolean, short argshort);
+
+    public String simpleWrapPrimitive(Integer argInt, Float argfloat, Long arglong, Double argdouble, Character argchar, Byte argbyte, Boolean argboolean, Short argshort);
+
     public GenericResponse array(List<String>[] args0);
 
     public GenericResponse arrayboolean(boolean[] args0);
