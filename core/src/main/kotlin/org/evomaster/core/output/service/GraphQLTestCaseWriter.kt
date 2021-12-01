@@ -9,12 +9,16 @@ import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.service.HttpWsFitness
+import org.evomaster.core.problem.httpws.service.HttpWsIndividual
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 
@@ -24,28 +28,9 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         private val log = LoggerFactory.getLogger(GraphQLTestCaseWriter::class.java)
     }
 
-    @Inject(optional = true)
-    protected lateinit var rc: RemoteController
+    @Inject
+    protected lateinit var httpWsFitness: HttpWsFitness<Individual>
 
-    protected lateinit var infoDto: SutInfoDto
-
-    @PostConstruct
-    protected fun initialize() {
-
-        log.debug("Initializing {}", GraphQLTestCaseWriter::class.simpleName)
-        if (!config.blackBox || config.bbExperiments) {
-            rc.checkConnection()
-
-            val started = rc.startSUT()
-            if (!started) {
-                throw SutProblemException("Failed to start the system under test")
-            }
-
-            infoDto = rc.getSutInfo()
-                ?: throw SutProblemException("Failed to retrieve the info about the system under test")
-        }
-        log.debug("Done initializing {}", GraphQLTestCaseWriter::class.simpleName)
-    }
 
 
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>){
@@ -139,7 +124,9 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                 lines.append("$baseUrlOfSut + \"")
             }
 
-           val path= infoDto.graphQLProblem?.endpoint
+           val path= httpWsFitness.infoDto.graphQLProblem.endpoint
+
+              // infoDto.graphQLProblem?.endpoint
 
             lines.append("${path?.let { GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.NONE, format = format) }}\"")
         }
