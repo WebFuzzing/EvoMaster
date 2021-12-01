@@ -141,6 +141,8 @@ namespace EvoMaster.Instrumentation.StaticState {
 
         public static int GetNumberOfObjectives(string prefix) =>
             ObjectiveCoverage.Count(e => prefix == null || e.Key.StartsWith(prefix));
+        
+        public static IDictionary<string, TargetInfo> GetInternalReferenceToObjectiveCoverage() => ObjectiveCoverage;
 
         private static void UpdateObjective(string id, double value) {
             if (value < 0d || value > 1d) {

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using EvoMaster.Instrumentation.StaticState;
 
 namespace EvoMaster.Instrumentation {
@@ -25,8 +26,32 @@ namespace EvoMaster.Instrumentation {
         }
 
         public static List<TargetInfo> GetTargetInfos(IEnumerable<int> ids) {
-            //return empty
-            return new List<TargetInfo>();
+            
+            var list = new List<TargetInfo>();
+
+            var objectives = ExecutionTracer.GetInternalReferenceToObjectiveCoverage();
+
+            ids.ToList().ForEach(id => {
+                var descriptiveId = ObjectiveRecorder.GetDescriptiveId(id);
+
+                var info = objectives[descriptiveId];
+                
+                info = info == null ? TargetInfo.NotReached(id) : info.WithMappedId(id).WithNoDescriptiveId();
+
+                list.Add(info);
+            });
+
+            //If new targets were found, we add them even if not requested by EM
+            ObjectiveRecorder.GetTargetsSeenFirstTime().ToList().ForEach(s=> {
+                
+                var mappedId = ObjectiveRecorder.GetMappedId(s);
+
+                var info = objectives[s].WithMappedId(mappedId);
+
+                list.Add(info);
+            });
+
+            return list;
         }
 
         public static List<AdditionalInfo> GetAdditionalInfoList() {

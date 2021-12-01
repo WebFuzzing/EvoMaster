@@ -2,19 +2,12 @@ using System;
 using System.IO.Compression;
 using Mono.Cecil.Cil;
 
-namespace EvoMaster.Instrumentation.Heuristic
-{
-    public class HeuristicsForJumps
-    {
-        /**
-     * This are values compared against 0, like {@code value < 0}
-     *
-     * @return
-     */
-        public static Truthness GetForSingleValueJump(int value, Code opcode)
-        {
-            switch (opcode)
-            {
+namespace EvoMaster.Instrumentation.Heuristic {
+    public class HeuristicsForJumps {
+        //This are values compared against 0, like {@code value < 0}
+
+        public static Truthness GetForSingleValueJump(int value, Code opcode) {
+            switch (opcode) {
                 case Code.Brfalse: // ie, val == 0; JB: IFEQ 
                     return GetForValueComparison(value, 0, Code.Beq); //JB: IF_ICMPEQ
 
@@ -40,13 +33,11 @@ namespace EvoMaster.Instrumentation.Heuristic
         }
 
 
-        public static Truthness GetForValueComparison(int firstValue, int secondValue, Code opcode)
-        {
+        public static Truthness GetForValueComparison(int firstValue, int secondValue, Code opcode) {
             int a = firstValue;
             int b = secondValue;
 
-            switch (opcode)
-            {
+            switch (opcode) {
                 case Code.Beq: // ie, a == b; JB: IF_ICMPEQ
                     return TruthnessUtils.GetEqualityTruthness(a, b);
 
@@ -106,4 +97,3 @@ namespace EvoMaster.Instrumentation.Heuristic
         // }
     }
 }
-

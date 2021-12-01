@@ -102,10 +102,6 @@ namespace EvoMaster.Instrumentation_Shared {
             return m1.ComputeIfAbsent(index, i =>
                 SUCCESS_CALL + "_at_" + ClassName.Get(className).GetFullNameWithDots() +
                 "_" + PadNumber(line) + "_" + index);
-
-//        string name = SUCCESS_CALL + "_at_" + ClassName.get(className).getFullNameWithDots() +
-//                "_" + padNumber(line) + "_" + index;
-//        return name;//.intern();
         }
 
         public static string MethodReplacementObjectiveNameTemplate(string className, int line, int index) {
@@ -152,16 +148,6 @@ namespace EvoMaster.Instrumentation_Shared {
 
                 return name;
             });
-
-//        string name = BRANCH + "_at_" +
-//                ClassName.get(className).getFullNameWithDots()
-//                + "_at_line_" + padNumber(line) + "_position_" + branchId;
-//        if(thenBranch){
-//            name += TRUE_BRANCH;
-//        } else {
-//            name += FALSE_BRANCH;
-//        }
-//        return name;//.intern();
         }
 
         private static string PadNumber(int val) {
