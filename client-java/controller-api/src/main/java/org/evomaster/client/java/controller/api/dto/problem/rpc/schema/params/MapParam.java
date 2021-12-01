@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSu
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.MapType;
 
 import java.util.AbstractMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,5 +43,19 @@ public class MapParam extends NamedTypedValue<MapType, Map<NamedTypedValue, Name
     @Override
     public MapParam copyStructure() {
         return new MapParam(getName(), getType());
+    }
+
+    @Override
+    public void setValue(ParamDto dto) {
+        if (!dto.innerContent.isEmpty()){
+            PairParam t = getType().getTemplate();
+            Map<NamedTypedValue, NamedTypedValue> values = dto.innerContent.stream().map(s-> {
+                PairParam c = t.copyStructure();
+                c.setValue(s);
+                return c.getValue();
+            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            setValue(values);
+        }
+
     }
 }

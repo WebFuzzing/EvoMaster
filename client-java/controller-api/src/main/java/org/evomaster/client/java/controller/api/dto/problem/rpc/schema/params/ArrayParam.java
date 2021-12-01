@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Col
 
 import java.lang.reflect.Array;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * array param
@@ -41,4 +42,16 @@ public class ArrayParam extends NamedTypedValue<CollectionType, List<NamedTypedV
     }
 
 
+    @Override
+    public void setValue(ParamDto dto) {
+        if (!dto.innerContent.isEmpty()){
+            NamedTypedValue t = getType().getTemplate();
+            List<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
+                NamedTypedValue v = t.copyStructure();
+                t.setValue(s);
+                return v;
+            }).collect(Collectors.toList());
+            setValue(values);
+        }
+    }
 }

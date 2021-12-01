@@ -30,4 +30,14 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
     public LongParam copyStructure() {
         return new LongParam(getName(), getType());
     }
+
+
+    @Override
+    public void setValue(ParamDto dto) {
+        try {
+            setValue(Long.parseLong(dto.jsonValue));
+        }catch (NumberFormatException e){
+            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as long value");
+        }
+    }
 }

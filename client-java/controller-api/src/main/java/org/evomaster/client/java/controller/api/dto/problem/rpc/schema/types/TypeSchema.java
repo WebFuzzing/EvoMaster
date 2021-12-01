@@ -39,4 +39,8 @@ public class TypeSchema {
         dto.fullTypeName = fullTypeName;
         return dto;
     }
+
+    public boolean sameType(TypeDto dto){
+        return fullTypeName.equals(dto.fullTypeName);
+    }
 }

@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Pri
 /**
  * Primitive types Param
  */
-public class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> {
+public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> {
 
     public PrimitiveOrWrapperParam(String name, String type, String fullTypeName){
         super(name, new PrimitiveOrWrapperType(type, fullTypeName));

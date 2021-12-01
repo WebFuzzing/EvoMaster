@@ -30,4 +30,14 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     public BooleanParam copyStructure() {
         return new BooleanParam(getName(), getType());
     }
+
+
+    @Override
+    public void setValue(ParamDto dto) {
+        try {
+            setValue(Boolean.parseBoolean(dto.jsonValue));
+        }catch (NumberFormatException e){
+            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as boolean value");
+        }
+    }
 }

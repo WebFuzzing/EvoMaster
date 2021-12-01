@@ -370,13 +370,22 @@ public abstract class SutController implements SutHandler {
     }
 
     /**
-     * execute a RPC request with specified client
+     * execute a RPC request based on the specified dto
      * @param dto is the action DTO to be executed
      */
     public final Object executeAction(RPCActionDto dto){
         Object client = ((RPCProblem)getProblemInfo()).getClient(dto.interfaceId);
+        EndpointSchema endpointSchema = getEndpointSchema(dto);
+        return executeRPCEndpoint(client, endpointSchema);
+    }
+
+    /**
+     * execute a RPC request with specified client
+     * @param client is the client to execute the endpoint
+     * @param endpoint is the endpoint to be executed
+     */
+    private final Object executeRPCEndpoint(Object client, EndpointSchema endpoint){
         try {
-            EndpointSchema endpoint = getEndpointSchema(dto);
             Method method = client.getClass().getDeclaredMethod(endpoint.getName());
             Object[] params = new Object[endpoint.getRequestParams().size()];
 
@@ -391,6 +400,12 @@ public abstract class SutController implements SutHandler {
     }
 
     private EndpointSchema getEndpointSchema(RPCActionDto dto){
+        InterfaceSchema interfaceSchema = rpcInterfaceSchema.get(dto.interfaceId);
+        EndpointSchema endpointSchema = interfaceSchema.getOneEndpoint(dto).copyStructure();
+        // set value
+
+
+
         throw new RuntimeException("NOT IMPLEMENT getEndpointSchema");
     }
 

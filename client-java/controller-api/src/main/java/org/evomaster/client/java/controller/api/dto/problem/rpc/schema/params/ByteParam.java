@@ -38,4 +38,13 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     public ByteParam copyStructure() {
         return new ByteParam(getName(), getType());
     }
+
+    @Override
+    public void setValue(ParamDto dto) {
+        try {
+            setValue(Byte.parseByte(dto.jsonValue));
+        }catch (NumberFormatException e){
+            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as byte value");
+        }
+    }
 }

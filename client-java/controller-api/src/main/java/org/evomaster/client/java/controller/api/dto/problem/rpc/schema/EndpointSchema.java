@@ -5,6 +5,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.Na
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * endpoint dto for RPC service
@@ -47,7 +49,24 @@ public final class EndpointSchema {
 
     public RPCActionDto getDto(){
         RPCActionDto dto = new RPCActionDto();
-
+        dto.requestParams = requestParams.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
+        if (response != null)
+            dto.responseParam = response.getDto();
         return dto;
+    }
+
+    public boolean sameEndpoint(RPCActionDto dto){
+        return dto.actionId.equals(name)
+                && (getResponse() == null || getResponse().sameParam(dto.responseParam))
+                && getRequestParams().size() == dto.requestParams.size()
+                && IntStream.range(0, getRequestParams().size()).allMatch(i-> getRequestParams().get(i).sameParam(dto.requestParams.get(i)));
+    }
+
+    public EndpointSchema copyStructure(){
+        return new EndpointSchema(
+                name,
+                requestParams.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
+                response == null? null: response.copyStructure()
+        );
     }
 }

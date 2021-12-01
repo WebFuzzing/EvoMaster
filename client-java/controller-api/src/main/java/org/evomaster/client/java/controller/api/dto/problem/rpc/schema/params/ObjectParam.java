@@ -48,4 +48,9 @@ public class ObjectParam extends NamedTypedValue<ObjectType, Object> {
         dto.innerContent = getType().getFields().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;
     }
+
+    @Override
+    public void setValue(ParamDto dto) {
+
+    }
 }

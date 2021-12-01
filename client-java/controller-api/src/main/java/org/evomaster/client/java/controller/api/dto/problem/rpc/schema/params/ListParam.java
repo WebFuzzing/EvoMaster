@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSu
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -40,4 +41,19 @@ public class ListParam extends NamedTypedValue<CollectionType, List<NamedTypedVa
     public ListParam copyStructure() {
         return new ListParam(getName(), getType());
     }
+
+    @Override
+    public void setValue(ParamDto dto) {
+        if (!dto.innerContent.isEmpty()){
+            NamedTypedValue t = getType().getTemplate();
+            List<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
+                NamedTypedValue v = t.copyStructure();
+                t.setValue(s);
+                return v;
+            }).collect(Collectors.toList());
+            setValue(values);
+        }
+    }
+
+
 }

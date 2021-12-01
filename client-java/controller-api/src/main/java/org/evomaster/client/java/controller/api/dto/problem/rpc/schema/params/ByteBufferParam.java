@@ -2,18 +2,18 @@ package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.StringType;
 
 import java.nio.ByteBuffer;
 
 /**
  * this is created for handling binary in thrift, see https://thrift.apache.org/docs/types
+ * handle it as string
  */
-public class ByteBufferParam extends NamedTypedValue<CollectionType, ByteBuffer>{
-    private static final ByteParam template = new ByteParam("template");
+public class ByteBufferParam extends NamedTypedValue<StringType, ByteBuffer>{
 
     public ByteBufferParam(String name) {
-        super(name, new CollectionType(ByteBuffer.class.getSimpleName(), ByteBuffer.class.getName(), template));
+        super(name, new StringType());
     }
 
     public void setValue(byte[] value) {
@@ -31,12 +31,16 @@ public class ByteBufferParam extends NamedTypedValue<CollectionType, ByteBuffer>
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         dto.type.type = RPCSupportedDataType.BYTEBUFFER;
-        dto.type.example = getType().getTemplate().getDto();
         return dto;
     }
 
     @Override
     public ByteBufferParam copyStructure() {
         return new ByteBufferParam(getName());
+    }
+
+    @Override
+    public void setValue(ParamDto dto) {
+        setValue(dto.jsonValue.getBytes());
     }
 }

@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.TypeSchema;
@@ -60,8 +61,30 @@ public final class InterfaceSchema{
         return endpoints;
     }
 
+    /**
+     * @param name is a name of an endpoint
+     * @return a list of endpoints based on the specified name
+     */
     public List<EndpointSchema> findEndpoints(String name){
         return endpoints.stream().filter(s-> s.getName().equals(name)).collect(Collectors.toList());
+    }
+
+    /**
+     *
+     * @param dto is a rpc action dto
+     * @return one endpoint based on an action dto
+     * note that there should only exist one endpoint which conforms with the specified dto.
+     */
+    public EndpointSchema getOneEndpoint(RPCActionDto dto){
+        List<EndpointSchema> list = endpoints.stream().filter(s-> s.sameEndpoint(dto)).collect(Collectors.toList());
+
+        if (list.size() == 1)
+            return list.get(0);
+
+        if (list.size() > 1)
+            throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified dto");
+
+        throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified dto");
     }
 
     public String getName() {

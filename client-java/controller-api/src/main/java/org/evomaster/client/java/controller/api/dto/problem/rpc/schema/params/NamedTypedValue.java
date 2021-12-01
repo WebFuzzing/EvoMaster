@@ -74,4 +74,10 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     }
 
     public abstract NamedTypedValue<T, V> copyStructure();
+
+    public boolean sameParam(ParamDto dto){
+        return dto.name.equals(name) && type.sameType(dto.type);
+    }
+
+    public abstract void setValue(ParamDto dto);
 }

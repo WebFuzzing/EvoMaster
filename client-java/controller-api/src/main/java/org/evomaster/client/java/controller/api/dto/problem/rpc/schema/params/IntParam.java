@@ -31,4 +31,14 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
     public IntParam copyStructure() {
         return new IntParam(getName(), getType());
     }
+
+    @Override
+    public void setValue(ParamDto dto) {
+        try {
+            setValue(Integer.parseInt(dto.jsonValue));
+        }catch (NumberFormatException e){
+            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as int value");
+        }
+
+    }
 }

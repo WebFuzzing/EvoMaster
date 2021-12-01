@@ -43,4 +43,17 @@ public class SetParam extends NamedTypedValue<CollectionType, Set<NamedTypedValu
     public SetParam copyStructure() {
         return new SetParam(getName(), getType());
     }
+
+    @Override
+    public void setValue(ParamDto dto) {
+        if (!dto.innerContent.isEmpty()){
+            NamedTypedValue t = getType().getTemplate();
+            Set<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
+                NamedTypedValue v = t.copyStructure();
+                t.setValue(s);
+                return v;
+            }).collect(Collectors.toSet());
+            setValue(values);
+        }
+    }
 }

@@ -30,4 +30,13 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
     public FloatParam copyStructure() {
         return new FloatParam(getName(), getType());
     }
+
+    @Override
+    public void setValue(ParamDto dto) {
+        try {
+            setValue(Float.parseFloat(dto.jsonValue));
+        }catch (NumberFormatException e){
+            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as float value");
+        }
+    }
 }

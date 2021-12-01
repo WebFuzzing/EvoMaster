@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.PairType;
 
 import java.util.AbstractMap;
@@ -22,5 +23,17 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     @Override
     public PairParam copyStructure() {
         return new PairParam(getType());
+    }
+
+    @Override
+    public void setValue(ParamDto dto) {
+        if (dto.innerContent.size() == 2){
+            NamedTypedValue first = getType().getFirstTemplate().copyStructure();
+            NamedTypedValue second = getType().getSecondTemplate().copyStructure();
+            first.setValue(dto.innerContent.get(0));
+            second.setValue(dto.innerContent.get(1));
+            setValue(new AbstractMap.SimpleEntry(first, second));
+        }
+        throw new RuntimeException("ERROR: size of inner content of dto is not 2 for pair type, i.e., "+ dto.innerContent.size());
     }
 }

@@ -113,9 +113,9 @@ class RPCDtoConvertor {
             RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> FloatGene(param.name)
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> LongGene(param.name)
             RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT -> IntegerGene(param.name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
-            RPCSupportedDataType.STRING -> StringGene(param.name)
+            RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> StringGene(param.name)
             RPCSupportedDataType.ENUM -> handleEnumParam(param)
-            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST, RPCSupportedDataType.BYTEBUFFER -> handleCollectionParam(param)
+            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param)
             RPCSupportedDataType.MAP -> handleMapParam(param)
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
@@ -145,7 +145,7 @@ class RPCDtoConvertor {
 
     private fun handleCollectionParam(param: ParamDto) : Gene{
         val templateParam = when(param.type.type){
-            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST, RPCSupportedDataType.BYTEBUFFER -> param.type.example
+            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST -> param.type.example
             else -> throw IllegalStateException("")
         }
         val template = handleDtoParam(templateParam)
