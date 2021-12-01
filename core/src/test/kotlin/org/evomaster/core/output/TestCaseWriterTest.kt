@@ -88,7 +88,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -159,7 +159,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -205,7 +205,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -251,7 +251,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -299,7 +299,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -358,7 +358,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -404,7 +404,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -463,7 +463,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -509,7 +509,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -567,7 +567,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -625,7 +625,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -688,7 +688,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -731,7 +731,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -776,7 +776,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -821,7 +821,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -867,7 +867,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -911,7 +911,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -955,7 +955,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -1042,10 +1042,10 @@ class TestCaseWriterTest {
     @Test
     fun testDbInBetween() {
         val fooId = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
-        val foo = Table("Foo", setOf(fooId), HashSet<ForeignKey>())
+        val foo = Table("Foo", setOf(fooId), setOf())
 
         val fkId = Column("fkId", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
-        val bar = Table("Bar", setOf(fooId, fkId), HashSet<ForeignKey>())
+        val bar = Table("Bar", setOf(fooId, fkId), setOf())
 
         val pkGeneUniqueId = 12345L
 
@@ -1086,18 +1086,18 @@ public void test() throws Exception {
     List<InsertionDto> insertions0 = sql().insertInto("Foo", 1001L)
             .d("Id", "42")
         .dtos();
-    controller.execInsertionsIntoDatabase(insertions0);
+    InsertionResultsDto insertions0result = controller.execInsertionsIntoDatabase(insertions0);
     
     try{
         given().accept("*/*")
                 .get(baseUrlOfSut + "/foo");
     } catch(Exception e){
     }
-    List<InsertionDto> insertions1 = sql().insertInto("Bar", 1002L)
+    List<InsertionDto> insertions1 = sql(insertions0).insertInto("Bar", 1002L)
             .d("Id", "42")
             .d("fkId", "42")
         .dtos();
-    controller.execInsertionsIntoDatabase(insertions1);
+    InsertionResultsDto insertions1result = controller.execInsertionsIntoDatabase(insertions1, insertions0result);
     
     try{
         given().accept("*/*")
@@ -1115,10 +1115,10 @@ public void test() throws Exception {
     @Test
     fun testDbInBetweenSkipFailure() {
         val fooId = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
-        val foo = Table("Foo", setOf(fooId), HashSet<ForeignKey>())
+        val foo = Table("Foo", setOf(fooId), setOf())
 
         val fkId = Column("fkId", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
-        val bar = Table("Bar", setOf(fooId, fkId), HashSet<ForeignKey>())
+        val bar = Table("Bar", setOf(fooId, fkId), setOf())
 
         val pkGeneUniqueId = 12345L
 
@@ -1172,7 +1172,7 @@ public void test() throws Exception {
             .d("Id", "42")
             .d("fkId", "42")
         .dtos();
-    controller.execInsertionsIntoDatabase(insertions1);
+    InsertionResultsDto insertions1result = controller.execInsertionsIntoDatabase(insertions1);
     
     try{
         given().accept("*/*")

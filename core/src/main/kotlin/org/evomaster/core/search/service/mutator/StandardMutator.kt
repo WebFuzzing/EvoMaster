@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
@@ -11,6 +12,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter
@@ -36,15 +38,29 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         private val log: Logger = LoggerFactory.getLogger(StandardMutator::class.java)
     }
 
-    override fun doesStructureMutation(individual : T): Boolean {
-        /**
-         * disable structure mutation (add/remove) during focus search
-         */
-        if (config.disableStructureMutationDuringFocusSearch && apc.doesFocusSearch()){return false}
+    override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
 
-        return structureMutator.canApplyStructureMutator(individual) &&
-                config.maxTestSize > 1 && // if the maxTestSize is 1, there is no point to do structure mutation
-                randomness.nextBoolean(config.structureMutationProbability)
+        val prob = when(config.structureMutationProbStrategy){
+            EMConfig.StructureMutationProbStrategy.SPECIFIED -> config.structureMutationProbability
+            EMConfig.StructureMutationProbStrategy.SPECIFIED_FS -> if(apc.doesFocusSearch()) config.structureMutationProFS else config.structureMutationProbability
+            EMConfig.StructureMutationProbStrategy.DPC_TO_SPECIFIED_BEFORE_FS -> apc.getExploratoryValue(config.structureMutationProbability, config.structureMutationProFS)
+            EMConfig.StructureMutationProbStrategy.DPC_TO_SPECIFIED_AFTER_FS -> apc.getDPCValue(config.structureMutationProbability, config.structureMutationProFS, config.focusedSearchActivationTime, 1.0)
+            EMConfig.StructureMutationProbStrategy.ADAPTIVE_WITH_IMPACT -> {
+                if (!apc.doesFocusSearch()) config.structureMutationProbability
+                else {
+                    val impact = (evaluatedIndividual.impactInfo?:throw IllegalStateException("lack of impact info"))
+                    if (impact.impactsOfStructure.recentImprovement()
+                            || impact.impactsOfStructure.sizeImpact.recentImprovement()
+                            || (impact is ResourceImpactOfIndividual && (impact.resourceSizeImpact.any { it.value.recentImprovement() } || impact.sqlTableSizeImpact.any { it.value.recentImprovement() }))
+                    ) config.structureMutationProbability
+                    else 0.0
+                }
+            }
+        }
+
+        return structureMutator.canApplyStructureMutator(evaluatedIndividual.individual) &&
+//                (config.maxTestSize > 1) && // if the maxTestSize is 1, there is no point to do structure mutation
+                randomness.nextBoolean(prob)
     }
 
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene> {
@@ -111,11 +127,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val copy = individual.individual.copy() as T
 
 
-        if(doesStructureMutation(individual.individual)){
+        if(doesStructureMutation(individual)){
             if (log.isTraceEnabled){
                 log.trace("structure mutator will be applied")
             }
-            structureMutator.mutateStructure(copy, mutatedGene)
+            if (doesInitStructureMutation(individual))
+                structureMutator.mutateInitStructure(copy, individual, mutatedGene, targets)
+            else
+                structureMutator.mutateStructure(copy, individual, mutatedGene, targets)
             return copy
         }
 
@@ -240,7 +259,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
         val position = when {
             isFromInit -> individual.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
-            individual.seeActions(filter).isEmpty() -> individual.seeGenes().indexOf(gene)
             else -> individual.seeActions(ActionFilter.NO_INIT).indexOfFirst { it.seeGenes().contains(gene) }
         }
 
@@ -248,7 +266,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             it.seeActions(ActionFilter.ALL).any { d-> d.seeGenes().contains(gene) }
         }
 
-        mutatedGene?.addMutatedGene(isFromInit || isDbInResourceCall, valueBeforeMutation = value, gene = gene, position = position, resourcePosition = resourcePosition)
+        mutatedGene?.addMutatedGene(isDb = isDbInResourceCall, isInit = isFromInit, valueBeforeMutation = value, gene = gene, position = position, resourcePosition = resourcePosition)
 
         val additionInfo = if(enableAGS || enableAGM){
             val id = ImpactUtils.generateGeneId(individual, gene)

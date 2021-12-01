@@ -28,7 +28,8 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
 
     protected val authentications: MutableList<AuthenticationInfo> = mutableListOf()
 
-    protected var sqlInsertBuilder: SqlInsertBuilder? = null
+    var sqlInsertBuilder: SqlInsertBuilder? = null
+        protected set
 
     var existingSqlData : List<DbAction> = listOf()
         protected set
