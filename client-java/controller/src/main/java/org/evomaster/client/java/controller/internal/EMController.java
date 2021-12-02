@@ -495,10 +495,18 @@ public class EMController {
             sutController.newAction(dto);
 
             if (dto.rpcCall != null){
-                // TODO RPC execute action here and return its response
-                Object response = sutController.executeAction(dto.rpcCall);
+                try{
+                    // TODO RPC execute action here and return its response
+                    Object response = sutController.executeAction(dto.rpcCall);
+                    ActionResponseDto responseDto = new ActionResponseDto();
+                    responseDto.index = index;
+                    // convert the response to dto, and send back to core
 
-                // convert the response to dto, and send back to core
+
+                }catch (Exception e){
+                    // TODO return 500
+                }
+
             }
         }
 

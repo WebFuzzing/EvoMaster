@@ -39,4 +39,9 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as float value");
         }
     }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        setValue((Float) instance);
+    }
 }

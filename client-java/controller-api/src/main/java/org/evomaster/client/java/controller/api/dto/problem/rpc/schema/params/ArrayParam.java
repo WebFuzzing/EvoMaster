@@ -5,6 +5,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSu
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,5 +56,17 @@ public class ArrayParam extends NamedTypedValue<CollectionType, List<NamedTypedV
             }).collect(Collectors.toList());
             setValue(values);
         }
+    }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        NamedTypedValue t = getType().getTemplate();
+        List<NamedTypedValue> values = new ArrayList<>();
+        for (Object e : (Object[]) instance){
+            NamedTypedValue copy = t.copyStructure();
+            copy.setValueBasedOnInstance(e);
+            values.add(copy);
+        }
+        setValue(values);
     }
 }

@@ -5,6 +5,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSu
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.TypeSchema;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,5 +57,17 @@ public class SetParam extends NamedTypedValue<CollectionType, Set<NamedTypedValu
             }).collect(Collectors.toSet());
             setValue(values);
         }
+    }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        NamedTypedValue t = getType().getTemplate();
+        Set<NamedTypedValue> values = new HashSet<>();
+        for (Object e : (Set) instance){
+            NamedTypedValue copy = t.copyStructure();
+            copy.setValueBasedOnInstance(e);
+            values.add(copy);
+        }
+        setValue(values);
     }
 }

@@ -25,7 +25,8 @@ public class ActionDto {
     public List<String> inputVariables = new ArrayList<>();
 
     /**
-     *
+     * info to execute an RPC action.
+     * note that this is only used when handling RPC problem
      */
     public RPCActionDto rpcCall;
 }

@@ -39,4 +39,9 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as double value");
         }
     }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        setValue((Double) instance);
+    }
 }

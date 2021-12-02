@@ -69,4 +69,9 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
 
     }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        // TODO
+    }
 }

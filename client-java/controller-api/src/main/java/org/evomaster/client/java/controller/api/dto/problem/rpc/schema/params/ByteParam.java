@@ -43,4 +43,9 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as byte value");
         }
     }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        setValue((Byte) instance);
+    }
 }

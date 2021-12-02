@@ -39,6 +39,10 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
         }catch (NumberFormatException e){
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as short value");
         }
+    }
 
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        setValue((Short) instance);
     }
 }

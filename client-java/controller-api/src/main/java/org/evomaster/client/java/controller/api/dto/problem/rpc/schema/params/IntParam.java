@@ -41,4 +41,9 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
         }
 
     }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        setValue((Integer) instance);
+    }
 }

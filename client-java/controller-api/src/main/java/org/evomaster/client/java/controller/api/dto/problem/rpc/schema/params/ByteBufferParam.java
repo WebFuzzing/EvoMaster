@@ -43,4 +43,9 @@ public class ByteBufferParam extends NamedTypedValue<StringType, ByteBuffer>{
     public void setValue(ParamDto dto) {
         setValue(dto.jsonValue.getBytes());
     }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        setValue((ByteBuffer) instance);
+    }
 }

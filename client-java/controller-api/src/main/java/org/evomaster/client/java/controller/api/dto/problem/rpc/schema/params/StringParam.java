@@ -27,4 +27,9 @@ public class StringParam extends NamedTypedValue<StringType, String> {
         setValue(dto.jsonValue);
     }
 
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        setValue((String) instance);
+    }
+
 }

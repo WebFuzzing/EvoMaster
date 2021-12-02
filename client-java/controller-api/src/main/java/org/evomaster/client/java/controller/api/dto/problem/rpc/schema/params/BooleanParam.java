@@ -40,4 +40,9 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as boolean value");
         }
     }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        setValue((Boolean) instance);
+    }
 }

@@ -39,4 +39,9 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
             setValue(dto.jsonValue.charAt(0));
         }
     }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        setValue((Character) instance);
+    }
 }

@@ -40,4 +40,9 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as long value");
         }
     }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        setValue((Long) instance);
+    }
 }

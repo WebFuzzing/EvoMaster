@@ -66,18 +66,58 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         return isNullable;
     }
 
+    /**
+     * get its dto format in order to further handle it with evomastr core
+     * @return its corresponding dto
+     */
     public ParamDto getDto(){
         ParamDto dto = new ParamDto();
         dto.name = name;
         dto.type = type.getDto();
+        if (getValue() != null)
+            dto.jsonValue = getValue().toString();
         return dto;
     }
 
     public abstract NamedTypedValue<T, V> copyStructure();
 
+
+    /**
+     * it is used to find a param schema based on info specified with dto format
+     * @param dto specifies a param to check
+     * @return whether [this] param schema info is consistent with the given dto
+     */
     public boolean sameParam(ParamDto dto){
         return dto.name.equals(name) && type.sameType(dto.type);
     }
 
+    /**
+     * set value based on dto
+     * the value is basically obtained from evomaster core
+     * @param dto contains value info with string
+     */
     public abstract void setValue(ParamDto dto);
+
+    /**
+     * set value of param schema based on its instance
+     * it is mainly used to parse response
+     * @param instance a java object which is an instance of this param schema
+     */
+    public void setValueBasedOnInstance(Object instance){
+        if (isValidInstance(instance))
+            setValueBasedOnValidInstance(instance);
+        else
+            throw new IllegalStateException("class of the instance ("+ instance.getClass().getName() +") does not conform with this param: "+getType().getFullTypeName());
+    }
+
+    protected abstract void setValueBasedOnValidInstance(Object instance);
+
+    /**
+     *
+     * @param instance a java object which is an instance of this param schema
+     * @return if the specified instance conforms with this param schema
+     */
+    public boolean isValidInstance(Object instance){
+        return instance.getClass().isInstance(getType().getClazz());
+    }
 }

@@ -4,12 +4,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.Param
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.MapType;
 
-import java.util.AbstractMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * thrift
@@ -57,5 +53,17 @@ public class MapParam extends NamedTypedValue<MapType, Map<NamedTypedValue, Name
             setValue(values);
         }
 
+    }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        PairParam t = getType().getTemplate();
+        Map<NamedTypedValue, NamedTypedValue> values = new HashMap<>();
+        for (Object e : ((Map) instance).entrySet()){
+            PairParam copy = t.copyStructure();
+            copy.setValueBasedOnInstance(e);
+            values.put(copy.getValue().getKey(), copy.getValue().getValue());
+        }
+        setValue(values);
     }
 }

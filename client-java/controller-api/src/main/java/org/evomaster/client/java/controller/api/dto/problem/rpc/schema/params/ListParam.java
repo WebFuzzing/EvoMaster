@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.Param
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.CollectionType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,6 +54,18 @@ public class ListParam extends NamedTypedValue<CollectionType, List<NamedTypedVa
             }).collect(Collectors.toList());
             setValue(values);
         }
+    }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        NamedTypedValue t = getType().getTemplate();
+        List<NamedTypedValue> values = new ArrayList<>();
+        for (Object e : (List) instance){
+            NamedTypedValue copy = t.copyStructure();
+            copy.setValueBasedOnInstance(e);
+            values.add(copy);
+        }
+        setValue(values);
     }
 
 

@@ -33,4 +33,9 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as int value for setting enum");
         }
     }
+
+    @Override
+    protected void setValueBasedOnValidInstance(Object instance) {
+        //TODO
+    }
 }
