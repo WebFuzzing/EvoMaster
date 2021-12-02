@@ -2,10 +2,8 @@ using System;
 using System.Data.Common;
 using System.Threading.Tasks;
 
-namespace EvoMaster.DatabaseController.Abstractions
-{
-    public interface IDatabaseController
-    {
+namespace EvoMaster.DatabaseController.Abstractions {
+    public interface IDatabaseController {
         public string DatabaseName { get; }
         public int Port { get; }
         public int Timeout { get; }
@@ -14,14 +12,12 @@ namespace EvoMaster.DatabaseController.Abstractions
         Task StopAsync();
         void Stop();
 
-        protected static string GetDockerUri()
-        {
+        protected static string GetDockerUri() {
             return IsRunningOnWindows()
                 ? "npipe://./pipe/docker_engine"
                 : "unix:///var/run/docker.sock";
 
-            static bool IsRunningOnWindows()
-            {
+            static bool IsRunningOnWindows() {
                 return Environment.OSVersion.Platform == PlatformID.Win32NT;
             }
         }

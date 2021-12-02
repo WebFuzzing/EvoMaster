@@ -67,7 +67,7 @@ dotnet run $PORT &
 PID=$!
 
 # give enough time to start
-sleep 20
+sleep 60
 
 echo $(date) Starting EvoMaster
 java -jar $JAR --seed 42 --maxActionEvaluations $BUDGET  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME  --sutControllerPort $PORT

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 
 namespace EvoMaster.Controller.Api {
     public class RestProblemDto {
-
         /**
          * The full URL of where the Swagger JSON data can be located
          */
