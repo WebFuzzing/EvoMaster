@@ -1,19 +1,11 @@
 package org.evomaster.core.search.mutationweight.individual
 
-import io.swagger.parser.OpenAPIParser
-import io.swagger.v3.oas.models.OpenAPI
-import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.schema.Column
-import org.evomaster.core.database.schema.ColumnDataType
-import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.mutationweight.GeneWeightTestSchema
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

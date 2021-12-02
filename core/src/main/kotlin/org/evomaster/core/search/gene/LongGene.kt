@@ -150,6 +150,12 @@ class LongGene(
             }
         }else
             Long.MAX_VALUE
+    }
 
+    override fun compareTo(other: ComparableGene): Int {
+        if (other !is LongGene) {
+            throw RuntimeException("Expected LongGene. Cannot compare to ${other::javaClass} instance")
+        }
+        return this.toLong().compareTo(other.toLong())
     }
 }
