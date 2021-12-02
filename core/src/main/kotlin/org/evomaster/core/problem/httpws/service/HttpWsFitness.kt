@@ -89,7 +89,7 @@ abstract class HttpWsFitness<T>: FitnessFunction<T>() where T : Individual {
     protected var client: Client = ClientBuilder.newClient(clientConfiguration)
 
 
-    protected lateinit var infoDto: SutInfoDto
+    lateinit var infoDto: SutInfoDto
 
 
     @PostConstruct

@@ -1,10 +1,12 @@
 package org.evomaster.core.output.service
 
+import com.google.inject.Inject
 import org.evomaster.core.output.Lines
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
+import org.evomaster.core.problem.graphql.service.GraphQLFitness
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.search.Action
@@ -18,6 +20,9 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     companion object {
         private val log = LoggerFactory.getLogger(GraphQLTestCaseWriter::class.java)
     }
+
+    @Inject
+    protected lateinit var fitness: GraphQLFitness
 
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>){
         if (ind.individual is GraphQLIndividual) {
@@ -110,8 +115,11 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                 lines.append("$baseUrlOfSut + \"")
             }
 
-            val path = "/graphql"  //FIXME not hardcoded
-            lines.append("${GeneUtils.applyEscapes(path, mode = GeneUtils.EscapeMode.NONE, format = format)}\"")
+           val path= fitness.infoDto.graphQLProblem.endpoint
+
+              // infoDto.graphQLProblem?.endpoint
+
+            lines.append("${path?.let { GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.NONE, format = format) }}\"")
         }
 
         lines.append(")")
