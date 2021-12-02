@@ -1,8 +1,8 @@
-package org.evomaster.core.search.gene
+package org.evomaster.core.search.gene.datetime
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -16,6 +16,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
+
 /**
  * Using RFC3339
  *
@@ -23,22 +24,27 @@ import java.time.format.DateTimeParseException
  */
 class DateGene(
     name: String,
-        //note: ranges deliberately include wrong values.
+    //note: ranges deliberately include wrong values.
     val year: IntegerGene = IntegerGene("year", 2016, MIN_YEAR, MAX_YEAR),
     val month: IntegerGene = IntegerGene("month", 3, MIN_MONTH, MAX_MONTH),
     val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
     val onlyValidDates: Boolean = false,
     val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
-) : Gene(name, mutableListOf(year, month, day)) {
+) : ComparableGene(name, mutableListOf(year, month, day)) {
 
-    companion object{
-        val log : Logger = LoggerFactory.getLogger(DateGene::class.java)
+    companion object {
+        val log: Logger = LoggerFactory.getLogger(DateGene::class.java)
         const val MAX_YEAR = 2100
         const val MIN_YEAR = 1900
         const val MAX_MONTH = 13
         const val MIN_MONTH = 0
         const val MAX_DAY = 32
         const val MIN_DAY = 9
+
+        val DATE_GENE_COMPARATOR = compareBy<DateGene> { it.year }
+            .thenBy { it.month }
+            .thenBy { it.day }
+
     }
 
     enum class DateGeneFormat {
@@ -47,12 +53,14 @@ class DateGene(
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(year, month, day)
 
-    override fun copyContent(): Gene = DateGene(name,
-            year.copyContent() as IntegerGene,
-            month.copyContent() as IntegerGene,
-            day.copyContent() as IntegerGene,
-            dateGeneFormat = this.dateGeneFormat,
-            onlyValidDates = this.onlyValidDates)
+    override fun copyContent(): Gene = DateGene(
+        name,
+        year.copyContent() as IntegerGene,
+        month.copyContent() as IntegerGene,
+        day.copyContent() as IntegerGene,
+        dateGeneFormat = this.dateGeneFormat,
+        onlyValidDates = this.onlyValidDates
+    )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         do {
@@ -62,7 +70,14 @@ class DateGene(
         } while (onlyValidDates && !isValidDate())
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun candidatesInternalGenes(
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        allGenes: List<Gene>,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): List<Gene> {
         return listOf(year, month, day)
     }
 
@@ -70,27 +85,49 @@ class DateGene(
         return !onlyValidDates || isValidDate()
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
-        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateGeneImpact){
+    override fun adaptiveSelectSubset(
+        randomness: Randomness,
+        internalGenes: List<Gene>,
+        mwc: MutationWeightControl,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateGeneImpact) {
             val maps = mapOf<Gene, GeneImpact>(
-                    year to additionalGeneMutationInfo.impact.yearGeneImpact,
-                    month to additionalGeneMutationInfo.impact.monthGeneImpact,
-                    day to additionalGeneMutationInfo.impact.dayGeneImpact
+                year to additionalGeneMutationInfo.impact.yearGeneImpact,
+                month to additionalGeneMutationInfo.impact.monthGeneImpact,
+                day to additionalGeneMutationInfo.impact.dayGeneImpact
             )
-            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it), it) }
+            return mwc.selectSubGene(
+                internalGenes,
+                adaptiveWeight = true,
+                targets = additionalGeneMutationInfo.targets,
+                impacts = internalGenes.map { i -> maps.getValue(i) },
+                individual = null,
+                evi = additionalGeneMutationInfo.evi
+            ).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it), it) }
         }
 
         throw IllegalArgumentException("impact is null or not DateGeneImpact")
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+    override fun getValueAsPrintableString(
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
+    ): String {
         return "\"${getValueAsRawString()}\""
     }
 
     override fun getValueAsRawString(): String {
         return when (dateGeneFormat) {
             DateGeneFormat.ISO_LOCAL_DATE_FORMAT -> GeneUtils.let {
-                "${it.padded(year.value, 4)}-${it.padded(month.value, 2)}-${it.padded(day.value, 2)}"
+                "${GeneUtils.padded(year.value, 4)}-${GeneUtils.padded(month.value, 2)}-${
+                    GeneUtils.padded(
+                        day.value,
+                        2
+                    )
+                }"
             }
         }
     }
@@ -100,7 +137,11 @@ class DateGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         if (this.onlyValidDates && !other.isValidDate()) {
-            throw IllegalArgumentException("Cannot copy invalid date %s to gene accepting only valid values".format(other.getValueAsRawString()))
+            throw IllegalArgumentException(
+                "Cannot copy invalid date %s to gene accepting only valid values".format(
+                    other.getValueAsRawString()
+                )
+            )
         }
         this.year.copyValueFrom(other.year)
         this.month.copyValueFrom(other.month)
@@ -132,8 +173,8 @@ class DateGene(
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(year.flatView(excludePredicate))
-                    .plus(month.flatView(excludePredicate))
-                    .plus(day.flatView(excludePredicate))
+                .plus(month.flatView(excludePredicate))
+                .plus(day.flatView(excludePredicate))
     }
 
     /*
@@ -145,16 +186,16 @@ class DateGene(
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when{
+        return when {
             gene is DateGene -> {
                 day.bindValueBasedOn(gene.day) &&
                         month.bindValueBasedOn(gene.month) &&
                         year.bindValueBasedOn(gene.year)
             }
             gene is DateTimeGene -> bindValueBasedOn(gene.date)
-            gene is StringGene && gene.getSpecializationGene() != null-> bindValueBasedOn(gene.getSpecializationGene()!!)
+            gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
             // Man: convert to string based on the format?
-            else-> {
+            else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateGene with ${gene::class.java.simpleName}")
                 false
             }
@@ -181,5 +222,12 @@ class DateGene(
         } else if (day.value > 31) {
             day.value = 31
         }
+    }
+
+    override fun compareTo(other: ComparableGene): Int {
+        if (other !is DateGene) {
+            throw ClassCastException("Expected DataGene instance but ${other::javaClass} was found")
+        }
+        return DATE_GENE_COMPARATOR.compare(this, other)
     }
 }

@@ -1,15 +1,17 @@
-package org.evomaster.core.search.gene
+package org.evomaster.core.search.gene.datetime
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.ComparableGene
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -20,30 +22,34 @@ import org.slf4j.LoggerFactory
  * https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
  */
 open class DateTimeGene(
-        name: String,
-        val date: DateGene = DateGene("date"),
-        val time: TimeGene = TimeGene("time"),
-        val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
-) : Gene(name, mutableListOf(date, time)) {
+    name: String,
+    val date: DateGene = DateGene("date"),
+    val time: TimeGene = TimeGene("time"),
+    val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
+) : ComparableGene(name, mutableListOf(date, time)) {
 
     enum class DateTimeGeneFormat {
         // YYYY-MM-DDTHH:SS:MM
         ISO_LOCAL_DATE_TIME_FORMAT,
+
         // YYYY-MM-DD HH:SS:MM
         DEFAULT_DATE_TIME
     }
 
-    companion object{
-        val log : Logger = LoggerFactory.getLogger(DateTimeGene::class.java)
+    companion object {
+        val log: Logger = LoggerFactory.getLogger(DateTimeGene::class.java)
+
+        val DATE_TIME_GENE_COMPARATOR = compareBy<DateTimeGene> { it.date }
+            .thenBy { it.time }
     }
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(date, time)
 
     override fun copyContent(): Gene = DateTimeGene(
-            name,
-            date.copyContent() as DateGene,
-            time.copyContent() as TimeGene,
-            dateTimeGeneFormat = this.dateTimeGeneFormat
+        name,
+        date.copyContent() as DateGene,
+        time.copyContent() as TimeGene,
+        dateTimeGeneFormat = this.dateTimeGeneFormat
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -59,31 +65,66 @@ open class DateTimeGene(
         time.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun candidatesInternalGenes(
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        allGenes: List<Gene>,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): List<Gene> {
         return listOf(date, time)
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
-        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateTimeGeneImpact){
-            val maps = mapOf(
-                    date to additionalGeneMutationInfo.impact.dateGeneImpact,
-                    time to additionalGeneMutationInfo.impact.timeGeneImpact
+    override fun adaptiveSelectSubset(
+        randomness: Randomness,
+        internalGenes: List<Gene>,
+        mwc: MutationWeightControl,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateTimeGeneImpact) {
+            val maps = mapOf<Gene, GeneImpact>(
+                date to additionalGeneMutationInfo.impact.dateGeneImpact ,
+                time to additionalGeneMutationInfo.impact.timeGeneImpact
             )
-            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it), it) }
+
+            return mwc.selectSubGene(
+                internalGenes,
+                adaptiveWeight = true,
+                targets = additionalGeneMutationInfo.targets,
+                impacts = internalGenes.map { i  -> maps.getValue(i) },
+                individual = null,
+                evi = additionalGeneMutationInfo.evi
+            ).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it), it) }
         }
         throw IllegalArgumentException("impact is null or not DateTimeGeneImpact")
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+    override fun getValueAsPrintableString(
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
+    ): String {
         return "\"${getValueAsRawString()}\""
     }
 
     override fun getValueAsRawString(): String {
         val formattedDate = GeneUtils.let {
-            "${it.padded(date.year.value, 4)}-${it.padded(date.month.value, 2)}-${it.padded(date.day.value, 2)}"
+            "${GeneUtils.padded(date.year.value, 4)}-${
+                GeneUtils.padded(
+                    date.month.value,
+                    2
+                )
+            }-${GeneUtils.padded(date.day.value, 2)}"
         }
         val formattedTime = GeneUtils.let {
-            "${it.padded(time.hour.value, 2)}:${it.padded(time.minute.value, 2)}:${it.padded(time.second.value, 2)}"
+            "${GeneUtils.padded(time.hour.value, 2)}:${
+                GeneUtils.padded(
+                    time.minute.value,
+                    2
+                )
+            }:${GeneUtils.padded(time.second.value, 2)}"
         }
         return when (dateTimeGeneFormat) {
             DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT -> {
@@ -127,14 +168,14 @@ open class DateTimeGene(
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when{
+        return when {
             gene is DateTimeGene -> {
                 date.bindValueBasedOn(gene.date) &&
                         time.bindValueBasedOn(gene.time)
             }
             gene is DateGene -> date.bindValueBasedOn(gene)
             gene is TimeGene -> time.bindValueBasedOn(gene)
-            gene is StringGene && gene.getSpecializationGene()!= null -> {
+            gene is StringGene && gene.getSpecializationGene() != null -> {
                 bindValueBasedOn(gene.getSpecializationGene()!!)
             }
             else -> {
@@ -142,5 +183,12 @@ open class DateTimeGene(
                 false
             }
         }
+    }
+
+    override fun compareTo(other: ComparableGene): Int {
+        if (other !is DateTimeGene) {
+            throw ClassCastException("Instance of DateTimeGene was expected but ${other::javaClass} was found")
+        }
+        return DATE_TIME_GENE_COMPARATOR.compare(this, other)
     }
 }
