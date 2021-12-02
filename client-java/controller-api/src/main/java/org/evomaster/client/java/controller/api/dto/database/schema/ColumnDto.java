@@ -22,6 +22,7 @@ public class ColumnDto {
 
     public boolean isUnsigned = false;
 
+    public boolean isEnumeratedType = false;
     /**
      * precision of number
      * a negative number means that the precision is unspecified or inapplicable

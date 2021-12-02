@@ -7,6 +7,7 @@ import org.evomaster.core.problem.graphql.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.PetClinicCheckMain
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.gene.datetime.DateGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.*

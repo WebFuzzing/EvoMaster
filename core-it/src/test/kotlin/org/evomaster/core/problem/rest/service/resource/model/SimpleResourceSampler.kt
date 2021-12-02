@@ -14,8 +14,10 @@ class SimpleResourceSampler : ResourceSampler() {
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skipAction, config.doesApplyNameMatching)
 
 
-        this.sqlInsertBuilder = sqlInsertBuilder
-        existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
+        if (sqlInsertBuilder != null){
+            this.sqlInsertBuilder = sqlInsertBuilder
+            existingSqlData = sqlInsertBuilder.extractExistingPKs()
+        }
 
         initAdHocInitialIndividuals()
         postInits()

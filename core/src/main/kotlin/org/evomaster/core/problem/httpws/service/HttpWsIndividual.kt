@@ -72,7 +72,10 @@ abstract class HttpWsIndividual (
         addChildren(actions)
     }
 
-    fun removeAll(actions: List<DbAction>) {
+    /**
+     * remove specified dbactions i.e., [actions] from [dbInitialization]
+     */
+    fun removeInitDbActions(actions: List<DbAction>) {
         dbInitialization.removeAll(actions)
     }
 }

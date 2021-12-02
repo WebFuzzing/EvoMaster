@@ -25,7 +25,7 @@ data class AdditionalGeneMutationInfo (
         val selection: GeneMutationSelectionMethod,
         val impact: GeneImpact?, //null is only allowed when the gene is root.
         val geneReference: String?, // null is only allowed when selection is NONE
-        val archiveGeneSelector: ArchiveGeneSelector,
+        val archiveGeneSelector: ArchiveImpactSelector,
         val archiveGeneMutator: ArchiveGeneMutator,
         val evi: EvaluatedIndividual<*>,
         val targets: Set<Int>,

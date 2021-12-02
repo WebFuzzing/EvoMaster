@@ -194,6 +194,7 @@ class IndividualGeneImpactTest {
 
             mutatedGeneSpecification.addMutatedGene(
                     isDb = false,
+                    isInit = false,
                     position = mutatedIndex,
                     valueBeforeMutation = mutatedGene.value,
                     gene = mutatedGene

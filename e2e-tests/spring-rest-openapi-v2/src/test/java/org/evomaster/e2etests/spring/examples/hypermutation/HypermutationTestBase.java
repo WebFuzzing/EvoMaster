@@ -2,40 +2,36 @@ package org.evomaster.e2etests.spring.examples.hypermutation;
 
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.EvaluatedIndividual;
-import org.evomaster.core.search.Individual;
-import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact;
-import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 public class HypermutationTestBase extends SpringTestBase {
 
 
     public boolean check(EvaluatedIndividual<RestIndividual> ind, String action,int max){
-        List<GeneImpact> allImpacts = new ArrayList<>();
-        for (Gene g: ind.getIndividual().seeGenes(Individual.GeneFilter.ALL)){
-            String geneId = ImpactUtils.Companion.generateGeneId(ind.getIndividual(), g);
-            allImpacts.addAll(ind.getGeneImpact(geneId));
-        }
-        List<Integer> x = allImpacts.stream().filter(s-> s.getId().contains("POST:/api/highweight/"+action+"/{x}::DisruptiveGene>x")).map(s-> s.getTimesToManipulate()).collect(Collectors.toList());
-        int maxX = Collections.max(x);
-        List<Integer> y = allImpacts.stream().filter(s-> s.getId().contains("POST:/api/highweight/"+action+"/{x}::y")).map(s-> s.getTimesToManipulate()).collect(Collectors.toList());
-        int maxY = Collections.max(y);
-        List<Integer> z = allImpacts.stream().filter(s-> s.getId().contains("POST:/api/highweight/"+action+"/{x}::HighWeightDto>body")).map(s-> s.getTimesToManipulate()).collect(Collectors.toList());
-        int maxZ = Collections.max(z);
-        // z should be mutated more times than x and y
+        String xGeneId = "POST:/api/highweight/"+action+"/{x}::DisruptiveGene>x";
+        String yGeneId = "POST:/api/highweight/"+action+"/{x}::y";
+        String zGeneId = "POST:/api/highweight/"+action+"/{x}::HighWeightDto>body";
 
-        if (max == 0){
-            return z.stream().allMatch(s-> s> maxX && s>maxY);
-        }else if (max == 1){
-            return x.stream().allMatch(s-> s> maxZ && s> maxY);
-        }else{
-            throw new IllegalArgumentException("invalid max");
+        boolean result = true;
+        for (Map<String, GeneImpact> a : ind.getActionGeneImpact()){
+
+            int x = a.values().stream().filter(s-> s.getId().contains(xGeneId)).findFirst().get().getTimesToManipulate();
+            int y = a.values().stream().filter(s-> s.getId().contains(yGeneId)).findFirst().get().getTimesToManipulate();
+            int z = a.values().stream().filter(s-> s.getId().contains(zGeneId)).findFirst().get().getTimesToManipulate();
+
+            if (max == 0){
+                result = result && z > x && z > y;
+            }else if (max == 1){
+                result = result && x > z && x > y;
+            }else{
+                throw new IllegalArgumentException("invalid max");
+            }
+
         }
+
+        return result;
     }
 }

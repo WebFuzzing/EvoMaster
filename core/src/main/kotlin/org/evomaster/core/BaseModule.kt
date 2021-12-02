@@ -7,7 +7,7 @@ import org.evomaster.core.output.service.NoTestCaseWriter
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -63,7 +63,7 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
         bind(ArchiveMutationTrackService::class.java)
                 .asEagerSingleton()
 
-        bind(ArchiveGeneSelector::class.java)
+        bind(ArchiveImpactSelector::class.java)
                 .asEagerSingleton()
 
         bind(ArchiveGeneMutator::class.java)

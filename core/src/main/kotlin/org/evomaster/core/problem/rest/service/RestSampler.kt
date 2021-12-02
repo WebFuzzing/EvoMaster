@@ -29,7 +29,7 @@ class RestSampler : AbstractRestSampler(){
     override fun sampleAtRandom(): RestIndividual {
 
         val actions = mutableListOf<RestCallAction>()
-        val n = randomness.nextInt(1, config.maxTestSize)
+        val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())
 
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05) as RestCallAction)
@@ -62,7 +62,7 @@ class RestSampler : AbstractRestSampler(){
             return adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
         }
 
-        if (config.maxTestSize <= 1) {
+        if (getMaxTestSizeDuringSampler() <= 1) {
             /*
                 Here we would have sequences of endpoint calls that are
                 somehow linked to each other, eg a DELETE on a resource
@@ -167,7 +167,7 @@ class RestSampler : AbstractRestSampler(){
         createResourcesFor(write, test)
 
         if (write.verb == HttpVerb.PATCH &&
-                config.maxTestSize >= test.size + 1 &&
+                getMaxTestSizeDuringSampler() >= test.size + 1 &&
                 randomness.nextBoolean()) {
             /*
                 As PATCH is not idempotent (in contrast to PUT), it can make sense to test
@@ -233,7 +233,7 @@ class RestSampler : AbstractRestSampler(){
             val lastPost = test[test.size - 2] as RestCallAction
             Lazy.assert{lastPost.verb == HttpVerb.POST}
 
-            val available = config.maxTestSize - test.size
+            val available = getMaxTestSizeDuringSampler() - test.size
 
             if (lastPost.path.isEquivalent(get.path) && available > 0) {
                 /*
@@ -269,7 +269,7 @@ class RestSampler : AbstractRestSampler(){
     private fun createResourcesFor(target: RestCallAction, test: MutableList<RestCallAction>)
             : Boolean {
 
-        if (test.size >= config.maxTestSize) {
+        if (test.size >= getMaxTestSizeDuringSampler()) {
             return false
         }
 

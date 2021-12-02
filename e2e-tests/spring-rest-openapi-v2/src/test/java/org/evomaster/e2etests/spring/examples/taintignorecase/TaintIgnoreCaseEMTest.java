@@ -25,7 +25,7 @@ public class TaintIgnoreCaseEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        defaultSeed = 0;
+        defaultSeed = 100;
 
         runTestHandlingFlakyAndCompilation(
                 "TaintIgnoreCaseEM",

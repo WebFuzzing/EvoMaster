@@ -1,12 +1,12 @@
 package org.evomaster.core.problem.graphql
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 
@@ -19,7 +19,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/PetsClinic.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(15, actionCluster.size)
 
@@ -117,7 +118,8 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/AniList.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(54, actionCluster.size)
         val page = actionCluster.get("Page") as GraphQLAction
@@ -180,7 +182,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Bitquery.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(12, actionCluster.size)
 
         val algorand = actionCluster.get("algorand") as GraphQLAction
@@ -200,7 +204,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/CatalysisHub.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(11, actionCluster.size)
 
     }
@@ -210,7 +216,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Contentful.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(22, actionCluster.size)
 
         val asset = actionCluster.get("asset") as GraphQLAction
@@ -241,7 +249,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Countries.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(6, actionCluster.size)
 
         val continents = actionCluster.get("continents") as GraphQLAction
@@ -261,7 +271,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/DeutscheBahn.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(7, actionCluster.size)
 
         val routing = actionCluster.get("routing") as GraphQLAction
@@ -277,7 +289,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/DigitransitHSL.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(33, actionCluster.size)
 
         val node = actionCluster.get("node") as GraphQLAction
@@ -301,7 +315,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/EHRI.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(19, actionCluster.size)
 
     }
@@ -311,7 +327,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/EtMDB.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(24, actionCluster.size)
 
     }
@@ -321,19 +339,22 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Everbase.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(14, actionCluster.size)
 
     }
 
 
-    @Disabled
     @Test
     fun gitLabSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitLab.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(169, actionCluster.size)
 
     }
@@ -343,7 +364,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GraphQLJobs.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(15, actionCluster.size)
 
     }
@@ -352,7 +375,9 @@ class GraphQLActionBuilderTest {
     fun HIVDBSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/HIVDB.json").readText()
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(9, actionCluster.size)
 
     }
@@ -362,7 +387,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/MelodyRepo.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(2, actionCluster.size)
 
         val ppackage = actionCluster.get("package") as GraphQLAction
@@ -384,18 +411,21 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/ReactFinland.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(12, actionCluster.size)
 
     }
 
-    @Disabled
     @Test
     fun travelgateXSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/TravelgateX.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(9, actionCluster.size)
         /**/
         val admin = actionCluster.get("admin") as GraphQLAction
@@ -413,13 +443,14 @@ class GraphQLActionBuilderTest {
         assertTrue(logging.parameters[0].gene is ObjectGene)
     }
 
-    @Disabled
     @Test
     fun universeSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Universe.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(87, actionCluster.size)
     }
 
@@ -428,7 +459,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/recEg.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(1, actionCluster.size)
     }
 
@@ -437,7 +470,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/SpaceX.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(43, actionCluster.size)
 
         val coresUpcoming = actionCluster.get("coresUpcoming") as GraphQLAction
@@ -458,7 +493,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Book.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(3, actionCluster.size)
     }
 
@@ -469,7 +506,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceEg.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(1, actionCluster.size)
 
 
@@ -482,19 +521,19 @@ class GraphQLActionBuilderTest {
         assertEquals(2, interfaceObjectStore.fields.size)
 
         // basic interface not removed and object gene without fields removed
-       // assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
-       // assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
-       // val objFlowerStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
-       // assertEquals(0, objFlowerStore.fields.size)
-       // assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "id" })
-       // assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "name" })
+        // assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
+        // assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
+        // val objFlowerStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
+        // assertEquals(0, objFlowerStore.fields.size)
+        // assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "id" })
+        // assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "name" })
 
         assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
         assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
         val objPotStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
         assertEquals(1, objPotStore.fields.size)
-       // assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "id" })
-       // assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "name" })
+        // assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "id" })
+        // assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "name" })
         assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "address" })
 
         assertTrue(interfaceObjectStore.fields[1] is OptionalGene)
@@ -512,7 +551,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceInternalEg.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(1, actionCluster.size)
 
 
@@ -529,22 +570,22 @@ class GraphQLActionBuilderTest {
         assertTrue((objectStore1.fields[0] as OptionalGene).gene is ObjectGene)
         val interfaceObjectStore = (objectStore1.fields[0] as OptionalGene).gene as ObjectGene
         assertEquals(2, interfaceObjectStore.fields.size)
-       // assertEquals(2, interfaceObjectStore.fields.size)
+        // assertEquals(2, interfaceObjectStore.fields.size)
 
-       // assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
-       // assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
-       // val objFlowerStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
-       // assertEquals(0, objFlowerStore.fields.size)
-       // assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "id" })
-       // assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "name" })
+        // assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
+        // assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
+        // val objFlowerStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
+        // assertEquals(0, objFlowerStore.fields.size)
+        // assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "id" })
+        // assertTrue(objFlowerStore.fields.any { it is BooleanGene && it.name == "name" })
 
 
         assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
         assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
         val objPotStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
         assertEquals(1, objPotStore.fields.size)
-       // assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "id" })
-       // assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "name" })
+        // assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "id" })
+        // assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "name" })
         assertTrue(objPotStore.fields.any { it is BooleanGene && it.name == "address" })
 
         assertTrue(interfaceObjectStore.fields[1] is OptionalGene)
@@ -562,7 +603,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalEg.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(1, actionCluster.size)
 
 
@@ -600,7 +643,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalRecEg.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(1, actionCluster.size)
 
 
@@ -638,7 +683,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalRecEg2.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(1, actionCluster.size)
 
 
@@ -650,7 +697,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/enumInterface.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(1, actionCluster.size)
 
     }
@@ -660,7 +709,9 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceHis.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(1, actionCluster.size)
 
         val node = actionCluster.get("node") as GraphQLAction
@@ -684,10 +735,11 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/recEg2.json").readText()
 
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
         assertEquals(1, actionCluster.size)
     }
-
     @Test
     fun handleAllCyclesInObjectFieldsTest() {
 
@@ -701,6 +753,44 @@ class GraphQLActionBuilderTest {
             GraphQLActionBuilder.handleAllCyclesInObjectFields(it)  }
 
         assertTrue(!obj.isActive)
+
+    }
+
+
+    @Test
+    fun depthTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/abstract2.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+        assertEquals(2, actionCluster.size)
+
+        val a = actionCluster.get("a") as GraphQLAction
+        assertEquals(1, a.parameters.size)
+        assertTrue(a.parameters[0] is GQReturnParam)
+        assertTrue(a.parameters[0].gene is ObjectGene)
+
+        val objA = a.parameters[0].gene as ObjectGene//first level
+        assertEquals(3, objA.fields.size)
+        assertTrue(objA.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objA.fields.any { it is OptionalGene && it.name == "b" })// second level
+        assertTrue(objA.fields.any { it is OptionalGene && it.name == "f" })// second level
+
+        val objB = (objA.fields.first { it.name == "b" } as OptionalGene).gene as ObjectGene
+        assertEquals(1, objB.fields.size)
+        assertTrue(objB.fields.any { it is OptionalGene && it.name == "c" })//third level
+
+        val objC = (objB.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(1, objC.fields.size)
+        assertTrue(objC.fields.any { it is OptionalGene && it.name == "d" })//fourth level
+
+        val objD = (objC.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objD.fields.size)
+        assertTrue(objD.fields.any { it is OptionalGene && it.name == "e" })//fifth level
+
+        val objF = (objA.fields.first { it.name == "f" } as OptionalGene).gene as ObjectGene// second level
+        assertEquals(1, objF.fields.size)
 
     }
 

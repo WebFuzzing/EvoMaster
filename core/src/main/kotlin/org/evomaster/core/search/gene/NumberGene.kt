@@ -8,7 +8,7 @@ import kotlin.math.min
 abstract class NumberGene<T : Number>(name: String,
                                       var value: T,
                                       open val min : T?,
-                                      open val max : T?) : Gene(name, mutableListOf()) {
+                                      open val max : T?) : ComparableGene(name, mutableListOf()) {
 
     override fun getChildren(): MutableList<Gene> = mutableListOf()
 

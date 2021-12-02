@@ -14,7 +14,6 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Paths
-import java.util.logging.Logger
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -36,6 +35,8 @@ class EMConfig {
     companion object {
 
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
+
+        private const val headerRegex = "(.+:.+)|(^$)"
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -677,6 +678,25 @@ class EMConfig {
             " This is needed only for black-box testing of remote services.")
     var ratePerMinute = 0
 
+    @Important(4.0)
+    @Regex(headerRegex)
+    @Cfg("In black-box testing, we still need to deal with authentication of the HTTP requests." +
+            " With this parameter it is possible to specify a HTTP header that is going to be added to most requests." +
+            " This should be provided in the form _name:value_. If more than 1 header is needed, use as well the" +
+            " other options _header1_ and _header2_.")
+    var header0 = ""
+
+    @Important(4.1)
+    @Regex(headerRegex)
+    @Cfg("See documentation of _header0_.")
+    var header1 = ""
+
+    @Important(4.2)
+    @Regex(headerRegex)
+    @Cfg("See documentation of _header0_.")
+    var header2 = ""
+
+
     //-------- other options -------------
 
 
@@ -873,6 +893,21 @@ class EMConfig {
     @Probability
     var structureMutationProbability = 0.5
 
+    @Experimental
+    @Cfg("Probability of applying a mutation that can change the structure of test's initialization if it has")
+    @Probability
+    var initStructureMutationProbability = 0.0
+
+    @Experimental
+    @Cfg("Specify a maximum number of handling (remove/add) init actions at once, e.g., add 3 init actions at most")
+    @Min(0.0)
+    var maxSizeOfMutatingInitAction = 0
+
+    // Man: need to check it with Andrea about whether we consider it as a generic option
+    @Experimental
+    @Cfg("Specify a probability of applying a smart structure mutator for initialization of the individual")
+    @Probability
+    var probOfSmartInitStructureMutator = 0.0
 
     enum class GeneMutationStrategy {
         ONE_OVER_N,
@@ -965,18 +1000,12 @@ class EMConfig {
          * save evaluated individuals and Archive with a json format
          */
         JSON_ALL,
-//        /**
-//         * save Archive with a json format and save the evaluated individual with the specified test format
-//         */
-//        JSON_ARCHIVE_TEST_IND,
-//        /**
-//         * only save the evaluated individuals with json format
-//         */
-//        JSON_IND,
+
         /**
          * only save the evaluated individual with the specified test format
          */
         TEST_IND,
+
         /**
          * save covered targets with the specified target format and tests with the specified test format
          */
@@ -1087,26 +1116,102 @@ class EMConfig {
     var probOfApplySQLActionToCreateResources = 0.5
 
     @Experimental
-    @Cfg("When generating resource using SQL (e.g., sampler or mutator), how many new rows (max) to generate for the specific resource each time")
+    @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
     @Min(0.0)
-    var maxSqlInitActionsPerResource = 0
+    var maxSizeOfHandlingResource = 0
 
     @Experimental
     @Cfg("Specify a strategy to determinate a number of resources to be manipulated throughout the search.")
-    var employSqlNumResourceStrategy = SqlInitResourceStrategy.NONE
+    var employResourceSizeHandlingStrategy = SqlInitResourceStrategy.NONE
 
     enum class SqlInitResourceStrategy{
         NONE,
 
         /**
-         * determinate a number of resource to be manipulated at random between 1 and [maxSqlInitActionsPerResource]
+         * determinate a number of resource to be manipulated at random between 1 and [maxSizeOfHandlingResource]
          */
         RANDOM,
         /**
-         * adaptively decrease a number of resources to be manipulated from [maxSqlInitActionsPerResource] to 1
+         * adaptively decrease a number of resources to be manipulated from [maxSizeOfHandlingResource] to 1
          */
         DPC
     }
+
+    enum class StructureMutationProbStrategy{
+        /**
+         * apply the specified probability
+         */
+        SPECIFIED,
+
+        /**
+         * deactivated structure mutator when focused search starts
+         */
+        SPECIFIED_FS,
+
+        /**
+         * gradually update the structure mutator probability from [structureMutationProbability] to [structureMutationProFS] before focused search
+         */
+        DPC_TO_SPECIFIED_BEFORE_FS,
+
+        /**
+         * gradually update the structure mutator probability from [structureMutationProbability] to [structureMutationProFS] after focused search
+         */
+        DPC_TO_SPECIFIED_AFTER_FS,
+
+        /**
+         * apply a probability which is adaptive to the impact
+         */
+        ADAPTIVE_WITH_IMPACT
+    }
+
+    @Experimental
+    @Cfg("Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources")
+    @Min(0.0)
+    var maxResourceSize = 0
+
+    @Experimental
+    @Cfg("Specify a strategy to handle a probability of applying structure mutator during the focused search")
+    var structureMutationProbStrategy = StructureMutationProbStrategy.SPECIFIED
+
+    @Experimental
+    @Cfg("Specify a probability of applying structure mutator during the focused search")
+    @Probability
+    var structureMutationProFS = 0.0
+
+    enum class MaxTestSizeStrategy{
+        /**
+         * apply the specified max size of a test
+         */
+        SPECIFIED,
+
+        /**
+         * gradually increasing a size of test until focused search
+         */
+        DPC_INCREASING,
+
+        /**
+         * gradually decreasing a size of test until focused search
+         */
+        DPC_DECREASING
+    }
+
+    @Experimental
+    @Cfg("Specify a strategy to handle a max size of a test")
+    var maxTestSizeStrategy = MaxTestSizeStrategy.SPECIFIED
+
+    @Experimental
+    @Cfg("Specify whether to decide the resource-based structure mutator and resource to be mutated adaptively based on impacts during focused search." +
+            "Note that it only works when resource-based solution is enabled for solving REST problem")
+    var enableAdaptiveResourceStructureMutation = false
+
+    @Experimental
+    @Cfg("Specify a probability of applying length handling")
+    var probOfHandlingLength = 0.0
+
+    @Experimental
+    @Cfg("Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabeld")
+    var dpcTargetTestSize = 1
+
     @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
             "In other word, if the number is less than the specified, insertion is always applied.")
@@ -1325,10 +1430,6 @@ class EMConfig {
     @FilePath
     var impactFile = "impact.csv"
 
-    @Experimental
-    @Cfg("Specify whether to disable structure mutation during focus search")
-    var disableStructureMutationDuringFocusSearch = false
-
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
     @Probability
     var baseTaintAnalysisProbability = 0.9
@@ -1397,7 +1498,15 @@ class EMConfig {
 
     @Experimental
     @Cfg("Whether to skip failed SQL commands in the generated test files")
-    var skipFailureSQLInTestFile = false
+    var skipFailureSQLInTestFile = true
+
+    val defaultTreeDepth = 11
+
+    @Experimental
+    @Cfg("Maximum tree depth in mutations/queries to be evaluated;" +
+            "this is to avoid issues when dealing with huge graphs in GraphQL")
+    @Min(1.0)
+    var treeDepth = defaultTreeDepth
 
 
     @Experimental

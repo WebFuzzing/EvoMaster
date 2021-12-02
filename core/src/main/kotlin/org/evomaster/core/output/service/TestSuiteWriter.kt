@@ -277,6 +277,7 @@ class TestSuiteWriter {
             addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
             addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
+            addImport("org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto", lines)
             addImport(InsertionDto::class.qualifiedName!!, lines)
             addImport("java.util.List", lines)
 

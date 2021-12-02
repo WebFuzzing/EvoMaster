@@ -5,7 +5,7 @@ package org.evomaster.core.problem.graphql.schema
  */
 data class FullType( var kind: __TypeKind,
                      var name: String,
-                     var fields : MutableList<__Field> = mutableListOf(),
+                     var fields : MutableList<__Field>? = mutableListOf(),
                      var inputFields : MutableList<InputValue> = mutableListOf(),
                      var interfaces : MutableList<TypeRef> = mutableListOf(),
                      var enumValues : MutableList<__EnumValue> = mutableListOf(),

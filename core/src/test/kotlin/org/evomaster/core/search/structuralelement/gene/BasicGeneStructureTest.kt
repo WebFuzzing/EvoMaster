@@ -1,6 +1,9 @@
 package org.evomaster.core.search.structuralelement.gene
 
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -120,7 +123,8 @@ class StringWithSpecialization : GeneStructuralElementBaseTest(){
     }
 
 
-    override fun getStructuralElement(): StringGene = StringGene("foo", "foo", specializationGenes = mutableListOf(DateGene("now"), IntegerGene("foo")))
+    override fun getStructuralElement(): StringGene = StringGene("foo", "foo", specializationGenes = mutableListOf(
+        DateGene("now"), IntegerGene("foo")))
 
     override fun getExpectedChildrenSize(): Int = 2
 }
@@ -225,7 +229,8 @@ class MapGeneIntStructureTest : GeneStructuralElementBaseTest() {
 // date and time
 
 class DateGeneStructureTest: GeneStructuralElementBaseTest() {
-    override fun getCopyFromTemplate(): Gene =DateGene("2021-06-08", IntegerGene("year", 2021), IntegerGene("month", 6), IntegerGene("day",8))
+    override fun getCopyFromTemplate(): Gene =
+        DateGene("2021-06-08", IntegerGene("year", 2021), IntegerGene("month", 6), IntegerGene("day",8))
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is DateGene)

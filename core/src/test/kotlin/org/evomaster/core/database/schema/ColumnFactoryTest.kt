@@ -13,7 +13,7 @@ internal class ColumnFactoryTest {
 
     @Test
     fun givenABigSerialColumnDtoWhenCreatingAColumnThenItHasTheCorrectType() {
-        val columnDto = ColumnDto();
+        val columnDto = ColumnDto()
         columnDto.name = "product_id"
         columnDto.type = "bigserial"
         val databaseType = DatabaseType.POSTGRES
@@ -27,7 +27,7 @@ internal class ColumnFactoryTest {
 
     @Test
     fun givenASerialColumnDtoWhenCreatingAColumnThenItHasTheCorrectType() {
-        val columnDto = ColumnDto();
+        val columnDto = ColumnDto()
         columnDto.name = "product_id"
         columnDto.type = "serial"
         val databaseType = DatabaseType.POSTGRES
@@ -42,7 +42,7 @@ internal class ColumnFactoryTest {
 
     @Test
     fun givenAnInvalidColumnDtoWhenCreatingAColumnThenItThrowsIllegalArgumentException() {
-        val columnDto = ColumnDto();
+        val columnDto = ColumnDto()
         columnDto.name = "product_id"
         columnDto.type = "invalid"
         val databaseType = DatabaseType.POSTGRES
@@ -53,6 +53,6 @@ internal class ColumnFactoryTest {
                     databaseType = databaseType)
         }
 
-        assertThat(assertionThrown.message, equalTo("Column data type invalid is not supported in Evomaster Data types"))
+        assertThat(assertionThrown.message, equalTo("Column data type invalid is not supported in EvoMaster Data types"))
     }
 }
