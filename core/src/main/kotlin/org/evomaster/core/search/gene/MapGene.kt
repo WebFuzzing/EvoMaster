@@ -3,13 +3,10 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -203,7 +200,8 @@ class MapGene<K, V>(
     /**
      * remove an existing element [element] (key to value) from [elements]
      */
-    fun removeElements(element: PairGene<K, V>){
+    fun removeExistingElement(element: PairGene<K, V>){
+        //this is a reference heap check, not based on `equalsTo`
         if (elements.contains(element)){
             elements.remove(element)
             element.removeThisFromItsBindingGenes()
@@ -217,9 +215,9 @@ class MapGene<K, V>(
      * if the key of [element] exists in [elements],
      * we replace the existing one with [element]
      */
-    fun addElements(element: PairGene<K, V>){
+    fun addElement(element: PairGene<K, V>){
         getElementsBy(element).forEach { e->
-            removeElements(e)
+            removeExistingElement(e)
         }
         elements.add(element)
         addChild(element)

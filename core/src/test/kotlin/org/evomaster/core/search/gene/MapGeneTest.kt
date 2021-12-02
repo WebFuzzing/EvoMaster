@@ -30,9 +30,9 @@ internal class MapGeneTest{
 
         val map = MapGene("PrintableMap", intKey1.copy() as IntegerGene, strValue1.copy() as StringGene, 7)
         val s1 = PairGene("key_1",intKey1, strValue1)
-        map.addElements(s1)
+        map.addElement(s1)
         val s2 = PairGene("key_2", intKey2, strValue2)
-        map.addElements(s2)
+        map.addElement(s2)
 
         val mapstring = map.getValueAsPrintableString(targetFormat = targetFormat)
         assertEquals("1:\"foo\"", s1.getValueAsPrintableString(targetFormat = targetFormat))
@@ -53,7 +53,7 @@ internal class MapGeneTest{
         strValue4.value = "bar"
         val s4 = PairGene("key_4", intKey4, strValue4)
         assertTrue(map.containsKey(s4))
-        map.addElements(s4)
+        map.addElement(s4)
         //replace the existing pair with s4
         assertTrue(map.getValueAsPrintableString(targetFormat = targetFormat).contains("\"1\":\"bar\"", ignoreCase = true))
     }
