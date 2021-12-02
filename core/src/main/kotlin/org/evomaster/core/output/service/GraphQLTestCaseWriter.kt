@@ -6,13 +6,12 @@ import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.graphql.GraphQlCallResult
+import org.evomaster.core.problem.graphql.service.GraphQLFitness
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
 
@@ -23,7 +22,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     }
 
     @Inject
-    protected lateinit var httpWsFitness: HttpWsFitness<Individual>
+    protected lateinit var fitness: GraphQLFitness
 
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>){
         if (ind.individual is GraphQLIndividual) {
@@ -116,7 +115,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
                 lines.append("$baseUrlOfSut + \"")
             }
 
-           val path= httpWsFitness.infoDto.graphQLProblem.endpoint
+           val path= fitness.infoDto.graphQLProblem.endpoint
 
               // infoDto.graphQLProblem?.endpoint
 
