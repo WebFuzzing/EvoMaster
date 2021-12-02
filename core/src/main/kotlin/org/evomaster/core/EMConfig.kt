@@ -1496,7 +1496,6 @@ class EMConfig {
     var killSwitch = true
 
 
-    @Experimental
     @Cfg("Whether to skip failed SQL commands in the generated test files")
     var skipFailureSQLInTestFile = true
 
