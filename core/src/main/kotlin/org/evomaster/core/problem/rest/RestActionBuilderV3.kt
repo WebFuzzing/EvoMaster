@@ -550,7 +550,8 @@ object RestActionBuilderV3 {
              */
 
             if (fields.isEmpty()) {
-                return MapGene(name, getGene(name + "_field", additional, swagger, history, null))
+                // here, the first of pairgene should not be mutable
+                return MapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null), isFixedFirst = true))
             }
         }
 
@@ -558,7 +559,8 @@ object RestActionBuilderV3 {
 
         if (fields.isEmpty()) {
             log.warn("No fields for object definition: $name")
-            return MapGene(name, StringGene(name + "_field"))
+            // here, the first of pairgene should not be mutable
+            return MapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
         }
 
         /*
@@ -727,7 +729,7 @@ object RestActionBuilderV3 {
                         when (model) {
                             //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
                             is ObjectGene -> modelCluster.put(it.component1(), model)
-                            is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
+                            is MapGene<*, *> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
                         }
 
                     }

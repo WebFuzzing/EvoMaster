@@ -47,12 +47,12 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
         val textSearchVectorGene = genes[0] as SqlTextSearchVectorGene
         val textSearchVectorElementGene = StringGene("textLexeme")
         textSearchVectorElementGene.value = "bar"
-        textSearchVectorGene.textLexemes.addElements(textSearchVectorElementGene)
+        textSearchVectorGene.textLexemes.addElement(textSearchVectorElementGene)
 
         val textSearchQueryGene = genes[1] as SqlTextSearchQueryGene
         val textSearchQueryElementGene = StringGene("queryLexeme")
         textSearchQueryElementGene.value = "bar"
-        textSearchQueryGene.queryLexemes.addElements(textSearchQueryElementGene)
+        textSearchQueryGene.queryLexemes.addElement(textSearchQueryElementGene)
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)

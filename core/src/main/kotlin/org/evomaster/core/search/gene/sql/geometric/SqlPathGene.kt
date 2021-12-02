@@ -23,7 +23,7 @@ class SqlPathGene(
         /*
          * Paths must be non-empty lists
          */
-        points.addElements(SqlPointGene("p1"))
+        points.addElement(SqlPointGene("p1"))
     }
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(points)
@@ -39,7 +39,7 @@ class SqlPathGene(
          * A geometric path must be always a non-empty list
          */
         if (points.getAllElements().isEmpty()) {
-            points.addElements(SqlPointGene("p"))
+            points.addElement(SqlPointGene("p"))
         }
     }
 

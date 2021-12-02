@@ -23,7 +23,7 @@ class SqlTextSearchVectorGene(
         /*
          * Text Search vectors must be non-empty lists
          */
-        textLexemes.addElements(StringGene("lexeme"))
+        textLexemes.addElement(StringGene("lexeme"))
     }
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(textLexemes)
@@ -41,7 +41,7 @@ class SqlTextSearchVectorGene(
         if (textLexemes.getAllElements().isEmpty()) {
             val stringGene = StringGene("lexeme")
             stringGene.randomize(randomness, forceNewValue, allGenes)
-            textLexemes.addElements(stringGene)
+            textLexemes.addElement(stringGene)
         }
     }
 

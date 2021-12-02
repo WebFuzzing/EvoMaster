@@ -2,13 +2,11 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -20,13 +18,15 @@ import org.slf4j.LoggerFactory
  * Keys should be of any basic type, and should be modifiable.
  *
  */
-class MapGene<T>(
+class MapGene<K, V>(
         name: String,
-        val template: T,
+        val template: PairGene<K, V>,
         var maxSize: Int = MAX_SIZE,
-        private var elements: MutableList<T> = mutableListOf()
+        private var elements: MutableList<PairGene<K, V>> = mutableListOf()
 ) : CollectionGene, Gene(name, elements)
-        where T : Gene {
+        where K : Gene, V: Gene {
+
+    constructor(name : String, key: K, value: V, maxSize: Int): this(name, PairGene("template", key, value), maxSize)
 
     private var keyCounter = 0
 
@@ -42,29 +42,29 @@ class MapGene<T>(
         const val MAX_SIZE = 5
     }
 
-    override fun getChildren(): MutableList<T> {
+    override fun getChildren(): MutableList<PairGene<K, V>> {
         return elements
     }
 
     override fun copyContent(): Gene {
-        return MapGene<T>(name,
-                template.copyContent() as T,
+        return MapGene(name,
+                template.copyContent() as PairGene<K, V>,
                 maxSize,
-                elements.map { e -> e.copyContent() as T }.toMutableList()
+                elements.map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
         )
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is MapGene<*>) {
+        if (other !is MapGene<*,*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         clearElements()
-        this.elements = other.elements.map { e -> e.copyContent() as T }.toMutableList()
+        this.elements = other.elements.map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
         addChildren(this.elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is MapGene<*>) {
+        if (other !is MapGene<*,*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.elements.size == other.elements.size
@@ -82,10 +82,7 @@ class MapGene<T>(
         log.trace("Randomizing MapGene")
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
-            val gene = template.copy() as T
-//            gene.parent = this
-            gene.randomize(randomness, false)
-            gene.name = "key_${keyCounter++}"
+            val gene = addRandomElement(randomness, false)
             elements.add(gene)
         }
         addChildren(elements)
@@ -125,10 +122,7 @@ class MapGene<T>(
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
-            val gene = template.copy() as T
-//            gene.parent = this
-            gene.randomize(randomness, false)
-            gene.name = "key_${keyCounter++}"
+            val gene = addRandomElement(randomness, false)
             elements.add(gene)
             addChild(gene)
         } else {
@@ -142,14 +136,31 @@ class MapGene<T>(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "{" +
                 elements.filter { f ->
-                    f !is CycleObjectGene &&
-                            (f !is OptionalGene || f.isActive)
-                }.map { f ->
+                    isPrintable(f)
+                }.map {f->
                     """
-                    "${f.name}":${f.getValueAsPrintableString(targetFormat = targetFormat)}
+                    ${getKeyValueAsPrintableString(f.first, targetFormat)}:${f.second.getValueAsPrintableString(targetFormat = targetFormat)}
                     """
                 }.joinToString(",") +
                 "}"
+    }
+
+    private fun getKeyValueAsPrintableString(key: Gene, targetFormat: OutputFormat?): String {
+        val keyString = key.getValueAsPrintableString(targetFormat = targetFormat)
+        if (!keyString.startsWith("\""))
+            return "\"$keyString\""
+        return keyString
+    }
+
+    private fun isPrintable(pairGene: PairGene<K, V>): Boolean {
+        val keyT = ParamUtil.getValueGene(pairGene.first)
+        val valueT = pairGene.second
+        return (keyT is LongGene || keyT is StringGene || keyT is IntegerGene) &&
+                (valueT !is CycleObjectGene && (valueT !is OptionalGene || valueT.isActive))
+    }
+
+    override fun isPrintable(): Boolean {
+        return isPrintable(template)
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
@@ -171,9 +182,9 @@ class MapGene<T>(
         Note that value binding cannot be performed on the [elements]
      */
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if(gene is MapGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
+        if(gene is MapGene<*,*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             clearElements()
-            elements = gene.elements.mapNotNull { it.copyContent() as? T }.toMutableList()
+            elements = gene.elements.mapNotNull { it.copyContent() as? PairGene<K, V> }.toMutableList()
             addChildren(elements)
             return true
         }
@@ -186,15 +197,74 @@ class MapGene<T>(
         elements.clear()
     }
 
-    fun removeElements(element: T){
-        elements.remove(element)
-        element.removeThisFromItsBindingGenes()
+    /**
+     * remove an existing element [element] (key to value) from [elements]
+     */
+    fun removeExistingElement(element: PairGene<K, V>){
+        //this is a reference heap check, not based on `equalsTo`
+        if (elements.contains(element)){
+            elements.remove(element)
+            element.removeThisFromItsBindingGenes()
+        }else{
+            log.warn("the specified element (${if (element.isPrintable()) element.getValueAsPrintableString() else "not printable"})) does not exist in this map")
+        }
     }
 
-    fun addElements(element: T){
+    /**
+     * add [element] (key to value) to [elements],
+     * if the key of [element] exists in [elements],
+     * we replace the existing one with [element]
+     */
+    fun addElement(element: PairGene<K, V>){
+        getElementsBy(element).forEach { e->
+            removeExistingElement(e)
+        }
         elements.add(element)
         addChild(element)
     }
 
+    /**
+     * @return all elements
+     */
     fun getAllElements() = elements
+
+    /**
+     * @return whether the key of [pairGene] exists in [elements] of this map
+     */
+    fun containsKey(pairGene: PairGene<K, V>): Boolean{
+        return getElementsBy(pairGene).isNotEmpty()
+    }
+
+    /**
+     * @return a list of elements from [elements] which has the same key with [pairGene]
+     */
+    private fun getElementsBy(pairGene: PairGene<K, V>): List<PairGene<K, V>>{
+        val geneValue = ParamUtil.getValueGene(pairGene.first)
+        /*
+            currently we only support Integer, String and LongGene
+            TODO support other types if needed
+         */
+        if (geneValue is IntegerGene || geneValue is StringGene || geneValue is LongGene){
+            return elements.filter { ParamUtil.getValueGene(it.first).containsSameValueAs(geneValue) }
+        }
+        return listOf()
+    }
+
+    private fun addRandomElement(randomness: Randomness, forceNewValue: Boolean) : PairGene<K, V>{
+        val keyName = "key_${keyCounter++}"
+
+        val gene = template.copy() as PairGene<K, V>
+        gene.randomize(randomness, forceNewValue)
+
+        gene.name = keyName
+        gene.first.name = keyName
+        gene.second.name = keyName
+
+        if (containsKey(gene)){
+            // try one more time
+            gene.first.randomize(randomness, true, elements.map { it.first })
+        }
+
+        return gene
+    }
 }

@@ -146,7 +146,7 @@ class ParamUtil {
                             it is DisruptiveGene<*> ||
                             it is OptionalGene ||
                             it is ArrayGene<*> ||
-                            it is MapGene<*>)
+                            it is MapGene<*, *>)
                 }
                     .forEach { g ->
                         val names = getGeneNamesInPath(parameters, g)
@@ -193,10 +193,11 @@ class ParamUtil {
         private fun extractPathFromRoot(comGene: Gene, gene: Gene, names: MutableList<String>): Boolean {
             when (comGene) {
                 is ObjectGene -> return extractPathFromRoot(comGene, gene, names)
+                is PairGene<*,*> -> return extractPathFromRoot(comGene, gene, names)
                 is DisruptiveGene<*> -> return extractPathFromRoot(comGene, gene, names)
                 is OptionalGene -> return extractPathFromRoot(comGene, gene, names)
                 is ArrayGene<*> -> return extractPathFromRoot(comGene, gene, names)
-                is MapGene<*> -> return extractPathFromRoot(comGene, gene, names)
+                is MapGene<*, *> -> return extractPathFromRoot(comGene, gene, names)
                 else -> if (comGene == gene) {
                     names.add(comGene.name)
                     return true
@@ -239,7 +240,17 @@ class ParamUtil {
             return false
         }
 
-        private fun extractPathFromRoot(comGene: MapGene<*>, gene: Gene, names: MutableList<String>): Boolean {
+        private fun extractPathFromRoot(comGene: PairGene<*, *>, gene: Gene, names: MutableList<String>): Boolean {
+            listOf(comGene.first, comGene.second).forEach {
+                if (extractPathFromRoot(it, gene, names)) {
+                    names.add(it.name)
+                    return true
+                }
+            }
+            return false
+        }
+
+        private fun extractPathFromRoot(comGene: MapGene<*, *>, gene: Gene, names: MutableList<String>): Boolean {
             comGene.getAllElements().forEach {
                 if (extractPathFromRoot(it, gene, names)) {
                     names.add(it.name)
