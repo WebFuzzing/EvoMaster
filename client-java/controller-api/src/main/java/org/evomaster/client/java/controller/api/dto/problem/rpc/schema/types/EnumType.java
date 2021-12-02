@@ -14,8 +14,8 @@ public class EnumType extends TypeSchema {
      */
     private final String[] items;
 
-    public EnumType(String type, String fullTypeName, String[] items) {
-        super(type, fullTypeName);
+    public EnumType(String type, String fullTypeName, String[] items, Class<?> clazz) {
+        super(type, fullTypeName, clazz);
         this.items = items;
     }
 

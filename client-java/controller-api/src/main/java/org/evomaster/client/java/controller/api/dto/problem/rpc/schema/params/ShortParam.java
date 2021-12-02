@@ -9,8 +9,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Pri
  */
 public class ShortParam extends PrimitiveOrWrapperParam<Short> {
 
-    public ShortParam(String name, String type, String fullTypeName) {
-        super(name, type, fullTypeName);
+    public ShortParam(String name, String type, String fullTypeName, Class<?> clazz) {
+        super(name, type, fullTypeName, clazz);
     }
 
     public ShortParam(String name, PrimitiveOrWrapperType type) {

@@ -9,8 +9,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Pri
  */
 public class IntParam extends PrimitiveOrWrapperParam<Integer> {
 
-    public IntParam(String name, String type, String fullTypeName) {
-        super(name, type, fullTypeName);
+    public IntParam(String name, String type, String fullTypeName, Class<?> clazz) {
+        super(name, type, fullTypeName, clazz);
     }
 
     public IntParam(String name, PrimitiveOrWrapperType type) {

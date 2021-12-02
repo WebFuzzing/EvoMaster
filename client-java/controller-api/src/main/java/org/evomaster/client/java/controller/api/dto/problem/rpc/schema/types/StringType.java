@@ -12,7 +12,7 @@ public class StringType extends TypeSchema {
 
 
     public StringType() {
-        super(STRING_TYPE_NAME, FULL_STRING_TYPE_NAME);
+        super(STRING_TYPE_NAME, FULL_STRING_TYPE_NAME, String.class);
     }
 
     @Override

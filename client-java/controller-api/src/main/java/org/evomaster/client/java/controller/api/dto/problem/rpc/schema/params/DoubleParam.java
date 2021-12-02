@@ -8,8 +8,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Pri
  * double param
  */
 public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
-    public DoubleParam(String name, String type, String fullTypeName) {
-        super(name, type, fullTypeName);
+    public DoubleParam(String name, String type, String fullTypeName, Class<?> clazz) {
+        super(name, type, fullTypeName, clazz);
     }
 
     public DoubleParam(String name, PrimitiveOrWrapperType type) {

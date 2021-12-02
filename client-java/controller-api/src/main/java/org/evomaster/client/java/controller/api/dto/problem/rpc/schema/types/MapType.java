@@ -12,8 +12,8 @@ public class MapType extends TypeSchema{
     private final PairParam template;
 
 
-    public MapType(String type, String fullTypeName, PairParam template) {
-        super(type, fullTypeName);
+    public MapType(String type, String fullTypeName, PairParam template, Class<?> clazz) {
+        super(type, fullTypeName, clazz);
         this.template = template;
     }
 

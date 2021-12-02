@@ -8,8 +8,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Pri
  * char param
  */
 public class CharParam extends PrimitiveOrWrapperParam<Character> {
-    public CharParam(String name, String type, String fullTypeName) {
-        super(name, type, fullTypeName);
+    public CharParam(String name, String type, String fullTypeName, Class<?> clazz) {
+        super(name, type, fullTypeName, clazz);
     }
 
     public CharParam(String name, PrimitiveOrWrapperType type) {

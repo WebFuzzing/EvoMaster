@@ -12,12 +12,8 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     public final static String TYPE_NAME = byte.class.getSimpleName();
     public final static String FULL_TYPE_NAME = byte.class.getName();
 
-    public ByteParam(String name) {
-        this(name, TYPE_NAME, FULL_TYPE_NAME);
-    }
-
-    public ByteParam(String name, String type, String fullTypeName) {
-        super(name, type, fullTypeName);
+    public ByteParam(String name, String type, String fullTypeName, Class<?> clazz) {
+        super(name, type, fullTypeName, clazz);
     }
 
     public ByteParam(String name, PrimitiveOrWrapperType type) {

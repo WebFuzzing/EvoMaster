@@ -11,8 +11,8 @@ public class CollectionType extends TypeSchema{
      */
     private final NamedTypedValue template;
 
-    public CollectionType(String type, String fullTypeName, NamedTypedValue template) {
-        super(type, fullTypeName);
+    public CollectionType(String type, String fullTypeName, NamedTypedValue template, Class<?> clazz) {
+        super(type, fullTypeName, clazz);
         this.template = template;
     }
 

@@ -8,8 +8,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Pri
  * long param
  */
 public class LongParam extends PrimitiveOrWrapperParam<Long> {
-    public LongParam(String name, String type, String fullTypeName) {
-        super(name, type, fullTypeName);
+    public LongParam(String name, String type, String fullTypeName, Class<?> clazz) {
+        super(name, type, fullTypeName, clazz);
     }
 
     public LongParam(String name, PrimitiveOrWrapperType type) {

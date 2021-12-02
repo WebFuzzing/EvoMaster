@@ -104,7 +104,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     @Test
     public void testSimpleWrapPrimitiveToFromDTO() throws ClassNotFoundException {
 
-        EndpointSchema endpoint = getOneEndpoint("simplePrimitive");
+        EndpointSchema endpoint = getOneEndpoint("simpleWrapPrimitive");
         RPCActionDto dto = endpoint.getDto().copy();
         assertEquals(8, dto.requestParams.size());
         dto.requestParams.get(0).jsonValue = ""+42;

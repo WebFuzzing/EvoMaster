@@ -14,15 +14,15 @@ public class PrimitiveOrWrapperType extends TypeSchema {
      */
     public final boolean isWrapper;
 
-    public PrimitiveOrWrapperType(String type, String fullTypeName, boolean isWrapper) {
-        super(type, fullTypeName);
+    public PrimitiveOrWrapperType(String type, String fullTypeName, boolean isWrapper, Class<?> clazz) {
+        super(type, fullTypeName, clazz);
         if (!isPrimitiveOrTypes(type))
             throw new IllegalStateException("the type is not Primitive Or Wrapper class: "+ type);
         this.isWrapper = isWrapper;
     }
 
-    public PrimitiveOrWrapperType(String type, String fullTypeName){
-        this(type, fullTypeName, types.indexOf(type) >=8);
+    public PrimitiveOrWrapperType(String type, String fullTypeName, Class<?> clazz){
+        this(type, fullTypeName, types.indexOf(type) >=8, clazz);
     }
 
     private final static List<String> types = Arrays.asList("int","byte","short","long","float","double","boolean","char","Integer","Byte","Short","Long","Float","Double","Boolean","Character");

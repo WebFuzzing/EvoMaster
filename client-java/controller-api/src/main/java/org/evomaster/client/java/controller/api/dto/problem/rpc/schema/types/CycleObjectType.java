@@ -8,8 +8,8 @@ import java.util.ArrayList;
  */
 public class CycleObjectType extends ObjectType{
 
-    public CycleObjectType(String type, String fullTypeName) {
-        super(type, fullTypeName, new ArrayList<>());
+    public CycleObjectType(String type, String fullTypeName, Class<?> clazz) {
+        super(type, fullTypeName, new ArrayList<>(), clazz);
     }
 
 }

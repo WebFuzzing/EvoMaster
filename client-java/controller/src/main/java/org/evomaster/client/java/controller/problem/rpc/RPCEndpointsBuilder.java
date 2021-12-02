@@ -67,7 +67,7 @@ public class RPCEndpointsBuilder {
                 namedValue = new StringParam(name);
             } else if (clazz.isEnum()) {
                 String [] items = Arrays.stream(clazz.getEnumConstants()).map(Object::toString).toArray(String[]::new);
-                EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items);
+                EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items, clazz);
                 EnumParam param = new EnumParam(name, enumType);
                 //register this type in the schema
                 schema.registerType(enumType.copy(), param.copyStructure());
@@ -84,7 +84,7 @@ public class RPCEndpointsBuilder {
                 }
 
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
-                CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template);
+                CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 namedValue = new ArrayParam(name, ctype);
 
             } else if (clazz == ByteBuffer.class){
@@ -96,7 +96,7 @@ public class RPCEndpointsBuilder {
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 Class<?> templateClazz = getTemplateClass(type);
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
-                CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template);
+                CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 if (clazz.isAssignableFrom(List.class))
                     namedValue = new ListParam(name, ctype);
                 else
@@ -112,7 +112,7 @@ public class RPCEndpointsBuilder {
 
                 Class<?> valueTemplateClazz = getTemplateClass(valueType);
                 NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth);
-                MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate)));
+                MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate)), clazz);
                 namedValue = new MapParam(name, mtype);
             } else {
                 if (clazz.getName().startsWith("java")){
@@ -129,12 +129,12 @@ public class RPCEndpointsBuilder {
                         NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth);
                         fields.add(field);
                     }
-                    ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields);
+                    ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz);
                     ObjectParam oparam = new ObjectParam(name, otype);
                     schema.registerType(otype.copy(), oparam);
                     namedValue = oparam;
                 }else {
-                    CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName());
+                    CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz);
                     namedValue = new ObjectParam(name, otype);
                 }
             }

@@ -16,9 +16,15 @@ public class TypeSchema {
      */
     private final String fullTypeName;
 
-    public TypeSchema(String type, String fullTypeName){
+    /**
+     * original class
+     */
+    private final Class<?> clazz;
+
+    public TypeSchema(String type, String fullTypeName, Class<?> clazz){
         this.type = type;
         this.fullTypeName = fullTypeName;
+        this.clazz = clazz;
     }
 
 
@@ -31,7 +37,7 @@ public class TypeSchema {
     }
 
     public TypeSchema copy(){
-        return new TypeSchema(type, fullTypeName);
+        return new TypeSchema(type, fullTypeName, clazz);
     }
 
     public TypeDto getDto(){
@@ -42,5 +48,9 @@ public class TypeSchema {
 
     public boolean sameType(TypeDto dto){
         return fullTypeName.equals(dto.fullTypeName);
+    }
+
+    public Class<?> getClazz() {
+        return clazz;
     }
 }

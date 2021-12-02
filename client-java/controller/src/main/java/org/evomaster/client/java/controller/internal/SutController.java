@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.EndpointS
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
@@ -397,8 +398,9 @@ public abstract class SutController implements SutHandler {
 
 
             for (int i = 0; i < params.length; i++){
-                params[i] = endpoint.getRequestParams().get(i).newInstance();
-                types[i] = params[i].getClass();
+                NamedTypedValue param = endpoint.getRequestParams().get(i);
+                params[i] = param.newInstance();
+                types[i] = param.getType().getClazz();
             }
 
             Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);

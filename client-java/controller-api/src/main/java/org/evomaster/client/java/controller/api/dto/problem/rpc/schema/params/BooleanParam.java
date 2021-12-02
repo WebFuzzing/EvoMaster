@@ -8,8 +8,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.Pri
  * boolean param
  */
 public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
-    public BooleanParam(String name, String type, String fullTypeName) {
-        super(name, type, fullTypeName);
+    public BooleanParam(String name, String type, String fullTypeName, Class<?> clazz) {
+        super(name, type, fullTypeName, clazz);
     }
 
     public BooleanParam(String name, PrimitiveOrWrapperType type) {

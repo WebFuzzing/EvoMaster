@@ -22,7 +22,7 @@ public class PairType extends TypeSchema{
     private final NamedTypedValue secondTemplate;
 
     public PairType(NamedTypedValue keyTemplate, NamedTypedValue valueTemplate) {
-        super(PAIR_TYPE_NAME, FULL_PAIR_TYPE_NAME);
+        super(PAIR_TYPE_NAME, FULL_PAIR_TYPE_NAME, AbstractMap.SimpleEntry.class);
         this.firstTemplate = keyTemplate;
         this.secondTemplate = valueTemplate;
     }

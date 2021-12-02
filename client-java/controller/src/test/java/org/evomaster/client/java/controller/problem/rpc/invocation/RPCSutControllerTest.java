@@ -73,34 +73,23 @@ public class RPCSutControllerTest {
         assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", result);
     }
 
-//    @Test
-//    public void testArrayEndpoint(){
-//        EndpointSchema endpoint = interfaceSchemas.get(0).findEndpoints("array").get(0);
-//        RPCActionDto rpcActionDto = new RPCActionDto();
-//        rpcActionDto.rpcCall = endpoint;
-//        rpcActionDto.interfaceId = "com.thrift.example.artificial.RPCInterfaceExample";
+    @Test
+    public void testSimplePrimitiveEndpoint(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionId.equals("simplePrimitive")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(8, dto.requestParams.size());
+        dto.requestParams.get(0).jsonValue = ""+42;
+        dto.requestParams.get(1).jsonValue = ""+4.2f;
+        dto.requestParams.get(2).jsonValue = ""+42L;
+        dto.requestParams.get(3).jsonValue = ""+4.2;
+        dto.requestParams.get(4).jsonValue = ""+'x';
+        dto.requestParams.get(5).jsonValue = ""+ Byte.parseByte("42");
+        dto.requestParams.get(6).jsonValue = ""+ false;
+        dto.requestParams.get(7).jsonValue = ""+ Short.parseShort("42");
+        String result = (String)rpcController.executeAction(dto);
+        assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", result);
+    }
 
-//        assertEquals(1, endpoint.requestParams.size());
-//        NamedTypedValue param = endpoint.requestParams.get(0);
-//        assertTrue(param instanceof ArrayParam);
-//        assertTrue(param.getType() instanceof CollectionType);
-//        NamedTypedValue template = ((CollectionType) param.getType()).getTemplate();
-//        assertTrue(template instanceof ListParam);
-//        assertTrue(template.getType() instanceof CollectionType);
-//        NamedTypedValue element = ((CollectionType) template.getType()).getTemplate();
-//        assertTrue(element instanceof StringParam);
-//
-//        StringParam str1 = ((StringParam) element).copyStructure();
-//        str1.setValue("foo");
-//        StringParam str2 = ((StringParam) element).copyStructure();
-//        str1.setValue("bar");
-//
-//        ListParam list = ((ListParam) template).copyStructure();
-//        list.setValue(Arrays.asList(str1, str2));
-//
-//        param.setValue(Arrays.asList(list));
-//
-//        Object res = rpcController.executeAction(rpcActionDto);
-//        System.out.println(res);
-//    }
+
 }
