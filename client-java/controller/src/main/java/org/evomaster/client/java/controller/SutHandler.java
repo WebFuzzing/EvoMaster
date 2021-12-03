@@ -79,6 +79,24 @@ public interface SutHandler {
      * Execute the given data insertions into the database (if any)
      *
      * @param insertions DTOs for each insertion to execute
+     * @param previous an array of insertion results which were executed before this execution
+     * @return insertion execution results
      */
     InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous);
+
+
+    /**
+     * <p>
+     * return an instance of a client of an RPC service.
+     * </p>
+     *
+     * <p>
+     * This method must be blocking until the SUT is initialized.
+     *</p>
+     *
+     *
+     * @param interfaceName a full name of an interface
+     * @return a client which could send requests to the interface
+     */
+    Object getRPCClient(String interfaceName);
 }

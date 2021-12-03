@@ -601,4 +601,16 @@ public abstract class SutController implements SutHandler {
         dto.numberOfInstrumentedNumberComparisons = recorder.getNumberOfInstrumentedNumberComparisons();
         return dto;
     }
+
+    @Override
+    public Object getRPCClient(String interfaceName) {
+        if (!(getProblemInfo() instanceof RPCProblem))
+            throw new RuntimeException("ERROR: the problem should be RPC but it is "+ getProblemInfo().getClass().getSimpleName());
+
+        Object client = ((RPCProblem) getProblemInfo()).getClient(interfaceName);
+        if (client == null)
+            throw new RuntimeException("ERROR: cannot find any client with the name :"+ interfaceName);
+
+        return client;
+    }
 }
