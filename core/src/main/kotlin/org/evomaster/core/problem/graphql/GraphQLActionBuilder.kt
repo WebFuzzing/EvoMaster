@@ -900,23 +900,8 @@ object GraphQLActionBuilder {
             )
 
             //Remove primitive types (scalar and enum) from return params
-            if (gene.name.toLowerCase() != "scalar"
-                && !(gene is OptionalGene && gene.gene.name == "scalar")
-                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.name.toLowerCase() == "scalar")
-                && !(gene is ArrayGene<*> && gene.template.name.toLowerCase() == "scalar")
-                && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.name.toLowerCase() == "scalar")
-                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template.name.toLowerCase() == "scalar")
-                //enum cases
-                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>)
-                && !(gene is ArrayGene<*> && gene.template is EnumGene<*>)
-                && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is EnumGene<*>)
-                && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is EnumGene<*>)
-                && !(gene is EnumGene<*>)
-                && !(gene is OptionalGene && gene.gene is EnumGene<*>)
-
-            ) {
+            if (isPrimitiveType(gene))
                 params.add(GQReturnParam(methodName, gene))
-            }
 
         } else {
             //The action does not contain arguments, it only contain a return type
@@ -939,7 +924,17 @@ object GraphQLActionBuilder {
             )
 
             //Remove primitive types (scalar and enum) from return params
-            if (gene.name.toLowerCase() != "scalar"
+            if (isPrimitiveType(gene))
+                params.add(GQReturnParam(methodName, gene))
+        }
+
+        return params
+    }
+
+    private fun isPrimitiveType(
+        gene: Gene
+    ): Boolean {
+        return (gene.name.toLowerCase() != "scalar"
                 && !(gene is OptionalGene && gene.gene.name == "scalar")
                 && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.name.toLowerCase() == "scalar")
                 && !(gene is ArrayGene<*> && gene.template.name.toLowerCase() == "scalar")
@@ -951,15 +946,7 @@ object GraphQLActionBuilder {
                 && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is EnumGene<*>)
                 && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is EnumGene<*>)
                 && !(gene is EnumGene<*>)
-                && !(gene is OptionalGene && gene.gene is EnumGene<*>)
-
-            ) {
-                params.add(GQReturnParam(methodName, gene))
-            }
-
-        }
-
-        return params
+                && !(gene is OptionalGene && gene.gene is EnumGene<*>))
     }
 
     /**Note: There are tree functions containing blocs of "when": two functions for inputs and one for return.
@@ -1390,6 +1377,9 @@ object GraphQLActionBuilder {
                 return if (checkDepth(accum, maxNumberOfGenes)) {
                     history.addLast(tableType)
                     if (history.count { it == tableType } == 1) {
+
+
+
                         val objGene = createObjectGene(
                             state, tableType, kindOfTableFieldType, history,
                             isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum,
