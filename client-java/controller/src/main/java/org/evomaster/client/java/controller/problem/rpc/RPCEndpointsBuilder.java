@@ -1,9 +1,10 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.*;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.*;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.*;
+import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.problem.RPCType;
+import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 
 import java.lang.reflect.*;
 import java.nio.ByteBuffer;

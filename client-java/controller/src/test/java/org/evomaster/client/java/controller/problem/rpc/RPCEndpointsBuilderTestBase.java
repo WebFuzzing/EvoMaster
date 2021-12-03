@@ -1,9 +1,8 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.EndpointSchema;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.InterfaceSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.problem.RPCType;
-import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
 
 import java.util.List;
 

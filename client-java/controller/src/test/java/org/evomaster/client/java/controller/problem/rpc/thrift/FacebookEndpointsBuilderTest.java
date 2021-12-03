@@ -1,9 +1,9 @@
 package org.evomaster.client.java.controller.problem.rpc.thrift;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.EndpointSchema;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.EnumParam;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.params.NamedTypedValue;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.types.EnumType;
+import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.params.EnumParam;
+import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.EnumType;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilderTestBase;
 import org.junit.jupiter.api.Test;
 
