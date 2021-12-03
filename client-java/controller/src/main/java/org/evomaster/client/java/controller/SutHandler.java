@@ -92,7 +92,12 @@ public interface SutHandler {
      *
      * <p>
      * This method must be blocking until the SUT is initialized.
-     *</p>
+     * </p>
+     *
+     * <p>
+     * This method is only required when the problem is RPC for the moment,
+     * otherwise return null
+     * </p>
      *
      *
      * @param interfaceName a full name of an interface
