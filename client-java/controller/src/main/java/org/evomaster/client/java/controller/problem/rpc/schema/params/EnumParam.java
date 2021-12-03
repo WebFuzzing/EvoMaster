@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.EnumType;
 
 /**

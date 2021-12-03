@@ -2,9 +2,9 @@ package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil

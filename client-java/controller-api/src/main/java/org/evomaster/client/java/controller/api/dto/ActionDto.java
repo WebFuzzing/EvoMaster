@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.api.dto;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 
 import java.util.ArrayList;
 import java.util.List;

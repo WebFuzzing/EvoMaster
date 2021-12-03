@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.api.dto;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 
 /**
  * handling response of actions which are executed in driver side

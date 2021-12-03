@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCSupportedDataType;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.TypeDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 
 /**
  * string type

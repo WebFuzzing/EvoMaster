@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto;
+package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 import java.util.List;
 

@@ -2,8 +2,8 @@ package org.evomaster.client.java.controller.problem.rpc.invocation;
 
 import io.restassured.RestAssured;
 import org.evomaster.client.java.controller.api.Formats;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

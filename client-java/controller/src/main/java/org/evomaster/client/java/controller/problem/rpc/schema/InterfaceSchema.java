@@ -1,8 +1,8 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.ParamDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCActionDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.schema.dto.RPCInterfaceSchemaDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
