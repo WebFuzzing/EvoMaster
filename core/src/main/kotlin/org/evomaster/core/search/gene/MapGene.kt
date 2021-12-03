@@ -26,7 +26,7 @@ class MapGene<K, V>(
 ) : CollectionGene, Gene(name, elements)
         where K : Gene, V: Gene {
 
-    constructor(name : String, key: K, value: V, maxSize: Int): this(name, PairGene("template", key, value), maxSize)
+    constructor(name : String, key: K, value: V, maxSize: Int = MAX_SIZE): this(name, PairGene("template", key, value), maxSize)
 
     private var keyCounter = 0
 

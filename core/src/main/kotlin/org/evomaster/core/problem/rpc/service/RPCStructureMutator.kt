@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.Inject
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -16,7 +17,7 @@ class RPCStructureMutator : HttpWsStructureMutator() {
     @Inject
     private lateinit var sampler: RPCSampler
 
-    override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
+    override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
         if (individual !is RPCIndividual) {
             throw IllegalArgumentException("Invalid: individual type to be mutated with RPCStructureMutator should be RPCIndividual but ${individual::class.java.simpleName}")
         }
@@ -52,5 +53,9 @@ class RPCStructureMutator : HttpWsStructureMutator() {
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
         addInitializingActions(individual, mutatedGenes, sampler)
+    }
+
+    override fun getSqlInsertBuilder(): SqlInsertBuilder? {
+        return sampler.sqlInsertBuilder
     }
 }

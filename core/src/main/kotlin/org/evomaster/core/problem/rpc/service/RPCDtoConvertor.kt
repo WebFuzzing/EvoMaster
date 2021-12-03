@@ -156,7 +156,7 @@ class RPCDtoConvertor {
         if (param.type.fixedItems.isNullOrEmpty()){
             LoggingUtil.uniqueWarn(log, "Enum with name (${param.type.fullTypeName}) has empty items")
             // TODO check not sure
-            return MapGene(param.type.fullTypeName, StringGene("item"))
+            return MapGene(param.type.fullTypeName, PairGene.createStringPairGene(StringGene( "NO_ITEM")))
         }
         return EnumGene(param.name, param.type.fixedItems.toList())
 
@@ -167,8 +167,7 @@ class RPCDtoConvertor {
         Lazy.assert { pair.innerContent.size == 2 }
         val keyTemplate = handleCollectionParam(pair.innerContent[0])
         val valueTemplate = handleCollectionParam(pair.innerContent[1])
-//        return MapGene(param.name, key, value)
-        TODO("wait until map-extend branch is merged")
+        return MapGene(param.name, keyTemplate, valueTemplate)
     }
 
 
@@ -186,7 +185,7 @@ class RPCDtoConvertor {
         val typeName = type.type.fullTypeName
         if (type.innerContent.isEmpty()){
             LoggingUtil.uniqueWarn(log, "Object with name (${type.type.fullTypeName}) has empty fields")
-            return MapGene(typeName, StringGene("field"))
+            return MapGene(typeName, PairGene.createStringPairGene(StringGene( "field"), isFixedFirst = true))
         }
 
         val fields = type.innerContent.map { f-> handleDtoParam(f) }

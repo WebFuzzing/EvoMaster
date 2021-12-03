@@ -19,11 +19,17 @@ class RPCTestCaseWriter : HttpWsTestCaseWriter() {
         TODO("Not yet implemented")
     }
 
-    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>) {
+    override fun handleActionCalls(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>
+    ) {
         TODO("Not yet implemented")
     }
 
     override fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String) {
         TODO("Not yet implemented")
     }
+
 }
