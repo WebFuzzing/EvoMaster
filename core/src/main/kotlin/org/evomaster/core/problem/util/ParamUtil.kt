@@ -5,6 +5,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -32,7 +33,7 @@ class ParamUtil {
          */
         fun selectLongestPathAction(actions: List<RestCallAction>): List<RestCallAction> {
             val max =
-                actions.asSequence().map { a -> (a as RestCallAction).path.levels() }
+                actions.asSequence().map { a -> a.path.levels() }
                     .maxOrNull()!!
             return actions.filter { a ->  a.path.levels() == max }
         }
@@ -112,7 +113,7 @@ class ParamUtil {
             val targets = target.split(separator).filter { it != DISRUPTIVE_NAME }.toMutableList()
             val sources = source.split(separator).filter { it != DISRUPTIVE_NAME }.toMutableList()
             if (doContain) {
-                if (sources.toHashSet().map { s -> if (target.toLowerCase().contains(s.toLowerCase())) 1 else 0 }
+                if (sources.toHashSet().map { s -> if (target.lowercase().contains(s.lowercase())) 1 else 0 }
                         .sum() == sources.toHashSet().size)
                     return 0
             }
@@ -121,7 +122,7 @@ class ParamUtil {
             }
             if (sources.contains(BODYGENE_NAME)) {
                 val sources_rbody = sources.filter { it != BODYGENE_NAME }.toMutableList()
-                if (sources_rbody.toHashSet().map { s -> if (target.toLowerCase().contains(s.toLowerCase())) 1 else 0 }
+                if (sources_rbody.toHashSet().map { s -> if (target.lowercase().contains(s.lowercase())) 1 else 0 }
                         .sum() == sources_rbody.toHashSet().size)
                     return 0
             }
@@ -146,7 +147,7 @@ class ParamUtil {
                             it is DisruptiveGene<*> ||
                             it is OptionalGene ||
                             it is ArrayGene<*> ||
-                            it is MapGene<*>)
+                            it is MapGene<*, *>)
                 }
                     .forEach { g ->
                         val names = getGeneNamesInPath(parameters, g)
@@ -193,10 +194,11 @@ class ParamUtil {
         private fun extractPathFromRoot(comGene: Gene, gene: Gene, names: MutableList<String>): Boolean {
             when (comGene) {
                 is ObjectGene -> return extractPathFromRoot(comGene, gene, names)
+                is PairGene<*,*> -> return extractPathFromRoot(comGene, gene, names)
                 is DisruptiveGene<*> -> return extractPathFromRoot(comGene, gene, names)
                 is OptionalGene -> return extractPathFromRoot(comGene, gene, names)
                 is ArrayGene<*> -> return extractPathFromRoot(comGene, gene, names)
-                is MapGene<*> -> return extractPathFromRoot(comGene, gene, names)
+                is MapGene<*, *> -> return extractPathFromRoot(comGene, gene, names)
                 else -> if (comGene == gene) {
                     names.add(comGene.name)
                     return true
@@ -239,7 +241,17 @@ class ParamUtil {
             return false
         }
 
-        private fun extractPathFromRoot(comGene: MapGene<*>, gene: Gene, names: MutableList<String>): Boolean {
+        private fun extractPathFromRoot(comGene: PairGene<*, *>, gene: Gene, names: MutableList<String>): Boolean {
+            listOf(comGene.first, comGene.second).forEach {
+                if (extractPathFromRoot(it, gene, names)) {
+                    names.add(it.name)
+                    return true
+                }
+            }
+            return false
+        }
+
+        private fun extractPathFromRoot(comGene: MapGene<*, *>, gene: Gene, names: MutableList<String>): Boolean {
             comGene.getAllElements().forEach {
                 if (extractPathFromRoot(it, gene, names)) {
                     names.add(it.name)

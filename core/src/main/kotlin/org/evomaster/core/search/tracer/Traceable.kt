@@ -61,12 +61,12 @@ interface Traceable {
      *
      * @return an newly created TraceableElement regarding [next]
      */
-    abstract fun next(next: Traceable, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation) : Traceable?
+    fun next(next: Traceable, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation) : Traceable?
 
     /**
      * @param options indicates the option to copy the element in the tracking
      */
-    abstract fun copy(options: TraceableElementCopyFilter) : Traceable
+    fun copy(options: TraceableElementCopyFilter) : Traceable
 
 
     /**

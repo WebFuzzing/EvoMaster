@@ -97,6 +97,14 @@ public class EMController {
         connectedClientsSoFar.clear();
     }
 
+    private static String removePrefix(String s, String prefix)
+    {
+        if (s != null && prefix != null && s.startsWith(prefix)) {
+            return s.substring(prefix.length());
+        }
+        return s;
+    }
+
     @Path("/")
     @GET
     @Produces(MediaType.TEXT_HTML)
@@ -191,7 +199,7 @@ public class EMController {
         } else if (info instanceof GraphQlProblem) {
             GraphQlProblem p = (GraphQlProblem) info;
             dto.graphQLProblem = new GraphQLProblemDto();
-            dto.graphQLProblem.endpoint = p.getEndpoint();
+            dto.graphQLProblem.endpoint= removePrefix(p.getEndpoint(), baseUrlOfSUT);
         } else if(info instanceof RPCProblem){
             dto.rpcProblem = new RPCProblemDto();
             Map<String, InterfaceSchema> rpcSchemas = sutController.extractRPCSchema();
@@ -203,6 +211,7 @@ public class EMController {
                 schemas.add(s.getDto());
             }
             dto.rpcProblem.schemas = schemas;
+            dto.graphQLProblem.endpoint= removePrefix(p.getEndpoint(), baseUrlOfSUT);
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);

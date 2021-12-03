@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
@@ -30,7 +31,7 @@ class RestStructureMutator : HttpWsStructureMutator() {
 
 
 
-    override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
+    override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
         if (individual !is RestIndividual) {
             throw IllegalArgumentException("Invalid individual type")
         }
@@ -207,6 +208,10 @@ class RestStructureMutator : HttpWsStructureMutator() {
             // adding the action and the associated objects and help encapsulate the individual more?
         }
 
+    }
+
+    override fun getSqlInsertBuilder(): SqlInsertBuilder? {
+        return sampler.sqlInsertBuilder
     }
 
 }

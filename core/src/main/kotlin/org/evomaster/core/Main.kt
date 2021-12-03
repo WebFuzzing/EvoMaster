@@ -32,7 +32,7 @@ import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import java.lang.reflect.InvocationTargetException
 
 
@@ -609,7 +609,7 @@ class Main {
                 return
             }
 
-            val am = injector.getInstance(ArchiveGeneSelector::class.java)
+            val am = injector.getInstance(ArchiveImpactSelector::class.java)
             am.exportImpacts(solution)
         }
 

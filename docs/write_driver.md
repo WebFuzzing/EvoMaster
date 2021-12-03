@@ -104,17 +104,10 @@ However, in such case, you will need to package an uber jar file (e.g., using pl
 
 
 __WARNING__: Java 9 broke backward compatibility. 
-One painful change was that self-attachment of Java-Agents (needed for bytecode instrumentation)
-is now forbidden by default.
-When for example starting the driver with a JDK 9+ (e.g., JDK __11__), you need to add the VM option
-`-Djdk.attach.allowAttachSelf=true`, otherwise the process will crash.   
-For example, in IntelliJ IDEA:
+And each new JDK version seems breaking more stuff :-(.
+To deal with recent versions of the JDK, see [here for details](./jdks.md).
 
-![](img/intellij_jdk11_jvm_options.png)
 
-Note: there is a hacky workaround for this "_feature_" 
-(i.e., as done in [ByteBuddy](https://github.com/raphw/byte-buddy/issues/295)),
-but it is not implemented yet. 
 
 
 
@@ -149,23 +142,15 @@ This will be useful when needing to override the methods `isSutRunning()` and `s
 as you can just implement them with  `ctx.isRunning()` and `ctx.stop()`.
 
 
-When starting the SUT, there are at least two configurations that you want to change:
+When starting the SUT, there is one important configuration that you want to change: the binding port, as you want to use 0 for ephemeral ports (to avoid port conflicts).
 
-* the binding port, as you want to use 0 for ephemeral ports (to avoid port conflicts).
-* if the SUT is using a SQL database, you MUST wrap the SQL driver with _P6Spy_. 
-  This is as simple as adding `:p6spy` in the connecting datasource URL and change the `driver-class-name`.
-  This is needed by _EvoMaster_ to be able to intercept and analyse all the interactions with the database.
+Note: since version _1.3.0_, there is no longer the need to configure `P6Spy`.
   
 For a SUT like `features-service`, this can be done with:
 
 ```
 ctx = SpringApplication.run(Application.class, new String[]{
-                "--server.port=0",
-                "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb;DB_CLOSE_DELAY=-1;",
-                "--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),
-                "--spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-                "--spring.datasource.username=sa",
-                "--spring.datasource.password"
+                "--server.port=0"                
       });
 ```      
 
@@ -249,7 +234,7 @@ Then, the URL to connect to the database can be something like:
 ```
 String host = postgres.getContainerIpAddress();
 int port = postgres.getMappedPort(5432);
-String url = "jdbc:p6spy:postgresql://"+host+":"+port+"/postgres"
+String url = "jdbc:postgresql://"+host+":"+port+"/postgres"
 ```
 
 You can then tell Spring to use such URL with the parameter `--spring.datasource.url`.

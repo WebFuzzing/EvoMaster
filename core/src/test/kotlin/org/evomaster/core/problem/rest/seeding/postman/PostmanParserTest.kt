@@ -10,6 +10,8 @@ import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -419,19 +421,19 @@ class PostmanParserTest {
 
         val objArrProp = optObjArrProp.gene as ArrayGene<*>
 
-        val objArrPropElem1 = objArrProp.getAllElements()[0] as MapGene<*>
+        val objArrPropElem1 = objArrProp.getAllElements()[0] as MapGene<StringGene, *>
         assertEquals(2, objArrPropElem1.getAllElements().size)
         assertEquals("prop1", objArrPropElem1.getAllElements()[0].name)
-        assertEquals("val1", (objArrPropElem1.getAllElements()[0] as StringGene).value)
+        assertEquals("val1", (objArrPropElem1.getAllElements()[0] as PairGene<StringGene,StringGene>).second.value)
         assertEquals("prop2", objArrPropElem1.getAllElements()[1].name)
-        assertEquals("val2", (objArrPropElem1.getAllElements()[1] as StringGene).value)
+        assertEquals("val2", (objArrPropElem1.getAllElements()[1] as PairGene<StringGene,StringGene>).second.value)
 
-        val objArrPropElem2 = objArrProp.getAllElements()[1] as MapGene<*>
+        val objArrPropElem2 = objArrProp.getAllElements()[1] as MapGene<StringGene, *>
         assertEquals(2, objArrPropElem2.getAllElements().size)
         assertEquals("prop3", objArrPropElem2.getAllElements()[0].name)
-        assertEquals("val3", (objArrPropElem2.getAllElements()[0] as StringGene).value)
+        assertEquals("val3", (objArrPropElem2.getAllElements()[0] as PairGene<StringGene, StringGene>).second.value)
         assertEquals("prop4", objArrPropElem2.getAllElements()[1].name)
-        assertEquals("val4", (objArrPropElem2.getAllElements()[1] as StringGene).value)
+        assertEquals("val4", (objArrPropElem2.getAllElements()[1] as PairGene<StringGene, StringGene>).second.value)
     }
 
     @Test
@@ -488,13 +490,13 @@ class PostmanParserTest {
 
         val objArrProp = optObjArrProp.gene as ArrayGene<*>
 
-        val objArrPropElem1 = objArrProp.getAllElements()[0] as MapGene<*>
+        val objArrPropElem1 = objArrProp.getAllElements()[0] as MapGene<StringGene, *>
         assertEquals(0, objArrPropElem1.getAllElements().size)
 
-        val objArrPropElem2 = objArrProp.getAllElements()[1] as MapGene<*>
+        val objArrPropElem2 = objArrProp.getAllElements()[1] as MapGene<StringGene, *>
         assertEquals(1, objArrPropElem2.getAllElements().size)
         assertEquals("prop1", objArrPropElem2.getAllElements()[0].name)
-        assertEquals("val1", (objArrPropElem2.getAllElements()[0] as StringGene).value)
+        assertEquals("val1", (objArrPropElem2.getAllElements()[0] as PairGene<StringGene, StringGene>).second.value)
     }
 
     @Test

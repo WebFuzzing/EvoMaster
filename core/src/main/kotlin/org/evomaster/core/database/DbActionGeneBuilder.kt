@@ -8,9 +8,19 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.sql.time.SqlTimeIntervalGene
+import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.sql.geometric.*
+import org.evomaster.core.search.gene.sql.network.SqlCidrGene
+import org.evomaster.core.search.gene.sql.network.SqlInetGene
+import org.evomaster.core.search.gene.sql.network.SqlMacAddrGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
+import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
+import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
 import org.evomaster.core.utils.NumberCalculationUtil
 import kotlin.math.pow
 
@@ -37,7 +47,7 @@ class DbActionGeneBuilder {
 
             else -> when (column.type) {
                 // Man: TODO need to check
-                ColumnDataType.BIT->
+                ColumnDataType.BIT ->
                     handleBitColumn(column)
 
                 /**
@@ -71,7 +81,7 @@ class DbActionGeneBuilder {
                  * INT2/SMALLINT(5) is assumed as a short/Short field
                  * INT4/INTEGER(10) is a int/Integer field
                  */
-                 ColumnDataType.TINYINT, ColumnDataType.INT2, ColumnDataType.SMALLINT, ColumnDataType.INT, ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL, ColumnDataType.MEDIUMINT ->
+                ColumnDataType.TINYINT, ColumnDataType.INT2, ColumnDataType.SMALLINT, ColumnDataType.INT, ColumnDataType.INT4, ColumnDataType.INTEGER, ColumnDataType.SERIAL, ColumnDataType.MEDIUMINT ->
                     handleIntegerColumn(column)
 
                 /**
@@ -93,7 +103,14 @@ class DbActionGeneBuilder {
                  * N could be as large as Integer.MAX_VALUE
                  */
                 ColumnDataType.ARRAY_VARCHAR, //FIXME need general solution for arrays
-                ColumnDataType.TINYTEXT, ColumnDataType.TEXT, ColumnDataType.VARCHAR, ColumnDataType.CLOB, ColumnDataType.MEDIUMTEXT, ColumnDataType.LONGBLOB, ColumnDataType.MEDIUMBLOB, ColumnDataType.TINYBLOB ->
+                ColumnDataType.TINYTEXT,
+                ColumnDataType.TEXT,
+                ColumnDataType.VARCHAR,
+                ColumnDataType.CLOB,
+                ColumnDataType.MEDIUMTEXT,
+                ColumnDataType.LONGBLOB,
+                ColumnDataType.MEDIUMBLOB,
+                ColumnDataType.TINYBLOB ->
                     handleTextColumn(column)
 
                 //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
@@ -121,6 +138,7 @@ class DbActionGeneBuilder {
                 ColumnDataType.DATETIME ->
                     DateTimeGene(column.name)
 
+
                 ColumnDataType.YEAR ->
                     handleYearColumn(column)
 
@@ -131,15 +149,19 @@ class DbActionGeneBuilder {
                  * Could be any kind of binary data... so let's just use a string,
                  * which also simplifies when needing generate the test files
                  */
-                ColumnDataType.BLOB ->
+                ColumnDataType.BLOB,
+                ColumnDataType.BYTEA ->
                     handleBLOBColumn(column)
 
 
-                ColumnDataType.REAL ->
+                ColumnDataType.REAL, ColumnDataType.FLOAT4, ColumnDataType.FLOAT8 ->
                     handleRealColumn(column)
 
 
-                ColumnDataType.DECIMAL, ColumnDataType.DEC, ColumnDataType.NUMERIC ->
+                ColumnDataType.DEC,
+                ColumnDataType.DECIMAL,
+                ColumnDataType.NUMERIC
+                ->
                     handleDecimalColumn(column)
 
                 /**
@@ -163,6 +185,73 @@ class DbActionGeneBuilder {
                 ColumnDataType.ENUM ->
                     handleEnumColumn(column)
 
+                ColumnDataType.MONEY ->
+                    handleMoneyColumn(column)
+
+                ColumnDataType.BPCHAR ->
+                    handleTextColumn(column, isFixedLength = true)
+
+                ColumnDataType.INTERVAL ->
+                    SqlTimeIntervalGene(column.name)
+
+                ColumnDataType.POINT ->
+                    SqlPointGene(column.name)
+
+                ColumnDataType.LINE ->
+                    SqlLineGene(column.name)
+
+                ColumnDataType.LSEG ->
+                    SqlLineSegmentGene(column.name)
+
+                ColumnDataType.BOX ->
+                    SqlBoxGene(column.name)
+
+                ColumnDataType.PATH ->
+                    SqlPathGene(column.name)
+
+                ColumnDataType.POLYGON ->
+                    SqlPolygonGene(column.name)
+
+                ColumnDataType.CIRCLE ->
+                    SqlCircleGene(column.name)
+
+                ColumnDataType.CIDR ->
+                    SqlCidrGene(column.name)
+
+                ColumnDataType.INET ->
+                    SqlInetGene(column.name)
+
+                ColumnDataType.MACADDR ->
+                    SqlMacAddrGene(column.name)
+
+                ColumnDataType.MACADDR8 ->
+                    SqlMacAddrGene(column.name, numberOfOctets = SqlMacAddrGene.MACADDR8_SIZE)
+
+                ColumnDataType.TSVECTOR ->
+                    SqlTextSearchVectorGene(column.name)
+
+                ColumnDataType.TSQUERY ->
+                    SqlTextSearchQueryGene(column.name)
+
+                ColumnDataType.JSONPATH ->
+                    SqlJSONPathGene(column.name)
+
+                ColumnDataType.INT4RANGE ->
+                    SqlRangeGene(column.name, template = IntegerGene("bound"))
+
+                ColumnDataType.INT8RANGE ->
+                    SqlRangeGene(column.name, template = LongGene("bound"))
+
+                ColumnDataType.NUMRANGE ->
+                    SqlRangeGene(column.name, template = FloatGene("bound"))
+
+                ColumnDataType.DATERANGE ->
+                    SqlRangeGene(column.name, template = DateGene("bound"))
+
+                ColumnDataType.TSRANGE, ColumnDataType.TSTZRANGE ->
+                    SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
+
+
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
 
@@ -183,16 +272,16 @@ class DbActionGeneBuilder {
     /*
         https://dev.mysql.com/doc/refman/8.0/en/year.html
      */
-    private fun handleYearColumn(column: Column): Gene{
+    private fun handleYearColumn(column: Column): Gene {
         // Year(2) is not supported by mysql 8.0
         if (column.size == 2)
-            return IntegerGene(column.name,16 ,min =0, max = 99)
+            return IntegerGene(column.name, 16, min = 0, max = 99)
 
         return IntegerGene(column.name, 2016, min = 1901, max = 2155)
     }
 
-    private fun handleEnumColumn(column: Column): Gene{
-        return EnumGene(name = column.name, data = column.enumValuesAsStrings?: listOf())
+    private fun handleEnumColumn(column: Column): Gene {
+        return EnumGene(name = column.name, data = column.enumValuesAsStrings ?: listOf())
     }
 
     private fun handleBigIntColumn(column: Column): Gene {
@@ -213,10 +302,11 @@ class DbActionGeneBuilder {
 
             if ((column.type == ColumnDataType.INT4
                         || column.type == ColumnDataType.INT
-                        || column.type == ColumnDataType.INTEGER) && column.isUnsigned){
+                        || column.type == ColumnDataType.INTEGER) && column.isUnsigned
+            ) {
                 LongGene(column.name, min = 0L, max = 4294967295L)
-            }else{
-                val min = when{
+            } else {
+                val min = when {
                     column.isUnsigned -> 0
                     column.type == ColumnDataType.TINYINT -> Byte.MIN_VALUE.toInt()
                     column.type == ColumnDataType.SMALLINT || column.type == ColumnDataType.INT2 -> Short.MIN_VALUE.toInt()
@@ -224,16 +314,18 @@ class DbActionGeneBuilder {
                     else -> Int.MIN_VALUE
                 }
 
-                val max = when (column.type){
+                val max = when (column.type) {
                     ColumnDataType.TINYINT -> if (column.isUnsigned) 255 else Byte.MAX_VALUE.toInt()
                     ColumnDataType.SMALLINT, ColumnDataType.INT2 -> if (column.isUnsigned) 65535 else Short.MAX_VALUE.toInt()
                     ColumnDataType.MEDIUMINT -> if (column.isUnsigned) 16777215 else 8388607
                     else -> Int.MAX_VALUE
                 }
 
-                IntegerGene(column.name,
+                IntegerGene(
+                    column.name,
                     min = column.lowerBound ?: min,
-                    max = column.upperBound ?: max)
+                    max = column.upperBound ?: max
+                )
             }
         }
     }
@@ -267,9 +359,11 @@ class DbActionGeneBuilder {
                 EnumGene(column.name, column.enumValuesAsStrings.map { it.toInt() })
             }
         } else {
-            IntegerGene(column.name,
-                    min = column.lowerBound ?: Short.MIN_VALUE.toInt(),
-                    max = column.upperBound ?: Short.MAX_VALUE.toInt())
+            IntegerGene(
+                column.name,
+                min = column.lowerBound ?: Short.MIN_VALUE.toInt(),
+                max = column.upperBound ?: Short.MAX_VALUE.toInt()
+            )
         }
     }
 
@@ -282,13 +376,15 @@ class DbActionGeneBuilder {
                 EnumGene(column.name, column.enumValuesAsStrings.map { it.toInt() })
             }
         } else {
-            IntegerGene(column.name,
-                    min = column.lowerBound ?: Byte.MIN_VALUE.toInt(),
-                    max = column.upperBound ?: Byte.MAX_VALUE.toInt())
+            IntegerGene(
+                column.name,
+                min = column.lowerBound ?: Byte.MIN_VALUE.toInt(),
+                max = column.upperBound ?: Byte.MAX_VALUE.toInt()
+            )
         }
     }
 
-    private fun handleTextColumn(column: Column): Gene {
+    private fun handleTextColumn(column: Column, isFixedLength: Boolean = false): Gene {
         return if (column.enumValuesAsStrings != null) {
             if (column.enumValuesAsStrings.isEmpty()) {
                 throw IllegalArgumentException("the list of enumerated values cannot be empty")
@@ -305,7 +401,12 @@ class DbActionGeneBuilder {
                 val likePatterns = column.likePatterns
                 buildLikeRegexGene(columnName, likePatterns, databaseType = column.databaseType)
             } else {
-                StringGene(name = column.name, minLength = 0, maxLength = column.size)
+                val columnMinLength = if (isFixedLength) {
+                    column.size
+                } else {
+                    0
+                }
+                StringGene(name = column.name, minLength = columnMinLength, maxLength = column.size)
             }
         }
     }
@@ -315,19 +416,23 @@ class DbActionGeneBuilder {
      * The resulting gene is a disjunction of the given patterns
      */
     fun buildLikeRegexGene(geneName: String, likePatterns: List<String>, databaseType: DatabaseType): RegexGene {
-        return when(databaseType) {
+        return when (databaseType) {
             DatabaseType.POSTGRES, DatabaseType.MYSQL -> buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
             //TODO: support other database SIMILAR_TO check expressions
-            else -> throw UnsupportedOperationException("Must implement LIKE expressions for database %s".format(databaseType))
+            else -> throw UnsupportedOperationException(
+                "Must implement LIKE expressions for database %s".format(
+                    databaseType
+                )
+            )
         }
     }
 
     private fun buildPostgresMySQLLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
         val disjunctionRxGenes = likePatterns
-                .map { createGeneForPostgresLike(it) }
-                .map { it.disjunctions }
-                .map { it.disjunctions }
-                .flatten()
+            .map { createGeneForPostgresLike(it) }
+            .map { it.disjunctions }
+            .map { it.disjunctions }
+            .flatten()
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
@@ -337,43 +442,54 @@ class DbActionGeneBuilder {
      * The resulting gene is a disjunction of the given patterns
      * according to the database we are using
      */
-    fun buildSimilarToRegexGene(geneName: String, similarToPatterns: List<String>, databaseType: DatabaseType): RegexGene {
+    fun buildSimilarToRegexGene(
+        geneName: String,
+        similarToPatterns: List<String>,
+        databaseType: DatabaseType
+    ): RegexGene {
         return when {
             databaseType == DatabaseType.POSTGRES -> buildPostgresSimilarToRegexGene(geneName, similarToPatterns)
             //TODO: support other database SIMILAR_TO check expressions
-            else -> throw UnsupportedOperationException("Must implement similarTo expressions for database %s".format(databaseType))
+            else -> throw UnsupportedOperationException(
+                "Must implement similarTo expressions for database %s".format(
+                    databaseType
+                )
+            )
         }
     }
 
     private fun buildPostgresSimilarToRegexGene(geneName: String, similarToPatterns: List<String>): RegexGene {
         val disjunctionRxGenes = similarToPatterns
-                .map { createGeneForPostgresSimilarTo(it) }
-                .map { it.disjunctions }
-                .map { it.disjunctions }
-                .flatten()
+            .map { createGeneForPostgresSimilarTo(it) }
+            .map { it.disjunctions }
+            .map { it.disjunctions }
+            .flatten()
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
     fun buildSqlTimestampGene(name: String): DateTimeGene {
         return DateTimeGene(
-                name = name,
-                date = DateGene("date",
-                        year = IntegerGene("year", 2016, 1900, 2100),
-                        month = IntegerGene("month", 3, 1, 12),
-                        day = IntegerGene("day", 12, 1, 31),
-                        onlyValidDates = true),
-                time = TimeGene("time",
-                        hour = IntegerGene("hour", 0, 0, 23),
-                        minute = IntegerGene("minute", 0, 0, 59),
-                        second = IntegerGene("second", 0, 0, 59)
-                        ),
-                dateTimeGeneFormat =  DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
+            name = name,
+            date = DateGene(
+                "date",
+                year = IntegerGene("year", 2016, 1900, 2100),
+                month = IntegerGene("month", 3, 1, 12),
+                day = IntegerGene("day", 12, 1, 31),
+                onlyValidDates = true
+            ),
+            time = TimeGene(
+                "time",
+                hour = IntegerGene("hour", 0, 0, 23),
+                minute = IntegerGene("minute", 0, 0, 59),
+                second = IntegerGene("second", 0, 0, 59)
+            ),
+            dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
         )
 
     }
 
     private fun handleTimestampColumn(column: Column): DateTimeGene {
-        return if (column.enumValuesAsStrings != null) {
+        if (column.enumValuesAsStrings != null) {
             throw RuntimeException("Unsupported enum in TIMESTAMP. Please implement")
         } else {
             return buildSqlTimestampGene(column.name)
@@ -421,17 +537,40 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
-            if (column.precision >= 0){
+            if (column.precision >= 0) {
                 /*
                     set precision and boundary for DECIMAL
                     https://dev.mysql.com/doc/refman/8.0/en/fixed-point-types.html
                  */
                 val range = NumberCalculationUtil.boundaryDecimal(column.size, column.precision)
-                FloatGene(column.name, min= if (column.isUnsigned) 0.0f else range.first.toFloat(), max = range.second.toFloat(), precision = column.precision)
-            }else
+                FloatGene(
+                    column.name,
+                    min = if (column.isUnsigned) 0.0f else range.first.toFloat(),
+                    max = range.second.toFloat(),
+                    precision = column.precision
+                )
+            } else
                 FloatGene(column.name)
         }
     }
+
+    private fun handleMoneyColumn(column: Column): Gene {
+        return if (column.enumValuesAsStrings != null) {
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
+        } else {
+            val MONEY_COLUMN_PRECISION = 2
+            val MONEY_COLUMN_SIZE = 8
+            val range = NumberCalculationUtil.boundaryDecimal(MONEY_COLUMN_SIZE, MONEY_COLUMN_PRECISION)
+            FloatGene(
+                column.name,
+                min = range.first.toFloat(),
+                max = range.second.toFloat(),
+                precision = MONEY_COLUMN_PRECISION
+            )
+        }
+    }
+
 
     private fun handleBooleanColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
@@ -447,17 +586,18 @@ class DbActionGeneBuilder {
      * handle bit for mysql
      * https://dev.mysql.com/doc/refman/8.0/en/bit-value-literals.html
      */
-    private fun handleBitColumn(column: Column): Gene{
+    private fun handleBitColumn(column: Column): Gene {
 
-        return IntegerGene(column.name,  min= 0, max = (2.0).pow(column.size).toInt() -1 )
+        return IntegerGene(column.name, min = 0, max = (2.0).pow(column.size).toInt() - 1)
     }
 
     companion object {
         /**
-         * Throws an exception if the enum values is non-null and empty
+         * Throws an exception if the enum values is empty
+         * (parameter is non-nullable by definition)
          */
         private fun checkNotEmpty(enumValuesAsStrings: List<String>) {
-            if (enumValuesAsStrings != null && enumValuesAsStrings.isEmpty()) {
+            if (enumValuesAsStrings.isEmpty()) {
                 throw IllegalArgumentException("the list of enumerated values cannot be empty")
             }
         }

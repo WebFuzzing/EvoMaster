@@ -73,13 +73,13 @@ class ResourceManageService {
     /**
      * this function is used to initialized ad-hoc individuals for resource-based individual
      */
-    fun createAdHocIndividuals(auth: AuthenticationInfo, adHocInitialIndividuals : MutableList<RestIndividual>){
+    fun createAdHocIndividuals(auth: AuthenticationInfo, adHocInitialIndividuals : MutableList<RestIndividual>, maxTestSize: Int){
         val sortedResources = cluster.getCluster().values.sortedByDescending { it.getTokenMap().size }.asSequence()
 
         //GET, PATCH, DELETE
         sortedResources.forEach { ar->
             ar.actions.filter { it.verb != HttpVerb.POST && it.verb != HttpVerb.PUT }.forEach {a->
-                val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
+                val call = ar.sampleOneAction(a.copyContent() as RestCallAction, randomness)
                 call.seeActions(ActionFilter.NO_SQL).forEach { ra->
                     if(ra is RestCallAction) ra.auth = auth
                 }
@@ -90,7 +90,7 @@ class ResourceManageService {
         //all POST with one post action
         sortedResources.forEach { ar->
             ar.actions.filter { it.verb == HttpVerb.POST}.forEach { a->
-                val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
+                val call = ar.sampleOneAction(a.copyContent() as RestCallAction, randomness)
                 (call.seeActions(ActionFilter.NO_SQL) as List<RestCallAction>).forEach { it.auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }
@@ -99,7 +99,7 @@ class ResourceManageService {
         sortedResources
                 .filter { it.actions.find { a -> a.verb == HttpVerb.POST } != null && it.getPostChain()?.actions?.run { this.size > 1 }?:false  }
                 .forEach { ar->
-                    ar.genPostChain(randomness, config.maxTestSize)?.let {call->
+                    ar.genPostChain(randomness, maxTestSize)?.let {call->
                         call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
                         adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
                     }
@@ -108,7 +108,7 @@ class ResourceManageService {
         //PUT
         sortedResources.forEach { ar->
             ar.actions.filter { it.verb == HttpVerb.PUT }.forEach {a->
-                val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
+                val call = ar.sampleOneAction(a.copyContent() as RestCallAction, randomness)
                 call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }
@@ -118,7 +118,7 @@ class ResourceManageService {
         sortedResources.forEach { ar->
             ar.getTemplates().values.filter { t-> RestResourceTemplateHandler.isNotSingleAction(t.template) }
                     .forEach {ct->
-                        val call = ar.sampleRestResourceCalls(ct.template, randomness, config.maxTestSize)
+                        val call = ar.sampleRestResourceCalls(ct.template, randomness, maxTestSize)
                         call.seeActions(ActionFilter.NO_SQL).forEach { if(it is RestCallAction) it.auth = auth }
                         adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
                     }
@@ -216,7 +216,7 @@ class ResourceManageService {
                     previousDbActions = bindWith?.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>} ?: listOf())
 
                 if(!created){
-                    LoggingUtil.uniqueWarn(log, "resource creation for $resourceKey fails")
+                    LoggingUtil.uniqueWarn(log, "it is unlikely to prepare a resource for $resourceKey with SQL/REST action")
                 }else{
                     call.status =  ResourceStatus.CREATED_SQL
                 }
@@ -315,15 +315,15 @@ class ResourceManageService {
 
 
     /**
-     * @return a maximum number of resources to be manipulated in the initialization with SQL
+     * @return a maximum number of resources to be manipulated with action or sql
      *          e.g., we can add N resource or delete N resource in the initialization per time with e.g., structure mutator
      */
-    fun getSqlMaxNumOfResource() : Int {
-        if (config.maxSqlInitActionsPerResource == 0) return 0
-        return when(config.employSqlNumResourceStrategy){
+    fun getMaxNumOfResourceSizeHandling() : Int {
+        if (config.maxSizeOfHandlingResource == 0) return 0
+        return when(config.employResourceSizeHandlingStrategy){
             SqlInitResourceStrategy.NONE -> 0
-            SqlInitResourceStrategy.RANDOM -> config.maxSqlInitActionsPerResource
-            SqlInitResourceStrategy.DPC -> apc.getExploratoryValue(config.maxSqlInitActionsPerResource, 1)
+            SqlInitResourceStrategy.RANDOM -> config.maxSizeOfHandlingResource
+            SqlInitResourceStrategy.DPC -> apc.getExploratoryValue(config.maxSizeOfHandlingResource, 1)
         }
     }
 }

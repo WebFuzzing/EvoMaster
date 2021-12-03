@@ -1,5 +1,7 @@
 package org.evomaster.core.utils
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.min
@@ -7,6 +9,7 @@ import kotlin.math.pow
 
 object NumberCalculationUtil {
 
+    val log: Logger = LoggerFactory.getLogger(NumberCalculationUtil::class.java)
 
     /**
      * calculate the maximum increment for double which should be [min, max],
@@ -38,5 +41,12 @@ object NumberCalculationUtil {
         return valueWithPrecision(boundary * -1, precision).toDouble() to valueWithPrecision(boundary * 1, precision).toDouble()
     }
 
-    fun valueWithPrecision(value: Double, precision: Int) : BigDecimal = BigDecimal(value).setScale(precision, RoundingMode.HALF_UP)
+    fun valueWithPrecision(value: Double, precision: Int) : BigDecimal {
+        return try {
+            BigDecimal(value).setScale(precision, RoundingMode.HALF_UP)
+        }catch (e: NumberFormatException){
+            log.warn("fail to get value ($value) with the specified prevision ($precision)")
+            throw e
+        }
+    }
 }

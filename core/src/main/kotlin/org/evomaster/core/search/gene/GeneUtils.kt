@@ -1,7 +1,9 @@
 package org.evomaster.core.search.gene
 
-import org.apache.commons.lang3.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -157,7 +159,7 @@ object GeneUtils {
             EscapeMode.GQL_INPUT_MODE -> string
             EscapeMode.GQL_STR_VALUE -> applyGQLStr(string, format)
             EscapeMode.BODY -> applyBodyEscapes(string, format)
-            EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
+            EscapeMode.XML -> StringEscapeUtils.escapeXml10(string)
         }
         //if(forQueries) return applyQueryEscapes(string, format)
         //else return applyAssertionEscapes(string, format)
@@ -340,6 +342,29 @@ object GeneUtils {
         return p != null
     }
 
+    fun preventLimit(gene: Gene, force: Boolean = false) {
+
+        val limits = gene.flatView().filterIsInstance<LimitObjectGene>()
+        if (limits.isEmpty()) {
+            //nothing to do
+            return
+        }
+
+        for (c in limits) {
+
+            val prevented = tryToPreventSelection(c)
+
+            if (!prevented) {
+                val msg = "Could not prevent limit gene in ${gene.name} gene"
+                if (force) {
+                    throw RuntimeException(msg)
+                }
+                log.warn(msg)
+            }
+        }
+    }
+
+
     fun hasNonHandledCycles(gene: Gene): Boolean {
 
         val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
@@ -451,15 +476,15 @@ object GeneUtils {
             assert(candidates.isNotEmpty())
 
             // maybe do at random?
-            val selected = candidates[0]
-            if (selected is OptionalGene) {
-                selected.isActive = true
-                if (selected.gene is ObjectGene) {
-                    assert(selected.gene !is CycleObjectGene)
-                    repairBooleanSelection(selected.gene)
+            val selectedGene = candidates[0]
+            if (selectedGene is OptionalGene) {
+                selectedGene.isActive = true
+                if (selectedGene.gene is ObjectGene) {
+                    assert(selectedGene.gene !is CycleObjectGene)
+                    repairBooleanSelection(selectedGene.gene)
                 }
             } else {
-                (selected as BooleanGene).value = true
+                (selectedGene as BooleanGene).value = true
             }
         }
     }
@@ -493,6 +518,9 @@ object GeneUtils {
                 }
             }
             is CycleObjectGene -> {
+                gene
+            }
+            is LimitObjectGene -> {
                 gene
             }
             is ObjectGene -> {

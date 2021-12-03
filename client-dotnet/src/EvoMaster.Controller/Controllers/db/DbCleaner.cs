@@ -7,32 +7,28 @@ using System.Threading;
 using EvoMaster.Controller.Api;
 using EvoMaster.Client.Util;
 
-namespace EvoMaster.Controller.Controllers.db
-{
-    public static class DbCleaner
-    {
-        
-        public static void DropDatabaseTables(DbConnection connection, string schemaName, List<string> tablesToSkip, DatabaseType type){
+namespace EvoMaster.Controller.Controllers.db {
+    public static class DbCleaner {
+        public static void DropDatabaseTables(DbConnection connection, string schemaName, List<string> tablesToSkip,
+            DatabaseType type) {
             if (type != DatabaseType.MYSQL && type != DatabaseType.MARIADB)
-                throw new InvalidOperationException("Dropping tables are not supported by "+type);
+                throw new InvalidOperationException("Dropping tables are not supported by " + type);
             ClearDatabase(GetDefaultRetries(type), connection, schemaName, tablesToSkip, type, true);
         }
-        
-        public static void ClearDatabase_Postgres(DbConnection connection, string schema=null, List<string> tablesToSkip = null)
-        {
+
+        public static void ClearDatabase_Postgres(DbConnection connection, string schema = null,
+            List<string> tablesToSkip = null) {
             ClearDatabase(connection, tablesToSkip, DatabaseType.POSTGRES, schema);
         }
 
-        public static void ClearDatabase(DbConnection connection, List<string> tablesToSkip, DatabaseType type, string schema=null)
-        {
+        public static void ClearDatabase(DbConnection connection, List<string> tablesToSkip, DatabaseType type,
+            string schema = null) {
             ClearDatabase(GetDefaultRetries(type), connection, schema ?? GetSchema(type), tablesToSkip, type);
         }
 
-        private static void ConnectionStateCheck(DbConnection connection)
-        {
+        private static void ConnectionStateCheck(DbConnection connection) {
             // Man: need to check whether to throw an exception here, the connection should open in startSut.
-            if (connection.State == ConnectionState.Closed)
-            {
+            if (connection.State == ConnectionState.Closed) {
                 connection.Open();
             }
         }
@@ -41,13 +37,10 @@ namespace EvoMaster.Controller.Controllers.db
         // for more information about dbcommand and dbconnection
         // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/dbconnection-dbcommand-and-dbexception
         public static void ClearDatabase(int retries, DbConnection connection, string schemaName,
-            List<string> tablesToSkip, DatabaseType type, bool doDropTable = false)
-        {
+            List<string> tablesToSkip, DatabaseType type, bool doDropTable = false) {
             // Check for valid DbConnection.
-            if (connection != null)
-            {
-                try
-                {
+            if (connection != null) {
+                try {
                     ConnectionStateCheck(connection);
 
                     // Create the command.
@@ -56,7 +49,8 @@ namespace EvoMaster.Controller.Controllers.db
                     //disable referential integrity constraint for cleaning the data in tables
                     DisableReferentialIntegrity(command, type);
 
-                    CleanDataInTables(tablesToSkip, command, type, schemaName, GetDefaultTrunctionSingleCommand(type), doDropTable);
+                    CleanDataInTables(tablesToSkip, command, type, schemaName, GetDefaultTrunctionSingleCommand(type),
+                        doDropTable);
 
                     ResetSequences(command, type, schemaName);
 
@@ -71,18 +65,15 @@ namespace EvoMaster.Controller.Controllers.db
                         We could check the content of INFORMATION_SCHEMA.LOCKS, or simply look at error message
                      */
                     string msg = ex.Message;
-                    if (msg.ToLower().Contains("timeout"))
-                    {
-                        if (retries > 0)
-                        {
+                    if (msg.ToLower().Contains("timeout")) {
+                        if (retries > 0) {
                             SimpleLogger.Warn("Timeout issue with cleaning DB. Trying again.");
                             //let's just wait a bit, and retry
                             Thread.Sleep(2000);
                             retries--;
                             ClearDatabase(retries, connection, schemaName, tablesToSkip, type, doDropTable);
                         }
-                        else
-                        {
+                        else {
                             SimpleLogger.Error("Giving up cleaning the DB. There are still timeouts.");
                         }
                     }
@@ -92,38 +83,32 @@ namespace EvoMaster.Controller.Controllers.db
                 }
             }
         }
-        
-        private static void CleanDataInTables(List<string> tablesToSkip, DbCommand command, 
+
+        private static void CleanDataInTables(List<string> tablesToSkip, DbCommand command,
             DatabaseType type,
             string schema,
-            bool singleCommand, bool doDropTable)
-        {
+            bool singleCommand, bool doDropTable) {
             // Retrieve all tables
             command.CommandText = GetAllTableCommand(type, schema);
             command.CommandType = CommandType.Text;
             var reader = command.ExecuteReader();
 
             ISet<string> tables = new HashSet<string>();
-            while (reader.Read())
-            {
+            while (reader.Read()) {
                 tables.Add(reader.GetString(0));
             }
 
             reader.Close();
 
-            if (tables.Count == 0)
-            {
+            if (tables.Count == 0) {
                 throw new InvalidOperationException("Could not find any table");
             }
 
             //check tablesToSkip
-            if (tablesToSkip != null)
-            {
-                foreach (var s in tablesToSkip)
-                {
+            if (tablesToSkip != null) {
+                foreach (var s in tablesToSkip) {
                     var exist = tables.ToList().FindAll(t => s.Equals(t, StringComparison.InvariantCultureIgnoreCase));
-                    if (exist.Count == 0)
-                    {
+                    if (exist.Count == 0) {
                         var msg = "Asked to skip tables '" + s + "', but it does not exist.";
                         msg += " Existing tables in schema '" + schema + "': [" +
                                string.Join(",", tables) + "]";
@@ -133,44 +118,39 @@ namespace EvoMaster.Controller.Controllers.db
             }
 
             ISet<string> tablesHaveIdentifies = new HashSet<string>();
-            if (type == DatabaseType.MS_SQL_SERVER)
-            {
+            if (type == DatabaseType.MS_SQL_SERVER) {
                 command.CommandText = GetAllTableHasIdentify(type, schema);
                 command.CommandType = CommandType.Text;
                 var readerHasIdentify = command.ExecuteReader();
-                while (readerHasIdentify.Read())
-                {
+                while (readerHasIdentify.Read()) {
                     tablesHaveIdentifies.Add(readerHasIdentify.GetString(0));
                 }
+
                 readerHasIdentify.Close();
             }
-            
-            
+
+
             var tablesToClear = tables.ToList().FindAll(t =>
                 tablesToSkip == null || tablesToSkip.Count == 0 ||
                 !tablesToSkip.Any(s => t.Equals(s, StringComparison.InvariantCultureIgnoreCase)));
 
-            if (singleCommand)
-            {
-                if (!type.Equals(DatabaseType.POSTGRES))
-                {
-                    throw new InvalidOperationException("do not support for cleaning all data by one single command for " +type);
+            if (singleCommand) {
+                if (!type.Equals(DatabaseType.POSTGRES)) {
+                    throw new InvalidOperationException(
+                        "do not support for cleaning all data by one single command for " + type);
                 }
 
-                tablesToClear =  tablesToClear.Select(x => $"\"{x}\"").ToList();
+                tablesToClear = tablesToClear.Select(x => $"\"{x}\"").ToList();
                 var all = string.Join(",", tablesToClear);
-                
+
                 //TODO: Man need to check with Amid, this command seems different from java
                 TruncateTablesBySingleCommand(command, all);
             }
-            else
-            {
+            else {
                 //note from DbCleaner.java: if one at a time, need to make sure to first disable FK checks
-                foreach (var t in tablesToClear)
-                {
+                foreach (var t in tablesToClear) {
                     if (doDropTable) DropTables(command, t);
-                    else
-                    {
+                    else {
                         if (type == DatabaseType.MS_SQL_SERVER) DeleteTables(command, t, tablesHaveIdentifies);
                         else TruncateTables(command, t);
                     }
@@ -178,55 +158,49 @@ namespace EvoMaster.Controller.Controllers.db
             }
         }
 
-        private static String GetAllTableHasIdentify(DatabaseType type, String schema){
-            if(type != DatabaseType.MS_SQL_SERVER)
-                throw new InvalidOperationException("getAllTableHasIdentify only supports for MS_SQL_SERVER, not for "+type);
-            return GetAllTableCommand(type, schema) + " AND OBJECTPROPERTY(OBJECT_ID(TABLE_NAME), 'TableHasIdentity') = 1";
+        private static String GetAllTableHasIdentify(DatabaseType type, String schema) {
+            if (type != DatabaseType.MS_SQL_SERVER)
+                throw new InvalidOperationException("getAllTableHasIdentify only supports for MS_SQL_SERVER, not for " +
+                                                    type);
+            return GetAllTableCommand(type, schema) +
+                   " AND OBJECTPROPERTY(OBJECT_ID(TABLE_NAME), 'TableHasIdentity') = 1";
         }
-        
-        private static void DropTables(DbCommand command, string table)
-        {
+
+        private static void DropTables(DbCommand command, string table) {
             command.CommandText = "DROP TABLE IF EXISTS " + table;
             command.ExecuteNonQuery();
         }
 
-        private static void DeleteTables(DbCommand command, string table, ISet<string> tableHasIdentify)
-        {
+        private static void DeleteTables(DbCommand command, string table, ISet<string> tableHasIdentify) {
             command.CommandText = "DELETE FROM " + table;
             command.ExecuteNonQuery();
-            if (tableHasIdentify.Contains(table))
-            {
+            if (tableHasIdentify.Contains(table)) {
                 command.CommandText = "DBCC CHECKIDENT ('" + table + "', RESEED, 0)";
                 command.ExecuteNonQuery();
             }
         }
-        
-        private static void TruncateTables(DbCommand command, string table)
-        {
+
+        private static void TruncateTables(DbCommand command, string table) {
             command.CommandText = "TRUNCATE TABLE " + table;
             command.ExecuteNonQuery();
         }
-        
-        private static void TruncateTablesBySingleCommand(DbCommand command, string tables)
-        {
+
+        private static void TruncateTablesBySingleCommand(DbCommand command, string tables) {
             command.CommandText = "TRUNCATE " + tables;
             command.ExecuteNonQuery();
         }
 
-        private static void ResetSequences(DbCommand command, DatabaseType type, string schemaName)
-        {
+        private static void ResetSequences(DbCommand command, DatabaseType type, string schemaName) {
             ISet<string> sequences = new HashSet<string>();
             command.CommandText = GetAllSequenceCommand(type, schemaName);
             command.CommandType = CommandType.Text;
             var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
+            while (reader.Read()) {
                 sequences.Add(reader.GetString(0));
             }
 
             reader.Close();
-            foreach (var sequence in sequences)
-            {
+            foreach (var sequence in sequences) {
                 command.CommandText = ResetSequenceCommand(sequence, type);
                 command.ExecuteNonQuery();
             }
@@ -240,24 +214,20 @@ namespace EvoMaster.Controller.Controllers.db
             */
         }
 
-        private static string GetSchema(DatabaseType type)
-        {
-            return type switch
-            {
+        private static string GetSchema(DatabaseType type) {
+            return type switch {
                 DatabaseType.MS_SQL_SERVER => "dbo",
                 DatabaseType.H2 => "PUBLIC",
                 DatabaseType.POSTGRES => "public",
                 _ => throw new DbUnsupportedException(type)
             };
         }
-        
 
-        private static string GetAllTableCommand(DatabaseType type, string schema)
-        {
+
+        private static string GetAllTableCommand(DatabaseType type, string schema) {
             var command =
                 "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES  where (TABLE_TYPE='TABLE' OR TABLE_TYPE='BASE TABLE')";
-            switch (type)
-            {
+            switch (type) {
                 case DatabaseType.MS_SQL_SERVER:
                 // for mysql, schema is dbname
                 case DatabaseType.MYSQL:
@@ -271,11 +241,9 @@ namespace EvoMaster.Controller.Controllers.db
             throw new DbUnsupportedException(type);
         }
 
-        private static string GetAllSequenceCommand(DatabaseType type, string schema)
-        {
+        private static string GetAllSequenceCommand(DatabaseType type, string schema) {
             string command = "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES";
-            switch (type)
-            {
+            switch (type) {
                 case DatabaseType.MYSQL:
                 case DatabaseType.MARIADB:
                     return GetAllTableCommand(type, schema);
@@ -288,13 +256,11 @@ namespace EvoMaster.Controller.Controllers.db
             throw new DbUnsupportedException(type);
         }
 
-        private static string ResetSequenceCommand(string sequence, DatabaseType type)
-        {
-            switch(type)
-            {
+        private static string ResetSequenceCommand(string sequence, DatabaseType type) {
+            switch (type) {
                 case DatabaseType.MARIADB:
                 case DatabaseType.MYSQL:
-                    return "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;"; 
+                    return "ALTER TABLE " + sequence + " AUTO_INCREMENT=1;";
                 case DatabaseType.MS_SQL_SERVER:
                 case DatabaseType.POSTGRES:
                     return "ALTER SEQUENCE " + sequence + " RESTART WITH 1";
@@ -303,10 +269,8 @@ namespace EvoMaster.Controller.Controllers.db
             throw new DbUnsupportedException(type);
         }
 
-        private static int GetDefaultRetries(DatabaseType type)
-        {
-            switch (type)
-            {
+        private static int GetDefaultRetries(DatabaseType type) {
+            switch (type) {
                 case DatabaseType.MS_SQL_SERVER:
                 case DatabaseType.POSTGRES: return 0;
                 default:
@@ -314,22 +278,19 @@ namespace EvoMaster.Controller.Controllers.db
             }
         }
 
-        private static bool GetDefaultTrunctionSingleCommand(DatabaseType type)
-        {
-            return type switch
-            {
+        private static bool GetDefaultTrunctionSingleCommand(DatabaseType type) {
+            return type switch {
                 DatabaseType.POSTGRES => true,
                 _ => false
             };
         }
 
-        private static void DisableReferentialIntegrity(DbCommand command, DatabaseType type)
-        {
-            switch (type)
-            {
+        private static void DisableReferentialIntegrity(DbCommand command, DatabaseType type) {
+            switch (type) {
                 case DatabaseType.POSTGRES: break;
                 case DatabaseType.MS_SQL_SERVER:
-                    SqlScriptRunner.ExecCommand(command, "EXEC sp_MSForEachTable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
+                    SqlScriptRunner.ExecCommand(command,
+                        "EXEC sp_MSForEachTable \"ALTER TABLE ? NOCHECK CONSTRAINT all\"");
                     break;
                 case DatabaseType.H2:
                     SqlScriptRunner.ExecCommand(command, "SET REFERENTIAL_INTEGRITY FALSE");
@@ -344,13 +305,12 @@ namespace EvoMaster.Controller.Controllers.db
             }
         }
 
-        private static void EnableReferentialIntegrity(DbCommand command, DatabaseType type)
-        {
-            switch (type)
-            {
+        private static void EnableReferentialIntegrity(DbCommand command, DatabaseType type) {
+            switch (type) {
                 case DatabaseType.POSTGRES: break;
                 case DatabaseType.MS_SQL_SERVER:
-                    SqlScriptRunner.ExecCommand(command, "exec sp_MSForEachTable \"ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all\"");
+                    SqlScriptRunner.ExecCommand(command,
+                        "exec sp_MSForEachTable \"ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all\"");
                     break;
                 case DatabaseType.H2:
                     SqlScriptRunner.ExecCommand(command, "SET REFERENTIAL_INTEGRITY TRUE");

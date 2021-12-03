@@ -3,9 +3,14 @@ package org.evomaster.client.java.controller.problem;
 public class GraphQlProblem implements ProblemInfo{
 
     /**
-     * The endpoint in the SUT that expect incoming GraphQL queries
+     * The endpoint path (not the full URL) in the SUT that expects incoming GraphQL queries.
+     * Most of the times, this will just be "/graphql"
      */
     private final String endpoint;
+
+    public GraphQlProblem() {
+        this("/graphql");
+    }
 
     public GraphQlProblem(String endpoint) {
         this.endpoint = endpoint;

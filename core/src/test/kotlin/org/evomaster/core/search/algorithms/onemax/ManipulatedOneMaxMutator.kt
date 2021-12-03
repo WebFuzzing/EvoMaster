@@ -26,7 +26,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
        return listOf()
     }
 
-    override fun doesStructureMutation(individual: OneMaxIndividual): Boolean  = false
+    override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<OneMaxIndividual>): Boolean = false
 
     private fun manipulate(mutated: EvaluatedIndividual<OneMaxIndividual>, degree: Double, improve: Boolean, mutatedGeneSpecification: MutatedGeneSpecification?) : OneMaxIndividual{
         val ind = mutated.individual.copy() as OneMaxIndividual
@@ -38,7 +38,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
         val previousValue = ind.getValue(index)
         ind.setValue(index, if(improve) min(1.0, ind.getValue(index) + degree) else min(0.0, ind.getValue(index) - degree))
 
-        mutatedGeneSpecification?.addMutatedGene(isDb = false, valueBeforeMutation = previousValue.toString(), gene = ind.seeGenes()[index], position = null)
+        mutatedGeneSpecification?.addMutatedGene(isDb = false, isInit = false, valueBeforeMutation = previousValue.toString(), gene = ind.seeGenes()[index], position = null)
 
         return ind
     }

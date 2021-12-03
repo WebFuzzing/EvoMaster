@@ -59,7 +59,7 @@ class WriteJsonTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -107,7 +107,7 @@ class WriteJsonTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -153,7 +153,7 @@ class WriteJsonTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -199,7 +199,7 @@ class WriteJsonTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }

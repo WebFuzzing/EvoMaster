@@ -86,6 +86,10 @@ public class EvoMasterTest {
 ```
 
 
+## AUTH
+
+Since version `1.3.0`, it is possible to specify custom HTTP headers (e.g., to pass auth tokens), using the options from `--header0` to `--header2` (in case more than one HTTP header is needed). 
+
 ## WARNING
 
 Black-box testing is easy to do: first download the tool, and then just specify where the Swagger schema

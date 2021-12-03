@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
 namespace RestApis.HelloWorld.Controllers {
-
     [ApiController]
-    [Route ("[controller]")]
+    [Route("[controller]")]
     public class HelloWorldController : ControllerBase {
-
         [HttpGet]
-        public IActionResult Get () => Ok("Hello World");
+        public IActionResult Get() => Ok("HelloWorld");
     }
 }

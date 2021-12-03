@@ -11,6 +11,9 @@ import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene

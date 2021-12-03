@@ -7,11 +7,11 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
@@ -153,7 +153,7 @@ public abstract class SutController implements SutHandler {
     }
 
     @Override
-    public void execInsertionsIntoDatabase(List<InsertionDto> insertions) {
+    public InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous) {
 
         Connection connection = getConnection();
         if (connection == null) {
@@ -161,7 +161,7 @@ public abstract class SutController implements SutHandler {
         }
 
         try {
-            SqlScriptRunner.execInsert(connection, insertions);
+            return SqlScriptRunner.execInsert(connection, insertions, previous);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
