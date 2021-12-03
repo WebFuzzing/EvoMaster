@@ -66,12 +66,26 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
             setValue(values);
         }
-
-
     }
 
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
-        // TODO
+        List<NamedTypedValue> values = new ArrayList<>();
+        List<NamedTypedValue> fields = getType().getFields();
+        for (NamedTypedValue f: fields){
+            NamedTypedValue copy = f.copyStructure();
+            try {
+                Field fi = instance.getClass().getDeclaredField(f.getName());
+                fi.setAccessible(true);
+                Object fiv = fi.get(instance);
+                copy.setValueBasedOnValidInstance(fiv);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException("ERROR: fail to get value of the field with the name ("+ f.getName()+ ") and error Msg:"+e.getMessage());
+            }
+
+            values.add(copy);
+        }
+
+        setValue(values);
     }
 }
