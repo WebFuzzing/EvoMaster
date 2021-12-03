@@ -7,6 +7,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
@@ -373,10 +374,19 @@ public abstract class SutController implements SutHandler {
      * execute a RPC request based on the specified dto
      * @param dto is the action DTO to be executed
      */
-    public final Object executeAction(RPCActionDto dto){
+    public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto){
         Object client = ((RPCProblem)getProblemInfo()).getClient(dto.interfaceId);
         EndpointSchema endpointSchema = getEndpointSchema(dto);
-        return executeRPCEndpoint(client, endpointSchema);
+        Object response = executeRPCEndpoint(client, endpointSchema);
+        if (endpointSchema.getResponse() != null){
+            // successful execution
+            NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
+            resSchema.setValue(response);
+            responseDto.rpcResponse = resSchema.getDto();
+
+            //TODO handle exception if needed
+        }
+
     }
 
     /**

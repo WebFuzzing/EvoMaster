@@ -2,8 +2,10 @@ package org.evomaster.client.java.controller.problem.rpc.invocation;
 
 import io.restassured.RestAssured;
 import org.evomaster.client.java.controller.api.Formats;
+import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -14,7 +16,7 @@ import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * created by manzhang on 2021/11/27
@@ -69,8 +71,11 @@ public class RPCSutControllerTest {
         dto.requestParams.get(5).jsonValue = ""+ Byte.parseByte("42");
         dto.requestParams.get(6).jsonValue = ""+ false;
         dto.requestParams.get(7).jsonValue = ""+ Short.parseShort("42");
-        String result = (String)rpcController.executeAction(dto);
-        assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", result);
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.rpcResponse);
+        assertEquals(RPCSupportedDataType.STRING, responseDto.rpcResponse.type.type);
+        assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", responseDto.rpcResponse.jsonValue);
     }
 
     @Test
@@ -87,9 +92,11 @@ public class RPCSutControllerTest {
         dto.requestParams.get(5).jsonValue = ""+ Byte.parseByte("42");
         dto.requestParams.get(6).jsonValue = ""+ false;
         dto.requestParams.get(7).jsonValue = ""+ Short.parseShort("42");
-        String result = (String)rpcController.executeAction(dto);
-        assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", result);
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.rpcResponse);
+        assertEquals(RPCSupportedDataType.STRING, responseDto.rpcResponse.type.type);
+        assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", responseDto.rpcResponse.jsonValue);
     }
-
 
 }

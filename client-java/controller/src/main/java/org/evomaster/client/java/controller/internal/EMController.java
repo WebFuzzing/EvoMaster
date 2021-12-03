@@ -493,12 +493,14 @@ public class EMController {
             //this MUST not be inside a noKillSwitch, as it sets to false
             sutController.newAction(dto);
 
+
             if (dto.rpcCall != null){
+                ActionResponseDto responseDto = new ActionResponseDto();
+                responseDto.index = index;
                 try{
                     // TODO RPC execute action here and return its response
-                    Object response = sutController.executeAction(dto.rpcCall);
-                    ActionResponseDto responseDto = new ActionResponseDto();
-                    responseDto.index = index;
+                    sutController.executeAction(dto.rpcCall, responseDto);
+
                     // convert the response to dto, and send back to core
 
 
