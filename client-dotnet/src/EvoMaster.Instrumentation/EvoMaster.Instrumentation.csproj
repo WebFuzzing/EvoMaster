@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <IsPackable>true</IsPackable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -9,6 +10,20 @@
         <Version>1.1.1-SNAPSHOT</Version>
         <Authors>EvoMaster Team</Authors>
     </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\EvoMaster.Client.Util\EvoMaster.Client.Util.csproj" />
+      <ProjectReference Include="..\EvoMaster.Instrumentation_Shared\EvoMaster.Instrumentation_Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- using a higher version for the 3 packages above results in FileLoadException when trying to build the drivers -->
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.3" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="3.0.3" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.0.3" />
+        
+      <PackageReference Include="Mono.Cecil" Version="0.11.3" />
+    </ItemGroup>
     
     <Target Name="PublishNuGetLocally" AfterTargets="Build">
         <Exec Command="dotnet pack $(ProjectPath) -c $(ConfigurationName)" />

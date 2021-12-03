@@ -1,12 +1,10 @@
-
 using System.Collections.Generic;
-using EvoMaster.Instrumentation.Staticstate;
+using System.Linq;
+using EvoMaster.Instrumentation.StaticState;
 
-namespace EvoMaster.Instrumentation
-{
-    public static class InstrumentationController
-    {
-        public static void ResetForNewSearch(){
+namespace EvoMaster.Instrumentation {
+    public static class InstrumentationController {
+        public static void ResetForNewSearch() {
             ExecutionTracer.Reset();
             //ObjectiveRecorder.reset(false);
         }
@@ -15,7 +13,7 @@ namespace EvoMaster.Instrumentation
             Each time we start/stop/reset the SUT, we need to make sure
             to reset the collection of bytecode info.
          */
-        public static void ResetForNewTest(){
+        public static void ResetForNewTest() {
             ExecutionTracer.Reset();
 
             /*
@@ -26,15 +24,37 @@ namespace EvoMaster.Instrumentation
              */
             //ObjectiveRecorder.clearFirstTimeEncountered();
         }
-        
-        public static List<TargetInfo> GetTargetInfos(IEnumerable<int> ids){
+
+        public static List<TargetInfo> GetTargetInfos(IEnumerable<int> ids) {
             
-            //return empty
-            return new List<TargetInfo>();
-            
+            var list = new List<TargetInfo>();
+
+            var objectives = ExecutionTracer.GetInternalReferenceToObjectiveCoverage();
+
+            ids.ToList().ForEach(id => {
+                var descriptiveId = ObjectiveRecorder.GetDescriptiveId(id);
+
+                var info = objectives[descriptiveId];
+                
+                info = info == null ? TargetInfo.NotReached(id) : info.WithMappedId(id).WithNoDescriptiveId();
+
+                list.Add(info);
+            });
+
+            //If new targets were found, we add them even if not requested by EM
+            ObjectiveRecorder.GetTargetsSeenFirstTime().ToList().ForEach(s=> {
+                
+                var mappedId = ObjectiveRecorder.GetMappedId(s);
+
+                var info = objectives[s].WithMappedId(mappedId);
+
+                list.Add(info);
+            });
+
+            return list;
         }
-        
-        public static List<AdditionalInfo> GetAdditionalInfoList(){
+
+        public static List<AdditionalInfo> GetAdditionalInfoList() {
             return new List<AdditionalInfo>(ExecutionTracer.ExposeAdditionalInfoList());
         }
     }

@@ -17,6 +17,8 @@ import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -153,7 +155,7 @@ class RestResourceNode(
         return dbactions.filterNot { it.representExistingData }.flatMap { db->
             val exclude = related.flatMap { r-> r?.getRelatedColumn(db.table.name)?.toList()?:listOf() }
             db.seeGenesForInsertion(exclude)
-        }.filter(Gene::isMutable)
+        }.filter{it.isMutable() && it !is SqlForeignKeyGene && it !is SqlPrimaryKeyGene}
     }
 
     /**
@@ -205,7 +207,7 @@ class RestResourceNode(
 
     //if only get
     fun isIndependent() : Boolean{
-        return templates.all { it.value.independent } && (creations.none { c->c.isComplete() } || resourceToTable.paramToTable.isEmpty())
+        return templates.all { it.value.independent } && (creations.none { c->c.isComplete() } && resourceToTable.paramToTable.isEmpty())
     }
 
     // if only post, the resource does not contain any independent action
@@ -240,7 +242,7 @@ class RestResourceNode(
                 posts[0]
             }
             else -> null
-        }
+        }?.copyContent() as? RestCallAction
 
         if(post != null){
             postCreation.actions.add(0, post)
@@ -257,11 +259,12 @@ class RestResourceNode(
                 postCreation.confirmComplete()
         }
 
-        creations.add(postCreation)
+        if (postCreation.actions.isNotEmpty())
+            creations.add(postCreation)
     }
 
     private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){
-        val post = chooseClosestAncestor(path, listOf(HttpVerb.POST))
+        val post = chooseClosestAncestor(path, listOf(HttpVerb.POST))?.copyContent() as? RestCallAction
         if(post != null){
             postCreationChain.actions.add(0, post)
             if (post.path.hasVariablePathParameters() &&
@@ -337,11 +340,11 @@ class RestResourceNode(
 
     /**
      * sample a rest resource with one action based on the specified [verb]
-     * if [verb] is null, select the action at random
+     * if [verb] is null, select an action at random from available [actions] in this node
      */
     fun sampleOneAction(verb : HttpVerb? = null, randomness: Randomness) : RestResourceCalls{
-        val al = if(verb != null) getActionByHttpVerb(actions, verb) else randomness.choose(actions).copy() as RestCallAction
-        return sampleOneAction(al!!, randomness)
+        val al = if(verb != null) getActionByHttpVerb(actions, verb) else randomness.choose(actions)
+        return sampleOneAction(al!!.copyContent() as RestCallAction, randomness)
     }
 
     /**
@@ -558,7 +561,7 @@ class RestResourceNode(
             ancestors.find { it.path.toString() == path.toString() }
         }
         ar?.let{
-            val others = hasWithVerbs(it.ancestors.flatMap { it.actions }.filterIsInstance<RestCallAction>(), verbs)
+            val others = hasWithVerbs(it.ancestors.flatMap { it.actions }, verbs)
             if(others.isEmpty()) return null
             return chooseLongestPath(others)
         }

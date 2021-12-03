@@ -13,6 +13,7 @@ import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -84,8 +85,12 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             this(fitness, individual, results,
                     trackOperator = trackOperator,
                     index = index,
-                    impactInfo = if ((config.isEnabledImpactCollection()))
-                        ImpactsOfIndividual(individual, config.abstractInitializationGeneToMutate, config.maxSqlInitActionsPerMissingData, fitness)
+                    impactInfo = if ((config.isEnabledImpactCollection())){
+                        if(individual is RestIndividual && config.isEnabledResourceDependency())
+                            ResourceImpactOfIndividual(individual, config.abstractInitializationGeneToMutate, fitness)
+                        else
+                            ImpactsOfIndividual(individual, config.abstractInitializationGeneToMutate, fitness)
+                    }
                     else
                         null)
 
@@ -193,7 +198,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                     it.wrapWithEvaluatedResults(evaluatedResult)
                 }
             }
-            TraceableElementCopyFilter.DEEP_TRACK -> throw IllegalArgumentException("there is no need to track individual when evaluated indivdual is tracked")
+            TraceableElementCopyFilter.DEEP_TRACK -> throw IllegalArgumentException("there is no need to track individual when evaluated individual is tracked")
             TraceableElementCopyFilter.WITH_TRACK ->{
                 // the copy includes tracking info, but it is no need to include tracking info for the element in the tracking.
                 return copy().also { it.wrapWithTracking(evaluatedResult, trackingHistory = tracking) }
@@ -349,8 +354,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 val addedGenes = mutatedGenes.getAdded(true)
                 //handle added actions with genes
                 val groupGeneByActionIndex = addedGenes.filter { it.gene != null }.groupBy {g->
-                    mutatedGenes.mutatedIndividual!!.seeActions(ActionFilter.NO_INIT).find {
-                            a->a.seeGenes().contains(g.gene) }.run { mutatedGenes.mutatedIndividual!!.seeActions(ActionFilter.NO_INIT).indexOf(this) }
+                    mutatedGenes.mutatedIndividual!!.seeActions(NO_INIT).find {
+                            a->a.seeGenes().contains(g.gene) }.run { mutatedGenes.mutatedIndividual!!.seeActions(NO_INIT).indexOf(this) }
                 }
 
                 //handle added actions without genes
@@ -359,7 +364,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 addedGenes.mapNotNull { it.actionPosition }.toSet().sorted().forEach { actionIndex->
                       if (emptyActions.contains(actionIndex)){
                           impactInfo!!.addOrUpdateActionGeneImpacts(
-                              actionName = individual.seeActions(ActionFilter.NO_INIT)[actionIndex].getName(),
+                              actionName = individual.seeActions(NO_INIT)[actionIndex].getName(),
                               actionIndex = actionIndex,
                               newAction = true,
                               impacts = mutableMapOf()
@@ -371,7 +376,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                               throw IllegalArgumentException("mismatched impact info: genes should be mutated at $index action, but actually the index is $actionIndex")
                           impactInfo!!.addOrUpdateActionGeneImpacts(
                               actionIndex = actionIndex,
-                              actionName = individual.seeActions(ActionFilter.NO_INIT)[actionIndex].getName(),
+                              actionName = individual.seeActions(NO_INIT)[actionIndex].getName(),
                               impacts = mgenes.map {g->
                                   g.gene?:throw IllegalStateException("Added gene is not recorded")
                                   val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, g.gene)
@@ -401,20 +406,19 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 in this case, we might remove second table_a, thus the mutated ind A becomes
                 (table_a, resource_a, table_b, resource_b), and the table_b refers to the table_a in the front of resource_a
              */
-
-            var fix = impactInfo!!.findFirstMismatchedIndex(individual.seeActions(ActionFilter.NO_INIT))
+            var fix = impactInfo!!.findFirstMismatchedIndex(individual.seeActions(NO_INIT))
             while (fix.first != -1){
                 if (fix.second!!){
                     impactInfo.deleteActionGeneImpacts(setOf(fix.first))
                 }else{
                     impactInfo.addOrUpdateActionGeneImpacts(
-                        actionName = individual.seeActions(ActionFilter.NO_INIT)[fix.first].getName(),
+                        actionName = individual.seeActions(NO_INIT)[fix.first].getName(),
                         actionIndex = fix.first,
                         newAction = true,
                         impacts = mutableMapOf()
                     )
                 }
-                val nextFix = impactInfo.findFirstMismatchedIndex(individual.seeActions(ActionFilter.NO_INIT))
+                val nextFix = impactInfo.findFirstMismatchedIndex(individual.seeActions(NO_INIT))
                 if (nextFix.first < fix.first){
                     if (nextFix.first != -1)
                         log.warn("the fix at {} with remove/add ({}) does not work, and the next fix is at {}", fix.first, fix.second, nextFix.first)
@@ -425,6 +429,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
         impactInfo!!.impactsOfStructure.countImpact(next, sizeChanged, noImpactTargets= noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
 
+        if (impactInfo is ResourceImpactOfIndividual){
+            // count impact of changing size of resource
+            impactInfo.countResourceSizeImpact(previous as RestIndividual, current = next.individual as RestIndividual, noImpactTargets= noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets)
+        }
     }
 
 
@@ -441,17 +449,21 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 impactInfo!!.getSQLExistingData() == individual.seeInitializingActions().count { it is DbAction && it.representExistingData }
             }
         }
+
+        var updated = 0
         // update rest action genes and/or sql genes
-        mutatedGenes.mutatedActionOrDb().forEach { db->
+        mutatedGenes.mutatedActionOrInit().forEach { isInit->
             val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(
-                    mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous, fromInitialization = db)
+                    mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous, isInit = isInit)
+
+            updated += mutatedGenesWithContext.size
 
             mutatedGenesWithContext.forEach {gc->
                 val impact = impactInfo!!.getGene(
                         actionName = gc.action,
                         actionIndex = gc.position,
                         geneId = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, gc.current),
-                        fromInitialization = db
+                        fromInitialization = isInit
                 )?:throw IllegalArgumentException("mismatched impact info")
 
                 impact.countImpactWithMutatedGeneWithContext(
@@ -463,6 +475,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 )
             }
         }
+
+        Lazy.assert { updated == mutatedGenes.numOfMutatedGeneInfo() }
     }
 
     /**

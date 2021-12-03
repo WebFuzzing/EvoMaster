@@ -4,20 +4,17 @@ using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 
-namespace EvoMaster.DatabaseController.Containers
-{
+namespace EvoMaster.DatabaseController.Containers {
     /* This class is a base for running containers in our solution
       To run database in a docker container we first tried DotNet.Testcontainers library
       It worked fine for starting postgres database, but we coudln't use it for sql server as it was incompletely implemented to start sql server
       So we decided to implement it by the aid of Docker.Dotnet library */
 
     // credits to https://www.meziantou.net/2018/10/08/integration-testing-using-a-docker-container
-    internal abstract class DockerContainerBase
-    {
+    internal abstract class DockerContainerBase {
         protected const string ContainerPrefix = "EvoMaster-DB-";
 
-        protected DockerContainerBase(string imageName, string containerName)
-        {
+        protected DockerContainerBase(string imageName, string containerName) {
             ImageName = imageName;
             ContainerName = containerName;
         }
@@ -28,35 +25,29 @@ namespace EvoMaster.DatabaseController.Containers
 
         private ContainerStartAction StartAction { get; set; } = ContainerStartAction.NONE;
 
-        public async Task StartAsync(IDockerClient client, int timeout)
-        {
+        public async Task StartAsync(IDockerClient client, int timeout) {
             if (StartAction != ContainerStartAction.NONE) return;
 
             var images =
-                await client.Images.ListImagesAsync(new ImagesListParameters {MatchName = ImageName});
+                await client.Images.ListImagesAsync(new ImagesListParameters { MatchName = ImageName });
 
-            if (images.Count == 0)
-            {
+            if (images.Count == 0) {
                 await client.Images.CreateImageAsync(
-                    new ImagesCreateParameters {FromImage = ImageName, Tag = "latest"}, null,
+                    new ImagesCreateParameters { FromImage = ImageName, Tag = "latest" }, null,
                     new Progress<JSONMessage>());
             }
 
-            var list = await client.Containers.ListContainersAsync(new ContainersListParameters
-            {
+            var list = await client.Containers.ListContainersAsync(new ContainersListParameters {
                 All = true
             });
 
             var container = list.FirstOrDefault(x => x.Names.Contains("/" + ContainerName));
 
-            if (container == null)
-            {
+            if (container == null) {
                 await CreateContainerAsync(client);
             }
-            else
-            {
-                if (container.State == "running")
-                {
+            else {
+                if (container.State == "running") {
                     StartAction = ContainerStartAction.EXTERNAL;
                     return;
                 }
@@ -69,8 +60,7 @@ namespace EvoMaster.DatabaseController.Containers
             var i = 0;
             var eachDelay = (timeout * 1000) / 20 < 5000 ? 5000 : (timeout * 1000) / 20;
 
-            while (!await IsReadyAsync())
-            {
+            while (!await IsReadyAsync()) {
                 i++;
 
                 if (i > 20)
@@ -83,13 +73,11 @@ namespace EvoMaster.DatabaseController.Containers
             StartAction = ContainerStartAction.STARTED;
         }
 
-        private async Task CreateContainerAsync(IDockerClient client)
-        {
+        private async Task CreateContainerAsync(IDockerClient client) {
             var hostConfig = ToHostConfig();
             var config = ToConfig();
 
-            await client.Containers.CreateContainerAsync(new CreateContainerParameters(config)
-            {
+            await client.Containers.CreateContainerAsync(new CreateContainerParameters(config) {
                 Image = ImageName,
                 Name = ContainerName,
                 Tty = true,
@@ -97,10 +85,9 @@ namespace EvoMaster.DatabaseController.Containers
             });
         }
 
-        public Task RemoveAsync(IDockerClient client)
-        {
+        public Task RemoveAsync(IDockerClient client) {
             return client.Containers.RemoveContainerAsync(ContainerName,
-                new ContainerRemoveParameters {Force = true, RemoveVolumes = true});
+                new ContainerRemoveParameters { Force = true, RemoveVolumes = true });
         }
 
         protected abstract Task<bool> IsReadyAsync();
@@ -109,29 +96,24 @@ namespace EvoMaster.DatabaseController.Containers
 
         protected abstract Config ToConfig();
 
-        public override string ToString()
-        {
+        public override string ToString() {
             return $"{nameof(ImageName)}: {ImageName}, {nameof(ContainerName)}: {ContainerName}";
         }
 
-        public static async Task CleanupOrphanedContainersAsync(DockerClient dockerClient)
-        {
-            var containers = await dockerClient.Containers.ListContainersAsync(new ContainersListParameters
-            {
+        public static async Task CleanupOrphanedContainersAsync(DockerClient dockerClient) {
+            var containers = await dockerClient.Containers.ListContainersAsync(new ContainersListParameters {
                 All = true
             });
 
             var orphanedContainers = containers.Where(_ => _.Names.Any(__ => __.Contains(ContainerPrefix)));
 
-            foreach (var container in orphanedContainers)
-            {
+            foreach (var container in orphanedContainers) {
                 await dockerClient.Containers.RemoveContainerAsync(container.ID,
-                    new ContainerRemoveParameters {Force = true, RemoveVolumes = true});
+                    new ContainerRemoveParameters { Force = true, RemoveVolumes = true });
             }
         }
 
-        private enum ContainerStartAction
-        {
+        private enum ContainerStartAction {
             NONE,
             STARTED,
             EXTERNAL

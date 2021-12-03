@@ -2,16 +2,13 @@ package org.evomaster.core.output.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
-import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
@@ -47,8 +44,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 || ((call as RestCallAction).saveLocation && !res.stopping)
     }
 
-    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>) {
-        super.handleFieldDeclarations(lines, baseUrlOfSut, ind)
+    override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
+        super.handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
 
         if (shouldCheckExpectations()) {
             addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)
@@ -86,14 +83,13 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         }
     }
 
-    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>){
+    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>){
         //SQL actions are generated in between
         if (ind.individual is RestIndividual) {
-
             ind.evaluatedResourceActions().forEachIndexed { index, c ->
                 // db
                 if (c.first.isNotEmpty())
-                    SqlWriter.handleDbInitialization(format, c.first, lines, ind.individual.seeDbActions(), groupIndex = index.toString(), skipFailure = config.skipFailureSQLInTestFile)
+                    SqlWriter.handleDbInitialization(format, c.first, lines, ind.individual.seeDbActions(), groupIndex = index.toString(), insertionVars =insertionVars, skipFailure = config.skipFailureSQLInTestFile)
                 //actions
                 c.second.forEach { a ->
                     handleSingleCall(a, lines, baseUrlOfSut)

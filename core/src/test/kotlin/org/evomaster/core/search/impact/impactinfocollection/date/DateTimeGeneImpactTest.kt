@@ -1,6 +1,9 @@
 package org.evomaster.core.search.impact.impactinfocollection.date
 
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.ImpactOptions
