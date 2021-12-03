@@ -211,7 +211,6 @@ public class EMController {
                 schemas.add(s.getDto());
             }
             dto.rpcProblem.schemas = schemas;
-            dto.graphQLProblem.endpoint= removePrefix(p.getEndpoint(), baseUrlOfSUT);
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);
