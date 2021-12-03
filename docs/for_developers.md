@@ -330,9 +330,9 @@ Instructions can be found [here](./release.md).
 
 
 ### JDK VERSIONS
-At this point, we only support JDK __8__ and JDK __11__.
-_EvoMaster_ must be built with JDK 8, but still must be able to run it with JDK 11.
-Can be useful to setup your machine to easily switch between the 2 versions.
+At this point, we only support JDK __8__ and the following major LTS versions.
+_EvoMaster_ must be built with JDK 8, but still must be able to run it with the most recent LTS JDK.
+Can be useful to setup your machine to easily switch between different JDK versions.
 For example, if you are using a Mac, in your `~/.profile` configuration, you could have something 
 like:
 ```
@@ -347,6 +347,22 @@ alias java11='$JAVA_HOME_11/bin/java'
 alias mvn8='JAVA_HOME=$JAVA_HOME_8 && mvn'
 alias mvn11='JAVA_HOME=$JAVA_HOME_11 && mvn'
 ```
+
+If you are using Windows, it does not seem there is a simple way to define aliases.
+Besides setting up the `JAVA_HOME` environment variable, it can be useful to set up an enviroment variable for each LTS JDK version, e.g., `JAVA_HOME_8`, `JAVA_HOME_11` and `JAVA_HOME_17` (of course, you will need to install all those JDKs...).
+Then, from a bash shell (e.g., Git Bash), you can build with Maven using:
+
+`JAVA_HOME=$JAVA_HOME_11 mvn <your_inputs>`
+
+For example, try it with:
+
+`JAVA_HOME=$JAVA_HOME_11 mvn --version`
+
+You can also call `java` directly with:
+
+`$JAVA_HOME_17/bin/java -version`
+
+
 
 
 
