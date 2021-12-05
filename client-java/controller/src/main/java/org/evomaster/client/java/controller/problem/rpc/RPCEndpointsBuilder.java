@@ -24,7 +24,7 @@ public class RPCEndpointsBuilder {
         List<EndpointSchema> endpoints = new ArrayList<>();
         try {
             Class<?> interfaze = Class.forName(interfaceName);
-            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, client.getClass().getName());
+            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, (client != null)?client.getClass().getName():null);
             for (Method m : interfaze.getDeclaredMethods()) {
                 endpoints.add(build(schema, m, rpcType));
             }
