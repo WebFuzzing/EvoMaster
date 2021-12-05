@@ -31,7 +31,7 @@ class RPCSampler: HttpWsSampler<RPCIndividual>() {
     protected lateinit var rc: RemoteController
 
     @Inject
-    protected lateinit var convertor: RPCDtoConvertor
+    protected lateinit var rpcHandler: RPCEndpointsHandler
 
 
     protected val adHocInitialIndividuals: MutableList<RPCIndividual> = mutableListOf()
@@ -57,7 +57,7 @@ class RPCSampler: HttpWsSampler<RPCIndividual>() {
         val problem = infoDto.rpcProblem
                 ?: throw java.lang.IllegalStateException("Missing problem definition object")
 
-        convertor.initActionCluster(problem, actionCluster)
+        rpcHandler.initActionCluster(problem, actionCluster)
 
         setupAuthentication(infoDto)
         initSqlInfo(infoDto)

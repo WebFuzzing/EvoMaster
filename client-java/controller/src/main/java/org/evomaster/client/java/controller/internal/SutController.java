@@ -281,6 +281,10 @@ public abstract class SutController implements SutHandler {
         return schemaDto;
     }
 
+    /**
+     * extract endpoints info of the RPC interface by reflection based on the specified service interface name
+     * @return a map from the name of interface to extraced interface
+     */
     public final Map<String, InterfaceSchema> extractRPCSchema(){
         if (!rpcInterfaceSchema.isEmpty())
             return rpcInterfaceSchema;
@@ -292,7 +296,7 @@ public abstract class SutController implements SutHandler {
         try {
             RPCProblem rpcp = (RPCProblem) getProblemInfo();
             for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
-                InterfaceSchema schema = RPCEndpointsBuilder.build(interfaceName, rpcp.getType());
+                InterfaceSchema schema = RPCEndpointsBuilder.build(interfaceName, rpcp.getType(), rpcp.getClient(interfaceName));
                 rpcInterfaceSchema.put(interfaceName, schema);
             }
         }catch (Exception e){

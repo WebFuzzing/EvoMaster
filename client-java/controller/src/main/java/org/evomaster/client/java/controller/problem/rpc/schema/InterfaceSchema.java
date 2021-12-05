@@ -22,6 +22,11 @@ public final class InterfaceSchema{
     private final String name;
 
     /**
+     * name of the client
+     */
+    private final String client;
+
+    /**
      * a list of available endpoints in the service
      */
     private List<EndpointSchema> endpoints;
@@ -39,9 +44,10 @@ public final class InterfaceSchema{
     private Map<String, NamedTypedValue> objParamCollections = new HashMap<>();
 
 
-    public InterfaceSchema(String name, List<EndpointSchema> endpoints) {
+    public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client) {
         this.name = name;
         this.endpoints = endpoints;
+        this.client = client;
     }
 
     public void registerType(TypeSchema type, NamedTypedValue param){

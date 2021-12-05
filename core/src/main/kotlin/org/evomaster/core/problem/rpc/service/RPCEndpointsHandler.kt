@@ -20,10 +20,10 @@ import org.slf4j.LoggerFactory
 /**
  * this class is used to manage formulated individual with schemas of SUT
  */
-class RPCDtoConvertor {
+class RPCEndpointsHandler {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(RPCDtoConvertor::class.java)
+        private val log: Logger = LoggerFactory.getLogger(RPCEndpointsHandler::class.java)
     }
 
     @Inject

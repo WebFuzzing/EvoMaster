@@ -20,7 +20,7 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
         private val log: Logger = LoggerFactory.getLogger(RPCFitness::class.java)
     }
 
-    @Inject lateinit var convertor: RPCDtoConvertor
+    @Inject lateinit var rpcHandler: RPCEndpointsHandler
 
     override fun doCalculateCoverage(individual: RPCIndividual, targets: Set<Int>): EvaluatedIndividual<RPCIndividual>? {
 
@@ -36,7 +36,7 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
         run loop@{
             individual.seeActions().forEachIndexed { index, action->
                 val dto = getActionDto(action, index)
-                val rpc = convertor.transformActionDto(action)
+                val rpc = rpcHandler.transformActionDto(action)
                 dto.rpcCall = rpc
                 val ok = rc.executeNewRPCAction(dto, actionResults)
                 if (!ok) return@loop

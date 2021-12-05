@@ -20,11 +20,11 @@ public class RPCEndpointsBuilder {
      * @param rpcType          is the type of RPC, e.g., gRPC, Thrift
      * @return an interface schema for evomaster to access
      */
-    public static InterfaceSchema build(String interfaceName, RPCType rpcType) {
+    public static InterfaceSchema build(String interfaceName, RPCType rpcType, Object client) {
         List<EndpointSchema> endpoints = new ArrayList<>();
         try {
             Class<?> interfaze = Class.forName(interfaceName);
-            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints);
+            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, client.getClass().getName());
             for (Method m : interfaze.getDeclaredMethods()) {
                 endpoints.add(build(schema, m, rpcType));
             }
