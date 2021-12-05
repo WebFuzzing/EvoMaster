@@ -30,6 +30,9 @@ class RPCModule : AbstractModule(){
         bind(RPCSampler::class.java)
                 .asEagerSingleton()
 
+        bind(RPCEndpointsHandler::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<FitnessFunction<RPCIndividual>>() {})
                 .to(RPCFitness::class.java)
                 .asEagerSingleton()

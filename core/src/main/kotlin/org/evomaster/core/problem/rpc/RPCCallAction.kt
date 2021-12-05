@@ -31,7 +31,7 @@ class RPCCallAction(
         return true
     }
 
-    override fun copyContent(): StructuralElement {
+    override fun copyContent(): RPCCallAction {
         val p = parameters.asSequence().map(Param::copyContent).toMutableList()
         return RPCCallAction(id, p, auth)
     }

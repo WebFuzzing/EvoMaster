@@ -6,6 +6,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.tracer.TrackOperator
@@ -84,4 +85,12 @@ class RPCIndividual(
         removed.removeThisFromItsBindingGenes()
     }
 
+    override fun copyContent(): Individual {
+        return RPCIndividual(
+            actions.map { it.copyContent() }.toMutableList(),
+            seeInitializingActions().map { it.copyContent() as DbAction }.toMutableList(),
+            trackOperator,
+            index
+        )
+    }
 }

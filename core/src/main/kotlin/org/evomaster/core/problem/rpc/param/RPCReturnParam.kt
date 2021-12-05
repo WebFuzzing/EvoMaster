@@ -6,4 +6,9 @@ import org.evomaster.core.search.gene.Gene
 /**
  * params in return
  */
-class RPCReturnParam (name: String, gene: Gene): Param(name, gene)
+class RPCReturnParam (name: String, gene: Gene): Param(name, gene){
+
+    override fun copyContent(): Param {
+        return RPCReturnParam(name, gene.copyContent())
+    }
+}

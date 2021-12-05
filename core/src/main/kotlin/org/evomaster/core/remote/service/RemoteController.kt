@@ -322,7 +322,9 @@ class RemoteController() : DatabaseExecutor {
                     .request()
                     .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
         }
+
         TODO("handle results")
+        //ActionResponseDto
         //return readAndCheckResponse(response, "Failed to register new action")
     }
 

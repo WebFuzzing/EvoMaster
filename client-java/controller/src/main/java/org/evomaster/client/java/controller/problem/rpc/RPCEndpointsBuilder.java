@@ -10,6 +10,8 @@ import java.lang.reflect.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 
+import static org.evomaster.client.java.controller.problem.RPCType.THRIFT;
+
 /**
  * created by manzhang on 2021/11/4
  */
@@ -125,7 +127,7 @@ public class RPCEndpointsBuilder {
                 if (cycleSize < 3){
                     List<NamedTypedValue> fields = new ArrayList<>();
                     for(Field f: clazz.getDeclaredFields()){
-                        if (doSkipReflection(f.getName()))
+                        if (doSkipReflection(f.getName()) || doSkipField(f, rpcType))
                             continue;
                         NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth);
                         fields.add(field);
@@ -167,4 +169,39 @@ public class RPCEndpointsBuilder {
         return name.equals("$jacocoData");
     }
 
+    private final static List<String> THRIFT_SKIP = Arrays.asList(
+            "org.apache.thrift.protocol.TStruct",
+            "org.apache.thrift.protocol.TField",
+            "org.apache.thrift.TFieldIdEnum",
+            "org.apache.thrift.scheme.SchemeFactory"
+    );
+
+    private static boolean doSkipField(Field field, RPCType type){
+        switch (type){
+            case THRIFT: {
+                return THRIFT_SKIP.contains(field.getType().getName()) || isMetaMap(field) || doSkipFieldByName(field.getName(), type);
+            }
+            default: return false;
+        }
+
+    }
+
+    private static boolean doSkipFieldByName(String name, RPCType type){
+        switch (type){
+            case THRIFT: return name.equals("__isset_bitfield") || name.matches("^__(.+)_ISSET_ID$");
+            default: return false;
+        }
+    }
+
+    private static boolean isMetaMap(Field field){
+        boolean result = field.getName().equals("metaDataMap")
+                && field.getType().isAssignableFrom(Map.class);
+        if (!result) return result;
+        Type genericType = field.getGenericType();
+
+        Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
+
+        return valueType.getTypeName().equals("org.apache.thrift.meta_data.FieldMetaData");
+
+    }
 }
