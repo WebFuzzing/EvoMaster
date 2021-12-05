@@ -48,7 +48,7 @@ public final class EndpointSchema {
 
     public RPCActionDto getDto(){
         RPCActionDto dto = new RPCActionDto();
-        dto.actionId = name;
+        dto.actionName = name;
         dto.requestParams = requestParams.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         if (response != null)
             dto.responseParam = response.getDto();
@@ -56,7 +56,7 @@ public final class EndpointSchema {
     }
 
     public boolean sameEndpoint(RPCActionDto dto){
-        return dto.actionId.equals(name)
+        return dto.actionName.equals(name)
                 && (getResponse() == null || getResponse().sameParam(dto.responseParam))
                 && getRequestParams().size() == dto.requestParams.size()
                 && IntStream.range(0, getRequestParams().size()).allMatch(i-> getRequestParams().get(i).sameParam(dto.requestParams.get(i)));

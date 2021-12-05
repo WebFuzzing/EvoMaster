@@ -14,9 +14,14 @@ public class RPCActionDto {
     public String interfaceId;
 
     /**
+     * name of the client
+     */
+    public String clientInfo;
+
+    /**
      * name of the action
      */
-    public String actionId;
+    public String actionName;
 
     /**
      * request params
@@ -31,7 +36,7 @@ public class RPCActionDto {
     public RPCActionDto copy(){
         RPCActionDto copy = new RPCActionDto();
         copy.interfaceId = interfaceId;
-        copy.actionId = actionId;
+        copy.actionName = actionName;
         copy.responseParam = responseParam;
         if (requestParams != null)
             copy.requestParams = requestParams.stream().map(ParamDto::copy).collect(Collectors.toList());

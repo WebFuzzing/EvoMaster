@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.internal;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.AbstractNetworkConnector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ErrorHandler;
@@ -69,6 +71,12 @@ public abstract class SutController implements SutHandler {
      */
     private final Map<String, InterfaceSchema> rpcInterfaceSchema = new HashMap<>();
 
+    /**
+     * handle parsing RPCActionDto based on json string.
+     * Note that it is only used for RPC
+     */
+    private ObjectMapper objectMapper;
+
     private int actionIndex = -1;
 
     /**
@@ -114,6 +122,15 @@ public abstract class SutController implements SutHandler {
         newSearch();
 
         SimpleLogger.info("Started controller server on: " + controllerServer.getURI());
+
+        /*
+            handle RPC
+            eg, extract interface info based on specified info of interface
+         */
+        if (getProblemInfo() instanceof RPCProblem){
+            extractRPCSchema();
+            objectMapper = new ObjectMapper();
+        }
 
         return true;
     }
@@ -282,16 +299,24 @@ public abstract class SutController implements SutHandler {
     }
 
     /**
-     * extract endpoints info of the RPC interface by reflection based on the specified service interface name
-     * @return a map from the name of interface to extraced interface
+     *
+     * @return a map from the name of interface to extracted interface
      */
-    public final Map<String, InterfaceSchema> extractRPCSchema(){
+    public final Map<String, InterfaceSchema> getRPCSchema(){
+        return rpcInterfaceSchema;
+    }
+
+
+    /**
+     * extract endpoints info of the RPC interface by reflection based on the specified service interface name
+     */
+    private final void extractRPCSchema(){
         if (!rpcInterfaceSchema.isEmpty())
-            return rpcInterfaceSchema;
+            return;
 
         if (!(getProblemInfo() instanceof RPCProblem)){
             SimpleLogger.error("Problem ("+getProblemInfo().getClass().getSimpleName()+") is not RPC but request RPC schema.");
-            return null;
+            return;
         }
         try {
             RPCProblem rpcp = (RPCProblem) getProblemInfo();
@@ -301,10 +326,7 @@ public abstract class SutController implements SutHandler {
             }
         }catch (Exception e){
             SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
-            return null;
         }
-
-        return rpcInterfaceSchema;
     }
 
 
@@ -379,9 +401,8 @@ public abstract class SutController implements SutHandler {
      * @param dto is the action DTO to be executed
      */
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto){
-        Object client = ((RPCProblem)getProblemInfo()).getClient(dto.interfaceId);
         EndpointSchema endpointSchema = getEndpointSchema(dto);
-        Object response = executeRPCEndpoint(client, endpointSchema);
+        Object response = executeRPCEndpoint(dto);
         if (endpointSchema.getResponse() != null){
             // successful execution
             NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
@@ -391,6 +412,23 @@ public abstract class SutController implements SutHandler {
             //TODO handle exception if needed
         }
 
+    }
+
+    private Object executeRPCEndpoint(RPCActionDto dto){
+        Object client = ((RPCProblem)getProblemInfo()).getClient(dto.interfaceId);
+        EndpointSchema endpointSchema = getEndpointSchema(dto);
+        return executeRPCEndpoint(client, endpointSchema);
+    }
+
+    @Override
+    public Object executeRPCEndpoint(String json) {
+        try {
+            RPCActionDto dto = objectMapper.readValue(json, RPCActionDto.class);
+            return executeRPCEndpoint(dto);
+        } catch (JsonProcessingException e) {
+            SimpleLogger.error("Failed to extract the json: " + e.getMessage());
+        }
+        return null;
     }
 
     /**

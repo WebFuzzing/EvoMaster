@@ -23,4 +23,8 @@ class FakeController : SutHandler {
     override fun getRPCClient(interfaceName: String?): Any {
         throw RuntimeException("ERROR: should not be executed")
     }
+
+    override fun executeRPCEndpoint(json: String?): Any {
+        throw RuntimeException("ERROR: should not be executed")
+    }
 }

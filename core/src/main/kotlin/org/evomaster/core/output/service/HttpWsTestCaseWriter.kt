@@ -11,6 +11,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.GeneUtils
@@ -33,18 +34,6 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             otherwise the test would become flaky
         */
         return !(result as HttpWsCallResult).getTimedout()
-    }
-
-    protected fun createUniqueResponseVariableName(): String {
-        val name = "res_$counter"
-        counter++
-        return name
-    }
-
-    protected fun createUniqueBodyVariableName(): String {
-        val name = "body_$counter"
-        counter++
-        return name
     }
 
     /**

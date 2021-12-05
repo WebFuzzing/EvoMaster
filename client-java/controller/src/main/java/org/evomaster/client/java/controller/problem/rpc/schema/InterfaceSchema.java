@@ -24,7 +24,7 @@ public final class InterfaceSchema{
     /**
      * name of the client
      */
-    private final String client;
+    private final String clientInfo;
 
     /**
      * a list of available endpoints in the service
@@ -47,7 +47,7 @@ public final class InterfaceSchema{
     public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client) {
         this.name = name;
         this.endpoints = endpoints;
-        this.client = client;
+        this.clientInfo = client;
     }
 
     public void registerType(TypeSchema type, NamedTypedValue param){
@@ -97,6 +97,10 @@ public final class InterfaceSchema{
         return name;
     }
 
+    public String getClientInfo(){
+        return clientInfo;
+    }
+
     public Map<String, TypeSchema> getTypeCollections() {
         return typeCollections;
     }
@@ -104,10 +108,14 @@ public final class InterfaceSchema{
     public RPCInterfaceSchemaDto getDto(){
         RPCInterfaceSchemaDto dto = new RPCInterfaceSchemaDto();
         dto.interfaceId = this.getName();
+        dto.clientInfo = this.getClientInfo();
         List<ParamDto> typeParams = new ArrayList<>();
         dto.types = typeParams;
         dto.endpoints = endpoints.stream().map(EndpointSchema::getDto).collect(Collectors.toList());
-        dto.endpoints.forEach(e-> e.interfaceId = dto.interfaceId);
+        dto.endpoints.forEach(e-> {
+            e.interfaceId = dto.interfaceId;
+            e.clientInfo = dto.clientInfo;
+        });
         return dto;
     }
 }

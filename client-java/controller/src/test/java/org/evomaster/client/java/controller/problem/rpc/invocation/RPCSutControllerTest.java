@@ -59,7 +59,7 @@ public class RPCSutControllerTest {
 
     @Test
     public void testSimpleWrapPrimitiveEndpoint(){
-        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionId.equals("simpleWrapPrimitive")).collect(Collectors.toList());
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("simpleWrapPrimitive")).collect(Collectors.toList());
         assertEquals(1, dtos.size());
         RPCActionDto dto = dtos.get(0).copy();
         assertEquals(8, dto.requestParams.size());
@@ -80,7 +80,7 @@ public class RPCSutControllerTest {
 
     @Test
     public void testSimplePrimitiveEndpoint(){
-        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionId.equals("simplePrimitive")).collect(Collectors.toList());
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("simplePrimitive")).collect(Collectors.toList());
         assertEquals(1, dtos.size());
         RPCActionDto dto = dtos.get(0).copy();
         assertEquals(8, dto.requestParams.size());

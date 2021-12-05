@@ -23,7 +23,10 @@ class TestSuiteWriter {
     companion object {
         const val jsImport = "EM"
 
-        private const val controller = "controller"
+        /**
+         * variable name of Sut handler
+         */
+        const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
         private const val fixtureClass = "ControllerFixture"

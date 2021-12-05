@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rpc.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto
@@ -30,7 +31,7 @@ class RPCEndpointsHandler {
     protected lateinit var configuration: EMConfig
 
     /**
-     * key is a name of the endpoint, ie, interface name: action name
+     * key is an id of the endpoint, ie, interface name: action name
      * value is corresponding endpoint schema
      */
     private val actionSchemaCluster = mutableMapOf<String, RPCActionDto>()
@@ -41,6 +42,16 @@ class RPCEndpointsHandler {
      * value is object gene for it
      */
     private val typeCache = mutableMapOf<String, Gene>()
+
+    private val objectMapper = ObjectMapper()
+
+    /**
+     * @param actionId is an id of the endpoint
+     * @return action dto which contains info for its execution, eg, client, method name in the interface
+     */
+    fun getActionDto(actionId : String) : RPCActionDto{
+        return actionSchemaCluster[actionId]?: throw IllegalStateException("could not find the $actionId")
+    }
 
     /**
      * reset [actionCluster] based on interface schemas specified in [problem]
@@ -56,8 +67,8 @@ class RPCEndpointsHandler {
         actionCluster.clear()
         problem.schemas.forEach { i->
             i.endpoints.forEach{e->
-                actionSchemaCluster.putIfAbsent(actionName(i.interfaceId, e.actionId), e)
-                val name = actionName(i.interfaceId, e.actionId)
+                actionSchemaCluster.putIfAbsent(actionName(i.interfaceId, e.actionName), e)
+                val name = actionName(i.interfaceId, e.actionName)
                 if (actionCluster.containsKey(name))
                     throw IllegalStateException("$name exists in the actionCluster")
                 actionCluster[name] = processEndpoint(name, e)
@@ -65,6 +76,9 @@ class RPCEndpointsHandler {
         }
     }
 
+    /**
+     * get rpc action dto based on specified [action]
+     */
     fun transformActionDto(action: RPCCallAction) : RPCActionDto {
         // generate RPCActionDto
         val rpcAction = actionSchemaCluster[action.id]?.copy()?: throw IllegalStateException("cannot find the ${action.id} in actionSchemaCluster")
@@ -79,6 +93,14 @@ class RPCEndpointsHandler {
         }
 
         return rpcAction
+    }
+
+    /**
+     * get rpc action dto with string json based on specified [action]
+     */
+    fun getRPCActionJson(action: RPCCallAction) : String {
+        val dto = transformActionDto(action)
+        return objectMapper.writeValueAsString(dto)
     }
 
     private fun transformGeneToParamDto(gene: Gene, dto: ParamDto){
@@ -197,6 +219,5 @@ class RPCEndpointsHandler {
         val objType = typeCache[param.type.fullTypeName] ?:throw IllegalStateException("missing ${param.type.fullTypeName} in typeCache")
         return objType.copy().apply { this.name = param.name }
     }
-
 
 }

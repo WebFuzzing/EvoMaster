@@ -7,10 +7,24 @@ import java.util.List;
  */
 public class RPCInterfaceSchemaDto {
 
+    /**
+     * name of the interface
+     */
     public String interfaceId;
 
+    /**
+     * name of client which could execute endpoints of this interface
+     */
+    public String clientInfo;
+
+    /**
+     * endpoints in this RPC interface
+     */
     public List<RPCActionDto> endpoints;
 
+    /**
+     * defined types in this interface
+     */
     public List<ParamDto> types;
 
 }
