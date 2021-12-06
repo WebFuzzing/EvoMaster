@@ -26,10 +26,8 @@ class LongGene(
     }
 
     override fun copyContent(): Gene {
-        val copy = LongGene(name, value, numericConstrains)
-        return copy
+        return LongGene(name, value, numericConstrains)
     }
-
 
     fun getMinimum(): Long {
         return min?.toLong() ?: Long.MIN_VALUE
@@ -39,6 +37,15 @@ class LongGene(
         return max?.toLong() ?: Long.MAX_VALUE
     }
 
+    private fun getRealMinimum(): Long {
+        return if (numericConstrains?.getExclusiveMinimum() == true) getMinimum() + 1 else getMinimum()
+    }
+
+    private fun getRealMaximum(): Long {
+        return if (numericConstrains?.getExclusiveMaximum() == true) getMaximum() - 1 else getMaximum()
+    }
+
+
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         /*
@@ -46,16 +53,20 @@ class LongGene(
             we employ [randomness.randomizeBoundedIntAndLong] for randomizing long that is same as randomizing int
          */
         if (isRangeSpecified()){
-            value = randomness.randomizeBoundedIntAndLong(value, getMinimum(), getMaximum(), forceNewValue)
+            value = randomness.randomizeBoundedIntAndLong(value, getRealMinimum(), getRealMaximum(), forceNewValue)
             return
         }
 
-        var k = if (randomness.nextBoolean(0.1)) {
+        var k = when {
+            randomness.nextBoolean(0.1) -> {
                 randomness.nextLong()
-        } else if (randomness.nextBoolean(0.1)) {
-            randomness.nextInt().toLong()
-        } else {
-            randomness.nextInt(1000).toLong()
+            }
+            randomness.nextBoolean(0.1) -> {
+                randomness.nextInt().toLong()
+            }
+            else -> {
+                randomness.nextInt(1000).toLong()
+            }
         }
 
         while (forceNewValue && k == value) {

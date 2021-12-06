@@ -159,7 +159,7 @@ abstract class FloatingPointNumber<T:Number>(
 
     /**
      * @return minimal changes of the [value].
-     * this is typlically used when [precision] is specified
+     * this is typically used when [precision] is specified
      */
     fun getMinimalDelta(): T?{
         return Companion.getMinimalDelta(precision, value)

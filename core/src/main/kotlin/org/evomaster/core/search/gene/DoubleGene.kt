@@ -27,19 +27,50 @@ class DoubleGene(name: String,
         private val log : Logger = LoggerFactory.getLogger(DoubleGene::class.java)
     }
 
+    private fun getRealMinimum(): Double {
+        return if (numericConstrains?.getExclusiveMinimum() == true) {
+            getMinimum() + getMinimalDelta() as Double
+        } else getMinimum()
+    }
+
+    private fun getRealMaximum(): Double {
+        return if (numericConstrains?.getExclusiveMaximum() == true) {
+            getMaximum() - getMinimalDelta() as Double
+        }  else getMaximum()
+    }
+
     override fun copyContent() = DoubleGene(name, value, numericConstrains, precision)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         var rand = randomness.nextDouble()
-        if (isRangeSpecified() && ((rand < getMinimum()) || (rand > getMaximum()))){
-            rand = randomness.nextDouble(getMinimum(), getMaximum())
+        if (isRangeSpecified() && ((exceedsMin(rand)) || (exceedsMax(rand)))){
+            rand = randomness.nextDouble(getRealMinimum(), getRealMaximum())
         }
         value = getFormattedValue(rand)
 
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    private fun exceedsMin(res: Double): Boolean {
+        return if (numericConstrains?.getExclusiveMinimum() == true) {
+            res <= getMinimum()
+        } else {
+            res < getMinimum()
+        }
+    }
+
+    private fun exceedsMax(res: Double): Boolean {
+        return if (numericConstrains?.getExclusiveMaximum() == true) {
+            res >= getMaximum()
+        } else {
+            res > getMaximum()
+        }
+    }
+
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,
+                        allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy,
+                        enableAdaptiveGeneMutation: Boolean,
+                        additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean {
 
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")

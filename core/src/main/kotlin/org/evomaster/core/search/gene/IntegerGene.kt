@@ -40,6 +40,14 @@ class IntegerGene(
         return max?.toInt() ?: Int.MAX_VALUE
     }
 
+    private fun getRealMinimum(): Int {
+        return if (numericConstrains?.getExclusiveMinimum() == true) getMinimum() + 1 else getMinimum()
+    }
+
+    private fun getRealMaximum(): Int {
+        return if (numericConstrains?.getExclusiveMaximum() == true) getMaximum() - 1 else getMaximum()
+    }
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(IntegerGene::class.java)
     }
@@ -63,8 +71,7 @@ class IntegerGene(
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-
-        value = randomness.randomizeBoundedIntAndLong(value.toLong(), getMinimum().toLong(), getMaximum().toLong(), forceNewValue).toInt()
+        value = randomness.randomizeBoundedIntAndLong(value.toLong(), getRealMinimum().toLong(), getRealMaximum().toLong(), forceNewValue).toInt()
     }
 
     override fun mutate(
@@ -79,7 +86,7 @@ class IntegerGene(
 
         if (enableAdaptiveGeneMutation) {
             additionalGeneMutationInfo
-                ?: throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
+                ?: throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
             if (additionalGeneMutationInfo.hasHistory()) {
                 try {
                     additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
@@ -93,10 +100,10 @@ class IntegerGene(
             }
         }
 
-        //check maximum range. no point in having a delta greater than such range
+        // check maximum range. no point in having a delta greater than such range
         val range = getMaximum().toLong() - getMinimum().toLong()
 
-        //choose an i for 2^i modification
+        // choose an i for 2^i modification
         val delta = getDelta(randomness, apc, range)
 
         val sign = when (value) {
@@ -108,12 +115,28 @@ class IntegerGene(
         val res: Long = (value.toLong()) + (sign * delta)
 
         value = when {
-            res > getMaximum().toLong() -> getMaximum().toInt()
-            res < getMinimum().toLong() -> getMinimum().toInt()
+            exceedsMax(res) -> getRealMaximum()
+            exceedsMin(res) -> getRealMinimum()
             else -> res.toInt()
         }
 
         return true
+    }
+
+    private fun exceedsMin(res: Long): Boolean {
+        return if (numericConstrains?.getExclusiveMinimum() == true) {
+            res <= getMinimum().toLong()
+        } else {
+            res < getMinimum().toLong()
+        }
+    }
+
+    private fun exceedsMax(res: Long): Boolean {
+        return if (numericConstrains?.getExclusiveMaximum() == true) {
+            res >= getMaximum().toLong()
+        } else {
+            res > getMaximum().toLong()
+        }
     }
 
 

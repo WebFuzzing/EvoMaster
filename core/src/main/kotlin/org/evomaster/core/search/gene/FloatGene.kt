@@ -29,16 +29,46 @@ class FloatGene(name: String,
         private val log : Logger = LoggerFactory.getLogger(FloatGene::class.java)
     }
 
+
+    private fun getRealMinimum(): Float {
+        return if (numericConstrains?.getExclusiveMinimum() == true) {
+            getMinimum() + getMinimalDelta() as Float
+        } else getMinimum()
+    }
+
+    private fun getRealMaximum(): Float {
+        return if (numericConstrains?.getExclusiveMaximum() == true) {
+            getMaximum() - getMinimalDelta() as Float
+        }  else getMaximum()
+    }
+
+
     override fun copyContent() = FloatGene(name, value, numericConstrains, precision)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         var rand = randomness.nextFloat()
-        if (isRangeSpecified() && ((rand < getMinimum()) || (rand > getMaximum()))){
-            rand = randomness.nextDouble(getMinimum().toDouble(), getMaximum().toDouble()).toFloat()
+        if (isRangeSpecified() && ((exceedsMin(rand)) || (exceedsMax(rand)))){
+            rand = randomness.nextDouble(getRealMinimum().toDouble(), getRealMaximum().toDouble()).toFloat()
         }
         value = getFormattedValue(rand)
 
+    }
+
+    private fun exceedsMin(res: Float): Boolean {
+        return if (numericConstrains?.getExclusiveMinimum() == true) {
+            res <= getMinimum()
+        } else {
+            res < getMinimum()
+        }
+    }
+
+    private fun exceedsMax(res: Float): Boolean {
+        return if (numericConstrains?.getExclusiveMaximum() == true) {
+            res >= getMaximum()
+        } else {
+            res > getMaximum()
+        }
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
