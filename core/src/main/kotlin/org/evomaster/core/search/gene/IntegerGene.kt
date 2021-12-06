@@ -13,13 +13,15 @@ import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHis
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.Optional
 
 fun complete(numericConstrains: NumericConstrains?): NumericConstrains {
     /** Inclusive */
-     val min: Int = Optional.ofNullable(numericConstrains?.getMin()?.toInt()).orElse(Int.MIN_VALUE)
+     val min: Int = Optional.ofNullable(numericConstrains?.getMin()?.toInt())
+        .orElse(Int.MIN_VALUE)
     /** Inclusive */
-     val max: Int = Optional.ofNullable(numericConstrains?.getMax()?.toInt()).orElse(Int.MAX_VALUE)
+     val max: Int = Optional.ofNullable(numericConstrains?.getMax()?.toInt())
+        .orElse(Int.MAX_VALUE)
 
     return NumericConstrains(min, max)
 }
