@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.date
 
-import org.evomaster.core.search.gene.DateGene
+import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
@@ -26,7 +26,7 @@ class DateGeneImpactTest : GeneImpactTest() {
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
         geneToMutate as DateGene
         geneToMutate.apply {
-            when{
+            when {
                 mutationTag == 0 -> year.value = year.value + 1
                 mutationTag == 1 -> month.value = month.value + 1
                 mutationTag == 2 -> day.value = day.value + 1
@@ -38,35 +38,47 @@ class DateGeneImpactTest : GeneImpactTest() {
     }
 
     @Test
-    fun testYear(){
+    fun testYear() {
         val gene = getGene()
         val impact = initImpact(gene)
-        val updatedImpact = template( gene, impact, listOf(ImpactOptions.IMPACT_IMPROVEMENT), 0).second
-        assertImpact((impact as DateGeneImpact).yearGeneImpact, (updatedImpact as DateGeneImpact).yearGeneImpact, ImpactOptions.IMPACT_IMPROVEMENT)
-        assertImpact((impact as DateGeneImpact).monthGeneImpact, (updatedImpact as DateGeneImpact).monthGeneImpact, ImpactOptions.NONE)
-        assertImpact((impact as DateGeneImpact).dayGeneImpact, (updatedImpact as DateGeneImpact).dayGeneImpact, ImpactOptions.NONE)
+        val updatedImpact = template(gene, impact, listOf(ImpactOptions.IMPACT_IMPROVEMENT), 0).second
+        assertImpact(
+            (impact as DateGeneImpact).yearGeneImpact,
+            (updatedImpact as DateGeneImpact).yearGeneImpact,
+            ImpactOptions.IMPACT_IMPROVEMENT
+        )
+        assertImpact(impact.monthGeneImpact, updatedImpact.monthGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.dayGeneImpact, updatedImpact.dayGeneImpact, ImpactOptions.NONE)
 
     }
 
     @Test
-    fun testMonth(){
+    fun testMonth() {
         val gene = getGene()
         val impact = initImpact(gene)
-        val updatedImpact = template( gene, impact, listOf(ImpactOptions.NO_IMPACT), 1).second
-        assertImpact((impact as DateGeneImpact).monthGeneImpact, (updatedImpact as DateGeneImpact).monthGeneImpact, ImpactOptions.NO_IMPACT)
+        val updatedImpact = template(gene, impact, listOf(ImpactOptions.NO_IMPACT), 1).second
+        assertImpact(
+            (impact as DateGeneImpact).monthGeneImpact,
+            (updatedImpact as DateGeneImpact).monthGeneImpact,
+            ImpactOptions.NO_IMPACT
+        )
 
-        assertImpact((impact as DateGeneImpact).yearGeneImpact, (updatedImpact as DateGeneImpact).yearGeneImpact, ImpactOptions.NONE)
-        assertImpact((impact as DateGeneImpact).dayGeneImpact, (updatedImpact as DateGeneImpact).dayGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.yearGeneImpact, updatedImpact.yearGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.dayGeneImpact, updatedImpact.dayGeneImpact, ImpactOptions.NONE)
     }
 
     @Test
-    fun testDay(){
+    fun testDay() {
         val gene = getGene()
         val impact = initImpact(gene)
-        val updatedImpact = template( gene, impact, listOf(ImpactOptions.ONLY_IMPACT), 2).second
-        assertImpact((impact as DateGeneImpact).dayGeneImpact, (updatedImpact as DateGeneImpact).dayGeneImpact, ImpactOptions.ONLY_IMPACT)
+        val updatedImpact = template(gene, impact, listOf(ImpactOptions.ONLY_IMPACT), 2).second
+        assertImpact(
+            (impact as DateGeneImpact).dayGeneImpact,
+            (updatedImpact as DateGeneImpact).dayGeneImpact,
+            ImpactOptions.ONLY_IMPACT
+        )
 
-        assertImpact((impact as DateGeneImpact).monthGeneImpact, (updatedImpact as DateGeneImpact).monthGeneImpact, ImpactOptions.NONE)
-        assertImpact((impact as DateGeneImpact).yearGeneImpact, (updatedImpact as DateGeneImpact).yearGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.monthGeneImpact, updatedImpact.monthGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.yearGeneImpact, updatedImpact.yearGeneImpact, ImpactOptions.NONE)
     }
 }

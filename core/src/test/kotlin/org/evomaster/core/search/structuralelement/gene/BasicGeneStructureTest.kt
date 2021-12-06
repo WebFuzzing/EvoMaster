@@ -1,6 +1,9 @@
 package org.evomaster.core.search.structuralelement.gene
 
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -120,7 +123,8 @@ class StringWithSpecialization : GeneStructuralElementBaseTest(){
     }
 
 
-    override fun getStructuralElement(): StringGene = StringGene("foo", "foo", specializationGenes = mutableListOf(DateGene("now"), IntegerGene("foo")))
+    override fun getStructuralElement(): StringGene = StringGene("foo", "foo", specializationGenes = mutableListOf(
+        DateGene("now"), IntegerGene("foo")))
 
     override fun getExpectedChildrenSize(): Int = 2
 }
@@ -203,21 +207,21 @@ class MapGeneIntStructureTest : GeneStructuralElementBaseTest() {
 
     override fun getCopyFromTemplate(): Gene = MapGene(
         "foo",
-        template = DoubleGene("foo"),
+        template = PairGene.createStringPairGene(DoubleGene("foo")),
         maxSize = 20,
-        elements = (0 until copyTemplateSize).map { DoubleGene("foo", it.toDouble()) }.toMutableList())
+        elements = (0 until copyTemplateSize).map { PairGene.createStringPairGene(DoubleGene("foo", it.toDouble())) }.toMutableList())
 
     override fun assertCopyFrom(base: Gene) {
-        assertTrue(base is MapGene<*>)
-        assertEquals(copyTemplateSize, (base as MapGene<*>).getAllElements().size)
+        assertTrue(base is MapGene<*, *>)
+        assertEquals(copyTemplateSize, (base as MapGene<*, *>).getAllElements().size)
         assertChildren(base, copyTemplateSize)
     }
 
-    override fun getStructuralElement(): MapGene<DoubleGene> = MapGene(
+    override fun getStructuralElement(): MapGene<StringGene,  DoubleGene> = MapGene(
         "foo",
-        template = DoubleGene("foo"),
+        template = PairGene.createStringPairGene(DoubleGene("foo")),
         maxSize = 20,
-        elements = (0 until size).map { DoubleGene("foo", it.toDouble()) }.toMutableList())
+        elements = (0 until size).map { PairGene.createStringPairGene(DoubleGene("foo", it.toDouble())) }.toMutableList())
 
     override fun getExpectedChildrenSize(): Int  = size
 }
@@ -225,7 +229,8 @@ class MapGeneIntStructureTest : GeneStructuralElementBaseTest() {
 // date and time
 
 class DateGeneStructureTest: GeneStructuralElementBaseTest() {
-    override fun getCopyFromTemplate(): Gene =DateGene("2021-06-08", IntegerGene("year", 2021), IntegerGene("month", 6), IntegerGene("day",8))
+    override fun getCopyFromTemplate(): Gene =
+        DateGene("2021-06-08", IntegerGene("year", 2021), IntegerGene("month", 6), IntegerGene("day",8))
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is DateGene)

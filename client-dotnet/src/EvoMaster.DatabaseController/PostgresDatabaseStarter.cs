@@ -8,15 +8,12 @@ using DotNet.Testcontainers.Containers.Modules.Databases;
 using EvoMaster.DatabaseController.Abstractions;
 using Npgsql;
 
-namespace EvoMaster.DatabaseController
-{
-    public class PostgresDatabaseController : IDatabaseController
-    {
+namespace EvoMaster.DatabaseController {
+    public class PostgresDatabaseController : IDatabaseController {
         private static TestcontainerDatabase _database;
         private static NpgsqlConnection _connection;
 
-        public PostgresDatabaseController(string databaseName, int port, string password, int timeout = 60)
-        {
+        public PostgresDatabaseController(string databaseName, int port, string password, int timeout = 60) {
             DatabaseName = databaseName;
             Port = port;
             Timeout = timeout;
@@ -28,12 +25,10 @@ namespace EvoMaster.DatabaseController
         public int Timeout { get; }
         public string Password { get; }
 
-        public async Task<(string, DbConnection)> StartAsync()
-        {
+        public async Task<(string, DbConnection)> StartAsync() {
             var postgresBuilder = new TestcontainersBuilder<PostgreSqlTestcontainer>()
                 .WithName($"EvoMaster-DB-Postgres-{Guid.NewGuid()}")
-                .WithDatabase(new PostgreSqlTestcontainerConfiguration
-                {
+                .WithDatabase(new PostgreSqlTestcontainerConfiguration {
                     Database = DatabaseName,
                     Username = "user",
                     Password = Password
@@ -52,14 +47,12 @@ namespace EvoMaster.DatabaseController
             return (connectionString, _connection);
         }
 
-        public async Task StopAsync()
-        {
+        public async Task StopAsync() {
             await _connection.CloseAsync();
             await _database.StopAsync();
         }
 
-        public void Stop()
-        {
+        public void Stop() {
             _connection.Close();
             _database.StopAsync().GetAwaiter().GetResult();
         }

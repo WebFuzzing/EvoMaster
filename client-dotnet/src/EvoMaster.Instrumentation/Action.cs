@@ -1,13 +1,10 @@
-
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace EvoMaster.Instrumentation
-{
+namespace EvoMaster.Instrumentation {
     [Serializable]
-    public class Action
-    {
+    public class Action {
         private readonly int _index;
 
         /**

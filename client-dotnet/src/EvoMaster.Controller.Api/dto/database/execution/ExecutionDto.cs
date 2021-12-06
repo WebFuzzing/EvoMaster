@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+
 namespace EvoMaster.Controller.Api {
     /**
      * Each time a SQL command is executed, we keep track of which tables
@@ -13,7 +14,6 @@ namespace EvoMaster.Controller.Api {
      * clause was not satisfied.
      */
     public class ExecutionDto {
-
         /**
          * What was tried to be retrieved in a SELECT.
          * Something like "select x from Foo" would give info on "Foo-&gt;{x}".
@@ -26,22 +26,22 @@ namespace EvoMaster.Controller.Api {
          * Note: this does NOT include what was used in the WHERE clauses.
          * For example, "select a,b from Foo where c&gt;0" would give info just for "Foo-&gt;{a,b}"
          */
-        public IDictionary<string, ISet<string>> QueriedData { get; set; } = new Dictionary<string, ISet<string>> ();
+        public IDictionary<string, ISet<string>> QueriedData { get; set; } = new Dictionary<string, ISet<string>>();
 
         /**
          * What tables/columns were tried to be updated in UPDATE
          */
-        public IDictionary<string, ISet<string>> UpdatedData { get; set; } = new Dictionary<string, ISet<string>> ();
+        public IDictionary<string, ISet<string>> UpdatedData { get; set; } = new Dictionary<string, ISet<string>>();
 
         /**
          * What tables/columns were tried to be newly created with INSERT
          */
-        public IDictionary<string, ISet<string>> InsertedData { get; set; } = new Dictionary<string, ISet<string>> ();
+        public IDictionary<string, ISet<string>> InsertedData { get; set; } = new Dictionary<string, ISet<string>>();
 
         /**
          * Names of tables on which DELETE was applied
          */
-        public ISet<string> DeletedData { get; set; } = new HashSet<string> ();
+        public ISet<string> DeletedData { get; set; } = new HashSet<string>();
 
         /**
          * Every time there is a WHERE clause which "failed" (ie, resulted in false),
@@ -51,12 +51,11 @@ namespace EvoMaster.Controller.Api {
          * If there is no WHERE, but still no data was returned, we consider it
          * as a failed WHERE
          */
-        public IDictionary<string, ISet<string>> FailedWhere { get; set; } = new Dictionary<string, ISet<string>> ();
+        public IDictionary<string, ISet<string>> FailedWhere { get; set; } = new Dictionary<string, ISet<string>>();
 
         /**
          * The total Number of SQL commands (e.g., SELECT and UPDATE) executed
          */
         public int NumberOfSqlCommands { get; set; }
     }
-
 }

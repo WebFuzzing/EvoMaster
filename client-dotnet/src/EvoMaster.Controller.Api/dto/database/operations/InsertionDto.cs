@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 
-namespace EvoMaster.Controller.Api
-{
-  public class InsertionDto {
-
+namespace EvoMaster.Controller.Api {
+    public class InsertionDto {
         /**
          * The ID of this insertion operation.
          * This is needed when we have multiple insertions, where
@@ -15,6 +13,6 @@ namespace EvoMaster.Controller.Api
 
         public string TargetTable { get; set; }
 
-        public IList<InsertionEntryDto> data { get; set; } = new List<InsertionEntryDto> ();
+        public IList<InsertionEntryDto> data { get; set; } = new List<InsertionEntryDto>();
     }
 }

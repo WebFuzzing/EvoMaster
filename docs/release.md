@@ -149,4 +149,14 @@ to check if anything is missing.
 And this is why it was important to build the non-SNAPSHOT with `package` instead of `install`. 
 
 
+## Example Update
+
+Every time we make a new release, we should also update the examples in [https://github.com/EMResearch/rest-api-example](https://github.com/EMResearch/rest-api-example).
+This means:
+* increase the dependency version of EM in the pom file
+* remove/fix any deprecated function in the implemented driver
+* regenerate all the tests, using one of built executables (e.g., `evomaster.exe` on Windows)
+
+
+
 

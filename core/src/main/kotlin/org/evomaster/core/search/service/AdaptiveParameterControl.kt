@@ -51,14 +51,26 @@ class AdaptiveParameterControl {
      */
     fun getExploratoryValue(start: Double, end: Double) : Double{
 
+        return getDPCValue(start, end, 0.0, config.focusedSearchActivationTime)
+    }
+
+    /**
+     * Based on the given period of the search, i.e., between [startTime] and [threshold]
+     * return a scaled value between [start] (from [startTime]) and [end] (until [threshold])
+     */
+    fun getDPCValue(start: Double, end: Double, startTime: Double, threshold: Double) : Double{
+        if (threshold < startTime)
+            throw IllegalArgumentException("threshold ($threshold) should not be less than startTime ($startTime)")
+
         val passed: Double = time.percentageUsedBudget()
-        val threshold:Double = config.focusedSearchActivationTime
+        if (passed < startTime)
+            return start
 
         if(passed >= threshold){
             return end
         }
 
-        val scale = passed / threshold
+        val scale = (passed-startTime) / (threshold-startTime)
 
         val delta = end - start
 

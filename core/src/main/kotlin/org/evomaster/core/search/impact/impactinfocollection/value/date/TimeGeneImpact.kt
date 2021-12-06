@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.value.date
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.TimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
 
@@ -46,7 +46,7 @@ class TimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
         if (gc.current !is TimeGene)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be TimeGene")
 
-        if (gc.previous != null && gc.previous !is TimeGene )
+        if (gc.previous != null && gc.previous !is TimeGene)
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be TimeGene")
 
         val innerImpacts = mutableListOf<IntegerGeneImpact>()

@@ -1,6 +1,3 @@
-namespace RestApis.Animals.Entities
-{
-    public class Mammal : Animal
-    {
-    }
+namespace RestApis.Animals.Entities {
+    public class Mammal : Animal { }
 }

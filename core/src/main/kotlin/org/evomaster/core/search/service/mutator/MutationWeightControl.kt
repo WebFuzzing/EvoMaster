@@ -9,7 +9,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneSelector
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -29,7 +29,7 @@ class MutationWeightControl {
     lateinit var apc : AdaptiveParameterControl
 
     @Inject
-    lateinit var archiveMutator : ArchiveGeneSelector
+    lateinit var archiveMutator : ArchiveImpactSelector
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(MutationWeightControl::class.java)

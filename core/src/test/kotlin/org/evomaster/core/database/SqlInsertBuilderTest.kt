@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.QueryRes
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.junit.jupiter.api.Assertions.*
@@ -492,9 +493,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf("A", "B"), enumGene.values.toSet());
+        assertEquals(setOf("A", "B"), enumGene.values.toSet())
 
     }
 
@@ -516,9 +517,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf(42, 77), enumGene.values.toSet());
+        assertEquals(setOf(42, 77), enumGene.values.toSet())
 
     }
 
@@ -541,9 +542,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf(true, false), enumGene.values.toSet());
+        assertEquals(setOf(true, false), enumGene.values.toSet())
 
     }
 
@@ -565,9 +566,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf(42, 77), enumGene.values.toSet());
+        assertEquals(setOf(42, 77), enumGene.values.toSet())
 
     }
 
@@ -589,9 +590,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf(42, 77), enumGene.values.toSet());
+        assertEquals(setOf(42, 77), enumGene.values.toSet())
 
     }
 
@@ -613,9 +614,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf("A", "B"), enumGene.values.toSet());
+        assertEquals(setOf("A", "B"), enumGene.values.toSet())
 
     }
 
@@ -637,9 +638,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf(42L, 77L), enumGene.values.toSet());
+        assertEquals(setOf(42L, 77L), enumGene.values.toSet())
 
     }
 
@@ -661,9 +662,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf(1.0, 2.5), enumGene.values.toSet());
+        assertEquals(setOf(1.0, 2.5), enumGene.values.toSet())
 
     }
 
@@ -685,9 +686,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf(1.0, 2.5), enumGene.values.toSet());
+        assertEquals(setOf(1.0, 2.5), enumGene.values.toSet())
 
     }
 
@@ -709,9 +710,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf(1.0f, 2.5f), enumGene.values.toSet());
+        assertEquals(setOf(1.0f, 2.5f), enumGene.values.toSet())
 
     }
 
@@ -733,9 +734,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf("A", "B"), enumGene.values.toSet());
+        assertEquals(setOf("A", "B"), enumGene.values.toSet())
 
     }
 
@@ -757,9 +758,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf("X'0000'", "X'ffff'"), enumGene.values.toSet());
+        assertEquals(setOf("X'0000'", "X'ffff'"), enumGene.values.toSet())
 
     }
 
@@ -903,9 +904,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf("B"), enumGene.values.toSet());
+        assertEquals(setOf("B"), enumGene.values.toSet())
 
     }
 
@@ -926,7 +927,7 @@ class SqlInsertBuilderTest {
 
         try {
             builder.createSqlInsertionAction("FOO", setOf("status"))
-            fail<Object>()
+            fail<Any>()
         } catch (ex: RuntimeException) {
 
         }
@@ -951,9 +952,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf("hi"), enumGene.values.toSet());
+        assertEquals(setOf("hi"), enumGene.values.toSet())
 
     }
 
@@ -973,7 +974,7 @@ class SqlInsertBuilderTest {
 
         try {
             builder.createSqlInsertionAction("FOO", setOf("f_id"))
-            fail<Object>()
+            fail<Any>()
         } catch (ex: IllegalArgumentException) {
 
         }
@@ -999,9 +1000,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
 
-        assertEquals(setOf("hi", "low"), enumGene.values.toSet());
+        assertEquals(setOf("hi", "low"), enumGene.values.toSet())
 
     }
 
