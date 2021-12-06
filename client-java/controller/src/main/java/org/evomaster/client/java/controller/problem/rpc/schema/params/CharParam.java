@@ -33,7 +33,7 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
 
     @Override
     public void setValue(ParamDto dto) {
-        if (dto.jsonValue != null)
+        if (dto.jsonValue == null)
             return;
         if (dto.jsonValue.length() > 1){
             throw new RuntimeException("ERROR: a length of a char with its string value is more than 1, i.e., "+ dto.jsonValue.length());
