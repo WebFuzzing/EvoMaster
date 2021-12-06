@@ -23,7 +23,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 21;
+        return 22;
     }
 
     @Test
