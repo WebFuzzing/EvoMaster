@@ -13,6 +13,7 @@ import org.evomaster.core.problem.httpws.service.param.Param
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.param.RPCInputParam
 import org.evomaster.core.problem.rpc.param.RPCReturnParam
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
@@ -104,24 +105,35 @@ class RPCEndpointsHandler {
     }
 
     private fun transformGeneToParamDto(gene: Gene, dto: ParamDto){
-        when(gene){
-            is IntegerGene -> dto.jsonValue = gene.value.toString()
-            is DoubleGene -> dto.jsonValue = gene.value.toString()
-            is FloatGene -> dto.jsonValue = gene.value.toString()
-            is BooleanGene -> dto.jsonValue = gene.value.toString()
-            is StringGene -> dto.jsonValue = gene.value
-            is EnumGene<*> -> dto.jsonValue = gene.index.toString()
+        // skip null value
+        if (gene is OptionalGene && !gene.isActive){
+            return
+        }
+
+        when(val valueGene = ParamUtil.getValueGene(gene)){
+            is IntegerGene -> dto.jsonValue = valueGene.value.toString()
+            is DoubleGene -> dto.jsonValue = valueGene.value.toString()
+            is FloatGene -> dto.jsonValue = valueGene.value.toString()
+            is BooleanGene -> dto.jsonValue = valueGene.value.toString()
+            is StringGene -> dto.jsonValue = valueGene.value
+            is EnumGene<*> -> dto.jsonValue = valueGene.index.toString()
             is ArrayGene<*> -> {
                 val template = dto.type.example?.copy()?:throw IllegalStateException("a template for an array is null")
-                val innerContent = gene.getAllElements().map {
+                val innerContent = valueGene.getAllElements().map {
                     val copy = template.copy()
                     transformGeneToParamDto(it, copy)
                     copy
                 }
                 dto.innerContent = innerContent
             }
-            else -> TODO("")
-
+            is ObjectGene -> {
+                valueGene.fields.forEach { f->
+                    val pdto = dto.innerContent.find { it.name == f.name }
+                        ?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
+                    transformGeneToParamDto(f, pdto)
+                }
+            }
+            else -> throw IllegalStateException("Not support transformGeneToParamDto with gene ${gene::class.java.simpleName} and dto (${dto.type.type})")
         }
     }
 
@@ -132,43 +144,59 @@ class RPCEndpointsHandler {
     fun setGeneBasedOnParamDto(gene: Gene, dto: ParamDto){
         if (!isValidToSetValue(gene, dto))
             throw IllegalStateException("the types of gene and its dto are mismatched, i.e., gene (${gene::class.java.simpleName}) vs. dto (${dto.type.type})")
+        val valueGene = ParamUtil.getValueGene(gene)
 
-        when(gene){
-            is IntegerGene -> gene.value = dto.jsonValue.toInt()
-            is DoubleGene -> gene.value = dto.jsonValue.toDouble()
-            is FloatGene -> gene.value = dto.jsonValue.toFloat()
-            is BooleanGene -> gene.value = dto.jsonValue.toBoolean()
-            is StringGene -> gene.value = dto.jsonValue
-            is EnumGene<*> -> gene.index = dto.jsonValue.toInt()
-            is ArrayGene<*> -> {
-                val template = gene.template
-                dto.innerContent.forEach { p->
-                    val copy = template.copyContent()
-                    setGeneBasedOnParamDto(copy, p)
-                    gene.addElement(copy as Nothing)
+        if (!dto.jsonValue.isNullOrEmpty()){
+            when(valueGene){
+                is IntegerGene -> valueGene.value = dto.jsonValue.toInt()
+                is DoubleGene -> valueGene.value = dto.jsonValue.toDouble()
+                is FloatGene -> valueGene.value = dto.jsonValue.toFloat()
+                is BooleanGene -> valueGene.value = dto.jsonValue.toBoolean()
+                is StringGene -> valueGene.value = dto.jsonValue
+                is EnumGene<*> -> valueGene.index = dto.jsonValue.toInt()
+                is ArrayGene<*> -> {
+                    val template = valueGene.template
+                    dto.innerContent.forEach { p->
+                        val copy = template.copyContent()
+                        setGeneBasedOnParamDto(copy, p)
+                        valueGene.addElement(copy)
+                    }
                 }
+                is ObjectGene -> {
+                    valueGene.fields.forEach { f->
+                        val pdto = dto.innerContent.find { it.name == f.name }
+                            ?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
+                        setGeneBasedOnParamDto(f, pdto)
+                    }
+                }
+                else -> throw IllegalStateException("Not support setGeneBasedOnParamDto with gene ${gene::class.java.simpleName} and dto (${dto.type.type})")
             }
-            else -> TODO("")
+        }else{
+            if (gene is OptionalGene && dto.isNullable)
+                gene.isActive = false
+            else
+                log.warn("could not retrieve value of ${dto.name?:"untitled"}")
         }
     }
 
     /**
-     * @return
+     * @return if types of [gene] and its [dto] ie, ParamDto are matched.
      */
     private fun isValidToSetValue(gene: Gene, dto: ParamDto) : Boolean{
+        val valueGene = ParamUtil.getValueGene(gene)
         return when(dto.type.type){
             RPCSupportedDataType.P_INT, RPCSupportedDataType.INT,
             RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT,
-            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> gene is IntegerGene
-            RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> gene is BooleanGene
-            RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR, RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> gene is StringGene
-            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> gene is DoubleGene
-            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> gene is FloatGene
-            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> gene is LongGene
-            RPCSupportedDataType.ENUM -> gene is MapGene<*,*> || gene is EnumGene<*>
-            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> gene is ArrayGene<*>
-            RPCSupportedDataType.MAP -> gene is MapGene<*, *>
-            RPCSupportedDataType.CUSTOM_OBJECT -> gene is ObjectGene || gene is MapGene<*,*>
+            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> valueGene is IntegerGene
+            RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> valueGene is BooleanGene
+            RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR, RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> valueGene is StringGene
+            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> valueGene is DoubleGene
+            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> valueGene is FloatGene
+            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> valueGene is LongGene
+            RPCSupportedDataType.ENUM -> valueGene is MapGene<*,*> || valueGene is EnumGene<*>
+            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> valueGene is ArrayGene<*>
+            RPCSupportedDataType.MAP -> valueGene is MapGene<*, *>
+            RPCSupportedDataType.CUSTOM_OBJECT -> valueGene is ObjectGene || valueGene is MapGene<*,*>
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
         }
     }
@@ -204,7 +232,7 @@ class RPCEndpointsHandler {
     private fun actionName(interfaceName: String, endpointName: String) = "$interfaceName:$endpointName"
 
     private fun handleDtoParam(param: ParamDto): Gene{
-        return when(param.type.type){
+        val gene = when(param.type.type){
             RPCSupportedDataType.P_INT, RPCSupportedDataType.INT -> IntegerGene(param.name)
             RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> BooleanGene(param.name)
             RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR -> StringGene(param.name, value="", maxLength = 1, minLength = 0)
@@ -220,6 +248,12 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
         }
+
+        return wrapWithOptionalGene(gene, param.isNullable)
+    }
+
+    private fun wrapWithOptionalGene(gene: Gene, isOptional: Boolean): Gene{
+        return if (isOptional) OptionalGene(gene.name, gene) else gene
     }
 
     private fun handleEnumParam(param: ParamDto): Gene{

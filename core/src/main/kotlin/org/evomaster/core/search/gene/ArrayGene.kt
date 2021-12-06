@@ -239,5 +239,19 @@ class ArrayGene<T>(
         addChild(element)
     }
 
+    /**
+     * add an element [element] to [elements],
+     *      if the [element] does not conform with the [template], the addition could fail
+     *
+     * @return whether the element could be added into this elements
+     *
+     */
+    fun addElement(element: Gene) : Boolean{
+        element as? T ?: return false
+        elements.add(element)
+        addChild(element)
+        return true
+    }
+
     fun getAllElements() = elements
 }

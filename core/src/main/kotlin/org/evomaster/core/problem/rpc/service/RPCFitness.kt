@@ -29,7 +29,7 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
 
         rc.resetSUT()
 
-        // TOD handle auth
+        // TODO handle auth
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
         doDbCalls(individual.seeInitializingActions(), actionResults = actionResults)
