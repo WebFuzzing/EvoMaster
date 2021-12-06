@@ -402,7 +402,7 @@ public abstract class SutController implements SutHandler {
         if (endpointSchema.getResponse() != null){
             // successful execution
             NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
-            resSchema.setValue(response);
+            resSchema.setValueBasedOnInstance(response);
             responseDto.rpcResponse = resSchema.getDto();
 
             //TODO handle exception if needed

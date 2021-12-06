@@ -11,6 +11,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils
+import kotlin.math.max
 
 /**
  * created by manzhang on 2021/11/26
@@ -91,22 +92,28 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
             json
         }
 
-        //needed as JSON uses ""
         val bodyLines = body.split("\n").map { s ->
-            "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
+            // after applyEscapes, somehow, the format is changed, then count space here
+            countFirstSpace(s) to "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
         }
 
-        if (bodyLines.size == 1) {
-            lines.add(bodyLines.first())
-        } else {
-            lines.add("${bodyLines.first()} + ")
-            lines.indented {
-                (1 until bodyLines.lastIndex).forEach { i ->
-                    lines.add("${bodyLines[i]} + ")
-                }
-                lines.add(bodyLines.last())
+        printBodyLines(lines, bodyLines)
+    }
+
+    private fun printBodyLines(lines: Lines, bodyLines: List<Pair<Int, String>>){
+        lines.indented {
+            bodyLines.forEachIndexed { index, line->
+                lines.add(nSpace(line.first)+ line.second + (if (index != bodyLines.size - 1) "+" else ""))
             }
         }
+    }
+
+    private fun countFirstSpace(line: String) : Int{
+        return max(0, line.indexOfFirst { it != ' ' })
+    }
+
+    private fun nSpace(n: Int): String{
+        return (0 until n).joinToString("") { " " }
     }
 
 }

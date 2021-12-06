@@ -117,6 +117,6 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * @return if the specified instance conforms with this param schema
      */
     public boolean isValidInstance(Object instance){
-        return instance.getClass().isInstance(getType().getClazz());
+        return getType().getClazz().isInstance(instance);
     }
 }

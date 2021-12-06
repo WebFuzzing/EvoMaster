@@ -98,9 +98,12 @@ class RPCEndpointsHandler {
 
     /**
      * get rpc action dto with string json based on specified [action]
+     * this is only used in test generation
      */
     fun getRPCActionJson(action: RPCCallAction) : String {
         val dto = transformActionDto(action)
+        // ignore response param
+        dto.responseParam = null
         return objectMapper.writeValueAsString(dto)
     }
 

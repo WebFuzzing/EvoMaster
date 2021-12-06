@@ -49,7 +49,10 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         dto.type.type = RPCSupportedDataType.CUSTOM_OBJECT;
-        dto.innerContent = getType().getFields().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
+        if (getValue() != null)
+            dto.innerContent = getValue().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
+        else
+            dto.innerContent = getType().getFields().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;
     }
 

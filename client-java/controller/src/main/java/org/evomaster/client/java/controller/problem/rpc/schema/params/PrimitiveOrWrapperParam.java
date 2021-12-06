@@ -10,14 +10,14 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     public PrimitiveOrWrapperParam(String name, String type, String fullTypeName, Class<?> clazz){
         super(name, new PrimitiveOrWrapperType(type, fullTypeName, clazz));
         // primitive type is not nullable
-        setNullable(!getType().isWrapper);
+        setNullable(getType().isWrapper);
 
     }
 
     public PrimitiveOrWrapperParam(String name, PrimitiveOrWrapperType type) {
         super(name, type);
         // primitive type is not nullable
-        setNullable(!getType().isWrapper);
+        setNullable(getType().isWrapper);
     }
 
     public static PrimitiveOrWrapperParam build(String name, Class<?> clazz){

@@ -57,7 +57,8 @@ public final class EndpointSchema {
 
     public boolean sameEndpoint(RPCActionDto dto){
         return dto.actionName.equals(name)
-                && (getResponse() == null || getResponse().sameParam(dto.responseParam))
+                // only check input parameters
+                // && (getResponse() == null || getResponse().sameParam(dto.responseParam))
                 && getRequestParams().size() == dto.requestParams.size()
                 && IntStream.range(0, getRequestParams().size()).allMatch(i-> getRequestParams().get(i).sameParam(dto.requestParams.get(i)));
     }
