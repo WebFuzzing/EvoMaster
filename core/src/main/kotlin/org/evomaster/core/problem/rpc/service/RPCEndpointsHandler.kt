@@ -125,6 +125,54 @@ class RPCEndpointsHandler {
         }
     }
 
+    /**
+     * set values of [gene] based on dto i.e., [ParamDto]
+     * note that it is typically used for handling responses of RPC endpoints
+     */
+    fun setGeneBasedOnParamDto(gene: Gene, dto: ParamDto){
+        if (!isValidToSetValue(gene, dto))
+            throw IllegalStateException("the types of gene and its dto are mismatched, i.e., gene (${gene::class.java.simpleName}) vs. dto (${dto.type.type})")
+
+        when(gene){
+            is IntegerGene -> gene.value = dto.jsonValue.toInt()
+            is DoubleGene -> gene.value = dto.jsonValue.toDouble()
+            is FloatGene -> gene.value = dto.jsonValue.toFloat()
+            is BooleanGene -> gene.value = dto.jsonValue.toBoolean()
+            is StringGene -> gene.value = dto.jsonValue
+            is EnumGene<*> -> gene.index = dto.jsonValue.toInt()
+            is ArrayGene<*> -> {
+                val template = gene.template
+                dto.innerContent.forEach { p->
+                    val copy = template.copyContent()
+                    setGeneBasedOnParamDto(copy, p)
+                    gene.addElement(copy as Nothing)
+                }
+            }
+            else -> TODO("")
+        }
+    }
+
+    /**
+     * @return
+     */
+    private fun isValidToSetValue(gene: Gene, dto: ParamDto) : Boolean{
+        return when(dto.type.type){
+            RPCSupportedDataType.P_INT, RPCSupportedDataType.INT,
+            RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT,
+            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> gene is IntegerGene
+            RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> gene is BooleanGene
+            RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR, RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> gene is StringGene
+            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> gene is DoubleGene
+            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> gene is FloatGene
+            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> gene is LongGene
+            RPCSupportedDataType.ENUM -> gene is MapGene<*,*> || gene is EnumGene<*>
+            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> gene is ArrayGene<*>
+            RPCSupportedDataType.MAP -> gene is MapGene<*, *>
+            RPCSupportedDataType.CUSTOM_OBJECT -> gene is ObjectGene || gene is MapGene<*,*>
+            RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
+        }
+    }
+
     private fun processEndpoint(name: String, endpointSchema: RPCActionDto) : RPCCallAction{
         val params = mutableListOf<Param>()
 

@@ -3,7 +3,10 @@ package org.evomaster.core.problem.rpc.service
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
+import org.evomaster.core.problem.rpc.RPCCallAction
+import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.rpc.param.RPCReturnParam
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -35,10 +38,7 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
 
         run loop@{
             individual.seeActions().forEachIndexed { index, action->
-                val dto = getActionDto(action, index)
-                val rpc = rpcHandler.transformActionDto(action)
-                dto.rpcCall = rpc
-                val ok = rc.executeNewRPCAction(dto, actionResults)
+                val ok = executeNewAction(action, index, actionResults)
                 if (!ok) return@loop
             }
         }
@@ -63,6 +63,24 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
 
         return EvaluatedIndividual(fv, individual.copy() as RPCIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
 
+    }
+
+    private fun executeNewAction(action: RPCCallAction, index: Int, actionResults: MutableList<ActionResult>) : Boolean{
+        val actionResult = RPCCallResult()
+        actionResults.add(actionResult)
+        val dto = getActionDto(action, index)
+        val rpc = rpcHandler.transformActionDto(action)
+        dto.rpcCall = rpc
+
+        val response =  rc.executeNewRPCActionAndGetResponse(dto)
+        if (response != null){
+            val responseGene = action.parameters.filterIsInstance<RPCReturnParam>().firstOrNull()
+            if (responseGene != null)
+                rpcHandler.setGeneBasedOnParamDto(responseGene.gene, response.rpcResponse)
+        }
+
+        actionResult.stopping = response != null
+        return response != null
     }
 
     private fun handleResponseTargets(){

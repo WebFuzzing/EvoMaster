@@ -311,10 +311,9 @@ class RemoteController() : DatabaseExecutor {
 
     /**
      * execute [actionDto] through [ControllerConstants.NEW_ACTION] endpoints of EMController,
-     * then add execution results into [actionResults]
-     * @return whether the execution fails
+     * @return execution response
      */
-    fun executeNewRPCAction(actionDto: ActionDto, actionResults: MutableList<ActionResult>) : Boolean{
+    fun executeNewRPCActionAndGetResponse(actionDto: ActionDto) : ActionResponseDto?{
 
         val response = makeHttpCall {
             getWebTarget()
@@ -323,9 +322,13 @@ class RemoteController() : DatabaseExecutor {
                     .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
         }
 
-        TODO("handle results")
-        //ActionResponseDto
-        //return readAndCheckResponse(response, "Failed to register new action")
+        val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<ActionResponseDto>>() {})
+
+        if (!checkResponse(response, dto, "Failed to execute RPC call")) {
+            return null
+        }
+
+        return dto?.data
     }
 
     fun registerNewAction(actionDto: ActionDto) : Boolean{

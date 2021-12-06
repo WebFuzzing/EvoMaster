@@ -6,7 +6,9 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 
 /**
- * created by manzhang on 2021/11/26
+ * here, RPCCallResult is inherent from HttpWs for the moment
+ * since some RPC might be based on HTTP, eg gRPC,
+ * then we could reuse properties of HTTP results
  */
 class RPCCallResult : HttpWsCallResult {
 
