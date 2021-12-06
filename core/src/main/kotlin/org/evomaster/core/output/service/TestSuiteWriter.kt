@@ -434,6 +434,10 @@ class TestSuiteWriter {
                     config.outputFormat.isJavaOrKotlin() -> {
                         addStatement("$controller.setupForGeneratedTest()", lines)
                         addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                        // now only support white-box
+                        if (config.problemType == EMConfig.ProblemType.RPC){
+                            addStatement("$controller.extractRPCSchema()", lines)
+                        }
                     }
                 }
 
