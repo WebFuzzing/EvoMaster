@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 
-namespace EvoMaster.Controller.Api
-{
-  public class DatabaseCommandDto {
-
+namespace EvoMaster.Controller.Api {
+    public class DatabaseCommandDto {
         /**
          * A generic SQL command.
          * Must be null if "insertions" field != null
@@ -18,6 +16,6 @@ namespace EvoMaster.Controller.Api
          * However, an insertion X referring to Y should
          * come in this list AFTER Y.
          */
-        public IList<InsertionDto> insertions { get; set; } = new List<InsertionDto> ();
+        public IList<InsertionDto> insertions { get; set; } = new List<InsertionDto>();
     }
 }

@@ -2,14 +2,11 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -221,12 +218,23 @@ class ArrayGene<T>(
         elements.clear()
     }
 
-    fun removeElements(element: T){
-        elements.remove(element)
-        element.removeThisFromItsBindingGenes()
+    /**
+     * remove an existing element [element] from [elements]
+     */
+    fun removeExistingElement(element: T){
+        //this is a reference heap check, not based on `equalsTo`
+        if (elements.contains(element)){
+            elements.remove(element)
+            element.removeThisFromItsBindingGenes()
+        }else{
+            log.warn("the specified element (${if (element.isPrintable()) element.getValueAsPrintableString() else "not printable"})) does not exist in this array")
+        }
     }
 
-    fun addElements(element: T){
+    /**
+     * add an element [element] to [elements]
+     */
+    fun addElement(element: T){
         elements.add(element)
         addChild(element)
     }

@@ -39,18 +39,18 @@ class MapGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spec
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
-        if(gc.current !is MapGene<*>)
+        if(gc.current !is MapGene<*, *>)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be MapGene")
-        if (gc.previous != null && gc.previous !is MapGene<*>)
+        if (gc.previous != null && gc.previous !is MapGene<*, *>)
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be MapGene")
 
-        if (gc.previous != null && (gc.previous as MapGene<*>).getAllElements().size != gc.current.getAllElements().size)
+        if (gc.previous != null && (gc.previous as MapGene<*, *>).getAllElements().size != gc.current.getAllElements().size)
             sizeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num =  1)
 
         //TODO for elements
     }
 
-    override fun validate(gene: Gene): Boolean = gene is MapGene<*>
+    override fun validate(gene: Gene): Boolean = gene is MapGene<*, *>
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
         return mutableMapOf("${getId()}-${sizeImpact.getId()}" to sizeImpact)

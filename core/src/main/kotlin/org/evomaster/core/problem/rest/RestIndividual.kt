@@ -227,6 +227,13 @@ class RestIndividual(
         removed.removeThisFromItsBindingGenes()
     }
 
+    fun removeResourceCall(remove: List<RestResourceCalls>) {
+        if(!resourceCalls.containsAll(remove))
+            throw IllegalArgumentException("specified rest calls are not part of this individual")
+        resourceCalls.removeAll(remove)
+        remove.forEach { it.removeThisFromItsBindingGenes() }
+    }
+
     /**
      * add [restCalls] at [position], if [position] == -1, append the [restCalls] at the end
      */

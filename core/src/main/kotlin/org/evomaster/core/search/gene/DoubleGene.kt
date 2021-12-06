@@ -114,4 +114,11 @@ class DoubleGene(name: String,
         return min?.toDouble() ?: Double.MIN_VALUE
     }
 
+    override fun compareTo(other: ComparableGene): Int {
+        if (other !is DoubleGene) {
+            throw RuntimeException("Expected DoubleGene. Cannot compare to ${other::javaClass} instance")
+        }
+        return this.toDouble().compareTo(other.toDouble())
+    }
+
 }

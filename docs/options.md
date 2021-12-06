@@ -40,6 +40,9 @@ There are 3 types of options:
 |`bbSwaggerUrl`| __String__. When in black-box mode for REST APIs, specify where the Swagger schema can be downloaded from. *Constraints*: `URL`. *Default value*: `""`.|
 |`bbTargetUrl`| __String__. When in black-box mode, specify the URL of where the SUT can be reached. In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema. In GraphQL, this will point to the entry point of the API. *Constraints*: `URL`. *Default value*: `""`.|
 |`ratePerMinute`| __Int__. Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards an external service, might want to limit the number of calls to avoid bombarding such service (which could end up becoming equivalent to a DoS attack). A value of zero or negative means that no limiter is applied. This is needed only for black-box testing of remote services. *Default value*: `0`.|
+|`header0`| __String__. In black-box testing, we still need to deal with authentication of the HTTP requests. With this parameter it is possible to specify a HTTP header that is going to be added to most requests. This should be provided in the form _name:value_. If more than 1 header is needed, use as well the other options _header1_ and _header2_. *Constraints*: `regex (.+:.+)\|(^$)`. *Default value*: `""`.|
+|`header1`| __String__. See documentation of _header0_. *Constraints*: `regex (.+:.+)\|(^$)`. *Default value*: `""`.|
+|`header2`| __String__. See documentation of _header0_. *Constraints*: `regex (.+:.+)\|(^$)`. *Default value*: `""`.|
 
 ## Internal Command-Line Options
 
@@ -98,6 +101,7 @@ There are 3 types of options:
 |`secondaryObjectiveStrategy`| __Enum__. Strategy used to handle the extra heuristics in the secondary objectives. *Valid values*: `AVG_DISTANCE, AVG_DISTANCE_SAME_N_ACTIONS, BEST_MIN`. *Default value*: `AVG_DISTANCE_SAME_N_ACTIONS`.|
 |`seed`| __Long__. The seed for the random generator used during the search. A negative value means the CPU clock time will be rather used as seed. *Default value*: `-1`.|
 |`showProgress`| __Boolean__. Whether to print how much search done so far. *Default value*: `true`.|
+|`skipFailureSQLInTestFile`| __Boolean__. Whether to skip failed SQL commands in the generated test files. *Default value*: `true`.|
 |`snapshotInterval`| __Double__. If positive, check how often, in percentage % of the budget, to collect statistics snapshots. For example, every 5% of the time. *Constraints*: `max=50.0`. *Default value*: `-1.0`.|
 |`snapshotStatisticsFile`| __String__. Where the snapshot file (if any) is going to be written (in CSV format). *Default value*: `snapshot.csv`.|
 |`specializeSQLGeneSelection`| __Boolean__. Whether to specialize sql gene selection to mutation. *Default value*: `true`.|
@@ -131,9 +135,10 @@ There are 3 types of options:
 |`archiveAfterMutationFile`| __String__. Specify a path to save archive after each mutation during search, only useful for debugging. *Default value*: `archive.csv`.|
 |`coveredTargetSortedBy`| __Enum__. Specify a format to organize the covered targets by the search. *Valid values*: `NAME, TEST`. *Default value*: `NAME`.|
 |`dependencyFile`| __String__. Specify a file that saves derived dependencies. *Default value*: `dependencies.csv`.|
-|`disableStructureMutationDuringFocusSearch`| __Boolean__. Specify whether to disable structure mutation during focus search. *Default value*: `false`.|
 |`doCollectImpact`| __Boolean__. Specify whether to collect impact info that provides an option to enable of collecting impact info when archive-based gene selection is disable. *Default value*: `false`.|
-|`employSqlNumResourceStrategy`| __Enum__. Specify a strategy to determinate a number of resources to be manipulated throughout the search. *Valid values*: `NONE, RANDOM, DPC`. *Default value*: `NONE`.|
+|`dpcTargetTestSize`| __Int__. Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabeld. *Default value*: `1`.|
+|`employResourceSizeHandlingStrategy`| __Enum__. Specify a strategy to determinate a number of resources to be manipulated throughout the search. *Valid values*: `NONE, RANDOM, DPC`. *Default value*: `NONE`.|
+|`enableAdaptiveResourceStructureMutation`| __Boolean__. Specify whether to decide the resource-based structure mutator and resource to be mutated adaptively based on impacts during focused search.Note that it only works when resource-based solution is enabled for solving REST problem. *Default value*: `false`.|
 |`enableNLPParser`| __Boolean__. Whether to employ NLP parser to process text. Note that to enable this parser, it is required to build the EvoMaster with the resource profile, i.e., mvn clean install -Presourceexp -DskipTests. *Default value*: `false`.|
 |`enableProcessMonitor`| __Boolean__. Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. This is only needed when running experiments with different parameter settings. *Default value*: `false`.|
 |`enableTrackIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals during the search. *Default value*: `false`.|
@@ -145,15 +150,21 @@ There are 3 types of options:
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
 |`impactAfterMutationFile`| __String__. Specify a path to save collected impact info after each mutation during search, only useful for debugging. *Default value*: `impactSnapshot.csv`.|
 |`impactFile`| __String__. Specify a path to save derived genes. *Default value*: `impact.csv`.|
+|`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`lastLineEpsilon`| __Double__. The Distance Metric Last Line may use several values for epsilon.During experimentation, it may be useful to adjust these values. Epsilon describes the size of the neighbourhood used for clustering, so may result in different clustering results.Epsilon should be between 0.0 and 1.0. If the value is outside of that range, epsilon will use the default of 0.8. *Constraints*: `min=0.0, max=1.0`. *Default value*: `0.8`.|
 |`maxLengthOfTraces`| __Int__. Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. Note that the value should be specified with a non-negative number or -1 (for tracking all history). *Constraints*: `min=-1.0`. *Default value*: `10`.|
-|`maxSqlInitActionsPerResource`| __Int__. When generating resource using SQL (e.g., sampler or mutator), how many new rows (max) to generate for the specific resource each time. *Constraints*: `min=0.0`. *Default value*: `0`.|
+|`maxResourceSize`| __Int__. Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources. *Constraints*: `min=0.0`. *Default value*: `0`.|
+|`maxSizeOfHandlingResource`| __Int__. Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
+|`maxSizeOfMutatingInitAction`| __Int__. Specify a maximum number of handling (remove/add) init actions at once, e.g., add 3 init actions at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
+|`maxTestSizeStrategy`| __Enum__. Specify a strategy to handle a max size of a test. *Valid values*: `SPECIFIED, DPC_INCREASING, DPC_DECREASING`. *Default value*: `SPECIFIED`.|
 |`maximumExistingDataToSampleInDb`| __Int__. Specify a maximum number of existing data in the database to sample when SQL handling is enabled. Note that a negative number means all existing data would be sampled. *Default value*: `-1`.|
 |`minRowOfTable`| __Int__. Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. In other word, if the number is less than the specified, insertion is always applied. *Constraints*: `min=0.0`. *Default value*: `10`.|
 |`mutatedGeneFile`| __String__. Specify a path to save mutation details which is useful for debugging mutation. *Default value*: `mutatedGeneInfo.csv`.|
 |`mutationTargetsSelectionStrategy`| __Enum__. Specify a strategy to select targets for evaluating mutation. *Valid values*: `FIRST_NOT_COVERED_TARGET, EXPANDED_UPDATED_NOT_COVERED_TARGET, UPDATED_NOT_COVERED_TARGET`. *Default value*: `FIRST_NOT_COVERED_TARGET`.|
 |`outputExecutedSQL`| __Enum__. Whether to output executed sql info. *Valid values*: `NONE, ALL_AT_END, ONCE_EXECUTED`. *Default value*: `NONE`.|
+|`probOfHandlingLength`| __Double__. Specify a probability of applying length handling. *Default value*: `0.0`.|
 |`probOfSelectFromDatabase`| __Double__. Specify a probability that enables selection (i.e., SELECT sql) of data from database instead of insertion (i.e., INSERT sql) for preparing resources for REST actions. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
+|`probOfSmartInitStructureMutator`| __Double__. Specify a probability of applying a smart structure mutator for initialization of the individual. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`processFiles`| __String__. Specify a folder to save results when a search monitor is enabled. *Default value*: `process_data`.|
 |`processFormat`| __Enum__. Specify a format to save the process data. *Valid values*: `JSON_ALL, TEST_IND, TARGET_TEST_IND`. *Default value*: `JSON_ALL`.|
 |`processInterval`| __Double__. Specify how often to save results when a search monitor is enabled, and 0.0 presents to record all evaluated individual. *Constraints*: `min=0.0, max=50.0`. *Default value*: `0.0`.|
@@ -165,7 +176,9 @@ There are 3 types of options:
 |`seedTestCases`| __Boolean__. Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process. *Default value*: `false`.|
 |`seedTestCasesFormat`| __Enum__. Format of the test cases seeded to EvoMaster. *Valid values*: `POSTMAN`. *Default value*: `POSTMAN`.|
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
-|`skipFailureSQLInTestFile`| __Boolean__. Whether to skip failed SQL commands in the generated test files. *Default value*: `false`.|
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
+|`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
+|`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
+|`treeDepth`| __Int__. Maximum tree depth in mutations/queries to be evaluated;this is to avoid issues when dealing with huge graphs in GraphQL. *Constraints*: `min=1.0`. *Default value*: `11`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|

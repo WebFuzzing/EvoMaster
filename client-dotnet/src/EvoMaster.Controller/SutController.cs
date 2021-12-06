@@ -11,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace EvoMaster.Controller {
-
     ///<summary>
     ///Abstract class used to connect to the EvoMaster process, and
     ///that is responsible to start/stop/restart the tested application,
@@ -31,16 +30,16 @@ namespace EvoMaster.Controller {
         // private DbSchemaDto SchemaDto;
 
         //For each action in a test, keep track of the extra heuristics, if any
-        private readonly ICollection<ExtraHeuristicsDto> extras = new SynchronizedCollection<ExtraHeuristicsDto> ();
+        private readonly ICollection<ExtraHeuristicsDto> extras = new SynchronizedCollection<ExtraHeuristicsDto>();
 
         //TODO: Commented this out just to prevent warning
         private int _actionIndex = -1;
 
-        public abstract void ResetStateOfSut ();
+        public abstract void ResetStateOfSut();
 
-        public abstract string StartSut ();
+        public abstract string StartSut();
 
-        public abstract void StopSut ();
+        public abstract void StopSut();
 
         ///<summary>
         ///Start the controller as a RESTful server.
@@ -49,13 +48,12 @@ namespace EvoMaster.Controller {
         ///</summary>
         ///<remarks>This method is blocking until the server is initialized.</remarks>
         ///<returns>returns true if there was no problem in starting the controller </returns>
-        public bool StartTheControllerServer () {
-
+        public bool StartTheControllerServer() {
             try {
-                CreateHostBuilder ().Build ().Run ();
-            } catch (System.Exception e) {
-
-                SimpleLogger.Error ("Failed to start web server", e);
+                CreateHostBuilder().Build().Run();
+            }
+            catch (System.Exception e) {
+                SimpleLogger.Error("Failed to start web server", e);
 
                 return false;
             }
@@ -63,49 +61,49 @@ namespace EvoMaster.Controller {
             return true;
         }
 
-        public bool StopTheControllerServer () {
+        public bool StopTheControllerServer() {
             //TODO: complete this method
-            throw new NotImplementedException ();
+            throw new NotImplementedException();
         }
 
         ///<summary>Returns the actual port in use (eg, if it was an ephemeral 0)</summary>
-        public int GetControllerServerPort () {
+        public int GetControllerServerPort() {
             //TODO: Complete this
-            throw new NotImplementedException ();
+            throw new NotImplementedException();
             //return ((AbstractNetworkConnector) controllerServer.getConnectors () [0]).getLocalPort ();
         }
 
-        public int GetControllerPort () {
+        public int GetControllerPort() {
             return controllerPort;
         }
 
-        public void SetControllerPort (int controllerPort) {
+        public void SetControllerPort(int controllerPort) {
             this.controllerPort = controllerPort;
         }
 
-        public string GetControllerHost () {
+        public string GetControllerHost() {
             return controllerHost;
         }
 
-        public void setControllerHost (String controllerHost) {
+        public void setControllerHost(String controllerHost) {
             this.controllerHost = controllerHost;
         }
 
         //TODO: Complete this method
-        public void ExecInsertionsIntoDatabase (IList<InsertionDto> insertions) {
-            throw new NotImplementedException ();
+        public void ExecInsertionsIntoDatabase(IList<InsertionDto> insertions) {
+            throw new NotImplementedException();
         }
 
         ///<summary>Calculate heuristics based on intercepted SQL commands</summary>
         ///<param name="sql">command as a string</param>
         //TODO: Complete this method
-        public void HandleSql (string sql) {
-            throw new NotImplementedException ();
+        public void HandleSql(string sql) {
+            throw new NotImplementedException();
         }
 
         //TODO: Complete this method
-        public void EnableComputeSqlHeuristicsOrExtractExecution (bool enableSqlHeuristics, bool enableSqlExecution) {
-            throw new NotImplementedException ();
+        public void EnableComputeSqlHeuristicsOrExtractExecution(bool enableSqlHeuristics, bool enableSqlExecution) {
+            throw new NotImplementedException();
         }
 
         ///<summary>
@@ -113,23 +111,23 @@ namespace EvoMaster.Controller {
         ///and it is automatically called by the EM controller after the SUT is started.
         ///</summary>
         //TODO: Complete this method
-        public void InitSqlHandler () {
-            throw new NotImplementedException ();
+        public void InitSqlHandler() {
+            throw new NotImplementedException();
         }
 
         //TODO: Complete this method
-        public void ResetExtraHeuristics () {
-            throw new NotImplementedException ();
+        public void ResetExtraHeuristics() {
+            throw new NotImplementedException();
         }
 
         //TODO: Complete this method
-        public IList<ExtraHeuristicsDto> GetExtraHeuristics () {
-            throw new NotImplementedException ();
+        public IList<ExtraHeuristicsDto> GetExtraHeuristics() {
+            throw new NotImplementedException();
         }
 
         //TODO: Complete this method
-        public ExtraHeuristicsDto ComputeExtraHeuristics () {
-            throw new NotImplementedException ();
+        public ExtraHeuristicsDto ComputeExtraHeuristics() {
+            throw new NotImplementedException();
         }
 
         /**
@@ -141,8 +139,8 @@ namespace EvoMaster.Controller {
          * @see SutController#getConnection
          */
         //TODO: Complete this method
-        public DbSchemaDto GetSqlDatabaseSchema () {
-            throw new NotImplementedException ();
+        public DbSchemaDto GetSqlDatabaseSchema() {
+            throw new NotImplementedException();
         }
 
         /**
@@ -152,8 +150,8 @@ namespace EvoMaster.Controller {
          * @return false if the verification failed
          */
         //TODO: Complete this method
-        public bool VerifySqlConnection () {
-            throw new NotImplementedException ();
+        public bool VerifySqlConnection() {
+            throw new NotImplementedException();
         }
 
         /**
@@ -161,9 +159,9 @@ namespace EvoMaster.Controller {
          *
          * Man: I modified this, please check Amid.
          */
-        public void NewTest () {
+        public void NewTest() {
             //_actionIndex = -1;
-            
+
             // resetExtraHeuristics();
             // extras.clear();
             NewTestSpecificHandler();
@@ -177,15 +175,14 @@ namespace EvoMaster.Controller {
          * @param dto the DTO with the information about the action (eg its index in the test)
          */
         //TODO: Complete this method. Man: modified, please check
-        public void NewAction (ActionDto dto) {
-            
+        public void NewAction(ActionDto dto) {
             // if (dto.index > extras.size()) {
             //     extras.add(computeExtraHeuristics());
             // }
             // this.actionIndex = dto.index;
             //
             // resetExtraHeuristics();
-            
+
             NewActionSpecificHandler(dto);
         }
 
@@ -193,18 +190,18 @@ namespace EvoMaster.Controller {
          * Re-initialize all internal data to enable a completely new search phase
          * which should be independent from previous ones
          */
-        public abstract void NewSearch ();
+        public abstract void NewSearch();
 
-        public abstract void NewTestSpecificHandler ();
+        public abstract void NewTestSpecificHandler();
 
-        public abstract void NewActionSpecificHandler (ActionDto dto);
+        public abstract void NewActionSpecificHandler(ActionDto dto);
 
         /**
          * Check if bytecode instrumentation is on.
          *
          * @return true if the instrumentation is on
          */
-        public abstract bool IsInstrumentationActivated ();
+        public abstract bool IsInstrumentationActivated();
 
         /**
          * <p>
@@ -221,7 +218,7 @@ namespace EvoMaster.Controller {
          * </p>
          * @return true if the SUT is running
          */
-        public abstract bool IsSutRunning ();
+        public abstract bool IsSutRunning();
 
         /**
          * <p>
@@ -240,7 +237,7 @@ namespace EvoMaster.Controller {
          *
          * @return a String representing the packages to cover
          */
-        public abstract string GetPackagePrefixesToCover ();
+        public abstract string GetPackagePrefixesToCover();
 
         /**
          * <p>
@@ -275,7 +272,7 @@ namespace EvoMaster.Controller {
          * @return a list of valid authentication credentials, or {@code null} if
          *      * none is necessary
          */
-        public abstract List<AuthenticationDto> GetInfoForAuthentication ();
+        public abstract List<AuthenticationDto> GetInfoForAuthentication();
 
         /**
          * <p>
@@ -304,17 +301,17 @@ namespace EvoMaster.Controller {
          *
          * @return {@code null} if the SUT does not use any SQL database
          */
-        public abstract string GetDatabaseDriverName ();
+        public abstract string GetDatabaseDriverName();
 
         //TODO: Complete this method
-        public abstract IList<TargetInfo> GetTargetInfos (IEnumerable<int> ids);
+        public abstract IList<TargetInfo> GetTargetInfos(IEnumerable<int> ids);
 
         /**
          * @return additional info for each action in the test.
          * The list is ordered based on the action index.
          */
         //TODO: Complete this method
-        public abstract IList<AdditionalInfo> GetAdditionalInfoList ();
+        public abstract IList<AdditionalInfo> GetAdditionalInfoList();
 
         /**
          * <p>
@@ -331,7 +328,7 @@ namespace EvoMaster.Controller {
          * </p>
          * @return an instance of object with all the needed data for the specific addressed problem
          */
-        public abstract IProblemInfo GetProblemInfo ();
+        public abstract IProblemInfo GetProblemInfo();
 
         /**
          * Test cases could be outputted in different language (e.g., Java and Kotlin),
@@ -340,36 +337,34 @@ namespace EvoMaster.Controller {
          *
          * @return the format in which the test cases should be generated
          */
-        public abstract OutputFormat GetPreferredOutputFormat ();
+        public abstract OutputFormat GetPreferredOutputFormat();
 
-        public abstract UnitsInfoDto GetUnitsInfoDto ();
+        public abstract UnitsInfoDto GetUnitsInfoDto();
 
         //TODO: Complete this method
         // protected UnitsInfoDto GetUnitsInfoDto (UnitsInfoRecorder recorder) {
 
         // }
 
-        private IHostBuilder CreateHostBuilder () =>
-            Host.CreateDefaultBuilder ()
-            .ConfigureServices ((hc, services) => {
-                services.Add (ServiceDescriptor.Singleton (typeof (SutController), this));
-            })
-            .ConfigureWebHostDefaults (webBuilder => {
-                webBuilder.UseStartup<Startup> ().UseUrls ($"http://*:{controllerPort}");
-            });
+        private IHostBuilder CreateHostBuilder() =>
+            Host.CreateDefaultBuilder()
+                .ConfigureServices((hc, services) => {
+                    services.Add(ServiceDescriptor.Singleton(typeof(SutController), this));
+                })
+                .ConfigureWebHostDefaults(webBuilder => {
+                    webBuilder.UseStartup<Startup>().UseUrls($"http://*:{controllerPort}");
+                });
 
-        protected int GetEphemeralTcpPort () {
+        protected int GetEphemeralTcpPort() {
+            var tcpListener = new TcpListener(IPAddress.Loopback, 0);
 
-            var tcpListener = new TcpListener (IPAddress.Loopback, 0);
+            tcpListener.Start();
 
-            tcpListener.Start ();
+            int port = ((IPEndPoint)tcpListener.LocalEndpoint).Port;
 
-            int port = ((IPEndPoint) tcpListener.LocalEndpoint).Port;
-
-            tcpListener.Stop ();
+            tcpListener.Stop();
 
             return port;
         }
-
     }
 }

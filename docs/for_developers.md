@@ -152,7 +152,7 @@ In the ideal world, each class/method/field would have nice, detailed, appropria
 But even in such a beautiful world, everything would go to hell at the first code change, as that might
 require manually changing most of the code comments.
 
-Cannot really quantify how much comments one should write, but at least it would be good to have:
+Cannot really quantify how many comments one should write, but at least it would be good to have:
 * brief (1-2 sentences) description of what the class is useful for (just before the class declaration) 
 * for fields that are data structures (e.g., collections and arrays) some comments would be useful, as long and detailed 
   variable names are not practical
@@ -169,7 +169,7 @@ For C#, besides `/** */`, for single line documentation you can use a triple sla
 
 ### IF CANNOT AVOID EXTERNAL SIDE-EFFECTS, DO DOCUMENT IT!!!
 
-If a call on a object has side-effects outside the class itself (e.g., writing to disk, add a system hook thread),
+If a call on a object has side effects outside the class itself (e.g., writing to disk, add a system hook thread),
 then this needs to be documented (see point on how to write comments),
 unless it is obvious from the function/class name.  
 
@@ -187,7 +187,7 @@ unless it is obvious from the function/class name.
   _Post-conditions_ are good, but often are difficult to write.
   Note: a _post-condition_ does not to be complete to be useful (i.e., find bugs). 
   For example, if we have _A && B_, but the writing
-  of _B_ is too difficult (or time consuming), still having just _A_ as _post-condition_ can help  
+  of _B_ is too difficult (or time-consuming), still having just _A_ as _post-condition_ can help  
 
 Note: currently _Kotlin_ does not have lazily evaluated assertions. 
 If you are writing a computational expensive check, rather user `Lazy.assert(predicate)`.  
@@ -330,9 +330,9 @@ Instructions can be found [here](./release.md).
 
 
 ### JDK VERSIONS
-At this point, we only support JDK __8__ and JDK __11__.
-_EvoMaster_ must be built with JDK 8, but still must be able to run it with JDK 11.
-Can be useful to setup your machine to easily switch between the 2 versions.
+At this point, we only support JDK __8__ and the following major LTS versions.
+_EvoMaster_ must be built with JDK 8, but still must be able to run it with the most recent LTS JDK.
+Can be useful to setup your machine to easily switch between different JDK versions.
 For example, if you are using a Mac, in your `~/.profile` configuration, you could have something 
 like:
 ```
@@ -347,6 +347,22 @@ alias java11='$JAVA_HOME_11/bin/java'
 alias mvn8='JAVA_HOME=$JAVA_HOME_8 && mvn'
 alias mvn11='JAVA_HOME=$JAVA_HOME_11 && mvn'
 ```
+
+If you are using Windows, it does not seem there is a simple way to define aliases.
+Besides setting up the `JAVA_HOME` environment variable, it can be useful to set up an environment variable for each LTS JDK version, e.g., `JAVA_HOME_8`, `JAVA_HOME_11` and `JAVA_HOME_17` (of course, you will need to install all those JDKs...).
+Then, from a bash shell (e.g., Git Bash), you can build with Maven using:
+
+`JAVA_HOME=$JAVA_HOME_11 mvn <your_inputs>`
+
+For example, try it with:
+
+`JAVA_HOME=$JAVA_HOME_11 mvn --version`
+
+You can also call `java` directly with:
+
+`$JAVA_HOME_17/bin/java -version`
+
+
 
 
 

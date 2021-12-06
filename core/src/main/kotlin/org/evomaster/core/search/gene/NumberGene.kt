@@ -8,13 +8,15 @@ import kotlin.math.min
 /**
  * Common superclass for all number genes (i.e. Float,Double,Integer,Long)
  */
-abstract class NumberGene<T : Number>(name: String, var value: T, var numericConstrains: NumericConstrains? = null) : Gene(name, mutableListOf()) {
-
+abstract class NumberGene<T : Number>(name: String,
+                                      var value: T,
+                                      var numericConstrains: NumericConstrains? = null) : ComparableGene(name, mutableListOf()) {
 
     var min: Number? = numericConstrains?.getMin()
     var max: Number? = numericConstrains?.getMax()
     var exclusiveMinimum: Boolean = numericConstrains?.getExclusiveMinimum() ?: false
     var exclusiveMaximum: Boolean = numericConstrains?.getExclusiveMaximum() ?: false
+
 
     override fun getChildren(): MutableList<Gene> = mutableListOf()
 

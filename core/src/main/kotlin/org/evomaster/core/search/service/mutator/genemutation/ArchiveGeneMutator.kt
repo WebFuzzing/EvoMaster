@@ -44,7 +44,7 @@ class ArchiveGeneMutator{
     lateinit var mwc : MutationWeightControl
 
     @Inject
-    lateinit var ags : ArchiveGeneSelector
+    lateinit var ags : ArchiveImpactSelector
 
 
     companion object{

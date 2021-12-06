@@ -1,6 +1,6 @@
 package org.evomaster.core.search.gene
 
-import org.apache.commons.lang3.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
@@ -9,9 +9,9 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
@@ -546,7 +546,7 @@ class StringGene(
 
         val rawValue = getValueAsRawString()
         if (mode != null && mode == EscapeMode.XML) {
-            return StringEscapeUtils.escapeXml(rawValue)
+            return StringEscapeUtils.escapeXml10(rawValue)
         } else {
             when {
                 // TODO this code should be refactored with other getValueAsPrintableString() methods

@@ -2,14 +2,12 @@ using System;
 
 namespace EvoMaster.Controller.Api {
     public class WrappedResponseDto {
-        internal WrappedResponseDto () {
-
-        }
+        internal WrappedResponseDto() { }
 
         public string Error { get; set; }
     }
-    public class WrappedResponseDto<T> : WrappedResponseDto {
 
+    public class WrappedResponseDto<T> : WrappedResponseDto {
         /**
          * The actual payload we are sending and are "wrapping" here
          */
@@ -19,34 +17,30 @@ namespace EvoMaster.Controller.Api {
          * A message describing the error, if any.
          * If this is not null, then "data" must be null.
          */
-
-        public static WrappedResponseDto<K> WithData<K> (K data) {
-
-            WrappedResponseDto<K> dto = new WrappedResponseDto<K> ();
+        public static WrappedResponseDto<K> WithData<K>(K data) {
+            WrappedResponseDto<K> dto = new WrappedResponseDto<K>();
 
             dto.Data = data;
 
             return dto;
         }
 
-        public static WrappedResponseDto WithNoData () => new WrappedResponseDto ();
+        public static WrappedResponseDto WithNoData() => new WrappedResponseDto();
 
-        public static WrappedResponseDto WithError (string error) {
-
+        public static WrappedResponseDto WithError(string error) {
             //TODO: check again
-            if (error.Equals (null))
-                throw new NullReferenceException ("Null error message");
+            if (error.Equals(null))
+                throw new NullReferenceException("Null error message");
 
-            if (string.IsNullOrEmpty (error)) {
-                throw new ArgumentException ("Empty error message");
+            if (string.IsNullOrEmpty(error)) {
+                throw new ArgumentException("Empty error message");
             }
 
-            WrappedResponseDto dto = new WrappedResponseDto ();
+            WrappedResponseDto dto = new WrappedResponseDto();
 
             dto.Error = error;
 
             return dto;
         }
     }
-
 }

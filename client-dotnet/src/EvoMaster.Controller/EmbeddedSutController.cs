@@ -5,44 +5,36 @@ using System.Threading;
 using System.Threading.Tasks;
 using EvoMaster.Controller.Api;
 using EvoMaster.Instrumentation;
-using EvoMaster.Instrumentation.Staticstate;
+using EvoMaster.Instrumentation.StaticState;
 using Microsoft.Extensions.Configuration;
 using Action = EvoMaster.Instrumentation.Action;
 
-namespace EvoMaster.Controller
-{
-    public abstract class EmbeddedSutController : SutController
-    {
-        public sealed override UnitsInfoDto GetUnitsInfoDto()
-        {
+namespace EvoMaster.Controller {
+    public abstract class EmbeddedSutController : SutController {
+        public sealed override UnitsInfoDto GetUnitsInfoDto() {
             //TODO
             return new UnitsInfoDto();
         }
 
         public sealed override bool IsInstrumentationActivated() => false;
 
-        public sealed override void NewActionSpecificHandler(ActionDto dto)
-        {
+        public sealed override void NewActionSpecificHandler(ActionDto dto) {
             ExecutionTracer.SetAction(new Action(dto.Index, dto.InputVariables));
         }
 
-        public override IList<TargetInfo> GetTargetInfos(IEnumerable<int> ids)
-        {
+        public override IList<TargetInfo> GetTargetInfos(IEnumerable<int> ids) {
             return InstrumentationController.GetTargetInfos(ids);
         }
 
-        public override IList<AdditionalInfo> GetAdditionalInfoList()
-        {
+        public override IList<AdditionalInfo> GetAdditionalInfoList() {
             return InstrumentationController.GetAdditionalInfoList();
         }
 
-        public sealed override void NewSearch()
-        {
+        public sealed override void NewSearch() {
             InstrumentationController.ResetForNewSearch();
         }
 
-        public sealed override void NewTestSpecificHandler()
-        {
+        public sealed override void NewTestSpecificHandler() {
             InstrumentationController.ResetForNewTest();
         }
 
@@ -51,32 +43,27 @@ namespace EvoMaster.Controller
         /// </summary>
         /// <param name="port">The port number on the localhost</param>
         /// <param name="timeout">The amount of time in seconds the driver should give up if the SUT did not start </param>
-        protected static void WaitUntilSutIsRunning(int port, int timeout = 60)
-        {
-            var task = Task.Run(() =>
-            {
+        protected static void WaitUntilSutIsRunning(int port, int timeout = 60) {
+            var task = Task.Run(() => {
                 using var tcpClient = new TcpClient();
-                while (true)
-                {
-                    try
-                    {
+                while (true) {
+                    try {
                         tcpClient.Connect("127.0.0.1", port);
                         break;
                     }
-                    catch (Exception)
-                    {
+                    catch (Exception) {
                         Thread.Sleep(50);
                     }
                 }
             });
-            
+
             if (task.Wait(TimeSpan.FromSeconds(timeout)))
                 return;
-            
+
             throw new TimeoutException($"The SUT didn't start within {timeout} seconds on port {port}.");
         }
-        protected static IConfiguration GetConfiguration(string settingFileName)
-        {
+
+        protected static IConfiguration GetConfiguration(string settingFileName) {
             var config = new ConfigurationBuilder()
                 .AddJsonFile(settingFileName)
                 .Build();

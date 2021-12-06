@@ -25,11 +25,10 @@ fun complete(numericConstrains: NumericConstrains?): NumericConstrains {
 }
 
 class IntegerGene(
-        name: String,
-        value: Int = 0,
-        numericConstrains: NumericConstrains? = null
+    name: String,
+    value: Int = 0,
+    numericConstrains: NumericConstrains? = null
 ) : NumberGene<Int>(name, value, complete(numericConstrains)) {
-
 
     fun getMinimum(): Int {
         return min?.toInt() ?: Int.MIN_VALUE
@@ -39,8 +38,8 @@ class IntegerGene(
         return max?.toInt() ?: Int.MAX_VALUE
     }
 
-    companion object{
-        private val log : Logger = LoggerFactory.getLogger(IntegerGene::class.java)
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(IntegerGene::class.java)
     }
 
     override fun copyContent(): Gene {
@@ -66,19 +65,29 @@ class IntegerGene(
         value = randomness.randomizeBoundedIntAndLong(value.toLong(), getMinimum().toLong(), getMaximum().toLong(), forceNewValue).toInt()
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun mutate(
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        mwc: MutationWeightControl,
+        allGenes: List<Gene>,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
 
-        if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
-            if (additionalGeneMutationInfo.hasHistory()){
+        if (enableAdaptiveGeneMutation) {
+            additionalGeneMutationInfo
+                ?: throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
+            if (additionalGeneMutationInfo.hasHistory()) {
                 try {
                     additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
-                            additionalGeneMutationInfo,
-                            this,
-                            allGenes
+                        additionalGeneMutationInfo,
+                        this,
+                        allGenes
                     )
                     return true
-                }catch (e: DifferentGeneInHistory){}
+                } catch (e: DifferentGeneInHistory) {
+                }
             }
         }
 
@@ -106,14 +115,19 @@ class IntegerGene(
     }
 
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+    override fun getValueAsPrintableString(
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
+    ): String {
         return value.toString()
     }
 
     override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        when(gene){
+        when (gene) {
             is IntegerGene -> value = gene.value
             is FloatGene -> value = gene.value.toInt()
             is DoubleGene -> value = gene.value.toInt()
@@ -121,13 +135,13 @@ class IntegerGene(
             is StringGene -> {
                 value = gene.value.toIntOrNull() ?: return false
             }
-            is Base64StringGene ->{
+            is Base64StringGene -> {
                 value = gene.data.value.toIntOrNull() ?: return false
             }
             is ImmutableDataHolderGene -> {
                 value = gene.value.toIntOrNull() ?: return false
             }
-            is SqlPrimaryKeyGene ->{
+            is SqlPrimaryKeyGene -> {
                 value = gene.uniqueId.toInt()
             }
             else -> {
@@ -137,4 +151,12 @@ class IntegerGene(
         }
         return true
     }
+
+    override fun compareTo(other: ComparableGene): Int {
+        if (other !is IntegerGene) {
+            throw ClassCastException("Expected IntegerGene but " + other::javaClass + " was found.")
+        }
+        return this.toInt().compareTo(other.toInt())
+    }
+
 }
