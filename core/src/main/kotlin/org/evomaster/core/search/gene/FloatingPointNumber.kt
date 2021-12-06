@@ -74,7 +74,7 @@ abstract class FloatingPointNumber<T:Number>(
          *          < 0 means - modification
          *          > 0 means + modification
          */
-        fun getGaussianDeltaWithDirection(randomness: Randomness, sDirection: Boolean?) : Double{
+        private fun getGaussianDeltaWithDirection(randomness: Randomness, sDirection: Boolean?) : Double{
             var gaussianDelta = randomness.nextGaussian()
             if (gaussianDelta == 0.0)
                 gaussianDelta = randomness.nextGaussian()

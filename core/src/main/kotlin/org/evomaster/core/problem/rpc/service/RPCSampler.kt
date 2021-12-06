@@ -64,6 +64,7 @@ class RPCSampler: HttpWsSampler<RPCIndividual>() {
 
         initAdHocInitialIndividuals()
 
+        updateConfigForTestOutput(infoDto)
         log.debug("Done initializing {}", RPCSampler::class.simpleName)
     }
 

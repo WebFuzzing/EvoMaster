@@ -4,7 +4,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.httpws.service.param.Param
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.problem.rpc.param.RPCInputParam
 import org.evomaster.core.search.gene.Gene
 
 /**
@@ -24,7 +24,8 @@ class RPCCallAction(
     }
 
     override fun seeGenes(): List<out Gene> {
-        return parameters.flatMap { it.seeGenes() }
+        // ignore genes in response here
+        return parameters.filterIsInstance<RPCInputParam>().flatMap { it.seeGenes() }
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {

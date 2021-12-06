@@ -79,7 +79,7 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
                 rpcHandler.setGeneBasedOnParamDto(responseGene.gene, response.rpcResponse)
         }
 
-        actionResult.stopping = response != null
+        actionResult.stopping = response == null
         return response != null
     }
 
