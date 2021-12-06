@@ -563,7 +563,7 @@ object RestActionBuilderV3 {
 
         if (fields.isEmpty()) {
             log.warn("No fields for object definition: $name")
-            // here, the first of pair gene should not be mutable
+            // here, the first of PairGene should not be mutable
             return MapGene(name,
                 PairGene.createStringPairGene(
                     StringGene(name + "_field", minLength = schema.minLength, maxLength = schema.maxLength),
