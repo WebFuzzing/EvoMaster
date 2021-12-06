@@ -202,6 +202,8 @@ public class EMController {
             dto.graphQLProblem.endpoint= removePrefix(p.getEndpoint(), baseUrlOfSUT);
         } else if(info instanceof RPCProblem){
             dto.rpcProblem = new RPCProblemDto();
+            // extract RPCSchema
+            sutController.extractRPCSchema();
             Map<String, InterfaceSchema> rpcSchemas = sutController.getRPCSchema();
             if (rpcSchemas == null){
                 return Response.status(500).entity(WrappedResponseDto.withError("Fail to extract RPC interface schema")).build();

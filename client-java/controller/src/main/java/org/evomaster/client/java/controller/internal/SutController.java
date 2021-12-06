@@ -123,15 +123,6 @@ public abstract class SutController implements SutHandler {
 
         SimpleLogger.info("Started controller server on: " + controllerServer.getURI());
 
-        /*
-            handle RPC
-            eg, extract interface info based on specified info of interface
-         */
-        if (getProblemInfo() instanceof RPCProblem){
-            extractRPCSchema();
-            objectMapper = new ObjectMapper();
-        }
-
         return true;
     }
 
@@ -310,7 +301,12 @@ public abstract class SutController implements SutHandler {
     /**
      * extract endpoints info of the RPC interface by reflection based on the specified service interface name
      */
-    private final void extractRPCSchema(){
+    @Override
+    public final void extractRPCSchema(){
+
+        if (objectMapper == null)
+            objectMapper = new ObjectMapper();
+
         if (!rpcInterfaceSchema.isEmpty())
             return;
 

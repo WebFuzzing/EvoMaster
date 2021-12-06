@@ -103,7 +103,7 @@ public interface SutHandler {
      * @param interfaceName a full name of an interface
      * @return a client which could send requests to the interface
      */
-    Object getRPCClient(String interfaceName);
+    default Object getRPCClient(String interfaceName){return null;}
 
     /**
      * <p>
@@ -113,5 +113,13 @@ public interface SutHandler {
      * @param json contains info of an RPC endpoint
      * @return value returned by this execution. it is nullable.
      */
-    Object executeRPCEndpoint(String json);
+    default Object executeRPCEndpoint(String json){return null;}
+
+    /**
+     * <p>
+     * execute an RPC endpoint with evomaster driver
+     * </p>
+     *
+     */
+    default void extractRPCSchema(){}
 }
