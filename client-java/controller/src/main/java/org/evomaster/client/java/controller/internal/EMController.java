@@ -510,12 +510,12 @@ public class EMController {
                 try{
                     // TODO RPC execute action here and return its response
                     sutController.executeAction(dto.rpcCall, responseDto);
-
-                    // convert the response to dto, and send back to core
-
-
+                    return Response.status(200).entity(WrappedResponseDto.withData(responseDto)).build();
                 }catch (Exception e){
-                    // TODO return 500
+                    // TODO handle exception on responseDto later
+                    String msg = "Thrown exception: " + e.getMessage();
+                    SimpleLogger.error(msg, e);
+                    return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                 }
 
             }

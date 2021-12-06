@@ -23,18 +23,20 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         Class<?> clazz = Class.forName(clazzName);
         try {
             Object instance = clazz.newInstance();
-            Field[] fs = clazz.getDeclaredFields();
-            for (int i = 0; i<fs.length; i++ ){
-                Field f = fs[i];
-                NamedTypedValue v = getValue().get(i);
+            for (NamedTypedValue v: getValue()){
+                Field f = clazz.getDeclaredField(v.getName());
                 f.setAccessible(true);
-                f.set(instance, v.newInstance());
+                Object vins = v.newInstance();
+                if (vins != null)
+                    f.set(instance, vins);
             }
             return instance;
         } catch (InstantiationException e) {
-            throw new RuntimeException("fail to construct the class:"+clazzName);
+            throw new RuntimeException("fail to construct the class:"+clazzName+" with error msg:"+e.getMessage());
         } catch (IllegalAccessException e) {
-            throw new RuntimeException("fail to access the class:"+clazzName);
+            throw new RuntimeException("fail to access the class:"+clazzName+" with error msg:"+e.getMessage());
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException("fail to access the field:"+clazzName+" with error msg:"+e.getMessage());
         }
     }
 

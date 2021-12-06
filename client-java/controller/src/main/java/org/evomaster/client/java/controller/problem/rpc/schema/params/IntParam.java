@@ -35,7 +35,8 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
     @Override
     public void setValue(ParamDto dto) {
         try {
-            setValue(Integer.parseInt(dto.jsonValue));
+            if (dto.jsonValue != null)
+                setValue(Integer.parseInt(dto.jsonValue));
         }catch (NumberFormatException e){
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as int value");
         }

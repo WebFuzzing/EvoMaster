@@ -38,7 +38,8 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     @Override
     public void setValue(ParamDto dto) {
         try {
-            setValue(Byte.parseByte(dto.jsonValue));
+            if (dto.jsonValue != null)
+                setValue(Byte.parseByte(dto.jsonValue));
         }catch (NumberFormatException e){
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as byte value");
         }

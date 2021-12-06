@@ -26,7 +26,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     /**
      * represent whether this value is nullable
      */
-    private boolean isNullable;
+    private boolean isNullable = true;
 
     /*
         TODO handle constraints
@@ -74,6 +74,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         dto.type = type.getDto();
         if (getValue() != null)
             dto.jsonValue = getValue().toString();
+        dto.isNullable = isNullable;
         return dto;
     }
 

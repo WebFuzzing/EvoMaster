@@ -99,12 +99,12 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
         if (bodyLines.size == 1) {
             lines.add(bodyLines.first())
         } else {
-            lines.add("bodyLines.first() + ")
+            lines.add("${bodyLines.first()} + ")
             lines.indented {
                 (1 until bodyLines.lastIndex).forEach { i ->
                     lines.add("${bodyLines[i]} + ")
                 }
-                lines.add("${bodyLines.last()})")
+                lines.add(bodyLines.last())
             }
         }
     }

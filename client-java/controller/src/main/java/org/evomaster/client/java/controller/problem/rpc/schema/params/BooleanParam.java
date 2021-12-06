@@ -35,7 +35,8 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     @Override
     public void setValue(ParamDto dto) {
         try {
-            setValue(Boolean.parseBoolean(dto.jsonValue));
+            if (dto.jsonValue != null)
+                setValue(Boolean.parseBoolean(dto.jsonValue));
         }catch (NumberFormatException e){
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as boolean value");
         }

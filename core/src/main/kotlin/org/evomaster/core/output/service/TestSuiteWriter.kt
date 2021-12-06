@@ -274,9 +274,12 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaOrKotlin()) {
-            addImport("io.restassured.RestAssured", lines)
-            addImport("io.restassured.RestAssured.given", lines, true)
-            addImport("io.restassured.response.ValidatableResponse", lines)
+            if (useRestAssured()){
+                addImport("io.restassured.RestAssured", lines)
+                addImport("io.restassured.RestAssured.given", lines, true)
+                addImport("io.restassured.response.ValidatableResponse", lines)
+            }
+
             addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
             addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
@@ -289,18 +292,24 @@ class TestSuiteWriter {
             if (config.enableBasicAssertions) {
                 addImport("org.hamcrest.Matchers.*", lines, true)
                 //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
-                addImport("io.restassured.config.JsonConfig", lines)
-                addImport("io.restassured.path.json.config.JsonPathConfig", lines)
-                addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
+                if (useRestAssured()){
+                    addImport("io.restassured.config.JsonConfig", lines)
+                    addImport("io.restassured.path.json.config.JsonPathConfig", lines)
+                    addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
+                }
+
                 addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
                 addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
                 addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
             }
 
+
             if (config.expectationsActive) {
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
-                addImport("io.restassured.path.json.JsonPath", lines)
+
+                if (useRestAssured())
+                    addImport("io.restassured.path.json.JsonPath", lines)
                 addImport("java.util.Arrays", lines)
             }
         }
@@ -447,20 +456,23 @@ class TestSuiteWriter {
                 }
             }
 
-            if (format.isJavaOrKotlin()) {
-                addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
-                addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
-                addStatement("RestAssured.urlEncodingEnabled = false", lines)
+            if (config.problemType != EMConfig.ProblemType.RPC){
+                if (format.isJavaOrKotlin()) {
+                    addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
+                    addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
+                    addStatement("RestAssured.urlEncodingEnabled = false", lines)
+                }
+
+                if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
+                    lines.add("RestAssured.config = RestAssured.config()")
+                    lines.indented {
+                        lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
+                        lines.add(".redirect(redirectConfig().followRedirects(false))")
+                    }
+                    appendSemicolon(lines)
+                }
             }
 
-            if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
-                lines.add("RestAssured.config = RestAssured.config()")
-                lines.indented {
-                    lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
-                    lines.add(".redirect(redirectConfig().followRedirects(false))")
-                }
-                appendSemicolon(lines)
-            }
         }
 
         if (format.isJavaScript()) {
@@ -651,4 +663,5 @@ class TestSuiteWriter {
     }
 
 
+    private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
 }

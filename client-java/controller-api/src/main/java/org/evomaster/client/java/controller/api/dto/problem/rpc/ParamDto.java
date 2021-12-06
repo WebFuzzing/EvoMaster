@@ -30,8 +30,9 @@ public class ParamDto {
 
     /**
      * whether the param could be null
+     * TODO handle this with javax.validate, but now it is all true
      */
-    public boolean isNullable;
+    public boolean isNullable = true;
 
     /**
      * create a copy

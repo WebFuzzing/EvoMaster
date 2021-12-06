@@ -34,7 +34,8 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     @Override
     public void setValue(ParamDto dto) {
         try {
-            setValue(Double.parseDouble(dto.jsonValue));
+            if (dto.jsonValue != null)
+                setValue(Double.parseDouble(dto.jsonValue));
         }catch (NumberFormatException e){
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as double value");
         }

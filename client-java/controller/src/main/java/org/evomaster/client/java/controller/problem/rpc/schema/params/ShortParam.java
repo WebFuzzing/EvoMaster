@@ -35,7 +35,8 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     @Override
     public void setValue(ParamDto dto) {
         try {
-            setValue(Short.parseShort(dto.jsonValue));
+            if (dto.jsonValue != null)
+                setValue(Short.parseShort(dto.jsonValue));
         }catch (NumberFormatException e){
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as short value");
         }

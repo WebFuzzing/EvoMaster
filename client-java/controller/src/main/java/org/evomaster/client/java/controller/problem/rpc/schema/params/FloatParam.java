@@ -34,7 +34,8 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
     @Override
     public void setValue(ParamDto dto) {
         try {
-            setValue(Float.parseFloat(dto.jsonValue));
+            if (dto.jsonValue != null)
+                setValue(Float.parseFloat(dto.jsonValue));
         }catch (NumberFormatException e){
             throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as float value");
         }
