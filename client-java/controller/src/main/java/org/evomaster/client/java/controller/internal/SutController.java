@@ -403,7 +403,6 @@ public abstract class SutController implements SutHandler {
         Object response = executeRPCEndpoint(dto);
         if (endpointSchema.getResponse() != null){
             if (response instanceof Exception){
-                //TODO might need to handle error of client on the driver side
                 RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
 
             }else{
@@ -462,6 +461,9 @@ public abstract class SutController implements SutHandler {
         } catch (NoSuchMethodException | ClassNotFoundException | IllegalAccessException e) {
             throw new RuntimeException("RPC ACTION EXECUTION ERROR: fail to process a RPC request with "+ e.getMessage());
         } catch (InvocationTargetException e){
+            /*
+                TODO might need to handle error of client here, then re-invoke the method in some cases
+             */
             return e.getTargetException();
         }
     }

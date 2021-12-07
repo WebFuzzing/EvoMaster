@@ -107,6 +107,10 @@ class RPCEndpointsHandler {
         return objectMapper.writeValueAsString(dto)
     }
 
+    fun getParamDtoJson(dto: ParamDto) : String {
+        return objectMapper.writeValueAsString(dto)
+    }
+
     private fun transformGeneToParamDto(gene: Gene, dto: ParamDto){
         // skip null value
         if (gene is OptionalGene && !gene.isActive){

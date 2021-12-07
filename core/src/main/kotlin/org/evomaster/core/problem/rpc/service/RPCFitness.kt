@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rpc.RPCCallAction
@@ -80,11 +81,25 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
         val response =  rc.executeNewRPCActionAndGetResponse(dto)
         if (response != null){
             val responseGene = action.parameters.filterIsInstance<RPCReturnParam>().firstOrNull()
-            if (responseGene != null)
+            if (responseGene != null && response.rpcResponse != null){
                 rpcHandler.setGeneBasedOnParamDto(responseGene.gene, response.rpcResponse)
+                actionResult.setSuccess()
+            }else{
+                if (response.exceptionInfoDto != null){
+                    actionResult.setRPCException(response.exceptionInfoDto)
+                    if (response.exceptionInfoDto.type == RPCExceptionType.CUSTOMIZED_EXCEPTION &&
+                        response.exceptionInfoDto.exceptionDto!=null){
+                        actionResult.setCustomizedExceptionBody(rpcHandler.getParamDtoJson(response.exceptionInfoDto.exceptionDto))
+                    }
+                } else
+                    log.warn("ERROR: missing exception info for failed RPC call invocation")
+            }
+        }else{
+            actionResult.setFailedCall()
         }
 
         actionResult.stopping = response == null
+
         return response != null
     }
 

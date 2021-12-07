@@ -7,6 +7,9 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
  * currently, we only collect thrift
  */
 public enum RPCExceptionType {
+
+    CUSTOMIZED_EXCEPTION(RPCExceptionCategory.OTHERS, new RPCType[]{RPCType.THRIFT}, -1),
+
     /*
         https://javadoc.io/doc/org.apache.thrift/libthrift/latest/org/apache/thrift/TApplicationException.html
      */

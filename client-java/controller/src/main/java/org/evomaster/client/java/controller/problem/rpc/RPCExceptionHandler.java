@@ -20,7 +20,7 @@ public class RPCExceptionHandler {
     public static void handle(Object e, ActionResponseDto dto, EndpointSchema endpointSchema, RPCType type){
 
         switch (type){
-            case THRIFT: dto.exceptionInfoDto = handleThrift(e, endpointSchema);
+            case THRIFT: dto.exceptionInfoDto = handleThrift(e, endpointSchema); break;
             default: throw new RuntimeException("ERROR: NOT SUPPORT exception handling for "+type);
         }
     }
@@ -43,7 +43,13 @@ public class RPCExceptionHandler {
             ParamDto edto = handleDefinedException(e, endpointSchema);
             dto.exceptionDto = edto;
 
-            handleTException(e, dto);
+
+            if (edto != null){
+                dto.type = RPCExceptionType.CUSTOMIZED_EXCEPTION;
+            }else{
+                handleTException(e, dto);
+            }
+
             if (dto.type == null){
                 SimpleLogger.error("Fail to extract exception type info for an exception "+ e.getClass().getName());
             }
@@ -58,8 +64,9 @@ public class RPCExceptionHandler {
 
     private static ParamDto handleDefinedException(Object e, EndpointSchema endpointSchema) throws ClassNotFoundException {
         for (NamedTypedValue p : endpointSchema.getExceptions()){
-            if (isRootThriftException(e)) continue;
-            if (isInstanceOf(e, p.getType().getFullTypeName())){
+            String type = p.getType().getFullTypeName();
+            if (type.equals(THRIFT_EXCEPTION_ROOT)) continue;
+            if (isInstanceOf(e, type)){
                 p.setValueBasedOnInstance(e);
                 return p.getDto();
             }
@@ -84,6 +91,7 @@ public class RPCExceptionHandler {
     private static boolean isRootThriftException(Object e) throws ClassNotFoundException {
         return Class.forName(THRIFT_EXCEPTION_ROOT).isInstance(e);
     }
+
 
     private static boolean isInstanceOf(Object e, String name) throws ClassNotFoundException {
         return Class.forName(name).isInstance(e);

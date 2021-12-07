@@ -67,7 +67,7 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
 
     override fun shouldFailIfException(result: ActionResult): Boolean {
         //TODO Man: need a further check
-        return true
+        return false
     }
 
     private fun executeActionWithSutHandler(lines: Lines, resVarName: String, executionJson: String){
