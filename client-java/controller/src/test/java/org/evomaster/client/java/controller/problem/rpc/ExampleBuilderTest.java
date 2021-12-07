@@ -6,7 +6,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
-import org.evomaster.client.java.controller.problem.RPCType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

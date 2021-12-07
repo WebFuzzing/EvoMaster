@@ -12,5 +12,5 @@ exception ErrorResponse {
 
 service ThriftExceptionService {
 
-    void check(1:string value) throws (1:BadResponse bad, 2:ErrorResponse error)
+    string check(1:string value) throws (1:BadResponse bad, 2:ErrorResponse error)
 }

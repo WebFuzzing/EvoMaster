@@ -12,13 +12,13 @@ public class ThriftExceptionService {
 
   public interface Iface {
 
-    public void check(java.lang.String value) throws BadResponse, ErrorResponse, org.apache.thrift.TException;
+    public java.lang.String check(java.lang.String value) throws BadResponse, ErrorResponse, org.apache.thrift.TException;
 
   }
 
   public interface AsyncIface {
 
-    public void check(java.lang.String value, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws org.apache.thrift.TException;
+    public void check(java.lang.String value, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException;
 
   }
 
@@ -42,10 +42,10 @@ public class ThriftExceptionService {
       super(iprot, oprot);
     }
 
-    public void check(java.lang.String value) throws BadResponse, ErrorResponse, org.apache.thrift.TException
+    public java.lang.String check(java.lang.String value) throws BadResponse, ErrorResponse, org.apache.thrift.TException
     {
       send_check(value);
-      recv_check();
+      return recv_check();
     }
 
     public void send_check(java.lang.String value) throws org.apache.thrift.TException
@@ -55,17 +55,20 @@ public class ThriftExceptionService {
       sendBase("check", args);
     }
 
-    public void recv_check() throws BadResponse, ErrorResponse, org.apache.thrift.TException
+    public java.lang.String recv_check() throws BadResponse, ErrorResponse, org.apache.thrift.TException
     {
       check_result result = new check_result();
       receiveBase(result, "check");
+      if (result.isSetSuccess()) {
+        return result.success;
+      }
       if (result.bad != null) {
         throw result.bad;
       }
       if (result.error != null) {
         throw result.error;
       }
-      return;
+      throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "check failed: unknown result");
     }
 
   }
@@ -86,16 +89,16 @@ public class ThriftExceptionService {
       super(protocolFactory, clientManager, transport);
     }
 
-    public void check(java.lang.String value, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws org.apache.thrift.TException {
+    public void check(java.lang.String value, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException {
       checkReady();
       check_call method_call = new check_call(value, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
       ___manager.call(method_call);
     }
 
-    public static class check_call extends org.apache.thrift.async.TAsyncMethodCall<Void> {
+    public static class check_call extends org.apache.thrift.async.TAsyncMethodCall<java.lang.String> {
       private java.lang.String value;
-      public check_call(java.lang.String value, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      public check_call(java.lang.String value, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.value = value;
       }
@@ -108,13 +111,13 @@ public class ThriftExceptionService {
         prot.writeMessageEnd();
       }
 
-      public Void getResult() throws BadResponse, ErrorResponse, org.apache.thrift.TException {
+      public java.lang.String getResult() throws BadResponse, ErrorResponse, org.apache.thrift.TException {
         if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new java.lang.IllegalStateException("Method call not finished!");
         }
         org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
         org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
-        return null;
+        return (new Client(prot)).recv_check();
       }
     }
 
@@ -156,7 +159,7 @@ public class ThriftExceptionService {
       public check_result getResult(I iface, check_args args) throws org.apache.thrift.TException {
         check_result result = new check_result();
         try {
-          iface.check(args.value);
+          result.success = iface.check(args.value);
         } catch (BadResponse bad) {
           result.bad = bad;
         } catch (ErrorResponse error) {
@@ -183,7 +186,7 @@ public class ThriftExceptionService {
       return processMap;
     }
 
-    public static class check<I extends AsyncIface> extends org.apache.thrift.AsyncProcessFunction<I, check_args, Void> {
+    public static class check<I extends AsyncIface> extends org.apache.thrift.AsyncProcessFunction<I, check_args, java.lang.String> {
       public check() {
         super("check");
       }
@@ -192,11 +195,12 @@ public class ThriftExceptionService {
         return new check_args();
       }
 
-      public org.apache.thrift.async.AsyncMethodCallback<Void> getResultHandler(final org.apache.thrift.server.AbstractNonblockingServer.AsyncFrameBuffer fb, final int seqid) {
+      public org.apache.thrift.async.AsyncMethodCallback<java.lang.String> getResultHandler(final org.apache.thrift.server.AbstractNonblockingServer.AsyncFrameBuffer fb, final int seqid) {
         final org.apache.thrift.AsyncProcessFunction fcall = this;
-        return new org.apache.thrift.async.AsyncMethodCallback<Void>() { 
-          public void onComplete(Void o) {
+        return new org.apache.thrift.async.AsyncMethodCallback<java.lang.String>() { 
+          public void onComplete(java.lang.String o) {
             check_result result = new check_result();
+            result.success = o;
             try {
               fcall.sendResponse(fb, result, org.apache.thrift.protocol.TMessageType.REPLY,seqid);
             } catch (org.apache.thrift.transport.TTransportException e) {
@@ -246,7 +250,7 @@ public class ThriftExceptionService {
         return false;
       }
 
-      public void start(I iface, check_args args, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws org.apache.thrift.TException {
+      public void start(I iface, check_args args, org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.thrift.TException {
         iface.check(args.value,resultHandler);
       }
     }
@@ -621,17 +625,20 @@ public class ThriftExceptionService {
   public static class check_result implements org.apache.thrift.TBase<check_result, check_result._Fields>, java.io.Serializable, Cloneable, Comparable<check_result>   {
     private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("check_result");
 
+    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.STRING, (short)0);
     private static final org.apache.thrift.protocol.TField BAD_FIELD_DESC = new org.apache.thrift.protocol.TField("bad", org.apache.thrift.protocol.TType.STRUCT, (short)1);
     private static final org.apache.thrift.protocol.TField ERROR_FIELD_DESC = new org.apache.thrift.protocol.TField("error", org.apache.thrift.protocol.TType.STRUCT, (short)2);
 
     private static final org.apache.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new check_resultStandardSchemeFactory();
     private static final org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new check_resultTupleSchemeFactory();
 
+    public @org.apache.thrift.annotation.Nullable java.lang.String success; // required
     public @org.apache.thrift.annotation.Nullable BadResponse bad; // required
     public @org.apache.thrift.annotation.Nullable ErrorResponse error; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success"),
       BAD((short)1, "bad"),
       ERROR((short)2, "error");
 
@@ -649,6 +656,8 @@ public class ThriftExceptionService {
       @org.apache.thrift.annotation.Nullable
       public static _Fields findByThriftId(int fieldId) {
         switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
           case 1: // BAD
             return BAD;
           case 2: // ERROR
@@ -697,6 +706,8 @@ public class ThriftExceptionService {
     public static final java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
     static {
       java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
       tmpMap.put(_Fields.BAD, new org.apache.thrift.meta_data.FieldMetaData("bad", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, BadResponse.class)));
       tmpMap.put(_Fields.ERROR, new org.apache.thrift.meta_data.FieldMetaData("error", org.apache.thrift.TFieldRequirementType.DEFAULT, 
@@ -709,10 +720,12 @@ public class ThriftExceptionService {
     }
 
     public check_result(
+      java.lang.String success,
       BadResponse bad,
       ErrorResponse error)
     {
       this();
+      this.success = success;
       this.bad = bad;
       this.error = error;
     }
@@ -721,6 +734,9 @@ public class ThriftExceptionService {
      * Performs a deep copy on <i>other</i>.
      */
     public check_result(check_result other) {
+      if (other.isSetSuccess()) {
+        this.success = other.success;
+      }
       if (other.isSetBad()) {
         this.bad = new BadResponse(other.bad);
       }
@@ -735,8 +751,34 @@ public class ThriftExceptionService {
 
     @Override
     public void clear() {
+      this.success = null;
       this.bad = null;
       this.error = null;
+    }
+
+    @org.apache.thrift.annotation.Nullable
+    public java.lang.String getSuccess() {
+      return this.success;
+    }
+
+    public check_result setSuccess(@org.apache.thrift.annotation.Nullable java.lang.String success) {
+      this.success = success;
+      return this;
+    }
+
+    public void unsetSuccess() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean isSetSuccess() {
+      return this.success != null;
+    }
+
+    public void setSuccessIsSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
     }
 
     @org.apache.thrift.annotation.Nullable
@@ -791,6 +833,14 @@ public class ThriftExceptionService {
 
     public void setFieldValue(_Fields field, @org.apache.thrift.annotation.Nullable java.lang.Object value) {
       switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unsetSuccess();
+        } else {
+          setSuccess((java.lang.String)value);
+        }
+        break;
+
       case BAD:
         if (value == null) {
           unsetBad();
@@ -813,6 +863,9 @@ public class ThriftExceptionService {
     @org.apache.thrift.annotation.Nullable
     public java.lang.Object getFieldValue(_Fields field) {
       switch (field) {
+      case SUCCESS:
+        return getSuccess();
+
       case BAD:
         return getBad();
 
@@ -830,6 +883,8 @@ public class ThriftExceptionService {
       }
 
       switch (field) {
+      case SUCCESS:
+        return isSetSuccess();
       case BAD:
         return isSetBad();
       case ERROR:
@@ -850,6 +905,15 @@ public class ThriftExceptionService {
         return false;
       if (this == that)
         return true;
+
+      boolean this_present_success = true && this.isSetSuccess();
+      boolean that_present_success = true && that.isSetSuccess();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
 
       boolean this_present_bad = true && this.isSetBad();
       boolean that_present_bad = true && that.isSetBad();
@@ -876,6 +940,10 @@ public class ThriftExceptionService {
     public int hashCode() {
       int hashCode = 1;
 
+      hashCode = hashCode * 8191 + ((isSetSuccess()) ? 131071 : 524287);
+      if (isSetSuccess())
+        hashCode = hashCode * 8191 + success.hashCode();
+
       hashCode = hashCode * 8191 + ((isSetBad()) ? 131071 : 524287);
       if (isSetBad())
         hashCode = hashCode * 8191 + bad.hashCode();
@@ -895,6 +963,16 @@ public class ThriftExceptionService {
 
       int lastComparison = 0;
 
+      lastComparison = java.lang.Boolean.compare(isSetSuccess(), other.isSetSuccess());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetSuccess()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, other.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
       lastComparison = java.lang.Boolean.compare(isSetBad(), other.isSetBad());
       if (lastComparison != 0) {
         return lastComparison;
@@ -936,6 +1014,14 @@ public class ThriftExceptionService {
       java.lang.StringBuilder sb = new java.lang.StringBuilder("check_result(");
       boolean first = true;
 
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
       sb.append("bad:");
       if (this.bad == null) {
         sb.append("null");
@@ -994,6 +1080,14 @@ public class ThriftExceptionService {
             break;
           }
           switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+                struct.success = iprot.readString();
+                struct.setSuccessIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
             case 1: // BAD
               if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
                 struct.bad = new BadResponse();
@@ -1027,6 +1121,11 @@ public class ThriftExceptionService {
         struct.validate();
 
         oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          oprot.writeString(struct.success);
+          oprot.writeFieldEnd();
+        }
         if (struct.bad != null) {
           oprot.writeFieldBegin(BAD_FIELD_DESC);
           struct.bad.write(oprot);
@@ -1055,13 +1154,19 @@ public class ThriftExceptionService {
       public void write(org.apache.thrift.protocol.TProtocol prot, check_result struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TTupleProtocol oprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
         java.util.BitSet optionals = new java.util.BitSet();
-        if (struct.isSetBad()) {
+        if (struct.isSetSuccess()) {
           optionals.set(0);
         }
-        if (struct.isSetError()) {
+        if (struct.isSetBad()) {
           optionals.set(1);
         }
-        oprot.writeBitSet(optionals, 2);
+        if (struct.isSetError()) {
+          optionals.set(2);
+        }
+        oprot.writeBitSet(optionals, 3);
+        if (struct.isSetSuccess()) {
+          oprot.writeString(struct.success);
+        }
         if (struct.isSetBad()) {
           struct.bad.write(oprot);
         }
@@ -1073,13 +1178,17 @@ public class ThriftExceptionService {
       @Override
       public void read(org.apache.thrift.protocol.TProtocol prot, check_result struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TTupleProtocol iprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
-        java.util.BitSet incoming = iprot.readBitSet(2);
+        java.util.BitSet incoming = iprot.readBitSet(3);
         if (incoming.get(0)) {
+          struct.success = iprot.readString();
+          struct.setSuccessIsSet(true);
+        }
+        if (incoming.get(1)) {
           struct.bad = new BadResponse();
           struct.bad.read(iprot);
           struct.setBadIsSet(true);
         }
-        if (incoming.get(1)) {
+        if (incoming.get(2)) {
           struct.error = new ErrorResponse();
           struct.error.read(iprot);
           struct.setErrorIsSet(true);

@@ -9,6 +9,8 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
+import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
@@ -401,8 +403,8 @@ public abstract class SutController implements SutHandler {
         Object response = executeRPCEndpoint(dto);
         if (endpointSchema.getResponse() != null){
             if (response instanceof Exception){
-                //TODO handle exception if needed
-
+                //TODO might need to handle error of client on the driver side
+                RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
 
             }else{
                 // successful execution
@@ -469,6 +471,10 @@ public abstract class SutController implements SutHandler {
         EndpointSchema endpointSchema = interfaceSchema.getOneEndpoint(dto).copyStructure();
         endpointSchema.setValue(dto);
         return endpointSchema;
+    }
+
+    private RPCType getRPCType(RPCActionDto dto){
+        return rpcInterfaceSchema.get(dto.interfaceId).getRpcType();
     }
 
     public abstract void newTestSpecificHandler();

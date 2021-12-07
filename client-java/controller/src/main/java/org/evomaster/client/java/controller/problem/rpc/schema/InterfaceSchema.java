@@ -1,12 +1,11 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,11 +42,16 @@ public final class InterfaceSchema{
      */
     private Map<String, NamedTypedValue> objParamCollections = new HashMap<>();
 
+    /**
+     * type of the RPC
+     */
+    private final RPCType rpcType;
 
-    public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client) {
+    public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client, RPCType rpcType) {
         this.name = name;
         this.endpoints = endpoints;
         this.clientInfo = client;
+        this.rpcType = rpcType;
     }
 
     public void registerType(TypeSchema type, NamedTypedValue param){
@@ -65,6 +69,10 @@ public final class InterfaceSchema{
 
     public List<EndpointSchema> getEndpoints(){
         return endpoints;
+    }
+
+    public RPCType getRpcType() {
+        return rpcType;
     }
 
     /**
