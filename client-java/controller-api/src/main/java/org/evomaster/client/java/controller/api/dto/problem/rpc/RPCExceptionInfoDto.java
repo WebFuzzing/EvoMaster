@@ -1,12 +1,14 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType;
+
 /**
  * contain exception info
  */
 public class RPCExceptionInfoDto {
 
     /**
-     * name of the exception
+     * class name of the exception
      */
     public String exceptionName;
 
@@ -16,9 +18,9 @@ public class RPCExceptionInfoDto {
     public String exceptionMessage;
 
     /**
-     * presenting whether the exception is specified or caught under the endpoint
+     * type of the exception
      */
-    public boolean definedException;
+    public RPCExceptionType type;
 
     /**
      * a dto of the exception defined by the RPC service

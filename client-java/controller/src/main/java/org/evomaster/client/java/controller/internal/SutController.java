@@ -400,12 +400,16 @@ public abstract class SutController implements SutHandler {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
         Object response = executeRPCEndpoint(dto);
         if (endpointSchema.getResponse() != null){
-            // successful execution
-            NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
-            resSchema.setValueBasedOnInstance(response);
-            responseDto.rpcResponse = resSchema.getDto();
+            if (response instanceof Exception){
+                //TODO handle exception if needed
 
-            //TODO handle exception if needed
+
+            }else{
+                // successful execution
+                NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
+                resSchema.setValueBasedOnInstance(response);
+                responseDto.rpcResponse = resSchema.getDto();
+            }
         }
 
     }
@@ -453,8 +457,10 @@ public abstract class SutController implements SutHandler {
             Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);
 
             return method.invoke(client, params);
-        } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException("RPC ACTION EXECUTION ERROR: fail to execute a RPC request with "+ e.getMessage());
+        } catch (NoSuchMethodException | ClassNotFoundException | IllegalAccessException e) {
+            throw new RuntimeException("RPC ACTION EXECUTION ERROR: fail to process a RPC request with "+ e.getMessage());
+        } catch (InvocationTargetException e){
+            return e.getTargetException();
         }
     }
 

@@ -2,15 +2,14 @@ package org.evomaster.client.java.controller.problem.rpc;
 
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
-import org.evomaster.client.java.controller.problem.RPCType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 
 import java.lang.reflect.*;
 import java.nio.ByteBuffer;
 import java.util.*;
-
-import static org.evomaster.client.java.controller.problem.RPCType.THRIFT;
+import java.util.stream.IntStream;
 
 /**
  * created by manzhang on 2021/11/4
@@ -47,7 +46,17 @@ public class RPCEndpointsBuilder {
             response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>());
         }
 
-        return new EndpointSchema(method.getName(), requestParams, response);
+        List<NamedTypedValue> exceptions = null;
+        if (method.getExceptionTypes().length > 0){
+            exceptions = new ArrayList<>();
+            for (int i = 0; i < method.getExceptionTypes().length; i++){
+                NamedTypedValue exception = build(schema, method.getExceptionTypes()[i],
+                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>());
+                exceptions.add(exception);
+            }
+        }
+
+        return new EndpointSchema(method.getName(), requestParams, response, exceptions);
     }
 
     private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type) {

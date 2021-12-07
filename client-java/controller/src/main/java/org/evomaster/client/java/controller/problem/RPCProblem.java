@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.problem;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
+
 import java.util.Map;
 import java.util.Set;
 
