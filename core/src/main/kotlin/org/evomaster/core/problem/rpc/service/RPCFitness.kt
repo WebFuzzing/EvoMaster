@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rpc.RPCCallAction
@@ -54,7 +55,7 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
                     then we might support customized property as we mentioned in industry paper (optional)
                 status info in GRPC, see https://grpc.github.io/grpc/core/md_doc_statuscodes.html
          */
-        handleResponseTargets()
+        handleResponseTargets(fv, individual.seeActions(), actionResults.filterIsInstance<RPCCallResult>(), dto.additionalInfoList)
 
         if (config.baseTaintAnalysisProbability > 0) {
             Lazy.assert { actionResults.size == dto.additionalInfoList.size }
@@ -66,6 +67,10 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
     }
 
     private fun executeNewAction(action: RPCCallAction, index: Int, actionResults: MutableList<ActionResult>) : Boolean{
+
+        // need for RPC as well
+        searchTimeController.waitForRateLimiter()
+
         val actionResult = RPCCallResult()
         actionResults.add(actionResult)
         val dto = getActionDto(action, index)
@@ -83,8 +88,12 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
         return response != null
     }
 
-    private fun handleResponseTargets(){
-        // TODO
+    private fun handleResponseTargets(fv: FitnessValue,
+                                      actions: List<RPCCallAction>,
+                                      actionResults: List<RPCCallResult>,
+                                      additionalInfoList: List<AdditionalInfoDto>
+    ){
+        //TODO
     }
 
 }
