@@ -33,7 +33,7 @@ class RPCCallResult : ActionResult {
     }
 
     fun failedCall(): Boolean{
-        return getInvocationCode() == RPCCallResultCategory.FAILED.name
+        return getInvocationCode() != RPCCallResultCategory.SUCCESS.name
     }
 
     fun setSuccess(){

@@ -398,34 +398,55 @@ public abstract class SutController implements SutHandler {
      * execute a RPC request based on the specified dto
      * @param dto is the action DTO to be executed
      */
-    public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto){
+    public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
-        Object response = executeRPCEndpoint(dto);
-        if (endpointSchema.getResponse() != null){
-            if (response instanceof Exception){
-                RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
+        try {
+            Object response = executeRPCEndpoint(dto, false);
 
-            }else{
-                // successful execution
-                NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
-                resSchema.setValueBasedOnInstance(response);
-                responseDto.rpcResponse = resSchema.getDto();
+            if (endpointSchema.getResponse() != null){
+                if (response instanceof Exception){
+                    RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
+                }else{
+                    // successful execution
+                    NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
+                    resSchema.setValueBasedOnInstance(response);
+                    responseDto.rpcResponse = resSchema.getDto();
+                }
             }
+        } catch (Exception e) {
+            throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
         }
+
 
     }
 
-    private Object executeRPCEndpoint(RPCActionDto dto){
+    private Object executeRPCEndpoint(RPCActionDto dto, boolean throwTargetException) throws Exception {
         Object client = ((RPCProblem)getProblemInfo()).getClient(dto.interfaceId);
         EndpointSchema endpointSchema = getEndpointSchema(dto);
-        return executeRPCEndpoint(client, endpointSchema);
+        return executeRPCEndpointCatchTargetException(client, endpointSchema, throwTargetException);
+    }
+
+    private Object executeRPCEndpointCatchTargetException(Object client, EndpointSchema endpoint, boolean throwTargetException) throws Exception {
+
+        Object res;
+        try {
+            res = executeRPCEndpoint(client, endpoint);
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException("RPC ACTION EXECUTION ERROR: fail to process a RPC request with "+ e.getMessage());
+        } catch (InvocationTargetException e) {
+            if (throwTargetException)
+                throw (Exception) e.getTargetException();
+            else
+                res = e.getTargetException();
+        }
+        return res;
     }
 
     @Override
-    public Object executeRPCEndpoint(String json) {
+    public Object executeRPCEndpoint(String json) throws Exception{
         try {
             RPCActionDto dto = objectMapper.readValue(json, RPCActionDto.class);
-            return executeRPCEndpoint(dto);
+            return executeRPCEndpoint(dto, true);
         } catch (JsonProcessingException e) {
             SimpleLogger.error("Failed to extract the json: " + e.getMessage());
         }
@@ -437,35 +458,25 @@ public abstract class SutController implements SutHandler {
      * @param client is the client to execute the endpoint
      * @param endpoint is the endpoint to be executed
      */
-    private final Object executeRPCEndpoint(Object client, EndpointSchema endpoint){
-        try {
-
-            if (endpoint.getRequestParams().isEmpty()){
-                Method method = client.getClass().getDeclaredMethod(endpoint.getName());
-                return method.invoke(client);
-            }
-
-            Object[] params = new Object[endpoint.getRequestParams().size()];
-            Class<?>[] types = new Class<?>[endpoint.getRequestParams().size()];
-
-
-            for (int i = 0; i < params.length; i++){
-                NamedTypedValue param = endpoint.getRequestParams().get(i);
-                params[i] = param.newInstance();
-                types[i] = param.getType().getClazz();
-            }
-
-            Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);
-
-            return method.invoke(client, params);
-        } catch (NoSuchMethodException | ClassNotFoundException | IllegalAccessException e) {
-            throw new RuntimeException("RPC ACTION EXECUTION ERROR: fail to process a RPC request with "+ e.getMessage());
-        } catch (InvocationTargetException e){
-            /*
-                TODO might need to handle error of client here, then re-invoke the method in some cases
-             */
-            return e.getTargetException();
+    private final Object executeRPCEndpoint(Object client, EndpointSchema endpoint) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
+        if (endpoint.getRequestParams().isEmpty()){
+            Method method = client.getClass().getDeclaredMethod(endpoint.getName());
+            return method.invoke(client);
         }
+
+        Object[] params = new Object[endpoint.getRequestParams().size()];
+        Class<?>[] types = new Class<?>[endpoint.getRequestParams().size()];
+
+
+        for (int i = 0; i < params.length; i++){
+            NamedTypedValue param = endpoint.getRequestParams().get(i);
+            params[i] = param.newInstance();
+            types[i] = param.getType().getClazz();
+        }
+
+        Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);
+
+        return method.invoke(client, params);
     }
 
     private EndpointSchema getEndpointSchema(RPCActionDto dto){

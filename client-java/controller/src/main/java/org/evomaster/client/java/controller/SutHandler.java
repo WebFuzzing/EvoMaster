@@ -113,7 +113,7 @@ public interface SutHandler {
      * @param json contains info of an RPC endpoint
      * @return value returned by this execution. it is nullable.
      */
-    default Object executeRPCEndpoint(String json){return null;}
+    default Object executeRPCEndpoint(String json) throws Exception {return null;}
 
     /**
      * <p>
