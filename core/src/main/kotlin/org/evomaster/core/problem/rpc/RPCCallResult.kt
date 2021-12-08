@@ -7,9 +7,8 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 
 /**
- * here, RPCCallResult is inherent from HttpWs for the moment
- * since some RPC might be based on HTTP, eg gRPC,
- * then we could reuse properties of HTTP results
+ * define RPC call result with various situations,
+ *  eg, success, exception, potential bug, fail (some problems when invoking the call, eg, timeout, network)
  */
 class RPCCallResult : ActionResult {
 
@@ -17,12 +16,7 @@ class RPCCallResult : ActionResult {
         const val LAST_STATEMENT_WHEN_P_BUG = "LAST_STATEMENT_WHEN_P_BUG"
         const val INVOCATION_CODE = "INVOCATION_CODE"
         const val CUSTOM_EXP_BODY = "CUSTOM_EXP_BODY"
-
-        const val POTENTIAL_BUG_EXP_CODE = 500
-        const val SUCCESS_CODE = 200
-        const val CUSTOM_EXP_CODE = 100
-
-        const val FAILED_CODE = 0
+        const val EXCEPTION_CODE = "EXCEPTION_CODE"
     }
 
     constructor(stopping: Boolean = false) : super(stopping)
@@ -35,20 +29,22 @@ class RPCCallResult : ActionResult {
     }
 
     fun setFailedCall(){
-        addResultValue(INVOCATION_CODE, FAILED_CODE.toString())
+        addResultValue(INVOCATION_CODE, RPCCallResultCategory.FAILED.name)
     }
 
     fun failedCall(): Boolean{
-        return getInvocationCode() == FAILED_CODE
+        return getInvocationCode() == RPCCallResultCategory.FAILED.name
     }
 
     fun setSuccess(){
-        addResultValue(INVOCATION_CODE, SUCCESS_CODE.toString())
+        addResultValue(INVOCATION_CODE, RPCCallResultCategory.SUCCESS.name)
     }
 
-    fun getInvocationCode(): Int?{
-        return getResultValue(INVOCATION_CODE)?.toInt()
+    fun getInvocationCode(): String?{
+        return getResultValue(INVOCATION_CODE)
     }
+
+    fun getExceptionCode() = getResultValue(EXCEPTION_CODE)
 
     fun setLastStatementForPotentialBug(info: String){
         addResultValue(LAST_STATEMENT_WHEN_P_BUG, info)
@@ -60,12 +56,14 @@ class RPCCallResult : ActionResult {
 
         if (dto.type != null){
             val code = when(dto.type){
-                RPCExceptionType.APP_INTERNAL_ERROR -> POTENTIAL_BUG_EXP_CODE
-                RPCExceptionType.CUSTOMIZED_EXCEPTION-> CUSTOM_EXP_CODE
-                else -> 400
+                RPCExceptionType.APP_INTERNAL_ERROR -> RPCCallResultCategory.P_BUG
+                RPCExceptionType.CUSTOMIZED_EXCEPTION-> RPCCallResultCategory.CUSTOM_EXCEPTION
+                else -> RPCCallResultCategory.EXCEPTION
             }
 
-            addResultValue(dto.type.name, code.toString())
+            addResultValue(EXCEPTION_CODE, dto.type.name)
+            addResultValue(INVOCATION_CODE, code.name)
+
         }
     }
 
@@ -78,4 +76,6 @@ class RPCCallResult : ActionResult {
     override fun matchedType(action: Action): Boolean {
         return action is RPCCallAction
     }
+
+    fun hasPotentialBug() : Boolean = getInvocationCode() == RPCCallResultCategory.P_BUG.name
 }

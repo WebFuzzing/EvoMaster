@@ -20,6 +20,8 @@ class IdMapper {
 
         private const val FAULT_500 = "500_"
 
+        private const val INTERNAL_ERROR = "INTERNAL_ERROR_"
+
         private const val FAULT_PARTIAL_ORACLE = "PartialOracle_"
 
         private const val GQL_ERRORS_PREFIX = "GQL_ERRORS_ACTION"
@@ -80,6 +82,10 @@ class IdMapper {
 
     fun getFaultDescriptiveIdFor500(postfix: String): String {
         return FAULT_DESCRIPTIVE_ID_PREFIX + FAULT_500 + postfix
+    }
+
+    fun getFaultDescriptiveIdForInternalError(postfix: String): String {
+        return FAULT_DESCRIPTIVE_ID_PREFIX + INTERNAL_ERROR + postfix
     }
 
     fun getFaultDescriptiveIdForPartialOracle(postfix: String): String {

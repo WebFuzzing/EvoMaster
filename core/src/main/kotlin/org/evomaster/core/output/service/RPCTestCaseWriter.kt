@@ -48,6 +48,8 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
     override fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String) {
 
         val rpcCallAction = (action as? RPCCallAction)?: throw IllegalStateException("action must be RPCCallAction, but it is ${action::class.java.simpleName}")
+        val rpcCallResult = (result as? RPCCallResult)?: throw IllegalStateException("result must be RPCCallResult, but it is ${action::class.java.simpleName}")
+
         val executionJson = rpcHandler.getRPCActionJson(rpcCallAction)
 
         val resVarName = createUniqueResponseVariableName()
@@ -62,7 +64,13 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
          */
         executeActionWithSutHandler(lines, resVarName, executionJson)
 
+        appendAdditionalInfo(lines, rpcCallResult)
 
+    }
+
+    private fun appendAdditionalInfo(lines: Lines, result: RPCCallResult){
+        if (config.outputFormat.isJavaOrKotlin() && result.hasPotentialBug())
+            lines.append("// ${result.getLastStatementForPotentialBug()}")
     }
 
     override fun shouldFailIfException(result: ActionResult): Boolean {

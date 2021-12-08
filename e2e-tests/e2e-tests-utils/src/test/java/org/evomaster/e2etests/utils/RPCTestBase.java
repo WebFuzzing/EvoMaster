@@ -27,8 +27,8 @@ public class RPCTestBase extends WsTestBase{
     public static void assertResponseContainException(Solution<RPCIndividual> solution, String exceptionName){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
                 s.evaluatedActions().stream().anyMatch(e-> {
-                    String body = e.getResult().getResultValue(exceptionName);
-                    return body != null;
+                    String code = ((RPCCallResult)e.getResult()).getExceptionCode();
+                    return code != null && code.equals(exceptionName);
                 }));
         assertTrue(ok);
     }

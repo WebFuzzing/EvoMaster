@@ -7,6 +7,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
+import org.evomaster.core.problem.rpc.RPCCallResultCategory
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.param.RPCReturnParam
 import org.evomaster.core.search.ActionResult
@@ -23,6 +24,8 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RPCFitness::class.java)
+
+        const val RPC_DEFAULT_FAULT_CODE = "RPC_framework_code"
     }
 
     @Inject lateinit var rpcHandler: RPCEndpointsHandler
@@ -87,9 +90,11 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
             }else{
                 if (response.exceptionInfoDto != null){
                     actionResult.setRPCException(response.exceptionInfoDto)
-                    if (response.exceptionInfoDto.type == RPCExceptionType.CUSTOMIZED_EXCEPTION &&
-                        response.exceptionInfoDto.exceptionDto!=null){
-                        actionResult.setCustomizedExceptionBody(rpcHandler.getParamDtoJson(response.exceptionInfoDto.exceptionDto))
+                    if (response.exceptionInfoDto.type == RPCExceptionType.CUSTOMIZED_EXCEPTION){
+                        if (response.exceptionInfoDto.exceptionDto!=null)
+                            actionResult.setCustomizedExceptionBody(rpcHandler.getParamDtoJson(response.exceptionInfoDto.exceptionDto))
+                        else
+                            log.warn("ERROR: missing customized exception dto")
                     }
                 } else
                     log.warn("ERROR: missing exception info for failed RPC call invocation")
@@ -108,7 +113,50 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
                                       actionResults: List<RPCCallResult>,
                                       additionalInfoList: List<AdditionalInfoDto>
     ){
-        //TODO
+        actionResults.indices.forEach { i->
+            val last = additionalInfoList[i].lastExecutedStatement?:RPC_DEFAULT_FAULT_CODE
+            actionResults[i].getInvocationCode()?:throw IllegalStateException("INVOCATION CODE is not assigned on the RPC call result")
+            val category = RPCCallResultCategory.valueOf(actionResults[i].getInvocationCode()!!)
+            handleAdditionalResponseTargetDescription(fv, category, actions[i].getName(), i, last)
+
+            if (category ==RPCCallResultCategory.P_BUG){
+                actionResults[i].setLastStatementForPotentialBug(last)
+            }
+        }
+    }
+
+
+    private fun handleAdditionalResponseTargetDescription(fv: FitnessValue,
+                                                          category: RPCCallResultCategory,
+                                                          name: String,
+                                                          indexOfAction : Int,
+                                                          locationPbug: String){
+        val okId = idMapper.handleLocalTarget("RPC_SUCCESS:$name")
+        val failId = idMapper.handleLocalTarget("RPC_FAIL:$name")
+
+        when(category){
+            RPCCallResultCategory.SUCCESS->{
+                fv.updateTarget(okId, 1.0, indexOfAction)
+                fv.updateTarget(failId, 0.5, indexOfAction)
+            }
+            // shall we distinguish these two types?
+            RPCCallResultCategory.EXCEPTION, RPCCallResultCategory.CUSTOM_EXCEPTION ->{
+                fv.updateTarget(okId, 0.1, indexOfAction)
+                fv.updateTarget(failId, 0.1, indexOfAction)
+            }
+            RPCCallResultCategory.P_BUG->{
+                fv.updateTarget(okId, 0.5, indexOfAction)
+                fv.updateTarget(failId, 1.0, indexOfAction)
+
+                val postfix = "$locationPbug $name"
+                val descriptiveId = idMapper.getFaultDescriptiveIdForInternalError(postfix)
+                val bugId = idMapper.handleLocalTarget(descriptiveId)
+                fv.updateTarget(bugId, 1.0, indexOfAction)
+            }
+            RPCCallResultCategory.FAILED->{
+                // do nothing for the moment
+            }
+        }
     }
 
 }
