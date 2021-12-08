@@ -13,7 +13,7 @@ import org.evomaster.core.search.ActionResult
 class RPCCallResult : ActionResult {
 
     companion object {
-        const val LAST_STATEMENT_WHEN_P_BUG = "LAST_STATEMENT_WHEN_P_BUG"
+        const val LAST_STATEMENT_WHEN_INTERNAL_ERROR = "LAST_STATEMENT_WHEN_INTERNAL_ERROR"
         const val INVOCATION_CODE = "INVOCATION_CODE"
         const val CUSTOM_EXP_BODY = "CUSTOM_EXP_BODY"
         const val EXCEPTION_CODE = "EXCEPTION_CODE"
@@ -46,17 +46,17 @@ class RPCCallResult : ActionResult {
 
     fun getExceptionCode() = getResultValue(EXCEPTION_CODE)
 
-    fun setLastStatementForPotentialBug(info: String){
-        addResultValue(LAST_STATEMENT_WHEN_P_BUG, info)
+    fun setLastStatementForInternalError(info: String){
+        addResultValue(LAST_STATEMENT_WHEN_INTERNAL_ERROR, info)
     }
 
-    fun getLastStatementForPotentialBug() = getResultValue(LAST_STATEMENT_WHEN_P_BUG)
+    fun getLastStatementForPotentialBug() = getResultValue(LAST_STATEMENT_WHEN_INTERNAL_ERROR)
 
     fun setRPCException(dto: RPCExceptionInfoDto) {
 
         if (dto.type != null){
             val code = when(dto.type){
-                RPCExceptionType.APP_INTERNAL_ERROR -> RPCCallResultCategory.POTENTIAL_BUG
+                RPCExceptionType.APP_INTERNAL_ERROR -> RPCCallResultCategory.POTENTIAL_FAULT
                 RPCExceptionType.CUSTOMIZED_EXCEPTION-> RPCCallResultCategory.CUSTOM_EXCEPTION
                 else -> RPCCallResultCategory.EXCEPTION
             }
@@ -77,5 +77,5 @@ class RPCCallResult : ActionResult {
         return action is RPCCallAction
     }
 
-    fun hasPotentialBug() : Boolean = getInvocationCode() == RPCCallResultCategory.POTENTIAL_BUG.name
+    fun hasPotentialFault() : Boolean = getInvocationCode() == RPCCallResultCategory.POTENTIAL_FAULT.name
 }

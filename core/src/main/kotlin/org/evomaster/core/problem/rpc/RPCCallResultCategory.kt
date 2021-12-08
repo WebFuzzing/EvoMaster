@@ -2,10 +2,10 @@ package org.evomaster.core.problem.rpc
 
 enum class RPCCallResultCategory {
     /**
-     * potential bugs by an RPC call
+     * potential faults by an RPC call
      * eg, internal error by Thrift
      */
-    POTENTIAL_BUG,
+    POTENTIAL_FAULT,
 
     /**
      * a successful RPC call

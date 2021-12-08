@@ -69,7 +69,7 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
     }
 
     private fun appendAdditionalInfo(lines: Lines, result: RPCCallResult){
-        if (config.outputFormat.isJavaOrKotlin() && result.hasPotentialBug())
+        if (config.outputFormat.isJavaOrKotlin() && result.hasPotentialFault())
             lines.append("// ${result.getLastStatementForPotentialBug()}")
     }
 
