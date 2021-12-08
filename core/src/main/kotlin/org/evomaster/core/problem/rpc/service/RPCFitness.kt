@@ -119,7 +119,7 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
             val category = RPCCallResultCategory.valueOf(actionResults[i].getInvocationCode()!!)
             handleAdditionalResponseTargetDescription(fv, category, actions[i].getName(), i, last)
 
-            if (category ==RPCCallResultCategory.P_BUG){
+            if (category ==RPCCallResultCategory.POTENTIAL_BUG){
                 actionResults[i].setLastStatementForPotentialBug(last)
             }
         }
@@ -144,7 +144,7 @@ class RPCFitness : HttpWsFitness<RPCIndividual>() {
                 fv.updateTarget(okId, 0.1, indexOfAction)
                 fv.updateTarget(failId, 0.1, indexOfAction)
             }
-            RPCCallResultCategory.P_BUG->{
+            RPCCallResultCategory.POTENTIAL_BUG->{
                 fv.updateTarget(okId, 0.5, indexOfAction)
                 fv.updateTarget(failId, 1.0, indexOfAction)
 
