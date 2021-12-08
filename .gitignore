@@ -109,3 +109,8 @@ Migrations/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/bin/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/obj/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/generated/
+
+#Visual Studio
+.vs/
+*launchsettings.json
+*csproj.user
