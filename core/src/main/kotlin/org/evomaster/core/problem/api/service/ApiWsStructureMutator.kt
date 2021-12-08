@@ -1,10 +1,9 @@
-package org.evomaster.core.problem.httpws.service
+package org.evomaster.core.problem.api.service
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.rest.service.ResourceDepManageService
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -17,13 +16,13 @@ import org.slf4j.LoggerFactory
 import kotlin.math.max
 import kotlin.math.min
 
-abstract class HttpWsStructureMutator : StructureMutator(){
+abstract class ApiWsStructureMutator : StructureMutator(){
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(HttpWsStructureMutator::class.java)
+        private val log: Logger = LoggerFactory.getLogger(ApiWsStructureMutator::class.java)
     }
 
-    fun<T : HttpWsIndividual> addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: HttpWsSampler<T>) {
+    fun<T : ApiWsIndividual> addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
         if (!config.shouldGenerateSqlData()) {
             return
         }
@@ -54,9 +53,9 @@ abstract class HttpWsStructureMutator : StructureMutator(){
         }
     }
 
-    fun<T : HttpWsIndividual> handleFailedWhereSQL(
+    fun<T : ApiWsIndividual> handleFailedWhereSQL(
         ind: T, fw: Map<String, Set<String>>,
-        mutatedGenes: MutatedGeneSpecification?, sampler: HttpWsSampler<T>
+        mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
     ): MutableList<List<Action>>?{
 
         /*
@@ -155,8 +154,8 @@ abstract class HttpWsStructureMutator : StructureMutator(){
     }
 
     override fun mutateInitStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
-        Lazy.assert { individual is HttpWsIndividual }
-        individual as HttpWsIndividual
+        Lazy.assert { individual is ApiWsIndividual }
+        individual as ApiWsIndividual
 
         /*
            modify one table at once, and add/remove [n] rows for it. however, never totally remove the table.
@@ -190,7 +189,7 @@ abstract class HttpWsStructureMutator : StructureMutator(){
     /**
      * add specified actions (i.e., [add]) into initialization of [individual]
      */
-    fun handleInitSqlAddition(individual: HttpWsIndividual, add: List<List<DbAction>>, mutatedGenes: MutatedGeneSpecification?){
+    fun handleInitSqlAddition(individual: ApiWsIndividual, add: List<List<DbAction>>, mutatedGenes: MutatedGeneSpecification?){
         individual.addInitializingActions(actions = add.flatten())
         mutatedGenes?.addedDbActions?.addAll(add)
     }
@@ -198,7 +197,7 @@ abstract class HttpWsStructureMutator : StructureMutator(){
     /**
      * remove specified actions (i.e., [remove]) from initialization of [individual]
      */
-    fun handleInitSqlRemoval(individual: HttpWsIndividual, remove: List<DbAction>, mutatedGenes: MutatedGeneSpecification?){
+    fun handleInitSqlRemoval(individual: ApiWsIndividual, remove: List<DbAction>, mutatedGenes: MutatedGeneSpecification?){
         val relatedRemove = mutableListOf<DbAction>()
         relatedRemove.addAll(remove)
         remove.forEach {
@@ -209,7 +208,7 @@ abstract class HttpWsStructureMutator : StructureMutator(){
         individual.removeInitDbActions(set)
     }
 
-    private fun getRelatedRemoveDbActions(ind: HttpWsIndividual, remove : DbAction, relatedRemove: MutableList<DbAction>){
+    private fun getRelatedRemoveDbActions(ind: ApiWsIndividual, remove : DbAction, relatedRemove: MutableList<DbAction>){
         val pks = remove.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
         val index = ind.seeInitializingActions().indexOf(remove)
         if (index < ind.seeInitializingActions().size - 1 && pks.isNotEmpty()){
@@ -234,8 +233,8 @@ abstract class HttpWsStructureMutator : StructureMutator(){
 
         val list= (0 until num).map { getSqlInsertBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
 
-        if (ResourceDepManageService.log.isTraceEnabled){
-            ResourceDepManageService.log.trace("at createDbActions, {} insertions are added, and they are {}", list.size,
+        if (log.isTraceEnabled){
+            log.trace("at createDbActions, {} insertions are added, and they are {}", list.size,
                     list.flatten().joinToString(",") {
                         it.getResolvedName()
                     })

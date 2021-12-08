@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.httpws.service
+package org.evomaster.core.problem.api.service
 
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.HeaderDto
@@ -7,7 +7,8 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.httpws.service.auth.*
+import org.evomaster.core.problem.api.service.auth.*
+import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
@@ -19,10 +20,10 @@ import org.slf4j.LoggerFactory
  * Common code shared among sampler that rely on a RemoteController, and
  * that use HTTP, ie typically Web Services like REST and GraphQL
  */
-abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
+abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual{
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(HttpWsSampler::class.java)
+        private val log: Logger = LoggerFactory.getLogger(ApiWsSampler::class.java)
     }
 
 

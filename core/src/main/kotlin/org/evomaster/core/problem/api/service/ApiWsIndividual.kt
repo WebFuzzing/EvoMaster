@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.httpws.service
+package org.evomaster.core.problem.api.service
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
@@ -10,9 +10,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.math.max
 
-abstract class HttpWsIndividual (
+abstract class ApiWsIndividual (
     private val dbInitialization: MutableList<DbAction> = mutableListOf(),
     trackOperator: TrackOperator? = null,
     index : Int = -1,
@@ -20,7 +19,7 @@ abstract class HttpWsIndividual (
 ): Individual(trackOperator, index, children){
 
     companion object{
-        private val log : Logger = LoggerFactory.getLogger(HttpWsIndividual::class.java)
+        private val log : Logger = LoggerFactory.getLogger(ApiWsIndividual::class.java)
     }
 
     override fun seeInitializingActions(): List<DbAction> {

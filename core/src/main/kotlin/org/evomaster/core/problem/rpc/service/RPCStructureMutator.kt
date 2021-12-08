@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rpc.service
 
 import com.google.inject.Inject
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
+import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.EvaluatedIndividual
@@ -12,7 +12,7 @@ import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 /**
  * created by manzhang on 2021/11/26
  */
-class RPCStructureMutator : HttpWsStructureMutator() {
+class RPCStructureMutator : ApiWsStructureMutator() {
 
     @Inject
     private lateinit var sampler: RPCSampler

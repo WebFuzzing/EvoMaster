@@ -2,8 +2,7 @@ package org.evomaster.core.problem.rpc
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.problem.httpws.service.HttpWsIndividual
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual
@@ -25,7 +24,7 @@ class RPCIndividual(
         dbInitialization: MutableList<DbAction> = mutableListOf(),
         trackOperator: TrackOperator? = null,
         index : Int = -1
-) : HttpWsIndividual(dbInitialization, trackOperator, index, actions) {
+) : ApiWsIndividual(dbInitialization, trackOperator, index, actions) {
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {

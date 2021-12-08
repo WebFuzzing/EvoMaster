@@ -9,7 +9,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedData
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.httpws.service.param.Param
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.param.RPCInputParam
 import org.evomaster.core.problem.rpc.param.RPCReturnParam

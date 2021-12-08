@@ -3,7 +3,7 @@ package org.evomaster.core.output
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.output.service.WebTestCaseWriter
 import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.httpws.service.auth.JsonTokenPostLogin
+import org.evomaster.core.problem.api.service.auth.JsonTokenPostLogin
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.GeneUtils

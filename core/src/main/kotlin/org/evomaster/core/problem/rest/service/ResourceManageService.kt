@@ -8,7 +8,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.resource.*
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.search.Action

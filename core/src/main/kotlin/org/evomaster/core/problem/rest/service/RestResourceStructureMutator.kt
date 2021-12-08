@@ -3,13 +3,12 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
+import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter.*
@@ -23,7 +22,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.roundToInt
 
-class RestResourceStructureMutator : HttpWsStructureMutator() {
+class RestResourceStructureMutator : ApiWsStructureMutator() {
 
     @Inject
     private lateinit var rm : ResourceManageService

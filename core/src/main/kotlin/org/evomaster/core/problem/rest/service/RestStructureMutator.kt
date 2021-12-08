@@ -3,10 +3,9 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
+import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
@@ -15,7 +14,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class RestStructureMutator : HttpWsStructureMutator() {
+class RestStructureMutator : ApiWsStructureMutator() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestStructureMutator::class.java)

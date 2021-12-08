@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.httpws.service.param
+package org.evomaster.core.problem.api.service.param
 
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene

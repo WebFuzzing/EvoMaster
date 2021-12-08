@@ -4,9 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
+import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.SampleType
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -18,7 +17,7 @@ import org.slf4j.LoggerFactory
     TODO: here there is quite bit of code that is similar to REST.
     Once this is stable, should refactoring to avoid duplication
  */
-class GraphQLStructureMutator : HttpWsStructureMutator() {
+class GraphQLStructureMutator : ApiWsStructureMutator() {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(GraphQLStructureMutator::class.java)

@@ -4,7 +4,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.httpws.service.param.Param
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
@@ -871,12 +871,12 @@ enum class InitMode{
  *              e.g., during the search
  */
 data class ParamInfo(
-        val name : String,
-        val key : String,
-        val preSegment : String, //by default is flatten segment
-        val segmentLevel : Int,
-        val referParam : Param,
-        val doesReferToOther : Boolean,
-        val involvedAction : MutableSet<HttpVerb> = mutableSetOf(),
-        var fromAdditionInfo : Boolean = false
+    val name : String,
+    val key : String,
+    val preSegment : String, //by default is flatten segment
+    val segmentLevel : Int,
+    val referParam : Param,
+    val doesReferToOther : Boolean,
+    val involvedAction : MutableSet<HttpVerb> = mutableSetOf(),
+    var fromAdditionInfo : Boolean = false
 )

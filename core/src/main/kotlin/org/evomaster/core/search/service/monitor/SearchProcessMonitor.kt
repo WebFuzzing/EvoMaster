@@ -9,7 +9,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.service.param.Param
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual

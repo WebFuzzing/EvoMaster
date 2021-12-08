@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.httpws.service.HttpWsFitness
+import org.evomaster.core.problem.api.service.ApiWsFitness
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory
@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory
 /**
  * created by manzhang on 2021/11/26
  */
-class RPCFitness : HttpWsFitness<RPCIndividual>() {
+class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RPCFitness::class.java)

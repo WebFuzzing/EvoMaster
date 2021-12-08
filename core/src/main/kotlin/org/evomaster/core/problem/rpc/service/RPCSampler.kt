@@ -4,9 +4,9 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.httpws.service.HttpWsSampler
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
+import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.api.service.auth.NoAuth
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.SutProblemException
@@ -18,7 +18,7 @@ import javax.annotation.PostConstruct
 /**
  * created by manzhang on 2021/11/25
  */
-class RPCSampler: HttpWsSampler<RPCIndividual>() {
+class RPCSampler: ApiWsSampler<RPCIndividual>() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RPCSampler::class.java)
