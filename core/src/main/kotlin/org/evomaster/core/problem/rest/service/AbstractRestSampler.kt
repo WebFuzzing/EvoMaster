@@ -5,7 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 
 
-abstract class AbstractRestSampler : ApiWsSampler<RestIndividual>() {
+abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestSampler::class.java)
     }

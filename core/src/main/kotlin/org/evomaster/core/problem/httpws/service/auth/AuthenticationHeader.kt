@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.api.service.auth
+package org.evomaster.core.problem.httpws.service.auth
 
 //should be immutable
 

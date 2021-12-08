@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.api.service.auth
+package org.evomaster.core.problem.httpws.service.auth
 
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.Action

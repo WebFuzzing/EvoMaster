@@ -36,7 +36,7 @@ class RPCStructureMutator : ApiWsStructureMutator() {
         val size = individual.seeActions().size
         if ((size + 1 < config.maxTestSize) && (size == 1 || randomness.nextBoolean())){
             // add
-            val sampledAction = sampler.sampleRandomAction(0.05) as RPCCallAction
+            val sampledAction = sampler.sampleRandomAction()
 
             //save mutated genes
             mutatedGenes?.addRemovedOrAddedByAction(sampledAction, size, false, size)

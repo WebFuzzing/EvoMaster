@@ -5,8 +5,6 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsSampler
-import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
-import org.evomaster.core.problem.api.service.auth.NoAuth
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.SutProblemException
@@ -59,7 +57,6 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
 
         rpcHandler.initActionCluster(problem, actionCluster)
 
-        setupAuthentication(infoDto)
         initSqlInfo(infoDto)
 
         initAdHocInitialIndividuals()
@@ -75,9 +72,18 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         }
     }
 
+    /**
+     * sample an action from [actionCluster] at random
+     */
+    fun sampleRandomAction(): RPCCallAction {
+        val action = randomness.choose(actionCluster).copy() as RPCCallAction
+        randomizeActionGenes(action)
+        return action
+    }
+
     override fun sampleAtRandom(): RPCIndividual {
         val len = randomness.nextInt(1, config.maxTestSize)
-        val actions = (0 until len).map { sampleRandomAction(0.05) as RPCCallAction }
+        val actions = (0 until len).map { sampleRandomAction()}
         return createRPCIndividual(actions.toMutableList())
     }
 
@@ -89,11 +95,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
     private fun initAdHocInitialIndividuals(){
         // create one action per individual with/without auth
         adHocInitialIndividuals.clear()
-        createSingleCallIndividualOnEachAction(NoAuth())
-
-        authentications.forEach { a->
-            createSingleCallIndividualOnEachAction(a)
-        }
+        createSingleCallIndividualOnEachAction()
 
         if (config.seedTestCases){
             // TODO handle seeded individual
@@ -101,12 +103,11 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         }
     }
 
-    private fun createSingleCallIndividualOnEachAction(auth: AuthenticationInfo) {
+    private fun createSingleCallIndividualOnEachAction() {
         actionCluster.asSequence()
                 .filter { a -> a.value is RPCCallAction }
                 .forEach { a ->
                     val copy = a.value.copy() as RPCCallAction
-                    copy.auth = auth
                     randomizeActionGenes(copy)
                     val ind = createRPCIndividual(mutableListOf(copy))
                     adHocInitialIndividuals.add(ind)

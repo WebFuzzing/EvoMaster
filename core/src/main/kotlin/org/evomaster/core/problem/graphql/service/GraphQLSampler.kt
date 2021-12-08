@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.graphql.*
-import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.remote.SutProblemException
@@ -17,7 +17,7 @@ import javax.annotation.PostConstruct
     TODO: some code here will need to be refactored out with AbstractRestSampler to avoid duplication
  */
 
-class GraphQLSampler : ApiWsSampler<GraphQLIndividual>() {
+class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(GraphQLSampler::class.java)
