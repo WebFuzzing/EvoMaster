@@ -255,7 +255,7 @@ class MapGene<K, V>(
     private fun getElementsBy(pairGene: PairGene<K, V>): List<PairGene<K, V>>{
         val geneValue = ParamUtil.getValueGene(pairGene.first)
         /*
-            currently we only support Integer, String and LongGene
+            currently we only support Integer, String, LongGene
             TODO support other types if needed
          */
         if (geneValue is IntegerGene || geneValue is StringGene || geneValue is LongGene){

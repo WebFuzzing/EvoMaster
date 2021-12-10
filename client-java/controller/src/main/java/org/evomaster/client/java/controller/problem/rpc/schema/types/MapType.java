@@ -1,7 +1,10 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.PairParam;
+
+import java.util.Arrays;
 
 /**
  * map type
@@ -25,7 +28,9 @@ public class MapType extends TypeSchema{
     @Override
     public TypeDto getDto() {
         TypeDto dto = super.getDto();
-        dto.example = template.getDto();
+        ParamDto example = template.getDto();
+        example.innerContent = Arrays.asList(template.getType().getFirstTemplate().getDto(), template.getType().getSecondTemplate().getDto());
+        dto.example = example;
         return dto;
     }
 }

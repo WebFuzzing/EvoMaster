@@ -61,6 +61,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
 
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
+        if (instance == null) return;
         PairParam t = getType().getTemplate();
         List<PairParam> values = new ArrayList<>();
         for (Object e : ((Map) instance).entrySet()){

@@ -19,6 +19,7 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
+        if (getValue() == null) return null;
         return new AbstractMap.SimpleEntry<>(getValue().getKey().newInstance(), getValue().getKey().newInstance());
     }
 
@@ -43,12 +44,13 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
             first.setValueBasedOnDto(dto.innerContent.get(0));
             second.setValueBasedOnDto(dto.innerContent.get(1));
             setValue(new AbstractMap.SimpleEntry(first, second));
-        }
-        throw new RuntimeException("ERROR: size of inner content of dto is not 2 for pair type, i.e., "+ dto.innerContent.size());
+        } else
+            throw new RuntimeException("ERROR: size of inner content of dto is not 2 for pair type, i.e., "+ dto.innerContent.size());
     }
 
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
+        if (instance == null) return;
         NamedTypedValue first = getType().getFirstTemplate().copyStructure();
         NamedTypedValue second = getType().getSecondTemplate().copyStructure();
         first.setValueBasedOnInstance(((Map.Entry)instance).getKey());

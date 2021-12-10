@@ -407,20 +407,28 @@ public abstract class SutController implements SutHandler {
             throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
         }
 
-        try{
-            if (endpointSchema.getResponse() != null){
-                if (response instanceof Exception){
+        if (endpointSchema.getResponse() != null){
+            if (response instanceof Exception){
+                try{
                     RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
-                }else{
-                    // successful execution
-                    NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
-                    resSchema.setValueBasedOnInstance(response);
-                    responseDto.rpcResponse = resSchema.getDto();
+                } catch (Exception e){
+                    throw new RuntimeException("ERROR: fail to handle exception instance to dto "+ e.getMessage());
+                }
+            }else{
+                try{
+                    if (response != null){
+                        // successful execution
+                        NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
+                        resSchema.setValueBasedOnInstance(response);
+                        responseDto.rpcResponse = resSchema.getDto();
+                    }
+                } catch (Exception e){
+                    throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
                 }
             }
-        } catch (Exception e){
-            throw new RuntimeException("ERROR: fail to set response instance value to dto "+ e.getMessage());
         }
+
+
     }
 
     private Object executeRPCEndpoint(RPCActionDto dto, boolean throwTargetException) throws Exception {
@@ -481,9 +489,13 @@ public abstract class SutController implements SutHandler {
             throw new RuntimeException("ERROR: fail to instance value of input parameters based on dto/schema, msg error:"+e.getMessage());
         }
 
-        Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);
+        try {
+            Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);
 
-        return method.invoke(client, params);
+            return method.invoke(client, params);
+        } catch (NullPointerException e){
+            throw new RuntimeException("null pointer");
+        }
     }
 
     private EndpointSchema getEndpointSchema(RPCActionDto dto){

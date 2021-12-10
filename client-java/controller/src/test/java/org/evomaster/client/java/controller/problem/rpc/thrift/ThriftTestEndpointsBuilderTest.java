@@ -455,6 +455,8 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
         ParamDto dto = p1.getDto();
         assertEquals(RPCSupportedDataType.SET, dto.type.type);
+        assertEquals(RPCSupportedDataType.INT, dto.type.example.type.type);
+
         assertEquals(3, dto.innerContent.size());
         assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.jsonValue))));
     }
@@ -473,7 +475,6 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1 instanceof ListParam);
         assertEquals(1, endpoint.getExceptions().size());
 
-
         List<Integer> input = new ArrayList<Integer>(){{
             add(1);
             add(2);
@@ -488,6 +489,8 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
         ParamDto dto = p1.getDto();
         assertEquals(RPCSupportedDataType.LIST, dto.type.type);
+        assertEquals(RPCSupportedDataType.INT, dto.type.example.type.type);
+
         assertEquals(3, dto.innerContent.size());
         assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.jsonValue))));
     }
@@ -662,6 +665,12 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(2, dto.innerContent.size());
         ParamDto userMapDto = dto.innerContent.get(0);
         assertEquals(RPCSupportedDataType.MAP, userMapDto.type.type);
+
+        // check example
+        assertEquals(2, userMapDto.type.example.innerContent.size());
+        assertEquals(RPCSupportedDataType.ENUM, userMapDto.type.example.innerContent.get(0).type.type);
+        assertEquals(RPCSupportedDataType.LONG, userMapDto.type.example.innerContent.get(1).type.type);
+
         assertEquals(3, userMapDto.innerContent.size());
         for (ParamDto p: userMapDto.innerContent){
             assertEquals(2, p.innerContent.size());

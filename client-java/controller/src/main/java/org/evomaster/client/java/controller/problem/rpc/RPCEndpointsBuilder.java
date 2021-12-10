@@ -101,6 +101,7 @@ public class RPCEndpointsBuilder {
                 }
 
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
+                template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
                 namedValue = new ArrayParam(name, ctype);
@@ -114,6 +115,7 @@ public class RPCEndpointsBuilder {
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 Class<?> templateClazz = getTemplateClass(type);
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
+                template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
                 if (clazz.isAssignableFrom(List.class))
@@ -128,6 +130,7 @@ public class RPCEndpointsBuilder {
 
                 Class<?> keyTemplateClazz = getTemplateClass(keyType);
                 NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth);
+                keyTemplate.setNullable(false);
 
                 Class<?> valueTemplateClazz = getTemplateClass(valueType);
                 NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth);

@@ -20,6 +20,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
+        if (getValue() == null) return null;
         String clazzName = getType().getFullTypeName();
         Class<?> clazz = Class.forName(clazzName);
         try {

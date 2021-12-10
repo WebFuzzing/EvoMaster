@@ -19,6 +19,8 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
+        if (getValue() == null)
+            return null;
         Class <? extends Enum> clazz = (Class < ? extends Enum >) Class.forName(getType().getFullTypeName());
         String value = getType().getItems()[getValue()];
         return Enum.valueOf(clazz, value);
