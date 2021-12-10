@@ -72,8 +72,6 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         ParamDto dto = new ParamDto();
         dto.name = name;
         dto.type = type.getDto();
-        if (getValue() != null)
-            dto.jsonValue = getValue().toString();
         dto.isNullable = isNullable;
         return dto;
     }
@@ -95,7 +93,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * the value is basically obtained from evomaster core
      * @param dto contains value info with string
      */
-    public abstract void setValue(ParamDto dto);
+    public abstract void setValueBasedOnDto(ParamDto dto);
 
     /**
      * set value of param schema based on its instance
@@ -103,6 +101,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * @param instance a java object which is an instance of this param schema
      */
     public void setValueBasedOnInstance(Object instance){
+        if (instance == null) return;
         if (isValidInstance(instance))
             setValueBasedOnValidInstance(instance);
         else

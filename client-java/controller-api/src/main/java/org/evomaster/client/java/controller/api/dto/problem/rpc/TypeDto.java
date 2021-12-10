@@ -20,6 +20,11 @@ public class TypeDto {
     public ParamDto example;
 
     /**
+     * representing depth to leaf type
+     */
+    public int depth;
+
+    /**
      * fixed items in this types
      */
     public String[] fixedItems;

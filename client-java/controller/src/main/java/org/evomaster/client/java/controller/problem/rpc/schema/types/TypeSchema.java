@@ -21,6 +21,8 @@ public class TypeSchema {
      */
     private final Class<?> clazz;
 
+    public int depth;
+
     public TypeSchema(String type, String fullTypeName, Class<?> clazz){
         this.type = type;
         this.fullTypeName = fullTypeName;
@@ -43,6 +45,7 @@ public class TypeSchema {
     public TypeDto getDto(){
         TypeDto dto = new TypeDto();
         dto.fullTypeName = fullTypeName;
+        dto.depth = depth;
         return dto;
     }
 

@@ -1,8 +1,11 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
 import java.util.AbstractMap;
+import java.util.Arrays;
 
 /**
  * created by manzhang on 2021/11/27
@@ -32,5 +35,14 @@ public class PairType extends TypeSchema{
 
     public NamedTypedValue getSecondTemplate() {
         return secondTemplate;
+    }
+
+    @Override
+    public TypeDto getDto() {
+        TypeDto dto = super.getDto();
+        ParamDto example = new ParamDto();
+        example.innerContent = Arrays.asList(firstTemplate.getDto(), secondTemplate.getDto());
+        dto.example = example;
+        return dto;
     }
 }

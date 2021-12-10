@@ -9,7 +9,6 @@ import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory
 import org.evomaster.core.problem.rpc.RPCIndividual
-import org.evomaster.core.problem.rpc.param.RPCReturnParam
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -83,21 +82,25 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
         val response =  rc.executeNewRPCActionAndGetResponse(dto)
         if (response != null){
-            val responseGene = action.parameters.filterIsInstance<RPCReturnParam>().firstOrNull()
-            if (responseGene != null && response.rpcResponse != null){
-                rpcHandler.setGeneBasedOnParamDto(responseGene.gene, response.rpcResponse)
+            // check exception
+            if (response.exceptionInfoDto != null){
+                actionResult.setRPCException(response.exceptionInfoDto)
+                if (response.exceptionInfoDto.type == RPCExceptionType.CUSTOMIZED_EXCEPTION){
+                    if (response.exceptionInfoDto.exceptionDto!=null){
+                        actionResult.setCustomizedExceptionBody(rpcHandler.getParamDtoJson(response.exceptionInfoDto.exceptionDto))
+                    } else
+                        log.warn("ERROR: missing customized exception dto")
+                }
+            } else{
                 actionResult.setSuccess()
-            }else{
-                if (response.exceptionInfoDto != null){
-                    actionResult.setRPCException(response.exceptionInfoDto)
-                    if (response.exceptionInfoDto.type == RPCExceptionType.CUSTOMIZED_EXCEPTION){
-                        if (response.exceptionInfoDto.exceptionDto!=null)
-                            actionResult.setCustomizedExceptionBody(rpcHandler.getParamDtoJson(response.exceptionInfoDto.exceptionDto))
-                        else
-                            log.warn("ERROR: missing customized exception dto")
-                    }
-                } else
-                    log.warn("ERROR: missing exception info for failed RPC call invocation")
+            }
+
+            // check response
+            if (response.rpcResponse !=null){
+                Lazy.assert { action.responseTemplate != null }
+                val responseParam = action.responseTemplate!!.copyContent()
+                rpcHandler.setGeneBasedOnParamDto(responseParam.gene, response.rpcResponse)
+                action.response = responseParam
             }
         }else{
             actionResult.setFailedCall()
@@ -115,7 +118,8 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
     ){
         actionResults.indices.forEach { i->
             val last = additionalInfoList[i].lastExecutedStatement?:RPC_DEFAULT_FAULT_CODE
-            actionResults[i].getInvocationCode()?:throw IllegalStateException("INVOCATION CODE is not assigned on the RPC call result")
+            actionResults[i].getInvocationCode()
+                ?:throw IllegalStateException("INVOCATION CODE is not assigned on the RPC call result")
             val category = RPCCallResultCategory.valueOf(actionResults[i].getInvocationCode()!!)
             handleAdditionalResponseTargetDescription(fv, category, actions[i].getName(), i, last)
 

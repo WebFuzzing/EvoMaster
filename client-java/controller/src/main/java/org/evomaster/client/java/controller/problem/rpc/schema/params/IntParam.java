@@ -24,6 +24,9 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
             dto.type.type = RPCSupportedDataType.INT;
         else
             dto.type.type = RPCSupportedDataType.P_INT;
+
+        if (getValue() != null)
+            dto.jsonValue = getValue().toString();
         return dto;
     }
 
@@ -33,7 +36,7 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
     }
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         try {
             if (dto.jsonValue != null)
                 setValue(Integer.parseInt(dto.jsonValue));
@@ -46,5 +49,10 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         setValue((Integer) instance);
+    }
+
+    @Override
+    public boolean isValidInstance(Object instance) {
+        return instance instanceof Integer;
     }
 }

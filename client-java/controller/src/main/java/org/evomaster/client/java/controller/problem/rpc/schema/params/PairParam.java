@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PairType;
 
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -22,17 +23,25 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     }
 
     @Override
+    public ParamDto getDto() {
+        ParamDto dto = super.getDto();
+        if (getValue() != null)
+            dto.innerContent = Arrays.asList(getValue().getKey().getDto(), getValue().getValue().getDto());
+        return dto;
+    }
+
+    @Override
     public PairParam copyStructure() {
         return new PairParam(getType());
     }
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         if (dto.innerContent.size() == 2){
             NamedTypedValue first = getType().getFirstTemplate().copyStructure();
             NamedTypedValue second = getType().getSecondTemplate().copyStructure();
-            first.setValue(dto.innerContent.get(0));
-            second.setValue(dto.innerContent.get(1));
+            first.setValueBasedOnDto(dto.innerContent.get(0));
+            second.setValueBasedOnDto(dto.innerContent.get(1));
             setValue(new AbstractMap.SimpleEntry(first, second));
         }
         throw new RuntimeException("ERROR: size of inner content of dto is not 2 for pair type, i.e., "+ dto.innerContent.size());
@@ -42,8 +51,8 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     protected void setValueBasedOnValidInstance(Object instance) {
         NamedTypedValue first = getType().getFirstTemplate().copyStructure();
         NamedTypedValue second = getType().getSecondTemplate().copyStructure();
-        first.setValue(((Map.Entry)instance).getKey());
-        second.setValue(((Map.Entry)instance).getValue());
+        first.setValueBasedOnInstance(((Map.Entry)instance).getKey());
+        second.setValueBasedOnInstance(((Map.Entry)instance).getValue());
         setValue(new AbstractMap.SimpleEntry(first, second));
     }
 

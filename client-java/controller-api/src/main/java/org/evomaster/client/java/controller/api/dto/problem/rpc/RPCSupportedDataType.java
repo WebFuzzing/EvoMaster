@@ -11,5 +11,6 @@ public enum RPCSupportedDataType {
     ARRAY, LIST, SET, MAP,
     PAIR, // for map
     BYTEBUFFER, //Thrift
-    CUSTOM_OBJECT
+    CUSTOM_OBJECT,
+    CUSTOM_CYCLE_OBJECT
 }

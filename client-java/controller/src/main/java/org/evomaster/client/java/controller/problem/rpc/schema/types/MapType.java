@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.PairParam;
 
 /**
@@ -19,5 +20,12 @@ public class MapType extends TypeSchema{
 
     public PairParam getTemplate() {
         return template;
+    }
+
+    @Override
+    public TypeDto getDto() {
+        TypeDto dto = super.getDto();
+        dto.example = template.getDto();
+        return dto;
     }
 }

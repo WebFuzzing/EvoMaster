@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
 /**
@@ -18,5 +19,12 @@ public class CollectionType extends TypeSchema{
 
     public NamedTypedValue getTemplate() {
         return template;
+    }
+
+    @Override
+    public TypeDto getDto() {
+        TypeDto dto = super.getDto();
+        dto.example = template.getDto();
+        return dto;
     }
 }

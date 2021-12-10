@@ -224,6 +224,20 @@ class MapGene<K, V>(
     }
 
     /**
+     * add [element] to [elements]
+     * @return if the element is added successfully
+     */
+    fun addElement(element: Gene) : Boolean{
+        element as? PairGene<K, V> ?:return false
+        getElementsBy(element).forEach { e->
+            removeExistingElement(e)
+        }
+        elements.add(element)
+        addChild(element)
+        return true
+    }
+
+    /**
      * @return all elements
      */
     fun getAllElements() = elements

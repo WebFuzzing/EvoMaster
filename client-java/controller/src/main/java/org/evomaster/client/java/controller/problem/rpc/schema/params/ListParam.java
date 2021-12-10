@@ -20,6 +20,7 @@ public class ListParam extends NamedTypedValue<CollectionType, List<NamedTypedVa
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
+        if (getValue() == null) return null;
         return getValue().stream().map(v-> {
             try {
                 return v.newInstance();
@@ -33,7 +34,9 @@ public class ListParam extends NamedTypedValue<CollectionType, List<NamedTypedVa
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         dto.type.type = RPCSupportedDataType.LIST;
-        dto.type.example = getType().getTemplate().getDto();
+        if (getValue() != null){
+            dto.innerContent = getValue().stream().map(s-> s.getDto()).collect(Collectors.toList());
+        }
         return dto;
     }
 
@@ -43,12 +46,12 @@ public class ListParam extends NamedTypedValue<CollectionType, List<NamedTypedVa
     }
 
     @Override
-    public void setValue(ParamDto dto) {
-        if (!dto.innerContent.isEmpty()){
+    public void setValueBasedOnDto(ParamDto dto) {
+        if (dto.innerContent!= null && !dto.innerContent.isEmpty()){
             NamedTypedValue t = getType().getTemplate();
             List<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
                 NamedTypedValue v = t.copyStructure();
-                v.setValue(s);
+                v.setValueBasedOnDto(s);
                 return v;
             }).collect(Collectors.toList());
             setValue(values);

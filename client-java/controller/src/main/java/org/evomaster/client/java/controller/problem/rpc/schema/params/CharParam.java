@@ -23,6 +23,8 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
             dto.type.type = RPCSupportedDataType.CHAR;
         else
             dto.type.type = RPCSupportedDataType.P_CHAR;
+        if (getValue() != null)
+            dto.jsonValue = getValue().toString();
         return dto;
     }
 
@@ -32,7 +34,7 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
     }
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         if (dto.jsonValue == null)
             return;
         if (dto.jsonValue.length() > 1){
@@ -45,5 +47,10 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         setValue((Character) instance);
+    }
+
+    @Override
+    public boolean isValidInstance(Object instance) {
+        return instance instanceof Character;
     }
 }

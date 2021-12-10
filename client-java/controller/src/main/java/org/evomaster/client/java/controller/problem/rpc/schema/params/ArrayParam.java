@@ -34,6 +34,9 @@ public class ArrayParam extends NamedTypedValue<CollectionType, List<NamedTypedV
         ParamDto dto = super.getDto();
         dto.type.type = RPCSupportedDataType.ARRAY;
         dto.type.example = getType().getTemplate().getDto();
+
+        if (getValue() != null)
+            dto.innerContent = getValue().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;
     }
 
@@ -44,12 +47,12 @@ public class ArrayParam extends NamedTypedValue<CollectionType, List<NamedTypedV
 
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         if (!dto.innerContent.isEmpty()){
             NamedTypedValue t = getType().getTemplate();
             List<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
                 NamedTypedValue v = t.copyStructure();
-                v.setValue(s);
+                v.setValueBasedOnDto(s);
                 return v;
             }).collect(Collectors.toList());
             setValue(values);

@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedData
 import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,7 +28,20 @@ public class ObjectType extends TypeSchema {
     @Override
     public TypeDto getDto() {
         TypeDto dto = super.getDto();
+        dto.depth = depth;
         dto.type = RPCSupportedDataType.CUSTOM_OBJECT;
         return dto;
+    }
+
+    public ObjectType copy(){
+        List<NamedTypedValue> cfields = new ArrayList<>();
+        if (fields != null){
+            for (NamedTypedValue f: fields){
+                cfields.add(f.copyStructure());
+            }
+        }
+        ObjectType objectType = new ObjectType(getType(), getFullTypeName(), cfields ,getClazz());
+        objectType.depth = depth;
+        return objectType;
     }
 }

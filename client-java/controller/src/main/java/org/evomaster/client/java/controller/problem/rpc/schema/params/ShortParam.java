@@ -24,6 +24,9 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
             dto.type.type = RPCSupportedDataType.SHORT;
         else
             dto.type.type = RPCSupportedDataType.P_SHORT;
+        if (getValue() != null)
+            dto.jsonValue = getValue().toString();
+
         return dto;
     }
 
@@ -33,7 +36,7 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     }
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         try {
             if (dto.jsonValue != null)
                 setValue(Short.parseShort(dto.jsonValue));
@@ -45,5 +48,10 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         setValue((Short) instance);
+    }
+
+    @Override
+    public boolean isValidInstance(Object instance) {
+        return instance instanceof Short;
     }
 }

@@ -23,6 +23,8 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
             dto.type.type = RPCSupportedDataType.LONG;
         else
             dto.type.type = RPCSupportedDataType.P_LONG;
+        if (getValue() != null)
+            dto.jsonValue = getValue().toString();
         return dto;
     }
 
@@ -33,7 +35,7 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
 
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         try {
             if (dto.jsonValue != null)
                 setValue(Long.parseLong(dto.jsonValue));
@@ -45,5 +47,10 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         setValue((Long) instance);
+    }
+
+    @Override
+    public boolean isValidInstance(Object instance) {
+        return instance instanceof Long;
     }
 }

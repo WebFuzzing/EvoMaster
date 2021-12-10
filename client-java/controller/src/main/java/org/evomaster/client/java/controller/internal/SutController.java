@@ -400,9 +400,14 @@ public abstract class SutController implements SutHandler {
      */
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
+        Object response;
         try {
-            Object response = executeRPCEndpoint(dto, false);
+            response = executeRPCEndpoint(dto, false);
+        } catch (Exception e) {
+            throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
+        }
 
+        try{
             if (endpointSchema.getResponse() != null){
                 if (response instanceof Exception){
                     RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
@@ -413,11 +418,9 @@ public abstract class SutController implements SutHandler {
                     responseDto.rpcResponse = resSchema.getDto();
                 }
             }
-        } catch (Exception e) {
-            throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
+        } catch (Exception e){
+            throw new RuntimeException("ERROR: fail to set response instance value to dto "+ e.getMessage());
         }
-
-
     }
 
     private Object executeRPCEndpoint(RPCActionDto dto, boolean throwTargetException) throws Exception {
@@ -468,10 +471,14 @@ public abstract class SutController implements SutHandler {
         Class<?>[] types = new Class<?>[endpoint.getRequestParams().size()];
 
 
-        for (int i = 0; i < params.length; i++){
-            NamedTypedValue param = endpoint.getRequestParams().get(i);
-            params[i] = param.newInstance();
-            types[i] = param.getType().getClazz();
+        try{
+            for (int i = 0; i < params.length; i++){
+                NamedTypedValue param = endpoint.getRequestParams().get(i);
+                params[i] = param.newInstance();
+                types[i] = param.getType().getClazz();
+            }
+        } catch (Exception e){
+            throw new RuntimeException("ERROR: fail to instance value of input parameters based on dto/schema, msg error:"+e.getMessage());
         }
 
         Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);

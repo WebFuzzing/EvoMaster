@@ -27,6 +27,8 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
             dto.type.type = RPCSupportedDataType.BYTE;
         else
             dto.type.type = RPCSupportedDataType.P_BYTE;
+        if (getValue() != null)
+            dto.jsonValue = getValue().toString();
         return dto;
     }
 
@@ -36,7 +38,7 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     }
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         try {
             if (dto.jsonValue != null)
                 setValue(Byte.parseByte(dto.jsonValue));
@@ -48,5 +50,10 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         setValue((Byte) instance);
+    }
+
+    @Override
+    public boolean isValidInstance(Object instance) {
+        return instance instanceof Byte;
     }
 }

@@ -27,6 +27,7 @@ public class EnumType extends TypeSchema {
     public TypeDto getDto() {
         TypeDto dto = super.getDto();
         dto.type = RPCSupportedDataType.ENUM;
+        dto.fixedItems = items;
         return dto;
     }
 }

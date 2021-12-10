@@ -23,6 +23,8 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
             dto.type.type = RPCSupportedDataType.DOUBLE;
         else
             dto.type.type = RPCSupportedDataType.P_DOUBLE;
+        if (getValue() != null)
+            dto.jsonValue = getValue().toString();
         return dto;
     }
 
@@ -32,7 +34,7 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     }
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         try {
             if (dto.jsonValue != null)
                 setValue(Double.parseDouble(dto.jsonValue));
@@ -44,5 +46,10 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         setValue((Double) instance);
+    }
+
+    @Override
+    public boolean isValidInstance(Object instance) {
+        return instance instanceof Double;
     }
 }

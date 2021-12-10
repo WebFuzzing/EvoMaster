@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.CycleObjectType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -48,7 +49,12 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
-        dto.type.type = RPCSupportedDataType.CUSTOM_OBJECT;
+        if (getType() instanceof CycleObjectType){
+            dto.type.type = RPCSupportedDataType.CUSTOM_CYCLE_OBJECT;
+        }else{
+            dto.type.type = RPCSupportedDataType.CUSTOM_OBJECT;
+        }
+
         if (getValue() != null)
             dto.innerContent = getValue().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         else
@@ -57,7 +63,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     }
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
 
         if (dto.innerContent!=null && !dto.innerContent.isEmpty()){
             List<NamedTypedValue> fields = getType().getFields();
@@ -65,7 +71,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
             for (ParamDto p: dto.innerContent){
                 NamedTypedValue f = fields.stream().filter(s-> s.sameParam(p)).findFirst().get().copyStructure();
-                f.setValue(p);
+                f.setValueBasedOnDto(p);
                 values.add(f);
             }
 
@@ -83,7 +89,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 Field fi = instance.getClass().getDeclaredField(f.getName());
                 fi.setAccessible(true);
                 Object fiv = fi.get(instance);
-                copy.setValueBasedOnValidInstance(fiv);
+                copy.setValueBasedOnInstance(fiv);
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new RuntimeException("ERROR: fail to get value of the field with the name ("+ f.getName()+ ") and error Msg:"+e.getMessage());
             }

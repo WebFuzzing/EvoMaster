@@ -19,6 +19,8 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
+        if (getValue() != null)
+            dto.jsonValue = getValue().toString();
         if (getType().isWrapper)
             dto.type.type = RPCSupportedDataType.BOOLEAN;
         else
@@ -33,7 +35,7 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
 
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         try {
             if (dto.jsonValue != null)
                 setValue(Boolean.parseBoolean(dto.jsonValue));
@@ -45,5 +47,10 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         setValue((Boolean) instance);
+    }
+
+    @Override
+    public boolean isValidInstance(Object instance) {
+        return instance instanceof Boolean;
     }
 }

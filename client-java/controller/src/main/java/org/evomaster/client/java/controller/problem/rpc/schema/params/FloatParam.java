@@ -23,6 +23,9 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
             dto.type.type = RPCSupportedDataType.FLOAT;
         else
             dto.type.type = RPCSupportedDataType.P_FLOAT;
+
+        if (getValue() != null)
+            dto.jsonValue = getValue().toString();
         return dto;
     }
 
@@ -32,7 +35,7 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
     }
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         try {
             if (dto.jsonValue != null)
                 setValue(Float.parseFloat(dto.jsonValue));
@@ -44,5 +47,10 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         setValue((Float) instance);
+    }
+
+    @Override
+    public boolean isValidInstance(Object instance) {
+        return instance instanceof Float;
     }
 }

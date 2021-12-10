@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
  * thrift
  *  HashMap (see https://thrift.apache.org/docs/types#containers)
  */
-public class MapParam extends NamedTypedValue<MapType, Map<NamedTypedValue, NamedTypedValue>>{
+public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
 
     public MapParam(String name, MapType type) {
         super(name, type);
@@ -19,11 +19,13 @@ public class MapParam extends NamedTypedValue<MapType, Map<NamedTypedValue, Name
 
     @Override
     public Object newInstance() throws ClassNotFoundException {
-        return getValue().entrySet().stream().map(i-> {
+        if (getValue() == null) return null;
+        return getValue().stream().map(i-> {
             try {
-                return new AbstractMap.SimpleEntry<>(i.getValue().newInstance(), i.getValue().newInstance());
+                return new AbstractMap.SimpleEntry<>(i.getValue().getKey().newInstance(), i.getValue().getValue().newInstance());
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException(String.format("MapParam: could not create new instance for key and value (%s,%s)", i.getKey().toString(), i.getValue().getType()));
+                throw new RuntimeException(String.format("MapParam: could not create new instance for key and value (%s,%s)",
+                        i.getValue().getKey().toString(), i.getValue().getValue().getType()));
             }
         }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
@@ -32,7 +34,9 @@ public class MapParam extends NamedTypedValue<MapType, Map<NamedTypedValue, Name
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         dto.type.type = RPCSupportedDataType.MAP;
-        dto.type.example = getType().getTemplate().getDto();
+        if (getValue()!=null){
+            dto.innerContent = getValue().stream().map(s->s.getDto()).collect(Collectors.toList());
+        }
         return dto;
     }
 
@@ -42,14 +46,14 @@ public class MapParam extends NamedTypedValue<MapType, Map<NamedTypedValue, Name
     }
 
     @Override
-    public void setValue(ParamDto dto) {
-        if (!dto.innerContent.isEmpty()){
+    public void setValueBasedOnDto(ParamDto dto) {
+        if (dto.innerContent!= null && !dto.innerContent.isEmpty()){
             PairParam t = getType().getTemplate();
-            Map<NamedTypedValue, NamedTypedValue> values = dto.innerContent.stream().map(s-> {
+            List<PairParam> values = dto.innerContent.stream().map(s-> {
                 PairParam c = t.copyStructure();
-                c.setValue(s);
-                return c.getValue();
-            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                c.setValueBasedOnDto(s);
+                return c;
+            }).collect(Collectors.toList());
             setValue(values);
         }
 
@@ -58,11 +62,11 @@ public class MapParam extends NamedTypedValue<MapType, Map<NamedTypedValue, Name
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         PairParam t = getType().getTemplate();
-        Map<NamedTypedValue, NamedTypedValue> values = new HashMap<>();
+        List<PairParam> values = new ArrayList<>();
         for (Object e : ((Map) instance).entrySet()){
             PairParam copy = t.copyStructure();
             copy.setValueBasedOnInstance(e);
-            values.put(copy.getValue().getKey(), copy.getValue().getValue());
+            values.add(copy);
         }
         setValue(values);
     }

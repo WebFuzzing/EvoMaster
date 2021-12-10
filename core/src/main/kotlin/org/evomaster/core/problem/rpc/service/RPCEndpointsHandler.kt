@@ -11,8 +11,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rpc.RPCCallAction
-import org.evomaster.core.problem.rpc.param.RPCInputParam
-import org.evomaster.core.problem.rpc.param.RPCReturnParam
+import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
@@ -60,9 +59,11 @@ class RPCEndpointsHandler {
     fun initActionCluster(problem: RPCProblemDto, actionCluster: MutableMap<String, Action>){
 
         problem.schemas.forEach { i->
-            i.types.filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
+            i.types.sortedBy { it.type.depth }
+                .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
                 typeCache[t.type.fullTypeName] = handleObjectType(t)
             }
+
         }
 
         actionCluster.clear()
@@ -85,7 +86,7 @@ class RPCEndpointsHandler {
         val rpcAction = actionSchemaCluster[action.id]?.copy()?: throw IllegalStateException("cannot find the ${action.id} in actionSchemaCluster")
 
         action.parameters.forEach { p->
-            if (p is RPCInputParam){
+            if (p is RPCParam){
                 p.seeGenes().forEach { g->
                     val paramDto = rpcAction.requestParams.find{ r-> r.name == g.name}?:throw IllegalStateException("cannot find param with a name, ${g.name}")
                     transformGeneToParamDto(g, paramDto)
@@ -124,8 +125,27 @@ class RPCEndpointsHandler {
             is BooleanGene -> dto.jsonValue = valueGene.value.toString()
             is StringGene -> dto.jsonValue = valueGene.value
             is EnumGene<*> -> dto.jsonValue = valueGene.index.toString()
+            is LongGene -> dto.jsonValue = valueGene.value.toString()
             is ArrayGene<*> -> {
-                val template = dto.type.example?.copy()?:throw IllegalStateException("a template for an array is null")
+                val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a collection is null")
+                val innerContent = valueGene.getAllElements().map {
+                    val copy = template.copy()
+                    transformGeneToParamDto(it, copy)
+                    copy
+                }
+                dto.innerContent = innerContent
+            }
+            is PairGene<*, *> ->{
+                val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a pair is null")
+                Lazy.assert { template.innerContent.size == 2 }
+                val first = template.innerContent[0]
+                transformGeneToParamDto(valueGene.first, first)
+                val second = template.innerContent[1]
+                transformGeneToParamDto(valueGene.first, second)
+                dto.innerContent = listOf(first, second)
+            }
+            is MapGene<*, *> ->{
+                val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a map dto is null")
                 val innerContent = valueGene.getAllElements().map {
                     val copy = template.copy()
                     transformGeneToParamDto(it, copy)
@@ -160,8 +180,22 @@ class RPCEndpointsHandler {
                 is FloatGene -> valueGene.value = dto.jsonValue.toFloat()
                 is BooleanGene -> valueGene.value = dto.jsonValue.toBoolean()
                 is StringGene -> valueGene.value = dto.jsonValue
+                is LongGene -> valueGene.value = dto.jsonValue.toLong()
                 is EnumGene<*> -> valueGene.index = dto.jsonValue.toInt()
+                is PairGene<*, *> -> {
+                    Lazy.assert { dto.innerContent.size == 2 }
+                    setGeneBasedOnParamDto(valueGene.first, dto.innerContent[0])
+                    setGeneBasedOnParamDto(valueGene.second, dto.innerContent[1])
+                }
                 is ArrayGene<*> -> {
+                    val template = valueGene.template
+                    dto.innerContent.forEach { p->
+                        val copy = template.copyContent()
+                        setGeneBasedOnParamDto(copy, p)
+                        valueGene.addElement(copy)
+                    }
+                }
+                is MapGene<*, *> ->{
                     val template = valueGene.template
                     dto.innerContent.forEach { p->
                         val copy = template.copyContent()
@@ -204,6 +238,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> valueGene is ArrayGene<*>
             RPCSupportedDataType.MAP -> valueGene is MapGene<*, *>
             RPCSupportedDataType.CUSTOM_OBJECT -> valueGene is ObjectGene || valueGene is MapGene<*,*>
+            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> TODO()
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
         }
     }
@@ -218,22 +253,19 @@ class RPCEndpointsHandler {
                 else
                     this
             }
-            params.add(RPCInputParam(p.name, gene))
+            params.add(RPCParam(p.name, gene))
         }
 
+        var response: RPCParam? = null
         // response would be used for assertion generation
         if (endpointSchema.responseParam != null){
-            // return should be nullable
-            Lazy.assert {
-                endpointSchema.responseParam.isNullable
-            }
             val gene = OptionalGene(endpointSchema.responseParam.name, handleDtoParam(endpointSchema.responseParam))
-            params.add(RPCReturnParam(endpointSchema.responseParam.name, gene))
+            response = RPCParam(endpointSchema.responseParam.name, gene)
         }
         /*
             TODO Man exception and auth
          */
-        return RPCCallAction(name, params)
+        return RPCCallAction(name, params, responseTemplate = response, response = null )
     }
 
     private fun actionName(interfaceName: String, endpointName: String) = "$interfaceName:$endpointName"
@@ -253,6 +285,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param)
             RPCSupportedDataType.MAP -> handleMapParam(param)
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
+            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> TODO()
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
         }
 
@@ -276,17 +309,15 @@ class RPCEndpointsHandler {
     private fun handleMapParam(param: ParamDto) : Gene{
         val pair = param.type.example
         Lazy.assert { pair.innerContent.size == 2 }
-        val keyTemplate = handleCollectionParam(pair.innerContent[0])
-        val valueTemplate = handleCollectionParam(pair.innerContent[1])
+        val keyTemplate = handleDtoParam(pair.innerContent[0])
+        val valueTemplate = handleDtoParam(pair.innerContent[1])
         return MapGene(param.name, keyTemplate, valueTemplate)
     }
-
-
 
     private fun handleCollectionParam(param: ParamDto) : Gene{
         val templateParam = when(param.type.type){
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST -> param.type.example
-            else -> throw IllegalStateException("")
+            else -> throw IllegalStateException("do not support the collection type: "+ param.type.type)
         }
         val template = handleDtoParam(templateParam)
         return ArrayGene(param.name, template)
@@ -305,7 +336,8 @@ class RPCEndpointsHandler {
     }
 
     private fun handleObjectParam(param: ParamDto): Gene{
-        val objType = typeCache[param.type.fullTypeName] ?:throw IllegalStateException("missing ${param.type.fullTypeName} in typeCache")
+        val objType = typeCache[param.type.fullTypeName]
+            ?:throw IllegalStateException("missing ${param.type.fullTypeName} in typeCache")
         return objType.copy().apply { this.name = param.name }
     }
 

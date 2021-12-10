@@ -23,9 +23,17 @@ public class StringParam extends NamedTypedValue<StringType, String> {
     }
 
     @Override
-    public void setValue(ParamDto dto) {
+    public void setValueBasedOnDto(ParamDto dto) {
         if (dto.jsonValue != null)
             setValue(dto.jsonValue);
+    }
+
+    @Override
+    public ParamDto getDto() {
+        ParamDto dto = super.getDto();
+        if (getValue() != null)
+            dto.jsonValue = getValue().toString();
+        return dto;
     }
 
     @Override

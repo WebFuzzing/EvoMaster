@@ -6,9 +6,9 @@ import org.evomaster.core.search.gene.Gene
 /**
  * params in requests
  */
-class RPCInputParam (name: String, gene: Gene): Param(name, gene){
+class RPCParam (name: String, gene: Gene): Param(name, gene){
 
-    override fun copyContent(): Param {
-        return RPCInputParam(name, gene.copyContent())
+    override fun copyContent(): RPCParam {
+        return RPCParam(name, gene.copyContent())
     }
 }
