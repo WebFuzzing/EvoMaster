@@ -31,7 +31,7 @@ building on decades of research in the field of [Search-Based Software Testing](
 __Key features__:
 
 * At the moment, _EvoMaster_ targets RESTful APIs compiled to 
-  JVM __8__ and __11__ bytecode. Might work on other JVM versions, but we provide __NO__ support for it.
+  JVM (e.g., Java and Kotlin). We support JDK __8__ and the major LTS versions after that (currently JDK __17__). Might work on other JVM versions, but we provide __NO__ support for it.
 
 * We provide installers for the main operating systems: Windows (`.msi`), 
   OSX (`.dmg`) and Linux (`.deb`). We also provide an uber-fat JAR file.
@@ -55,14 +55,13 @@ __Key features__:
 * SQL handling: _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
   such information to generate higher code coverage test cases. Furthermore, it can generate data directly
   into the databases, and have such initialization automatically added in the generated tests. 
-  At the moment, _EvoMaster_ supports _H2_ and _Postgres_ databases.  
+  At the moment, _EvoMaster_ supports _Postgres_, _MySQL_ and _H2_  databases.  
 
 * _Blackbox_ testing mode: can run on any API (regardless of its programming language), 
   as long as an OpenAPI schema is provided. However, results will be worse than whitebox testing (e.g., due
   to lack of bytecode analysis).
 
-* _Authentication_: for white-box testing we support auth based on authentication headers and cookies. 
-   However, at the moment we do not support OAuth, nor authentication in black-box testing.
+* _Authentication_: we support auth based on authentication headers and cookies. 
 
 __Known limitations__:
 
@@ -125,6 +124,7 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
     * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
+    * [Dealing with JDKs above version 8](docs/jdks.md)
 * [Console output](docs/console_output.md)  
 * [Library dependencies for the generated tests](docs/library_dependencies.md)
 * [How to contribute](docs/contribute.md)

@@ -1,21 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using EvoMaster.Instrumentation_Shared;
 using EvoMaster.Instrumentation.StaticState;
-using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 
 namespace EvoMaster.Instrumentation {
     public class Instrumentator {
+        
         private MethodReference _probe;
-        private readonly ILogger _logger;
-
-        public Instrumentator(ILogger<Instrumentator> logger) {
-            _logger = logger;
-        }
 
         /// <summary>
         /// This method instruments an assembly file and saves its instrumented version in the specified destination directory
@@ -107,9 +101,8 @@ namespace EvoMaster.Instrumentation {
                 destination = destination.Remove(destination.Length - 1, 1);
             }
 
-            module.Write($"{destination}/InstrumentedSut.dll");
-            
-            _logger.LogInformation($"Instrumented File Saved Successfully at \"{destination}\"");
+            module.Write($"{destination}/{assembly}");
+            Client.Util.SimpleLogger.Info($"Instrumented File Saved at \"{destination}\"");
         }
 
         private int InsertVisitLineProbe(Instruction instruction, ILProcessor ilProcessor,
