@@ -1,6 +1,6 @@
-package com.foo.graphql.functionInReturnedObject
+package com.foo.graphql.functionInReturnedObjectWithReturnPrimitives
 
-import com.foo.graphql.functionInReturnedObject.type.Flower
+import com.foo.graphql.functionInReturnedObjectWithReturnPrimitives.type.Flower
 import org.springframework.stereotype.Component
 
 

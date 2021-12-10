@@ -1,8 +1,8 @@
-package com.foo.graphql.functionInReturnedObject.resolver
+package com.foo.graphql.functionInReturnedObjectWithReturnPrimitives.resolver
 
 
-import com.foo.graphql.functionInReturnedObject.DataRepository
-import com.foo.graphql.functionInReturnedObject.type.Flower
+import com.foo.graphql.functionInReturnedObjectWithReturnPrimitives.DataRepository
+import com.foo.graphql.functionInReturnedObjectWithReturnPrimitives.type.Flower
 import graphql.kickstart.tools.GraphQLQueryResolver
 import org.springframework.stereotype.Component
 

@@ -1,4 +1,4 @@
-package com.foo.graphql.functionInReturnedObject
+package com.foo.graphql.functionInReturnedObjectWithReturnPrimitives
 
 
 import org.springframework.boot.SpringApplication
@@ -8,9 +8,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
  * Created by asmab on 10-Dec-21.
  */
 @SpringBootApplication
-open class GQLFunctionInReturnedObjects{
+open class GQLFunctionInReturnedObjectsWithReturnPrimitives{
     companion object{
-        const val SCHEMA_NAME = "functionInReturnedObjects.graphqls"
+        const val SCHEMA_NAME = "functionInReturnedObjectsWithReturnPrimitives.graphqls"
     }
 }
 
@@ -27,6 +27,6 @@ open class GQLFunctionInReturnedObjects{
     http://localhost:8080/voyager
  */
 fun main(args: Array<String>) {
-    SpringApplication.run(GQLFunctionInReturnedObjects::class.java,
-            "--graphql.tools.schema-location-pattern=**/${GQLFunctionInReturnedObjects.SCHEMA_NAME}")
+    SpringApplication.run(GQLFunctionInReturnedObjectsWithReturnPrimitives::class.java,
+            "--graphql.tools.schema-location-pattern=**/${GQLFunctionInReturnedObjectsWithReturnPrimitives.SCHEMA_NAME}")
 }

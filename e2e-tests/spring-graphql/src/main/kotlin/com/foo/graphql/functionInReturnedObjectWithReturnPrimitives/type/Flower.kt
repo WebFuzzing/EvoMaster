@@ -1,4 +1,4 @@
-package com.foo.graphql.functionInReturnedObject.type
+package com.foo.graphql.functionInReturnedObjectWithReturnPrimitives.type
 
 
 class Flower (
