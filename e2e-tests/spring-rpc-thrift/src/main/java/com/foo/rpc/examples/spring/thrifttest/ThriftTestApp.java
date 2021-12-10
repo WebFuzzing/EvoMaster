@@ -1,4 +1,4 @@
-package com.foo.rpc.examples.spring.thriftexception;
+package com.foo.rpc.examples.spring.thrifttest;
 
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
@@ -12,10 +12,10 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-public class ThriftExceptionApp {
+public class ThriftTestApp {
 
     public static void main(String[] args) {
-        SpringApplication.run(ThriftExceptionApp.class, args);
+        SpringApplication.run(ThriftTestApp.class, args);
     }
 
     @Bean
@@ -24,8 +24,8 @@ public class ThriftExceptionApp {
     }
 
     @Bean
-    public ServletRegistrationBean thriftexceptionServlet(TProtocolFactory protocolFactory, ThriftExceptionServiceImp service) {
-        TServlet tServlet =  new TServlet(new ThriftExceptionService.Processor<>(service), protocolFactory);
-        return new ServletRegistrationBean(tServlet, "/thriftexception");
+    public ServletRegistrationBean thrifttestServlet(TProtocolFactory protocolFactory, ThriftTestImp service) {
+        TServlet tServlet =  new TServlet(new ThriftTest.Processor<>(service), protocolFactory);
+        return new ServletRegistrationBean(tServlet, "/thrifttest");
     }
 }
