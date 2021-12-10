@@ -794,4 +794,39 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Test
+    fun functionInReturnedObjectsTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/tempSchemaFunctioReturnedObj.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(1, actionCluster.size)
+        val page = actionCluster.get("Page") as GraphQLAction
+        assertEquals(2, page.parameters.size)
+        assertTrue(page.parameters[0] is GQInputParam)
+        assertTrue((page.parameters[0].gene as OptionalGene).gene is IntegerGene)
+        assertTrue(page.parameters[1] is GQReturnParam)
+        assertTrue(page.parameters[1].gene is ObjectGene)
+        val objPage = page.parameters[1].gene as ObjectGene
+
+        assertEquals(2, objPage.fields.size)
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "users" })
+
+        val objPageInfo = (objPage.fields.first { it.name == "pageInfo" } as OptionalGene).gene as ObjectGene
+        assertEquals(1, objPageInfo.fields.size)
+        assertTrue(objPageInfo.fields.any { it is BooleanGene && it.name == "total" })
+        /**/
+
+
+        //recuperate the user obj
+        val objUser = (objPage.fields.first { it.name == "users" } as OptionalGene).gene as ObjectGene
+        assertEquals(1, objUser.fields.size)
+        assertTrue(objUser.fields.any { it is BooleanGene && it.name == "about" })
+
+    }
+
 }
