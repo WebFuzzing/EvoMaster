@@ -1,0 +1,12 @@
+type Query {
+    flowers: Flower
+}
+type Flower {
+    type(id:Int, store: Store ): String
+}
+
+input Store{
+    id: Int!
+    name: String
+
+}
