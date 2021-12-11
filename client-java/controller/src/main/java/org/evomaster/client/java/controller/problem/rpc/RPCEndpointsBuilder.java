@@ -9,7 +9,6 @@ import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import java.lang.reflect.*;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.stream.IntStream;
 
 /**
  * created by manzhang on 2021/11/4
@@ -17,8 +16,16 @@ import java.util.stream.IntStream;
 public class RPCEndpointsBuilder {
 
     private final static String OBJECT_FLAG = "OBJECT";
-    private static String getObjectTypeNameWithFlag(String name) {
+    private static String getObjectTypeNameWithFlag(Class<?> clazz, String name) {
+        if (isNotCustomizedObject(clazz)) return name;
         return OBJECT_FLAG + ":" + name;
+    }
+
+    private static boolean isNotCustomizedObject(Class<?> clazz){
+        return PrimitiveOrWrapperType.isPrimitiveOrTypes(clazz) || clazz == String.class ||
+                clazz == ByteBuffer.class || clazz.isEnum() || clazz.isArray() ||
+                clazz.isAssignableFrom(List.class) || clazz.isAssignableFrom(Set.class);
+
     }
 
     /**
@@ -72,8 +79,7 @@ public class RPCEndpointsBuilder {
     }
 
     private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth) {
-        String depthFlag= clazz.getName();
-
+        depth.add(getObjectTypeNameWithFlag(clazz, clazz.getName()));
         NamedTypedValue namedValue = null;
 
         try{
@@ -103,7 +109,7 @@ public class RPCEndpointsBuilder {
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
-                ctype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
+                ctype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
                 namedValue = new ArrayParam(name, ctype);
 
             } else if (clazz == ByteBuffer.class){
@@ -117,7 +123,7 @@ public class RPCEndpointsBuilder {
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
-                ctype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
+                ctype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
                 if (clazz.isAssignableFrom(List.class))
                     namedValue = new ListParam(name, ctype);
                 else
@@ -135,18 +141,16 @@ public class RPCEndpointsBuilder {
                 Class<?> valueTemplateClazz = getTemplateClass(valueType);
                 NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate)), clazz);
-                mtype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
+                mtype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
                 namedValue = new MapParam(name, mtype);
             } else {
                 if (clazz.getName().startsWith("java")){
                     throw new RuntimeException("NOT handle "+clazz.getName()+" class in java");
                 }
 
-                depthFlag = getObjectTypeNameWithFlag(clazz.getName());
+                long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName()))).count();
 
-                long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz.getName()))).count();
-
-                if (cycleSize < 2){
+                if (cycleSize < 3){
                     List<NamedTypedValue> fields = new ArrayList<>();
                     for(Field f: clazz.getDeclaredFields()){
                         if (doSkipReflection(f.getName()) || doSkipField(f, rpcType))
@@ -155,13 +159,13 @@ public class RPCEndpointsBuilder {
                         fields.add(field);
                     }
                     ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz);
-                    otype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
+                    otype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
                     ObjectParam oparam = new ObjectParam(name, otype);
                     schema.registerType(otype.copy(), oparam);
                     namedValue = oparam;
                 }else {
                     CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz);
-                    otype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
+                    otype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
                     ObjectParam oparam = new ObjectParam(name, otype);
                     schema.registerType(otype.copy(), oparam);
                     namedValue = new ObjectParam(name, otype);
@@ -172,7 +176,7 @@ public class RPCEndpointsBuilder {
                     name, clazz.getName(), genericType==null?"null":genericType.getTypeName(), genericType==null?"null":genericType.getClass().getName(), String.join(",", depth), e.getMessage()));
         }
 
-        depth.add(depthFlag);
+
         return namedValue;
     }
 
