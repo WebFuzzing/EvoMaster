@@ -29,6 +29,13 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
     }
 
     @Override
+    String getValueWithJava() {
+        if (getValue() == null)
+            return null;
+        return "'"+getValue()+"'";
+    }
+
+    @Override
     public CharParam copyStructure() {
         return new CharParam(getName(), getType());
     }

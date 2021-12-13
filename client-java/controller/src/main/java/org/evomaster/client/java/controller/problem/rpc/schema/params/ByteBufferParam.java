@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.ByteBufferT
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * this is created for handling binary in thrift, see https://thrift.apache.org/docs/types
@@ -52,5 +53,10 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         setValue((ByteBuffer) instance);
+    }
+
+    @Override
+    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+        return null;
     }
 }

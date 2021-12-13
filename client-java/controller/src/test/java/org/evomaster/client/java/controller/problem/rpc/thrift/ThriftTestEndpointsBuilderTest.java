@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.thrift;
 import com.thrift.example.real.thrift.test.*;
 import org.apache.thrift.TException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilderTestBase;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
@@ -91,6 +92,19 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.newInstance().equals(input));
         assertTrue(p1.getDto().jsonValue.equals(input));
         assertEquals(RPCSupportedDataType.STRING, p1.getDto().type.type);
+
+        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        assertEquals(1, javaCode.size());
+        assertTrue(javaCode.get(0).equals("java.lang.String arg0 = \"foo\";"));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test
@@ -111,6 +125,20 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.newInstance().equals(input));
         assertTrue(p1.getDto().jsonValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_BOOLEAN, p1.getDto().type.type);
+
+
+        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        assertEquals(1, javaCode.size());
+        assertTrue(javaCode.get(0).equals("boolean arg0 = true;"));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test
@@ -131,6 +159,20 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.newInstance().equals(input));
         assertTrue(p1.getDto().jsonValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_BYTE, p1.getDto().type.type);
+
+        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        System.out.println(javaCode);
+        assertEquals(1, javaCode.size());
+        assertTrue(javaCode.get(0).equals("byte arg0 = 42;"));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test
@@ -151,6 +193,19 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.newInstance().equals(input));
         assertTrue(p1.getDto().jsonValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_INT, p1.getDto().type.type);
+
+        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        assertEquals(1, javaCode.size());
+        assertTrue(javaCode.get(0).equals("int arg0 = 42;"));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test
@@ -171,6 +226,20 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.newInstance().equals(input));
         assertTrue(p1.getDto().jsonValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_LONG, p1.getDto().type.type);
+
+        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        assertEquals(1, javaCode.size());
+        assertTrue(javaCode.get(0).equals("long arg0 = 42L;"));
+
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test
@@ -190,6 +259,19 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.newInstance().equals(input));
         assertTrue(p1.getDto().jsonValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_DOUBLE, p1.getDto().type.type);
+
+        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        assertEquals(1, javaCode.size());
+        assertTrue(javaCode.get(0).equals("double arg0 = 42.42;"));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test
@@ -213,6 +295,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(extracted.equals("foo"));
         assertTrue(p1.getDto().jsonValue.equals("foo"));
         assertEquals(RPCSupportedDataType.BYTEBUFFER, p1.getDto().type.type);
+
     }
 
     @Test
@@ -263,6 +346,26 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
             } else {
                 fail("error field name "+fdto.name);
             }
+        }
+
+        List<String> javaCode = request.newInstanceWithJava(true, true);
+        assertEquals(8, javaCode.size());
+        assertEquals("com.thrift.example.real.thrift.test.Xtruct arg0 = null;", javaCode.get(0));
+        assertEquals("{", javaCode.get(1));
+        assertEquals(" arg0 = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(2));
+        assertEquals(" arg0.string_thing = \"foo\";", javaCode.get(3));
+        assertEquals(" arg0.byte_thing = 42;", javaCode.get(4));
+        assertEquals(" arg0.i32_thing = 42;", javaCode.get(5));
+        assertEquals(" arg0.i64_thing = 42L;", javaCode.get(6));
+        assertEquals("}", javaCode.get(7));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
         }
     }
 
@@ -342,6 +445,34 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
             }
         }
 
+
+        List<String> javaCode = request.newInstanceWithJava(true, true);
+
+        assertEquals(14, javaCode.size());
+        assertEquals("com.thrift.example.real.thrift.test.Xtruct2 arg0 = null;", javaCode.get(0));
+        assertEquals("{", javaCode.get(1));
+        assertEquals(" arg0 = new com.thrift.example.real.thrift.test.Xtruct2();", javaCode.get(2));
+        assertEquals(" arg0.byte_thing = 42;", javaCode.get(3));
+        assertEquals(" arg0.struct_thing = null;", javaCode.get(4));
+        assertEquals(" {", javaCode.get(5));
+        assertEquals("  arg0.struct_thing = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(6));
+        assertEquals("  arg0.struct_thing.string_thing = \"bar\";", javaCode.get(7));
+        assertEquals("  arg0.struct_thing.byte_thing = 100;", javaCode.get(8));
+        assertEquals("  arg0.struct_thing.i32_thing = 100;", javaCode.get(9));
+        assertEquals("  arg0.struct_thing.i64_thing = 100L;", javaCode.get(10));
+        assertEquals(" }", javaCode.get(11));
+        assertEquals(" arg0.i32_thing = 42;", javaCode.get(12));
+        assertEquals("}", javaCode.get(13));
+
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
+        }
     }
 
 
@@ -391,6 +522,34 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(3, results.get(2));
         assertEquals(43, results.get(42));
         assertEquals(101, results.get(100));
+
+        List<String> javaCode = p1.newInstanceWithJava(true,true);
+        assertEquals(16, javaCode.size());
+        assertEquals("java.util.Map<java.lang.Integer,java.lang.Integer> arg0 = null;", javaCode.get(0));
+        assertEquals("{", javaCode.get(1));
+        assertEquals(" arg0 = new java.util.HashMap<>();", javaCode.get(2));
+        assertEquals(" java.lang.Integer arg0_key_0 = 1;", javaCode.get(3));
+        assertEquals(" java.lang.Integer arg0_value_0 = 2;", javaCode.get(4));
+        assertEquals(" arg0.put(arg0_key_0,arg0_value_0);", javaCode.get(5));
+        assertEquals(" java.lang.Integer arg0_key_1 = 2;", javaCode.get(6));
+        assertEquals(" java.lang.Integer arg0_value_1 = 3;", javaCode.get(7));
+        assertEquals(" arg0.put(arg0_key_1,arg0_value_1);", javaCode.get(8));
+        assertEquals(" java.lang.Integer arg0_key_2 = 100;", javaCode.get(9));
+        assertEquals(" java.lang.Integer arg0_value_2 = 101;", javaCode.get(10));
+        assertEquals(" arg0.put(arg0_key_2,arg0_value_2);", javaCode.get(11));
+        assertEquals(" java.lang.Integer arg0_key_3 = 42;", javaCode.get(12));
+        assertEquals(" java.lang.Integer arg0_value_3 = 43;", javaCode.get(13));
+        assertEquals(" arg0.put(arg0_key_3,arg0_value_3);", javaCode.get(14));
+        assertEquals("}", javaCode.get(15));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test
@@ -440,6 +599,33 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(""+43, results.get("abc"));
         assertEquals(""+101, results.get("def"));
 
+        List<String> javaCode = p1.newInstanceWithJava(true,true);
+        assertEquals(16, javaCode.size());
+        assertEquals("java.util.Map<java.lang.String,java.lang.String> arg0 = null;", javaCode.get(0));
+        assertEquals("{", javaCode.get(1));
+        assertEquals(" arg0 = new java.util.HashMap<>();", javaCode.get(2));
+        assertEquals(" java.lang.String arg0_key_0 = \"bar\";", javaCode.get(3));
+        assertEquals(" java.lang.String arg0_value_0 = \"3\";", javaCode.get(4));
+        assertEquals(" arg0.put(arg0_key_0,arg0_value_0);", javaCode.get(5));
+        assertEquals(" java.lang.String arg0_key_1 = \"abc\";", javaCode.get(6));
+        assertEquals(" java.lang.String arg0_value_1 = \"43\";", javaCode.get(7));
+        assertEquals(" arg0.put(arg0_key_1,arg0_value_1);", javaCode.get(8));
+        assertEquals(" java.lang.String arg0_key_2 = \"def\";", javaCode.get(9));
+        assertEquals(" java.lang.String arg0_value_2 = \"101\";", javaCode.get(10));
+        assertEquals(" arg0.put(arg0_key_2,arg0_value_2);", javaCode.get(11));
+        assertEquals(" java.lang.String arg0_key_3 = \"foo\";", javaCode.get(12));
+        assertEquals(" java.lang.String arg0_value_3 = \"2\";", javaCode.get(13));
+        assertEquals(" arg0.put(arg0_key_3,arg0_value_3);", javaCode.get(14));
+        assertEquals("}", javaCode.get(15));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test
@@ -456,7 +642,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1 instanceof SetParam);
         assertEquals(1, endpoint.getExceptions().size());
 
-        Set<Integer> input = new HashSet<Integer>(){{
+        Set<Integer> input = new LinkedHashSet<Integer>(){{
             add(1);
             add(2);
             add(3);
@@ -474,6 +660,29 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
         assertEquals(3, dto.innerContent.size());
         assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.jsonValue))));
+
+        List<String> javaCodes = p1.newInstanceWithJava(true,true);
+
+        assertEquals(10, javaCodes.size());
+        assertEquals("java.util.Set<java.lang.Integer> arg0 = null;", javaCodes.get(0));
+        assertEquals("{", javaCodes.get(1));
+        assertEquals(" arg0 = new java.util.HashSet<>();", javaCodes.get(2));
+        assertEquals(" java.lang.Integer arg0_e_0 = 1;", javaCodes.get(3));
+        assertEquals(" arg0.add(arg0_e_0);", javaCodes.get(4));
+        assertEquals(" java.lang.Integer arg0_e_1 = 2;", javaCodes.get(5));
+        assertEquals(" arg0.add(arg0_e_1);", javaCodes.get(6));
+        assertEquals(" java.lang.Integer arg0_e_2 = 3;", javaCodes.get(7));
+        assertEquals(" arg0.add(arg0_e_2);", javaCodes.get(8));
+        assertEquals("}", javaCodes.get(9));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCodes.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCodes.size(); i++){
+            assertEquals(javaCodes.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test
@@ -508,6 +717,30 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
         assertEquals(3, dto.innerContent.size());
         assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.jsonValue))));
+
+        List<String> javaCodes = p1.newInstanceWithJava(true,true);
+        javaCodes.forEach(System.out::println);
+
+        assertEquals(10, javaCodes.size());
+        assertEquals("java.util.List<java.lang.Integer> arg0 = null;", javaCodes.get(0));
+        assertEquals("{", javaCodes.get(1));
+        assertEquals(" arg0 = new java.util.ArrayList<>();", javaCodes.get(2));
+        assertEquals(" java.lang.Integer arg0_e_0 = 1;", javaCodes.get(3));
+        assertEquals(" arg0.add(arg0_e_0);", javaCodes.get(4));
+        assertEquals(" java.lang.Integer arg0_e_1 = 2;", javaCodes.get(5));
+        assertEquals(" arg0.add(arg0_e_1);", javaCodes.get(6));
+        assertEquals(" java.lang.Integer arg0_e_2 = 3;", javaCodes.get(7));
+        assertEquals(" arg0.add(arg0_e_2);", javaCodes.get(8));
+        assertEquals("}", javaCodes.get(9));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCodes.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCodes.size(); i++){
+            assertEquals(javaCodes.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test

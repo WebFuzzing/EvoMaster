@@ -56,4 +56,8 @@ public class TypeSchema {
     public Class<?> getClazz() {
         return clazz;
     }
+
+    public String getTypeNameForInstance(){
+        return getFullTypeName();
+    }
 }

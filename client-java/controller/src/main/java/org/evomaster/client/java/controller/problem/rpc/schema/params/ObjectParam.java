@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CycleObjectType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
 import java.lang.reflect.Field;
@@ -100,4 +101,28 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
         setValue(values);
     }
+
+    @Override
+    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+        String typeName = getType().getTypeNameForInstance();
+        String varName = variableName;
+
+        List<String> codes = new ArrayList<>();
+        boolean isNull = (getValue() == null);
+        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, typeName, varName, null);
+        CodeJavaGenerator.addCode(codes, var, indent);
+        if (isNull) return codes;
+
+        CodeJavaGenerator.addCode(codes, "{", indent);
+        // new obj
+        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstanceObject(typeName, varName), indent+1);
+        for (NamedTypedValue f : getValue()){
+            String fName = varName+"."+f.getName();
+            codes.addAll(f.newInstanceWithJava(false, true, fName, indent+1));
+        }
+
+        CodeJavaGenerator.addCode(codes, "}", indent);
+        return codes;
+    }
+
 }

@@ -17,6 +17,13 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     }
 
     @Override
+    String getValueWithJava() {
+        if (getValue() == null)
+            return null;
+        return ""+getValue();
+    }
+
+    @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         if (getType().isWrapper)

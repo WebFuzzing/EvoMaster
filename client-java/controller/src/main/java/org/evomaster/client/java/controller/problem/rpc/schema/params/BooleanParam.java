@@ -17,6 +17,13 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     }
 
     @Override
+    String getValueWithJava() {
+        if (getValue() == null)
+            return null;
+        return ""+getValue();
+    }
+
+    @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         if (getValue() != null)

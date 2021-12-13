@@ -18,6 +18,13 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     }
 
     @Override
+    String getValueWithJava() {
+        if (getValue() == null)
+            return null;
+        return ""+getValue();
+    }
+
+    @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         if (getType().isWrapper)

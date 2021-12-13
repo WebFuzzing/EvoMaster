@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.PairType;
 
 import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -61,5 +62,10 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     @Override
     public boolean isValidInstance(Object instance) {
         return super.isValidInstance(instance) || instance instanceof Map.Entry;
+    }
+
+    @Override
+    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+        return null;
     }
 }

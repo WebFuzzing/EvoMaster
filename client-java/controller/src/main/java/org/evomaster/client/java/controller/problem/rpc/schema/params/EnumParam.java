@@ -1,11 +1,13 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.EnumType;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * enum parameter
@@ -63,5 +65,15 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("ERROR: fail to process setValueBasedOnValidInstance, with error msg:"+e.getMessage());
         }
+    }
+
+
+
+    @Override
+    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+        String value = null;
+        if (getValue() != null)
+            value = getType().getFullTypeName()+"."+getType().getItems()[getValue()];
+        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value));
     }
 }

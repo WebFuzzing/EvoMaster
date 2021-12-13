@@ -4,6 +4,10 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * long param
  */
@@ -14,6 +18,13 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
 
     public LongParam(String name, PrimitiveOrWrapperType type) {
         super(name, type);
+    }
+
+    @Override
+    String getValueWithJava() {
+        if (getValue() == null)
+            return null;
+        return ""+getValue()+"L";
     }
 
     @Override
@@ -53,4 +64,5 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
     public boolean isValidInstance(Object instance) {
         return instance instanceof Long;
     }
+
 }

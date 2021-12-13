@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.PairParam;
 
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * map type
@@ -32,5 +33,12 @@ public class MapType extends TypeSchema{
         example.innerContent = Arrays.asList(template.getType().getFirstTemplate().getDto(), template.getType().getSecondTemplate().getDto());
         dto.example = example;
         return dto;
+    }
+
+    @Override
+    public String getTypeNameForInstance() {
+        String key = template.getType().getFirstTemplate().getType().getTypeNameForInstance();
+        String value = template.getType().getSecondTemplate().getType().getTypeNameForInstance();
+        return Map.class.getName()+"<"+key+","+value+">";
     }
 }

@@ -1,6 +1,10 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Primitive types Param
@@ -44,4 +48,12 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     public Object newInstance() {
         return getValue();
     }
+
+    abstract String getValueWithJava();
+
+    @Override
+    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueWithJava()));
+    }
+
 }

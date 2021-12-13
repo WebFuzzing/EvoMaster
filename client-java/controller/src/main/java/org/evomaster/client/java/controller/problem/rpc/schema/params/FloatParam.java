@@ -17,6 +17,13 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
     }
 
     @Override
+    String getValueWithJava() {
+        if (getValue() == null)
+            return null;
+        return ""+getValue()+"f";
+    }
+
+    @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         if (getType().isWrapper)

@@ -1,7 +1,11 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.StringType;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * string param
@@ -39,6 +43,14 @@ public class StringParam extends NamedTypedValue<StringType, String> {
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         setValue((String) instance);
+    }
+
+    @Override
+    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+        String value = null;
+        if (getValue() != null)
+            value = "\""+getValue()+"\"";
+        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value));
     }
 
 }

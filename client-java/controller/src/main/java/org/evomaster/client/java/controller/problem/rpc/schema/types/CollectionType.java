@@ -27,4 +27,12 @@ public class CollectionType extends TypeSchema{
         dto.example = template.getDto();
         return dto;
     }
+
+    @Override
+    public String getTypeNameForInstance() {
+        String generic = template.getType().getTypeNameForInstance();
+        if (getClazz().isArray())
+            return generic+"[]";
+        return getFullTypeName()+"<"+generic+">";
+    }
 }

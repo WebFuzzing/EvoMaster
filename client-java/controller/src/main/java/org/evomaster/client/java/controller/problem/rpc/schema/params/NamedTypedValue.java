@@ -3,6 +3,8 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
+import java.util.List;
+
 /**
  * a named instance of the type with its value, eg Param/Field
  */
@@ -117,5 +119,18 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      */
     public boolean isValidInstance(Object instance){
         return getType().getClazz().isInstance(instance);
+    }
+
+
+    /**
+     * create instances with Java
+     * @return a list of string which could create instance with java
+     */
+    public abstract List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent);
+
+
+
+    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName){
+        return newInstanceWithJava(isDeclaration, doesIncludeName, getName(), 0);
     }
 }

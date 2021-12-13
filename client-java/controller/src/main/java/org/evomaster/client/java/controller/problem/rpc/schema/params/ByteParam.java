@@ -21,6 +21,13 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     }
 
     @Override
+    String getValueWithJava() {
+        if (getValue() == null)
+            return null;
+        return ""+getValue();
+    }
+
+    @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         if (getType().isWrapper)

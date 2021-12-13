@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
 import java.util.ArrayList;
@@ -69,5 +70,30 @@ public class ArrayParam extends NamedTypedValue<CollectionType, List<NamedTypedV
             values.add(copy);
         }
         setValue(values);
+    }
+
+    @Override
+    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+        String fullName = getType().getTypeNameForInstance();
+        List<String> codes = new ArrayList<>();
+        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null);
+        CodeJavaGenerator.addCode(codes, var, indent);
+        if (getValue() == null) return codes;
+        int length = getValue().size();
+        CodeJavaGenerator.addCode(codes, "{", indent);
+        // new array
+        CodeJavaGenerator.addCode(codes,
+                CodeJavaGenerator.setInstance(
+                        variableName,
+                        CodeJavaGenerator.newArray(getType().getTemplate().getType().getTypeNameForInstance(), length)), indent+1);
+        int index = 0;
+        for (NamedTypedValue e: getValue()){
+            String eVar = variableName+"["+index+"]";
+            codes.addAll(e.newInstanceWithJava(false, true, eVar, indent+1));
+            index++;
+        }
+
+        CodeJavaGenerator.addCode(codes, "}", indent);
+        return codes;
     }
 }

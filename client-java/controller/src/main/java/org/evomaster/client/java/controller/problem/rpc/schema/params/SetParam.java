@@ -2,10 +2,10 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -62,12 +62,38 @@ public class SetParam extends NamedTypedValue<CollectionType, Set<NamedTypedValu
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         NamedTypedValue t = getType().getTemplate();
-        Set<NamedTypedValue> values = new HashSet<>();
+        // employ linked hash set to avoid flaky tests
+        Set<NamedTypedValue> values = new LinkedHashSet<>();
         for (Object e : (Set) instance){
             NamedTypedValue copy = t.copyStructure();
             copy.setValueBasedOnInstance(e);
             values.add(copy);
         }
         setValue(values);
+    }
+
+    @Override
+    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+        String fullName = getType().getTypeNameForInstance();
+        List<String> codes = new ArrayList<>();
+        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null);
+        CodeJavaGenerator.addCode(codes, var, indent);
+        if (getValue() == null) return codes;
+        CodeJavaGenerator.addCode(codes, "{", indent);
+        // new array
+        CodeJavaGenerator.addCode(codes,
+                CodeJavaGenerator.setInstance(
+                        variableName,
+                        CodeJavaGenerator.newSet()), indent+1);
+        int index = 0;
+        for (NamedTypedValue e: getValue()){
+            String eVarName = variableName+"_e_"+index;
+            codes.addAll(e.newInstanceWithJava(true, true, eVarName, indent+1));
+            CodeJavaGenerator.addCode(codes, variableName+".add("+eVarName+");", indent+1);
+            index++;
+        }
+
+        CodeJavaGenerator.addCode(codes, "}", indent);
+        return codes;
     }
 }

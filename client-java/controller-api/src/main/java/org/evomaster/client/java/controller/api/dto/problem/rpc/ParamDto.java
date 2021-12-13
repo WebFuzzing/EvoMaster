@@ -34,6 +34,9 @@ public class ParamDto {
      */
     public boolean isNullable = true;
 
+
+    public List<String> javaCode = null;
+
     /**
      * create a copy
      */
@@ -45,6 +48,7 @@ public class ParamDto {
         if (innerContent != null)
             copy.innerContent = innerContent.stream().map(ParamDto::copy).collect(Collectors.toList());
         copy.jsonValue = jsonValue;
+        copy.javaCode = javaCode;
         return copy;
     }
 

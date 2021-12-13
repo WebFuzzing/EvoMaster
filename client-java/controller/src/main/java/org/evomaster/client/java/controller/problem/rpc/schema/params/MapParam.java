@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.MapType;
 
 import java.util.*;
@@ -70,5 +71,36 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
             values.add(copy);
         }
         setValue(values);
+    }
+
+    @Override
+    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
+        String fullName = getType().getTypeNameForInstance();
+        List<String> codes = new ArrayList<>();
+        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, fullName, variableName, null);
+        CodeJavaGenerator.addCode(codes, var, indent);
+        if (getValue() == null) return codes;
+        CodeJavaGenerator.addCode(codes, "{", indent);
+        // new array
+        CodeJavaGenerator.addCode(codes,
+                CodeJavaGenerator.setInstance(
+                        variableName,
+                        CodeJavaGenerator.newMap()), indent+1);
+        int index = 0;
+        for (PairParam e: getValue()){
+            String eKeyVarName = variableName+"_key_"+index;
+            if (e.getValue().getKey() == null)
+                throw new RuntimeException("key should not been null");
+            codes.addAll(e.getValue().getKey().newInstanceWithJava(true, true, eKeyVarName, indent+1));
+            String eValueVarName = variableName+"_value_"+index;
+            if (e.getValue().getValue() == null)
+                throw new RuntimeException("value should not been null");
+            codes.addAll(e.getValue().getValue().newInstanceWithJava(true, true, eValueVarName, indent+1));
+            CodeJavaGenerator.addCode(codes, variableName+".put("+eKeyVarName+","+eValueVarName+");", indent+1);
+            index++;
+        }
+
+        CodeJavaGenerator.addCode(codes, "}", indent);
+        return codes;
     }
 }
