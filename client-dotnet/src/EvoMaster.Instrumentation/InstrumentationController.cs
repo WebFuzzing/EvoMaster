@@ -6,7 +6,7 @@ namespace EvoMaster.Instrumentation {
     public static class InstrumentationController {
         public static void ResetForNewSearch() {
             ExecutionTracer.Reset();
-            //ObjectiveRecorder.reset(false);
+            ObjectiveRecorder.Reset(false);
         }
 
         /*
@@ -22,7 +22,7 @@ namespace EvoMaster.Instrumentation {
                would be lost, as EM will have no way to ask for them later, unless
                we explicitly say to return ALL targets
              */
-            //ObjectiveRecorder.clearFirstTimeEncountered();
+            ObjectiveRecorder.ClearFirstTimeEncountered();
         }
 
         public static List<TargetInfo> GetTargetInfos(IEnumerable<int> ids) {
