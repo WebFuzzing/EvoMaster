@@ -296,6 +296,15 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().jsonValue.equals("foo"));
         assertEquals(RPCSupportedDataType.BYTEBUFFER, p1.getDto().type.type);
 
+        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        assertEquals(6, javaCode.size());
+        assertEquals("java.nio.ByteBuffer arg0 = null;", javaCode.get(0));
+        assertEquals("{", javaCode.get(1));
+        assertEquals(" byte[] arg0_byteArray = \"foo\".getBytes(StandardCharsets.UTF_8);", javaCode.get(2));
+        assertEquals(" arg0 = ByteBuffer.allocate(arg0_byteArray.length);", javaCode.get(3));
+        assertEquals(" arg0.put(arg0_byteArray);", javaCode.get(4));
+        assertEquals("}", javaCode.get(5));
+
     }
 
     @Test
@@ -767,6 +776,19 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         ParamDto dto = p1.getDto();
         assertEquals(RPCSupportedDataType.ENUM, dto.type.type);
         assertEquals(""+index, dto.jsonValue);
+
+        List<String> javaCode = p1.newInstanceWithJava(true,true);
+        assertEquals(1, javaCode.size());
+        assertEquals("com.thrift.example.real.thrift.test.Numberz arg0 = com.thrift.example.real.thrift.test.Numberz.TWO;", javaCode.get(0));
+
+        RPCActionDto actionDto = endpoint.getDto();
+        assertEquals(1, actionDto.requestParams.size());
+        ParamDto pdto = actionDto.requestParams.get(0);
+        assertNotNull(pdto.javaCode);
+        assertEquals(javaCode.size(), pdto.javaCode.size());
+        for (int i = 0; i < javaCode.size(); i++){
+            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
+        }
     }
 
     @Test

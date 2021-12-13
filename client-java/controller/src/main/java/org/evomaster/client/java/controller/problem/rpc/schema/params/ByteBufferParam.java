@@ -1,10 +1,12 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ByteBufferType;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -57,6 +59,22 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
 
     @Override
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        return null;
+        List<String> codes = new ArrayList<>();
+        String var = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, ByteBuffer.class.getName(), variableName, null);
+        CodeJavaGenerator.addCode(codes, var, indent);
+        if (getValue() == null) return codes;
+        CodeJavaGenerator.addCode(codes, "{", indent);
+        String varValue = variableName+"_byteArray";
+        String byteArray = "\""+ new String(getValue().array(), StandardCharsets.UTF_8) + "\".getBytes(StandardCharsets.UTF_8)";
+        CodeJavaGenerator.addCode(codes,
+                CodeJavaGenerator.oneLineInstance(true, true, "byte[]", varValue, byteArray), indent + 1);
+        CodeJavaGenerator.addCode(codes,
+                CodeJavaGenerator.oneLineInstance(false, true, String.class.getName(), variableName, "ByteBuffer.allocate("+varValue+".length)"), indent + 1);
+        CodeJavaGenerator.addCode(codes, variableName+".put("+varValue+");", indent+1);
+        CodeJavaGenerator.addCode(codes, "}", indent);
+
+        return codes;
     }
+
+
 }
