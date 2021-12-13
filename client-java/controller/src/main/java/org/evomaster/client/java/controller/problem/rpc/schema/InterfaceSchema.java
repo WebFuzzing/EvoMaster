@@ -63,6 +63,10 @@ public final class InterfaceSchema{
 
     }
 
+    public Map<String, NamedTypedValue> getObjParamCollections() {
+        return objParamCollections;
+    }
+
     public TypeSchema getTypeOrNull(String name){
         return typeCollections.get(name);
     }

@@ -1,9 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.thrift;
 
-import com.thrift.example.real.thrift.test.Insanity;
-import com.thrift.example.real.thrift.test.Numberz;
-import com.thrift.example.real.thrift.test.Xtruct;
-import com.thrift.example.real.thrift.test.Xtruct2;
+import com.thrift.example.real.thrift.test.*;
+import org.apache.thrift.TException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilderTestBase;
@@ -41,6 +39,23 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
     @Test
     public void testEndpointsLoad(){
         assertEquals(expectedNumberOfEndpoints(), schema.getEndpoints().size());
+    }
+
+    @Test
+    public void testDepth(){
+        List<Class> clazz = Arrays.asList(Xtruct.class, Xtruct2.class, Insanity.class, Numberz.class, Xception.class, Xception2.class, TException.class);
+        Map<String, NamedTypedValue> typedValueMap = schema.getObjParamCollections();
+        assertEquals(clazz.size(), typedValueMap.size());
+        assertEquals(0, typedValueMap.get(Xtruct.class.getName()).getType().depth);
+        assertEquals(0, typedValueMap.get(Numberz.class.getName()).getType().depth);
+        assertEquals(0, typedValueMap.get(Xception.class.getName()).getType().depth);
+        assertEquals(0, typedValueMap.get(TException.class.getName()).getType().depth);
+
+        assertEquals(1, typedValueMap.get(Xtruct2.class.getName()).getType().depth);
+        assertEquals(1, typedValueMap.get(Xception2.class.getName()).getType().depth);
+
+        assertEquals(2, typedValueMap.get(Insanity.class.getName()).getType().depth);
+
     }
 
     @Test

@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import java.lang.reflect.*;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * created by manzhang on 2021/11/4
@@ -109,7 +110,7 @@ public class RPCEndpointsBuilder {
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
-                ctype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
+                ctype.depth = getDepthLevel(clazz, depth);
                 namedValue = new ArrayParam(name, ctype);
 
             } else if (clazz == ByteBuffer.class){
@@ -123,7 +124,7 @@ public class RPCEndpointsBuilder {
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
-                ctype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
+                ctype.depth = getDepthLevel(clazz, depth);
                 if (clazz.isAssignableFrom(List.class))
                     namedValue = new ListParam(name, ctype);
                 else
@@ -141,7 +142,7 @@ public class RPCEndpointsBuilder {
                 Class<?> valueTemplateClazz = getTemplateClass(valueType);
                 NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate)), clazz);
-                mtype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
+                mtype.depth = getDepthLevel(clazz, depth);
                 namedValue = new MapParam(name, mtype);
             } else {
                 if (clazz.getName().startsWith("java")){
@@ -159,13 +160,13 @@ public class RPCEndpointsBuilder {
                         fields.add(field);
                     }
                     ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz);
-                    otype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
+                    otype.depth = getDepthLevel(clazz, depth);
                     ObjectParam oparam = new ObjectParam(name, otype);
                     schema.registerType(otype.copy(), oparam);
                     namedValue = oparam;
                 }else {
                     CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz);
-                    otype.depth = (int) new HashSet<>(depth).stream().filter(s-> !s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName())) && s.startsWith(OBJECT_FLAG)).count();;
+                    otype.depth = getDepthLevel(clazz, depth);
                     ObjectParam oparam = new ObjectParam(name, otype);
                     schema.registerType(otype.copy(), oparam);
                     namedValue = new ObjectParam(name, otype);
@@ -232,5 +233,11 @@ public class RPCEndpointsBuilder {
 
         return valueType.getTypeName().equals("org.apache.thrift.meta_data.FieldMetaData");
 
+    }
+
+    private static int getDepthLevel(Class clazz, List<String> depth){
+        String tag = getObjectTypeNameWithFlag(clazz, clazz.getName());
+        int start = Math.max(0, depth.lastIndexOf(tag));
+        return depth.subList(start, depth.size()).stream().filter(s-> !s.equals(tag) && s.startsWith(OBJECT_FLAG)).collect(Collectors.toSet()).size();
     }
 }
