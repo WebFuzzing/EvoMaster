@@ -17,11 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- using a higher version for the 3 packages above results in FileLoadException when trying to build the drivers -->
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.3" />
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="3.0.3" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.0.3" />
-        
       <PackageReference Include="Mono.Cecil" Version="0.11.3" />
     </ItemGroup>
     
