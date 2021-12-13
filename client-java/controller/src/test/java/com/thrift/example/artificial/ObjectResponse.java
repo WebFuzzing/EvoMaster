@@ -1,5 +1,7 @@
 package com.thrift.example.artificial;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -7,6 +9,7 @@ import java.util.List;
  */
 public class ObjectResponse {
 
+    @NotNull@NotEmpty
     public String f1;
 
     public int f2;

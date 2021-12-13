@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -76,7 +77,12 @@ public class RPCEndpointsBuilder {
         String name = parameter.getName();
         Class<?> clazz = parameter.getType();
         List<String> depth = new ArrayList<>();
-        return build(schema, clazz, parameter.getParameterizedType(), name, type, depth);
+        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth);
+
+        for (Annotation annotation: parameter.getAnnotations()){
+            handleConstraint(namedTypedValue, annotation);
+        }
+        return namedTypedValue;
     }
 
     private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth) {
@@ -144,7 +150,9 @@ public class RPCEndpointsBuilder {
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate)), clazz);
                 mtype.depth = getDepthLevel(clazz, depth);
                 namedValue = new MapParam(name, mtype);
-            } else {
+            } else if (clazz.isAssignableFrom(Date.class)){
+                throw new RuntimeException("TODO");
+            }else {
                 if (clazz.getName().startsWith("java")){
                     throw new RuntimeException("NOT handle "+clazz.getName()+" class in java");
                 }
@@ -157,6 +165,9 @@ public class RPCEndpointsBuilder {
                         if (doSkipReflection(f.getName()) || doSkipField(f, rpcType))
                             continue;
                         NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth);
+                        for (Annotation annotation : f.getAnnotations()){
+                            handleConstraint(field, annotation);
+                        }
                         fields.add(field);
                     }
                     ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz);
@@ -179,6 +190,10 @@ public class RPCEndpointsBuilder {
 
 
         return namedValue;
+    }
+
+    private static void handleConstraint(NamedTypedValue namedTypedValue, Annotation annotation){
+        throw new RuntimeException("TODO handle annotation");
     }
 
     private static Class<?> getTemplateClass(Type type){
