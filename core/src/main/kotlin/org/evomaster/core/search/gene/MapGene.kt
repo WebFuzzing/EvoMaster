@@ -83,9 +83,10 @@ class MapGene<K, V>(
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
             val gene = addRandomElement(randomness, false)
-            elements.add(gene)
+            // if the key of gene exists, the value would be replaced with the latest one
+            addElement(gene)
         }
-        addChildren(elements)
+        //addChildren(elements)
     }
 
     override fun isMutable(): Boolean {
@@ -155,7 +156,7 @@ class MapGene<K, V>(
     private fun isPrintable(pairGene: PairGene<K, V>): Boolean {
         val keyT = ParamUtil.getValueGene(pairGene.first)
         val valueT = pairGene.second
-        return (keyT is LongGene || keyT is StringGene || keyT is IntegerGene) &&
+        return (keyT is LongGene || keyT is StringGene || keyT is IntegerGene || keyT is EnumGene<*>) &&
                 (valueT !is CycleObjectGene && (valueT !is OptionalGene || valueT.isActive))
     }
 
@@ -255,10 +256,10 @@ class MapGene<K, V>(
     private fun getElementsBy(pairGene: PairGene<K, V>): List<PairGene<K, V>>{
         val geneValue = ParamUtil.getValueGene(pairGene.first)
         /*
-            currently we only support Integer, String, LongGene
+            currently we only support Integer, String, LongGene, Enum
             TODO support other types if needed
          */
-        if (geneValue is IntegerGene || geneValue is StringGene || geneValue is LongGene){
+        if (geneValue is IntegerGene || geneValue is StringGene || geneValue is LongGene || geneValue is EnumGene<*>){
             return elements.filter { ParamUtil.getValueGene(it.first).containsSameValueAs(geneValue) }
         }
         return listOf()
