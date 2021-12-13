@@ -60,10 +60,6 @@ public final class EndpointSchema {
         dto.requestParams = requestParams.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         if (response != null)
             dto.responseParam = response.getDto();
-        // we only set java code for root param
-        for (int i = 0; i < getRequestParams().size(); i++){
-            dto.requestParams.get(i).javaCode = getRequestParams().get(i).newInstanceWithJava(true,true);
-        }
         return dto;
     }
 
