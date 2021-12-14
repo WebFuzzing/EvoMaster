@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  * thrift
  *     HashSet (see https://thrift.apache.org/docs/types#containers)
  */
-public class SetParam extends NamedTypedValue<CollectionType, Set<NamedTypedValue>>{
+public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
 
     public SetParam(String name, CollectionType type) {
         super(name, type);

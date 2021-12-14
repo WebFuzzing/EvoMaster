@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
  */
 public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
 
+    private Integer minSize;
+    private Integer maxSize;
+
     public MapParam(String name, MapType type) {
         super(name, type);
     }
@@ -102,5 +105,23 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
 
         CodeJavaGenerator.addCode(codes, "}", indent);
         return codes;
+    }
+
+    public Integer getMinSize() {
+        return minSize;
+    }
+
+    public void setMinSize(Integer minSize) {
+        if (this.minSize != null && this.minSize >= minSize)
+            return;
+        this.minSize = minSize;
+    }
+
+    public Integer getMaxSize() {
+        return maxSize;
+    }
+
+    public void setMaxSize(Integer maxSize) {
+        this.maxSize = maxSize;
     }
 }

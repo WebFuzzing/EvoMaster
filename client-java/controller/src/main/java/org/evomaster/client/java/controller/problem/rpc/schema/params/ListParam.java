@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  * thrift
  *  ArrayList (see https://thrift.apache.org/docs/types#containers)
  */
-public class ListParam extends NamedTypedValue<CollectionType, List<NamedTypedValue>>{
+public class ListParam extends CollectionParam<List<NamedTypedValue>>{
 
     public ListParam(String name, CollectionType type) {
         super(name, type);
@@ -95,6 +95,5 @@ public class ListParam extends NamedTypedValue<CollectionType, List<NamedTypedVa
         CodeJavaGenerator.addCode(codes, "}", indent);
         return codes;
     }
-
 
 }

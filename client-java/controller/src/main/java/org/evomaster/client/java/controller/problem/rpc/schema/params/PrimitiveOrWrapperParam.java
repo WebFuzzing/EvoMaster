@@ -11,6 +11,9 @@ import java.util.List;
  */
 public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> {
 
+    private V min;
+    private V max;
+
     public PrimitiveOrWrapperParam(String name, String type, String fullTypeName, Class<?> clazz){
         super(name, new PrimitiveOrWrapperType(type, fullTypeName, clazz));
         // primitive type is not nullable
@@ -42,6 +45,22 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         if (clazz == Short.class || clazz == short.class)
             return new ShortParam(name, clazz.getSimpleName(), clazz.getName(), clazz);
         throw new RuntimeException("PrimitiveOrWrapperParam: unhandled type "+ clazz.getName());
+    }
+
+    public V getMin() {
+        return min;
+    }
+
+    public void setMin(V min) {
+        this.min = min;
+    }
+
+    public V getMax() {
+        return max;
+    }
+
+    public void setMax(V max) {
+        this.max = max;
     }
 
     @Override

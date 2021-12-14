@@ -12,8 +12,30 @@ import java.util.List;
  */
 public class StringParam extends NamedTypedValue<StringType, String> {
 
+    private Integer minSize;
+    private Integer maxSize;
+
     public StringParam(String name) {
         super(name, new StringType());
+    }
+
+
+    public Integer getMinSize() {
+        return minSize;
+    }
+
+    public void setMinSize(Integer minSize) {
+        if (this.minSize != null && this.minSize >= minSize)
+            return;
+        this.minSize = minSize;
+    }
+
+    public Integer getMaxSize() {
+        return maxSize;
+    }
+
+    public void setMaxSize(Integer maxSize) {
+        this.maxSize = maxSize;
     }
 
     @Override

@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * array param
  */
-public class ArrayParam extends NamedTypedValue<CollectionType, List<NamedTypedValue>>{
+public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
 
     public ArrayParam(String name, CollectionType type) {
         super(name, type);

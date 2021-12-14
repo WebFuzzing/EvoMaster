@@ -196,7 +196,11 @@ public class RPCEndpointsBuilder {
     }
 
     private static void handleConstraint(NamedTypedValue namedTypedValue, Annotation annotation){
-        throw new RuntimeException("TODO handle annotation");
+        if (annotation.annotationType().getName().startsWith("javax.validation.constraints")){
+            JavaXConstraintHandler.handleParam(namedTypedValue, annotation);
+        } else {
+            throw new RuntimeException("NOT SUPPORT annotation with "+ annotation.annotationType().getName());
+        }
     }
 
     private static Class<?> getTemplateClass(Type type){
