@@ -23,7 +23,7 @@ public class DateType extends TypeSchema {
     public final IntParam timezone = new IntParam("timezone");
     public final List<IntParam> dateFields;
 
-    public final static SimpleDateFormat DATE_FORMATTER =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS zzz");
+    public final static SimpleDateFormat DATE_FORMATTER =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ");
 
     public DateType(String type, String fullTypeName, Class<?> clazz) {
         super(type, fullTypeName, clazz);
@@ -50,14 +50,15 @@ public class DateType extends TypeSchema {
     public String getDateString(List<IntParam> values){
         if (values.size() != dateFields.size())
             throw new RuntimeException("mismatched size of values, it should be "+dateFields.size() + ", but it is "+values.size());
-        return String.format("%04d-%02d-%02d %02d:%02d:%02d %s",
+        return String.format("%04d-%02d-%02d %02d:%02d:%02d.%03d %s",
                 values.get(0).getValue(),
                 values.get(1).getValue(),
                 values.get(2).getValue(),
                 values.get(3).getValue(),
                 values.get(4).getValue(),
                 values.get(5).getValue(),
-                formatZZZZ(values.get(6).getValue())
+                values.get(6).getValue(),
+                formatZZZZ(values.get(7).getValue())
         );
     }
 
@@ -70,7 +71,7 @@ public class DateType extends TypeSchema {
         if (zone < 0)
             value = value * -1;
 
-        String stringValue = String.format("%4d", value);
+        String stringValue = String.format("%04d", value);
         if (zone < 0)
             stringValue = "-"+stringValue;
         else
@@ -96,10 +97,13 @@ public class DateType extends TypeSchema {
         assert timeValues.length == 3;
         values.get(3).setValue(Integer.parseInt(timeValues[0]));
         values.get(4).setValue(Integer.parseInt(timeValues[1]));
-        values.get(5).setValue(Integer.parseInt(timeValues[2]));
+        String[] secondValue = timeValues[2].split("\\.");
+        assert secondValue.length == 2;
+        values.get(5).setValue(Integer.parseInt(secondValue[0]));
+        values.get(6).setValue(Integer.parseInt(secondValue[1]));
 
         //timezone
-        values.get(6).setValue(Integer.parseInt(strValues[2]));
+        values.get(7).setValue(Integer.parseInt(strValues[2]));
         return values;
     }
 

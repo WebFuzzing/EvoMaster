@@ -1,5 +1,6 @@
 package com.thrift.example.artificial;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -23,5 +24,7 @@ public interface RPCInterfaceExample {
     public GenericResponse listAndMap(List<Map<String, String>> args0);
 
     public ObjectResponse objResponse();
+
+    public String dateToString(Date date);
 
 }

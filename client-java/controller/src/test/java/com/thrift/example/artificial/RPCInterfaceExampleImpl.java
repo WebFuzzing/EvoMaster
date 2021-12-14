@@ -1,6 +1,7 @@
 package com.thrift.example.artificial;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -69,5 +70,10 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         response.f3 = 0.42;
         response.f4 = new double[]{0.0, 0.5, 1.0};
         return response;
+    }
+
+    @Override
+    public String dateToString(Date date) {
+        return date.toString();
     }
 }

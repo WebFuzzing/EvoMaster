@@ -9,7 +9,9 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.junit.jupiter.api.Test;
 
+import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -28,7 +30,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 8;
+        return 9;
     }
 
     @Override
@@ -39,6 +41,46 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     @Test
     public void testEndpointsLoad(){
         assertEquals(expectedNumberOfEndpoints(), schema.getEndpoints().size());
+    }
+
+
+    @Test
+    public void testDateToString() throws ClassNotFoundException, ParseException {
+        EndpointSchema endpoint = getOneEndpoint("dateToString");
+        assertNotNull(endpoint.getResponse());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof DateParam);
+
+        String stringDate = "2021-12-14 19:45:23.722 +0100";
+        Date date = DateType.DATE_FORMATTER.parse(stringDate);
+        long time = date.getTime();
+
+        p1.setValueBasedOnInstance(date);
+        Object instance = p1.newInstance();
+        assertTrue(instance instanceof  Date);
+        assertEquals(time, ((Date) instance).getTime());
+
+        ParamDto dto = p1.getDto();
+        assertEquals(8, dto.innerContent.size());
+        assertEquals("2021", dto.innerContent.get(0).jsonValue);
+        assertEquals("12", dto.innerContent.get(1).jsonValue);
+        assertEquals("14", dto.innerContent.get(2).jsonValue);
+        assertEquals("19", dto.innerContent.get(3).jsonValue);
+        assertEquals("45", dto.innerContent.get(4).jsonValue);
+        assertEquals("23", dto.innerContent.get(5).jsonValue);
+        assertEquals("722", dto.innerContent.get(6).jsonValue);
+        assertEquals("100", dto.innerContent.get(7).jsonValue);
+
+        List<String> javacode = p1.newInstanceWithJava(true, true);
+        assertEquals(5, javacode.size());
+        assertEquals("java.util.Date arg0 = null;", javacode.get(0));
+        assertEquals("{", javacode.get(1));
+        assertEquals(" // Date is "+stringDate, javacode.get(2));
+        assertEquals(" arg0 = new java.util.Date("+time+"L);", javacode.get(3));
+        assertEquals("}", javacode.get(4));
+
     }
 
     @Test
@@ -170,11 +212,6 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         paramDto.innerContent = Arrays.asList(iList);
         endpoint.setValue(dto);
 
-        Object arg0Instance = endpoint.getRequestParams().get(0).newInstance();
-        // need to fix generic type
-//        List<String>[] ins = (List<String>[])arg0Instance;
-//        assertEquals(1, ins.length);
-//        assertEquals(3, ins[0].size());
     }
 
 
