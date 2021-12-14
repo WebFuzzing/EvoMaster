@@ -3,8 +3,11 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.value.TupleGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
@@ -29,6 +32,7 @@ class TupleGene(
      * of the templated, and then mutated/randomized
      *
      * change `var` to `val`, need to check
+     * note that if the list of gene could be updated, its impact needs to be updated
      */
     val elements: List<Gene> = mutableListOf(),
     /**
@@ -135,7 +139,7 @@ class TupleGene(
     }
 
     override fun mutationWeight(): Double {
-        // skip last one for counting the weight
+        // need to check, skip last one for counting the weight
         return elements.dropLast(1).sumOf { it.mutationWeight() }
     }
 
@@ -147,12 +151,28 @@ class TupleGene(
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
+        // need to check, skip last for value mutation
         return elements.dropLast(1).filter { it.isMutable() }
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
+    }
+
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+
+        if (additionalGeneMutationInfo.impact != null
+            && additionalGeneMutationInfo.impact is TupleGeneImpact
+        ) {
+            val impacts = internalGenes.map { additionalGeneMutationInfo.impact.elements.getValue(it.name) }
+            val selected = mwc.selectSubGene(
+                internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
+            )
+            val map = selected.map { internalGenes.indexOf(it) }
+            return map.map { internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact, gene = internalGenes[it]) }
+        }
+        throw IllegalArgumentException("impact is null or not TupleGeneImpact, ${additionalGeneMutationInfo.impact}")
     }
 
 }
