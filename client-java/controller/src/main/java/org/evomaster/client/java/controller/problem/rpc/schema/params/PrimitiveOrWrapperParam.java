@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
@@ -45,6 +46,14 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         if (clazz == Short.class || clazz == short.class)
             return new ShortParam(name, clazz.getSimpleName(), clazz.getName(), clazz);
         throw new RuntimeException("PrimitiveOrWrapperParam: unhandled type "+ clazz.getName());
+    }
+
+    @Override
+    public ParamDto getDto() {
+        ParamDto dto = super.getDto();
+        dto.minSize = min;
+        dto.maxSize = max;
+        return dto;
     }
 
     public Long getMin() {

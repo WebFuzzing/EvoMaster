@@ -35,6 +35,10 @@ public class ParamDto {
     public boolean isNullable = true;
 
 
+    public Long minSize;
+
+    public Long maxSize;
+
     /**
      * create a copy
      */
@@ -46,6 +50,8 @@ public class ParamDto {
         if (innerContent != null)
             copy.innerContent = innerContent.stream().map(ParamDto::copy).collect(Collectors.toList());
         copy.jsonValue = jsonValue;
+        copy.maxSize = maxSize;
+        copy.minSize = minSize;
         return copy;
     }
 
