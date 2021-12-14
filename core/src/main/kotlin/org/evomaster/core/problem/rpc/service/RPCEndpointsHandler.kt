@@ -291,14 +291,14 @@ class RPCEndpointsHandler {
 
     private fun handleDtoParam(param: ParamDto): Gene{
         val gene = when(param.type.type){
-            RPCSupportedDataType.P_INT, RPCSupportedDataType.INT -> IntegerGene(param.name)
+            RPCSupportedDataType.P_INT, RPCSupportedDataType.INT -> IntegerGene(param.name, min = param.minSize?.toInt()?: Int.MIN_VALUE, max = param.maxSize?.toInt()?:Int.MAX_VALUE)
             RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> BooleanGene(param.name)
-            RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR -> StringGene(param.name, value="", maxLength = 1, minLength = 0)
-            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> DoubleGene(param.name)
-            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> FloatGene(param.name)
-            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> LongGene(param.name)
-            RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT -> IntegerGene(param.name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
-            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> IntegerGene(param.name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt())
+            RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR -> StringGene(param.name, value="", maxLength = 1, minLength = param.minSize?.toInt()?:0)
+            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> DoubleGene(param.name, min = param.minSize?.toDouble(), max = param.maxSize?.toDouble())
+            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> FloatGene(param.name, min = param.minSize?.toFloat(), max = param.maxSize?.toFloat())
+            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> LongGene(param.name, min = param.minSize, max = param.maxSize)
+            RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT -> IntegerGene(param.name, min = param.minSize?.toInt()?:Short.MIN_VALUE.toInt(), max = param.maxSize?.toInt()?:Short.MAX_VALUE.toInt())
+            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> IntegerGene(param.name, min = param.minSize?.toInt()?:Byte.MIN_VALUE.toInt(), max = param.maxSize?.toInt()?:Byte.MAX_VALUE.toInt())
             RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> StringGene(param.name)
             RPCSupportedDataType.ENUM -> handleEnumParam(param)
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param)
@@ -339,7 +339,12 @@ class RPCEndpointsHandler {
         Lazy.assert { pair.innerContent.size == 2 }
         val keyTemplate = handleDtoParam(pair.innerContent[0])
         val valueTemplate = handleDtoParam(pair.innerContent[1])
-        return MapGene(param.name, keyTemplate, valueTemplate)
+
+        return MapGene(param.name, keyTemplate, valueTemplate).apply {
+            if (param.maxSize != null)
+                maxSize = param.maxSize.toInt()
+            //TODO handle min size latter
+        }
     }
 
     private fun handleCollectionParam(param: ParamDto) : Gene{
@@ -348,7 +353,11 @@ class RPCEndpointsHandler {
             else -> throw IllegalStateException("do not support the collection type: "+ param.type.type)
         }
         val template = handleDtoParam(templateParam)
-        return ArrayGene(param.name, template)
+        return ArrayGene(param.name, template).apply {
+            if (param.maxSize != null)
+                maxSize = param.maxSize.toInt()
+            //TODO handle min size latter
+        }
     }
 
     private fun handleObjectType(type: ParamDto): Gene{

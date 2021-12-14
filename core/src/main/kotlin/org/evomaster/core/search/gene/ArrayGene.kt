@@ -26,6 +26,7 @@ class ArrayGene<T>(
          * on this template
          */
         val template: T,
+        // TODO, add minSize
         /**
          *  How max elements to have in this array. Usually arrays are unbound, till the maximum int size (ie, 2 billion
          *  elements on the JVM). But, for search reasons, too large arrays are impractical

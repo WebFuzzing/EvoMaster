@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory
 class MapGene<K, V>(
         name: String,
         val template: PairGene<K, V>,
+        // TODO, add minSize
         var maxSize: Int = MAX_SIZE,
         private var elements: MutableList<PairGene<K, V>> = mutableListOf()
 ) : CollectionGene, Gene(name, elements)
