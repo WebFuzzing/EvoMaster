@@ -25,7 +25,18 @@ public class DateType extends TypeSchema {
     public final IntParam timezone = new IntParam("timezone");
     public final List<IntParam> dateFields;
 
+    /**
+     * simple date format
+     * current default setting for handling date
+     */
     public final static SimpleDateFormat SIMPLE_DATE_FORMATTER =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    /**
+     * complete date format which could conform with time long value
+     *
+     * note that
+     * if we employ this format, we need to extend time gene for supporting millisecond and timezone
+     */
     public final static SimpleDateFormat DATE_FORMATTER =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ");
 
     public DateType(String type, String fullTypeName, Class<?> clazz, boolean simpleFormat) {
@@ -132,8 +143,6 @@ public class DateType extends TypeSchema {
             //timezone
             values.get(7).setValue(Integer.parseInt(strValues[2]));
         }
-
-
 
         return values;
     }
