@@ -2,7 +2,10 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -119,6 +122,27 @@ class TupleGene(
 
     override fun isMutable(): Boolean {
         return elements.dropLast(1).any { it.isMutable() }
+    }
+
+    override fun mutationWeight(): Double {
+        // skip last one for counting the weight
+        return elements.dropLast(1).sumOf { it.mutationWeight() }
+    }
+
+    override fun candidatesInternalGenes(
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        allGenes: List<Gene>,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): List<Gene> {
+        return elements.dropLast(1).filter { it.isMutable() }
+    }
+
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
+        return if (excludePredicate(this)) listOf(this) else
+            listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
     }
 
 }
