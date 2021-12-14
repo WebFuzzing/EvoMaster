@@ -16,38 +16,38 @@ import org.slf4j.LoggerFactory
  *  TODO double-check with Man regarding hypermutation for this gene
  */
 class TupleGene(
-        /**
-         * The name of this gene
-         */
-        name: String,
-        /**
-         * The actual elements in the array, based on the template. Ie, usually those elements will be clones
-         * of the templated, and then mutated/randomized
-         */
-        var elements: MutableList<Gene> = mutableListOf(),
-        /**
-         * In some cases, we want to treat an element differently from the other (the last in particular).
-         * This is for example the case of function calls in GQL when the return type is an object, on
-         * which we need to select what to retrieve.
-         * In these cases, such return object will be part of the tuple, as the last element.
-         */
-        val lastElementTreatedSpecially : Boolean = false
+    /**
+     * The name of this gene
+     */
+    name: String,
+    /**
+     * The actual elements in the array, based on the template. Ie, usually those elements will be clones
+     * of the templated, and then mutated/randomized
+     */
+    var elements: MutableList<Gene> = mutableListOf(),
+    /**
+     * In some cases, we want to treat an element differently from the other (the last in particular).
+     * This is for example the case of function calls in GQL when the return type is an object, on
+     * which we need to select what to retrieve.
+     * In these cases, such return object will be part of the tuple, as the last element.
+     */
+    val lastElementTreatedSpecially: Boolean = false
 
-) : CollectionGene, Gene(name, elements) {
+) : Gene(name, elements) {
 
     init {
-        if(elements.isEmpty()){
+        if (elements.isEmpty()) {
             throw IllegalArgumentException("Empty tuple")
         }
     }
 
-    companion object{
-        val log : Logger = LoggerFactory.getLogger(TupleGene::class.java)
+    companion object {
+        val log: Logger = LoggerFactory.getLogger(TupleGene::class.java)
     }
 
-    fun getSpecialGene() : Gene? {
+    fun getSpecialGene(): Gene? {
         TODO("Not yet implemented")
-        if(lastElementTreatedSpecially){
+        if (lastElementTreatedSpecially) {
             return elements.last()
         }
         return StringGene("Not implemented yet!!!")
@@ -71,7 +71,7 @@ class TupleGene(
         if (elements.isEmpty()) return
 
         //maybe not so important here to complicate code to enable forceNewValue
-        clearElements()
+        elements.clear()
         log.trace("Randomizing TupleGene")
 
         elements.forEach {
@@ -86,8 +86,8 @@ class TupleGene(
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        clearElements()
-        this.elements=other.elements.map { e -> e.copyContent() }.toMutableList()
+        elements.clear()
+        this.elements = other.elements.map { e -> e.copyContent() }.toMutableList()
         // build parents for [element]
         addChildren(this.elements)
     }
@@ -105,8 +105,8 @@ class TupleGene(
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if(gene is TupleGene ){
-            clearElements()
+        if (gene is TupleGene) {
+            elements.clear()
             elements = gene.elements.map { it.copyContent() }.toMutableList()
             addChildren(elements)
             return true
@@ -118,10 +118,5 @@ class TupleGene(
 
     override fun getChildren(): MutableList<Gene> = elements
 
-    override fun clearElements() {
-        elements.forEach { it.removeThisFromItsBindingGenes() }
-        elements.clear()
-
-    }
 
 }
