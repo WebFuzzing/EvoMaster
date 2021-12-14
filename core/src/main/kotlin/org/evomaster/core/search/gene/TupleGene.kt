@@ -95,9 +95,20 @@ class TupleGene(
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is TupleGene) {
-            elements = gene.elements.map { it.copyContent() }.toMutableList()
-            return true
+        // man: we skip binding of last gene, please check
+        val size = elements.size - 1
+
+        if (gene is TupleGene && elements.size == gene.elements.size && (0 until size).all { elements[it].possiblySame(gene.elements[it]) }) {
+            var result = true
+            (0 until size).forEach {
+                val r = elements[it].bindValueBasedOn(gene.elements[it])
+                if (!r)
+                    LoggingUtil.uniqueWarn(log, "cannot bind the element at $it with the name ${elements[it].name}")
+                result = result && r
+            }
+            if (!result)
+                LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} with the specified TupleGene gene")
+            return result
         }
         LoggingUtil.uniqueWarn(log, "cannot bind TupleGene with ${gene::class.java.simpleName}")
         return false
@@ -106,5 +117,8 @@ class TupleGene(
 
     override fun getChildren(): MutableList<Gene> = elements
 
+    override fun isMutable(): Boolean {
+        return elements.dropLast(1).any { it.isMutable() }
+    }
 
 }
