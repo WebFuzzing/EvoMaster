@@ -30,7 +30,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 9;
+        return 10;
     }
 
     @Override
@@ -43,6 +43,54 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(expectedNumberOfEndpoints(), schema.getEndpoints().size());
     }
 
+    @Test
+    public void testConstraintInputs(){
+        EndpointSchema endpoint = getOneEndpoint("constraintInputs");
+
+        assertNotNull(endpoint.getResponse());
+        assertEquals(2, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+        assertTrue(p1.isNullable());
+        assertEquals(7, ((ObjectParam) p1).getType().getFields().size());
+        for (NamedTypedValue f: ((ObjectParam) p1).getType().getFields()){
+            if (f.getName().equals("list")){
+                assertTrue(f instanceof ListParam);
+                assertFalse(f.isNullable());
+                assertEquals(1, ((ListParam)f).getMinSize());
+            } else if (f.getName().equals("listSize")){
+                assertTrue(f instanceof ListParam);
+                assertEquals(1, ((ListParam)f).getMinSize());
+                assertEquals(10, ((ListParam)f).getMaxSize());
+            } else if (f.getName().equals("intWithMinMax")){
+                assertTrue(f instanceof IntParam);
+                assertEquals(0, ((IntParam)f).getMin().intValue());
+                assertEquals(100, ((IntParam)f).getMax().intValue());
+            } else if (f.getName().equals("longWithMinMax")){
+                assertTrue(f instanceof LongParam);
+                assertEquals(-100L, ((LongParam)f).getMin());
+                assertEquals(1000L, ((LongParam)f).getMax());
+            } else if (f.getName().equals("notBlankString")){
+                assertTrue(f instanceof StringParam);
+                assertFalse(f.isNullable());
+                assertEquals(1, ((StringParam)f).getMinSize());
+            } else if (f.getName().equals("nullableString")){
+                assertTrue(f instanceof StringParam);
+                assertTrue(f.isNullable());
+            } else if (f.getName().equals("stringSize")){
+                assertTrue(f instanceof StringParam);
+                assertEquals(2, ((StringParam)f).getMinSize());
+                assertEquals(10, ((StringParam)f).getMaxSize());
+            } else
+                fail("do not handle param "+ f.getName());
+        }
+
+
+        NamedTypedValue p2 = endpoint.getRequestParams().get(1);
+        assertTrue(p2 instanceof StringParam);
+        assertFalse(p2.isNullable());
+    }
 
     @Test
     public void testDateToString() throws ClassNotFoundException, ParseException {

@@ -11,8 +11,8 @@ import java.util.List;
  */
 public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> {
 
-    private V min;
-    private V max;
+    private Long min;
+    private Long max;
 
     public PrimitiveOrWrapperParam(String name, String type, String fullTypeName, Class<?> clazz){
         super(name, new PrimitiveOrWrapperType(type, fullTypeName, clazz));
@@ -47,19 +47,19 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         throw new RuntimeException("PrimitiveOrWrapperParam: unhandled type "+ clazz.getName());
     }
 
-    public V getMin() {
+    public Long getMin() {
         return min;
     }
 
-    public void setMin(V min) {
+    public void setMin(Long min) {
         this.min = min;
     }
 
-    public V getMax() {
+    public Long getMax() {
         return max;
     }
 
-    public void setMax(V max) {
+    public void setMax(Long max) {
         this.max = max;
     }
 

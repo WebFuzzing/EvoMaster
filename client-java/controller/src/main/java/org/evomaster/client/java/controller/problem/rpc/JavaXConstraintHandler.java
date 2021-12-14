@@ -54,6 +54,7 @@ public class JavaXConstraintHandler {
 
         Integer[] size = handleSize(annotation);
         if (size != null){
+            //TODO if set size, should the value still be nullable?
             param.setMinSize(size[0]);
             param.setMaxSize(size[1]);
             return true;

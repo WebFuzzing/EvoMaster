@@ -76,4 +76,10 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     public String dateToString(Date date) {
         return date.toString();
     }
+
+    @Override
+    public String constraintInputs(ConstrainedRequest arg0, String arg1) {
+        return null;
+    }
+
 }

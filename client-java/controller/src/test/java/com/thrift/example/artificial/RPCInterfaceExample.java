@@ -1,5 +1,6 @@
 package com.thrift.example.artificial;
 
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -26,5 +27,7 @@ public interface RPCInterfaceExample {
     public ObjectResponse objResponse();
 
     public String dateToString(Date date);
+
+    public String constraintInputs(ConstrainedRequest arg0, @NotNull String arg1);
 
 }
