@@ -69,21 +69,16 @@ class TupleGene(
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         if (elements.isEmpty()) return
-
-        //maybe not so important here to complicate code to enable forceNewValue
-        elements.clear()
-        elements.forEach {
+        //double check
+        elements.dropLast(1).forEach {
             it.randomize(randomness, false)
-           // elements.add(it)
         }
-
     }
 
     override fun copyValueFrom(other: Gene) {
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        elements.clear()
         this.elements = other.elements.map { e -> e.copyContent() }.toMutableList()
     }
 
@@ -101,7 +96,6 @@ class TupleGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is TupleGene) {
-            elements.clear()
             elements = gene.elements.map { it.copyContent() }.toMutableList()
             return true
         }
