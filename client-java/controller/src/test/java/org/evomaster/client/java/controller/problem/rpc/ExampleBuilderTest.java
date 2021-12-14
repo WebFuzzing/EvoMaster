@@ -53,8 +53,9 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         NamedTypedValue p1 = endpoint.getRequestParams().get(0);
         assertTrue(p1 instanceof DateParam);
 
-        String stringDate = "2021-12-14 19:45:23.722 +0100";
-        Date date = DateType.DATE_FORMATTER.parse(stringDate);
+        //String stringDate = "2021-12-14 19:45:23.722 +0100";
+        String stringDate = "2021-12-14 19:45:23";
+        Date date = DateType.SIMPLE_DATE_FORMATTER.parse(stringDate);
         long time = date.getTime();
 
         p1.setValueBasedOnInstance(date);
@@ -63,15 +64,15 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(time, ((Date) instance).getTime());
 
         ParamDto dto = p1.getDto();
-        assertEquals(8, dto.innerContent.size());
+        assertEquals(6, dto.innerContent.size());
         assertEquals("2021", dto.innerContent.get(0).jsonValue);
         assertEquals("12", dto.innerContent.get(1).jsonValue);
         assertEquals("14", dto.innerContent.get(2).jsonValue);
         assertEquals("19", dto.innerContent.get(3).jsonValue);
         assertEquals("45", dto.innerContent.get(4).jsonValue);
         assertEquals("23", dto.innerContent.get(5).jsonValue);
-        assertEquals("722", dto.innerContent.get(6).jsonValue);
-        assertEquals("100", dto.innerContent.get(7).jsonValue);
+//        assertEquals("722", dto.innerContent.get(6).jsonValue);
+//        assertEquals("100", dto.innerContent.get(7).jsonValue);
 
         List<String> javacode = p1.newInstanceWithJava(true, true);
         assertEquals(5, javacode.size());

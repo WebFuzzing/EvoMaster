@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 public class DateType extends TypeSchema {
 
+    public final boolean EMPLOY_SIMPLE_Format;
+
     public final IntParam year = new IntParam("year");
     public final IntParam month = new IntParam("month");
     public final IntParam day = new IntParam("day");
@@ -23,11 +25,21 @@ public class DateType extends TypeSchema {
     public final IntParam timezone = new IntParam("timezone");
     public final List<IntParam> dateFields;
 
+    public final static SimpleDateFormat SIMPLE_DATE_FORMATTER =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public final static SimpleDateFormat DATE_FORMATTER =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ");
 
-    public DateType(String type, String fullTypeName, Class<?> clazz) {
+    public DateType(String type, String fullTypeName, Class<?> clazz, boolean simpleFormat) {
         super(type, fullTypeName, clazz);
-        dateFields = Arrays.asList(year, month, day, hour, minute, second, millisecond, timezone);
+        EMPLOY_SIMPLE_Format = simpleFormat;
+        if (EMPLOY_SIMPLE_Format)
+            dateFields = Arrays.asList(year, month, day, hour, minute, second);
+        else
+            dateFields = Arrays.asList(year, month, day, hour, minute, second, millisecond, timezone);
+
+    }
+
+    public DateType(String type, String fullTypeName, Class<?> clazz) {
+        this(type, fullTypeName, clazz, true);
     }
 
     public DateType(){
@@ -41,7 +53,10 @@ public class DateType extends TypeSchema {
     public Date getDateInstance(List<IntParam> values){
         String stringValue = getDateString(values);
         try {
-            return DATE_FORMATTER.parse(stringValue);
+            if (EMPLOY_SIMPLE_Format)
+                return SIMPLE_DATE_FORMATTER.parse(stringValue);
+            else
+                return DATE_FORMATTER.parse(stringValue);
         } catch (ParseException e) {
             throw new RuntimeException("ERROR: fail to parse values to Date");
         }
@@ -50,6 +65,16 @@ public class DateType extends TypeSchema {
     public String getDateString(List<IntParam> values){
         if (values.size() != dateFields.size())
             throw new RuntimeException("mismatched size of values, it should be "+dateFields.size() + ", but it is "+values.size());
+        if (EMPLOY_SIMPLE_Format)
+            return String.format("%04d-%02d-%02d %02d:%02d:%02d",
+                    values.get(0).getValue(),
+                    values.get(1).getValue(),
+                    values.get(2).getValue(),
+                    values.get(3).getValue(),
+                    values.get(4).getValue(),
+                    values.get(5).getValue()
+            );
+
         return String.format("%04d-%02d-%02d %02d:%02d:%02d.%03d %s",
                 values.get(0).getValue(),
                 values.get(1).getValue(),
@@ -97,13 +122,19 @@ public class DateType extends TypeSchema {
         assert timeValues.length == 3;
         values.get(3).setValue(Integer.parseInt(timeValues[0]));
         values.get(4).setValue(Integer.parseInt(timeValues[1]));
+
         String[] secondValue = timeValues[2].split("\\.");
         assert secondValue.length == 2;
         values.get(5).setValue(Integer.parseInt(secondValue[0]));
-        values.get(6).setValue(Integer.parseInt(secondValue[1]));
+        if (!EMPLOY_SIMPLE_Format){
+            values.get(6).setValue(Integer.parseInt(secondValue[1]));
 
-        //timezone
-        values.get(7).setValue(Integer.parseInt(strValues[2]));
+            //timezone
+            values.get(7).setValue(Integer.parseInt(strValues[2]));
+        }
+
+
+
         return values;
     }
 
