@@ -41,8 +41,10 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
         if (getValue()!=null){
             dto.innerContent = getValue().stream().map(s->s.getDto()).collect(Collectors.toList());
         }
-        dto.minSize = Long.valueOf(minSize);
-        dto.maxSize = Long.valueOf(maxSize);
+        if (minSize != null)
+            dto.minSize = Long.valueOf(minSize);
+        if (maxSize != null)
+            dto.maxSize = Long.valueOf(maxSize);
         return dto;
     }
 
