@@ -9,6 +9,7 @@ public enum RPCSupportedDataType {
     STRING,
     ENUM,
     ARRAY, LIST, SET, MAP,
+    UTIL_DATE,
     PAIR, // for map
     BYTEBUFFER, //Thrift
     CUSTOM_OBJECT,

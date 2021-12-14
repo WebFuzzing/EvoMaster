@@ -35,6 +35,10 @@ public class CodeJavaGenerator {
         return String.format("new %s()", fullName);
     }
 
+    public static String newObjectConsParams(String fullName, String params){
+        return String.format("new %s(%s)", fullName, params);
+    }
+
     public static String newArray(String fullName, int length){
         return String.format("new %s[%d]", fullName, length);
     }
@@ -62,6 +66,11 @@ public class CodeJavaGenerator {
 
     public static List<String> addCode(List<String> codes, String code, int indent){
         codes.add(getIndent(indent) + code);
+        return codes;
+    }
+
+    public static List<String> addComment(List<String> codes, String comment, int indent){
+        codes.add(getIndent(indent) + "// " + comment);
         return codes;
     }
 }

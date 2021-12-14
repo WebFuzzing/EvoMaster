@@ -151,10 +151,13 @@ public class RPCEndpointsBuilder {
                 mtype.depth = getDepthLevel(clazz, depth);
                 namedValue = new MapParam(name, mtype);
             } else if (clazz.isAssignableFrom(Date.class)){
-                throw new RuntimeException("TODO");
+                if (clazz == Date.class)
+                    namedValue = new DateParam(name);
+                else
+                    throw new RuntimeException("NOT support "+clazz.getName()+" date type in java yet");
             }else {
                 if (clazz.getName().startsWith("java")){
-                    throw new RuntimeException("NOT handle "+clazz.getName()+" class in java");
+                    throw new RuntimeException("NOT handle "+clazz.getName()+" class in java yet");
                 }
 
                 long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName()))).count();

@@ -17,6 +17,11 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
         super(name, type);
     }
 
+    public IntParam(String name) {
+        super(name, new PrimitiveOrWrapperType(int.class.getSimpleName(), int.class.getName(), false, int.class));
+    }
+
+
     @Override
     String getValueWithJava() {
         if (getValue() == null)
