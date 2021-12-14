@@ -1,51 +1,22 @@
 package org.evomaster.core.search.gene
 
-
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class TupleGeneTest {
 
 
     @Test
-    fun copyValueFromTest() {
-        val originalGene = TupleGene(
-            "tupleGeneTestOri",
-            mutableListOf(
-                StringGene("stringGeneTestOri", "hello"),
-                ObjectGene("objectGeneTestOri", listOf(IntegerGene("integerGeneTestOri", 3))),
-                ArrayGene(
-                    "arrayGeneTestOri",
-                    ObjectGene("ObjectGeneTestOri", listOf(FloatGene("floatGeneTestOri", 3.43f)))
-                )
-            )
-        )
-        val gene = TupleGene(
-            "tupleGene",
-            mutableListOf(
-                StringGene("stringGeneTest", "hello")
-            )
-        )
-        Assertions.assertEquals(gene.elements.size, 1)
-        gene.copyValueFrom(originalGene)
-        Assertions.assertEquals(gene.elements.size, 3)
-        Assertions.assertFalse(gene.elements.any { it is StringGene && it.name == "stringGeneTest" })
-        Assertions.assertTrue(gene.elements.any { it is StringGene && it.name == "stringGeneTestOri" })
-        Assertions.assertTrue(gene.elements.any { it is ObjectGene && it.name == "objectGeneTestOri" })
-        Assertions.assertTrue(gene.elements.any { it is ArrayGene<*> && it.name == "arrayGeneTestOri" })
-    }
-
-    @Test
-    fun containsSameValueAsTest() {
+    fun copyFromAndcontainsSameValueAsTest() {
 
         val originalGene = TupleGene(
             "tupleGeneTestOri",
             mutableListOf(
-                StringGene("stringGeneTestOri", "hello"),
-                ObjectGene("objectGeneTestOri", listOf(IntegerGene("integerGeneTestOri", 3))),
+                StringGene("stringGene1", "hello"),
+                ObjectGene("objectGene2", listOf(IntegerGene("f1", 3))),
                 ArrayGene(
-                    "arrayGeneTestOri",
-                    ObjectGene("ObjectGeneTestOri", listOf(FloatGene("floatGeneTestOri", 3.43f)))
+                    "arrayGene3",
+                    ObjectGene("ObjectGene1", listOf(FloatGene("f1", 3.43f)))
                 )
             )
         )
@@ -53,15 +24,22 @@ class TupleGeneTest {
         val gene = TupleGene(
             "tupleGeneTest",
             mutableListOf(
-                StringGene("stringGeneTest", "hello"),
-                ObjectGene("objectGeneTest", listOf(IntegerGene("integerGeneTest", 3))),
+                StringGene("stringGene1", "foo"),
+                ObjectGene("objectGene2", listOf(IntegerGene("f1", 42))),
                 ArrayGene(
-                    "arrayGeneTest",
-                    ObjectGene("ObjectGeneTest", listOf(FloatGene("floatGeneTest", 3.43f)))
-                )
+                    "arrayGene3",
+                    ObjectGene("ObjectGene1", listOf(FloatGene("f1", 4.2f)))
+                ).apply {
+                    addElement(ObjectGene("ObjectGene1", listOf(FloatGene("f1", 4.2f))))
+                }
             )
         )
-        Assertions.assertTrue(originalGene.containsSameValueAs(gene))
+
+        assertFalse(originalGene.containsSameValueAs(gene))
+
+        originalGene.copyValueFrom(gene)
+        assertEquals(1, (originalGene.elements[2] as ArrayGene<*>).getAllElements().size)
+        assertTrue(originalGene.containsSameValueAs(gene))
     }
 
     @Test
@@ -69,11 +47,11 @@ class TupleGeneTest {
         val originalGene = TupleGene(
             "tupleGeneTestOri",
             mutableListOf(
-                StringGene("stringGeneTestOri", "hello"),
-                ObjectGene("objectGeneTestOri", listOf(IntegerGene("integerGeneTestOri", 3))),
+                StringGene("stringGene1", "hello"),
+                ObjectGene("objectGene2", listOf(IntegerGene("f1", 3))),
                 ArrayGene(
-                    "arrayGeneTestOri",
-                    ObjectGene("ObjectGeneTestOri", listOf(FloatGene("floatGeneTestOri", 3.43f)))
+                    "arrayGene3",
+                    ObjectGene("ObjectGene1", listOf(FloatGene("f1", 3.43f)))
                 )
             )
         )
@@ -81,18 +59,27 @@ class TupleGeneTest {
         val gene = TupleGene(
             "tupleGeneTest",
             mutableListOf(
-                StringGene("stringGeneTest", "hello"),
-                ObjectGene("objectGeneTest", listOf(IntegerGene("integerGeneTest", 3))),
+                StringGene("stringGene1", "foo"),
+                ObjectGene("objectGene2", listOf(IntegerGene("f1", 42))),
                 ArrayGene(
-                    "arrayGeneTest",
-                    ObjectGene("ObjectGeneTest", listOf(FloatGene("floatGeneTest", 3.43f)))
-                )
+                    "arrayGene3",
+                    ObjectGene("ObjectGene1", listOf(FloatGene("f1", 4.2f)))
+                ).apply {
+                    addElement(ObjectGene("ObjectGene1", listOf(FloatGene("f1", 4.2f))))
+                }
             )
         )
 
-        Assertions.assertTrue(originalGene.bindValueBasedOn(gene))
-        Assertions.assertTrue(originalGene.elements.any { it is StringGene && it.name == "stringGeneTest" })
-        Assertions.assertTrue(originalGene.elements.any { it is ObjectGene && it.name == "objectGeneTest" })
-        Assertions.assertTrue(originalGene.elements.any { it is ArrayGene<*> && it.name == "arrayGeneTest" })
+        assertTrue(originalGene.bindValueBasedOn(gene))
+
+        originalGene.elements.apply {
+            assertTrue(this[0] is StringGene)
+            assertEquals("foo", (this[0] as StringGene).value)
+            assertTrue(this[1] is ObjectGene)
+            assertTrue((this[1] as ObjectGene).fields[0] is IntegerGene)
+            assertEquals(42, ((this[1] as ObjectGene).fields[0] as IntegerGene).value)
+            assertTrue(this[2] is ArrayGene<*>)
+            assertEquals(0, (this[2] as ArrayGene<*>).getAllElements().size)
+        }
     }
 }

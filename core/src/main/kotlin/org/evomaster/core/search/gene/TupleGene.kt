@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -26,8 +27,10 @@ class TupleGene(
     /**
      * The actual elements in the array, based on the template. Ie, usually those elements will be clones
      * of the templated, and then mutated/randomized
+     *
+     * change `var` to `val`, need to check
      */
-    var elements: MutableList<Gene> = mutableListOf(),
+    val elements: List<Gene> = mutableListOf(),
     /**
      * In some cases, we want to treat an element differently from the other (the last in particular).
      * This is for example the case of function calls in GQL when the return type is an object, on
@@ -82,7 +85,10 @@ class TupleGene(
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.elements = other.elements.map { e -> e.copyContent() }.toMutableList()
+        Lazy.assert { elements.size == other.elements.size }
+        (elements.indices).forEach {
+            elements[it].copyValueFrom(other.elements[it])
+        }
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -98,10 +104,14 @@ class TupleGene(
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        // man: we skip binding of last gene, please check
+        // man: need to check if we skip binding of last gene
         val size = elements.size - 1
 
-        if (gene is TupleGene && elements.size == gene.elements.size && (0 until size).all { elements[it].possiblySame(gene.elements[it]) }) {
+        if (gene is TupleGene
+            && elements.size == gene.elements.size
+            // binding is applicable only if names of element genes are consistent
+            && (0 until size).all { elements[it].possiblySame(gene.elements[it]) }
+        ) {
             var result = true
             (0 until size).forEach {
                 val r = elements[it].bindValueBasedOn(gene.elements[it])
@@ -118,7 +128,7 @@ class TupleGene(
 
     }
 
-    override fun getChildren(): MutableList<Gene> = elements
+    override fun getChildren(): List<Gene> = elements
 
     override fun isMutable(): Boolean {
         return elements.dropLast(1).any { it.isMutable() }
