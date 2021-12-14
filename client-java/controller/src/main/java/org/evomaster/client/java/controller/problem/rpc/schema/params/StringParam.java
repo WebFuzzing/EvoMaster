@@ -59,8 +59,10 @@ public class StringParam extends NamedTypedValue<StringType, String> {
         ParamDto dto = super.getDto();
         if (getValue() != null)
             dto.jsonValue = getValue();
-        dto.maxSize = Long.valueOf(maxSize);
-        dto.minSize = Long.valueOf(minSize);
+        if (maxSize != null)
+            dto.maxSize = Long.valueOf(maxSize);
+        if (minSize != null)
+            dto.minSize = Long.valueOf(minSize);
         return dto;
     }
 

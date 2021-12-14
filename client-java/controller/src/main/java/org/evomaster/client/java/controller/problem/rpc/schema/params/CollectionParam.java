@@ -34,8 +34,10 @@ public abstract class CollectionParam<V> extends NamedTypedValue<CollectionType,
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
-        dto.maxSize = Long.valueOf(maxSize);
-        dto.minSize = Long.valueOf(minSize);
+        if (maxSize != null)
+            dto.maxSize = Long.valueOf(maxSize);
+        if (minSize != null)
+            dto.minSize = Long.valueOf(minSize);
         return dto;
     }
 }
