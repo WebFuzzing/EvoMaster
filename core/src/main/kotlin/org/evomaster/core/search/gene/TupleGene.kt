@@ -72,12 +72,9 @@ class TupleGene(
 
         //maybe not so important here to complicate code to enable forceNewValue
         elements.clear()
-        log.trace("Randomizing TupleGene")
-
         elements.forEach {
             it.randomize(randomness, false)
-            elements.add(it)
-            addChild(it)
+           // elements.add(it)
         }
 
     }
@@ -88,8 +85,6 @@ class TupleGene(
         }
         elements.clear()
         this.elements = other.elements.map { e -> e.copyContent() }.toMutableList()
-        // build parents for [element]
-        addChildren(this.elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -108,7 +103,6 @@ class TupleGene(
         if (gene is TupleGene) {
             elements.clear()
             elements = gene.elements.map { it.copyContent() }.toMutableList()
-            addChildren(elements)
             return true
         }
         LoggingUtil.uniqueWarn(log, "cannot bind TupleGene with ${gene::class.java.simpleName}")
