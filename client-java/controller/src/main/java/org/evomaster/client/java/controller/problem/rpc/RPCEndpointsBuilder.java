@@ -163,7 +163,7 @@ public class RPCEndpointsBuilder {
 
                 long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName()))).count();
 
-                if (cycleSize < 3){
+                if (cycleSize == 1){
                     List<NamedTypedValue> fields = new ArrayList<>();
                     for(Field f: clazz.getDeclaredFields()){
                         if (doSkipReflection(f.getName()) || doSkipField(f, rpcType))

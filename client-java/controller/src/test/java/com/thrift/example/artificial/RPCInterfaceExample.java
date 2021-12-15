@@ -26,6 +26,10 @@ public interface RPCInterfaceExample {
 
     public ObjectResponse objResponse();
 
+    public CycleAObj objCycleA();
+
+    public CycleBObj objCycleB();
+
     public String dateToString(Date date);
 
     public String constraintInputs(ConstrainedRequest arg0, @NotNull String arg1);

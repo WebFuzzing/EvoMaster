@@ -30,7 +30,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 10;
+        return 12;
     }
 
     @Override
@@ -360,8 +360,45 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertTrue(fs.get(4) instanceof ArrayParam);
         assertTrue(fs.get(5) instanceof ArrayParam);
 
-        ObjectParam fs3 = (ObjectParam) fs.get(3);
-        assertTrue(fs3.getType().getFields().get(3).getType() instanceof CycleObjectType);
+        assertTrue(fs.get(3).getType() instanceof CycleObjectType);
+
+    }
+
+    @Test
+    public void testObjCycleA(){
+
+        EndpointSchema endpoint = getOneEndpoint("objCycleA");
+        assertEquals(0, endpoint.getRequestParams().size());
+
+        assertNotNull(endpoint.getResponse());
+        NamedTypedValue param = endpoint.getResponse();
+        assertTrue(param instanceof ObjectParam);
+        assertTrue(param.getType() instanceof ObjectType);
+
+        List<NamedTypedValue> fs = ((ObjectType) param.getType()).getFields();
+        assertEquals(1, fs.size());
+        assertTrue(fs.get(0) instanceof ObjectParam);
+        assertEquals(1, ((ObjectParam)fs.get(0)).getType().getFields().size());
+        assertTrue(((ObjectParam)fs.get(0)).getType().getFields().get(0).getType() instanceof CycleObjectType);
+
+    }
+
+    @Test
+    public void testObjCycleB(){
+
+        EndpointSchema endpoint = getOneEndpoint("objCycleB");
+        assertEquals(0, endpoint.getRequestParams().size());
+
+        assertNotNull(endpoint.getResponse());
+        NamedTypedValue param = endpoint.getResponse();
+        assertTrue(param instanceof ObjectParam);
+        assertTrue(param.getType() instanceof ObjectType);
+
+        List<NamedTypedValue> fs = ((ObjectType) param.getType()).getFields();
+        assertEquals(1, fs.size());
+        assertTrue(fs.get(0) instanceof ObjectParam);
+        assertEquals(1, ((ObjectParam)fs.get(0)).getType().getFields().size());
+        assertTrue(((ObjectParam)fs.get(0)).getType().getFields().get(0).getType() instanceof CycleObjectType);
 
     }
 

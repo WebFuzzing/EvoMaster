@@ -73,6 +73,16 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     }
 
     @Override
+    public CycleAObj objCycleA() {
+        return null;
+    }
+
+    @Override
+    public CycleBObj objCycleB() {
+        return null;
+    }
+
+    @Override
     public String dateToString(Date date) {
         return date.toString();
     }
