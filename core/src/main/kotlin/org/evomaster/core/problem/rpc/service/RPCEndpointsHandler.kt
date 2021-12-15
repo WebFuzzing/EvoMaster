@@ -77,6 +77,15 @@ class RPCEndpointsHandler {
                 actionCluster[name] = processEndpoint(name, e)
             }
         }
+
+        // report statistic of endpoints
+        reportEndpointsStatistics(problem.schemas.size)
+    }
+
+    private fun reportEndpointsStatistics(numSchema: Int){
+        LoggingUtil.getInfoLogger().apply {
+            info("There are $numSchema defined RPC interfaces with ${actionSchemaCluster.size} accessible endpoints.")
+        }
     }
 
     /**
