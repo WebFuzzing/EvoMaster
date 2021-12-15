@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
@@ -199,7 +200,7 @@ public class RPCEndpointsBuilder {
         if (annotation.annotationType().getName().startsWith("javax.validation.constraints")){
             JavaXConstraintHandler.handleParam(namedTypedValue, annotation);
         } else {
-            throw new RuntimeException("NOT SUPPORT annotation with "+ annotation.annotationType().getName());
+            SimpleLogger.info("annotation with "+ annotation.annotationType().getName()+" is not handled");
         }
     }
 

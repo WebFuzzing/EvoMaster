@@ -134,7 +134,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                                                           category: RPCCallResultCategory,
                                                           name: String,
                                                           indexOfAction : Int,
-                                                          locationPbug: String){
+                                                          locationPotentialBug: String){
         val okId = idMapper.handleLocalTarget("RPC_SUCCESS:$name")
         val failId = idMapper.handleLocalTarget("RPC_FAIL:$name")
 
@@ -147,12 +147,14 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             RPCCallResultCategory.EXCEPTION, RPCCallResultCategory.CUSTOM_EXCEPTION ->{
                 fv.updateTarget(okId, 0.1, indexOfAction)
                 fv.updateTarget(failId, 0.1, indexOfAction)
+
+                // here we create additional targets by combining various exceptions with endpoints
             }
             RPCCallResultCategory.POTENTIAL_FAULT->{
                 fv.updateTarget(okId, 0.5, indexOfAction)
                 fv.updateTarget(failId, 1.0, indexOfAction)
 
-                val postfix = "$locationPbug $name"
+                val postfix = "$locationPotentialBug $name"
                 val descriptiveId = idMapper.getFaultDescriptiveIdForInternalError(postfix)
                 val bugId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(bugId, 1.0, indexOfAction)
