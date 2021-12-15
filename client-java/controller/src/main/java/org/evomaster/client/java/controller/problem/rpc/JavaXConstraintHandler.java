@@ -96,6 +96,17 @@ public class JavaXConstraintHandler {
             return true;
         }
 
+        Long max = handleMax(annotation);
+        if (max != null){
+            param.setMax(max);
+            return true;
+        }
+        Long min = handleMin(annotation);
+        if (min != null){
+            param.setMin(min);
+            return true;
+        }
+
         return false;
     }
 

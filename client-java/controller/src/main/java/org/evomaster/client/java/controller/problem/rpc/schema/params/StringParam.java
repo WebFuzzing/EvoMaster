@@ -15,6 +15,9 @@ public class StringParam extends NamedTypedValue<StringType, String> {
     private Integer minSize;
     private Integer maxSize;
 
+    private Long min;
+    private Long max;
+
     public StringParam(String name) {
         super(name, new StringType());
     }
@@ -36,6 +39,22 @@ public class StringParam extends NamedTypedValue<StringType, String> {
 
     public void setMaxSize(Integer maxSize) {
         this.maxSize = maxSize;
+    }
+
+    public Long getMin() {
+        return min;
+    }
+
+    public void setMin(Long min) {
+        this.min = min;
+    }
+
+    public Long getMax() {
+        return max;
+    }
+
+    public void setMax(Long max) {
+        this.max = max;
     }
 
     @Override
@@ -63,6 +82,10 @@ public class StringParam extends NamedTypedValue<StringType, String> {
             dto.maxSize = Long.valueOf(maxSize);
         if (minSize != null)
             dto.minSize = Long.valueOf(minSize);
+        if (min != null)
+            dto.minValue = min;
+        if (max != null)
+            dto.maxValue = max;
         return dto;
     }
 

@@ -291,15 +291,20 @@ class RPCEndpointsHandler {
 
     private fun handleDtoParam(param: ParamDto): Gene{
         val gene = when(param.type.type){
-            RPCSupportedDataType.P_INT, RPCSupportedDataType.INT -> IntegerGene(param.name, min = param.minSize?.toInt()?: Int.MIN_VALUE, max = param.maxSize?.toInt()?:Int.MAX_VALUE)
+            RPCSupportedDataType.P_INT, RPCSupportedDataType.INT -> IntegerGene(param.name, min = param.minValue?.toInt()?: Int.MIN_VALUE, max = param.maxValue?.toInt()?:Int.MAX_VALUE)
             RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> BooleanGene(param.name)
             RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR -> StringGene(param.name, value="", maxLength = 1, minLength = param.minSize?.toInt()?:0)
-            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> DoubleGene(param.name, min = param.minSize?.toDouble(), max = param.maxSize?.toDouble())
-            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> FloatGene(param.name, min = param.minSize?.toFloat(), max = param.maxSize?.toFloat())
-            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> LongGene(param.name, min = param.minSize, max = param.maxSize)
-            RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT -> IntegerGene(param.name, min = param.minSize?.toInt()?:Short.MIN_VALUE.toInt(), max = param.maxSize?.toInt()?:Short.MAX_VALUE.toInt())
-            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> IntegerGene(param.name, min = param.minSize?.toInt()?:Byte.MIN_VALUE.toInt(), max = param.maxSize?.toInt()?:Byte.MAX_VALUE.toInt())
-            RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> StringGene(param.name)
+            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> DoubleGene(param.name, min = param.minValue?.toDouble(), max = param.maxValue?.toDouble())
+            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> FloatGene(param.name, min = param.minValue?.toFloat(), max = param.maxValue?.toFloat())
+            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> LongGene(param.name, min = param.minValue, max = param.maxValue)
+            RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT -> IntegerGene(param.name, min = param.minValue?.toInt()?:Short.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Short.MAX_VALUE.toInt())
+            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> IntegerGene(param.name, min = param.minValue?.toInt()?:Byte.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Byte.MAX_VALUE.toInt())
+            RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> StringGene(param.name).apply {
+                if (param.minValue != null || param.maxValue != null){
+                    // add specification based on constraint info
+                    specializationGenes.add(LongGene(param.name, min=param.minValue, max = param.maxValue))
+                }
+            }
             RPCSupportedDataType.ENUM -> handleEnumParam(param)
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param)
             RPCSupportedDataType.MAP -> handleMapParam(param)

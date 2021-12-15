@@ -39,6 +39,10 @@ public class ParamDto {
 
     public Long maxSize;
 
+
+    public Long minValue;
+    public Long maxValue;
+
     /**
      * create a copy
      */
@@ -52,6 +56,8 @@ public class ParamDto {
         copy.jsonValue = jsonValue;
         copy.maxSize = maxSize;
         copy.minSize = minSize;
+        copy.minValue = minValue;
+        copy.maxValue = maxValue;
         return copy;
     }
 

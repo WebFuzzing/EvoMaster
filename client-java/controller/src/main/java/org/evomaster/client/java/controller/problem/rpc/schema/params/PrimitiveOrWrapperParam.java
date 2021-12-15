@@ -51,8 +51,8 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
-        dto.minSize = min;
-        dto.maxSize = max;
+        dto.minValue = min;
+        dto.maxValue = max;
         return dto;
     }
 
