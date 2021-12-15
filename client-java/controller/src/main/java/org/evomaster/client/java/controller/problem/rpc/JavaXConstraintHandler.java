@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -28,8 +29,10 @@ public class JavaXConstraintHandler {
             solved = handleMapParam((MapParam) namedTypedValue, annotation);
         }
 
-        if (!solved)
-            throw new RuntimeException("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its constraint "+ cons.getName());
+        if (!solved){
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its constraint "+ cons.getName());
+//            throw new RuntimeException("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its constraint "+ cons.getName());
+        }
     }
 
     public static boolean handlePrimitiveOrWrapperParam(PrimitiveOrWrapperParam param, Annotation annotation){
