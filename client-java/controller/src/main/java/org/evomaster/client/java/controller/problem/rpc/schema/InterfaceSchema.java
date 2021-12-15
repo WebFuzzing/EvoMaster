@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.CycleObjectType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
 import java.util.HashMap;
@@ -56,10 +57,11 @@ public final class InterfaceSchema{
 
     public void registerType(TypeSchema type, NamedTypedValue param){
         String typeName = type.getFullTypeName();
-        if (!typeCollections.containsKey(typeName)){
+        if (!(type instanceof CycleObjectType)){
             typeCollections.put(typeName, type);
             objParamCollections.put(param.getType().getFullTypeName(), param);
         }
+
 
     }
 

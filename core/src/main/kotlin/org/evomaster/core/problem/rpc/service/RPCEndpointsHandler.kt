@@ -310,7 +310,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.MAP -> handleMapParam(param)
             RPCSupportedDataType.UTIL_DATE -> handleUtilDate(param)
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
-            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> TODO()
+            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> CycleObjectGene(param.name)
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
         }
 
@@ -322,7 +322,7 @@ class RPCEndpointsHandler {
             only support simple format (more details see [org.evomaster.client.java.controller.problem.rpc.schema.types.DateType]) for the moment
          */
         Lazy.assert { param.innerContent.size == 6 }
-        return DateTimeGene(param.name);
+        return DateTimeGene(param.name)
     }
 
     private fun wrapWithOptionalGene(gene: Gene, isOptional: Boolean): Gene{
