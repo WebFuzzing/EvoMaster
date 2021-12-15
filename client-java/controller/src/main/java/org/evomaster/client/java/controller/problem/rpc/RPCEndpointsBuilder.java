@@ -184,7 +184,7 @@ public class RPCEndpointsBuilder {
                     otype.depth = getDepthLevel(clazz, depth);
                     ObjectParam oparam = new ObjectParam(name, otype);
                     schema.registerType(otype.copy(), oparam);
-                    namedValue = new ObjectParam(name, otype);
+                    namedValue = oparam;
                 }
             }
         }catch (ClassCastException e){

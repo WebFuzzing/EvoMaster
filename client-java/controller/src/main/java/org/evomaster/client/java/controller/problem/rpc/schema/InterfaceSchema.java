@@ -59,10 +59,9 @@ public final class InterfaceSchema{
         String typeName = type.getFullTypeName();
         if (!(type instanceof CycleObjectType)){
             typeCollections.put(typeName, type);
-            objParamCollections.put(param.getType().getFullTypeName(), param);
         }
-
-
+        if (!(param.getType() instanceof CycleObjectType))
+            objParamCollections.put(param.getType().getFullTypeName(), param);
     }
 
     public Map<String, NamedTypedValue> getObjParamCollections() {
