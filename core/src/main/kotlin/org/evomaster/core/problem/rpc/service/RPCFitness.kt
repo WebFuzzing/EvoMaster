@@ -123,7 +123,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             val category = RPCCallResultCategory.valueOf(actionResults[i].getInvocationCode()!!)
             handleAdditionalResponseTargetDescription(fv, category, actions[i].getName(), i, last)
 
-            if (category ==RPCCallResultCategory.POTENTIAL_FAULT){
+            if (category ==RPCCallResultCategory.INTERNAL_ERROR){
                 actionResults[i].setLastStatementForInternalError(last)
             }
         }
@@ -143,19 +143,22 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 fv.updateTarget(okId, 1.0, indexOfAction)
                 fv.updateTarget(failId, 0.5, indexOfAction)
             }
-            // shall we distinguish these two types?
+            // shall we distinguish create additional targets for each kind of exception thrown
             RPCCallResultCategory.EXCEPTION, RPCCallResultCategory.CUSTOM_EXCEPTION ->{
                 fv.updateTarget(okId, 0.1, indexOfAction)
                 fv.updateTarget(failId, 0.1, indexOfAction)
-
-                // here we create additional targets by combining various exceptions with endpoints
             }
-            RPCCallResultCategory.POTENTIAL_FAULT->{
+
+            RPCCallResultCategory.INTERNAL_ERROR, RPCCallResultCategory.UNEXPECTED_EXCEPTION->{
                 fv.updateTarget(okId, 0.5, indexOfAction)
                 fv.updateTarget(failId, 1.0, indexOfAction)
 
                 val postfix = "$locationPotentialBug $name"
-                val descriptiveId = idMapper.getFaultDescriptiveIdForInternalError(postfix)
+                val descriptiveId = if (category == RPCCallResultCategory.INTERNAL_ERROR)
+                                        idMapper.getFaultDescriptiveIdForInternalError(postfix)
+                                    else
+                                        idMapper.getFaultDescriptiveIdForUnexpectedException(postfix)
+
                 val bugId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(bugId, 1.0, indexOfAction)
             }

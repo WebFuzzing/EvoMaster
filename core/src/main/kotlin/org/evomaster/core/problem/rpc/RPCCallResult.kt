@@ -56,7 +56,8 @@ class RPCCallResult : ActionResult {
 
         if (dto.type != null){
             val code = when(dto.type){
-                RPCExceptionType.APP_INTERNAL_ERROR -> RPCCallResultCategory.POTENTIAL_FAULT
+                RPCExceptionType.APP_INTERNAL_ERROR -> RPCCallResultCategory.INTERNAL_ERROR
+                RPCExceptionType.UNEXPECTED_EXCEPTION -> RPCCallResultCategory.UNEXPECTED_EXCEPTION
                 RPCExceptionType.CUSTOMIZED_EXCEPTION-> RPCCallResultCategory.CUSTOM_EXCEPTION
                 else -> RPCCallResultCategory.EXCEPTION
             }
@@ -77,5 +78,7 @@ class RPCCallResult : ActionResult {
         return action is RPCCallAction
     }
 
-    fun hasPotentialFault() : Boolean = getInvocationCode() == RPCCallResultCategory.POTENTIAL_FAULT.name
+    fun hasPotentialFault() : Boolean = getInvocationCode() == RPCCallResultCategory.INTERNAL_ERROR.name ||
+            getInvocationCode() == RPCCallResultCategory.UNEXPECTED_EXCEPTION.name
+
 }

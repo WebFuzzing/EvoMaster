@@ -5,7 +5,13 @@ enum class RPCCallResultCategory {
      * potential faults by an RPC call
      * eg, internal error by Thrift
      */
-    POTENTIAL_FAULT,
+    INTERNAL_ERROR,
+
+    /**
+     * unexpected exception
+     * eg, runtime exception
+     */
+    UNEXPECTED_EXCEPTION,
 
     /**
      * a successful RPC call
