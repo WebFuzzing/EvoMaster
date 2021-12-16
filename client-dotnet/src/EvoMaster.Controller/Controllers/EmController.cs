@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -7,7 +8,7 @@ using System.Text;
 using EvoMaster.Client.Util;
 using EvoMaster.Controller.Api;
 using EvoMaster.Controller.Problem;
-using EvoMaster.Instrumentation;
+using EvoMaster.Instrumentation.StaticState;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -57,7 +58,7 @@ namespace EvoMaster.Controller.Controllers
 
         private bool TrackRequestSource(ConnectionInfo connectionInfo)
         {
-            string source = $"{connectionInfo.RemoteIpAddress}:{connectionInfo.RemotePort}";
+            var source = $"{connectionInfo.RemoteIpAddress}:{connectionInfo.RemotePort}";
 
             connectedClientsSoFar.Add(source);
 
@@ -112,7 +113,7 @@ namespace EvoMaster.Controller.Controllers
             //   return StatusCode(StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError(msg));
             // }
 
-            SutInfoDto dto = new SutInfoDto();
+            var dto = new SutInfoDto();
             dto.IsSutRunning = _sutController.IsSutRunning();
             dto.BaseUrlOfSUT = _baseUrlOfSut;
             dto.InfoForAuthentication = _sutController.GetInfoForAuthentication();
@@ -120,11 +121,11 @@ namespace EvoMaster.Controller.Controllers
             //dto.SqlSchemaDto = _sutController.GetSqlDatabaseSchema ();
             dto.DefaultOutputFormat = _sutController.GetPreferredOutputFormat();
 
-            IProblemInfo info = _sutController.GetProblemInfo();
+            var info = _sutController.GetProblemInfo();
 
             if (info == null)
             {
-                string msg = "Undefined problem type in the EM Controller";
+                var msg = "Undefined problem type in the EM Controller";
 
                 SimpleLogger.Error(msg);
 
@@ -132,14 +133,14 @@ namespace EvoMaster.Controller.Controllers
             }
             else if (info is RestProblem)
             {
-                RestProblem rp = (RestProblem) info;
+                var rp = (RestProblem) info;
                 dto.RestProblem = new RestProblemDto();
                 dto.RestProblem.OpenApiUrl = rp.GetSwaggerJsonUrl();
                 dto.RestProblem.EndpointsToSkip = rp.GetEndpointsToSkip();
             }
             else
             {
-                string msg = "Unrecognized problem type: " + info.GetType().FullName;
+                var msg = "Unrecognized problem type: " + info.GetType().FullName;
 
                 SimpleLogger.Error(msg);
 
@@ -149,7 +150,7 @@ namespace EvoMaster.Controller.Controllers
             dto.UnitsInfoDto = _sutController.GetUnitsInfoDto();
             if (dto.UnitsInfoDto == null)
             {
-                string msg = "Failed to extract units info";
+                var msg = "Failed to extract units info";
 
                 SimpleLogger.Error(msg);
 
@@ -164,7 +165,7 @@ namespace EvoMaster.Controller.Controllers
         {
             AssertTrackRequestSource(Request.HttpContext.Connection);
 
-            ControllerInfoDto dto = new ControllerInfoDto();
+            var dto = new ControllerInfoDto();
             dto.FullName = _sutController.GetType().FullName;
             dto.IsInstrumentationOn = _sutController.IsInstrumentationActivated();
 
@@ -190,20 +191,20 @@ namespace EvoMaster.Controller.Controllers
 
             if (dto == null || !dto.Run.HasValue)
             {
-                string errorMessage = "Invalid JSON: 'run' field is required";
+                var errorMessage = "Invalid JSON: 'run' field is required";
 
                 SimpleLogger.Warn(errorMessage);
 
                 return BadRequest(WrappedResponseDto<string>.WithError(errorMessage));
             }
 
-            bool sqlHeuristics = dto.CalculateSqlHeuristics != null && dto.CalculateSqlHeuristics.Value;
-            bool sqlExecution = dto.ExtractSqlExecutionInfo != null && dto.ExtractSqlExecutionInfo.Value;
+            var sqlHeuristics = dto.CalculateSqlHeuristics != null && dto.CalculateSqlHeuristics.Value;
+            var sqlExecution = dto.ExtractSqlExecutionInfo != null && dto.ExtractSqlExecutionInfo.Value;
 
             //TODO: uncomment
             // _sutController.EnableComputeSqlHeuristicsOrExtractExecution (sqlHeuristics, sqlExecution);
 
-            bool doReset = dto.ResetState != null && dto.ResetState.Value;
+            var doReset = dto.ResetState != null && dto.ResetState.Value;
 
             lock (_lock)
             {
@@ -211,7 +212,7 @@ namespace EvoMaster.Controller.Controllers
                 {
                     if (doReset)
                     {
-                        string errorMessage = "Invalid JSON: cannot reset state and stop service at same time";
+                        var errorMessage = "Invalid JSON: cannot reset state and stop service at same time";
 
                         SimpleLogger.Warn(errorMessage);
 
@@ -236,7 +237,7 @@ namespace EvoMaster.Controller.Controllers
                         if (_baseUrlOfSut == null)
                         {
                             //there has been an internal failure in starting the SUT
-                            String msg = "Internal failure: cannot start SUT based on given configuration";
+                            var msg = "Internal failure: cannot start SUT based on given configuration";
 
                             SimpleLogger.Warn(msg);
 
@@ -306,11 +307,11 @@ namespace EvoMaster.Controller.Controllers
 
         //TODO:complete this method
         [HttpGet("controller/api/testResults")]
-        public IActionResult GetTestResults([FromQuery] string ids)
+        public IActionResult GetTestResults([FromQuery] string ids, [FromQuery] bool killSwitch)
         {
             if (ids == null) ids = "";
 
-            List<int> idsList = new List<int>();
+            var idsList = new List<int>();
             try
             {
                 ids.Split(',').Where(x => !string.IsNullOrEmpty(x.Trim())).ToList()
@@ -326,9 +327,17 @@ namespace EvoMaster.Controller.Controllers
             }
 
             var dto = new TestResultsDto();
-            var temp = _sutController.GetTargetInfos(idsList).ToList();
 
-            temp.ForEach(t =>
+            var targetInfos = NoKillSwitch(() => _sutController.GetTargetInfos(idsList).ToList());
+
+            if (targetInfos == null)
+            {
+                var msg = "Failed to collect target information for " + ids.Length + " ids";
+                SimpleLogger.Error(msg);
+                return StatusCode(500, WrappedResponseDto<TestResultsDto>.WithError(msg));
+            }
+
+            targetInfos.ForEach(t =>
             {
                 var info = new TargetInfoDto
                 {
@@ -341,20 +350,84 @@ namespace EvoMaster.Controller.Controllers
                 dto.Targets.Add(info);
             });
 
+            /*
+                Note: it is important that extra is computed before AdditionalInfo,
+                as heuristics on SQL might add new entries to String specializations
+
+                FIXME actually the String specialization would work only on Embedded, and
+                not on External :(
+                But, as anyway we are going to refactor it in Core at a later point, no need
+                to waste time for a tmp workaround
+             */
+
+            // dto.ExtraHeuristics = NoKillSwitch(() => _sutController.GetExtraHeuristics()); TODO
+
+            var additionalInfos = NoKillSwitch(() => _sutController.GetAdditionalInfoList().ToList());
+
+            if (additionalInfos != null)
+            {
+                additionalInfos.ForEach(a =>
+                {
+                    var info = new AdditionalInfoDto
+                    {
+                        QueryParameters = new HashSet<string>(a.GetQueryParametersView()),
+                        Headers = new HashSet<string>(a.GetHeadersView()),
+                        LastExecutedStatement = a.GetLastExecutedStatement(),
+                        RawAccessOfHttpBodyPayload = a.IsRawAccessOfHttpBodyPayload(),
+                        ParsedDtoNames = new HashSet<string>(a.GetParsedDtoNamesView()),
+                        StringSpecializations = new Dictionary<string, IList<StringSpecializationInfoDto>>()
+                    };
+
+                    foreach (var entry in
+                             a.GetStringSpecializationsView())
+                    {
+                        Trace.Assert(entry.Value.Count != 0);
+
+                        var list = new List<StringSpecializationInfoDto>();
+
+                        entry.Value.ToList()
+                            .ForEach(it =>
+                            {
+                                var stringSpecializationInfoDto = new StringSpecializationInfoDto(
+                                    it.GetStringSpecialization().ToString(),
+                                    it.GetValue(),
+                                    it.GetTaintType().ToString());
+                                list.Add(stringSpecializationInfoDto);
+                            });
+
+
+                        info.StringSpecializations.Add(entry.Key, list);
+                    }
+
+                    dto.AdditionalInfoList.Add(info);
+                });
+            }
+            else
+            {
+                const string msg = "Failed to collect additional info";
+                SimpleLogger.Error(msg);
+                return StatusCode(500, WrappedResponseDto<TestResultsDto>.WithError(msg));
+            }
+
+            if (killSwitch)
+            {
+                _sutController.SetKillSwitch(true);
+            }
+
             return Ok(WrappedResponseDto<TestResultsDto>.WithData(dto));
+        }
 
+        private T NoKillSwitch<T>(Func<T> func)
+        {
+            var previous = ExecutionTracer.IsKillSwitch();
 
-            //    //java version: List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
-            //IList<AdditionalInfo> additionalInfos = _sutController.GetAdditionalInfoList();
+            ExecutionTracer.SetKillSwitch(false);
 
-            ////Fake data here
-            //var dto = new TestResultsDto
-            //{
-            //    AdditionalInfoList = Enumerable.Repeat(new AdditionalInfoDto
-            //    {
-            //        LastExecutedStatement = "\"TODO: LastExecutedStatement\""
-            //    }, additionalInfos.Count).ToList()
-            //};
+            var t = func();
+
+            ExecutionTracer.SetKillSwitch(previous);
+
+            return t;
         }
 
         //TODO: implement ExecuteDatabaseCommand method

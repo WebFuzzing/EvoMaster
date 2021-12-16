@@ -38,6 +38,8 @@ namespace EvoMaster.Controller {
             InstrumentationController.ResetForNewTest();
         }
 
+        public override void SetKillSwitch(bool b) => ExecutionTracer.SetKillSwitch(b);
+
         /// <summary>
         /// This method checks whether the SUT is listening on the port number
         /// </summary>

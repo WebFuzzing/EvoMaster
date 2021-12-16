@@ -1,5 +1,4 @@
 using System;
-using System.IO.Compression;
 using Mono.Cecil.Cil;
 
 namespace EvoMaster.Instrumentation.Heuristic {

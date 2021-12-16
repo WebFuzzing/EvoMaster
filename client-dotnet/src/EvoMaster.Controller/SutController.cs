@@ -346,6 +346,8 @@ namespace EvoMaster.Controller {
 
         // }
 
+        public abstract void SetKillSwitch(bool b);
+        
         private IHostBuilder CreateHostBuilder() =>
             Host.CreateDefaultBuilder()
                 .ConfigureServices((hc, services) => {

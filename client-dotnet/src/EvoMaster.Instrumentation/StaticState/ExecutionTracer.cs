@@ -2,11 +2,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using EvoMaster.Instrumentation_Shared;
 
-namespace EvoMaster.Instrumentation.StaticState {
-    public static class ExecutionTracer {
+namespace EvoMaster.Instrumentation.StaticState
+{
+    public static class ExecutionTracer
+    {
         /*
          * Key -> the unique descriptive id of the coverage objective
          *
@@ -24,7 +25,7 @@ namespace EvoMaster.Instrumentation.StaticState {
         When we get the best distance for a testing target, we might
         also want to know which action in the test led to it.
         */
-        private static int _actionIndex = 0;
+        private static int _actionIndex;
 
         /*
         A set of possible values used in the tests, needed for some kinds
@@ -43,24 +44,27 @@ namespace EvoMaster.Instrumentation.StaticState {
         Keep track of expensive operations. Might want to skip doing them if too many.
         This should be re-set for each action
         */
-        private static int _expensiveOperation = 0;
+        private static int _expensiveOperation;
 
-        private static readonly object _lock = new object();
+        private static readonly object Lock = new object();
 
 
         /*
          One problem is that, once a test case is evaluated, some background tests might still be running.
          We want to kill them to avoid issue (eg, when evaluating new tests while previous threads are still running).
          */
-        private static volatile bool _killSwitch = false;
+        private static volatile bool _killSwitch;
 
-        static ExecutionTracer() {
+        static ExecutionTracer()
+        {
             Reset();
         }
 
 
-        public static void Reset() {
-            lock (_lock) {
+        public static void Reset()
+        {
+            lock (Lock)
+            {
                 ObjectiveCoverage.Clear();
                 _actionIndex = 0;
                 AdditionalInfoList.Clear();
@@ -71,38 +75,81 @@ namespace EvoMaster.Instrumentation.StaticState {
             }
         }
 
-        public static bool IsKillSwitch() {
+        public static bool IsKillSwitch()
+        {
             return _killSwitch;
         }
 
-        public static void SetAction(Action action) {
-            lock (_lock) {
+        public static void SetAction(Action action)
+        {
+            lock (Lock)
+            {
                 SetKillSwitch(false);
                 _expensiveOperation = 0;
-                if (action.GetIndex() != _actionIndex) {
+                if (action.GetIndex() != _actionIndex)
+                {
                     _actionIndex = action.GetIndex();
                     AdditionalInfoList.Add(new AdditionalInfo());
                 }
 
-                if (action.GetInputVariables() != null && action.GetInputVariables().Count != 0) {
+                if (action.GetInputVariables() != null && action.GetInputVariables().Count != 0)
+                {
                     _inputVariables = action.GetInputVariables();
                 }
             }
         }
 
-        public static void SetKillSwitch(bool killSwitch) {
-            ExecutionTracer._killSwitch = killSwitch;
+        public static void SetKillSwitch(bool killSwitch)
+        {
+            _killSwitch = killSwitch;
         }
 
-        public static IList<AdditionalInfo> ExposeAdditionalInfoList() {
+
+        /// <summary>
+        /// This could be based on static info of the input (eg, according to a precise name convention given
+        /// by TaintInputName), or dynamic info given directly by the test itself (eg, the test at action can
+        /// register a list of values to check for)
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns>bool</returns>
+        public static bool IsTaintInput(string input)
+        {
+            return TaintInputName.IsTaintInput(input) || _inputVariables.Contains(input);
+        }
+
+        public static TaintType GetTaintType(String input)
+        {
+            if (input == null)
+            {
+                return TaintType.NONE;
+            }
+
+            if (IsTaintInput(input))
+            {
+                return TaintType.FULL_MATCH;
+            }
+
+            if (TaintInputName.IncludesTaintInput(input)
+                || _inputVariables.ToList().Any(input.Contains))
+            {
+                return TaintType.PARTIAL_MATCH;
+            }
+
+            return TaintType.NONE;
+        }
+
+        public static IEnumerable<AdditionalInfo> ExposeAdditionalInfoList()
+        {
             return AdditionalInfoList;
         }
 
 
         ///<summary>Report on the fact that a given line has been executed.</summary>
-        public static void ExecutedLine(string className, string methodName, string descriptor, int line) {
+        public static void ExecutedLine(string className, string methodName, string descriptor, int line)
+        {
             //This is done to prevent the SUT keep on executing code after a test case is evaluated
-            if (IsKillSwitch()) {
+            if (IsKillSwitch())
+            {
                 //TODO
                 // var initClass = Arrays.stream(Thread.CurrentThread..getStackTrace())
                 //     .anyMatch(e -> e.getMethodName().equals("<clinit>"));
@@ -131,9 +178,9 @@ namespace EvoMaster.Instrumentation.StaticState {
             MarkLastExecutedStatement(lastLine, lastMethod);
         }
 
-        public static void MarkLastExecutedStatement(string lastLine, string lastMethod) {
-            //TODO
-            //GetCurrentAdditionalInfo().PushLastExecutedStatement(lastLine, lastMethod);
+        public static void MarkLastExecutedStatement(string lastLine, string lastMethod)
+        {
+            GetCurrentAdditionalInfo().PushLastExecutedStatement(lastLine, lastMethod);
         }
 
         ///<returns>the number of objectives that have been encountered during the test execution</returns>
@@ -141,23 +188,29 @@ namespace EvoMaster.Instrumentation.StaticState {
 
         public static int GetNumberOfObjectives(string prefix) =>
             ObjectiveCoverage.Count(e => prefix == null || e.Key.StartsWith(prefix));
-        
+
         public static IDictionary<string, TargetInfo> GetInternalReferenceToObjectiveCoverage() => ObjectiveCoverage;
 
-        private static void UpdateObjective(string id, double value) {
-            if (value < 0d || value > 1d) {
+        private static void UpdateObjective(string id, double value)
+        {
+            if (value < 0d || value > 1d)
+            {
                 throw new ArgumentException("Invalid value " + value + " out of range [0,1]");
             }
 
             //In the same execution, a target could be reached several times, so we should keep track of the best value found so far
-            lock (_lock) {
-                if (ObjectiveCoverage.ContainsKey(id)) {
+            lock (Lock)
+            {
+                if (ObjectiveCoverage.ContainsKey(id))
+                {
                     var previous = ObjectiveCoverage[id].Value;
-                    if (value > previous) {
+                    if (value > previous)
+                    {
                         ObjectiveCoverage.Add(id, new TargetInfo(null, id, value, _actionIndex));
                     }
                 }
-                else {
+                else
+                {
                     ObjectiveCoverage.Add(id, new TargetInfo(null, id, value, _actionIndex));
                 }
             }
@@ -165,8 +218,10 @@ namespace EvoMaster.Instrumentation.StaticState {
             ObjectiveRecorder.Update(id, value);
         }
 
-        private static AdditionalInfo GetCurrentAdditionalInfo() {
-            lock (_lock) {
+        private static AdditionalInfo GetCurrentAdditionalInfo()
+        {
+            lock (Lock)
+            {
                 return AdditionalInfoList[_actionIndex];
             }
         }

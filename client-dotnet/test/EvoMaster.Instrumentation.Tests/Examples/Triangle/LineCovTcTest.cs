@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using EvoMaster.Instrumentation.Examples.Triangle;
 using EvoMaster.Instrumentation.StaticState;
 using Xunit;
