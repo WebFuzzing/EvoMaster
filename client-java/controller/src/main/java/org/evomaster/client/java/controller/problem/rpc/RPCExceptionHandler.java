@@ -95,6 +95,7 @@ public class RPCExceptionHandler {
                 RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
                 p.setValueBasedOnInstance(e);
                 dto.exceptionDto = p.getDto();
+                dto.type = RPCExceptionType.CUSTOMIZED_EXCEPTION;
                 return dto;
             }
         }

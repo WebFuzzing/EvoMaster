@@ -20,9 +20,26 @@ class IdMapper {
 
         private const val FAULT_500 = "500_"
 
-        private const val INTERNAL_ERROR = "INTERNAL_ERROR_"
+        // RPC internal error, eg thrift application internal error exception
+        private const val RPC_INTERNAL_ERROR = "INTERNAL_ERROR_"
 
-        private const val UNEXPECTED_EXCEPTION = "UNEXPECTED_EXCEPTION"
+        // RPC service error which is customized by user
+        private const val RPC_SERVICE_ERROR = "SERVICE_ERROR_"
+
+        // exception for RPC
+        private const val EXCEPTION = "EXCEPTION_"
+
+        // unexpected exception for RPC
+        private const val UNEXPECTED_EXCEPTION = "UNEXPECTED_EXCEPTION_"
+
+        // an RPC call which is handled as defined
+        private const val RPC_HANDLED = "RPC_HANDLED_"
+
+        // an RPC call which achieves a successful business logic
+        private const val RPC_HANDLED_SUCCESS = "RPC_HANDLED_SUCCESS_"
+
+        // an RPC call which fails to achieve a successful business logic
+        private const val RPC_HANDLED_ERROR = "RPC_HANDLED_ERROR_"
 
         private const val FAULT_PARTIAL_ORACLE = "PartialOracle_"
 
@@ -35,6 +52,41 @@ class IdMapper {
         fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX) || isGQLErrors(descriptiveId, true)
 
         fun isFault500(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_500)
+
+        /**
+         * @return if [descriptiveId] represents an RPC call which leads to an internal error
+         */
+        fun isRPCInternalError(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX + RPC_INTERNAL_ERROR)
+
+        /**
+         * @return if [descriptiveId] represents an RPC call with thrown unexpected exception
+         */
+        fun isUnexpectedException(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX + UNEXPECTED_EXCEPTION)
+
+        /**
+         * @return if [descriptiveId] represents an RPC call with thrown exception
+         */
+        fun isRPCException(descriptiveId: String) = descriptiveId.startsWith(EXCEPTION) || isUnexpectedException(descriptiveId)
+
+        /**
+         * @return if [descriptiveId] represents an RPC call which is handled as defined
+         */
+        fun isRPCHandled(descriptiveId: String) = descriptiveId.startsWith(RPC_HANDLED)
+
+        /**
+         * @return if [descriptiveId] represents an RPC call which achieves a successful scenario
+         */
+        fun isRPCHandledAndSuccess(descriptiveId: String) = descriptiveId.startsWith(RPC_HANDLED_SUCCESS)
+
+        /**
+         * @return if [descriptiveId] represents an RPC call which achieves an error scenario
+         */
+        fun isRPCHandledButError(descriptiveId: String) = descriptiveId.startsWith(RPC_HANDLED_ERROR)
+
+        /**
+         * @return if [descriptiveId] represents an RPC call which results in a service error
+         */
+        fun isRPCServiceError(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX + RPC_SERVICE_ERROR)
 
         fun isFaultPartialOracle(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX+ FAULT_PARTIAL_ORACLE)
 
@@ -87,11 +139,7 @@ class IdMapper {
     }
 
     fun getFaultDescriptiveIdForInternalError(postfix: String): String {
-        return FAULT_DESCRIPTIVE_ID_PREFIX + INTERNAL_ERROR + postfix
-    }
-
-    fun getFaultDescriptiveIdForUnexpectedException(postfix: String): String {
-        return FAULT_DESCRIPTIVE_ID_PREFIX + UNEXPECTED_EXCEPTION + postfix
+        return FAULT_DESCRIPTIVE_ID_PREFIX + RPC_INTERNAL_ERROR + postfix
     }
 
     fun getFaultDescriptiveIdForPartialOracle(postfix: String): String {
@@ -113,6 +161,31 @@ class IdMapper {
 
     fun getGQLNoErrors(method: String) = "$GQL_NO_ERRORS:$method"
 
+
+    fun getFaultDescriptiveIdForUnexpectedException(postfix: String): String {
+        return FAULT_DESCRIPTIVE_ID_PREFIX + UNEXPECTED_EXCEPTION + postfix
+    }
+
+    fun getRPCServiceError(postfix: String): String {
+        return FAULT_DESCRIPTIVE_ID_PREFIX + RPC_SERVICE_ERROR + postfix
+    }
+
+    fun getRPCException(postfix: String): String {
+        return EXCEPTION + postfix
+    }
+
+    fun getHandledRPC(postfix: String): String {
+        return RPC_HANDLED + postfix
+    }
+
+    fun getHandledRPCAndSuccess(postfix: String): String {
+        return RPC_HANDLED_SUCCESS + postfix
+    }
+
+    fun getHandledRPCButError(postfix: String): String {
+        return RPC_HANDLED_ERROR + postfix
+    }
+
     fun isFault(id: Int) : Boolean = mapping[id]?.let{ isFault(it)} ?: false
 
     fun isFault500(id: Int): Boolean = mapping[id]?.let {isFault500(it)} ?: false
@@ -122,4 +195,40 @@ class IdMapper {
     fun isGQLErrors(id : Int, withLine: Boolean) : Boolean = mapping[id]?.let { isGQLErrors(it, withLine) } == true
 
     fun isGQLNoErrors(id : Int) : Boolean = mapping[id]?.let { isGQLNoErrors(it) } == true
+
+
+    /**
+     * @return if [id] refers to an RPC call with thrown unexpected exception
+     */
+    fun isRPCInternalError(id: Int) : Boolean = mapping[id]?.let { isRPCInternalError(it) } == true
+
+    /**
+     * @return if [id] refers to an RPC call with thrown unexpected exception
+     */
+    fun isUnexpectedException(id: Int) : Boolean = mapping[id]?.let { isUnexpectedException(it) } == true
+
+    /**
+     * @return if [id] refers to an RPC call with thrown exception
+     */
+    fun isRPCException(id: Int) = mapping[id]?.let { isRPCException(it) } == true
+
+    /**
+     * @return if [id] refers to an RPC call which is handled as defined
+     */
+    fun isRPCHandled(id: Int) = mapping[id]?.let { isRPCHandled(it) } == true
+
+    /**
+     * @return if [id] refers to an RPC call which achieves a successful scenario
+     */
+    fun isRPCHandledAndSuccess(id: Int) = mapping[id]?.let { isRPCHandledAndSuccess(it) } == true
+
+    /**
+     * @return if [id] refers to an RPC call which achieves an error scenario
+     */
+    fun isRPCHandledButError(id: Int) = mapping[id]?.let { isRPCHandledButError(it) } == true
+
+    /**
+     * @return if [id] refers to an RPC call which results in a service error specified by user
+     */
+    fun isRPCServiceError(id: Int) : Boolean = mapping[id]?.let { isRPCServiceError(it) } == true
 }

@@ -14,9 +14,9 @@ enum class RPCCallResultCategory {
     UNEXPECTED_EXCEPTION,
 
     /**
-     * a successful RPC call
+     * a RPC call which is handed as defined and there is no any exception thrown
      */
-    SUCCESS,
+    HANDLED,
 
     /**
      * a customized exception thrown by an RPC call
@@ -24,12 +24,12 @@ enum class RPCCallResultCategory {
     CUSTOM_EXCEPTION,
 
     /**
-     * an exception thrown by an RPC call
+     * an exception thrown by an RPC call that is neither unexpected nor customized
      */
-    EXCEPTION,
+    OTHERWISE_EXCEPTION,
 
     /**
-     * failed to process an RPC call
+     * failed to process an RPC call, eg, time out or network problem
      */
     FAILED
 

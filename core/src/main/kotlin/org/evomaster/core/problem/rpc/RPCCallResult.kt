@@ -33,11 +33,11 @@ class RPCCallResult : ActionResult {
     }
 
     fun failedCall(): Boolean{
-        return getInvocationCode() != RPCCallResultCategory.SUCCESS.name
+        return getInvocationCode() != RPCCallResultCategory.HANDLED.name
     }
 
     fun setSuccess(){
-        addResultValue(INVOCATION_CODE, RPCCallResultCategory.SUCCESS.name)
+        addResultValue(INVOCATION_CODE, RPCCallResultCategory.HANDLED.name)
     }
 
     fun getInvocationCode(): String?{
@@ -59,7 +59,7 @@ class RPCCallResult : ActionResult {
                 RPCExceptionType.APP_INTERNAL_ERROR -> RPCCallResultCategory.INTERNAL_ERROR
                 RPCExceptionType.UNEXPECTED_EXCEPTION -> RPCCallResultCategory.UNEXPECTED_EXCEPTION
                 RPCExceptionType.CUSTOMIZED_EXCEPTION-> RPCCallResultCategory.CUSTOM_EXCEPTION
-                else -> RPCCallResultCategory.EXCEPTION
+                else -> RPCCallResultCategory.OTHERWISE_EXCEPTION
             }
 
             addResultValue(EXCEPTION_CODE, dto.type.name)
