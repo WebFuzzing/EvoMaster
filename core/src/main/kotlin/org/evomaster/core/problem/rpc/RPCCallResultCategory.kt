@@ -33,7 +33,4 @@ enum class RPCCallResultCategory {
      */
     FAILED
 
-    // business logic reward here
-
-    // might add category representing an exception due to inputs
 }

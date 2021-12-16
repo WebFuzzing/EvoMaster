@@ -93,6 +93,9 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 }
             } else{
                 actionResult.setSuccess()
+                if (response.customizedCallResultCode != null){
+                    actionResult.setCustomizedBusinessLogicCode(response.customizedCallResultCode)
+                }
             }
 
             // check response
@@ -120,30 +123,20 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             val last = additionalInfoList[i].lastExecutedStatement?:RPC_DEFAULT_FAULT_CODE
             actionResults[i].getInvocationCode()
                 ?:throw IllegalStateException("INVOCATION CODE is not assigned on the RPC call result")
-            val category = RPCCallResultCategory.valueOf(actionResults[i].getInvocationCode()!!)
-            handleAdditionalExceptionTargetDescription(fv, category, actions[i].getName(), i, last)
 
-            if (category ==RPCCallResultCategory.INTERNAL_ERROR){
-                actionResults[i].setLastStatementForInternalError(last)
-            }
+            handleAdditionalTargetsDescription(fv, actionResults[i], actions[i].getName(), i, last)
+
         }
     }
 
-    /**
-     * for additional targets handling in RPC which includes
-     * 1) successful call, successful business logic
-     * 2) successful call, failed scenario of the business logic
-     * 3) successful call, service error defined in the response (likely priority)
-     * 4) exception -- declared in the endpoint (medium reward)
-     * 5) exception -- internal error (priority, high reward)
-     * 6) exception -- unexpected (priority, high reward)
-     * 7) failure invocation -- the call could not be proceeded (no reward, might punish)
-     */
-    private fun handleAdditionalExceptionTargetDescription(fv: FitnessValue,
-                                                           category: RPCCallResultCategory,
-                                                           name: String,
-                                                           indexOfAction : Int,
-                                                           locationPotentialBug: String){
+
+    private fun handleAdditionalTargetsDescription(fv: FitnessValue,
+                                                   callResult: RPCCallResult,
+                                                   name: String,
+                                                   indexOfAction : Int,
+                                                   locationPotentialBug: String){
+
+        val category = RPCCallResultCategory.valueOf(callResult.getInvocationCode()!!)
 
         val okId = idMapper.handleLocalTarget(idMapper.getHandledRPC(name))
         val failId = idMapper.handleLocalTarget(idMapper.getRPCException(name))
@@ -153,7 +146,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 fv.updateTarget(okId, 1.0, indexOfAction)
                 fv.updateTarget(failId, 0.5, indexOfAction)
 
-                //handleBusinessLogicTarget(fv, name, indexOfAction, locationPotentialBug)
+                handleBusinessLogicTarget(fv, callResult, name, indexOfAction, locationPotentialBug)
             }
 
             RPCCallResultCategory.OTHERWISE_EXCEPTION, RPCCallResultCategory.CUSTOM_EXCEPTION ->{
@@ -173,6 +166,8 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
                 val bugId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(bugId, 1.0, indexOfAction)
+
+                callResult.setLastStatementForInternalError(locationPotentialBug)
             }
             RPCCallResultCategory.FAILED->{
                 // do nothing for the moment
@@ -181,6 +176,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
     }
 
     private fun handleBusinessLogicTarget(fv: FitnessValue,
+                                          callResult: RPCCallResult,
                                           name: String,
                                           indexOfAction : Int,
                                           locationPotentialBug: String){
@@ -188,7 +184,30 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val okId = idMapper.handleLocalTarget(idMapper.getHandledRPCAndSuccess(name))
         val failId = idMapper.handleLocalTarget(idMapper.getHandledRPCButError(name))
 
-        TODO()
+        when{
+            callResult.isSuccessfulBusinessLogicCode() ->{
+                fv.updateTarget(okId, 1.0, indexOfAction)
+                fv.updateTarget(failId, 0.5, indexOfAction)
+            }
+
+            callResult.isOtherwiseCustomizedServiceError() ->{
+                fv.updateTarget(okId, 0.1, indexOfAction)
+                fv.updateTarget(failId, 0.1, indexOfAction)
+            }
+
+            callResult.isCustomizedServiceError() -> {
+                fv.updateTarget(okId, 0.5, indexOfAction)
+                fv.updateTarget(failId, 1.0, indexOfAction)
+
+                val postfix = "$locationPotentialBug $name"
+                val descriptiveId = idMapper.getRPCServiceError(postfix)
+
+                val bugId = idMapper.handleLocalTarget(descriptiveId)
+                fv.updateTarget(bugId, 1.0, indexOfAction)
+
+                callResult.setLastStatementForInternalError(locationPotentialBug)
+            }
+        }
 
     }
 

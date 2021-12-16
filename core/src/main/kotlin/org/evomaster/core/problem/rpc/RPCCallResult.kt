@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rpc
 
 import com.google.common.annotations.VisibleForTesting
+import org.evomaster.client.java.controller.api.dto.CustomizedCallResultCode
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.search.Action
@@ -17,6 +18,10 @@ class RPCCallResult : ActionResult {
         const val INVOCATION_CODE = "INVOCATION_CODE"
         const val CUSTOM_EXP_BODY = "CUSTOM_EXP_BODY"
         const val EXCEPTION_CODE = "EXCEPTION_CODE"
+        const val CUSTOM_BUSINESS_LOGIC_CODE = "CUSTOM_BUSINESS_LOGIC_CODE"
+        const val CUSTOM_BUSINESS_LOGIC_SUCCESS = 200
+        const val CUSTOM_BUSINESS_LOGIC_SERVICE_ERROR = 500
+        const val CUSTOM_BUSINESS_LOGIC_OTHERWISE_ERROR = 400
     }
 
     constructor(stopping: Boolean = false) : super(stopping)
@@ -49,6 +54,19 @@ class RPCCallResult : ActionResult {
     fun setLastStatementForInternalError(info: String){
         addResultValue(LAST_STATEMENT_WHEN_INTERNAL_ERROR, info)
     }
+
+    fun setCustomizedBusinessLogicCode(result: CustomizedCallResultCode){
+        when(result){
+            CustomizedCallResultCode.SUCCESS -> addResultValue(CUSTOM_BUSINESS_LOGIC_CODE, CUSTOM_BUSINESS_LOGIC_SUCCESS.toString())
+            CustomizedCallResultCode.SERVICE_ERROR -> addResultValue(CUSTOM_BUSINESS_LOGIC_CODE, CUSTOM_BUSINESS_LOGIC_SERVICE_ERROR.toString())
+            CustomizedCallResultCode.OTHERWISE_ERROR -> addResultValue(CUSTOM_BUSINESS_LOGIC_CODE, CUSTOM_BUSINESS_LOGIC_OTHERWISE_ERROR.toString())
+        }
+
+    }
+
+    fun isSuccessfulBusinessLogicCode() = getResultValue(CUSTOM_BUSINESS_LOGIC_CODE) == CUSTOM_BUSINESS_LOGIC_SUCCESS.toString()
+    fun isCustomizedServiceError() = getResultValue(CUSTOM_BUSINESS_LOGIC_CODE) == CUSTOM_BUSINESS_LOGIC_SERVICE_ERROR.toString()
+    fun isOtherwiseCustomizedServiceError() = getResultValue(CUSTOM_BUSINESS_LOGIC_CODE)  == CUSTOM_BUSINESS_LOGIC_OTHERWISE_ERROR.toString()
 
     fun getLastStatementForPotentialBug() = getResultValue(LAST_STATEMENT_WHEN_INTERNAL_ERROR)
 
