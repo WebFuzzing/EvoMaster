@@ -7,6 +7,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.evomaster.client.java.controller.CustomizedResponseHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
@@ -49,7 +50,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * that is responsible to start/stop/restart the tested application,
  * ie the system under test (SUT)
  */
-public abstract class SutController implements SutHandler {
+public abstract class SutController implements SutHandler, CustomizedResponseHandler {
 
     private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
@@ -415,15 +416,21 @@ public abstract class SutController implements SutHandler {
                     throw new RuntimeException("ERROR: fail to handle exception instance to dto "+ e.getMessage());
                 }
             }else{
-                try{
-                    if (response != null){
+                if (response != null){
+                    try{
                         // successful execution
                         NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
                         resSchema.setValueBasedOnInstance(response);
                         responseDto.rpcResponse = resSchema.getDto();
+                    } catch (Exception e){
+                        throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
                     }
-                } catch (Exception e){
-                    throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
+
+                    try {
+                        responseDto.customizedCallResultCode = categorizeBasedOnResponse(response);
+                    } catch (Exception e){
+                        throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
+                    }
                 }
             }
         }
@@ -694,5 +701,10 @@ public abstract class SutController implements SutHandler {
             throw new RuntimeException("ERROR: cannot find any client with the name :"+ interfaceName);
 
         return client;
+    }
+
+    @Override
+    public CustomizedCallResultCode categorizeBasedOnResponse(Object response) {
+        return null;
     }
 }

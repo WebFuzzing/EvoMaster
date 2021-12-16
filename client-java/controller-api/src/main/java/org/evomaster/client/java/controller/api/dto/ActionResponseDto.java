@@ -26,4 +26,10 @@ public class ActionResponseDto {
     public RPCExceptionInfoDto exceptionInfoDto;
 
 
+    /**
+     * representing a result categorized by user's specification
+     */
+    public CustomizedCallResultCode customizedCallResultCode;
+
+
 }
