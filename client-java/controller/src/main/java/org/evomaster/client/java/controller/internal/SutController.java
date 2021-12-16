@@ -443,7 +443,7 @@ public abstract class SutController implements SutHandler {
         try {
             res = executeRPCEndpoint(client, endpoint);
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
-            throw new RuntimeException("RPC ACTION EXECUTION ERROR: fail to process a RPC request with "+ e.getMessage());
+            throw new RuntimeException("EM RPC REQUEST EXECUTION ERROR: fail to process a RPC request with "+ e.getMessage());
         } catch (InvocationTargetException e) {
             if (throwTargetException)
                 throw (Exception) e.getTargetException();

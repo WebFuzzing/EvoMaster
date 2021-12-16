@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
 import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionCategory;
@@ -19,11 +18,41 @@ public class RPCExceptionHandler {
 
     public static void handle(Object e, ActionResponseDto dto, EndpointSchema endpointSchema, RPCType type){
 
+        try {
+            dto.exceptionInfoDto = handleDefinedException(e, endpointSchema, type);
+            if (dto.exceptionInfoDto != null) return;
+        } catch (ClassNotFoundException ex) {
+            throw new RuntimeException("ERROR: fail to handle defined exception for "+type+" with error msg:"+ ex);
+        }
+
+        // handling defined exception for each RPC
         switch (type){
             case THRIFT: dto.exceptionInfoDto = handleThrift(e, endpointSchema); break;
+            case GENERAL: break; // do nothing
             default: throw new RuntimeException("ERROR: NOT SUPPORT exception handling for "+type);
         }
+        if (dto.exceptionInfoDto != null) return;
+
+        dto.exceptionInfoDto = handleUnexpectedException(e);
     }
+
+    private static RPCExceptionInfoDto handleUnexpectedException(Object e){
+        RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
+        dto.type = RPCExceptionType.UNEXPECTED_EXCEPTION;
+        if (e.getClass().isAssignableFrom(Exception.class)){
+            dto.exceptionName = e.getClass().getName();
+            try {
+                dto.exceptionMessage = getExceptionMessage(e);
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
+                throw new RuntimeException("ERROR: fail to get exception message info for "+e.getClass().getName());
+            }
+        }else
+            throw new RuntimeException("ERROR: the exception is not java.lang.Exception "+e.getClass().getName());
+
+        return dto;
+    }
+
+
 
     /**
      * handle exceptions from thrift
@@ -33,22 +62,15 @@ public class RPCExceptionHandler {
      * @return extracted exception dto
      */
     private static RPCExceptionInfoDto handleThrift(Object e, EndpointSchema endpointSchema)  {
-        RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
+        RPCExceptionInfoDto dto = null;
 
         try {
             if (!isRootThriftException(e)){
-                throw new RuntimeException("ERROR: exception e is not an instance of TException of Thrift, and it is "+ e.getClass().getName());
+                SimpleLogger.error("Exception e is not an instance of TException of Thrift, and it is "+ e.getClass().getName());
+                return dto;
             }
-
-            ParamDto edto = handleDefinedException(e, endpointSchema);
-            dto.exceptionDto = edto;
-
-
-            if (edto != null){
-                dto.type = RPCExceptionType.CUSTOMIZED_EXCEPTION;
-            }else{
-                handleTException(e, dto);
-            }
+            dto = new RPCExceptionInfoDto();
+            handleTException(e, dto);
 
             if (dto.type == null){
                 SimpleLogger.error("Fail to extract exception type info for an exception "+ e.getClass().getName());
@@ -62,23 +84,26 @@ public class RPCExceptionHandler {
     }
 
 
-    private static ParamDto handleDefinedException(Object e, EndpointSchema endpointSchema) throws ClassNotFoundException {
+    private static RPCExceptionInfoDto handleDefinedException(Object e, EndpointSchema endpointSchema, RPCType rpcType) throws ClassNotFoundException {
+
         for (NamedTypedValue p : endpointSchema.getExceptions()){
             String type = p.getType().getFullTypeName();
-            if (type.equals(THRIFT_EXCEPTION_ROOT)) continue;
+            // skip to handle root TException here
+            if (rpcType == RPCType.THRIFT && type.equals(THRIFT_EXCEPTION_ROOT))
+                continue;
             if (isInstanceOf(e, type)){
+                RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
                 p.setValueBasedOnInstance(e);
-                return p.getDto();
+                dto.exceptionDto = p.getDto();
+                return dto;
             }
         }
         return null;
     }
 
     private static void handleTException(Object e, RPCExceptionInfoDto dto) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
-        Method getMessage = e.getClass().getDeclaredMethod("getMessage");
-        getMessage.setAccessible(true);
-        String msg =  (String) getMessage.invoke(e);
-        dto.exceptionMessage = msg;
+
+        dto.exceptionMessage = getExceptionMessage(e);
 
         Method getType = e.getClass().getDeclaredMethod("getType");
         getType.setAccessible(true);
@@ -86,6 +111,12 @@ public class RPCExceptionHandler {
 
         dto.type = getExceptionType(extract(e), type);
 
+    }
+
+    private static String getExceptionMessage(Object e) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method getMessage = e.getClass().getDeclaredMethod("getMessage");
+        getMessage.setAccessible(true);
+        return (String) getMessage.invoke(e);
     }
 
     private static boolean isRootThriftException(Object e) throws ClassNotFoundException {

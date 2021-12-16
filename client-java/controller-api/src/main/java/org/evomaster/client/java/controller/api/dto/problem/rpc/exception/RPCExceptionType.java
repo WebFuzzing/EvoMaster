@@ -10,6 +10,18 @@ public enum RPCExceptionType {
 
     CUSTOMIZED_EXCEPTION(RPCExceptionCategory.OTHERS, new RPCType[]{RPCType.THRIFT}, -1),
 
+    /**
+     * this exception is thrown during execution, but not declared in the endpoint
+     * this case is identified as a bug,
+     * eg, runtime exception which is unchecked
+     *      https://docs.oracle.com/javase/8/docs/api/java/lang/RuntimeException.html
+     *
+     * category might be application (currently set as Others),
+     *         however, need a clear definition for each category
+     *
+     */
+    UNEXPECTED_EXCEPTION(RPCExceptionCategory.OTHERS, new RPCType[]{RPCType.GENERAL}, -1),
+
     /*
         https://javadoc.io/doc/org.apache.thrift/libthrift/latest/org/apache/thrift/TApplicationException.html
      */
