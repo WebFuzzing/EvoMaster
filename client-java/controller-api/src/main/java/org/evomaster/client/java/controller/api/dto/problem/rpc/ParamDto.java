@@ -35,12 +35,25 @@ public class ParamDto {
     public boolean isNullable = true;
 
 
+    /**
+     * a min size of the param, eg, String, List
+     */
     public Long minSize;
 
+    /**
+     * a max size of the param, eg, String, List
+     */
     public Long maxSize;
 
 
+    /**
+     * a min value of the param, eg, Numeric
+     */
     public Long minValue;
+
+    /**
+     * a max value of the param, eg, Numeric
+     */
     public Long maxValue;
 
     /**
