@@ -16,7 +16,7 @@ namespace RestApis.Tests.Crud {
 
             var controllerPort = 40100;
             if (args.Length > 0) {
-                controllerPort = Int32.Parse(args[0]);
+                controllerPort = int.Parse(args[0]);
             }
             
             var embeddedEvoMasterController = new EmbeddedEvoMasterController ();

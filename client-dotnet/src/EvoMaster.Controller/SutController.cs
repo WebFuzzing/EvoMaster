@@ -17,8 +17,8 @@ namespace EvoMaster.Controller {
     ///ie the system under test (SUT)
     ///</summary>
     public abstract class SutController : ISutHandler {
-        private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
-        private string controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
+        private int _controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
+        private string _controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
 
         //TODO: To be added
         //private final SqlHandler sqlHandler = new SqlHandler();
@@ -30,7 +30,7 @@ namespace EvoMaster.Controller {
         // private DbSchemaDto SchemaDto;
 
         //For each action in a test, keep track of the extra heuristics, if any
-        private readonly ICollection<ExtraHeuristicsDto> extras = new SynchronizedCollection<ExtraHeuristicsDto>();
+        private readonly ICollection<ExtraHeuristicsDto> _extras = new SynchronizedCollection<ExtraHeuristicsDto>();
 
         //TODO: Commented this out just to prevent warning
         private int _actionIndex = -1;
@@ -74,19 +74,19 @@ namespace EvoMaster.Controller {
         }
 
         public int GetControllerPort() {
-            return controllerPort;
+            return _controllerPort;
         }
 
         public void SetControllerPort(int controllerPort) {
-            this.controllerPort = controllerPort;
+            this._controllerPort = controllerPort;
         }
 
         public string GetControllerHost() {
-            return controllerHost;
+            return _controllerHost;
         }
 
-        public void setControllerHost(String controllerHost) {
-            this.controllerHost = controllerHost;
+        public void SetControllerHost(string controllerHost) {
+            this._controllerHost = controllerHost;
         }
 
         //TODO: Complete this method
@@ -354,7 +354,7 @@ namespace EvoMaster.Controller {
                     services.Add(ServiceDescriptor.Singleton(typeof(SutController), this));
                 })
                 .ConfigureWebHostDefaults(webBuilder => {
-                    webBuilder.UseStartup<Startup>().UseUrls($"http://*:{controllerPort}");
+                    webBuilder.UseStartup<Startup>().UseUrls($"http://*:{_controllerPort}");
                 });
 
         protected int GetEphemeralTcpPort() {

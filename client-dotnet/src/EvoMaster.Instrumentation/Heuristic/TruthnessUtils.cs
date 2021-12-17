@@ -10,7 +10,7 @@ public class TruthnessUtils {
             throw new ArgumentException("Negative value: " + v);
         }
 
-        if (!Double.IsFinite(v) || v == Double.MaxValue) {
+        if (!double.IsFinite(v) || v == double.MaxValue) {
             return 1d;
         }
 

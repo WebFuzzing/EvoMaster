@@ -158,7 +158,7 @@ namespace EvoMaster.Controller.Controllers.db {
             }
         }
 
-        private static String GetAllTableHasIdentify(DatabaseType type, String schema) {
+        private static string GetAllTableHasIdentify(DatabaseType type, string schema) {
             if (type != DatabaseType.MS_SQL_SERVER)
                 throw new InvalidOperationException("getAllTableHasIdentify only supports for MS_SQL_SERVER, not for " +
                                                     type);

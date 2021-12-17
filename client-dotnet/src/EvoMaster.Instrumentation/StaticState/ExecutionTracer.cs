@@ -117,7 +117,7 @@ namespace EvoMaster.Instrumentation.StaticState
             return TaintInputName.IsTaintInput(input) || _inputVariables.Contains(input);
         }
 
-        public static TaintType GetTaintType(String input)
+        public static TaintType GetTaintType(string input)
         {
             if (input == null)
             {

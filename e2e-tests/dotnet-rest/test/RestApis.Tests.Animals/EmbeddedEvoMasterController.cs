@@ -23,7 +23,7 @@ namespace RestApis.Tests.Animals.Controller {
             var embeddedEvoMasterController = new EmbeddedEvoMasterController();
 
             if (args.Length > 0) {
-                var controllerPort = Int32.Parse(args[0]);
+                var controllerPort = int.Parse(args[0]);
                 embeddedEvoMasterController.SetControllerPort(controllerPort);
             }
 
