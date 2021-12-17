@@ -133,7 +133,7 @@ public final class EndpointSchema {
             javaCode.addAll(param.newInstanceWithJava(indent));
         }
         String paramVars = requestParams.stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
-        String client = CodeJavaGenerator.castToType(clientTypeName, CodeJavaGenerator.getGetClientMethod(interfaceName));
+        String client = CodeJavaGenerator.castToType(clientTypeName, CodeJavaGenerator.getGetClientMethod("\""+interfaceName+"\""));
 
         CodeJavaGenerator.addCode(
                 javaCode,

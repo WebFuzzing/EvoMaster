@@ -135,7 +135,7 @@ public class CodeJavaGenerator {
      * @return code to invoke the method
      */
     public static String methodInvocation(String obj, String methodName, String params){
-        if (obj != null)
+        if (obj == null)
             return String.format("%s(%s)", methodName, params);
 
         return String.format("%s.%s(%s)", obj, methodName, params);
