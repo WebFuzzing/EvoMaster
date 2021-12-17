@@ -122,7 +122,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 //        assertEquals("722", dto.innerContent.get(6).jsonValue);
 //        assertEquals("100", dto.innerContent.get(7).jsonValue);
 
-        List<String> javacode = p1.newInstanceWithJava(true, true);
+        List<String> javacode = p1.newInstanceWithJava(0);
         assertEquals(5, javacode.size());
         assertEquals("java.util.Date arg0 = null;", javacode.get(0));
         assertEquals("{", javacode.get(1));

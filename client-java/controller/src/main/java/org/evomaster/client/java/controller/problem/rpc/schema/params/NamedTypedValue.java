@@ -124,13 +124,23 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
     /**
      * create instances with Java
+     * @param isDeclaration specifies whether it is used to declare the instance (ie, with type name).
+     * @param doesIncludeName specifies whether it is required to have the variable name
+     *                        eg, if true, var = new instance(); if yes, new instance();
+     * @param variableName specifies the name of variable
+     * @param indent specifies the indent of this block of the code
      * @return a list of string which could create instance with java
      */
     public abstract List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent);
 
 
-
-    public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName){
-        return newInstanceWithJava(isDeclaration, doesIncludeName, getName(), 0);
+    /**
+     * create instances with Java
+     *
+     * @param indent specifies the current indent of the code
+     * @return a list of string which could create instance with java
+     */
+    public List<String> newInstanceWithJava(int indent){
+        return newInstanceWithJava(true, true, getName(), indent);
     }
 }

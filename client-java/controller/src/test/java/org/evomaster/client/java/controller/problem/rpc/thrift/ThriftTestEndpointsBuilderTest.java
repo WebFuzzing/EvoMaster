@@ -93,7 +93,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().jsonValue.equals(input));
         assertEquals(RPCSupportedDataType.STRING, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        List<String> javaCode = p1.newInstanceWithJava(0);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("java.lang.String arg0 = \"foo\";"));
 
@@ -127,7 +127,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(RPCSupportedDataType.P_BOOLEAN, p1.getDto().type.type);
 
 
-        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        List<String> javaCode = p1.newInstanceWithJava(0);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("boolean arg0 = true;"));
 
@@ -160,7 +160,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().jsonValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_BYTE, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        List<String> javaCode = p1.newInstanceWithJava(0);
         System.out.println(javaCode);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("byte arg0 = 42;"));
@@ -194,7 +194,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().jsonValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_INT, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        List<String> javaCode = p1.newInstanceWithJava(0);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("int arg0 = 42;"));
 
@@ -227,7 +227,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().jsonValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_LONG, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        List<String> javaCode = p1.newInstanceWithJava(0);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("long arg0 = 42L;"));
 
@@ -260,7 +260,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().jsonValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_DOUBLE, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        List<String> javaCode = p1.newInstanceWithJava(0);
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("double arg0 = 42.42;"));
 
@@ -296,7 +296,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.getDto().jsonValue.equals("foo"));
         assertEquals(RPCSupportedDataType.BYTEBUFFER, p1.getDto().type.type);
 
-        List<String> javaCode = p1.newInstanceWithJava(true, true);
+        List<String> javaCode = p1.newInstanceWithJava(0);
         assertEquals(6, javaCode.size());
         assertEquals("java.nio.ByteBuffer arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
@@ -357,7 +357,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
             }
         }
 
-        List<String> javaCode = request.newInstanceWithJava(true, true);
+        List<String> javaCode = request.newInstanceWithJava(0);
         assertEquals(8, javaCode.size());
         assertEquals("com.thrift.example.real.thrift.test.Xtruct arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
@@ -455,7 +455,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         }
 
 
-        List<String> javaCode = request.newInstanceWithJava(true, true);
+        List<String> javaCode = request.newInstanceWithJava(0);
 
         assertEquals(14, javaCode.size());
         assertEquals("com.thrift.example.real.thrift.test.Xtruct2 arg0 = null;", javaCode.get(0));
@@ -532,7 +532,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(43, results.get(42));
         assertEquals(101, results.get(100));
 
-        List<String> javaCode = p1.newInstanceWithJava(true,true);
+        List<String> javaCode = p1.newInstanceWithJava(0);
         assertEquals(16, javaCode.size());
         assertEquals("java.util.Map<java.lang.Integer,java.lang.Integer> arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
@@ -608,7 +608,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(""+43, results.get("abc"));
         assertEquals(""+101, results.get("def"));
 
-        List<String> javaCode = p1.newInstanceWithJava(true,true);
+        List<String> javaCode = p1.newInstanceWithJava(0);
         assertEquals(16, javaCode.size());
         assertEquals("java.util.Map<java.lang.String,java.lang.String> arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
@@ -670,7 +670,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(3, dto.innerContent.size());
         assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.jsonValue))));
 
-        List<String> javaCodes = p1.newInstanceWithJava(true,true);
+        List<String> javaCodes = p1.newInstanceWithJava(0);
 
         assertEquals(10, javaCodes.size());
         assertEquals("java.util.Set<java.lang.Integer> arg0 = null;", javaCodes.get(0));
@@ -727,7 +727,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(3, dto.innerContent.size());
         assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.jsonValue))));
 
-        List<String> javaCodes = p1.newInstanceWithJava(true,true);
+        List<String> javaCodes = p1.newInstanceWithJava(0);
         javaCodes.forEach(System.out::println);
 
         assertEquals(10, javaCodes.size());
@@ -777,7 +777,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(RPCSupportedDataType.ENUM, dto.type.type);
         assertEquals(""+index, dto.jsonValue);
 
-        List<String> javaCode = p1.newInstanceWithJava(true,true);
+        List<String> javaCode = p1.newInstanceWithJava(0);
         assertEquals(1, javaCode.size());
         assertEquals("com.thrift.example.real.thrift.test.Numberz arg0 = com.thrift.example.real.thrift.test.Numberz.TWO;", javaCode.get(0));
 

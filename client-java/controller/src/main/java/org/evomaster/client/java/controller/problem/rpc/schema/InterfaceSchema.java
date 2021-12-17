@@ -120,8 +120,6 @@ public final class InterfaceSchema{
 
     public RPCInterfaceSchemaDto getDto(){
         RPCInterfaceSchemaDto dto = new RPCInterfaceSchemaDto();
-        dto.interfaceId = this.getName();
-        dto.clientInfo = this.getClientInfo();
         dto.types = objParamCollections.values().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         dto.endpoints = endpoints.stream().map(EndpointSchema::getDto).collect(Collectors.toList());
         dto.endpoints.forEach(e-> {

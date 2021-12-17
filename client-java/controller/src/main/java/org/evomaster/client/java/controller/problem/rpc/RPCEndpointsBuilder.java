@@ -71,7 +71,7 @@ public class RPCEndpointsBuilder {
             }
         }
 
-        return new EndpointSchema(method.getName(), requestParams, response, exceptions);
+        return new EndpointSchema(method.getName(), schema.getName(), schema.getClientInfo(), requestParams, response, exceptions);
     }
 
     private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type) {

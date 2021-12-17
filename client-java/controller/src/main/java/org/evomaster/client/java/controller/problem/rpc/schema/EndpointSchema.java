@@ -1,8 +1,10 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -15,6 +17,16 @@ public final class EndpointSchema {
      * name of the endpoint
      */
     private final String name;
+
+    /**
+     * name of the interface
+     */
+    private final String interfaceName;
+
+    /**
+     * name of type of the client
+     */
+    private final String clientTypeName;
 
     /**
      * request params of the endpoint
@@ -31,8 +43,10 @@ public final class EndpointSchema {
      */
     private final List<NamedTypedValue> exceptions;
 
-    public EndpointSchema(String name, List<NamedTypedValue> requestParams, NamedTypedValue response, List<NamedTypedValue> exceptions) {
+    public EndpointSchema(String name, String interfaceName, String clientTypeName, List<NamedTypedValue> requestParams, NamedTypedValue response, List<NamedTypedValue> exceptions) {
         this.name = name;
+        this.interfaceName = interfaceName;
+        this.clientTypeName = clientTypeName;
         this.requestParams = requestParams;
         this.response = response;
         this.exceptions = exceptions;
@@ -57,6 +71,8 @@ public final class EndpointSchema {
     public RPCActionDto getDto(){
         RPCActionDto dto = new RPCActionDto();
         dto.actionName = name;
+        dto.interfaceId = interfaceName;
+        dto.clientInfo = clientTypeName;
         dto.requestParams = requestParams.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         if (response != null)
             dto.responseParam = response.getDto();
@@ -82,11 +98,9 @@ public final class EndpointSchema {
      */
     public EndpointSchema copyStructure(){
         return new EndpointSchema(
-                name,
+                name, interfaceName, clientTypeName,
                 requestParams == null? null: requestParams.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
-                response == null? null: response.copyStructure(),
-                exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList())
-        );
+                response == null? null: response.copyStructure(), exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()));
     }
 
     /**
@@ -101,5 +115,34 @@ public final class EndpointSchema {
         // might be not useful
         if (dto.responseParam != null)
             response.setValueBasedOnDto(dto.responseParam);
+    }
+
+    /**
+     * process to generate java code to invoke this request
+     * @param responseVarName specifies a variable name representing a response of this endpoint
+     * @return code to send the request and set the response if exists
+     */
+    public List<String> newInvocationWithJava(String responseVarName){
+        List<String> javaCode = new ArrayList<>();
+        if (response != null){
+            javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getFullTypeName(), responseVarName, null));
+        }
+        javaCode.add("{");
+        int indent = 1;
+        for (NamedTypedValue param: getRequestParams()){
+            javaCode.addAll(param.newInstanceWithJava(indent));
+        }
+        String paramVars = requestParams.stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
+        String client = CodeJavaGenerator.castToType(clientTypeName, CodeJavaGenerator.getGetClientMethod(interfaceName));
+
+        CodeJavaGenerator.addCode(
+                javaCode,
+                CodeJavaGenerator.setInstance(response!= null,
+                        responseVarName,
+                        CodeJavaGenerator.methodInvocation(client, getName(), paramVars)),
+                indent);
+
+        javaCode.add("}");
+        return javaCode;
     }
 }
