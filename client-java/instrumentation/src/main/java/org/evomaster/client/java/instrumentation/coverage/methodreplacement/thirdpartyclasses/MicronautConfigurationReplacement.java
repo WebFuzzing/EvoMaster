@@ -7,25 +7,23 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
-// import javax.servlet.ServletInputStream;
-// import java.io.IOException;
-// import java.lang.reflect.InvocationTargetException;
-// import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
-public class JettyClassReplacement extends ThirdPartyMethodReplacementClass {
+public class MicronautConfigurationReplacement extends ThirdPartyMethodReplacementClass {
 
-    private static final JettyClassReplacement singleton = new JettyClassReplacement();
+    private static final MicronautConfigurationReplacement singleton = new MicronautConfigurationReplacement();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
-        return "io.netty.handler.codec.http.HttpVersion";
+        return "io.micronaut.http.server.netty.configuration.NettyHttpServerConfiguration";
     }
 
     @Replacement(replacingStatic = false,
-        type = ReplacementType.TRACKER,
-        id = "isKeepAliveDefault",
-        usageFilter = UsageFilter.ONLY_SUT)
-    public boolean isKeepAliveDefault() {
+            type = ReplacementType.TRACKER,
+            id = "micronautNettyServerConfiguration_class",
+            usageFilter = UsageFilter.ONLY_SUT)
+    public boolean isKeepAliveOnServerError() {
         return true;
     }
 }
