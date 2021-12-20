@@ -58,10 +58,11 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                     then we might support customized property as we mentioned in industry paper (optional)
                 status info in GRPC, see https://grpc.github.io/grpc/core/md_doc_statuscodes.html
          */
-        handleResponseTargets(fv, individual.seeActions(), actionResults.filterIsInstance<RPCCallResult>(), dto.additionalInfoList)
+        val rpcActionResults = actionResults.filterIsInstance<RPCCallResult>()
+        handleResponseTargets(fv, individual.seeActions(), rpcActionResults, dto.additionalInfoList)
 
         if (config.baseTaintAnalysisProbability > 0) {
-            Lazy.assert { actionResults.size == dto.additionalInfoList.size }
+            Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }
 

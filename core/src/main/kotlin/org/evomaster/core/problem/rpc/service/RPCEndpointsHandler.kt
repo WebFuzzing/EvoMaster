@@ -191,7 +191,7 @@ class RPCEndpointsHandler {
             throw IllegalStateException("the types of gene and its dto are mismatched, i.e., gene (${gene::class.java.simpleName}) vs. dto (${dto.type.type})")
         val valueGene = ParamUtil.getValueGene(gene)
 
-        if (!dto.jsonValue.isNullOrEmpty()){
+        if (!dto.jsonValue.isNullOrEmpty() || dto.type.example != null){
             when(valueGene){
                 is IntegerGene -> valueGene.value = dto.jsonValue.toInt()
                 is DoubleGene -> valueGene.value = dto.jsonValue.toDouble()
