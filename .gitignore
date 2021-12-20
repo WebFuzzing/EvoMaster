@@ -110,3 +110,4 @@ Migrations/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/obj/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/generated/
 /e2e-tests/spring-rpc-thrift/target/
+/e2e-tests/spring-rpc/spring-rpc-thrift/target/

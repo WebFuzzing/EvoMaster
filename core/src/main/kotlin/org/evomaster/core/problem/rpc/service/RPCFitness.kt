@@ -156,7 +156,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 fv.updateTarget(failId, 1.0, indexOfAction)
 
                 // exception type + last statement + endpoint name
-                val postfix = "${callResult.getExceptionCode()} $locationPotentialBug $name"
+                val postfix = "${callResult.getExceptionTypeName()} $locationPotentialBug $name"
                 val descriptiveId = if (category == RPCCallResultCategory.UNEXPECTED_EXCEPTION){
                     idMapper.getFaultDescriptiveIdForUnexpectedException(postfix)
                 }else

@@ -96,6 +96,7 @@ public class RPCExceptionHandler {
                 p.setValueBasedOnInstance(e);
                 dto.exceptionDto = p.getDto();
                 dto.type = RPCExceptionType.CUSTOMIZED_EXCEPTION;
+                dto.exceptionName = e.getClass().getName();
                 return dto;
             }
         }
@@ -103,7 +104,7 @@ public class RPCExceptionHandler {
     }
 
     private static void handleTException(Object e, RPCExceptionInfoDto dto) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
-
+        dto.exceptionName = e.getClass().getName();
         dto.exceptionMessage = getExceptionMessage(e);
 
         Method getType = e.getClass().getDeclaredMethod("getType");

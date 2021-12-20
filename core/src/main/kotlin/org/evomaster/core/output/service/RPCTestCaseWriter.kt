@@ -70,8 +70,12 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
 
     private fun appendAdditionalInfo(lines: Lines, result: RPCCallResult){
         // here, we report internal error and unexpected exception as potential faults
-        if (config.outputFormat.isJavaOrKotlin() && result.hasPotentialFault())
+        if (config.outputFormat.isJavaOrKotlin() && result.hasPotentialFault()){
             lines.append("// ${result.getLastStatementForPotentialBug()}")
+            if (result.isExceptionThrown())
+                lines.append(" ${result.getExceptionInfo()}")
+        }
+
     }
 
     override fun shouldFailIfException(result: ActionResult): Boolean {

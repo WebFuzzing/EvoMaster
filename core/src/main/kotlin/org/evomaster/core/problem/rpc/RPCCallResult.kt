@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting
 import org.evomaster.client.java.controller.api.dto.CustomizedCallResultCode
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 
@@ -14,10 +15,11 @@ import org.evomaster.core.search.ActionResult
 class RPCCallResult : ActionResult {
 
     companion object {
-        const val LAST_STATEMENT_WHEN_INTERNAL_ERROR = "LAST_STATEMENT_WHEN_INTERNAL_ERROR"
+        const val LAST_STATEMENT_WHEN_POTENTIAL_FAULT = "LAST_STATEMENT_WHEN_POTENTIAL_FAULT"
         const val INVOCATION_CODE = "INVOCATION_CODE"
         const val CUSTOM_EXP_BODY = "CUSTOM_EXP_BODY"
         const val EXCEPTION_CODE = "EXCEPTION_CODE"
+        const val EXCEPTION_TYPE_NAME = "EXCEPTION_TYPE_NAME"
         const val CUSTOM_BUSINESS_LOGIC_CODE = "CUSTOM_BUSINESS_LOGIC_CODE"
         const val CUSTOM_BUSINESS_LOGIC_SUCCESS = 200
         const val CUSTOM_BUSINESS_LOGIC_SERVICE_ERROR = 500
@@ -45,14 +47,19 @@ class RPCCallResult : ActionResult {
         addResultValue(INVOCATION_CODE, RPCCallResultCategory.HANDLED.name)
     }
 
-    fun getInvocationCode(): String?{
-        return getResultValue(INVOCATION_CODE)
-    }
+    fun getInvocationCode()= getResultValue(INVOCATION_CODE)
 
     fun getExceptionCode() = getResultValue(EXCEPTION_CODE)
 
+    fun getExceptionTypeName() = getResultValue(EXCEPTION_TYPE_NAME)
+
+    fun getExceptionInfo() : String{
+        Lazy.assert { getInvocationCode() != null && getExceptionCode() != null && getExceptionTypeName() != null }
+        return "${getInvocationCode()}:${getExceptionTypeName()}"
+    }
+
     fun setLastStatementForInternalError(info: String){
-        addResultValue(LAST_STATEMENT_WHEN_INTERNAL_ERROR, info)
+        addResultValue(LAST_STATEMENT_WHEN_POTENTIAL_FAULT, info)
     }
 
     fun setCustomizedBusinessLogicCode(result: CustomizedCallResultCode){
@@ -68,7 +75,7 @@ class RPCCallResult : ActionResult {
     fun isCustomizedServiceError() = getResultValue(CUSTOM_BUSINESS_LOGIC_CODE) == CUSTOM_BUSINESS_LOGIC_SERVICE_ERROR.toString()
     fun isOtherwiseCustomizedServiceError() = getResultValue(CUSTOM_BUSINESS_LOGIC_CODE)  == CUSTOM_BUSINESS_LOGIC_OTHERWISE_ERROR.toString()
 
-    fun getLastStatementForPotentialBug() = getResultValue(LAST_STATEMENT_WHEN_INTERNAL_ERROR)
+    fun getLastStatementForPotentialBug() = getResultValue(LAST_STATEMENT_WHEN_POTENTIAL_FAULT)
 
     fun setRPCException(dto: RPCExceptionInfoDto) {
 
@@ -81,6 +88,7 @@ class RPCCallResult : ActionResult {
             }
 
             addResultValue(EXCEPTION_CODE, dto.type.name)
+            addResultValue(EXCEPTION_TYPE_NAME, dto.exceptionName)
             addResultValue(INVOCATION_CODE, code.name)
 
         }
@@ -96,7 +104,8 @@ class RPCCallResult : ActionResult {
         return action is RPCCallAction
     }
 
-    fun hasPotentialFault() : Boolean = getInvocationCode() == RPCCallResultCategory.INTERNAL_ERROR.name ||
-            getInvocationCode() == RPCCallResultCategory.UNEXPECTED_EXCEPTION.name
+    fun hasPotentialFault() : Boolean = getInvocationCode() == RPCCallResultCategory.INTERNAL_ERROR.name || isExceptionThrown()
+
+    fun isExceptionThrown() : Boolean = getExceptionCode() != null
 
 }
