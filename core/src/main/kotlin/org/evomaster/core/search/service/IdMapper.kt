@@ -175,8 +175,8 @@ class IdMapper {
         return FAULT_DESCRIPTIVE_ID_PREFIX + RPC_SERVICE_ERROR + postfix
     }
 
-    fun getRPCDeclaredException(postfix: String): String {
-        return DECLARED_EXCEPTION + postfix
+    fun getFaultDescriptiveIdForRPCDeclaredException(postfix: String): String {
+        return FAULT_DESCRIPTIVE_ID_PREFIX + DECLARED_EXCEPTION + postfix
     }
 
     fun getHandledRPC(postfix: String): String {

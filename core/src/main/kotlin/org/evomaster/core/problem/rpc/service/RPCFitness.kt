@@ -139,7 +139,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val category = RPCCallResultCategory.valueOf(callResult.getInvocationCode()!!)
 
         val okId = idMapper.handleLocalTarget(idMapper.getHandledRPC(name))
-        val failId = idMapper.handleLocalTarget(idMapper.getRPCDeclaredException(name))
+        val failId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveIdForRPCDeclaredException(name))
 
         when(category){
             RPCCallResultCategory.HANDLED->{
@@ -160,7 +160,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 val descriptiveId = if (category == RPCCallResultCategory.UNEXPECTED_EXCEPTION){
                     idMapper.getFaultDescriptiveIdForUnexpectedException(postfix)
                 }else
-                    idMapper.getRPCDeclaredException(postfix)
+                    idMapper.getFaultDescriptiveIdForRPCDeclaredException(postfix)
 
                 val exceptionId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(exceptionId, 1.0, indexOfAction)
