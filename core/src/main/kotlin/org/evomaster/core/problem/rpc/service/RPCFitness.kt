@@ -139,7 +139,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val category = RPCCallResultCategory.valueOf(callResult.getInvocationCode()!!)
 
         val okId = idMapper.handleLocalTarget(idMapper.getHandledRPC(name))
-        val failId = idMapper.handleLocalTarget(idMapper.getRPCException(name))
+        val failId = idMapper.handleLocalTarget(idMapper.getRPCDeclaredException(name))
 
         when(category){
             RPCCallResultCategory.HANDLED->{
@@ -149,20 +149,32 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 handleBusinessLogicTarget(fv, callResult, name, indexOfAction, locationPotentialBug)
             }
 
-            RPCCallResultCategory.OTHERWISE_EXCEPTION, RPCCallResultCategory.CUSTOM_EXCEPTION ->{
+            RPCCallResultCategory.OTHERWISE_EXCEPTION,
+            RPCCallResultCategory.CUSTOM_EXCEPTION,
+            RPCCallResultCategory.UNEXPECTED_EXCEPTION ->{
                 fv.updateTarget(okId, 0.5, indexOfAction)
                 fv.updateTarget(failId, 1.0, indexOfAction)
+
+                // exception type + last statement + endpoint name
+                val postfix = "${callResult.getExceptionCode()} $locationPotentialBug $name"
+                val descriptiveId = if (category == RPCCallResultCategory.UNEXPECTED_EXCEPTION){
+                    idMapper.getFaultDescriptiveIdForUnexpectedException(postfix)
+                }else
+                    idMapper.getRPCDeclaredException(postfix)
+
+                val exceptionId = idMapper.handleLocalTarget(descriptiveId)
+                fv.updateTarget(exceptionId, 1.0, indexOfAction)
+
+                callResult.setLastStatementForInternalError(locationPotentialBug)
+
             }
 
-            RPCCallResultCategory.INTERNAL_ERROR, RPCCallResultCategory.UNEXPECTED_EXCEPTION->{
+            RPCCallResultCategory.INTERNAL_ERROR->{
                 fv.updateTarget(okId, 0.5, indexOfAction)
                 fv.updateTarget(failId, 1.0, indexOfAction)
 
                 val postfix = "$locationPotentialBug $name"
-                val descriptiveId = if (category == RPCCallResultCategory.INTERNAL_ERROR)
-                                        idMapper.getFaultDescriptiveIdForInternalError(postfix)
-                                    else
-                                        idMapper.getFaultDescriptiveIdForUnexpectedException(postfix)
+                val descriptiveId = idMapper.getFaultDescriptiveIdForInternalError(postfix)
 
                 val bugId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(bugId, 1.0, indexOfAction)

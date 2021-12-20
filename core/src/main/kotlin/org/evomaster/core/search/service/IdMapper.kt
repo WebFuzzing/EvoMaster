@@ -27,7 +27,7 @@ class IdMapper {
         private const val RPC_SERVICE_ERROR = "SERVICE_ERROR_"
 
         // exception for RPC
-        private const val EXCEPTION = "EXCEPTION_"
+        private const val DECLARED_EXCEPTION = "DECLARED_EXCEPTION_"
 
         // unexpected exception for RPC
         private const val UNEXPECTED_EXCEPTION = "UNEXPECTED_EXCEPTION_"
@@ -64,9 +64,14 @@ class IdMapper {
         fun isUnexpectedException(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX + UNEXPECTED_EXCEPTION)
 
         /**
+         * @return if [descriptiveId] represents an RPC call with an exception which is declared
+         */
+        fun isRPCDeclaredException(descriptiveId: String) = descriptiveId.startsWith(DECLARED_EXCEPTION)
+
+        /**
          * @return if [descriptiveId] represents an RPC call with thrown exception
          */
-        fun isRPCException(descriptiveId: String) = descriptiveId.startsWith(EXCEPTION) || isUnexpectedException(descriptiveId)
+        fun isRPCException(descriptiveId: String) = isRPCDeclaredException(descriptiveId) || isUnexpectedException(descriptiveId)
 
         /**
          * @return if [descriptiveId] represents an RPC call which is handled as defined
@@ -170,8 +175,8 @@ class IdMapper {
         return FAULT_DESCRIPTIVE_ID_PREFIX + RPC_SERVICE_ERROR + postfix
     }
 
-    fun getRPCException(postfix: String): String {
-        return EXCEPTION + postfix
+    fun getRPCDeclaredException(postfix: String): String {
+        return DECLARED_EXCEPTION + postfix
     }
 
     fun getHandledRPC(postfix: String): String {
@@ -206,6 +211,11 @@ class IdMapper {
      * @return if [id] refers to an RPC call with thrown unexpected exception
      */
     fun isUnexpectedException(id: Int) : Boolean = mapping[id]?.let { isUnexpectedException(it) } == true
+
+    /**
+     * @return if [id] refers to an RPC call with thrown exception which is declared
+     */
+    fun isRPCDeclaredException(id: Int) = mapping[id]?.let { isRPCDeclaredException(it) } == true
 
     /**
      * @return if [id] refers to an RPC call with thrown exception

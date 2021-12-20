@@ -194,6 +194,12 @@ class FitnessValue(
             .map { idMapper.getDescriptiveId(it) }
     }
 
+    fun rpcDeclaredException(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCDeclaredException(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
     fun rpcException(idMapper: IdMapper) : List<String>{
         return targets.keys
             .filter { idMapper.isRPCException(it)}
