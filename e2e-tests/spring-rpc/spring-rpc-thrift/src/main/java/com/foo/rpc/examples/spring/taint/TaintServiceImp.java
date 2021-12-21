@@ -42,6 +42,6 @@ public class TaintServiceImp implements TaintService.Iface{
         if(!TaintCheckString.check(value)){
             throw new IllegalArgumentException(":-(");
         }
-        return "thirdparty OK";
+        return "collection OK";
     }
 }

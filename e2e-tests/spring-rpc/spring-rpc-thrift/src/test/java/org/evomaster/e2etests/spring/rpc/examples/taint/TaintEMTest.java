@@ -36,10 +36,15 @@ public class TaintEMTest extends SpringRPCTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
                     assertRPCEndpointResult(solution, TaintService.Iface.class.getName()+":getInteger", RPCCallResultCategory.HANDLED.name());
+                    assertContentInResponseForEndpoint(solution, TaintService.Iface.class.getName()+":getInteger", "integer");
                     assertRPCEndpointResult(solution, TaintService.Iface.class.getName()+":getDate", RPCCallResultCategory.HANDLED.name());
+                    assertContentInResponseForEndpoint(solution, TaintService.Iface.class.getName()+":getDate", "date");
                     assertRPCEndpointResult(solution, TaintService.Iface.class.getName()+":getConstant", RPCCallResultCategory.HANDLED.name());
+                    assertContentInResponseForEndpoint(solution, TaintService.Iface.class.getName()+":getConstant", "constant OK");
                     assertRPCEndpointResult(solution, TaintService.Iface.class.getName()+":getThirdParty", RPCCallResultCategory.HANDLED.name());
+                    assertContentInResponseForEndpoint(solution, TaintService.Iface.class.getName()+":getThirdParty", "thirdparty OK");
                     assertRPCEndpointResult(solution, TaintService.Iface.class.getName()+":getCollection", RPCCallResultCategory.HANDLED.name());
+                    assertContentInResponseForEndpoint(solution, TaintService.Iface.class.getName()+":getCollection", "collection OK");
                 });
     }
 }
