@@ -55,6 +55,16 @@ public class RPCTestBase extends WsTestBase{
 
     }
 
+    public static void assertRPCEndpointResult(Solution<RPCIndividual> solution, String methodName, String result){
+        boolean ok = solution.getIndividuals().stream().anyMatch(s->
+                s.evaluatedActions().stream().anyMatch(e->{
+                    String code = ((RPCCallResult)e.getResult()).getInvocationCode();
+                    return e.getAction().getName().equals(methodName) && code!=null && code.equals(result);
+                }));
+
+        assertTrue(ok);
+    }
+
     public static void assertSizeInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, Integer min, Integer max){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
                 s.getIndividual().seeActions().stream().anyMatch(a-> {

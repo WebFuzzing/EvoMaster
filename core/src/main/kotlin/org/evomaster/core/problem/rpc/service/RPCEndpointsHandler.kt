@@ -133,7 +133,7 @@ class RPCEndpointsHandler {
             is DoubleGene -> dto.jsonValue = valueGene.value.toString()
             is FloatGene -> dto.jsonValue = valueGene.value.toString()
             is BooleanGene -> dto.jsonValue = valueGene.value.toString()
-            is StringGene -> dto.jsonValue = valueGene.value
+            is StringGene -> dto.jsonValue = valueGene.getValueAsRawString()
             is EnumGene<*> -> dto.jsonValue = valueGene.index.toString()
             is LongGene -> dto.jsonValue = valueGene.value.toString()
             is ArrayGene<*> -> {
@@ -294,12 +294,7 @@ class RPCEndpointsHandler {
         val params = mutableListOf<Param>()
 
         endpointSchema.requestParams.forEach { p->
-            val gene = handleDtoParam(p).run {
-                if (p.isNullable)
-                    OptionalGene(this.name, this)
-                else
-                    this
-            }
+            val gene = handleDtoParam(p)
             params.add(RPCParam(p.name, gene))
         }
 
@@ -354,7 +349,7 @@ class RPCEndpointsHandler {
     }
 
     private fun wrapWithOptionalGene(gene: Gene, isOptional: Boolean): Gene{
-        return if (isOptional) OptionalGene(gene.name, gene) else gene
+        return if (isOptional && gene !is OptionalGene) OptionalGene(gene.name, gene) else gene
     }
 
     private fun handleEnumParam(param: ParamDto): Gene{
