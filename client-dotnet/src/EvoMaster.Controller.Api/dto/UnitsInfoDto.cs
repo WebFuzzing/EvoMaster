@@ -11,7 +11,7 @@ namespace EvoMaster.Controller.Api {
         /**
      * Then name of all the units (eg classes) in the SUT
      */
-        public ISet<string> UnitNames = new HashSet<string>();
+        public IEnumerable<string> UnitNames = new HashSet<string>();
 
         /**
      * The total number of lines/statements/instructions in all
@@ -54,6 +54,6 @@ namespace EvoMaster.Controller.Api {
             Value -> OpenAPI object schema
             TODO should consider if also adding info on type, eg JSON vs XML
          */
-        public IDictionary<string, string> ParsedDtos { get; set; }
+        public IReadOnlyDictionary<string,string>  ParsedDtos { get; set; }
     }
 }

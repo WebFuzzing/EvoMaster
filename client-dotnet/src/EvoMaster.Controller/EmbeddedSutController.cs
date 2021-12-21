@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,9 +12,9 @@ using Action = EvoMaster.Instrumentation.Action;
 
 namespace EvoMaster.Controller {
     public abstract class EmbeddedSutController : SutController {
-        public sealed override UnitsInfoDto GetUnitsInfoDto() {
-            //TODO
-            return new UnitsInfoDto();
+        public sealed override UnitsInfoDto GetUnitsInfoDto()
+        {
+            return GetUnitsInfoDto(UnitsInfoRecorder.GetInstance());
         }
 
         public sealed override bool IsInstrumentationActivated() => false;

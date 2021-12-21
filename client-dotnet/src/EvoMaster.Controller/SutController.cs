@@ -6,6 +6,7 @@ using EvoMaster.Client.Util;
 using EvoMaster.Controller.Api;
 using EvoMaster.Controller.Problem;
 using EvoMaster.Instrumentation;
+using EvoMaster.Instrumentation.StaticState;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -342,9 +343,25 @@ namespace EvoMaster.Controller {
         public abstract UnitsInfoDto GetUnitsInfoDto();
 
         //TODO: Complete this method
-        // protected UnitsInfoDto GetUnitsInfoDto (UnitsInfoRecorder recorder) {
+        protected UnitsInfoDto GetUnitsInfoDto (UnitsInfoRecorder recorder)
+        {
+            if(recorder == null){
+                return null;
+            }
 
-        // }
+            var dto = new UnitsInfoDto
+            {
+                NumberOfBranches = recorder.GetNumberOfBranches(),
+                NumberOfLines = recorder.GetNumberOfLines(),
+                NumberOfReplacedMethodsInSut = recorder.GetNumberOfReplacedMethodsInSut(),
+                NumberOfReplacedMethodsInThirdParty = recorder.GetNumberOfReplacedMethodsInThirdParty(),
+                NumberOfTrackedMethods = recorder.GetNumberOfTrackedMethods(),
+                UnitNames = recorder.GetUnitNames(),
+                ParsedDtos = recorder.GetParsedDtos(),
+                NumberOfInstrumentedNumberComparisons = recorder.GetNumberOfInstrumentedNumberComparisons()
+            };
+            return dto;
+        }
 
         public abstract void SetKillSwitch(bool b);
         
