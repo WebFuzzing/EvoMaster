@@ -40,6 +40,21 @@ public class RPCTestBase extends WsTestBase{
     }
 
 
+    public static void assertContentInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, String content){
+        boolean ok = solution.getIndividuals().stream().anyMatch(s->
+                s.getIndividual().seeActions().stream().anyMatch(a-> {
+                    if (a.getName().equals(methodName)){
+                        Gene gene = null;
+                        if (a.getResponse() != null)
+                            gene = a.getResponse().getGene();
+                        return containContent(gene, content);
+                    }else return false;
+                }));
+
+        assertTrue(ok);
+
+    }
+
     public static void assertSizeInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, Integer min, Integer max){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
                 s.getIndividual().seeActions().stream().anyMatch(a-> {
@@ -51,6 +66,18 @@ public class RPCTestBase extends WsTestBase{
                     }));
 
         assertTrue(ok);
+    }
+
+    private static boolean containContent(Gene gene, String content){
+        if (content == null) return true;
+        if (gene == null) return false;
+
+        Gene valueGene = ParamUtil.Companion.getValueGene(gene);
+        if (valueGene.isPrintable()){
+            return valueGene.getValueAsRawString().contains(content);
+        }
+        //TODO fix other types
+        return false;
     }
 
     private static int getCollectionSize(Gene gene){
