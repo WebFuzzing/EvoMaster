@@ -21,17 +21,23 @@ import org.slf4j.LoggerFactory
 class MapGene<K, V>(
         name: String,
         val template: PairGene<K, V>,
-        // TODO, add minSize
         var maxSize: Int? = null,
+        var minSize: Int? = null,
         private var elements: MutableList<PairGene<K, V>> = mutableListOf()
 ) : CollectionGene, Gene(name, elements)
         where K : Gene, V: Gene {
 
-    constructor(name : String, key: K, value: V, maxSize: Int = MAX_SIZE): this(name, PairGene("template", key, value), maxSize)
+    constructor(name : String, key: K, value: V, maxSize: Int? = null, minSize: Int? = null): this(name, PairGene("template", key, value), maxSize, minSize)
 
     private var keyCounter = 0
 
     init {
+
+        if (minSize != null && maxSize != null && minSize!! > maxSize!!){
+            throw IllegalArgumentException(
+                "minSize (${minSize}) is greater than maxSize ($maxSize)")
+        }
+
         if (maxSize != null && elements.size > maxSize!!) {
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
@@ -51,6 +57,7 @@ class MapGene<K, V>(
         return MapGene(name,
                 template.copyContent() as PairGene<K, V>,
                 maxSize,
+                minSize,
                 elements.map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
         )
     }
@@ -81,7 +88,7 @@ class MapGene<K, V>(
 
         elements.clear()
         log.trace("Randomizing MapGene")
-        val n = randomness.nextInt(getMaxSizeOrDefault())
+        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeOrDefault())
         (0 until n).forEach {
             val gene = addRandomElement(randomness, false)
             // if the key of gene exists, the value would be replaced with the latest one
@@ -123,7 +130,7 @@ class MapGene<K, V>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.isEmpty() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
+        if(elements.size == getMinSizeOrDefault() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
             val gene = addRandomElement(randomness, false)
             elements.add(gene)
             addChild(gene)
@@ -289,4 +296,6 @@ class MapGene<K, V>(
     }
 
     fun getMaxSizeOrDefault() = maxSize?: ArrayGene.MAX_SIZE
+
+    fun getMinSizeOrDefault() = minSize?: 0
 }

@@ -26,7 +26,6 @@ class ArrayGene<T>(
          * on this template
          */
         val template: T,
-        // TODO, add minSize
         /**
          *  How max elements to have in this array. Usually arrays are unbound, till the maximum int size (ie, 2 billion
          *  elements on the JVM). But, for search reasons, too large arrays are impractical
@@ -35,6 +34,8 @@ class ArrayGene<T>(
          *  then we employ the default max size [MAX_SIZE] for handling mutation and randomizing values
          */
         var maxSize: Int? = null,
+
+        var minSize: Int? = null,
         /**
          * The actual elements in the array, based on the template. Ie, usually those elements will be clones
          * of the templated, and then mutated/randomized
@@ -49,10 +50,17 @@ class ArrayGene<T>(
             clearElements()
         }
 
+        if (minSize != null && maxSize != null && minSize!! > maxSize!!){
+            throw IllegalArgumentException(
+                "minSize (${minSize}) is greater than maxSize ($maxSize)")
+        }
+
         if (maxSize != null && elements.size > maxSize!!) {
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
+
+        // might not check min size in constructor
     }
 
     companion object{
@@ -72,6 +80,7 @@ class ArrayGene<T>(
         return ArrayGene<T>(name,
                 template.copyContent() as T,
                 maxSize,
+                minSize,
                 elements.map { e -> e.copyContent() as T }.toMutableList()
         )
     }
@@ -116,7 +125,7 @@ class ArrayGene<T>(
         //maybe not so important here to complicate code to enable forceNewValue
         clearElements()
         log.trace("Randomizing ArrayGene")
-        val n = randomness.nextInt(getMaxSizeOrDefault())
+        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeOrDefault())
         (0 until n).forEach {
             val gene = template.copy() as T
 //            gene.parent = this
@@ -155,9 +164,8 @@ class ArrayGene<T>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.isEmpty() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
+        if(elements.size == getMinSizeOrDefault() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
             val gene = template.copy() as T
-//            gene.parent = this
             gene.randomize(randomness, false)
             elements.add(gene)
             addChild(gene)
@@ -264,4 +272,6 @@ class ArrayGene<T>(
     }
 
     fun getMaxSizeOrDefault() = maxSize?: MAX_SIZE
+
+    fun getMinSizeOrDefault() = minSize?: 0
 }

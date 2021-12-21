@@ -361,7 +361,7 @@ class RPCEndpointsHandler {
         if (param.type.fixedItems.isNullOrEmpty()){
             LoggingUtil.uniqueWarn(log, "Enum with name (${param.type.fullTypeName}) has empty items")
             // TODO check not sure
-            return MapGene(param.type.fullTypeName, PairGene.createStringPairGene(StringGene( "NO_ITEM")))
+            return MapGene(param.type.fullTypeName, PairGene.createStringPairGene(StringGene( "NO_ITEM")), maxSize = 0)
         }
         return EnumGene(param.name, param.type.fixedItems.toList())
 
@@ -373,11 +373,7 @@ class RPCEndpointsHandler {
         val keyTemplate = handleDtoParam(pair.innerContent[0])
         val valueTemplate = handleDtoParam(pair.innerContent[1])
 
-        return MapGene(param.name, keyTemplate, valueTemplate).apply {
-            if (param.maxSize != null)
-                maxSize = param.maxSize.toInt()
-            //TODO handle min size latter
-        }
+        return MapGene(param.name, keyTemplate, valueTemplate, maxSize = param.maxSize?.toInt(), minSize = param.minSize?.toInt())
     }
 
     private fun handleCollectionParam(param: ParamDto) : Gene{
@@ -386,17 +382,14 @@ class RPCEndpointsHandler {
             else -> throw IllegalStateException("do not support the collection type: "+ param.type.type)
         }
         val template = handleDtoParam(templateParam)
-        return ArrayGene(param.name, template).apply {
-            if (param.maxSize != null)
-                maxSize = param.maxSize.toInt()
-            //TODO handle min size latter
-        }
+        return ArrayGene(param.name, template, maxSize = param.maxSize?.toInt(), minSize = param.minSize?.toInt())
     }
 
     private fun handleObjectType(type: ParamDto): Gene{
         val typeName = type.type.fullTypeName
         if (type.innerContent.isEmpty()){
             LoggingUtil.uniqueWarn(log, "Object with name (${type.type.fullTypeName}) has empty fields")
+            // shall we set maxSize is 0 here?
             return MapGene(typeName, PairGene.createStringPairGene(StringGene( "field"), isFixedFirst = true))
         }
 
