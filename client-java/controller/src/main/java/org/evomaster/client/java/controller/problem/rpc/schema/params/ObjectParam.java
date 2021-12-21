@@ -51,15 +51,10 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
-        if (getType() instanceof CycleObjectType){
-            dto.type.type = RPCSupportedDataType.CUSTOM_CYCLE_OBJECT;
-        }else{
-            dto.type.type = RPCSupportedDataType.CUSTOM_OBJECT;
-        }
 
         if (getValue() != null){
             dto.innerContent = getValue().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
-            dto.jsonValue = "{}";
+            dto.jsonValue = NOT_NULL_MARK_OBJ_DATE;
         } else
             dto.innerContent = getType().getFields().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;

@@ -33,9 +33,10 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
-        if (getValue() != null)
+        if (getValue() != null){
             dto.innerContent = getValue().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
-        else
+            dto.jsonValue = NOT_NULL_MARK_OBJ_DATE;
+        } else
             dto.innerContent = getType().getDateFields().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;
     }

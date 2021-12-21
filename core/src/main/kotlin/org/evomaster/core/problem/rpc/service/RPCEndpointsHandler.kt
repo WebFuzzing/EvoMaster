@@ -258,11 +258,10 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT,
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG,
             RPCSupportedDataType.ENUM,
-            RPCSupportedDataType.CUSTOM_OBJECT -> dto.jsonValue == null
+            RPCSupportedDataType.UTIL_DATE, RPCSupportedDataType.CUSTOM_OBJECT -> dto.jsonValue == null
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST,
             RPCSupportedDataType.MAP,
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT,
-            RPCSupportedDataType.UTIL_DATE,
             RPCSupportedDataType.PAIR -> dto.innerContent == null
         }
     }
@@ -285,7 +284,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> valueGene is ArrayGene<*>
             RPCSupportedDataType.MAP -> valueGene is MapGene<*, *>
             RPCSupportedDataType.CUSTOM_OBJECT -> valueGene is ObjectGene || valueGene is MapGene<*,*>
-            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> TODO()
+            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene
             RPCSupportedDataType.UTIL_DATE -> valueGene is DateTimeGene
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
         }

@@ -10,6 +10,8 @@ import java.util.List;
  */
 public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
+    public final static String NOT_NULL_MARK_OBJ_DATE = "{}";
+
     /**
      * name of the instance, eg param name
      */
