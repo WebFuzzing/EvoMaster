@@ -22,7 +22,7 @@ class MapGene<K, V>(
         name: String,
         val template: PairGene<K, V>,
         // TODO, add minSize
-        var maxSize: Int = MAX_SIZE,
+        var maxSize: Int? = null,
         private var elements: MutableList<PairGene<K, V>> = mutableListOf()
 ) : CollectionGene, Gene(name, elements)
         where K : Gene, V: Gene {
@@ -32,7 +32,7 @@ class MapGene<K, V>(
     private var keyCounter = 0
 
     init {
-        if (elements.size > maxSize) {
+        if (maxSize != null && elements.size > maxSize!!) {
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
@@ -81,7 +81,7 @@ class MapGene<K, V>(
 
         elements.clear()
         log.trace("Randomizing MapGene")
-        val n = randomness.nextInt(maxSize)
+        val n = randomness.nextInt(getMaxSizeOrDefault())
         (0 until n).forEach {
             val gene = addRandomElement(randomness, false)
             // if the key of gene exists, the value would be replaced with the latest one
@@ -92,7 +92,7 @@ class MapGene<K, V>(
 
     override fun isMutable(): Boolean {
         //it wouldn't make much sense to have 0, but let's just be safe here
-        return maxSize > 0
+        return getMaxSizeOrDefault() > 0
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -100,7 +100,7 @@ class MapGene<K, V>(
             throw IllegalStateException("Cannot mutate a immutable array")
         }
         val mutable = elements.filter { it.isMutable() }
-        if ( mutable.isEmpty() || mutable.size > maxSize){
+        if ( mutable.isEmpty() || mutable.size > getMaxSizeOrDefault()){
             return listOf()
         }
 
@@ -123,7 +123,7 @@ class MapGene<K, V>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
+        if(elements.isEmpty() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
             val gene = addRandomElement(randomness, false)
             elements.add(gene)
             addChild(gene)
@@ -287,4 +287,6 @@ class MapGene<K, V>(
     override fun isEmpty(): Boolean {
         return elements.isEmpty()
     }
+
+    fun getMaxSizeOrDefault() = maxSize?: ArrayGene.MAX_SIZE
 }
