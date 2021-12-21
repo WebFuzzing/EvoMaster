@@ -9,9 +9,11 @@ import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory
 import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.gene.CollectionGene
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -97,14 +99,25 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 if (response.customizedCallResultCode != null){
                     actionResult.setCustomizedBusinessLogicCode(response.customizedCallResultCode)
                 }
-            }
 
-            // check response
-            if (response.rpcResponse !=null){
-                Lazy.assert { action.responseTemplate != null }
-                val responseParam = action.responseTemplate!!.copyContent()
-                rpcHandler.setGeneBasedOnParamDto(responseParam.gene, response.rpcResponse)
-                action.response = responseParam
+                // check response
+                if (response.rpcResponse !=null){
+                    Lazy.assert { action.responseTemplate != null }
+                    val responseParam = action.responseTemplate!!.copyContent()
+                    rpcHandler.setGeneBasedOnParamDto(responseParam.gene, response.rpcResponse)
+                    action.response = responseParam
+
+                    //extract response type
+                    actionResult.setHandledResponse(false)
+                    val valueGene = ParamUtil.getValueGene(responseParam.gene)
+                    if (valueGene is CollectionGene){
+                        actionResult.setHandledCollectionResponse(valueGene.isEmpty())
+                    }
+                } else {
+                    actionResult.setHandledResponse(true)
+                }
+
+
             }
         }else{
             actionResult.setFailedCall()
@@ -148,6 +161,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 fv.updateTarget(failId, 0.5, indexOfAction)
 
                 handleBusinessLogicTarget(fv, callResult, name, indexOfAction, locationPotentialBug)
+                handleHandledResponse(fv, callResult, name, indexOfAction)
             }
 
             RPCCallResultCategory.OTHERWISE_EXCEPTION,
@@ -188,6 +202,38 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         }
     }
 
+    private fun handleHandledResponse(fv: FitnessValue,
+                               callResult: RPCCallResult,
+                               name: String,
+                               indexOfAction : Int){
+        if (!callResult.hasResponse()) return;
+
+        val resNull = idMapper.handleLocalTarget("RESPONSE_NULL:$name")
+        val resNotNull = idMapper.handleLocalTarget("RESPONSE_NOTNULL:$name")
+
+        if (callResult.isNotNullHandledResponse()){
+            fv.updateTarget(resNull, 0.5, indexOfAction)
+            fv.updateTarget(resNotNull, 1.0, indexOfAction)
+
+            if (callResult.hasCollectionResponse()){
+                val resEmpty = idMapper.handleLocalTarget("RESPONSE_COLLECTION_EMPTY:$name")
+                val resNotEmpty = idMapper.handleLocalTarget("RESPONSE_COLLECTION_NOTEMPTY:$name")
+
+                if (callResult.isNotEmptyHandledResponse()){
+                    fv.updateTarget(resEmpty, 0.5, indexOfAction)
+                    fv.updateTarget(resNotEmpty, 1.0, indexOfAction)
+                } else{
+                    fv.updateTarget(resEmpty, 1.0, indexOfAction)
+                    fv.updateTarget(resNotEmpty, 0.5, indexOfAction)
+                }
+            }
+
+        } else{
+            fv.updateTarget(resNull, 1.0, indexOfAction)
+            fv.updateTarget(resNotNull, 0.5, indexOfAction)
+        }
+    }
+
     private fun handleBusinessLogicTarget(fv: FitnessValue,
                                           callResult: RPCCallResult,
                                           name: String,
@@ -221,7 +267,5 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 callResult.setLastStatementForInternalError(locationPotentialBug)
             }
         }
-
     }
-
 }

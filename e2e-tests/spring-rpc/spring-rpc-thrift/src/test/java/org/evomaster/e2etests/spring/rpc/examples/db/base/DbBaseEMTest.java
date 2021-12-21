@@ -2,8 +2,6 @@ package org.evomaster.e2etests.spring.rpc.examples.db.base;
 
 import com.foo.rpc.examples.spring.db.base.DbBaseController;
 import com.foo.rpc.examples.spring.db.base.DbBaseService;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rpc.RPCIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.rpc.examples.SpringRPCTestBase;
@@ -33,7 +31,7 @@ public class DbBaseEMTest extends SpringRPCTestBase {
                     Solution<RPCIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
-                    //assertSizeInResponseForEndpoint(solution, DbBaseService.Iface.class.getName()+":getByName", 1, null);
+                    assertSizeInResponseForEndpoint(solution, DbBaseService.Iface.class.getName()+":getByName", 1, null);
                 });
     }
 }

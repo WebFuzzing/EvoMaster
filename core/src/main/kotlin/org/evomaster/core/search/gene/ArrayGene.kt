@@ -54,7 +54,8 @@ class ArrayGene<T>(
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(ArrayGene::class.java)
-        const val MAX_SIZE = 5
+        const val MAX_SIZE = 15
+        const val MAX_SIZE_ADD = 5
     }
 
 
@@ -113,7 +114,7 @@ class ArrayGene<T>(
         //maybe not so important here to complicate code to enable forceNewValue
         clearElements()
         log.trace("Randomizing ArrayGene")
-        val n = randomness.nextInt(maxSize)
+        val n = randomness.nextInt(MAX_SIZE_ADD)
         (0 until n).forEach {
             val gene = template.copy() as T
 //            gene.parent = this
@@ -255,4 +256,8 @@ class ArrayGene<T>(
     }
 
     fun getAllElements() = elements
+
+    override fun isEmpty(): Boolean {
+        return elements.isEmpty()
+    }
 }

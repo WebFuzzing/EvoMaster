@@ -43,7 +43,10 @@ public class RPCTestBase extends WsTestBase{
     public static void assertSizeInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, Integer min, Integer max){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
                 s.getIndividual().seeActions().stream().anyMatch(a-> {
-                    int size = getCollectionSize( a.getResponse().getGene());
+                    int size = -1;
+                    if (a.getResponse()!=null){
+                        size = getCollectionSize( a.getResponse().getGene());
+                    }
                     return a.getName().equals(methodName) && (min == null || size >= min) && (max == null ||  size <= max);
                     }));
 

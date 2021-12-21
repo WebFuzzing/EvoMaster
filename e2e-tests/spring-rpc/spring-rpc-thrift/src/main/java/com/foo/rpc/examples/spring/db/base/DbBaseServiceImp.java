@@ -48,7 +48,7 @@ public class DbBaseServiceImp implements DbBaseService.Iface{
 
     @Override
     public List<DbBaseDto> getByName(String name) throws TException {
-        if (name == null) return null;
+
         List<DbBaseEntity> entities = repository.findByName(name);
         if (entities.isEmpty()) {
             return null;

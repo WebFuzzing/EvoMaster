@@ -24,6 +24,12 @@ class RPCCallResult : ActionResult {
         const val CUSTOM_BUSINESS_LOGIC_SUCCESS = 200
         const val CUSTOM_BUSINESS_LOGIC_SERVICE_ERROR = 500
         const val CUSTOM_BUSINESS_LOGIC_OTHERWISE_ERROR = 400
+        const val HANDLED_RESULTS = "HANDLED_RESULTS"
+        const val HANDLED_RESULTS_NOT_NULL = "NOT_NULL"
+        const val HANDLED_RESULTS_NULL = "NULL"
+        const val HANDLED_COLLECTION_RESULTS = "HANDLED_COLLECTION_RESULTS"
+        const val HANDLED_COLLECTION_RESULTS_ISEMPTY = "IS_EMPTY"
+        const val HANDLED_COLLECTION_RESULTS_NOTEMPTY = "NOT_EMPTY"
     }
 
     constructor(stopping: Boolean = false) : super(stopping)
@@ -34,6 +40,20 @@ class RPCCallResult : ActionResult {
     override fun copy(): ActionResult {
         return RPCCallResult(this)
     }
+
+    fun setHandledResponse(isNull : Boolean){
+        addResultValue(HANDLED_RESULTS, if (isNull) HANDLED_RESULTS_NULL else HANDLED_RESULTS_NOT_NULL)
+    }
+
+    fun setHandledCollectionResponse(isEmpty: Boolean){
+        addResultValue(HANDLED_COLLECTION_RESULTS, if (isEmpty) HANDLED_COLLECTION_RESULTS_ISEMPTY else HANDLED_COLLECTION_RESULTS_NOTEMPTY)
+    }
+
+    fun hasResponse() = getResultValue(HANDLED_RESULTS) != null
+    fun hasCollectionResponse() = getResultValue(HANDLED_COLLECTION_RESULTS) != null
+
+    fun isNotNullHandledResponse() = getResultValue(HANDLED_RESULTS) == HANDLED_RESULTS_NOT_NULL
+    fun isNotEmptyHandledResponse() = getResultValue(HANDLED_COLLECTION_RESULTS) == HANDLED_COLLECTION_RESULTS_NOTEMPTY
 
     fun setFailedCall(){
         addResultValue(INVOCATION_CODE, RPCCallResultCategory.FAILED.name)

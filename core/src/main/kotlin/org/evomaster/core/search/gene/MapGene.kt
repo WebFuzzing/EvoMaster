@@ -283,4 +283,8 @@ class MapGene<K, V>(
 
         return gene
     }
+
+    override fun isEmpty(): Boolean {
+        return elements.isEmpty()
+    }
 }

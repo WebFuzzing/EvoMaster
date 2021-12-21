@@ -50,6 +50,13 @@ class RPCCallAction(
 
     override fun copyContent(): RPCCallAction {
         val p = parameters.asSequence().map(Param::copyContent).toMutableList()
-        return RPCCallAction(id, p, responseTemplate?.copyContent(), responseTemplate?.copyContent())
+        return RPCCallAction(id, p, responseTemplate?.copyContent(), response?.copyContent())
+    }
+
+    /**
+     * reset response info
+     */
+    fun resetResponse() {
+        response = null
     }
 }
