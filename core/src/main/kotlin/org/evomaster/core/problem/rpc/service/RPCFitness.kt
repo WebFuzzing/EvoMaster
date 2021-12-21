@@ -160,8 +160,10 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 fv.updateTarget(okId, 1.0, indexOfAction)
                 fv.updateTarget(failId, 0.5, indexOfAction)
 
-                handleBusinessLogicTarget(fv, callResult, name, indexOfAction, locationPotentialBug)
-                handleHandledResponse(fv, callResult, name, indexOfAction)
+                if (config.enableRPCCustomizedResponseTargets)
+                    handleBusinessLogicTarget(fv, callResult, name, indexOfAction, locationPotentialBug)
+                if (config.enableRPCExtraResponseTargets)
+                    handleHandledResponse(fv, callResult, name, indexOfAction)
             }
 
             RPCCallResultCategory.OTHERWISE_EXCEPTION,

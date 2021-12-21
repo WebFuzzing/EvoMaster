@@ -1538,6 +1538,14 @@ class EMConfig {
     @Cfg("Specify a path to save all executed sql commands to a file (default is 'sql.txt')")
     var saveExecutedSQLToFile : String = "sql.txt"
 
+    @Experimental
+    @Cfg("Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null")
+    var enableRPCExtraResponseTargets = false
+
+    @Experimental
+    @Cfg("Whether to enable customized responses indicating business logic")
+    var enableRPCCustomizedResponseTargets = false
+
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
