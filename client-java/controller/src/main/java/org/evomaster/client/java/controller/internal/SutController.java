@@ -434,8 +434,6 @@ public abstract class SutController implements SutHandler, CustomizedResponseHan
                 }
             }
         }
-
-
     }
 
     private Object executeRPCEndpoint(RPCActionDto dto, boolean throwTargetException) throws Exception {

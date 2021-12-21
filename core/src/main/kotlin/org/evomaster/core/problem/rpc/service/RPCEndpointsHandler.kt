@@ -191,7 +191,7 @@ class RPCEndpointsHandler {
             throw IllegalStateException("the types of gene and its dto are mismatched, i.e., gene (${gene::class.java.simpleName}) vs. dto (${dto.type.type})")
         val valueGene = ParamUtil.getValueGene(gene)
 
-        if (!dto.jsonValue.isNullOrEmpty() || dto.type.example != null || (dto.innerContent?.isNotEmpty() == true)){
+        if (!isNullDto(dto)){
             when(valueGene){
                 is IntegerGene -> valueGene.value = dto.jsonValue.toInt()
                 is DoubleGene -> valueGene.value = dto.jsonValue.toDouble()
@@ -244,6 +244,26 @@ class RPCEndpointsHandler {
                 gene.isActive = false
             else
                 log.warn("could not retrieve value of ${dto.name?:"untitled"}")
+        }
+    }
+
+    private fun isNullDto(dto: ParamDto) : Boolean{
+        return when(dto.type.type){
+            RPCSupportedDataType.P_INT, RPCSupportedDataType.INT,
+            RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT,
+            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE,
+            RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN,
+            RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR, RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER,
+            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE,
+            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT,
+            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG,
+            RPCSupportedDataType.ENUM,
+            RPCSupportedDataType.CUSTOM_OBJECT -> dto.jsonValue == null
+            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST,
+            RPCSupportedDataType.MAP,
+            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT,
+            RPCSupportedDataType.UTIL_DATE,
+            RPCSupportedDataType.PAIR -> dto.innerContent == null
         }
     }
 
