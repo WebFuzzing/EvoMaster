@@ -104,6 +104,10 @@ class RPCEndpointsHandler {
             }
         }
 
+        if (rpcAction.requestParams.any { s-> s.innerContent?.any { f-> f.jsonValue == null } == true }){
+            println()
+        }
+
         return rpcAction
     }
 
@@ -123,8 +127,12 @@ class RPCEndpointsHandler {
     }
 
     private fun transformGeneToParamDto(gene: Gene, dto: ParamDto){
-        // skip null value
+
         if (gene is OptionalGene && !gene.isActive){
+            // set null value
+            if (gene.gene is ObjectGene || gene.gene is DateTimeGene){
+                dto.innerContent = null
+            }
             return
         }
 

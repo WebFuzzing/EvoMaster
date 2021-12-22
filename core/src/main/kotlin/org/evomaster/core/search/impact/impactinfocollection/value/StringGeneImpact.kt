@@ -129,7 +129,7 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
                 hierarchySpecializationImpactInfo = hierarchySpecializationImpactInfo!!.next(added.toMutableList())
             }else if (previous != null && current.specializationGenes.size < (previous as StringGene).specializationGenes.size){
                 log.info("some specializations of StringGene are removed {},{}", current.specializationGenes.size, previous.specializationGenes.size)
-            }else{
+            }else if(previous == null){
                 log.info("the previous gene is null")
                 if (current.specializationGenes.size != getSpecializationImpacts().size){
                     log.warn("invalid initialization of specializationGenes of string gene")

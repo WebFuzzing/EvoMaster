@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rpc
 import com.google.common.annotations.VisibleForTesting
 import org.evomaster.client.java.controller.api.dto.CustomizedCallResultCode
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfoDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionCategory
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
 import org.evomaster.core.search.Action
@@ -104,12 +105,22 @@ class RPCCallResult : ActionResult {
                 RPCExceptionType.APP_INTERNAL_ERROR -> RPCCallResultCategory.INTERNAL_ERROR
                 RPCExceptionType.UNEXPECTED_EXCEPTION -> RPCCallResultCategory.UNEXPECTED_EXCEPTION
                 RPCExceptionType.CUSTOMIZED_EXCEPTION-> RPCCallResultCategory.CUSTOM_EXCEPTION
-                else -> RPCCallResultCategory.OTHERWISE_EXCEPTION
+                else -> {
+                    when(dto.type.category){
+                        RPCExceptionCategory.PROTOCOL-> RPCCallResultCategory.PROTOCOL_ERROR
+                        RPCExceptionCategory.TRANSPORT-> RPCCallResultCategory.TRANSPORT_ERROR
+                        else-> RPCCallResultCategory.OTHERWISE_EXCEPTION
+                    }
+                }
             }
 
             addResultValue(EXCEPTION_CODE, dto.type.name)
             addResultValue(EXCEPTION_TYPE_NAME, dto.exceptionName)
             addResultValue(INVOCATION_CODE, code.name)
+
+            if (dto.exceptionMessage != null){
+                setErrorMessage(dto.exceptionMessage)
+            }
 
         }
     }

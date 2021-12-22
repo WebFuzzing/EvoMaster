@@ -165,15 +165,25 @@ public class RPCEndpointsBuilder {
 
                 if (cycleSize == 1){
                     List<NamedTypedValue> fields = new ArrayList<>();
+                    Field thrift_metamap = null;
                     for(Field f: clazz.getDeclaredFields()){
                         if (doSkipReflection(f.getName()) || doSkipField(f, rpcType))
                             continue;
+                        if (rpcType == RPCType.THRIFT && isMetaMap(f)){
+                            thrift_metamap = f;
+                            continue;
+                        }
                         NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth);
                         for (Annotation annotation : f.getAnnotations()){
                             handleConstraint(field, annotation);
                         }
                         fields.add(field);
                     }
+
+                    if (thrift_metamap!=null){
+                        handleMetaMap(thrift_metamap, fields);
+                    }
+
                     ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz);
                     otype.depth = getDepthLevel(clazz, depth);
                     ObjectParam oparam = new ObjectParam(name, otype);
@@ -232,7 +242,7 @@ public class RPCEndpointsBuilder {
     private static boolean doSkipField(Field field, RPCType type){
         switch (type){
             case THRIFT: {
-                return THRIFT_SKIP.contains(field.getType().getName()) || isMetaMap(field) || doSkipFieldByName(field.getName(), type);
+                return THRIFT_SKIP.contains(field.getType().getName()) || doSkipFieldByName(field.getName(), type);
             }
             default: return false;
         }
@@ -256,6 +266,41 @@ public class RPCEndpointsBuilder {
 
         return valueType.getTypeName().equals("org.apache.thrift.meta_data.FieldMetaData");
 
+    }
+
+    private static void handleMetaMap(Field metaMap_field, List<NamedTypedValue> fields){
+        Object metaMap = null;
+        try {
+            metaMap = metaMap_field.get(null);
+
+            if (metaMap instanceof Map){
+                for (Object f : ((Map)metaMap).values()){
+                    Field fname = f.getClass().getDeclaredField("fieldName");
+                    fname.setAccessible(true);
+                    String name = (String) fname.get(f);
+                    NamedTypedValue field = findFieldByName(name, fields);
+                    if (field!=null){
+                        Field frequiredType = f.getClass().getDeclaredField("requirementType");
+                        frequiredType.setAccessible(true);
+                        byte required = (byte)frequiredType.get(f);
+                        if (required == 1)
+                            field.setNullable(false);
+                        // TODO for handling default
+                    }else {
+                        SimpleLogger.error("Error: fail to find field in list but exist in metaMap, and the field name is "+ name);
+                    }
+                }
+            }
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            SimpleLogger.error("Error: fail to set isNull based on metaMap of Thrift struct "+e.getMessage());
+        }
+    }
+
+    private static NamedTypedValue findFieldByName(String name, List<NamedTypedValue> fields){
+        for (NamedTypedValue f: fields){
+            if (f.getName().equals(name)) return f;
+        }
+        return null;
     }
 
     private static int getDepthLevel(Class clazz, List<String> depth){

@@ -165,7 +165,11 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 if (config.enableRPCExtraResponseTargets)
                     handleHandledResponse(fv, callResult, name, indexOfAction)
             }
-
+            // low reward for protocol error
+            RPCCallResultCategory.PROTOCOL_ERROR->{
+                fv.updateTarget(okId, 0.1, indexOfAction)
+                fv.updateTarget(failId, 0.1, indexOfAction)
+            }
             RPCCallResultCategory.OTHERWISE_EXCEPTION,
             RPCCallResultCategory.CUSTOM_EXCEPTION,
             RPCCallResultCategory.UNEXPECTED_EXCEPTION ->{
@@ -198,8 +202,8 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
                 callResult.setLastStatementForInternalError(locationPotentialBug)
             }
-            RPCCallResultCategory.FAILED->{
-                // do nothing for the moment
+            RPCCallResultCategory.FAILED, RPCCallResultCategory.TRANSPORT_ERROR ->{
+                // no reward for failed and transport error
             }
         }
     }

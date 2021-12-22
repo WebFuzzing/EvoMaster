@@ -8,6 +8,16 @@ enum class RPCCallResultCategory {
     INTERNAL_ERROR,
 
     /**
+     * protocol error, eg, due to invalid inputs
+     */
+    PROTOCOL_ERROR,
+
+    /**
+     * transport error, eg, time out
+     */
+    TRANSPORT_ERROR,
+
+    /**
      * unexpected exception
      * eg, runtime exception
      */
@@ -29,7 +39,7 @@ enum class RPCCallResultCategory {
     OTHERWISE_EXCEPTION,
 
     /**
-     * failed to process an RPC call, eg, time out or network problem
+     * failed to process an RPC call
      */
     FAILED
 

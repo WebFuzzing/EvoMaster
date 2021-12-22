@@ -41,11 +41,7 @@ public class RPCExceptionHandler {
         dto.type = RPCExceptionType.UNEXPECTED_EXCEPTION;
         if (e.getClass().isAssignableFrom(Exception.class)){
             dto.exceptionName = e.getClass().getName();
-            try {
-                dto.exceptionMessage = getExceptionMessage(e);
-            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
-                throw new RuntimeException("ERROR: fail to get exception message info for "+e.getClass().getName());
-            }
+            dto.exceptionMessage = getExceptionMessage(e);
         }else
             throw new RuntimeException("ERROR: the exception is not java.lang.Exception "+e.getClass().getName());
 
@@ -115,10 +111,16 @@ public class RPCExceptionHandler {
 
     }
 
-    private static String getExceptionMessage(Object e) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method getMessage = e.getClass().getDeclaredMethod("getMessage");
-        getMessage.setAccessible(true);
-        return (String) getMessage.invoke(e);
+    private static String getExceptionMessage(Object e)  {
+        Method getMessage = null;
+        try {
+            getMessage = e.getClass().getMethod("getMessage");
+            getMessage.setAccessible(true);
+            return (String) getMessage.invoke(e);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
+            SimpleLogger.error("Error: fail to get message of the exception with "+ex.getMessage());
+            return null;
+        }
     }
 
     private static boolean isRootThriftException(Object e) throws ClassNotFoundException {
