@@ -301,7 +301,7 @@ class RPCEndpointsHandler {
         var response: RPCParam? = null
         // response would be used for assertion generation
         if (endpointSchema.responseParam != null){
-            val gene = OptionalGene(endpointSchema.responseParam.name, handleDtoParam(endpointSchema.responseParam))
+            val gene = handleDtoParam(endpointSchema.responseParam)
             response = RPCParam(endpointSchema.responseParam.name, gene)
         }
         /*

@@ -41,7 +41,23 @@ public class RPCTestBase extends WsTestBase{
 
 
     public static void assertContentInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, String content){
-        boolean ok = solution.getIndividuals().stream().anyMatch(s->
+        boolean ok = containsContent(solution, methodName, content);
+        assertTrue(ok);
+
+    }
+
+    public static void assertAnyContentInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, List<String> contents){
+        boolean ok = contents.stream().anyMatch(content->containsContent(solution, methodName, content));
+        assertTrue(ok);
+    }
+
+    public static void assertAllContentInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, List<String> contents){
+        boolean ok = contents.stream().allMatch(content->containsContent(solution, methodName, content));
+        assertTrue(ok);
+    }
+
+    public static boolean containsContent(Solution<RPCIndividual> solution, String methodName, String content){
+        return solution.getIndividuals().stream().anyMatch(s->
                 s.getIndividual().seeActions().stream().anyMatch(a-> {
                     if (a.getName().equals(methodName)){
                         Gene gene = null;
@@ -50,9 +66,6 @@ public class RPCTestBase extends WsTestBase{
                         return containContent(gene, content);
                     }else return false;
                 }));
-
-        assertTrue(ok);
-
     }
 
     public static void assertRPCEndpointResult(Solution<RPCIndividual> solution, String methodName, String result){

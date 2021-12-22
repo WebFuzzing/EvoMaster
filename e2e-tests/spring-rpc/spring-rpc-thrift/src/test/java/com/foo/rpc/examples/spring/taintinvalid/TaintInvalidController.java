@@ -1,4 +1,4 @@
-package com.foo.rpc.examples.spring.taintignorecase;
+package com.foo.rpc.examples.spring.taintinvalid;
 
 import com.foo.rpc.examples.spring.SpringController;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -11,30 +11,30 @@ import org.evomaster.client.java.controller.problem.RPCProblem;
 
 import java.util.HashMap;
 
-public class TaintIgnoreCaseController extends SpringController {
+public class TaintInvalidController extends SpringController {
     private TTransport transport;
     private TProtocol protocol;
-    private TaintIgnoreCaseService.Client client;
+    private TaintInvalidService.Client client;
 
-    public TaintIgnoreCaseController(){
-        super(TaintIgnoreCaseApp.class);
+    public TaintInvalidController(){
+        super(TaintInvalidApp.class);
     }
 
     @Override
     public ProblemInfo getProblemInfo() {
         return new RPCProblem(new HashMap<String, Object>() {{
-            put(TaintIgnoreCaseService.Iface.class.getName(), client);
+            put(TaintInvalidService.Iface.class.getName(), client);
         }});
     }
 
     @Override
     public String startClient() {
-        String url = "http://localhost:"+getSutPort()+"/taintignorecase";
+        String url = "http://localhost:"+getSutPort()+"/taintinvalid";
         try {
             // init client
             transport = new THttpClient(url);
             protocol = new TBinaryProtocol(transport);
-            client = new TaintIgnoreCaseService.Client(protocol);
+            client = new TaintInvalidService.Client(protocol);
         } catch (TTransportException e) {
             e.printStackTrace();
         }
@@ -42,15 +42,4 @@ public class TaintIgnoreCaseController extends SpringController {
         return url;
     }
 
-//    @Override
-//    public void resetStateOfSUT()  {
-//        try {
-//            // need a further check if we need per invocation
-//            client.getInputProtocol().getTransport().flush();
-//            client.getOutputProtocol().getTransport().flush();
-//        } catch (TTransportException e) {
-//            e.printStackTrace();
-//        }
-//
-//    }
 }
