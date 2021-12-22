@@ -401,6 +401,9 @@ public abstract class SutController implements SutHandler, CustomizedResponseHan
      */
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
+        if (dto.responseVariable != null)
+            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable);
+
         Object response;
         try {
             response = executeRPCEndpoint(dto, false);
@@ -422,6 +425,7 @@ public abstract class SutController implements SutHandler, CustomizedResponseHan
                         NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
                         resSchema.setValueBasedOnInstance(response);
                         responseDto.rpcResponse = resSchema.getDto();
+                        responseDto.jsonResponse = objectMapper.writeValueAsString(response);
                     } catch (Exception e){
                         throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
                     }

@@ -11,12 +11,18 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.math.max
 
 /**
  * created by manzhang on 2021/11/26
  */
 class RPCTestCaseWriter : WebTestCaseWriter() {
+
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(RPCTestCaseWriter::class.java)
+    }
 
     @Inject
     protected lateinit var rpcHandler: RPCEndpointsHandler
@@ -62,7 +68,18 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
 
             currently, perform RPC endpoint execution with Sut Handler using string json which indicates detailed action info
          */
-        executeActionWithSutHandler(lines, resVarName, executionJson)
+        if (config.enablePureRPCTestGeneration){
+            val script = rpcCallResult.getTestScript()
+            if (script != null){
+                lines.add(script)
+            }else{
+                log.warn("fail to get test script from em driver")
+                executeActionWithSutHandler(lines, resVarName, executionJson)
+            }
+        }else{
+            executeActionWithSutHandler(lines, resVarName, executionJson)
+        }
+
 
         appendAdditionalInfo(lines, rpcCallResult)
 

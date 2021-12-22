@@ -3,6 +3,8 @@ package org.evomaster.client.java.controller.api.dto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfoDto;
 
+import java.util.List;
+
 /**
  * handling response of actions which are executed in driver side
  */
@@ -19,6 +21,16 @@ public class ActionResponseDto {
      * note that this info is only used for RPC problem
      */
     public ParamDto rpcResponse;
+
+    /**
+     *  an original response with json format
+     */
+    public String jsonResponse;
+
+    /**
+     * code for processing the action
+     */
+    public List<String> testScript;
 
     /**
      * representing exception info if it occurs

@@ -31,6 +31,9 @@ class RPCCallResult : ActionResult {
         const val HANDLED_COLLECTION_RESULTS = "HANDLED_COLLECTION_RESULTS"
         const val HANDLED_COLLECTION_RESULTS_ISEMPTY = "IS_EMPTY"
         const val HANDLED_COLLECTION_RESULTS_NOTEMPTY = "NOT_EMPTY"
+
+        const val INVOCATION_SCRIPT= "INVOCATION_SCRIPT"
+        const val RESPONSE_JSON_VALUE= "RESPONSE_JSON_VALUE"
     }
 
     constructor(stopping: Boolean = false) : super(stopping)
@@ -41,6 +44,18 @@ class RPCCallResult : ActionResult {
     override fun copy(): ActionResult {
         return RPCCallResult(this)
     }
+
+    fun setResponseJsonValue(jsonValue: String){
+        addResultValue(RESPONSE_JSON_VALUE, jsonValue)
+    }
+
+    fun getResponseJsonValue() = getResultValue(RESPONSE_JSON_VALUE)
+
+    fun setTestScript(lines: List<String>){
+        addResultValue(INVOCATION_SCRIPT, lines.joinToString(System.lineSeparator()))
+    }
+
+    fun getTestScript() = getResultValue(INVOCATION_SCRIPT)
 
     fun setHandledResponse(isNull : Boolean){
         addResultValue(HANDLED_RESULTS, if (isNull) HANDLED_RESULTS_NULL else HANDLED_RESULTS_NOT_NULL)

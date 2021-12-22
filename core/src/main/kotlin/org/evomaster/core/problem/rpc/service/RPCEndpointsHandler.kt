@@ -91,7 +91,7 @@ class RPCEndpointsHandler {
     /**
      * get rpc action dto based on specified [action]
      */
-    fun transformActionDto(action: RPCCallAction) : RPCActionDto {
+    fun transformActionDto(action: RPCCallAction, index : Int = -1) : RPCActionDto {
         // generate RPCActionDto
         val rpcAction = actionSchemaCluster[action.id]?.copy()?: throw IllegalStateException("cannot find the ${action.id} in actionSchemaCluster")
 
@@ -103,9 +103,17 @@ class RPCEndpointsHandler {
                 }
             }
         }
+        if (configuration.enablePureRPCTestGeneration && index != -1){
+            rpcAction.responseVariable = generateResponseVariable(index)
+        }
 
         return rpcAction
     }
+
+    /**
+     * generate response variable name for RPC action based on its [index] in a test
+     */
+    fun generateResponseVariable(index: Int) = "res$index"
 
     /**
      * get rpc action dto with string json based on specified [action]

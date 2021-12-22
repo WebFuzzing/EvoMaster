@@ -84,7 +84,15 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         dto.rpcCall = rpc
 
         val response =  rc.executeNewRPCActionAndGetResponse(dto)
+
+
         if (response != null){
+            if (config.enablePureRPCTestGeneration){
+                if (response.testScript == null)
+                    log.warn("empty test script")
+                else
+                    actionResult.setTestScript(response.testScript)
+            }
             // check exception
             if (response.exceptionInfoDto != null){
                 actionResult.setRPCException(response.exceptionInfoDto)
