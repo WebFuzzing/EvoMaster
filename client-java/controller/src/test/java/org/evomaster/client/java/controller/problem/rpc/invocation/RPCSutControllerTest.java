@@ -63,19 +63,19 @@ public class RPCSutControllerTest {
         assertEquals(1, dtos.size());
         RPCActionDto dto = dtos.get(0).copy();
         assertEquals(8, dto.requestParams.size());
-        dto.requestParams.get(0).jsonValue = ""+42;
-        dto.requestParams.get(1).jsonValue = ""+4.2f;
-        dto.requestParams.get(2).jsonValue = ""+42L;
-        dto.requestParams.get(3).jsonValue = ""+4.2;
-        dto.requestParams.get(4).jsonValue = ""+'x';
-        dto.requestParams.get(5).jsonValue = ""+ Byte.parseByte("42");
-        dto.requestParams.get(6).jsonValue = ""+ false;
-        dto.requestParams.get(7).jsonValue = ""+ Short.parseShort("42");
+        dto.requestParams.get(0).stringValue = ""+42;
+        dto.requestParams.get(1).stringValue = ""+4.2f;
+        dto.requestParams.get(2).stringValue = ""+42L;
+        dto.requestParams.get(3).stringValue = ""+4.2;
+        dto.requestParams.get(4).stringValue = ""+'x';
+        dto.requestParams.get(5).stringValue = ""+ Byte.parseByte("42");
+        dto.requestParams.get(6).stringValue = ""+ false;
+        dto.requestParams.get(7).stringValue = ""+ Short.parseShort("42");
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
         assertNotNull(responseDto.rpcResponse);
         assertEquals(RPCSupportedDataType.STRING, responseDto.rpcResponse.type.type);
-        assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", responseDto.rpcResponse.jsonValue);
+        assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", responseDto.rpcResponse.stringValue);
     }
 
     @Test
@@ -84,19 +84,19 @@ public class RPCSutControllerTest {
         assertEquals(1, dtos.size());
         RPCActionDto dto = dtos.get(0).copy();
         assertEquals(8, dto.requestParams.size());
-        dto.requestParams.get(0).jsonValue = ""+42;
-        dto.requestParams.get(1).jsonValue = ""+4.2f;
-        dto.requestParams.get(2).jsonValue = ""+42L;
-        dto.requestParams.get(3).jsonValue = ""+4.2;
-        dto.requestParams.get(4).jsonValue = ""+'x';
-        dto.requestParams.get(5).jsonValue = ""+ Byte.parseByte("42");
-        dto.requestParams.get(6).jsonValue = ""+ false;
-        dto.requestParams.get(7).jsonValue = ""+ Short.parseShort("42");
+        dto.requestParams.get(0).stringValue = ""+42;
+        dto.requestParams.get(1).stringValue = ""+4.2f;
+        dto.requestParams.get(2).stringValue = ""+42L;
+        dto.requestParams.get(3).stringValue = ""+4.2;
+        dto.requestParams.get(4).stringValue = ""+'x';
+        dto.requestParams.get(5).stringValue = ""+ Byte.parseByte("42");
+        dto.requestParams.get(6).stringValue = ""+ false;
+        dto.requestParams.get(7).stringValue = ""+ Short.parseShort("42");
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
         assertNotNull(responseDto.rpcResponse);
         assertEquals(RPCSupportedDataType.STRING, responseDto.rpcResponse.type.type);
-        assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", responseDto.rpcResponse.jsonValue);
+        assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", responseDto.rpcResponse.stringValue);
     }
 
 }

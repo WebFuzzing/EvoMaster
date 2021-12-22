@@ -69,15 +69,15 @@ public class StringParam extends NamedTypedValue<StringType, String> {
 
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
-        if (dto.jsonValue != null)
-            setValue(dto.jsonValue);
+        if (dto.stringValue != null)
+            setValue(dto.stringValue);
     }
 
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         if (getValue() != null)
-            dto.jsonValue = getValue();
+            dto.stringValue = getValue();
         if (maxSize != null)
             dto.maxSize = Long.valueOf(maxSize);
         if (minSize != null)

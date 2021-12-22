@@ -27,7 +27,7 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         if (getValue() != null)
-            dto.jsonValue = getValue().toString();
+            dto.stringValue = getValue().toString();
         if (getType().isWrapper)
             dto.type.type = RPCSupportedDataType.BOOLEAN;
         else
@@ -44,10 +44,10 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
         try {
-            if (dto.jsonValue != null)
-                setValue(Boolean.parseBoolean(dto.jsonValue));
+            if (dto.stringValue != null)
+                setValue(Boolean.parseBoolean(dto.stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as boolean value");
+            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as boolean value");
         }
     }
 

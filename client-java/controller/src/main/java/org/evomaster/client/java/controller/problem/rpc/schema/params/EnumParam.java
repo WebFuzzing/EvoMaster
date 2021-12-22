@@ -32,7 +32,7 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         if (getValue() != null)
-            dto.jsonValue = getValue().toString();
+            dto.stringValue = getValue().toString();
         return dto;
     }
 
@@ -44,10 +44,10 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
         try {
-            if (dto.jsonValue != null)
-                setValue(Integer.parseInt(dto.jsonValue));
+            if (dto.stringValue != null)
+                setValue(Integer.parseInt(dto.stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as int value for setting enum");
+            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as int value for setting enum");
         }
     }
 

@@ -19,9 +19,9 @@ public class ParamDto {
     public TypeDto type;
 
     /**
-     * value with json format
+     * value with string format
      */
-    public String jsonValue;
+    public String stringValue;
 
     /**
      * inner content
@@ -30,7 +30,6 @@ public class ParamDto {
 
     /**
      * whether the param could be null
-     * TODO handle this with javax.validate, but now it is all true
      */
     public boolean isNullable = true;
 
@@ -66,7 +65,7 @@ public class ParamDto {
         copy.isNullable = isNullable;
         if (innerContent != null)
             copy.innerContent = innerContent.stream().map(ParamDto::copy).collect(Collectors.toList());
-        copy.jsonValue = jsonValue;
+        copy.stringValue = stringValue;
         copy.maxSize = maxSize;
         copy.minSize = minSize;
         copy.minValue = minValue;

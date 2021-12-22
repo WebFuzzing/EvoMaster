@@ -1,9 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
-import org.evomaster.client.java.controller.problem.rpc.schema.types.CycleObjectType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -54,7 +52,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
         if (getValue() != null){
             dto.innerContent = getValue().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
-            dto.jsonValue = NOT_NULL_MARK_OBJ_DATE;
+            dto.stringValue = NOT_NULL_MARK_OBJ_DATE;
         } else
             dto.innerContent = getType().getFields().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;

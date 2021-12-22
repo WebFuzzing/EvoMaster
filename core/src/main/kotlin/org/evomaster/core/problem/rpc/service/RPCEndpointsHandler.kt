@@ -133,13 +133,13 @@ class RPCEndpointsHandler {
         }
 
         when(val valueGene = ParamUtil.getValueGene(gene)){
-            is IntegerGene -> dto.jsonValue = valueGene.value.toString()
-            is DoubleGene -> dto.jsonValue = valueGene.value.toString()
-            is FloatGene -> dto.jsonValue = valueGene.value.toString()
-            is BooleanGene -> dto.jsonValue = valueGene.value.toString()
-            is StringGene -> dto.jsonValue = valueGene.getValueAsRawString()
-            is EnumGene<*> -> dto.jsonValue = valueGene.index.toString()
-            is LongGene -> dto.jsonValue = valueGene.value.toString()
+            is IntegerGene -> dto.stringValue = valueGene.value.toString()
+            is DoubleGene -> dto.stringValue = valueGene.value.toString()
+            is FloatGene -> dto.stringValue = valueGene.value.toString()
+            is BooleanGene -> dto.stringValue = valueGene.value.toString()
+            is StringGene -> dto.stringValue = valueGene.getValueAsRawString()
+            is EnumGene<*> -> dto.stringValue = valueGene.index.toString()
+            is LongGene -> dto.stringValue = valueGene.value.toString()
             is ArrayGene<*> -> {
                 val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a collection is null")
                 val innerContent = valueGene.getAllElements().map {
@@ -197,13 +197,13 @@ class RPCEndpointsHandler {
 
         if (!isNullDto(dto)){
             when(valueGene){
-                is IntegerGene -> valueGene.value = dto.jsonValue.toInt()
-                is DoubleGene -> valueGene.value = dto.jsonValue.toDouble()
-                is FloatGene -> valueGene.value = dto.jsonValue.toFloat()
-                is BooleanGene -> valueGene.value = dto.jsonValue.toBoolean()
-                is StringGene -> valueGene.value = dto.jsonValue
-                is LongGene -> valueGene.value = dto.jsonValue.toLong()
-                is EnumGene<*> -> valueGene.index = dto.jsonValue.toInt()
+                is IntegerGene -> valueGene.value = dto.stringValue.toInt()
+                is DoubleGene -> valueGene.value = dto.stringValue.toDouble()
+                is FloatGene -> valueGene.value = dto.stringValue.toFloat()
+                is BooleanGene -> valueGene.value = dto.stringValue.toBoolean()
+                is StringGene -> valueGene.value = dto.stringValue
+                is LongGene -> valueGene.value = dto.stringValue.toLong()
+                is EnumGene<*> -> valueGene.index = dto.stringValue.toInt()
                 is PairGene<*, *> -> {
                     Lazy.assert { dto.innerContent.size == 2 }
                     setGeneBasedOnParamDto(valueGene.first, dto.innerContent[0])
@@ -262,7 +262,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT,
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG,
             RPCSupportedDataType.ENUM,
-            RPCSupportedDataType.UTIL_DATE, RPCSupportedDataType.CUSTOM_OBJECT -> dto.jsonValue == null
+            RPCSupportedDataType.UTIL_DATE, RPCSupportedDataType.CUSTOM_OBJECT -> dto.stringValue == null
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST,
             RPCSupportedDataType.MAP,
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT,

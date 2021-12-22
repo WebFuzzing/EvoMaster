@@ -113,12 +113,12 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         ParamDto dto = p1.getDto();
         assertEquals(6, dto.innerContent.size());
-        assertEquals("2021", dto.innerContent.get(0).jsonValue);
-        assertEquals("12", dto.innerContent.get(1).jsonValue);
-        assertEquals("14", dto.innerContent.get(2).jsonValue);
-        assertEquals("19", dto.innerContent.get(3).jsonValue);
-        assertEquals("45", dto.innerContent.get(4).jsonValue);
-        assertEquals("23", dto.innerContent.get(5).jsonValue);
+        assertEquals("2021", dto.innerContent.get(0).stringValue);
+        assertEquals("12", dto.innerContent.get(1).stringValue);
+        assertEquals("14", dto.innerContent.get(2).stringValue);
+        assertEquals("19", dto.innerContent.get(3).stringValue);
+        assertEquals("45", dto.innerContent.get(4).stringValue);
+        assertEquals("23", dto.innerContent.get(5).stringValue);
 //        assertEquals("722", dto.innerContent.get(6).jsonValue);
 //        assertEquals("100", dto.innerContent.get(7).jsonValue);
 
@@ -155,14 +155,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         EndpointSchema endpoint = getOneEndpoint("simplePrimitive");
         RPCActionDto dto = endpoint.getDto().copy();
         assertEquals(8, dto.requestParams.size());
-        dto.requestParams.get(0).jsonValue = ""+42;
-        dto.requestParams.get(1).jsonValue = ""+4.2f;
-        dto.requestParams.get(2).jsonValue = ""+42L;
-        dto.requestParams.get(3).jsonValue = ""+4.2;
-        dto.requestParams.get(4).jsonValue = ""+'x';
-        dto.requestParams.get(5).jsonValue = ""+ Byte.parseByte("42");
-        dto.requestParams.get(6).jsonValue = ""+ false;
-        dto.requestParams.get(7).jsonValue = ""+ Short.parseShort("42");
+        dto.requestParams.get(0).stringValue = ""+42;
+        dto.requestParams.get(1).stringValue = ""+4.2f;
+        dto.requestParams.get(2).stringValue = ""+42L;
+        dto.requestParams.get(3).stringValue = ""+4.2;
+        dto.requestParams.get(4).stringValue = ""+'x';
+        dto.requestParams.get(5).stringValue = ""+ Byte.parseByte("42");
+        dto.requestParams.get(6).stringValue = ""+ false;
+        dto.requestParams.get(7).stringValue = ""+ Short.parseShort("42");
         endpoint.setValue(dto);
         assertEquals(42, endpoint.getRequestParams().get(0).newInstance());
         assertEquals(4.2f, endpoint.getRequestParams().get(1).newInstance());
@@ -198,14 +198,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         EndpointSchema endpoint = getOneEndpoint("simpleWrapPrimitive");
         RPCActionDto dto = endpoint.getDto().copy();
         assertEquals(8, dto.requestParams.size());
-        dto.requestParams.get(0).jsonValue = ""+42;
-        dto.requestParams.get(1).jsonValue = ""+4.2f;
-        dto.requestParams.get(2).jsonValue = ""+42L;
-        dto.requestParams.get(3).jsonValue = ""+4.2;
-        dto.requestParams.get(4).jsonValue = ""+'x';
-        dto.requestParams.get(5).jsonValue = ""+ Byte.parseByte("42");
-        dto.requestParams.get(6).jsonValue = ""+ false;
-        dto.requestParams.get(7).jsonValue = ""+ Short.parseShort("42");
+        dto.requestParams.get(0).stringValue = ""+42;
+        dto.requestParams.get(1).stringValue = ""+4.2f;
+        dto.requestParams.get(2).stringValue = ""+42L;
+        dto.requestParams.get(3).stringValue = ""+4.2;
+        dto.requestParams.get(4).stringValue = ""+'x';
+        dto.requestParams.get(5).stringValue = ""+ Byte.parseByte("42");
+        dto.requestParams.get(6).stringValue = ""+ false;
+        dto.requestParams.get(7).stringValue = ""+ Short.parseShort("42");
         endpoint.setValue(dto);
         assertEquals(42, endpoint.getRequestParams().get(0).newInstance());
         assertEquals(4.2f, endpoint.getRequestParams().get(1).newInstance());
@@ -251,7 +251,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         List<ParamDto> strs = IntStream.range(0, 3).mapToObj(i->{
             ParamDto p = paramExampleExampleDto.copy();
-            p.jsonValue = "str_"+ i;
+            p.stringValue = "str_"+ i;
             return p;
         }).collect(Collectors.toList());
 

@@ -35,7 +35,7 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
         ParamDto dto = super.getDto();
         if (getValue() != null){
             // bytebuffer is now handled as string
-            dto.jsonValue = new String(getValue().array(), StandardCharsets.UTF_8);
+            dto.stringValue = new String(getValue().array(), StandardCharsets.UTF_8);
         }
 
         return dto;
@@ -48,8 +48,8 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
 
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
-        if (dto.jsonValue != null)
-            setValue(dto.jsonValue.getBytes());
+        if (dto.stringValue != null)
+            setValue(dto.stringValue.getBytes());
     }
 
     @Override

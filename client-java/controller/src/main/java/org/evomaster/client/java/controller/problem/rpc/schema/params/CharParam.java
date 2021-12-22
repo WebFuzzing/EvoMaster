@@ -24,7 +24,7 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
         else
             dto.type.type = RPCSupportedDataType.P_CHAR;
         if (getValue() != null)
-            dto.jsonValue = getValue().toString();
+            dto.stringValue = getValue().toString();
         return dto;
     }
 
@@ -42,12 +42,12 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
 
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
-        if (dto.jsonValue == null)
+        if (dto.stringValue == null)
             return;
-        if (dto.jsonValue.length() > 1){
-            throw new RuntimeException("ERROR: a length of a char with its string value is more than 1, i.e., "+ dto.jsonValue.length());
-        } else if (dto.jsonValue.length() == 1){
-            setValue(dto.jsonValue.charAt(0));
+        if (dto.stringValue.length() > 1){
+            throw new RuntimeException("ERROR: a length of a char with its string value is more than 1, i.e., "+ dto.stringValue.length());
+        } else if (dto.stringValue.length() == 1){
+            setValue(dto.stringValue.charAt(0));
         }
     }
 

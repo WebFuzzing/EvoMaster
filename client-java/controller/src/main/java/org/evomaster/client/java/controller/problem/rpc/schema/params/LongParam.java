@@ -4,10 +4,6 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 /**
  * long param
  */
@@ -35,7 +31,7 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
         else
             dto.type.type = RPCSupportedDataType.P_LONG;
         if (getValue() != null)
-            dto.jsonValue = getValue().toString();
+            dto.stringValue = getValue().toString();
         return dto;
     }
 
@@ -48,10 +44,10 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
         try {
-            if (dto.jsonValue != null)
-                setValue(Long.parseLong(dto.jsonValue));
+            if (dto.stringValue != null)
+                setValue(Long.parseLong(dto.stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as long value");
+            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as long value");
         }
     }
 

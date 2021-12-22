@@ -90,7 +90,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         p1.setValueBasedOnInstance(input);
 
         assertTrue(p1.newInstance().equals(input));
-        assertTrue(p1.getDto().jsonValue.equals(input));
+        assertTrue(p1.getDto().stringValue.equals(input));
         assertEquals(RPCSupportedDataType.STRING, p1.getDto().type.type);
 
         List<String> javaCode = p1.newInstanceWithJava(0);
@@ -132,7 +132,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         p1.setValueBasedOnInstance(input);
 
         assertTrue(p1.newInstance().equals(input));
-        assertTrue(p1.getDto().jsonValue.equals(""+input));
+        assertTrue(p1.getDto().stringValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_BOOLEAN, p1.getDto().type.type);
 
 
@@ -166,7 +166,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         p1.setValueBasedOnInstance(input);
 
         assertTrue(p1.newInstance().equals(input));
-        assertTrue(p1.getDto().jsonValue.equals(""+input));
+        assertTrue(p1.getDto().stringValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_BYTE, p1.getDto().type.type);
 
         List<String> javaCode = p1.newInstanceWithJava(0);
@@ -199,7 +199,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         p1.setValueBasedOnInstance(input);
 
         assertTrue(p1.newInstance().equals(input));
-        assertTrue(p1.getDto().jsonValue.equals(""+input));
+        assertTrue(p1.getDto().stringValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_INT, p1.getDto().type.type);
 
         List<String> javaCode = p1.newInstanceWithJava(0);
@@ -232,7 +232,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         p1.setValueBasedOnInstance(input);
 
         assertTrue(p1.newInstance().equals(input));
-        assertTrue(p1.getDto().jsonValue.equals(""+input));
+        assertTrue(p1.getDto().stringValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_LONG, p1.getDto().type.type);
 
         List<String> javaCode = p1.newInstanceWithJava(0);
@@ -265,7 +265,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         p1.setValueBasedOnInstance(input);
 
         assertTrue(p1.newInstance().equals(input));
-        assertTrue(p1.getDto().jsonValue.equals(""+input));
+        assertTrue(p1.getDto().stringValue.equals(""+input));
         assertEquals(RPCSupportedDataType.P_DOUBLE, p1.getDto().type.type);
 
         List<String> javaCode = p1.newInstanceWithJava(0);
@@ -301,7 +301,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(p1.newInstance() instanceof ByteBuffer);
         String extracted = new String(((ByteBuffer) p1.newInstance()).array(), StandardCharsets.UTF_8);
         assertTrue(extracted.equals("foo"));
-        assertTrue(p1.getDto().jsonValue.equals("foo"));
+        assertTrue(p1.getDto().stringValue.equals("foo"));
         assertEquals(RPCSupportedDataType.BYTEBUFFER, p1.getDto().type.type);
 
         List<String> javaCode = p1.newInstanceWithJava(0);
@@ -353,13 +353,13 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(4, dto.innerContent.size());
         for (ParamDto fdto : dto.innerContent){
             if (fdto.name.equals("string_thing")){
-                assertEquals(input.string_thing, fdto.jsonValue);
+                assertEquals(input.string_thing, fdto.stringValue);
             } else if (fdto.name.equals("byte_thing")){
-                assertEquals(fdto.jsonValue, "" + input.byte_thing);
+                assertEquals(fdto.stringValue, "" + input.byte_thing);
             } else if (fdto.name.equals("i32_thing")){
-                assertEquals(fdto.jsonValue, "" + input.i32_thing);
+                assertEquals(fdto.stringValue, "" + input.i32_thing);
             } else if (fdto.name.equals("i64_thing")){
-                assertEquals(fdto.jsonValue, "" + input.i64_thing);
+                assertEquals(fdto.stringValue, "" + input.i64_thing);
             } else {
                 fail("error field name "+fdto.name);
             }
@@ -439,20 +439,20 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
         for (ParamDto fdto : requestDto.innerContent){
             if (fdto.name.equals("byte_thing")){
-                assertEquals(fdto.jsonValue, "" + input.byte_thing);
+                assertEquals(fdto.stringValue, "" + input.byte_thing);
             } else if (fdto.name.equals("i32_thing")){
-                assertEquals(fdto.jsonValue, "" + input.i32_thing);
+                assertEquals(fdto.stringValue, "" + input.i32_thing);
             } else if (fdto.name.equals("struct_thing")){
                 assertEquals(4, fdto.innerContent.size());
                 for (ParamDto fidto : fdto.innerContent){
                     if (fidto.name.equals("string_thing")){
-                        assertEquals(objField.string_thing, fidto.jsonValue);
+                        assertEquals(objField.string_thing, fidto.stringValue);
                     } else if (fidto.name.equals("byte_thing")){
-                        assertEquals("" + objField.byte_thing, fidto.jsonValue);
+                        assertEquals("" + objField.byte_thing, fidto.stringValue);
                     } else if (fidto.name.equals("i32_thing")){
-                        assertEquals("" + objField.i32_thing, fidto.jsonValue);
+                        assertEquals("" + objField.i32_thing, fidto.stringValue);
                     } else if (fidto.name.equals("i64_thing")){
-                        assertEquals("" + objField.i64_thing, fidto.jsonValue);
+                        assertEquals("" + objField.i64_thing, fidto.stringValue);
                     } else {
                         fail("error field name of Xtruct "+fidto.name);
                     }
@@ -532,7 +532,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         Map<Integer, Integer> results = new HashMap<>();
         for (ParamDto e: dto.innerContent){
             assertEquals(2, e.innerContent.size());
-            results.put(Integer.parseInt(e.innerContent.get(0).jsonValue), Integer.parseInt(e.innerContent.get(1).jsonValue));
+            results.put(Integer.parseInt(e.innerContent.get(0).stringValue), Integer.parseInt(e.innerContent.get(1).stringValue));
         }
         assertEquals(4, results.size());
         assertEquals(2, results.get(1));
@@ -608,7 +608,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         Map<String, String> results = new HashMap<>();
         for (ParamDto e: dto.innerContent){
             assertEquals(2, e.innerContent.size());
-            results.put(e.innerContent.get(0).jsonValue, e.innerContent.get(1).jsonValue);
+            results.put(e.innerContent.get(0).stringValue, e.innerContent.get(1).stringValue);
         }
         assertEquals(4, results.size());
         assertEquals(""+2, results.get("foo"));
@@ -676,7 +676,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(RPCSupportedDataType.INT, dto.type.example.type.type);
 
         assertEquals(3, dto.innerContent.size());
-        assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.jsonValue))));
+        assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.stringValue))));
 
         List<String> javaCodes = p1.newInstanceWithJava(0);
 
@@ -733,7 +733,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(RPCSupportedDataType.INT, dto.type.example.type.type);
 
         assertEquals(3, dto.innerContent.size());
-        assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.jsonValue))));
+        assertTrue(dto.innerContent.stream().allMatch(s-> input.contains(Integer.parseInt(s.stringValue))));
 
         List<String> javaCodes = p1.newInstanceWithJava(0);
 
@@ -782,7 +782,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
         ParamDto dto = p1.getDto();
         assertEquals(RPCSupportedDataType.ENUM, dto.type.type);
-        assertEquals(""+index, dto.jsonValue);
+        assertEquals(""+index, dto.stringValue);
 
         List<String> javaCode = p1.newInstanceWithJava(0);
         assertEquals(1, javaCode.size());
@@ -866,36 +866,36 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
         // 1st pair element
         assertEquals(2, dto.innerContent.get(0).innerContent.size());
-        assertEquals(""+1, dto.innerContent.get(0).innerContent.get(0).jsonValue);
+        assertEquals(""+1, dto.innerContent.get(0).innerContent.get(0).stringValue);
         assertEquals(RPCSupportedDataType.MAP, dto.innerContent.get(0).innerContent.get(1).type.type);
         assertEquals(2, dto.innerContent.get(0).innerContent.get(1).innerContent.size());
         for (ParamDto p : dto.innerContent.get(0).innerContent.get(1).innerContent){
             assertEquals(2, p.innerContent.size());
-            if (p.innerContent.get(0).jsonValue.equals("1")){
-                assertEquals("1", p.innerContent.get(1).jsonValue);
-            } else if (p.innerContent.get(0).jsonValue.equals("2")){
-                assertEquals("2", p.innerContent.get(1).jsonValue);
+            if (p.innerContent.get(0).stringValue.equals("1")){
+                assertEquals("1", p.innerContent.get(1).stringValue);
+            } else if (p.innerContent.get(0).stringValue.equals("2")){
+                assertEquals("2", p.innerContent.get(1).stringValue);
             } else {
-                fail("invalid key:value, ie,"+ p.innerContent.get(0).jsonValue +":"+p.innerContent.get(1).jsonValue);
+                fail("invalid key:value, ie,"+ p.innerContent.get(0).stringValue +":"+p.innerContent.get(1).stringValue);
             }
         }
 
         // 2nd pair element
         assertEquals(2, dto.innerContent.get(1).innerContent.size());
-        assertEquals(""+2, dto.innerContent.get(1).innerContent.get(0).jsonValue);
+        assertEquals(""+2, dto.innerContent.get(1).innerContent.get(0).stringValue);
         assertEquals(RPCSupportedDataType.MAP,dto.innerContent.get(1).innerContent.get(1).type.type);
         assertEquals(3, dto.innerContent.get(1).innerContent.get(1).innerContent.size());
 
         for (ParamDto p : dto.innerContent.get(1).innerContent.get(1).innerContent){
             assertEquals(2, p.innerContent.size());
-            if (p.innerContent.get(0).jsonValue.equals("1")){
-                assertEquals("2", p.innerContent.get(1).jsonValue);
-            } else if (p.innerContent.get(0).jsonValue.equals("2")){
-                assertEquals("4", p.innerContent.get(1).jsonValue);
-            } else if (p.innerContent.get(0).jsonValue.equals("3")){
-                assertEquals("6", p.innerContent.get(1).jsonValue);
+            if (p.innerContent.get(0).stringValue.equals("1")){
+                assertEquals("2", p.innerContent.get(1).stringValue);
+            } else if (p.innerContent.get(0).stringValue.equals("2")){
+                assertEquals("4", p.innerContent.get(1).stringValue);
+            } else if (p.innerContent.get(0).stringValue.equals("3")){
+                assertEquals("6", p.innerContent.get(1).stringValue);
             } else {
-                fail("invalid key:value, ie,"+ p.innerContent.get(0).jsonValue +":"+p.innerContent.get(1).jsonValue);
+                fail("invalid key:value, ie,"+ p.innerContent.get(0).stringValue +":"+p.innerContent.get(1).stringValue);
             }
         }
     }
@@ -955,14 +955,14 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
             ParamDto value = p.innerContent.get(1);
             assertEquals(RPCSupportedDataType.ENUM, key.type.type);
             assertEquals(RPCSupportedDataType.LONG, value.type.type);
-            if (key.jsonValue.equals(""+Numberz.TWO.ordinal())){
-                assertEquals(""+2L, value.jsonValue);
-            } else if (key.jsonValue.equals(""+Numberz.EIGHT.ordinal())){
-                assertEquals(""+8L, value.jsonValue);
-            } else if (key.jsonValue.equals(""+Numberz.SIX.ordinal())){
-                assertEquals(""+6L, value.jsonValue);
+            if (key.stringValue.equals(""+Numberz.TWO.ordinal())){
+                assertEquals(""+2L, value.stringValue);
+            } else if (key.stringValue.equals(""+Numberz.EIGHT.ordinal())){
+                assertEquals(""+8L, value.stringValue);
+            } else if (key.stringValue.equals(""+Numberz.SIX.ordinal())){
+                assertEquals(""+6L, value.stringValue);
             } else {
-                fail("invalid key:value, ie,"+ key.jsonValue+":"+value.jsonValue);
+                fail("invalid key:value, ie,"+ key.stringValue +":"+value.stringValue);
             }
 
         }
@@ -974,13 +974,13 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(RPCSupportedDataType.CUSTOM_OBJECT, xtructDto.type.type);
         for (ParamDto fdto : xtructDto.innerContent){
             if (fdto.name.equals("string_thing")){
-                assertEquals("foo", fdto.jsonValue);
+                assertEquals("foo", fdto.stringValue);
             } else if (fdto.name.equals("byte_thing")){
-                assertEquals(""+((byte)100), fdto.jsonValue);
+                assertEquals(""+((byte)100), fdto.stringValue);
             } else if (fdto.name.equals("i32_thing")){
-                assertEquals(""+100, fdto.jsonValue);
+                assertEquals(""+100, fdto.stringValue);
             } else if (fdto.name.equals("i64_thing")){
-                assertEquals(""+100L, fdto.jsonValue);
+                assertEquals(""+100L, fdto.stringValue);
             } else {
                 fail("error field name "+fdto.name);
             }

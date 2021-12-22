@@ -31,7 +31,7 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
         else
             dto.type.type = RPCSupportedDataType.P_DOUBLE;
         if (getValue() != null)
-            dto.jsonValue = getValue().toString();
+            dto.stringValue = getValue().toString();
         return dto;
     }
 
@@ -43,10 +43,10 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
         try {
-            if (dto.jsonValue != null)
-                setValue(Double.parseDouble(dto.jsonValue));
+            if (dto.stringValue != null)
+                setValue(Double.parseDouble(dto.stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as double value");
+            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as double value");
         }
     }
 

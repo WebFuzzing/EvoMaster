@@ -32,7 +32,7 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
         else
             dto.type.type = RPCSupportedDataType.P_SHORT;
         if (getValue() != null)
-            dto.jsonValue = getValue().toString();
+            dto.stringValue = getValue().toString();
 
         return dto;
     }
@@ -45,10 +45,10 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
         try {
-            if (dto.jsonValue != null)
-                setValue(Short.parseShort(dto.jsonValue));
+            if (dto.stringValue != null)
+                setValue(Short.parseShort(dto.stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as short value");
+            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as short value");
         }
     }
 

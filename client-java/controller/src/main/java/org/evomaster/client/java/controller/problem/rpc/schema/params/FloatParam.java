@@ -32,7 +32,7 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
             dto.type.type = RPCSupportedDataType.P_FLOAT;
 
         if (getValue() != null)
-            dto.jsonValue = getValue().toString();
+            dto.stringValue = getValue().toString();
         return dto;
     }
 
@@ -44,10 +44,10 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
         try {
-            if (dto.jsonValue != null)
-                setValue(Float.parseFloat(dto.jsonValue));
+            if (dto.stringValue != null)
+                setValue(Float.parseFloat(dto.stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.jsonValue+" as float value");
+            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as float value");
         }
     }
 
