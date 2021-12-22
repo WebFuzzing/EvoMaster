@@ -38,7 +38,7 @@ namespace EvoMaster.Instrumentation
             _enteringProbe =
                 module.ImportReference(
                     typeof(Instrumentator).GetMethod(name: "EnteringLine",
-                        types: new[] {typeof(string), typeof(string), typeof(int)}));
+                        types: new[] {typeof(string), typeof(int)}));
 
             foreach (var type in module.Types)
             {
