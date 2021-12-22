@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.types;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
@@ -43,6 +44,7 @@ public class PairType extends TypeSchema{
         ParamDto example = new ParamDto();
         example.innerContent = Arrays.asList(firstTemplate.getDto(), secondTemplate.getDto());
         dto.example = example;
+        dto.type = RPCSupportedDataType.PAIR;
         return dto;
     }
 }

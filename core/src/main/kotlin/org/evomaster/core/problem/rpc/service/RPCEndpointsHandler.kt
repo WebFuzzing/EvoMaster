@@ -104,10 +104,6 @@ class RPCEndpointsHandler {
             }
         }
 
-        if (rpcAction.requestParams.any { s-> s.innerContent?.any { f-> f.jsonValue == null } == true }){
-            println()
-        }
-
         return rpcAction
     }
 
@@ -294,7 +290,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.CUSTOM_OBJECT -> valueGene is ObjectGene || valueGene is MapGene<*,*>
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene
             RPCSupportedDataType.UTIL_DATE -> valueGene is DateTimeGene
-            RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
+            RPCSupportedDataType.PAIR -> valueGene is PairGene<*,*>
         }
     }
 

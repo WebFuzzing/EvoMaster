@@ -21,7 +21,10 @@ public class ThriftTestRPCEMTest extends SpringRPCTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        //TODO
+        /*
+            just for basic check
+            but it has some problems on kotlin compile, and it is flaky
+         */
 //        runTestHandlingFlakyAndCompilation(
 //                "ThriftTestRPCEM",
 //                "org.foo.ThriftTestRPCEM",
