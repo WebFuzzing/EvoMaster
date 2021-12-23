@@ -119,4 +119,23 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         return codes;
     }
 
+    @Override
+    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+        List<String> codes = new ArrayList<>();
+        if (getValue() == null){
+            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
+            return codes;
+        }
+        for (NamedTypedValue f : getValue()){
+            String fName = responseVarName+"."+f.getName();
+            codes.addAll(f.newAssertionWithJava(indent, fName));
+        }
+        return codes;
+    }
+
+    @Override
+    public String getValueAsJavaString() {
+        return null;
+    }
+
 }

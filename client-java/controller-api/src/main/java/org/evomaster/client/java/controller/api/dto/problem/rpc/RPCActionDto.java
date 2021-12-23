@@ -38,6 +38,11 @@ public class RPCActionDto {
      */
     public String responseVariable;
 
+    /**
+     * variable name of controller
+     */
+    public String controllerVariable;
+
     public RPCActionDto copy(){
         RPCActionDto copy = new RPCActionDto();
         copy.interfaceId = interfaceId;
@@ -47,6 +52,7 @@ public class RPCActionDto {
         if (requestParams != null)
             copy.requestParams = requestParams.stream().map(ParamDto::copy).collect(Collectors.toList());
         copy.responseVariable = responseVariable;
+        copy.controllerVariable = controllerVariable;
         return copy;
     }
 

@@ -17,7 +17,7 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
     }
 
     @Override
-    String getValueWithJava() {
+    public String getValueAsJavaString() {
         if (getValue() == null)
             return null;
         return ""+getValue()+"L";

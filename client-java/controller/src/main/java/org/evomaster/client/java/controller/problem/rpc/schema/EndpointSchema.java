@@ -122,7 +122,7 @@ public final class EndpointSchema {
      * @param responseVarName specifies a variable name representing a response of this endpoint
      * @return code to send the request and set the response if exists
      */
-    public List<String> newInvocationWithJava(String responseVarName){
+    public List<String> newInvocationWithJava(String responseVarName, String controllerVarName){
         List<String> javaCode = new ArrayList<>();
         if (response != null){
             javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getFullTypeName(), responseVarName, null));
@@ -133,7 +133,7 @@ public final class EndpointSchema {
             javaCode.addAll(param.newInstanceWithJava(indent));
         }
         String paramVars = requestParams.stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
-        String client = CodeJavaGenerator.castToType(clientTypeName, CodeJavaGenerator.getGetClientMethod("\""+interfaceName+"\""));
+        String client = CodeJavaGenerator.castToType(clientTypeName, CodeJavaGenerator.getGetClientMethod(controllerVarName,"\""+interfaceName+"\""));
 
         CodeJavaGenerator.addCode(
                 javaCode,

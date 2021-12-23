@@ -145,4 +145,14 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     public List<String> newInstanceWithJava(int indent){
         return newInstanceWithJava(true, true, getName(), indent);
     }
+
+    /**
+     * create assertions with java for response
+     * @param indent specifies the current indent of the code
+     * @param responseVarName a variable name for responses
+     * @return a list of string for assertions
+     */
+    public abstract List<String> newAssertionWithJava(int indent, String responseVarName);
+
+    public abstract String getValueAsJavaString();
 }

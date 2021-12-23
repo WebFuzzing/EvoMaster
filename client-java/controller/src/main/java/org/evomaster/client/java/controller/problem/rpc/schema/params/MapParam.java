@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.MapType;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -109,6 +110,41 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
 
         CodeJavaGenerator.addCode(codes, "}", indent);
         return codes;
+    }
+
+    @Override
+    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+        List<String> codes = new ArrayList<>();
+        if (getValue() == null){
+            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
+            return codes;
+        }
+        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withSize(responseVarName)), indent);
+
+        if (doAssertion(getType().getTemplate().getValue().getKey())){
+            for (PairParam e: getValue()){
+                String key = e.getValue().getKey().getValueAsJavaString();
+                if (key == null)
+                    throw new RuntimeException("key is null");
+                String eValueVarName = responseVarName+".get("+key+")";
+                if (e.getValue().getValue() == null)
+                    throw new RuntimeException("value should not been null");
+                codes.addAll(e.getValue().getValue().newAssertionWithJava(indent, eValueVarName));
+            }
+        }else{
+            SimpleLogger.error("ERROR: do not support to generate assertions for Map with key :"+getType().getTemplate().getValue().getKey().getType().getFullTypeName());
+        }
+
+        return codes;
+    }
+
+    private boolean doAssertion(NamedTypedValue key){
+        return key instanceof PrimitiveOrWrapperParam || key instanceof EnumParam || key instanceof StringParam;
+    }
+
+    @Override
+    public String getValueAsJavaString() {
+        return null;
     }
 
     public Integer getMinSize() {

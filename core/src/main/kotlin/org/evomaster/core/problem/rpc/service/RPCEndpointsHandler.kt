@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedData
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.param.RPCParam
@@ -105,6 +106,7 @@ class RPCEndpointsHandler {
         }
         if (configuration.enablePureRPCTestGeneration && index != -1){
             rpcAction.responseVariable = generateResponseVariable(index)
+            rpcAction.controllerVariable = TestSuiteWriter.controller
         }
 
         return rpcAction
@@ -113,7 +115,7 @@ class RPCEndpointsHandler {
     /**
      * generate response variable name for RPC action based on its [index] in a test
      */
-    fun generateResponseVariable(index: Int) = "res$index"
+    private fun generateResponseVariable(index: Int) = "res_$index"
 
     /**
      * get rpc action dto with string json based on specified [action]

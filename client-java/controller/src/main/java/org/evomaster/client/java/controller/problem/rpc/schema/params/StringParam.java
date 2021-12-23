@@ -102,4 +102,21 @@ public class StringParam extends NamedTypedValue<StringType, String> {
         return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value));
     }
 
+    @Override
+    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(CodeJavaGenerator.getIndent(indent));
+        if (getValue() == null)
+            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+        else
+            sb.append(CodeJavaGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName));
+
+        return Collections.singletonList(sb.toString());
+    }
+
+    @Override
+    public String getValueAsJavaString() {
+        return "\""+getValue()+"\"";
+    }
+
 }

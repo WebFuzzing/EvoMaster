@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.DateType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -82,5 +83,28 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
         CodeJavaGenerator.addCode(codes, "}", indent);
 
         return codes;
+    }
+
+    @Override
+    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(CodeJavaGenerator.getIndent(indent));
+        if (getValue() == null)
+            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+        else{
+            /*
+                it might be tricky to handle date assertion since it might be `now`
+                then here we just append runtime value as comments
+             */
+            sb.append("// runtime value is ");
+            sb.append(getType().getDateString(getValue()));
+        }
+
+        return Collections.singletonList(sb.toString());
+    }
+
+    @Override
+    public String getValueAsJavaString() {
+        return null;
     }
 }

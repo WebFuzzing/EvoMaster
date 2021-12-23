@@ -80,7 +80,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val actionResult = RPCCallResult()
         actionResults.add(actionResult)
         val dto = getActionDto(action, index)
-        val rpc = rpcHandler.transformActionDto(action)
+        val rpc = rpcHandler.transformActionDto(action, index)
         dto.rpcCall = rpc
 
         val response =  rc.executeNewRPCActionAndGetResponse(dto)
@@ -90,8 +90,11 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             if (config.enablePureRPCTestGeneration){
                 if (response.testScript == null)
                     log.warn("empty test script")
-                else
+                else{
                     actionResult.setTestScript(response.testScript)
+                    actionResult.setResponseVariableName(rpc.responseVariable)
+                }
+
             }
             // check exception
             if (response.exceptionInfoDto != null){

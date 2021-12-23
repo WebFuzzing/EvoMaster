@@ -34,6 +34,7 @@ class RPCCallResult : ActionResult {
 
         const val INVOCATION_SCRIPT= "INVOCATION_SCRIPT"
         const val RESPONSE_JSON_VALUE= "RESPONSE_JSON_VALUE"
+        const val RESPONSE_VARIABLE_NAME = "RESPONSE_VARIABLE_NAME"
     }
 
     constructor(stopping: Boolean = false) : super(stopping)
@@ -44,6 +45,12 @@ class RPCCallResult : ActionResult {
     override fun copy(): ActionResult {
         return RPCCallResult(this)
     }
+
+    fun setResponseVariableName(name: String){
+        addResultValue(RESPONSE_VARIABLE_NAME, name)
+    }
+
+    fun getResponseVariableName() = getResultValue(RESPONSE_VARIABLE_NAME)
 
     fun setResponseJsonValue(jsonValue: String){
         addResultValue(RESPONSE_JSON_VALUE, jsonValue)

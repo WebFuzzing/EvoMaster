@@ -402,7 +402,7 @@ public abstract class SutController implements SutHandler, CustomizedResponseHan
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
         if (dto.responseVariable != null)
-            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable);
+            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable);
 
         Object response;
         try {

@@ -96,4 +96,23 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
         CodeJavaGenerator.addCode(codes, "}", indent);
         return codes;
     }
+
+    @Override
+    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+        List<String> codes = new ArrayList<>();
+        if (getValue() == null){
+            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
+            return codes;
+        }
+        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withSize(responseVarName)), indent);
+        /*
+            it is tricky to check values for set since the sequence is not determinate
+         */
+        return codes;
+    }
+
+    @Override
+    public String getValueAsJavaString() {
+        return null;
+    }
 }

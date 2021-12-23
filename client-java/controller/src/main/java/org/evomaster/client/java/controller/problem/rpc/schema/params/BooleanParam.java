@@ -17,7 +17,7 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     }
 
     @Override
-    String getValueWithJava() {
+    public String getValueAsJavaString() {
         if (getValue() == null)
             return null;
         return ""+getValue();

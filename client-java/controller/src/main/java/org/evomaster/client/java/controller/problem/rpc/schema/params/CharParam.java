@@ -29,7 +29,7 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
     }
 
     @Override
-    String getValueWithJava() {
+    public String getValueAsJavaString() {
         if (getValue() == null)
             return null;
         return "'"+getValue()+"'";

@@ -56,33 +56,57 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
         val rpcCallAction = (action as? RPCCallAction)?: throw IllegalStateException("action must be RPCCallAction, but it is ${action::class.java.simpleName}")
         val rpcCallResult = (result as? RPCCallResult)?: throw IllegalStateException("result must be RPCCallResult, but it is ${action::class.java.simpleName}")
 
-        val executionJson = rpcHandler.getRPCActionJson(rpcCallAction)
 
-        val resVarName = createUniqueResponseVariableName()
+
+        var resVarName = createUniqueResponseVariableName()
 
         lines.addEmpty()
 
-        /*
-            TODO we might generate RPC action with fully instanced values
-            eg, instance all required dto with code
+        resVarName = handleActionExecution(lines, resVarName, rpcCallResult, rpcCallAction)
+        // append additional info after the execution, eg, last statement
+        appendAdditionalInfo(lines, rpcCallResult)
 
-            currently, perform RPC endpoint execution with Sut Handler using string json which indicates detailed action info
-         */
+        if (config.enableBasicAssertions){
+            if (rpcCallAction.response!=null){
+                if (rpcCallResult.hasResponse())
+                    handleAssertions(lines, resVarName, rpcCallResult)
+                else{
+                    handleAssertNull(lines, resVarName)
+                }
+            }
+        }
+    }
+
+    private fun handleAssertNull(lines: Lines, resVarName: String){
+        if (format.isJava()){
+            lines.add("assertNull($resVarName)")
+            lines.appendSemicolon(config.outputFormat)
+        }
+
+    }
+
+    private fun handleAssertions(lines: Lines, resVarName: String, rpcCallResult: RPCCallResult){
+        val responseBody = rpcCallResult.getResponseJsonValue()
+
+    }
+
+    private fun handleActionExecution(lines: Lines, resVarName: String, rpcCallResult: RPCCallResult, rpcCallAction: RPCCallAction): String{
+
         if (config.enablePureRPCTestGeneration){
             val script = rpcCallResult.getTestScript()
             if (script != null){
-                lines.add(script)
+                script.split(System.lineSeparator()).forEach {
+                    lines.add(it)
+                }
+                return rpcCallResult.getResponseVariableName()?: throw IllegalStateException("missing variable name of response")
             }else{
                 log.warn("fail to get test script from em driver")
-                executeActionWithSutHandler(lines, resVarName, executionJson)
+                executeActionWithSutHandler(lines, resVarName, rpcCallAction)
             }
         }else{
-            executeActionWithSutHandler(lines, resVarName, executionJson)
+            executeActionWithSutHandler(lines, resVarName, rpcCallAction)
         }
-
-
-        appendAdditionalInfo(lines, rpcCallResult)
-
+        return resVarName
     }
 
     private fun appendAdditionalInfo(lines: Lines, result: RPCCallResult){
@@ -100,7 +124,10 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
         return false
     }
 
-    private fun executeActionWithSutHandler(lines: Lines, resVarName: String, executionJson: String){
+    private fun executeActionWithSutHandler(lines: Lines, resVarName: String, rpcCallAction: RPCCallAction){
+
+        val executionJson = rpcHandler.getRPCActionJson(rpcCallAction)
+
         when {
             format.isKotlin() -> lines.add("val $resVarName = ${TestSuiteWriter.controller}.executeRPCEndpoint(")
             format.isJava() -> lines.add("Object $resVarName = ${TestSuiteWriter.controller}.executeRPCEndpoint(")

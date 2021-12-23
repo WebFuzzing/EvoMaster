@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.ByteBufferT
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -74,6 +75,22 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
         CodeJavaGenerator.addCode(codes, "}", indent);
 
         return codes;
+    }
+
+    @Override
+    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(CodeJavaGenerator.getIndent(indent));
+        if (getValue() == null)
+            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+        else
+            sb.append("// not handle ByteBuffer assertion");
+        return Collections.singletonList(sb.toString());
+    }
+
+    @Override
+    public String getValueAsJavaString() {
+        return null;
     }
 
 

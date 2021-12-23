@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import net.sf.jsqlparser.expression.WindowOffset;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.EnumType;
@@ -67,13 +68,30 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
         }
     }
 
-
-
     @Override
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
         String value = null;
         if (getValue() != null)
-            value = getType().getFullTypeName()+"."+getType().getItems()[getValue()];
+            value = CodeJavaGenerator.enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]);
         return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value));
+    }
+
+    @Override
+    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(CodeJavaGenerator.getIndent(indent));
+        if (getValue() == null)
+            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+        else
+            sb.append(CodeJavaGenerator.junitAssertEquals(CodeJavaGenerator.enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]), responseVarName));
+
+        return Collections.singletonList(sb.toString());
+    }
+
+    @Override
+    public String getValueAsJavaString() {
+        if (getValue() == null)
+            return null;
+        return CodeJavaGenerator.enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]);
     }
 }

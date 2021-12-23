@@ -96,4 +96,27 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
         CodeJavaGenerator.addCode(codes, "}", indent);
         return codes;
     }
+
+    @Override
+    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+        List<String> codes = new ArrayList<>();
+        if (getValue() == null){
+            CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
+            return codes;
+        }
+        CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withLength(responseVarName)), indent);
+
+        int index = 0;
+        for (NamedTypedValue e: getValue()){
+            String eVar = responseVarName+"["+index+"]";
+            codes.addAll(e.newAssertionWithJava(indent, eVar));
+            index++;
+        }
+        return codes;
+    }
+
+    @Override
+    public String getValueAsJavaString() {
+        return null;
+    }
 }

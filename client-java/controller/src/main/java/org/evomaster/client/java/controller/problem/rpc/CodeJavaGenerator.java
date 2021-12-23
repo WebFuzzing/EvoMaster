@@ -8,10 +8,14 @@ public class CodeJavaGenerator {
     private final static String NULL_EXP = "null";
     private final static String GET_CLIENT_METHOD = "getRPCClient";
 
+    public static String enumValue(String enumTypeName, String itemName){
+        return String.format("%s.%s", handleNestedSymbolInTypeName(enumTypeName), itemName);
+    }
+
     public static String oneLineInstance(boolean isDeclaration, boolean doesIncludeName, String fullName, String varName, String value){
         StringBuilder sb = new StringBuilder();
         if (isDeclaration)
-            sb.append(fullName).append(" ");
+            sb.append(handleNestedSymbolInTypeName(fullName)).append(" ");
         if (doesIncludeName)
             sb.append(varName).append(" = ");
         String stringValue = NULL_EXP;
@@ -70,7 +74,7 @@ public class CodeJavaGenerator {
      * @return code to new object with params constructor
      */
     public static String newObjectConsParams(String fullName, String params){
-        return String.format("new %s(%s)", fullName, params);
+        return String.format("new %s(%s)", handleNestedSymbolInTypeName(fullName), params);
     }
 
     public static String newArray(String fullName, int length){
@@ -115,16 +119,21 @@ public class CodeJavaGenerator {
      * @return a java code which casts obj to a type
      */
     public static String castToType(String typeName, String objCode){
-        return String.format("((%s)%s)", typeName, objCode);
+        return String.format("((%s)%s)", handleNestedSymbolInTypeName(typeName), objCode);
+    }
+
+    private static String handleNestedSymbolInTypeName(String typeName){
+        return typeName.replaceAll("\\$","\\.");
     }
 
     /**
      * process the code to get RPC client
+     * @param controllerVarName specifies the controller variable name
      * @param interfaceName specifies the interface name to get its corresponding client
      * @return code which enables getting RPC client
      */
-    public static String getGetClientMethod(String interfaceName){
-        return String.format("%s(%s)", GET_CLIENT_METHOD, interfaceName);
+    public static String getGetClientMethod(String controllerVarName, String interfaceName){
+        return String.format("%s(%s)", controllerVarName + "." + GET_CLIENT_METHOD, interfaceName);
     }
 
     /**
@@ -143,5 +152,21 @@ public class CodeJavaGenerator {
 
     public static String appendLast(){
         return ";";
+    }
+
+    public static String junitAssertEquals(String expectedValue, String variableName){
+        return String.format("assertEquals(%s, %s)", expectedValue, variableName) + appendLast();
+    }
+
+    public static String junitAssertNull(String variableName){
+        return String.format("assertNull(%s)", variableName) + appendLast();
+    }
+
+    public static String withSize(String variableName){
+        return String.format("%s.size()", variableName);
+    }
+
+    public static String withLength(String variableName){
+        return String.format("%s.length", variableName);
     }
 }

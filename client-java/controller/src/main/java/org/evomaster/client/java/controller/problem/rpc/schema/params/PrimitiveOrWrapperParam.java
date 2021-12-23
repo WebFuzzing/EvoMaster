@@ -77,11 +77,21 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         return getValue();
     }
 
-    abstract String getValueWithJava();
-
     @Override
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueWithJava()));
+        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString()));
+    }
+
+    @Override
+    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(CodeJavaGenerator.getIndent(indent));
+        if (getValue() == null)
+            sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
+        else
+            sb.append(CodeJavaGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName));
+
+        return Collections.singletonList(sb.toString());
     }
 
 }

@@ -18,7 +18,7 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     }
 
     @Override
-    String getValueWithJava() {
+    public String getValueAsJavaString() {
         if (getValue() == null)
             return null;
         return ""+getValue();

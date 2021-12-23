@@ -21,7 +21,7 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     }
 
     @Override
-    String getValueWithJava() {
+    public String getValueAsJavaString() {
         if (getValue() == null)
             return null;
         return ""+getValue();
