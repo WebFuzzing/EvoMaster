@@ -94,8 +94,10 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                     actionResult.setTestScript(response.testScript)
                     actionResult.setResponseVariableName(rpc.responseVariable)
                 }
-
             }
+
+
+
             // check exception
             if (response.exceptionInfoDto != null){
                 actionResult.setRPCException(response.exceptionInfoDto)
@@ -123,6 +125,14 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                     val valueGene = ParamUtil.getValueGene(responseParam.gene)
                     if (valueGene is CollectionGene){
                         actionResult.setHandledCollectionResponse(valueGene.isEmpty())
+                    }
+
+                    if (config.enableRPCAssertionWithInstance){
+                        if (response.assertionScript == null){
+                            log.warn("empty test assertions")
+                        }else{
+                            actionResult.setAssertionScript(response.assertionScript)
+                        }
                     }
                 } else {
                     actionResult.setHandledResponse(true)

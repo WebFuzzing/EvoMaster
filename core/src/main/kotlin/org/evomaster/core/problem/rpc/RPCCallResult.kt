@@ -33,8 +33,9 @@ class RPCCallResult : ActionResult {
         const val HANDLED_COLLECTION_RESULTS_NOTEMPTY = "NOT_EMPTY"
 
         const val INVOCATION_SCRIPT= "INVOCATION_SCRIPT"
-        const val RESPONSE_JSON_VALUE= "RESPONSE_JSON_VALUE"
+//        const val RESPONSE_JSON_VALUE= "RESPONSE_JSON_VALUE"
         const val RESPONSE_VARIABLE_NAME = "RESPONSE_VARIABLE_NAME"
+        const val RESPONSE_ASSERTION_SCRIPT = "RESPONSE_ASSERTION_SCRIPT"
     }
 
     constructor(stopping: Boolean = false) : super(stopping)
@@ -52,17 +53,23 @@ class RPCCallResult : ActionResult {
 
     fun getResponseVariableName() = getResultValue(RESPONSE_VARIABLE_NAME)
 
-    fun setResponseJsonValue(jsonValue: String){
-        addResultValue(RESPONSE_JSON_VALUE, jsonValue)
-    }
-
-    fun getResponseJsonValue() = getResultValue(RESPONSE_JSON_VALUE)
+//    fun setResponseJsonValue(jsonValue: String){
+//        addResultValue(RESPONSE_JSON_VALUE, jsonValue)
+//    }
+//
+//    fun getResponseJsonValue() = getResultValue(RESPONSE_JSON_VALUE)
 
     fun setTestScript(lines: List<String>){
         addResultValue(INVOCATION_SCRIPT, lines.joinToString(System.lineSeparator()))
     }
 
     fun getTestScript() = getResultValue(INVOCATION_SCRIPT)
+
+    fun setAssertionScript(lines: List<String>){
+        addResultValue(RESPONSE_ASSERTION_SCRIPT, lines.joinToString(System.lineSeparator()))
+    }
+
+    fun getAssertionScript() = getResultValue(RESPONSE_ASSERTION_SCRIPT)
 
     fun setHandledResponse(isNull : Boolean){
         addResultValue(HANDLED_RESULTS, if (isNull) HANDLED_RESULTS_NULL else HANDLED_RESULTS_NOT_NULL)

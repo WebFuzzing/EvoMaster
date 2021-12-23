@@ -169,4 +169,8 @@ public class CodeJavaGenerator {
     public static String withLength(String variableName){
         return String.format("%s.length", variableName);
     }
+
+    public static String junitAssertNumbersMatch(String expectedValue, String variableName){
+        return String.format("assertTrue(numbersMatch(%s, %s))", expectedValue, variableName) + appendLast();
+    }
 }

@@ -86,7 +86,14 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
     }
 
     private fun handleAssertions(lines: Lines, resVarName: String, rpcCallResult: RPCCallResult){
-        val responseBody = rpcCallResult.getResponseJsonValue()
+//        val responseBody = rpcCallResult.getResponseJsonValue()
+
+        if (config.enableRPCAssertionWithInstance){
+            if (rpcCallResult.getAssertionScript() != null)
+                rpcCallResult.getAssertionScript()!!.split(System.lineSeparator()).forEach {
+                    lines.add(it)
+                }
+        }
 
     }
 

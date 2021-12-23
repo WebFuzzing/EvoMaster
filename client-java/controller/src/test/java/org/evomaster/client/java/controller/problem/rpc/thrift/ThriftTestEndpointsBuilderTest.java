@@ -254,7 +254,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
         List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
         assertEquals(1, assertionJavaCode.size());
-        assertEquals("assertEquals(42.42, res1);", assertionJavaCode.get(0));
+        assertEquals("assertTrue(numbersMatch(42.42, res1));", assertionJavaCode.get(0));
     }
 
     @Test
