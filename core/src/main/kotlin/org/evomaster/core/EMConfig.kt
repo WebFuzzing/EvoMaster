@@ -1554,6 +1554,10 @@ class EMConfig {
     @Cfg("Whether to generate RPC tests which is independent from EM driver.")
     var enablePureRPCTestGeneration = false
 
+    @Experimental
+    @Cfg("Whether to generate RPC Assertions based on instance")
+    var enableRPCAssertionWithInstance = false
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds

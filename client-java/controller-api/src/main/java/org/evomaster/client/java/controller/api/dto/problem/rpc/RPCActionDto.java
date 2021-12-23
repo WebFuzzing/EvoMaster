@@ -43,6 +43,16 @@ public class RPCActionDto {
      */
     public String controllerVariable;
 
+    /**
+     * if generate assertions on driver side and send back core
+     */
+    public boolean doGenerateAssertions;
+
+    /**
+     * if generate test script on driver side and send back core
+     */
+    public boolean doGenerateTestScript;
+
     public RPCActionDto copy(){
         RPCActionDto copy = new RPCActionDto();
         copy.interfaceId = interfaceId;
@@ -53,6 +63,8 @@ public class RPCActionDto {
             copy.requestParams = requestParams.stream().map(ParamDto::copy).collect(Collectors.toList());
         copy.responseVariable = responseVariable;
         copy.controllerVariable = controllerVariable;
+        copy.doGenerateAssertions = doGenerateAssertions;
+        copy.doGenerateTestScript = doGenerateTestScript;
         return copy;
     }
 

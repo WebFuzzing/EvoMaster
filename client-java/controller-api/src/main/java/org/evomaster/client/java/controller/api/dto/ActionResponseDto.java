@@ -33,6 +33,11 @@ public class ActionResponseDto {
     public List<String> testScript;
 
     /**
+     * code for assertions
+     */
+    public List<String> assertionScript;
+
+    /**
      * representing exception info if it occurs
      */
     public RPCExceptionInfoDto exceptionInfoDto;

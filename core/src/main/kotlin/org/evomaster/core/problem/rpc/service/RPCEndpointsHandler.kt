@@ -30,7 +30,7 @@ class RPCEndpointsHandler {
     }
 
     @Inject
-    protected lateinit var configuration: EMConfig
+    protected lateinit var config: EMConfig
 
     /**
      * key is an id of the endpoint, ie, interface name: action name
@@ -104,10 +104,15 @@ class RPCEndpointsHandler {
                 }
             }
         }
-        if (configuration.enablePureRPCTestGeneration && index != -1){
-            rpcAction.responseVariable = generateResponseVariable(index)
+
+        rpcAction.doGenerateTestScript = config.enablePureRPCTestGeneration && (index != -1)
+        rpcAction.doGenerateAssertions = config.enableRPCAssertionWithInstance
+
+        if (rpcAction.doGenerateTestScript){
             rpcAction.controllerVariable = TestSuiteWriter.controller
         }
+        if (rpcAction.doGenerateTestScript || rpcAction.doGenerateAssertions)
+            rpcAction.responseVariable = generateResponseVariable(index)
 
         return rpcAction
     }

@@ -154,5 +154,9 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      */
     public abstract List<String> newAssertionWithJava(int indent, String responseVarName);
 
+    public List<String> newAssertionWithJava(String responseVarName){
+        return newAssertionWithJava(0, responseVarName);
+    }
+
     public abstract String getValueAsJavaString();
 }
