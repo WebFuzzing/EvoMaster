@@ -116,7 +116,7 @@ public class StringParam extends NamedTypedValue<StringType, String> {
 
     @Override
     public String getValueAsJavaString() {
-        return "\""+getValue()+"\"";
+        return "\""+CodeJavaGenerator.handleEscapeCharInString(getValue())+"\"";
     }
 
 }

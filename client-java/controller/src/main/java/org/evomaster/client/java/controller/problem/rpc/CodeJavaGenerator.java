@@ -1,12 +1,37 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 public class CodeJavaGenerator {
 
     private final static String NULL_EXP = "null";
     private final static String GET_CLIENT_METHOD = "getRPCClient";
+
+    /**
+     * handle escape char in string in java
+     *      https://docs.oracle.com/javase/tutorial/java/data/characters.html
+     * @param orgValue is an original string
+     * @return string with handled escape char
+     */
+    public static String handleEscapeCharInString(String orgValue){
+        StringBuilder sb = new StringBuilder();
+        for (char c: orgValue.toCharArray()){
+            switch (c){
+                case '\t': sb.append("\\t"); break;
+                case '\b': sb.append("\\b"); break;
+                case '\n': sb.append("\\n"); break;
+                case '\r': sb.append("\\r"); break;
+                case '\f': sb.append("\\f"); break;
+                case '\'': sb.append("\\'"); break;
+                case '\"': sb.append("\\\""); break;
+                case '\\': sb.append("\\\\"); break;
+                default: sb.append(c); break;
+            }
+        }
+        return sb.toString();
+    }
 
     public static String enumValue(String enumTypeName, String itemName){
         return String.format("%s.%s", handleNestedSymbolInTypeName(enumTypeName), itemName);
