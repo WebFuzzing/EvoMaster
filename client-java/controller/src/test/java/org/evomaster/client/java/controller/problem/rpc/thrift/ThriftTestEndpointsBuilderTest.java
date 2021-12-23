@@ -97,14 +97,6 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("java.lang.String arg0 = \"foo\";"));
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
 
         List<String> endpointJavaCode = endpoint.newInvocationWithJava("res1","controller");
         assertEquals(5, endpointJavaCode.size());
@@ -144,14 +136,10 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("boolean arg0 = true;"));
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
+
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(1, assertionJavaCode.size());
+        assertEquals("assertEquals(true, res1);", assertionJavaCode.get(0));
     }
 
     @Test
@@ -177,14 +165,10 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("byte arg0 = 42;"));
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
+
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(1, assertionJavaCode.size());
+        assertEquals("assertEquals(42, res1);", assertionJavaCode.get(0));
     }
 
     @Test
@@ -210,14 +194,10 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("int arg0 = 42;"));
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
+
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(1, assertionJavaCode.size());
+        assertEquals("assertEquals(42, res1);", assertionJavaCode.get(0));
     }
 
     @Test
@@ -244,14 +224,9 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(javaCode.get(0).equals("long arg0 = 42L;"));
 
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(1, assertionJavaCode.size());
+        assertEquals("assertEquals(42L, res1);", assertionJavaCode.get(0));
     }
 
     @Test
@@ -276,14 +251,10 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(1, javaCode.size());
         assertTrue(javaCode.get(0).equals("double arg0 = 42.42;"));
 
-        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
+
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(1, assertionJavaCode.size());
+        assertEquals("assertEquals(42.42, res1);", assertionJavaCode.get(0));
     }
 
     @Test
@@ -317,6 +288,9 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(" arg0.put(arg0_byteArray);", javaCode.get(4));
         assertEquals("}", javaCode.get(5));
 
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(1, assertionJavaCode.size());
+        assertEquals("// not handle ByteBuffer assertion", assertionJavaCode.get(0));
     }
 
     @Test
@@ -380,14 +354,13 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(" arg0.i64_thing = 42L;", javaCode.get(6));
         assertEquals("}", javaCode.get(7));
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
+
+        List<String> assertionJavaCode = request.newAssertionWithJava(0, "res1");
+        assertEquals(4, assertionJavaCode.size());
+        assertEquals("assertEquals(\"foo\", res1.string_thing);", assertionJavaCode.get(0));
+        assertEquals("assertEquals(42, res1.byte_thing);", assertionJavaCode.get(1));
+        assertEquals("assertEquals(42, res1.i32_thing);", assertionJavaCode.get(2));
+        assertEquals("assertEquals(42L, res1.i64_thing);", assertionJavaCode.get(3));
     }
 
     @Test
@@ -486,14 +459,16 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("}", javaCode.get(13));
 
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
+
+        List<String> assertionJavaCode = request.newAssertionWithJava(0, "res1");
+        assertEquals(6, assertionJavaCode.size());
+        assertEquals("assertEquals(42, res1.byte_thing);", assertionJavaCode.get(0));
+        assertEquals("assertEquals(\"bar\", res1.struct_thing.string_thing);", assertionJavaCode.get(1));
+        assertEquals("assertEquals(100, res1.struct_thing.byte_thing);", assertionJavaCode.get(2));
+        assertEquals("assertEquals(100, res1.struct_thing.i32_thing);", assertionJavaCode.get(3));
+        assertEquals("assertEquals(100L, res1.struct_thing.i64_thing);", assertionJavaCode.get(4));
+        assertEquals("assertEquals(42, res1.i32_thing);", assertionJavaCode.get(5));
+
     }
 
 
@@ -563,14 +538,15 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(" arg0.put(arg0_key_3,arg0_value_3);", javaCode.get(14));
         assertEquals("}", javaCode.get(15));
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
+
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(5, assertionJavaCode.size());
+        assertEquals("assertEquals(4, res1.size());", assertionJavaCode.get(0));
+        assertEquals("assertEquals(2, res1.get(1));", assertionJavaCode.get(1));
+        assertEquals("assertEquals(3, res1.get(2));", assertionJavaCode.get(2));
+        assertEquals("assertEquals(101, res1.get(100));", assertionJavaCode.get(3));
+        assertEquals("assertEquals(43, res1.get(42));", assertionJavaCode.get(4));
+
     }
 
     @Test
@@ -639,14 +615,14 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(" arg0.put(arg0_key_3,arg0_value_3);", javaCode.get(14));
         assertEquals("}", javaCode.get(15));
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
+
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(5, assertionJavaCode.size());
+        assertEquals("assertEquals(4, res1.size());", assertionJavaCode.get(0));
+        assertEquals("assertEquals(\"3\", res1.get(\"bar\"));", assertionJavaCode.get(1));
+        assertEquals("assertEquals(\"43\", res1.get(\"abc\"));", assertionJavaCode.get(2));
+        assertEquals("assertEquals(\"101\", res1.get(\"def\"));", assertionJavaCode.get(3));
+        assertEquals("assertEquals(\"2\", res1.get(\"foo\"));", assertionJavaCode.get(4));
     }
 
     @Test
@@ -696,14 +672,9 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(" arg0.add(arg0_e_2);", javaCodes.get(8));
         assertEquals("}", javaCodes.get(9));
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCodes.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCodes.size(); i++){
-//            assertEquals(javaCodes.get(i), pdto.javaCode.get(i));
-//        }
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(1, assertionJavaCode.size());
+        assertEquals("assertEquals(3, res1.size());", assertionJavaCode.get(0));
     }
 
     @Test
@@ -753,14 +724,12 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(" arg0.add(arg0_e_2);", javaCodes.get(8));
         assertEquals("}", javaCodes.get(9));
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCodes.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCodes.size(); i++){
-//            assertEquals(javaCodes.get(i), pdto.javaCode.get(i));
-//        }
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(4, assertionJavaCode.size());
+        assertEquals("assertEquals(3, res1.size());", assertionJavaCode.get(0));
+        assertEquals("assertEquals(1, res1.get(0));", assertionJavaCode.get(1));
+        assertEquals("assertEquals(2, res1.get(1));", assertionJavaCode.get(2));
+        assertEquals("assertEquals(3, res1.get(2));", assertionJavaCode.get(3));
     }
 
     @Test
@@ -792,14 +761,9 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(1, javaCode.size());
         assertEquals("com.thrift.example.real.thrift.test.Numberz arg0 = com.thrift.example.real.thrift.test.Numberz.TWO;", javaCode.get(0));
 
-//        RPCActionDto actionDto = endpoint.getDto();
-//        assertEquals(1, actionDto.requestParams.size());
-//        ParamDto pdto = actionDto.requestParams.get(0);
-//        assertNotNull(pdto.javaCode);
-//        assertEquals(javaCode.size(), pdto.javaCode.size());
-//        for (int i = 0; i < javaCode.size(); i++){
-//            assertEquals(javaCode.get(i), pdto.javaCode.get(i));
-//        }
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(1, assertionJavaCode.size());
+        assertEquals("assertEquals(com.thrift.example.real.thrift.test.Numberz.TWO, res1);", assertionJavaCode.get(0));
     }
 
     @Test
@@ -902,6 +866,21 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
                 fail("invalid key:value, ie,"+ p.innerContent.get(0).stringValue +":"+p.innerContent.get(1).stringValue);
             }
         }
+
+        List<String> assertionNullJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(1, assertionNullJavaCode.size());
+        assertEquals("assertNull(res1);", assertionNullJavaCode.get(0));
+
+        List<String> assertionJavaCode = response.newAssertionWithJava(0, "res1");
+        assertEquals(8, assertionJavaCode.size());
+        assertEquals("assertEquals(2, res1.size());", assertionJavaCode.get(0));
+        assertEquals("assertEquals(2, res1.get(1).size());", assertionJavaCode.get(1));
+        assertEquals("assertEquals(1, res1.get(1).get(1));", assertionJavaCode.get(2));
+        assertEquals("assertEquals(2, res1.get(1).get(2));", assertionJavaCode.get(3));
+        assertEquals("assertEquals(3, res1.get(2).size());", assertionJavaCode.get(4));
+        assertEquals("assertEquals(2, res1.get(2).get(1));", assertionJavaCode.get(5));
+        assertEquals("assertEquals(4, res1.get(2).get(2));", assertionJavaCode.get(6));
+        assertEquals("assertEquals(6, res1.get(2).get(3));", assertionJavaCode.get(7));
     }
 
     @Test
@@ -989,6 +968,19 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
                 fail("error field name "+fdto.name);
             }
         }
+
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        assertEquals(9, assertionJavaCode.size());
+        // disable due to flaky
+//        assertEquals("assertEquals(3, res1.userMap.size());", assertionJavaCode.get(0));
+//        assertEquals("assertEquals(8L, res1.userMap.get(com.thrift.example.real.thrift.test.Numberz.EIGHT));", assertionJavaCode.get(1));
+//        assertEquals("assertEquals(6L, res1.userMap.get(com.thrift.example.real.thrift.test.Numberz.SIX));", assertionJavaCode.get(2));
+//        assertEquals("assertEquals(2L, res1.userMap.get(com.thrift.example.real.thrift.test.Numberz.TWO));", assertionJavaCode.get(3));
+//        assertEquals("assertEquals(1, res1.xtructs.size());", assertionJavaCode.get(4));
+//        assertEquals("assertEquals(\"foo\", res1.xtructs.get(0).string_thing);", assertionJavaCode.get(5));
+//        assertEquals("assertEquals(100, res1.xtructs.get(0).byte_thing);", assertionJavaCode.get(6));
+//        assertEquals("assertEquals(100, res1.xtructs.get(0).i32_thing);", assertionJavaCode.get(7));
+//        assertEquals("assertEquals(100L, res1.xtructs.get(0).i64_thing);", assertionJavaCode.get(8));
     }
 
     @Test
