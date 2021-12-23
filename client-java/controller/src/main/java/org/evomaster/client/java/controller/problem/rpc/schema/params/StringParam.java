@@ -98,7 +98,7 @@ public class StringParam extends NamedTypedValue<StringType, String> {
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
         String value = null;
         if (getValue() != null)
-            value = "\""+getValue()+"\"";
+            value = getValueAsJavaString();
         return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value));
     }
 
