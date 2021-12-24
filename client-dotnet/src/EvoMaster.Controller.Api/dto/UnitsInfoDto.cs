@@ -1,17 +1,19 @@
 using System.Collections.Generic;
 
-namespace EvoMaster.Controller.Api {
+namespace EvoMaster.Controller.Api
+{
     /**
    * Information about the "units" in the SUT.
    * In case of OO languages like Java and Kotlin, those will be "classes"
    *
    * Created by arcuri82 on 27-Sep-19.
    */
-    public class UnitsInfoDto {
+    public class UnitsInfoDto
+    {
         /**
      * Then name of all the units (eg classes) in the SUT
      */
-        public IEnumerable<string> UnitNames = new HashSet<string>();
+        public IEnumerable<string> UnitNames { get; set; }
 
         /**
      * The total number of lines/statements/instructions in all
@@ -54,6 +56,6 @@ namespace EvoMaster.Controller.Api {
             Value -> OpenAPI object schema
             TODO should consider if also adding info on type, eg JSON vs XML
          */
-        public IReadOnlyDictionary<string,string>  ParsedDtos { get; set; }
+        public IReadOnlyDictionary<string, string> ParsedDtos { get; set; }
     }
 }

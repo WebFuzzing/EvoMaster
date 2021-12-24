@@ -38,7 +38,7 @@ namespace EvoMaster.Instrumentation
             _enteringProbe =
                 module.ImportReference(
                     typeof(Instrumentator).GetMethod(name: "EnteringLine",
-                        types: new[] {typeof(string), typeof(int)}));
+                        types: new[] {typeof(string), typeof(int), typeof(bool)}));
 
             foreach (var type in module.Types)
             {
@@ -55,6 +55,8 @@ namespace EvoMaster.Instrumentation
                     var lastCompletedLine = 0;
                     var alreadyCompletedLines = new List<int>();
                     method.Body.SimplifyMacros(); //This is to prevent overflow of short branch opcodes
+
+                    bool firstProbeInTheClass = true;
 
                     for (var i = 0; i < int.MaxValue; i++)
                     {
@@ -110,9 +112,13 @@ namespace EvoMaster.Instrumentation
                         }
 
                         if (sequencePoint != null && sequencePoint.StartLine != lastCompletedLine)
-                            i = InsertEnteringLineProbe(instruction, ilProcessor, i, type.Name,
-                                method.Name, sequencePoint.StartLine);
-                        
+                        {
+                            i = InsertEnteringLineProbe(instruction, ilProcessor, i, type.Name, sequencePoint.StartLine,
+                                firstProbeInTheClass);
+
+                            firstProbeInTheClass = false;
+                        }
+
                         if (sequencePoint != null && !sequencePoint.IsHidden)
                             lastCompletedLine = sequencePoint.StartLine;
                     }
@@ -126,16 +132,18 @@ namespace EvoMaster.Instrumentation
                 destination = destination.Remove(destination.Length - 1, 1);
             }
 
+            //saving unitsInfoDto in a json file
+
             module.Write($"{destination}/{assembly}");
             Client.Util.SimpleLogger.Info($"Instrumented File Saved at \"{destination}\"");
         }
 
         private int InsertCompletedLineProbe(Instruction instruction, ILProcessor ilProcessor,
-            int byteCodeIndex, string className, string methodName, int line)
+            int byteCodeIndex, string className, string methodName, int lineNo)
         {
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var methodNameInstruction = ilProcessor.Create(OpCodes.Ldstr, methodName);
-            var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, line);
+            var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var completedInstruction = ilProcessor.Create(OpCodes.Call, _completedProbe);
 
             ilProcessor.InsertBefore(instruction, classNameInstruction);
@@ -151,15 +159,18 @@ namespace EvoMaster.Instrumentation
         }
 
         private int InsertEnteringLineProbe(Instruction instruction, ILProcessor ilProcessor,
-            int byteCodeIndex, string className, string methodName, int line)
+            int byteCodeIndex, string className, int line, bool markNewClass)
         {
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, line);
+            var markNewClassInstruction = ilProcessor.Create(markNewClass ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
             var enteringInstruction = ilProcessor.Create(OpCodes.Call, _enteringProbe);
 
             ilProcessor.InsertBefore(instruction, classNameInstruction);
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, lineNumberInstruction);
+            byteCodeIndex++;
+            ilProcessor.InsertBefore(instruction, markNewClassInstruction);
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, enteringInstruction);
             byteCodeIndex++;
@@ -174,14 +185,17 @@ namespace EvoMaster.Instrumentation
         //This method is called by the probe inserted after each covered line in the instrumented SUT
         public static void CompletedLine(string className, string methodName, int lineNo)
         {
-            ObjectiveRecorder.RegisterTarget(ObjectiveNaming.LineObjectiveName(className, lineNo));
-            //TODO: description
-            ExecutionTracer.ExecutedLine(className, methodName, "desc", lineNo);
+            var lineTarget = ObjectiveNaming.LineObjectiveName(className, lineNo);
+            ObjectiveRecorder.RegisterTarget(lineTarget);
+            ExecutionTracer.ExecutedLine(className, methodName, lineTarget, lineNo);
         }
 
-        public static void EnteringLine(string className, int lineNo)
+        public static void EnteringLine(string className, int lineNo, bool markNewClass)
         {
-            UnitsInfoRecorder.MarkNewLine(ObjectiveNaming.LineObjectiveName(className,lineNo));
+            if (markNewClass)
+                UnitsInfoRecorder.MarkNewUnit(ObjectiveNaming.ClassObjectiveName(className));
+
+            UnitsInfoRecorder.MarkNewLine(ObjectiveNaming.LineObjectiveName(className, lineNo));
         }
     }
 }
