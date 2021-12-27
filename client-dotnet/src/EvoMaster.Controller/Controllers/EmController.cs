@@ -328,7 +328,7 @@ namespace EvoMaster.Controller.Controllers
 
             var dto = new TestResultsDto();
 
-            var targetInfos = NoKillSwitch(() => _sutController.GetTargetInfos(idsList).ToList());
+            var targetInfos = NoKillSwitch(() => _sutController.GetTargetInfos(idsList));
 
             if (targetInfos == null)
             {
@@ -337,7 +337,7 @@ namespace EvoMaster.Controller.Controllers
                 return StatusCode(500, WrappedResponseDto<TestResultsDto>.WithError(msg));
             }
 
-            targetInfos.ForEach(t =>
+            targetInfos.ToList().ForEach(t =>
             {
                 var info = new TargetInfoDto
                 {

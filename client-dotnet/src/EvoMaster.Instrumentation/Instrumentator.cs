@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using EvoMaster.Instrumentation_Shared;
 using EvoMaster.Instrumentation.StaticState;
 using Mono.Cecil;
@@ -12,6 +13,8 @@ namespace EvoMaster.Instrumentation
     {
         private MethodReference _completedProbe;
         private MethodReference _enteringProbe;
+
+        private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
 
         /// <summary>
         /// This method instruments an assembly file and saves its instrumented version in the specified destination directory
@@ -56,7 +59,7 @@ namespace EvoMaster.Instrumentation
                     var alreadyCompletedLines = new List<int>();
                     method.Body.SimplifyMacros(); //This is to prevent overflow of short branch opcodes
 
-                    bool firstProbeInTheClass = true;
+                    //bool firstProbeInTheClass = true;
 
                     for (var i = 0; i < int.MaxValue; i++)
                     {
@@ -113,10 +116,10 @@ namespace EvoMaster.Instrumentation
 
                         if (sequencePoint != null && sequencePoint.StartLine != lastCompletedLine)
                         {
-                            i = InsertEnteringLineProbe(instruction, ilProcessor, i, type.Name, sequencePoint.StartLine,
-                                firstProbeInTheClass);
+                            // i = InsertEnteringLineProbe(instruction, ilProcessor, i, type.Name, sequencePoint.StartLine,
+                            //     firstProbeInTheClass);
 
-                            firstProbeInTheClass = false;
+                            //firstProbeInTheClass = false;
                         }
 
                         if (sequencePoint != null && !sequencePoint.IsHidden)
@@ -133,6 +136,8 @@ namespace EvoMaster.Instrumentation
             }
 
             //saving unitsInfoDto in a json file
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(_registeredTargets);
+            File.WriteAllText("Targets.json", json);
 
             module.Write($"{destination}/{assembly}");
             Client.Util.SimpleLogger.Info($"Instrumented File Saved at \"{destination}\"");
@@ -141,6 +146,10 @@ namespace EvoMaster.Instrumentation
         private int InsertCompletedLineProbe(Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, string methodName, int lineNo)
         {
+            //register all targets(description of all targets, including units, lines and branches)
+            _registeredTargets.Classes.Add(ObjectiveNaming.ClassObjectiveName(className));
+            _registeredTargets.Lines.Add(ObjectiveNaming.LineObjectiveName(className, lineNo));
+
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var methodNameInstruction = ilProcessor.Create(OpCodes.Ldstr, methodName);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
