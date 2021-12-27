@@ -96,11 +96,11 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
                         CodeJavaGenerator.newMap()), indent+1);
         int index = 0;
         for (PairParam e: getValue()){
-            String eKeyVarName = variableName+"_key_"+index;
+            String eKeyVarName = CodeJavaGenerator.handleVariableName(variableName+"_key_"+index);
             if (e.getValue().getKey() == null)
                 throw new RuntimeException("key should not been null");
             codes.addAll(e.getValue().getKey().newInstanceWithJava(true, true, eKeyVarName, indent+1));
-            String eValueVarName = variableName+"_value_"+index;
+            String eValueVarName = CodeJavaGenerator.handleVariableName(variableName+"_value_"+index);
             if (e.getValue().getValue() == null)
                 throw new RuntimeException("value should not been null");
             codes.addAll(e.getValue().getValue().newInstanceWithJava(true, true, eValueVarName, indent+1));

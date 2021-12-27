@@ -198,4 +198,8 @@ public class CodeJavaGenerator {
     public static String junitAssertNumbersMatch(String expectedValue, String variableName){
         return String.format("assertTrue(numbersMatch(%s, %s))", expectedValue, variableName) + appendLast();
     }
+
+    public static String handleVariableName(String original){
+        return original.replaceAll("\\.","_");
+    }
 }

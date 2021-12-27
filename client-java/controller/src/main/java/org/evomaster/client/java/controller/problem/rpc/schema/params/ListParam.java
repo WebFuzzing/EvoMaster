@@ -86,7 +86,7 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
                         CodeJavaGenerator.newList()), indent+1);
         int index = 0;
         for (NamedTypedValue e: getValue()){
-            String eVarName = variableName+"_e_"+index;
+            String eVarName = CodeJavaGenerator.handleVariableName(variableName+"_e_"+index);
             codes.addAll(e.newInstanceWithJava(true, true, eVarName, indent+1));
             CodeJavaGenerator.addCode(codes, variableName+".add("+eVarName+");", indent+1);
             index++;
