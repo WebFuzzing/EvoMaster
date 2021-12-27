@@ -7,15 +7,12 @@ using EvoMaster.Instrumentation.StaticState;
 using EvoMaster.Instrumentation_Shared;
 using Xunit;
 
-namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
-{
-    public class LineCovTcTest
-    {
+namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
+    public class LineCovTcTest {
         //TODO: a test method to check whether the extra file contains every line
 
         [Fact]
-        public void TestLineCoverage()
-        {
+        public void TestLineCoverage() {
             ITriangleClassification tc = new TriangleClassificationImpl();
 
             ExecutionTracer.Reset();
@@ -35,8 +32,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
         [InlineData(10, 6, 3, "Line_at_TriangleClassificationImpl_00019")]
         [InlineData(7, 6, 7, "Line_at_TriangleClassificationImpl_00023")]
         [InlineData(7, 6, 5, "Line_at_TriangleClassificationImpl_00026")]
-        public void TestSpecificLineCoverage(int a, int b, int c, string returnLine)
-        {
+        public void TestSpecificLineCoverage(int a, int b, int c, string returnLine) {
             ITriangleClassification tc = new TriangleClassificationImpl();
 
             ExecutionTracer.Reset();
@@ -56,8 +52,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
         [InlineData(10, 6, 3)]
         [InlineData(7, 6, 7)]
         [InlineData(7, 6, 5)]
-        public void TestLastLineCoverage(int a, int b, int c)
-        {
+        public void TestLastLineCoverage(int a, int b, int c) {
             ITriangleClassification tc = new TriangleClassificationImpl();
 
             ExecutionTracer.Reset();
@@ -73,41 +68,36 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle
         }
 
         [Fact]
-        public void TestAllLinesGettingRegistered()
-        {
-            var expectedLineNumbers = new List<int>
-            {
+        public void TestAllLinesGettingRegistered() {
+            var expectedLineNumbers = new List<int> {
                 5, 6, 7, 10, 11, 14, 16, 18, 19, 22, 23, 26, 27
             };
 
             var expectedLines = new List<string>();
             expectedLineNumbers.ForEach(x =>
                 expectedLines.Add(ObjectiveNaming.LineObjectiveName("TriangleClassificationImpl", x)));
-            
+
             var targets = GetRegisteredTargets();
 
             Assert.Equal(expectedLines, targets.Lines);
         }
 
         [Fact]
-        public void TestAllClassesGettingRegistered()
-        {
-            var expectedclassNames = new List<string>
-            {
+        public void TestAllClassesGettingRegistered() {
+            var expectedclassNames = new List<string> {
                 "TriangleClassificationImpl"
             };
 
             var expectedClasses = new List<string>();
 
-            expectedclassNames.ForEach(x=>expectedClasses.Add(ObjectiveNaming.ClassObjectiveName(x)));
-            
+            expectedclassNames.ForEach(x => expectedClasses.Add(ObjectiveNaming.ClassObjectiveName(x)));
+
             var targets = GetRegisteredTargets();
 
             Assert.Equal(expectedClasses, targets.Classes);
         }
 
-        private RegisteredTargets GetRegisteredTargets()
-        {
+        private RegisteredTargets GetRegisteredTargets() {
             var bin = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
             if (bin == null) throw new Exception("Executing directory not found");

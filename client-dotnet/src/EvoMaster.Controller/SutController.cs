@@ -14,15 +14,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace EvoMaster.Controller
-{
+namespace EvoMaster.Controller {
     ///<summary>
     ///Abstract class used to connect to the EvoMaster process, and
     ///that is responsible to start/stop/restart the tested application,
     ///ie the system under test (SUT)
     ///</summary>
-    public abstract class SutController : ISutHandler
-    {
+    public abstract class SutController : ISutHandler {
         private int _controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
         private string _controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
 
@@ -54,14 +52,11 @@ namespace EvoMaster.Controller
         ///</summary>
         ///<remarks>This method is blocking until the server is initialized.</remarks>
         ///<returns>returns true if there was no problem in starting the controller </returns>
-        public bool StartTheControllerServer()
-        {
-            try
-            {
+        public bool StartTheControllerServer() {
+            try {
                 CreateHostBuilder().Build().Run();
             }
-            catch (System.Exception e)
-            {
+            catch (System.Exception e) {
                 SimpleLogger.Error("Failed to start web server", e);
 
                 return false;
@@ -70,57 +65,48 @@ namespace EvoMaster.Controller
             return true;
         }
 
-        public bool StopTheControllerServer()
-        {
+        public bool StopTheControllerServer() {
             //TODO: complete this method
             throw new NotImplementedException();
         }
 
         ///<summary>Returns the actual port in use (eg, if it was an ephemeral 0)</summary>
-        public int GetControllerServerPort()
-        {
+        public int GetControllerServerPort() {
             //TODO: Complete this
             throw new NotImplementedException();
             //return ((AbstractNetworkConnector) controllerServer.getConnectors () [0]).getLocalPort ();
         }
 
-        public int GetControllerPort()
-        {
+        public int GetControllerPort() {
             return _controllerPort;
         }
 
-        public void SetControllerPort(int controllerPort)
-        {
+        public void SetControllerPort(int controllerPort) {
             this._controllerPort = controllerPort;
         }
 
-        public string GetControllerHost()
-        {
+        public string GetControllerHost() {
             return _controllerHost;
         }
 
-        public void SetControllerHost(string controllerHost)
-        {
+        public void SetControllerHost(string controllerHost) {
             this._controllerHost = controllerHost;
         }
 
         //TODO: Complete this method
-        public void ExecInsertionsIntoDatabase(IList<InsertionDto> insertions)
-        {
+        public void ExecInsertionsIntoDatabase(IList<InsertionDto> insertions) {
             throw new NotImplementedException();
         }
 
         ///<summary>Calculate heuristics based on intercepted SQL commands</summary>
         ///<param name="sql">command as a string</param>
         //TODO: Complete this method
-        public void HandleSql(string sql)
-        {
+        public void HandleSql(string sql) {
             throw new NotImplementedException();
         }
 
         //TODO: Complete this method
-        public void EnableComputeSqlHeuristicsOrExtractExecution(bool enableSqlHeuristics, bool enableSqlExecution)
-        {
+        public void EnableComputeSqlHeuristicsOrExtractExecution(bool enableSqlHeuristics, bool enableSqlExecution) {
             throw new NotImplementedException();
         }
 
@@ -129,26 +115,22 @@ namespace EvoMaster.Controller
         ///and it is automatically called by the EM controller after the SUT is started.
         ///</summary>
         //TODO: Complete this method
-        public void InitSqlHandler()
-        {
+        public void InitSqlHandler() {
             throw new NotImplementedException();
         }
 
         //TODO: Complete this method
-        public void ResetExtraHeuristics()
-        {
+        public void ResetExtraHeuristics() {
             throw new NotImplementedException();
         }
 
         //TODO: Complete this method
-        public IList<ExtraHeuristicsDto> GetExtraHeuristics()
-        {
+        public IList<ExtraHeuristicsDto> GetExtraHeuristics() {
             throw new NotImplementedException();
         }
 
         //TODO: Complete this method
-        public ExtraHeuristicsDto ComputeExtraHeuristics()
-        {
+        public ExtraHeuristicsDto ComputeExtraHeuristics() {
             throw new NotImplementedException();
         }
 
@@ -161,8 +143,7 @@ namespace EvoMaster.Controller
          * @see SutController#getConnection
          */
         //TODO: Complete this method
-        public DbSchemaDto GetSqlDatabaseSchema()
-        {
+        public DbSchemaDto GetSqlDatabaseSchema() {
             throw new NotImplementedException();
         }
 
@@ -173,8 +154,7 @@ namespace EvoMaster.Controller
          * @return false if the verification failed
          */
         //TODO: Complete this method
-        public bool VerifySqlConnection()
-        {
+        public bool VerifySqlConnection() {
             throw new NotImplementedException();
         }
 
@@ -183,8 +163,7 @@ namespace EvoMaster.Controller
          *
          * Man: I modified this, please check Amid.
          */
-        public void NewTest()
-        {
+        public void NewTest() {
             //_actionIndex = -1;
 
             // resetExtraHeuristics();
@@ -200,8 +179,7 @@ namespace EvoMaster.Controller
          * @param dto the DTO with the information about the action (eg its index in the test)
          */
         //TODO: Complete this method. Man: modified, please check
-        public void NewAction(ActionDto dto)
-        {
+        public void NewAction(ActionDto dto) {
             // if (dto.index > extras.size()) {
             //     extras.add(computeExtraHeuristics());
             // }
@@ -367,15 +345,12 @@ namespace EvoMaster.Controller
 
         public abstract UnitsInfoDto GetUnitsInfoDto();
 
-        protected UnitsInfoDto GetUnitsInfoDto(UnitsInfoRecorder recorder)
-        {
-            if (recorder == null)
-            {
+        protected UnitsInfoDto GetUnitsInfoDto(UnitsInfoRecorder recorder) {
+            if (recorder == null) {
                 return null;
             }
 
-            var dto = new UnitsInfoDto
-            {
+            var dto = new UnitsInfoDto {
                 NumberOfBranches = recorder.GetNumberOfBranches(),
                 NumberOfLines = recorder.GetNumberOfLines(),
                 NumberOfReplacedMethodsInSut = recorder.GetNumberOfReplacedMethodsInSut(),
@@ -388,8 +363,7 @@ namespace EvoMaster.Controller
             return dto;
         }
 
-        protected UnitsInfoDto GetUnitsInfoDtoFromFile()
-        {
+        protected UnitsInfoDto GetUnitsInfoDtoFromFile() {
             var bin = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
             if (bin == null) throw new Exception("Executing directory not found");
@@ -399,8 +373,7 @@ namespace EvoMaster.Controller
             var targets = Newtonsoft.Json.JsonConvert.DeserializeObject<RegisteredTargets>(json);
 
             //TODO: other props of the sut
-            var dto = new UnitsInfoDto
-            {
+            var dto = new UnitsInfoDto {
                 UnitNames = targets.Classes,
                 NumberOfBranches = targets.Branches.Count,
                 NumberOfLines = targets.Lines.Count
@@ -413,17 +386,14 @@ namespace EvoMaster.Controller
 
         private IHostBuilder CreateHostBuilder() =>
             Host.CreateDefaultBuilder()
-                .ConfigureServices((hc, services) =>
-                {
+                .ConfigureServices((hc, services) => {
                     services.Add(ServiceDescriptor.Singleton(typeof(SutController), this));
                 })
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
+                .ConfigureWebHostDefaults(webBuilder => {
                     webBuilder.UseStartup<Startup>().UseUrls($"http://*:{_controllerPort}");
                 });
 
-        protected int GetEphemeralTcpPort()
-        {
+        protected int GetEphemeralTcpPort() {
             var tcpListener = new TcpListener(IPAddress.Loopback, 0);
 
             tcpListener.Start();

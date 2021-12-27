@@ -12,8 +12,7 @@ using Action = EvoMaster.Instrumentation.Action;
 
 namespace EvoMaster.Controller {
     public abstract class EmbeddedSutController : SutController {
-        public sealed override UnitsInfoDto GetUnitsInfoDto()
-        {
+        public sealed override UnitsInfoDto GetUnitsInfoDto() {
             // return GetUnitsInfoDto(UnitsInfoRecorder.GetInstance());
             return GetUnitsInfoDtoFromFile();
         }

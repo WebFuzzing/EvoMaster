@@ -26,7 +26,6 @@ namespace EvoMaster.Instrumentation {
         }
 
         public static List<TargetInfo> GetTargetInfos(IEnumerable<int> ids) {
-            
             var list = new List<TargetInfo>();
 
             var objectives = ExecutionTracer.GetInternalReferenceToObjectiveCoverage();
@@ -35,15 +34,14 @@ namespace EvoMaster.Instrumentation {
                 var descriptiveId = ObjectiveRecorder.GetDescriptiveId(id);
 
                 var info = objectives[descriptiveId];
-                
+
                 info = info == null ? TargetInfo.NotReached(id) : info.WithMappedId(id).WithNoDescriptiveId();
 
                 list.Add(info);
             });
 
             //If new targets were found, we add them even if not requested by EM
-            ObjectiveRecorder.GetTargetsSeenFirstTime().ToList().ForEach(s=> {
-                
+            ObjectiveRecorder.GetTargetsSeenFirstTime().ToList().ForEach(s => {
                 var mappedId = ObjectiveRecorder.GetMappedId(s);
 
                 var info = objectives[s].WithMappedId(mappedId);
