@@ -32,6 +32,17 @@ public class AuthenticationDto {
      */
     public JsonTokenPostLoginDto jsonTokenPostLogin;
 
+    /**
+     * if the auth is processed based on RPC endpoints,
+     * specify what info are required to execute the endpoint
+     */
+    public JsonAuthEndpointDto jsonAuthEndpoint;
+
+    /**
+     * part of info in request for authentication
+     */
+    public List<AuthKeyValueDto> authKeyValue = new ArrayList<>();
+
     public AuthenticationDto() {
     }
 
