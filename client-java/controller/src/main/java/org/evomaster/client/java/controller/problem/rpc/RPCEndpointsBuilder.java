@@ -36,18 +36,56 @@ public class RPCEndpointsBuilder {
      * @param rpcType          is the type of RPC, e.g., gRPC, Thrift
      * @return an interface schema for evomaster to access
      */
-    public static InterfaceSchema build(String interfaceName, RPCType rpcType, Object client) {
+    public static InterfaceSchema build(String interfaceName, RPCType rpcType, Object client,
+                                        List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
+                                        List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation) {
         List<EndpointSchema> endpoints = new ArrayList<>();
+        List<String> skippedEndpoints = new ArrayList<>();
         try {
             Class<?> interfaze = Class.forName(interfaceName);
-            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType);
+            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints);
             for (Method m : interfaze.getDeclaredMethods()) {
-                endpoints.add(build(schema, m, rpcType));
+                if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation))
+                    endpoints.add(build(schema, m, rpcType));
+                else {
+                    skippedEndpoints.add(m.getName());
+                }
             }
             return schema;
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("cannot find the interface with the name (" + interfaceName + ") and the error message is " + e.getMessage());
         }
+    }
+
+    private static boolean filterMethod(Method endpoint,
+                                        List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
+                                        List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation){
+        if (skipEndpointsByName != null && involveEndpointsByName != null)
+            throw new IllegalArgumentException("Error: skipEndpointsByName and involveEndpointsByName should not be specified at same time.");
+        if (skipEndpointsByAnnotation != null && involveEndpointsByAnnotation != null)
+            throw new IllegalArgumentException("Error: skipEndpointsByAnnotation and involveEndpointsByAnnotation should not be specified at same time.");
+
+        if (skipEndpointsByName != null || skipEndpointsByAnnotation != null)
+            return !anyMatchByNameAndAnnotation(endpoint, skipEndpointsByName, skipEndpointsByAnnotation);
+
+        if (involveEndpointsByName != null || involveEndpointsByAnnotation != null)
+            return anyMatchByNameAndAnnotation(endpoint, involveEndpointsByName, involveEndpointsByAnnotation);
+
+        return true;
+    }
+
+    private static boolean anyMatchByNameAndAnnotation(Method endpoint, List<String> names, List<String> annotations){
+        boolean anyMatch = false;
+        if (annotations != null){
+            for (Annotation annotation : endpoint.getAnnotations()){
+                anyMatch = anyMatch || annotations.contains(annotation.annotationType().getName());
+            }
+        }
+
+        if (names != null)
+            anyMatch = anyMatch || names.contains(endpoint.getName());
+
+        return anyMatch;
     }
 
 

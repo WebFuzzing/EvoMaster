@@ -320,7 +320,11 @@ public abstract class SutController implements SutHandler, CustomizedResponseHan
         try {
             RPCProblem rpcp = (RPCProblem) getProblemInfo();
             for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
-                InterfaceSchema schema = RPCEndpointsBuilder.build(interfaceName, rpcp.getType(), rpcp.getClient(interfaceName));
+                InterfaceSchema schema = RPCEndpointsBuilder.build(interfaceName, rpcp.getType(), rpcp.getClient(interfaceName),
+                        rpcp.skipEndpointsByName!=null? rpcp.skipEndpointsByName.get(interfaceName):null,
+                        rpcp.skipEndpointsByAnnotation!=null?rpcp.skipEndpointsByAnnotation.get(interfaceName):null,
+                        rpcp.involveEndpointsByName!=null? rpcp.involveEndpointsByName.get(interfaceName):null,
+                        rpcp.involveEndpointsByAnnotation!=null? rpcp.involveEndpointsByAnnotation.get(interfaceName):null);
                 rpcInterfaceSchema.put(interfaceName, schema);
             }
         }catch (Exception e){

@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTyped
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CycleObjectType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +49,18 @@ public final class InterfaceSchema{
      */
     private final RPCType rpcType;
 
+    private final List<String> skippedEndpoints;
+
     public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client, RPCType rpcType) {
+        this(name, endpoints, client, rpcType, null);
+    }
+
+    public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client, RPCType rpcType, List<String> skippedEndpoints) {
         this.name = name;
         this.endpoints = endpoints;
         this.clientInfo = client;
         this.rpcType = rpcType;
+        this.skippedEndpoints = skippedEndpoints;
     }
 
     public void registerType(TypeSchema type, NamedTypedValue param){
@@ -124,6 +132,8 @@ public final class InterfaceSchema{
         dto.interfaceId = this.getName();
         dto.clientInfo = this.getClientInfo();
         dto.endpoints = endpoints.stream().map(EndpointSchema::getDto).collect(Collectors.toList());
+        if (skippedEndpoints != null)
+            dto.skippedEndpoints = new ArrayList<>(skippedEndpoints);
         return dto;
     }
 }

@@ -27,4 +27,9 @@ public class RPCInterfaceSchemaDto {
      */
     public List<ParamDto> types;
 
+    /**
+     *  skipped endpoints
+     */
+    public List<String> skippedEndpoints;
+
 }

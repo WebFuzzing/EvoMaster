@@ -80,12 +80,12 @@ class RPCEndpointsHandler {
         }
 
         // report statistic of endpoints
-        reportEndpointsStatistics(problem.schemas.size)
+        reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 })
     }
 
-    private fun reportEndpointsStatistics(numSchema: Int){
+    private fun reportEndpointsStatistics(numSchema: Int, skipped: Int){
         LoggingUtil.getInfoLogger().apply {
-            info("There are $numSchema defined RPC interfaces with ${actionSchemaCluster.size} accessible endpoints.")
+            info("There are $numSchema defined RPC interfaces with ${actionSchemaCluster.size} accessible endpoints and $skipped skipped endpoints.")
         }
     }
 
