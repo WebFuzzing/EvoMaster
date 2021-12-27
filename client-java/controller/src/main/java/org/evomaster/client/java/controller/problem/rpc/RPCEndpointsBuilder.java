@@ -40,7 +40,7 @@ public class RPCEndpointsBuilder {
         List<EndpointSchema> endpoints = new ArrayList<>();
         try {
             Class<?> interfaze = Class.forName(interfaceName);
-            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, (client != null)?client.getClass().getName():null, rpcType);
+            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType);
             for (Method m : interfaze.getDeclaredMethods()) {
                 endpoints.add(build(schema, m, rpcType));
             }
@@ -48,6 +48,29 @@ public class RPCEndpointsBuilder {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("cannot find the interface with the name (" + interfaceName + ") and the error message is " + e.getMessage());
         }
+    }
+
+
+    private static String getClientClass(Object client){
+        if (client == null) return null;
+        String clazzType = client.getClass().getName();
+
+        // handle com.sun.proxy
+        if (!clazzType.startsWith("com.sun.proxy.")){
+            return clazzType;
+        }
+
+        Class<?>[] clazz = client.getClass().getInterfaces();
+        if (clazz.length == 0){
+            SimpleLogger.error("Error: the client is not related to any interface");
+            return null;
+        }
+
+        if (clazz.length > 1)
+            SimpleLogger.error("ERROR: the client has more than one interfaces");
+
+        return clazz[0].getName();
+
     }
 
     private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType) {
