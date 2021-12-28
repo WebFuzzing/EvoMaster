@@ -97,6 +97,7 @@ public class RPCEndpointsBuilder {
     }
 
     private static AuthenticationDto getRelatedAuthEndpoint(List<AuthenticationDto> authenticationDtos, String interfaceName, Method method){
+        if (authenticationDtos == null) return null;
         return authenticationDtos.stream().filter(a-> a.jsonAuthEndpoint != null
                 && a.jsonAuthEndpoint.endpointName.equals(method.getName())
                 && a.jsonAuthEndpoint.interfaceName.equals(interfaceName)).findAny().orElseGet(null);
@@ -160,9 +161,11 @@ public class RPCEndpointsBuilder {
         List<NamedTypedValue> requestParams = new ArrayList<>();
 
         List<AuthenticationDto> authAnnotationDtos = getRelatedAuthAnnotation(authenticationDtoList, method);
-        List<Integer> authKeys = authAnnotationDtos.stream().map(s-> authenticationDtoList.indexOf(s)).collect(Collectors.toList());
+        List<Integer> authKeys = null;
+        if (authAnnotationDtos != null)
+            authKeys = authAnnotationDtos.stream().map(s-> authenticationDtoList.indexOf(s)).collect(Collectors.toList());
         List<String> authFields = null;
-        if (!authAnnotationDtos.isEmpty()){
+        if (authAnnotationDtos!= null && !authAnnotationDtos.isEmpty()){
             authFields = authAnnotationDtos.get(0).authAnnotation.values.stream().map(s-> s.fieldKey).collect(Collectors.toList());
         }
         for (Parameter p : method.getParameters()) {
@@ -183,10 +186,11 @@ public class RPCEndpointsBuilder {
             }
         }
 
-        return new EndpointSchema(method.getName(), schema.getName(), schema.getClientInfo(), requestParams, response, exceptions, !authAnnotationDtos.isEmpty(), authKeys);
+        return new EndpointSchema(method.getName(), schema.getName(), schema.getClientInfo(), requestParams, response, exceptions, authAnnotationDtos!= null && !authAnnotationDtos.isEmpty(), authKeys);
     }
 
     private static List<AuthenticationDto> getRelatedAuthAnnotation(List<AuthenticationDto> authenticationDtoList, Method method){
+        if (authenticationDtoList == null) return null;
         List<String> annotations = Arrays.stream(method.getAnnotations()).map(s-> s.annotationType().getName()).collect(Collectors.toList());
         return authenticationDtoList.stream().filter(s-> s.authAnnotation != null && s.authAnnotation.annotationName!= null && annotations.contains(s.authAnnotation.annotationName)).collect(Collectors.toList());
     }
