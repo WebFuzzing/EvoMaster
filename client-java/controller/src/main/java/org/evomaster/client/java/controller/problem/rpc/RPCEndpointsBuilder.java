@@ -41,10 +41,12 @@ public class RPCEndpointsBuilder {
      * @param authenticationDtoList
      */
     public static void validateRPCAuthAnnotation(List<AuthenticationDto> authenticationDtoList){
+        if (authenticationDtoList == null || authenticationDtoList.isEmpty()) return;
+
         Map<String, List<AuthAnnotationDto>> group = new HashMap<>();
         authenticationDtoList.stream().filter(s-> s.authAnnotation!=null).forEach(s->{
             if (s.authAnnotation.annotationName == null)
-                throw new IllegalArgumentException("annotationName must be specified for auth info at index "+ authenticationDtoList.indexOf(s));
+                throw new RuntimeException("annotationName must be specified for auth info at index "+ authenticationDtoList.indexOf(s));
             if (!group.containsKey(s.authAnnotation.annotationName))
                 group.put(s.authAnnotation.annotationName, new ArrayList<>());
             group.get(s.authAnnotation.annotationName).add(s.authAnnotation);
@@ -55,7 +57,7 @@ public class RPCEndpointsBuilder {
                 g.forEach(a->{
                     List<String> akeys = a.values.stream().map(k-> k.fieldKey).collect(Collectors.toList());
                     if (akeys.size() != keys.size() || !akeys.containsAll(keys)){
-                        throw new IllegalArgumentException("keys for same annotation "+a.annotationName+" must be specified with same keys");
+                        throw new RuntimeException("keys for same annotation "+a.annotationName+" must be specified with same keys");
                     }
                 });
             }
