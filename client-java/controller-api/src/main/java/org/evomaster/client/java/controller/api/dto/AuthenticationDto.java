@@ -39,9 +39,9 @@ public class AuthenticationDto {
     public JsonAuthEndpointDto jsonAuthEndpoint;
 
     /**
-     * part of info in request for authentication
+     * auth with annotation on endpoints
      */
-    public List<AuthKeyValueDto> authKeyValue = new ArrayList<>();
+    public AuthAnnotationDto authAnnotation;
 
     public AuthenticationDto() {
     }

@@ -3,16 +3,11 @@ package org.evomaster.core.problem.httpws.service
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.httpws.service.auth.*
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -27,7 +22,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     }
 
 
-    protected val authentications: MutableList<AuthenticationInfo> = mutableListOf()
+    protected val authentications: MutableList<HttpWsAuthenticationInfo> = mutableListOf()
 
 
 
@@ -45,7 +40,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
         return action
     }
 
-    fun getRandomAuth(noAuthP: Double): AuthenticationInfo {
+    fun getRandomAuth(noAuthP: Double): HttpWsAuthenticationInfo {
         if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
             return NoAuth()
         } else {
@@ -116,7 +111,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
         }
 
 
-        val auth = AuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
+        val auth = HttpWsAuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
 
         authentications.add(auth)
         return

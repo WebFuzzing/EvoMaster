@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.graphql
 
 import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.search.Action
@@ -19,7 +19,7 @@ class GraphQLAction(
         val methodName: String,
     val methodType: GQMethodType,
     parameters: MutableList<Param>,
-    auth: AuthenticationInfo = NoAuth()
+    auth: HttpWsAuthenticationInfo = NoAuth()
         ) : HttpWsAction(auth, parameters) {
 
     override fun getName(): String {

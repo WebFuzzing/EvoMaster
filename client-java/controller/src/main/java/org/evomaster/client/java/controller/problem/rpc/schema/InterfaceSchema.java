@@ -33,6 +33,11 @@ public final class InterfaceSchema{
     private List<EndpointSchema> endpoints;
 
     /**
+     * a list of endpoints for handling authentication
+     */
+    private List<EndpointSchema> authEndpoints;
+
+    /**
      * key is the full name of type
      * value is its type schema
      */

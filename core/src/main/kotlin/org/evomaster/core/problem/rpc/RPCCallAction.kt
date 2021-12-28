@@ -1,7 +1,10 @@
 package org.evomaster.core.problem.rpc
 
 import org.evomaster.core.problem.api.service.ApiWsAction
+import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
+import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.search.gene.Gene
 
@@ -26,14 +29,11 @@ class RPCCallAction(
      * an actual response of the response
      * note that the template is immutable, and it is not part of the children of [this]
      */
-    var response : RPCParam?
+    var response : RPCParam?,
 
-    /*
-        TODO Man shall I add detailed dto of exception here?
-        it might be helpful for assertion generations on exception dto. CHECK LATER
-     */
+    override var auth: RPCAuthenticationInfo = RPCNoAuth()
 
-) : ApiWsAction(inputParameters)  {
+) : ApiWsAction(auth, inputParameters)  {
 
     override fun getName(): String {
         return id

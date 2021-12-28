@@ -6,7 +6,7 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
@@ -519,7 +519,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
         addInitializingActions(individual, mutatedGenes, sampler)
     }
 
-    private fun maintainAuth(authInfo: AuthenticationInfo?, mutated: RestResourceCalls){
+    private fun maintainAuth(authInfo: HttpWsAuthenticationInfo?, mutated: RestResourceCalls){
         authInfo?.let { auth->
             mutated.seeActions(NO_SQL).forEach { if(it is RestCallAction) it.auth = auth }
         }

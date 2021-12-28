@@ -1,11 +1,12 @@
 package org.evomaster.core.problem.api.service
 
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.service.Randomness
 
 abstract class ApiWsAction(
+    open val auth: AuthenticationInfo,
     val parameters: MutableList<Param>
 ) : Action(parameters){
 

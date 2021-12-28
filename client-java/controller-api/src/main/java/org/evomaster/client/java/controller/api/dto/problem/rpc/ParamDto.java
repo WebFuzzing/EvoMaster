@@ -56,6 +56,11 @@ public class ParamDto {
     public Long maxValue;
 
     /**
+     * if the param is for handling auth
+     */
+    public boolean isForAuth;
+
+    /**
      * create a copy
      */
     public ParamDto copy(){

@@ -37,6 +37,16 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         ind1 uses javax-validation
      */
 
+    public boolean isForAuth() {
+        return isForAuth;
+    }
+
+    public void setForAuth(boolean forAuth) {
+        isForAuth = forAuth;
+    }
+
+    private boolean isForAuth = false;
+
     public NamedTypedValue(String name, T type) {
         this.name = name;
         this.type = type;
@@ -77,6 +87,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         dto.name = name;
         dto.type = type.getDto();
         dto.isNullable = isNullable;
+        dto.isForAuth = isForAuth;
         return dto;
     }
 

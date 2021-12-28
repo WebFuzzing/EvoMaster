@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
+import org.evomaster.client.java.controller.api.dto.AuthAnnotationDto;
+import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.JsonAuthEndpointDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
@@ -32,29 +35,71 @@ public class RPCEndpointsBuilder {
     }
 
     /**
+     * for auth info specified with annotations
+     * 1) regarding same annotation, they should have consistent keys
+     * 2) annotation should not be null
+     * @param authenticationDtoList
+     */
+    public static void validateRPCAuthAnnotation(List<AuthenticationDto> authenticationDtoList){
+        Map<String, List<AuthAnnotationDto>> group = new HashMap<>();
+        authenticationDtoList.stream().filter(s-> s.authAnnotation!=null).forEach(s->{
+            if (s.authAnnotation.annotationName == null)
+                throw new IllegalArgumentException("annotationName must be specified for auth info at index "+ authenticationDtoList.indexOf(s));
+            if (!group.containsKey(s.authAnnotation.annotationName))
+                group.put(s.authAnnotation.annotationName, new ArrayList<>());
+            group.get(s.authAnnotation.annotationName).add(s.authAnnotation);
+        });
+        group.values().forEach(g->{
+            if (g.size() > 1){
+                List<String> keys = g.get(0).values.stream().map(a-> a.fieldKey).collect(Collectors.toList());
+                g.forEach(a->{
+                    List<String> akeys = a.values.stream().map(k-> k.fieldKey).collect(Collectors.toList());
+                    if (akeys.size() != keys.size() || !akeys.containsAll(keys)){
+                        throw new IllegalArgumentException("keys for same annotation "+a.annotationName+" must be specified with same keys");
+                    }
+                });
+            }
+        });
+    }
+
+    /**
      * @param interfaceName the name of interface
      * @param rpcType          is the type of RPC, e.g., gRPC, Thrift
      * @return an interface schema for evomaster to access
      */
     public static InterfaceSchema build(String interfaceName, RPCType rpcType, Object client,
                                         List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
-                                        List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation) {
+                                        List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation,
+                                        List<AuthenticationDto> authenticationDtoList) {
         List<EndpointSchema> endpoints = new ArrayList<>();
         List<String> skippedEndpoints = new ArrayList<>();
+        Map<Integer, EndpointSchema> authEndpoints = new HashMap<>();
         try {
             Class<?> interfaze = Class.forName(interfaceName);
             InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints);
             for (Method m : interfaze.getDeclaredMethods()) {
                 if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation))
-                    endpoints.add(build(schema, m, rpcType));
+                    endpoints.add(build(schema, m, rpcType, authenticationDtoList));
                 else {
                     skippedEndpoints.add(m.getName());
+                }
+
+                AuthenticationDto auth = getRelatedAuthEndpoint(authenticationDtoList, interfaceName, m);
+                if (auth != null){
+                    int index = authenticationDtoList.indexOf(auth);
+                    authEndpoints.put(index, build(schema, m, rpcType, authenticationDtoList));
                 }
             }
             return schema;
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("cannot find the interface with the name (" + interfaceName + ") and the error message is " + e.getMessage());
         }
+    }
+
+    private static AuthenticationDto getRelatedAuthEndpoint(List<AuthenticationDto> authenticationDtos, String interfaceName, Method method){
+        return authenticationDtos.stream().filter(a-> a.jsonAuthEndpoint != null
+                && a.jsonAuthEndpoint.endpointName.equals(method.getName())
+                && a.jsonAuthEndpoint.interfaceName.equals(interfaceName)).findAny().orElseGet(null);
     }
 
     private static boolean filterMethod(Method endpoint,
@@ -111,15 +156,21 @@ public class RPCEndpointsBuilder {
 
     }
 
-    private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType) {
+    private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType, List<AuthenticationDto> authenticationDtoList) {
         List<NamedTypedValue> requestParams = new ArrayList<>();
 
+        List<AuthenticationDto> authAnnotationDtos = getRelatedAuthAnnotation(authenticationDtoList, method);
+        List<Integer> authKeys = authAnnotationDtos.stream().map(s-> authenticationDtoList.indexOf(s)).collect(Collectors.toList());
+        List<String> authFields = null;
+        if (!authAnnotationDtos.isEmpty()){
+            authFields = authAnnotationDtos.get(0).authAnnotation.values.stream().map(s-> s.fieldKey).collect(Collectors.toList());
+        }
         for (Parameter p : method.getParameters()) {
-            requestParams.add(buildInputParameter(schema, p, rpcType));
+            requestParams.add(buildInputParameter(schema, p, rpcType, authFields));
         }
         NamedTypedValue response = null;
         if (!method.getReturnType().equals(Void.TYPE)) {
-            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>());
+            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null);
         }
 
         List<NamedTypedValue> exceptions = null;
@@ -127,19 +178,24 @@ public class RPCEndpointsBuilder {
             exceptions = new ArrayList<>();
             for (int i = 0; i < method.getExceptionTypes().length; i++){
                 NamedTypedValue exception = build(schema, method.getExceptionTypes()[i],
-                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>());
+                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>(), null);
                 exceptions.add(exception);
             }
         }
 
-        return new EndpointSchema(method.getName(), schema.getName(), schema.getClientInfo(), requestParams, response, exceptions);
+        return new EndpointSchema(method.getName(), schema.getName(), schema.getClientInfo(), requestParams, response, exceptions, !authAnnotationDtos.isEmpty(), authKeys);
     }
 
-    private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type) {
+    private static List<AuthenticationDto> getRelatedAuthAnnotation(List<AuthenticationDto> authenticationDtoList, Method method){
+        List<String> annotations = Arrays.stream(method.getAnnotations()).map(s-> s.annotationType().getName()).collect(Collectors.toList());
+        return authenticationDtoList.stream().filter(s-> s.authAnnotation != null && s.authAnnotation.annotationName!= null && annotations.contains(s.authAnnotation.annotationName)).collect(Collectors.toList());
+    }
+
+    private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type, List<String> fields) {
         String name = parameter.getName();
         Class<?> clazz = parameter.getType();
         List<String> depth = new ArrayList<>();
-        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth);
+        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, fields);
 
         for (Annotation annotation: parameter.getAnnotations()){
             handleConstraint(namedTypedValue, annotation);
@@ -147,7 +203,7 @@ public class RPCEndpointsBuilder {
         return namedTypedValue;
     }
 
-    private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth) {
+    private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth, List<String> authFieldKeys) {
         depth.add(getObjectTypeNameWithFlag(clazz, clazz.getName()));
         NamedTypedValue namedValue = null;
 
@@ -175,7 +231,7 @@ public class RPCEndpointsBuilder {
                     templateClazz = clazz.getComponentType();
                 }
 
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, authFieldKeys);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
@@ -189,7 +245,7 @@ public class RPCEndpointsBuilder {
                     throw new RuntimeException("genericType should not be null for List and Set class");
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 Class<?> templateClazz = getTemplateClass(type);
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, authFieldKeys);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
@@ -204,11 +260,11 @@ public class RPCEndpointsBuilder {
                 Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
                 Class<?> keyTemplateClazz = getTemplateClass(keyType);
-                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth);
+                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, authFieldKeys);
                 keyTemplate.setNullable(false);
 
                 Class<?> valueTemplateClazz = getTemplateClass(valueType);
-                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth);
+                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, authFieldKeys);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate)), clazz);
                 mtype.depth = getDepthLevel(clazz, depth);
                 namedValue = new MapParam(name, mtype);
@@ -234,7 +290,7 @@ public class RPCEndpointsBuilder {
                             thrift_metamap = f;
                             continue;
                         }
-                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth);
+                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, authFieldKeys);
                         for (Annotation annotation : f.getAnnotations()){
                             handleConstraint(field, annotation);
                         }
@@ -263,6 +319,9 @@ public class RPCEndpointsBuilder {
                     name, clazz.getName(), genericType==null?"null":genericType.getTypeName(), genericType==null?"null":genericType.getClass().getName(), String.join(",", depth), e.getMessage()));
         }
 
+        if (authFieldKeys!=null && authFieldKeys.contains(namedValue.getName())){
+            namedValue.setForAuth(true);
+        }
 
         return namedValue;
     }

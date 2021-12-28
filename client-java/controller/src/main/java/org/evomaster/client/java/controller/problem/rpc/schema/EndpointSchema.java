@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
+import org.evomaster.client.java.controller.api.dto.AuthAnnotationDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
@@ -43,13 +44,25 @@ public final class EndpointSchema {
      */
     private final List<NamedTypedValue> exceptions;
 
-    public EndpointSchema(String name, String interfaceName, String clientTypeName, List<NamedTypedValue> requestParams, NamedTypedValue response, List<NamedTypedValue> exceptions) {
+    /**
+     * whether the endpoint is clarified with auth
+     */
+    private final boolean authRequired;
+
+    private final List<Integer> requiredAuthCandidates;
+
+
+    public EndpointSchema(String name, String interfaceName, String clientTypeName,
+                          List<NamedTypedValue> requestParams, NamedTypedValue response, List<NamedTypedValue> exceptions,
+                          boolean authRequired, List<Integer> requiredAuthCandidates) {
         this.name = name;
         this.interfaceName = interfaceName;
         this.clientTypeName = clientTypeName;
         this.requestParams = requestParams;
         this.response = response;
         this.exceptions = exceptions;
+        this.authRequired = authRequired;
+        this.requiredAuthCandidates = requiredAuthCandidates;
     }
 
     public String getName() {
@@ -100,7 +113,8 @@ public final class EndpointSchema {
         return new EndpointSchema(
                 name, interfaceName, clientTypeName,
                 requestParams == null? null: requestParams.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
-                response == null? null: response.copyStructure(), exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()));
+                response == null? null: response.copyStructure(), exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
+                authRequired, requiredAuthCandidates);
     }
 
     /**

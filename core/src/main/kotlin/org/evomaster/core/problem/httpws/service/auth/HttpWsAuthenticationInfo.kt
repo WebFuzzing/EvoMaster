@@ -1,15 +1,16 @@
 package org.evomaster.core.problem.httpws.service.auth
 
+import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.Action
 
 //should be immutable
 
-open class AuthenticationInfo(
-    val name: String,
+open class HttpWsAuthenticationInfo(
+    name: String,
     val headers: List<AuthenticationHeader>,
     val cookieLogin: CookieLogin?,
-    val jsonTokenPostLogin: JsonTokenPostLogin?) {
+    val jsonTokenPostLogin: JsonTokenPostLogin?): AuthenticationInfo(name) {
 
     init {
         if(name.isBlank()){
