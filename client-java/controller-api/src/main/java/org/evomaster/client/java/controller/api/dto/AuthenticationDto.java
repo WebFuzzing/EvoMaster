@@ -41,7 +41,7 @@ public class AuthenticationDto {
     /**
      * auth with annotation on endpoints
      */
-    public AuthAnnotationDto authAnnotation;
+    public AuthInRequestDto authInRequest;
 
     public AuthenticationDto() {
     }
