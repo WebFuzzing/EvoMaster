@@ -11,7 +11,7 @@ import org.evomaster.core.search.gene.Gene
 /**
  * a RPC call
  */
-class RPCCallAction(
+open class RPCCallAction(
     /**
      * id of the RPCCallAction
      */
@@ -50,7 +50,7 @@ class RPCCallAction(
 
     override fun copyContent(): RPCCallAction {
         val p = parameters.asSequence().map(Param::copyContent).toMutableList()
-        return RPCCallAction(id, p, responseTemplate?.copyContent(), response?.copyContent())
+        return RPCCallAction(id, p, responseTemplate?.copyContent(), response?.copyContent(), auth)
     }
 
     /**
