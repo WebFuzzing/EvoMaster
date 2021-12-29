@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
-import org.evomaster.client.java.controller.api.dto.AuthAnnotationDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;

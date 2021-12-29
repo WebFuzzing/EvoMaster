@@ -318,7 +318,7 @@ public abstract class SutController implements SutHandler, CustomizedResponseHan
             return;
         }
         try {
-            RPCEndpointsBuilder.validateRPCAuthAnnotation(getInfoForAuthentication());
+            RPCEndpointsBuilder.validateRPCAuthInRequest(getInfoForAuthentication());
 
             RPCProblem rpcp = (RPCProblem) getProblemInfo();
             for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){

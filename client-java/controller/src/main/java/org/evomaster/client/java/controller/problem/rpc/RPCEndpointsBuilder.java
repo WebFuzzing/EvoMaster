@@ -1,8 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
-import org.evomaster.client.java.controller.api.dto.AuthAnnotationDto;
+import org.evomaster.client.java.controller.api.dto.AuthInRequestDto;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
-import org.evomaster.client.java.controller.api.dto.JsonAuthEndpointDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
@@ -40,16 +39,16 @@ public class RPCEndpointsBuilder {
      * 2) annotation should not be null
      * @param authenticationDtoList
      */
-    public static void validateRPCAuthAnnotation(List<AuthenticationDto> authenticationDtoList){
+    public static void validateRPCAuthInRequest(List<AuthenticationDto> authenticationDtoList){
         if (authenticationDtoList == null || authenticationDtoList.isEmpty()) return;
 
-        Map<String, List<AuthAnnotationDto>> group = new HashMap<>();
-        authenticationDtoList.stream().filter(s-> s.authAnnotation!=null).forEach(s->{
-            if (s.authAnnotation.annotationName == null)
+        Map<String, List<AuthInRequestDto>> group = new HashMap<>();
+        authenticationDtoList.stream().filter(s-> s.authInRequest !=null).forEach(s->{
+            if (s.authInRequest.annotationOnEndpoint == null)
                 throw new RuntimeException("annotationName must be specified for auth info at index "+ authenticationDtoList.indexOf(s));
-            if (!group.containsKey(s.authAnnotation.annotationName))
-                group.put(s.authAnnotation.annotationName, new ArrayList<>());
-            group.get(s.authAnnotation.annotationName).add(s.authAnnotation);
+            if (!group.containsKey(s.authInRequest.annotationOnEndpoint))
+                group.put(s.authInRequest.annotationOnEndpoint, new ArrayList<>());
+            group.get(s.authInRequest.annotationOnEndpoint).add(s.authInRequest);
         });
         group.values().forEach(g->{
             if (g.size() > 1){
@@ -57,7 +56,7 @@ public class RPCEndpointsBuilder {
                 g.forEach(a->{
                     List<String> akeys = a.values.stream().map(k-> k.fieldKey).collect(Collectors.toList());
                     if (akeys.size() != keys.size() || !akeys.containsAll(keys)){
-                        throw new RuntimeException("keys for same annotation "+a.annotationName+" must be specified with same keys");
+                        throw new RuntimeException("keys for same annotation "+a.annotationOnEndpoint +" must be specified with same keys");
                     }
                 });
             }
@@ -89,7 +88,10 @@ public class RPCEndpointsBuilder {
                 AuthenticationDto auth = getRelatedAuthEndpoint(authenticationDtoList, interfaceName, m);
                 if (auth != null){
                     int index = authenticationDtoList.indexOf(auth);
-                    authEndpoints.put(index, build(schema, m, rpcType, authenticationDtoList));
+                    /*
+                        handle endpoint which is for auth setup
+                     */
+                    authEndpoints.put(index, build(schema, m, rpcType, null));
                 }
             }
             return schema;
@@ -162,13 +164,15 @@ public class RPCEndpointsBuilder {
     private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType, List<AuthenticationDto> authenticationDtoList) {
         List<NamedTypedValue> requestParams = new ArrayList<>();
 
-        List<AuthenticationDto> authAnnotationDtos = getRelatedAuthAnnotation(authenticationDtoList, method);
+        List<AuthenticationDto> authAnnotationDtos = getRelatedAuth(authenticationDtoList, method);
         List<Integer> authKeys = null;
         if (authAnnotationDtos != null)
             authKeys = authAnnotationDtos.stream().map(s-> authenticationDtoList.indexOf(s)).collect(Collectors.toList());
         List<String> authFields = null;
         if (authAnnotationDtos!= null && !authAnnotationDtos.isEmpty()){
-            authFields = authAnnotationDtos.get(0).authAnnotation.values.stream().map(s-> s.fieldKey).collect(Collectors.toList());
+            Optional<AuthenticationDto> authInRequest = authAnnotationDtos.stream().filter(s-> s.authInRequest != null).findAny();
+            if (authInRequest.isPresent())
+                authFields = authInRequest.get().authInRequest.values.stream().map(s-> s.fieldKey).collect(Collectors.toList());
         }
         for (Parameter p : method.getParameters()) {
             requestParams.add(buildInputParameter(schema, p, rpcType, authFields));
@@ -191,10 +195,12 @@ public class RPCEndpointsBuilder {
         return new EndpointSchema(method.getName(), schema.getName(), schema.getClientInfo(), requestParams, response, exceptions, authAnnotationDtos!= null && !authAnnotationDtos.isEmpty(), authKeys);
     }
 
-    private static List<AuthenticationDto> getRelatedAuthAnnotation(List<AuthenticationDto> authenticationDtoList, Method method){
+
+    private static List<AuthenticationDto> getRelatedAuth(List<AuthenticationDto> authenticationDtoList, Method method){
         if (authenticationDtoList == null) return null;
         List<String> annotations = Arrays.stream(method.getAnnotations()).map(s-> s.annotationType().getName()).collect(Collectors.toList());
-        return authenticationDtoList.stream().filter(s-> s.authAnnotation != null && s.authAnnotation.annotationName!= null && annotations.contains(s.authAnnotation.annotationName)).collect(Collectors.toList());
+        return authenticationDtoList.stream().filter(s-> (s.jsonAuthEndpoint != null && s.jsonAuthEndpoint.annotationOnEndpoint != null && annotations.contains(s.jsonAuthEndpoint.annotationOnEndpoint)) ||
+                (s.authInRequest != null && s.authInRequest.annotationOnEndpoint != null && annotations.contains(s.authInRequest.annotationOnEndpoint))).collect(Collectors.toList());
     }
 
     private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type, List<String> fields) {
