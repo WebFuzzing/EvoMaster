@@ -48,6 +48,9 @@ public final class EndpointSchema {
      */
     private final boolean authRequired;
 
+    /**
+     * a list of index of auth info based on what are configured in the driver
+     */
     private final List<Integer> requiredAuthCandidates;
 
 

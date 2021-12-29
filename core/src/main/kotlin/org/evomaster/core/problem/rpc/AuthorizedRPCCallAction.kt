@@ -10,7 +10,7 @@ class AuthorizedRPCCallAction(
     inputParameters: MutableList<Param>,
     responseTemplate: RPCParam?,
     response : RPCParam?,
-    auth: RPCAuthenticationInfo,
+    auth: RPCAuthenticationInfo = RPCNoAuth(),
     var requiredAuth: RPCAuthenticationInfo = RPCNoAuth()
 
 ) : RPCCallAction(id, inputParameters, responseTemplate, response, auth){

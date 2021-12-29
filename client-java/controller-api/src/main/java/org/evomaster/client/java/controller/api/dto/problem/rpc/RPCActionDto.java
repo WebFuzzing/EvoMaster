@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,6 +54,16 @@ public class RPCActionDto {
      */
     public boolean doGenerateTestScript;
 
+    /**
+     * if the action requires auth to access
+     */
+    public boolean isAuthorized;
+
+    /**
+     * possible candidates for auth to access the endpoint
+     */
+    public List<Integer> requiredAuthCandidates;
+
     public RPCActionDto copy(){
         RPCActionDto copy = new RPCActionDto();
         copy.interfaceId = interfaceId;
@@ -65,6 +76,9 @@ public class RPCActionDto {
         copy.controllerVariable = controllerVariable;
         copy.doGenerateAssertions = doGenerateAssertions;
         copy.doGenerateTestScript = doGenerateTestScript;
+        copy.isAuthorized = isAuthorized;
+        if (copy.requiredAuthCandidates != null)
+            copy.requiredAuthCandidates = new ArrayList<>(requiredAuthCandidates);
         return copy;
     }
 

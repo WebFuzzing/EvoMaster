@@ -55,7 +55,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         val problem = infoDto.rpcProblem
                 ?: throw java.lang.IllegalStateException("Missing problem definition object")
 
-        rpcHandler.initActionCluster(problem, actionCluster)
+        rpcHandler.initActionCluster(problem, actionCluster, infoDto)
 
         initSqlInfo(infoDto)
 
@@ -109,8 +109,10 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
                 .forEach { a ->
                     val copy = a.value.copy() as RPCCallAction
                     randomizeActionGenes(copy)
-                    val ind = createRPCIndividual(mutableListOf(copy))
-                    adHocInitialIndividuals.add(ind)
+                    rpcHandler.actionWithAuth(copy).forEach { actionWithAuth->
+                        val ind = createRPCIndividual(mutableListOf(actionWithAuth))
+                        adHocInitialIndividuals.add(ind)
+                    }
                 }
     }
 
