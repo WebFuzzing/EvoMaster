@@ -382,7 +382,7 @@ public class RPCEndpointsBuilder {
 
     // old version of thrift for ind1 case study
     private static boolean doSkipSchemas(Field field){
-        if (!field.getName().equals("schemas")) return false;
+        if (!field.getName().equals("schemes")) return false;
 
         return field.getType().isAssignableFrom(Map.class)
                 && getTemplateClass(((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]).isAssignableFrom(Class.class);
