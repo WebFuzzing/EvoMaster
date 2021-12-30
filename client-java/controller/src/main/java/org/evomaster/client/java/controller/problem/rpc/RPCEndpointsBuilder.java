@@ -374,11 +374,18 @@ public class RPCEndpointsBuilder {
     private static boolean doSkipField(Field field, RPCType type){
         switch (type){
             case THRIFT: {
-                return THRIFT_SKIP.contains(field.getType().getName()) || doSkipFieldByName(field.getName(), type);
+                return THRIFT_SKIP.contains(field.getType().getName()) || doSkipFieldByName(field.getName(), type) || doSkipSchemas(field);
             }
             default: return false;
         }
+    }
 
+    // old version of thrift for ind1 case study
+    private static boolean doSkipSchemas(Field field){
+        if (!field.getName().equals("schemas")) return false;
+
+        return field.getType().isAssignableFrom(Map.class)
+                && getTemplateClass(((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]).isAssignableFrom(Class.class);
     }
 
     private static boolean doSkipFieldByName(String name, RPCType type){
