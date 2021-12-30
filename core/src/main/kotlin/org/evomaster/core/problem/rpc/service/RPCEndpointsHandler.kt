@@ -459,7 +459,8 @@ class RPCEndpointsHandler {
         if (param.type.fixedItems.isNullOrEmpty()){
             LoggingUtil.uniqueWarn(log, "Enum with name (${param.type.fullTypeName}) has empty items")
             // TODO check not sure
-            return MapGene(param.type.fullTypeName, PairGene.createStringPairGene(StringGene( "NO_ITEM")), maxSize = 0)
+            //return MapGene(param.type.fullTypeName, PairGene.createStringPairGene(StringGene( "NO_ITEM")), maxSize = 0)
+            return EnumGene(param.name, listOf<String>())
         }
         return EnumGene(param.name, param.type.fixedItems.toList())
 
@@ -487,8 +488,8 @@ class RPCEndpointsHandler {
         val typeName = type.type.fullTypeName
         if (type.innerContent.isEmpty()){
             LoggingUtil.uniqueWarn(log, "Object with name (${type.type.fullTypeName}) has empty fields")
-            // shall we set maxSize is 0 here?
-            return MapGene(typeName, PairGene.createStringPairGene(StringGene( "field"), isFixedFirst = true))
+            //return MapGene(typeName, PairGene.createStringPairGene(StringGene( "field"), isFixedFirst = true))
+            return ObjectGene(typeName, listOf(), refType = typeName)
         }
 
         val fields = type.innerContent.map { f-> handleDtoParam(f) }
