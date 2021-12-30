@@ -253,7 +253,8 @@ class RPCEndpointsHandler {
                 transformGeneToParamDto(valueGene.time.second, dto.innerContent[5])
             }
             is PairGene<*, *> ->{
-                val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a pair is null")
+                val template = dto.type.example?.copy()
+                    ?:throw IllegalStateException("a template for a pair (with dto name: ${dto.name} and gene name: ${gene.name}) is null")
                 Lazy.assert { template.innerContent.size == 2 }
                 val first = template.innerContent[0]
                 transformGeneToParamDto(valueGene.first, first)
@@ -262,7 +263,8 @@ class RPCEndpointsHandler {
                 dto.innerContent = listOf(first, second)
             }
             is MapGene<*, *> ->{
-                val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a map dto is null")
+                val template = dto.type.example?.copy()
+                    ?:throw IllegalStateException("a template for a map dto (with dto name: ${dto.name} and gene name: ${gene.name}) is null")
                 val innerContent = valueGene.getAllElements().map {
                     val copy = template.copy()
                     transformGeneToParamDto(it, copy)
