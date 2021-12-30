@@ -69,6 +69,12 @@ namespace EvoMaster.Instrumentation {
                         if ((sequencePoint == null || sequencePoint.IsHidden) && instruction.OpCode != OpCodes.Ret)
                             continue;
 
+                        if (sequencePoint != null) {
+                            i = InsertEnteringStatementProbe(instruction, ilProcessor, i, type.Name,
+                                sequencePoint.StartLine,
+                                sequencePoint.StartColumn);
+                        }
+
                         if (lastCompletedLine != 0 && lastCompletedColumn != 0) {
                             //This is to prevent insertion of completed probe after branch opcode
                             //Checking alreadyCompletedLines is in order to control calling Completed probe in loops two times...
@@ -94,13 +100,8 @@ namespace EvoMaster.Instrumentation {
                             alreadyCompletedLines.Add(lastCompletedLine);
                         }
 
-                        if (sequencePoint != null && sequencePoint.StartLine != lastCompletedLine) {
-                            // i = InsertEnteringLineProbe(instruction, ilProcessor, i, type.Name, sequencePoint.StartLine,
-                            //     firstProbeInTheClass);
-                        }
-
                         if (sequencePoint == null || sequencePoint.IsHidden) continue;
-                        
+
                         lastCompletedColumn = sequencePoint.StartColumn;
                         lastCompletedLine = sequencePoint.StartLine;
                     }
@@ -123,7 +124,7 @@ namespace EvoMaster.Instrumentation {
 
         private int InsertCompletedStatementProbe(Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int columnNo) {
-
+            //TODO: check if we should register statements or not
             //register all targets(description of all targets, including units, lines and branches)
             _registeredTargets.Classes.Add(ObjectiveNaming.ClassObjectiveName(className));
             _registeredTargets.Lines.Add(ObjectiveNaming.LineObjectiveName(className, lineNo));
