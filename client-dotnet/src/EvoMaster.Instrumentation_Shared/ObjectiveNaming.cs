@@ -17,6 +17,11 @@ namespace EvoMaster.Instrumentation_Shared {
         public static readonly string LINE = "Line";
 
         /**
+     * Prefix identifier for statement coverage objectives
+     */
+        public static readonly string STATEMENT = "Statement";
+
+        /**
      * Prefix identifier for branch coverage objectives
      */
         public static readonly string BRANCH = "Branch";
@@ -84,10 +89,11 @@ namespace EvoMaster.Instrumentation_Shared {
                     c => new ConcurrentDictionary<int, string>()); //TODO: capacity 1000
             return map.ComputeIfAbsent(line,
                 l => LINE + "_at_" + ClassName.Get(className).GetFullNameWithDots() + "_" + PadNumber(line));
-
-//        string name = LINE + "_at_" + ClassName.get(className).getFullNameWithDots() + "_" + padNumber(line);
-//        return name;//.intern();
         }
+
+        public static string StatementObjectiveName(string className, int line, int index) =>
+            STATEMENT + "_" + className + "_"
+            + PadNumber(line) + "_" + index;
 
         //TODO: capacity 10_000
         private static readonly IDictionary<string, IDictionary<int, IDictionary<int, string>>> CacheSuccessCall =

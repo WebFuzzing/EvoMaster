@@ -36,18 +36,7 @@ namespace EvoMaster.Instrumentation
      */
         private readonly IDictionary<string, ICollection<StringSpecializationInfo>> _stringSpecializations =
             new ConcurrentDictionary<string, ICollection<StringSpecializationInfo>>();
-
-        private class StatementDescription //implements Serializable TODO:should be static?
-        {
-            public readonly string Line;
-            public readonly string Method;
-
-            public StatementDescription(string line, string method)
-            {
-                Line = line;
-                Method = method;
-            }
-        }
+        
 
         /**
      * Keep track of the last executed statement done in the SUT.
@@ -63,13 +52,13 @@ namespace EvoMaster.Instrumentation
      *
      * Furthermore, we need a stack per execution thread, based on their name.
      */
-        private readonly IDictionary<string, Deque<StatementDescription>> _lastExecutedStatementStacks =
-            new ConcurrentDictionary<string, Deque<StatementDescription>>();
+        private readonly IDictionary<string, Deque<string>> _lastExecutedStatementStacks =
+            new ConcurrentDictionary<string, Deque<string>>();
 
         /**
      * In case we pop all elements from stack, keep track of last one separately.
      */
-        private StatementDescription _noExceptionStatement;
+        private string _noExceptionStatement;
 
 
         /**
@@ -159,56 +148,31 @@ namespace EvoMaster.Instrumentation
                 interested into... would need to check if there are cases in which this is not the case
              */
 
-            Deque<StatementDescription> stack = null;
+            Deque<string> stack = null;
             if (_lastExecutingThread != null)
             {
                 stack = _lastExecutedStatementStacks[_lastExecutingThread];
             }
 
-            if (_lastExecutingThread == null || stack == null || stack.IsEmpty())
-            {
-                return _noExceptionStatement?.Line;
+            if (_lastExecutingThread == null || stack == null || stack.IsEmpty()) {
+                
+                return _noExceptionStatement;
             }
 
-            var current = stack.PeekFront();
-            if (current == null)
-            {
-                //could happen due to multi-threading
-                return null;
-            }
-
-            return current.Line;
+            return stack.PeekFront();
         }
 
-        public void PushLastExecutedStatement(string lastLine, string lastMethod)
+        public void PushLastExecutedStatement(string statementId)
         {
             var key = GetThreadIdentifier();
             _lastExecutingThread = key;
             _lastExecutedStatementStacks.TryAdd(key,
-                new Deque<StatementDescription>()); //TODO: check TryAdd(putIfAbsent) and Deque(ArrayDeque_
+                new Deque<string>()); //TODO: check TryAdd(putIfAbsent) and Deque(ArrayDeque_
             var stack = _lastExecutedStatementStacks[key];
 
             _noExceptionStatement = null;
 
-            var statement = new StatementDescription(lastLine, lastMethod);
-
-            StatementDescription current;
-            try
-            {
-                current = stack.PeekFront();
-            }
-            catch (InvalidOperationException)
-            {
-                current = null;
-            }
-
-            //if some method, then replace top of stack
-            if (current != null && lastMethod.Equals(current.Method))
-            {
-                stack.PopFront();
-            }
-
-            stack.PushFront(statement);
+            stack.PushFront(statementId);
         }
 
         private string GetThreadIdentifier() => Thread.CurrentThread.ManagedThreadId.ToString();
@@ -234,7 +198,7 @@ namespace EvoMaster.Instrumentation
                 return;
             }
 
-            StatementDescription statementDescription = stack.PopFront();
+            var statementDescription = stack.PopFront();
 
             if (stack.IsEmpty())
             {

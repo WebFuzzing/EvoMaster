@@ -32,13 +32,13 @@ namespace EvoMaster.Instrumentation {
 
             _completedProbe =
                 module.ImportReference(
-                    typeof(Instrumentator).GetMethod(name: "CompletedLine",
-                        types: new[] {typeof(string), typeof(string), typeof(int)}));
+                    typeof(Instrumentator).GetMethod(name: "CompletedStatement",
+                        types: new[] {typeof(string), typeof(int), typeof(int)}));
 
             _enteringProbe =
                 module.ImportReference(
-                    typeof(Instrumentator).GetMethod(name: "EnteringLine",
-                        types: new[] {typeof(string), typeof(int), typeof(bool)}));
+                    typeof(Instrumentator).GetMethod(name: "EnteringStatement",
+                        types: new[] {typeof(string), typeof(int), typeof(int)}));
 
             foreach (var type in module.Types) {
                 if (type.Name == "<Module>") continue;
@@ -51,10 +51,9 @@ namespace EvoMaster.Instrumentation {
                     var mapping = method.DebugInformation.GetSequencePointMapping();
 
                     var lastCompletedLine = 0;
+                    var lastCompletedColumn = 0;
                     var alreadyCompletedLines = new List<int>();
                     method.Body.SimplifyMacros(); //This is to prevent overflow of short branch opcodes
-
-                    //bool firstProbeInTheClass = true;
 
                     for (var i = 0; i < int.MaxValue; i++) {
                         Instruction instruction;
@@ -70,30 +69,24 @@ namespace EvoMaster.Instrumentation {
                         if ((sequencePoint == null || sequencePoint.IsHidden) && instruction.OpCode != OpCodes.Ret)
                             continue;
 
-                        if (sequencePoint != null && sequencePoint.StartLine == lastCompletedLine)
-                            continue;
-
-
-                        if (lastCompletedLine != 0) {
+                        if (lastCompletedLine != 0 && lastCompletedColumn != 0) {
                             //This is to prevent insertion of completed probe after branch opcode
                             //Checking alreadyCompletedLines is in order to control calling Completed probe in loops two times...
                             //However I'm not sure this will work in all cases, if it didn't work, we can try branchInstruction.Operand.Next
                             if (IsBranchInstruction(instruction.Previous) &&
                                 !alreadyCompletedLines.Contains(lastCompletedLine)) {
-                                i = InsertCompletedLineProbe(instruction.Previous, ilProcessor, i, type.Name,
-                                    method.Name,
-                                    lastCompletedLine);
+                                i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
+                                    lastCompletedLine, lastCompletedColumn);
                             }
                             else {
-                                i = InsertCompletedLineProbe(instruction, ilProcessor, i, type.Name, method.Name,
-                                    lastCompletedLine);
+                                i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
+                                    lastCompletedLine, lastCompletedColumn);
 
                                 //To cover cases when ret has line number
                                 if (instruction.OpCode == OpCodes.Ret) {
                                     if (sequencePoint != null) {
-                                        i = InsertCompletedLineProbe(instruction, ilProcessor, i, type.Name,
-                                            method.Name,
-                                            sequencePoint.EndLine);
+                                        i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
+                                            sequencePoint.StartLine, sequencePoint.StartColumn);
                                     }
                                 }
                             }
@@ -104,12 +97,12 @@ namespace EvoMaster.Instrumentation {
                         if (sequencePoint != null && sequencePoint.StartLine != lastCompletedLine) {
                             // i = InsertEnteringLineProbe(instruction, ilProcessor, i, type.Name, sequencePoint.StartLine,
                             //     firstProbeInTheClass);
-
-                            //firstProbeInTheClass = false;
                         }
 
-                        if (sequencePoint != null && !sequencePoint.IsHidden)
-                            lastCompletedLine = sequencePoint.StartLine;
+                        if (sequencePoint == null || sequencePoint.IsHidden) continue;
+                        
+                        lastCompletedColumn = sequencePoint.StartColumn;
+                        lastCompletedLine = sequencePoint.StartLine;
                     }
 
                     method.Body.OptimizeMacros(); //Change back Br opcodes to Br.s if possible
@@ -128,43 +121,44 @@ namespace EvoMaster.Instrumentation {
             Client.Util.SimpleLogger.Info($"Instrumented File Saved at \"{destination}\"");
         }
 
-        private int InsertCompletedLineProbe(Instruction instruction, ILProcessor ilProcessor,
-            int byteCodeIndex, string className, string methodName, int lineNo) {
+        private int InsertCompletedStatementProbe(Instruction instruction, ILProcessor ilProcessor,
+            int byteCodeIndex, string className, int lineNo, int columnNo) {
+
             //register all targets(description of all targets, including units, lines and branches)
             _registeredTargets.Classes.Add(ObjectiveNaming.ClassObjectiveName(className));
             _registeredTargets.Lines.Add(ObjectiveNaming.LineObjectiveName(className, lineNo));
 
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
-            var methodNameInstruction = ilProcessor.Create(OpCodes.Ldstr, methodName);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
-            var completedInstruction = ilProcessor.Create(OpCodes.Call, _completedProbe);
+            var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
+            var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _completedProbe);
 
             ilProcessor.InsertBefore(instruction, classNameInstruction);
             byteCodeIndex++;
-            ilProcessor.InsertBefore(instruction, methodNameInstruction);
-            byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, lineNumberInstruction);
             byteCodeIndex++;
-            ilProcessor.InsertBefore(instruction, completedInstruction);
+            ilProcessor.InsertBefore(instruction, columnNumberInstruction);
+            byteCodeIndex++;
+            ilProcessor.InsertBefore(instruction, methodCallInstruction);
             byteCodeIndex++;
 
             return byteCodeIndex;
         }
 
-        private int InsertEnteringLineProbe(Instruction instruction, ILProcessor ilProcessor,
-            int byteCodeIndex, string className, int line, bool markNewClass) {
+        private int InsertEnteringStatementProbe(Instruction instruction, ILProcessor ilProcessor,
+            int byteCodeIndex, string className, int lineNo, int columnNo) {
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
-            var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, line);
-            var markNewClassInstruction = ilProcessor.Create(markNewClass ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
-            var enteringInstruction = ilProcessor.Create(OpCodes.Call, _enteringProbe);
+            var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
+            var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
+            var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringProbe);
 
             ilProcessor.InsertBefore(instruction, classNameInstruction);
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, lineNumberInstruction);
             byteCodeIndex++;
-            ilProcessor.InsertBefore(instruction, markNewClassInstruction);
+            ilProcessor.InsertBefore(instruction, columnNumberInstruction);
             byteCodeIndex++;
-            ilProcessor.InsertBefore(instruction, enteringInstruction);
+            ilProcessor.InsertBefore(instruction, methodCallInstruction);
             byteCodeIndex++;
 
             return byteCodeIndex;
@@ -174,18 +168,13 @@ namespace EvoMaster.Instrumentation {
             instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
             instruction.OpCode != OpCodes.Box;
 
-        //This method is called by the probe inserted after each covered line in the instrumented SUT
-        public static void CompletedLine(string className, string methodName, int lineNo) {
-            var lineTarget = ObjectiveNaming.LineObjectiveName(className, lineNo);
-            ObjectiveRecorder.RegisterTarget(lineTarget);
-            ExecutionTracer.ExecutedLine(className, methodName, lineTarget, lineNo);
+        //This method is called by the probe inserted after each covered statement in the instrumented SUT
+        public static void CompletedStatement(string className, int lineNo, int columnNo) {
+            ExecutionTracer.CompletedStatement(className, lineNo, columnNo);
         }
 
-        public static void EnteringLine(string className, int lineNo, bool markNewClass) {
-            if (markNewClass)
-                UnitsInfoRecorder.MarkNewUnit(ObjectiveNaming.ClassObjectiveName(className));
-
-            UnitsInfoRecorder.MarkNewLine(ObjectiveNaming.LineObjectiveName(className, lineNo));
+        public static void EnteringStatement(string className, int lineNo, int columnNo) {
+            ExecutionTracer.EnteringStatement(className, lineNo, columnNo);
         }
     }
 }
