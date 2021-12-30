@@ -390,7 +390,7 @@ public class RPCEndpointsBuilder {
 
     private static boolean doSkipFieldByName(String name, RPCType type){
         switch (type){
-            case THRIFT: return name.equals("__isset_bitfield") || name.matches("^__(.+)_ISSET_ID$");
+            case THRIFT: return name.equals("__isset_bitfield") || name.equals("__isset_bit_vector") || name.matches("^__(.+)_ISSET_ID$");
             default: return false;
         }
     }
