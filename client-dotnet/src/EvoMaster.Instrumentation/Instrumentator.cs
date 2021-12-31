@@ -52,7 +52,7 @@ namespace EvoMaster.Instrumentation {
 
                     var lastEnteredLine = 0;
                     var lastEnteredColumn = 0;
-                    
+
                     var alreadyCompletedLines = new List<int>();
                     method.Body.SimplifyMacros(); //This is to prevent overflow of short branch opcodes
 
@@ -70,7 +70,6 @@ namespace EvoMaster.Instrumentation {
                         if ((sequencePoint == null || sequencePoint.IsHidden) && instruction.OpCode != OpCodes.Ret)
                             continue;
 
-                        
 
                         if (lastEnteredLine != 0 && lastEnteredColumn != 0) {
                             //This is to prevent insertion of completed probe after branch opcode
@@ -78,33 +77,41 @@ namespace EvoMaster.Instrumentation {
                             //However I'm not sure this will work in all cases, if it didn't work, we can try branchInstruction.Operand.Next
                             if (IsBranchInstruction(instruction.Previous)) {
                                 i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
-                                    lastEnteredLine, lastEnteredColumn,1);
+                                    lastEnteredLine, lastEnteredColumn, 1);
                             }
                             else {
                                 i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
-                                    lastEnteredLine, lastEnteredColumn,2);
+                                    lastEnteredLine, lastEnteredColumn, 2);
 
                                 //To cover cases when ret has line number
                                 if (instruction.OpCode == OpCodes.Ret) {
                                     if (sequencePoint != null) {
                                         i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
-                                            sequencePoint.StartLine, sequencePoint.StartColumn,3);
+                                            sequencePoint.StartLine, sequencePoint.StartColumn, 3);
                                     }
                                 }
                             }
 
                             alreadyCompletedLines.Add(lastEnteredLine);
                         }
-                        
+
                         if (sequencePoint != null) {
-                            i = InsertEnteringStatementProbe(instruction, ilProcessor, i, type.Name,
-                                sequencePoint.StartLine,
-                                sequencePoint.StartColumn);
-                            
+                            if (instruction.Previous != null && IsBranchInstruction(instruction.Previous) &&
+                                instruction.Next != null) {
+                                i = InsertEnteringStatementProbe(instruction.Next, ilProcessor, i, type.Name,
+                                    sequencePoint.StartLine,
+                                    sequencePoint.StartColumn);
+                            }
+                            else {
+                                i = InsertEnteringStatementProbe(instruction, ilProcessor, i, type.Name,
+                                    sequencePoint.StartLine,
+                                    sequencePoint.StartColumn);
+                            }
+
                             lastEnteredColumn = sequencePoint.StartColumn;
                             lastEnteredLine = sequencePoint.StartLine;
                         }
-                        
+
                         // if (sequencePoint == null || sequencePoint.IsHidden) continue;
                     }
 
@@ -130,8 +137,9 @@ namespace EvoMaster.Instrumentation {
             //register all targets(description of all targets, including units, lines and branches)
             _registeredTargets.Classes.Add(ObjectiveNaming.ClassObjectiveName(className));
             _registeredTargets.Lines.Add(ObjectiveNaming.LineObjectiveName(className, lineNo));
-            
-            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, $"ind: {indicator} -- {instruction}");//TODO: change back to class name
+
+            var classNameInstruction =
+                ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _completedProbe);
@@ -150,10 +158,8 @@ namespace EvoMaster.Instrumentation {
 
         private int InsertEnteringStatementProbe(Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int columnNo) {
-
-            Console.WriteLine($"{className}: {lineNo}, {columnNo}");//TODO: remove
-            
-            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, $"{instruction}");//TODO: change back to class name
+            var classNameInstruction =
+                ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringProbe);
