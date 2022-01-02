@@ -43,7 +43,7 @@ namespace EvoMaster.Instrumentation {
             foreach (var type in module.Types) {
                 if (type.Name == "<Module>") continue;
 
-        foreach (var method in type.Methods) {
+                foreach (var method in type.Methods) {
                     if (!method.HasBody) continue;
 
                     var ilProcessor = method.Body.GetILProcessor();
@@ -53,7 +53,6 @@ namespace EvoMaster.Instrumentation {
                     var lastEnteredLine = 0;
                     var lastEnteredColumn = 0;
 
-                    var alreadyCompletedLines = new List<int>();
                     method.Body.SimplifyMacros(); //This is to prevent overflow of short branch opcodes
 
                     for (var i = 0; i < int.MaxValue; i++) {
@@ -73,7 +72,6 @@ namespace EvoMaster.Instrumentation {
 
                         if (lastEnteredLine != 0 && lastEnteredColumn != 0) {
                             //This is to prevent insertion of completed probe after branch opcode
-                            //Checking alreadyCompletedLines is in order to control calling Completed probe in loops two times...
                             //However I'm not sure this will work in all cases, if it didn't work, we can try branchInstruction.Operand.Next
                             if (IsBranchInstruction(instruction.Previous)) {
                                 i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
@@ -91,8 +89,6 @@ namespace EvoMaster.Instrumentation {
                                     }
                                 }
                             }
-
-                            alreadyCompletedLines.Add(lastEnteredLine);
                         }
 
                         if (sequencePoint != null) {
@@ -111,8 +107,6 @@ namespace EvoMaster.Instrumentation {
                             lastEnteredColumn = sequencePoint.StartColumn;
                             lastEnteredLine = sequencePoint.StartLine;
                         }
-
-                        // if (sequencePoint == null || sequencePoint.IsHidden) continue;
                     }
 
                     method.Body.OptimizeMacros(); //Change back Br opcodes to Br.s if possible
@@ -177,8 +171,9 @@ namespace EvoMaster.Instrumentation {
         }
 
         private static bool IsBranchInstruction(Instruction instruction) =>
-            instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
-            instruction.OpCode != OpCodes.Box;
+            (instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
+             instruction.OpCode != OpCodes.Box) || (instruction.OpCode == OpCodes.Throw) ||
+            (instruction.OpCode == OpCodes.Rethrow);
 
         //This method is called by the probe inserted after each covered statement in the instrumented SUT
         public static void CompletedStatement(string className, int lineNo, int columnNo) {
