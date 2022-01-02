@@ -43,7 +43,7 @@ namespace EvoMaster.Instrumentation {
             foreach (var type in module.Types) {
                 if (type.Name == "<Module>") continue;
 
-                foreach (var method in type.Methods) {
+        foreach (var method in type.Methods) {
                     if (!method.HasBody) continue;
 
                     var ilProcessor = method.Body.GetILProcessor();
@@ -182,10 +182,12 @@ namespace EvoMaster.Instrumentation {
 
         //This method is called by the probe inserted after each covered statement in the instrumented SUT
         public static void CompletedStatement(string className, int lineNo, int columnNo) {
+            Console.WriteLine($"*** completed {className}: {lineNo}, {columnNo}");
             ExecutionTracer.CompletedStatement(className, lineNo, columnNo);
         }
 
         public static void EnteringStatement(string className, int lineNo, int columnNo) {
+            Console.WriteLine($"### entering {className}: {lineNo}, {columnNo}");
             ExecutionTracer.EnteringStatement(className, lineNo, columnNo);
         }
     }

@@ -204,7 +204,7 @@ namespace EvoMaster.Instrumentation.StaticState {
                 if (ObjectiveCoverage.ContainsKey(id)) {
                     var previous = ObjectiveCoverage[id].Value;
                     if (value > previous) {
-                        ObjectiveCoverage.Add(id, new TargetInfo(null, id, value, _actionIndex));
+                        ObjectiveCoverage[id] = new TargetInfo(null, id, value, _actionIndex);
                     }
                 }
                 else {
