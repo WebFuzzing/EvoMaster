@@ -66,47 +66,44 @@ namespace EvoMaster.Instrumentation {
 
                         mapping.TryGetValue(instruction, out var sequencePoint);
 
+                        //skip return instructions which do not have any sequence point info
                         if ((sequencePoint == null || sequencePoint.IsHidden) && instruction.OpCode != OpCodes.Ret)
                             continue;
 
-
                         if (lastEnteredLine != 0 && lastEnteredColumn != 0) {
                             //This is to prevent insertion of completed probe after branch opcode
-                            //However I'm not sure this will work in all cases, if it didn't work, we can try branchInstruction.Operand.Next
                             if (IsBranchInstruction(instruction.Previous)) {
                                 i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
-                                    lastEnteredLine, lastEnteredColumn, 1);
+                                    lastEnteredLine, lastEnteredColumn);
                             }
                             else {
                                 i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
-                                    lastEnteredLine, lastEnteredColumn, 2);
-
-                                //To cover cases when ret has line number
-                                if (instruction.OpCode == OpCodes.Ret) {
-                                    if (sequencePoint != null) {
-                                        i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
-                                            sequencePoint.StartLine, sequencePoint.StartColumn, 3);
-                                    }
-                                }
+                                    lastEnteredLine, lastEnteredColumn);
                             }
                         }
 
-                        if (sequencePoint != null) {
-                            if (instruction.Previous != null && IsBranchInstruction(instruction.Previous) &&
-                                instruction.Next != null) {
-                                i = InsertEnteringStatementProbe(instruction.Next, ilProcessor, i, type.Name,
-                                    sequencePoint.StartLine,
-                                    sequencePoint.StartColumn);
-                            }
-                            else {
-                                i = InsertEnteringStatementProbe(instruction, ilProcessor, i, type.Name,
-                                    sequencePoint.StartLine,
-                                    sequencePoint.StartColumn);
-                            }
+                        if (sequencePoint == null) continue;
 
-                            lastEnteredColumn = sequencePoint.StartColumn;
-                            lastEnteredLine = sequencePoint.StartLine;
+                        if (instruction.Previous != null && IsBranchInstruction(instruction.Previous) &&
+                            instruction.Next != null) {
+                            i = InsertEnteringStatementProbe(instruction.Next, ilProcessor, i, type.Name,
+                                sequencePoint.StartLine,
+                                sequencePoint.StartColumn);
                         }
+                        else {
+                            i = InsertEnteringStatementProbe(instruction, ilProcessor, i, type.Name,
+                                sequencePoint.StartLine,
+                                sequencePoint.StartColumn);
+                        }
+
+                        //To cover cases when ret has line number
+                        if (instruction.OpCode == OpCodes.Ret) {
+                            i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
+                                sequencePoint.StartLine, sequencePoint.StartColumn);
+                        }
+
+                        lastEnteredColumn = sequencePoint.StartColumn;
+                        lastEnteredLine = sequencePoint.StartLine;
                     }
 
                     method.Body.OptimizeMacros(); //Change back Br opcodes to Br.s if possible
@@ -126,7 +123,7 @@ namespace EvoMaster.Instrumentation {
         }
 
         private int InsertCompletedStatementProbe(Instruction instruction, ILProcessor ilProcessor,
-            int byteCodeIndex, string className, int lineNo, int columnNo, int indicator) {
+            int byteCodeIndex, string className, int lineNo, int columnNo) {
             //TODO: check if we should register statements or not
             //register all targets(description of all targets, including units, lines and branches)
             _registeredTargets.Classes.Add(ObjectiveNaming.ClassObjectiveName(className));
