@@ -59,4 +59,11 @@ open class RPCCallAction(
     fun resetResponse() {
         response = null
     }
+
+    /**
+     * set no auth for this action
+     */
+    open fun setNoAuth(){
+        auth = RPCNoAuth()
+    }
 }

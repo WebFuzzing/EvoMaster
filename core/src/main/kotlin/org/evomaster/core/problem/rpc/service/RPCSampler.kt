@@ -5,8 +5,10 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.rpc.AuthorizedRPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.slf4j.Logger
@@ -74,16 +76,21 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
 
     /**
      * sample an action from [actionCluster] at random
+     * @param noAuthProbability specifies a probability which does not apply any auth
      */
-    fun sampleRandomAction(): RPCCallAction {
+    fun sampleRandomAction(noAuthProbability: Double): RPCCallAction {
         val action = randomness.choose(actionCluster).copy() as RPCCallAction
         randomizeActionGenes(action)
+        if (randomness.nextBoolean(noAuthProbability)){
+            action.setNoAuth()
+        }else
+            rpcHandler.actionWithRandomAuth(action, randomness)
         return action
     }
 
     override fun sampleAtRandom(): RPCIndividual {
         val len = randomness.nextInt(1, config.maxTestSize)
-        val actions = (0 until len).map { sampleRandomAction()}
+        val actions = (0 until len).map { sampleRandomAction(0.05)}
         return createRPCIndividual(actions.toMutableList())
     }
 
@@ -109,7 +116,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
                 .forEach { a ->
                     val copy = a.value.copy() as RPCCallAction
                     randomizeActionGenes(copy)
-                    rpcHandler.actionWithAuth(copy).forEach { actionWithAuth->
+                    rpcHandler.actionWithAllAuth(copy).forEach { actionWithAuth->
                         val ind = createRPCIndividual(mutableListOf(actionWithAuth))
                         adHocInitialIndividuals.add(ind)
                     }

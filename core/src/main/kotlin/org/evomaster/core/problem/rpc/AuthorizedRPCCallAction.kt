@@ -19,4 +19,9 @@ class AuthorizedRPCCallAction(
         val p = parameters.asSequence().map(Param::copyContent).toMutableList()
         return AuthorizedRPCCallAction(id, p, responseTemplate?.copyContent(), response?.copyContent(), auth, requiredAuth)
     }
+
+    override fun setNoAuth() {
+        super.setNoAuth()
+        requiredAuth = RPCNoAuth()
+    }
 }

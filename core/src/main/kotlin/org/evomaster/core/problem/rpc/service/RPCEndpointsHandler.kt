@@ -12,7 +12,6 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rpc.AuthorizedRPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallAction
@@ -23,6 +22,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -102,7 +102,26 @@ class RPCEndpointsHandler {
         return true
     }
 
-    fun actionWithAuth(action: RPCCallAction): List<RPCCallAction>{
+    /**
+     * setup auth for [action] with an auth info at random
+     */
+    fun actionWithRandomAuth(action: RPCCallAction, randomness: Randomness){
+        val gs = authentications.values.filter { it.isGlobal }
+        if (gs.isNotEmpty())
+            action.auth = randomness.choose(gs)
+        if (action is AuthorizedRPCCallAction){
+            val ss = authorizedActionAuthMap[action.id]
+            if (!ss.isNullOrEmpty()){
+                val sId = randomness.choose(ss)
+                action.requiredAuth = authentications[sId]?:throw IllegalStateException("could not find auth with id $sId in authentication map")
+            }
+        }
+    }
+
+    /**
+     * setup auth info for [action] with all auth candidates, ie, [authorizedActionAuthMap] and [authentications]
+     */
+    fun actionWithAllAuth(action: RPCCallAction): List<RPCCallAction>{
         val results = mutableListOf<RPCCallAction>()
         authentications.values.filter {it.isGlobal}.plus(listOf(RPCNoAuth())).forEach { u ->
             val actionWithAuth = action.copy()
