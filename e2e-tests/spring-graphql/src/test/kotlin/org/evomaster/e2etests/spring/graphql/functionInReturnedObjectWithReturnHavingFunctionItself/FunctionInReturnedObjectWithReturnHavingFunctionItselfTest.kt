@@ -22,7 +22,7 @@ class FunctionInReturnedObjectWithReturnHavingFunctionItselfTest : SpringTestBas
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "GQL_FunctionInReturnedObjectWithReturnHavingFunctionItselfEM",
-            "org.foo.graphql.BaseEM",
+            "org.foo.graphql.FunctionInReturnedObjectWithReturnHavingFunctionItselfEM",
             20
         ) { args: MutableList<String> ->
 

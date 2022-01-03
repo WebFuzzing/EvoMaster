@@ -23,7 +23,7 @@ class FunctionInReturnedObjectWithReturnPrimitivesTest : SpringTestBase() {
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
             "GQL_FunctionInReturnedObjectWithReturnPrimitivesTestEM",
-            "org.foo.graphql.BaseEM",
+            "org.foo.graphql.FunctionInReturnedObjectWithReturnPrimitivesTestEM",
             20
         ) { args: MutableList<String> ->
 
