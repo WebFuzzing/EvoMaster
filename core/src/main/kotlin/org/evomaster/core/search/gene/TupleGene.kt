@@ -72,7 +72,7 @@ class TupleGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        if (elements.isEmpty()) return
+        if (elements.isNotEmpty())
         //double check
         elements.dropLast(1).forEach {
             it.randomize(randomness, false)
