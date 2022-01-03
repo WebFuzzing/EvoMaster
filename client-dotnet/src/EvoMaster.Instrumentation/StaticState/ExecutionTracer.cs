@@ -215,6 +215,10 @@ namespace EvoMaster.Instrumentation.StaticState {
             ObjectiveRecorder.Update(id, value);
         }
 
+        public static double GetValue(string id){
+            return ObjectiveCoverage[id].Value ?? 0.0;
+        }
+
         private static AdditionalInfo GetCurrentAdditionalInfo() {
             lock (Lock) {
                 return AdditionalInfoList[_actionIndex];

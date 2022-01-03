@@ -9,18 +9,17 @@ using Xunit;
 
 namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
     public class LineCovTcTest {
-        //TODO: a test method to check whether the extra file contains every line
 
         [Fact]
         public void TestLineCoverage() {
             ITriangleClassification tc = new TriangleClassificationImpl();
-
+        
             ExecutionTracer.Reset();
-
+        
             Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
-
+        
             tc.Classify(-1, 0, 0);
-
+        
             var a = ExecutionTracer.GetNumberOfObjectives();
             //at least one line should have been covered
             Assert.True(a > 0);
@@ -43,7 +42,9 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
 
             tc.Classify(a, b, c);
 
-            Assert.Contains(returnLine, ObjectiveRecorder.AllTargets);
+            // Assert.Contains(returnLine, ObjectiveRecorder.AllTargets);
+            // here is to check if the specified line is covered, ie, fitness value is 1.0
+            Assert.Equal(1.0, ExecutionTracer.GetValue(returnLine));
         }
 
         [Theory]
@@ -54,56 +55,58 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         [InlineData(7, 6, 5)]
         public void TestLastLineCoverage(int a, int b, int c) {
             ITriangleClassification tc = new TriangleClassificationImpl();
-
+        
             ExecutionTracer.Reset();
             ObjectiveRecorder.Reset(true);
-
+        
             Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
             Assert.Empty(ObjectiveRecorder.AllTargets);
-
+        
             tc.Classify(a, b, c);
-
+        
             //assert that the last line of the method is reached
-            Assert.Contains("Line_at_TriangleClassificationImpl_00027", ObjectiveRecorder.AllTargets);
+            // Assert.Contains("Line_at_TriangleClassificationImpl_00027", ObjectiveRecorder.AllTargets);
+            
+            Assert.Equal(1.0, ExecutionTracer.GetValue("Line_at_TriangleClassificationImpl_00027"));
         }
-
+        
         [Fact]
         public void TestAllLinesGettingRegistered() {
             var expectedLineNumbers = new List<int> {
                 5, 6, 7, 10, 11, 14, 16, 18, 19, 22, 23, 26, 27
             };
-
+        
             var expectedLines = new List<string>();
             expectedLineNumbers.ForEach(x =>
                 expectedLines.Add(ObjectiveNaming.LineObjectiveName("TriangleClassificationImpl", x)));
-
+        
             var targets = GetRegisteredTargets();
-
+        
             Assert.Equal(expectedLines, targets.Lines);
         }
-
+        
         [Fact]
         public void TestAllClassesGettingRegistered() {
             var expectedclassNames = new List<string> {
                 "TriangleClassificationImpl"
             };
-
+        
             var expectedClasses = new List<string>();
-
+        
             expectedclassNames.ForEach(x => expectedClasses.Add(ObjectiveNaming.ClassObjectiveName(x)));
-
+        
             var targets = GetRegisteredTargets();
-
+        
             Assert.Equal(expectedClasses, targets.Classes);
         }
-
+        
         private RegisteredTargets GetRegisteredTargets() {
             var bin = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
+        
             if (bin == null) throw new Exception("Executing directory not found");
-
+        
             var json = File.ReadAllText(Path.Combine(bin, "Targets.json"));
-
+        
             return Newtonsoft.Json.JsonConvert.DeserializeObject<RegisteredTargets>(json);
         }
     }
