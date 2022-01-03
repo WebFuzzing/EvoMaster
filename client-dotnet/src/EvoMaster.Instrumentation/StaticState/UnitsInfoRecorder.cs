@@ -14,7 +14,6 @@ namespace EvoMaster.Instrumentation.StaticState{
 
         static UnitsInfoRecorder(){
             _singleton = new UnitsInfoRecorder();
-            InitializeUnitsInfo();
         }
 
         //see entries in UnitsInfoDto
@@ -32,31 +31,7 @@ namespace EvoMaster.Instrumentation.StaticState{
         private ConcurrentDictionary<string, string> _parsedDtos = new ConcurrentDictionary<string, string>();
 
         private ConcurrentHashSet<string> _alreadyReachedLines = new ConcurrentHashSet<string>();
-
-
-        /**
-         * With Dotnet, units info are collected based on json file,
-         * then require to initialize them based on it
-         */
-        public static void InitializeUnitsInfo(){
-            
-            var bin = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            if (bin == null) throw new Exception("Executing directory not found");
-
-            var json = File.ReadAllText(Path.Combine(bin, "Targets.json"));
-
-            var targets = Newtonsoft.Json.JsonConvert.DeserializeObject<RegisteredTargets>(json);
-            
-            foreach (var targetsClass in targets.Classes){
-                _singleton._unitNames.Add(targetsClass);
-            }
-            _singleton._numberOfBranches = targets.Branches.Count;
-            _singleton._numberOfLines = targets.Lines.Count;
-            
-            //TODO Amid, check if other properties are required to be init here
-
-        }
+        
 
         //Only needed for tests
         public static void Reset(){
@@ -71,16 +46,17 @@ namespace EvoMaster.Instrumentation.StaticState{
             _singleton._unitNames.Add(name);
         }
 
-        public static void MarkNewLine(string line){
-            if (_singleton._alreadyReachedLines.Contains(line)) return;
-
-            _singleton._alreadyReachedLines.Add(line);
+        public static void MarkNewLine(){
+            // if (_singleton._alreadyReachedLines.Contains(line)) return;
+            //
+            // _singleton._alreadyReachedLines.Add(line);
 
             Interlocked.Increment(ref _singleton._numberOfLines);
         }
 
-        public static void MarkNewBranchPair(){
-            Interlocked.Add(ref _singleton._numberOfBranches, 2);
+        public static void MarkNewBranch(){
+            // Interlocked.Add(ref _singleton._numberOfBranches, 2);
+            Interlocked.Increment(ref _singleton._numberOfBranches);
         }
 
         public static void MarkNewReplacedMethodInSut(){
