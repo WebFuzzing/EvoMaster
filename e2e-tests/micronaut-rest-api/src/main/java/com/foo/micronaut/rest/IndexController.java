@@ -4,7 +4,7 @@ import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 
-@Controller("/status")
+@Controller("/")
 public class IndexController {
 
     @Get(produces = MediaType.TEXT_PLAIN)
