@@ -83,7 +83,7 @@ class TupleGene(
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        Lazy.assert { elements.size == other.elements.size }
+        assert (elements.size == other.elements.size)
         (elements.indices).forEach {
             elements[it].copyValueFrom(other.elements[it])
         }
