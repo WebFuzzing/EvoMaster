@@ -363,25 +363,6 @@ namespace EvoMaster.Controller {
             return dto;
         }
 
-        protected UnitsInfoDto GetUnitsInfoDtoFromFile() {
-            var bin = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            if (bin == null) throw new Exception("Executing directory not found");
-
-            var json = File.ReadAllText(Path.Combine(bin, "Targets.json"));
-
-            var targets = Newtonsoft.Json.JsonConvert.DeserializeObject<RegisteredTargets>(json);
-
-            //TODO: other props of the sut
-            var dto = new UnitsInfoDto {
-                UnitNames = targets.Classes,
-                NumberOfBranches = targets.Branches.Count,
-                NumberOfLines = targets.Lines.Count
-            };
-
-            return dto;
-        }
-
         public abstract void SetKillSwitch(bool b);
 
         private IHostBuilder CreateHostBuilder() =>
