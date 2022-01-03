@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using EvoMaster.Client.Util;
 using EvoMaster.Instrumentation_Shared;
-using EvoMaster.Instrumentation.StaticState;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -33,12 +31,12 @@ namespace EvoMaster.Instrumentation {
 
             _completedProbe =
                 module.ImportReference(
-                    typeof(Instrumentator).GetMethod(name: "CompletedStatement",
+                    typeof(Probes).GetMethod(name: nameof(Probes.CompletedStatement),
                         types: new[] {typeof(string), typeof(int), typeof(int)}));
 
             _enteringProbe =
                 module.ImportReference(
-                    typeof(Instrumentator).GetMethod(name: "EnteringStatement",
+                    typeof(Probes).GetMethod(name: nameof(Probes.EnteringStatement),
                         types: new[] {typeof(string), typeof(int), typeof(int)}));
 
             foreach (var type in module.Types) {
@@ -172,18 +170,5 @@ namespace EvoMaster.Instrumentation {
             (instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
              instruction.OpCode != OpCodes.Box) || (instruction.OpCode == OpCodes.Throw) ||
             (instruction.OpCode == OpCodes.Rethrow);
-
-        //This method is called by the probe inserted after each covered statement in the instrumented SUT
-        public static void CompletedStatement(string className, int lineNo, int columnNo) {
-            // Console.WriteLine($"*** completed {className}: {lineNo}, {columnNo}");
-            SimpleLogger.Info($"*** completed {className}: {lineNo}, {columnNo}");
-            ExecutionTracer.CompletedStatement(className, lineNo, columnNo);
-        }
-
-        public static void EnteringStatement(string className, int lineNo, int columnNo) {
-            // Console.WriteLine($"### entering {className}: {lineNo}, {columnNo}");
-            SimpleLogger.Info($"### entering {className}: {lineNo}, {columnNo}");
-            ExecutionTracer.EnteringStatement(className, lineNo, columnNo);
-        }
     }
 }
