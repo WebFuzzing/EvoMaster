@@ -54,7 +54,7 @@ class TupleGene(
         if (lastElementTreatedSpecially) {
             return elements.last()
         }
-        return StringGene("Not implemented yet!!!")
+        return null
 
     }
 
