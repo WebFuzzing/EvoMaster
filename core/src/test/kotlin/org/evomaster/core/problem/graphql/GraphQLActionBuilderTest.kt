@@ -814,18 +814,31 @@ class GraphQLActionBuilderTest {
 
         assertEquals(2, objPage.fields.size)
         assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo" })
-        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "users" })
+       // assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "users" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "users" })
 
         val objPageInfo = (objPage.fields.first { it.name == "pageInfo" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objPageInfo.fields.size)
-        assertTrue(objPageInfo.fields.any { it is BooleanGene && it.name == "total" })
+        assertTrue(objPageInfo.fields.any { it is OptionalGene && it is BooleanGene && it.name == "total" })
         /**/
+        //recuperate the tuple user
+        val tupleUser = (objPage.fields.first { it.name == "users" } as OptionalGene).gene as TupleGene
+        //add more assertions ?
+        assertEquals(1, tupleUser.elements.size)
+        assertTrue(tupleUser.elements.any { it is StringGene && it.name == "Search" })
+        //missing assertions
 
-
-        //recuperate the user obj
+        //recuperate the user obj: be careful it belongs to the tuple
         val objUser = (objPage.fields.first { it.name == "users" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objUser.fields.size)
-        assertTrue(objUser.fields.any { it is BooleanGene && it.name == "about" })
+        assertTrue(objUser.fields.any {it is OptionalGene && it is TupleGene && it.name == "about" })
+
+        //recuperate the tuple about
+        val tupleAbout = (objUser.fields.first { it.name == "about" } as OptionalGene).gene as TupleGene
+        //add more assertions ?
+        assertEquals(1, tupleUser.elements.size)
+        assertTrue(tupleUser.elements.any { it is StringGene && it.name == "AsHtml" })//nn optional
+
 
     }
 
