@@ -798,13 +798,13 @@ class GraphQLActionBuilderTest {
     fun functionInReturnedObjectsTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/tempSchemaFunctioReturnedObj.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/anilist(Fragment1).json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(1, actionCluster.size)
-        val page = actionCluster.get("Page") as GraphQLAction
+        val page = actionCluster.get("page") as GraphQLAction
         assertEquals(2, page.parameters.size)
         assertTrue(page.parameters[0] is GQInputParam)
         assertTrue((page.parameters[0].gene as OptionalGene).gene is IntegerGene)
