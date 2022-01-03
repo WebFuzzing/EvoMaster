@@ -204,6 +204,36 @@ object GraphQLActionBuilder {
         state.argsTables.addAll(state.tempArgsTables)
         state.tables =
             state.tables.distinctBy { Pair(it.tableType, it.tableField) }.toMutableList()//remove redundant elements
+
+
+
+        println("I am the arg table:////////////////////////////////////////////////////////////////////// ")
+        for (element in state.argsTables) {
+            println("{Table Name: ${element?.tableType}, " +
+                    "Field: ${element?.tableField}, " +
+                    "KindOfTableField: ${element?.kindOfTableField}, " +
+                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfTableFieldOptional}, " +
+                    "table field Type: ${element?.tableFieldType}, " +
+                    "KindOfTable field type : ${element?.kindOfTableFieldType} " +
+                    "IsKindOfKindOfTableTypeOptional?: ${element?.isKindOfTableFieldTypeOptional} " +
+                    "//Args?: ${element?.tableFieldWithArgs} // ")
+        }
+        println(state.tables.size)
+
+
+        println("I am the table:////////////////////////////////////////////////////////////////////// ")
+        for (element in state.tables) {
+            println("{Table Name: ${element?.tableType}, " +
+                    "Field: ${element?.tableField}, " +
+                    "KindOfTableField: ${element?.kindOfTableField}, " +
+                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfTableFieldOptional}, " +
+                    "table field Type: ${element?.tableFieldType}, " +
+                    "KindOfTable field type : ${element?.kindOfTableFieldType} " +
+                    "IsKindOfKindOfTableTypeOptional?: ${element?.isKindOfTableFieldTypeOptional} " +
+                    "// Args?: ${element?.tableFieldWithArgs} ")
+        }
+        println(state.tables.size)
+
     }
 
     /*
