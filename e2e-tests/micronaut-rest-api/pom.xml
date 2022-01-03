@@ -127,6 +127,7 @@
                         <path>
                             <groupId>io.micronaut</groupId>
                             <artifactId>micronaut-http-validation</artifactId>
+                            <version>${micronaut.version}</version>
                         </path>
                         <path>
                             <groupId>io.micronaut</groupId>
