@@ -39,10 +39,10 @@
           "name": "Query",
           "fields": [
             {
-              "name": "Page",
+              "name": "page",
               "args": [
                 {
-                  "name": "page",
+                  "name": "PerPage",
                   "type": {
                     "kind": "SCALAR",
                     "name": "Int",
@@ -86,7 +86,7 @@
               "name": "users",
               "args": [
                 {
-                  "name": "search",
+                  "name": "Search",
                   "type": {
                     "kind": "SCALAR",
                     "name": "String",
@@ -147,7 +147,7 @@
               "name": "about",
               "args": [
                 {
-                  "name": "asHtml",
+                  "name": "AsHtml",
                   "type": {
                     "kind": "SCALAR",
                     "name": "Boolean",
