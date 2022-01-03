@@ -79,7 +79,7 @@ class TupleGeneTest {
             assertTrue((this[1] as ObjectGene).fields[0] is IntegerGene)
             assertEquals(42, ((this[1] as ObjectGene).fields[0] as IntegerGene).value)
             assertTrue(this[2] is ArrayGene<*>)
-            assertEquals(0, (this[2] as ArrayGene<*>).getAllElements().size)
+            assertEquals(1, (this[2] as ArrayGene<*>).getAllElements().size)
         }
     }
 }

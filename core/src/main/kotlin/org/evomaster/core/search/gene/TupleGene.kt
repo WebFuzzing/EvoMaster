@@ -73,8 +73,7 @@ class TupleGene(
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         if (elements.isNotEmpty())
-        //double check
-        elements.dropLast(1).forEach {
+        elements.forEach {
             it.randomize(randomness, false)
         }
     }
@@ -102,16 +101,14 @@ class TupleGene(
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        // man: need to check if we skip binding of last gene
-        val size = elements.size - 1
 
         if (gene is TupleGene
             && elements.size == gene.elements.size
             // binding is applicable only if names of element genes are consistent
-            && (0 until size).all { elements[it].possiblySame(gene.elements[it]) }
+            && (elements.indices).all { elements[it].possiblySame(gene.elements[it]) }
         ) {
             var result = true
-            (0 until size).forEach {
+            (elements.indices).forEach {
                 val r = elements[it].bindValueBasedOn(gene.elements[it])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the element at $it with the name ${elements[it].name}")
@@ -129,12 +126,11 @@ class TupleGene(
     override fun getChildren(): List<Gene> = elements
 
     override fun isMutable(): Boolean {
-        return elements.dropLast(1).any { it.isMutable() }
+        return elements.any { it.isMutable() }
     }
 
     override fun mutationWeight(): Double {
-        // need to check, skip last one for counting the weight
-        return elements.dropLast(1).sumOf { it.mutationWeight() }
+        return elements.sumOf { it.mutationWeight() }
     }
 
     override fun candidatesInternalGenes(
@@ -145,8 +141,7 @@ class TupleGene(
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        // need to check, skip last for value mutation
-        return elements.dropLast(1).filter { it.isMutable() }
+        return elements.filter { it.isMutable() }
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
