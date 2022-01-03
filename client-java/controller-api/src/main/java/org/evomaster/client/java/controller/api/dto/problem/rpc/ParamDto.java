@@ -75,6 +75,7 @@ public class ParamDto {
         copy.minSize = minSize;
         copy.minValue = minValue;
         copy.maxValue = maxValue;
+        copy.isForAuth = isForAuth;
         return copy;
     }
 

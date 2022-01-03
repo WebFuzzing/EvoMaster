@@ -440,6 +440,10 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
         }
 
+        // if this param is related to auth in request dto, build it as DisruptiveGene with 0.0 probability (ie, not mutable)
+        if (param.isForAuth)
+            return DisruptiveGene(param.name, gene, 0.0)
+
         return wrapWithOptionalGene(gene, param.isNullable)
     }
 
