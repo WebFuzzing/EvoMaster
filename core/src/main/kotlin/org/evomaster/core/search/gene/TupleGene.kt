@@ -26,11 +26,9 @@ class TupleGene(
     /**
      * The actual elements in the array, based on the template. Ie, usually those elements will be clones
      * of the templated, and then mutated/randomized
-     *
-     * change `var` to `val`, need to check
      * note that if the list of gene could be updated, its impact needs to be updated
      */
-    val elements: List<Gene> = mutableListOf(),
+    val elements: List<Gene> = listOf(),
     /**
      * In some cases, we want to treat an element differently from the other (the last in particular).
      * This is for example the case of function calls in GQL when the return type is an object, on
