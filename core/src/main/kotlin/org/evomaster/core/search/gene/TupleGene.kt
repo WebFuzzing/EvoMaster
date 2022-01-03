@@ -28,7 +28,7 @@ class TupleGene(
      * of the templated, and then mutated/randomized
      * note that if the list of gene could be updated, its impact needs to be updated
      */
-    val elements: List<Gene> = listOf(),
+    val elements: List<Gene>,
     /**
      * In some cases, we want to treat an element differently from the other (the last in particular).
      * This is for example the case of function calls in GQL when the return type is an object, on
