@@ -17,10 +17,6 @@ import org.slf4j.LoggerFactory
  *  A tuple is a fixed-size, ordered list of elements, of possible different types.
  *  This is needed for example when representing the inputs of function calls in
  *  GraphQL.
- *
- *  TODO all needed methods to make it compile
- *
- *  TODO double-check with Man regarding hypermutation for this gene
  */
 class TupleGene(
     /**
