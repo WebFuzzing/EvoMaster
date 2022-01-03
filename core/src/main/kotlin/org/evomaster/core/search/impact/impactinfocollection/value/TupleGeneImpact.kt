@@ -39,8 +39,7 @@ class TupleGeneImpact (
         if (gc.current !is TupleGene)
             throw IllegalArgumentException("gc.current ${gc.current::class.java.simpleName} should be ObjectGene")
         if (gc.previous == null){
-            // here we drop last
-            gc.current.elements.dropLast(1).forEach { gene ->
+            gc.current.elements.forEach { gene ->
                 val fImpact = elements.getValue(gene.name) as? GeneImpact ?:throw IllegalArgumentException("impact should be gene impact")
                 val mutatedGeneWithContext = MutatedGeneWithContext(previous = null, current =  gene, action = "none", position = -1, numOfMutatedGene = gc.current.elements.size)
                 fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
@@ -50,8 +49,7 @@ class TupleGeneImpact (
         if (gc.previous !is TupleGene)
             throw IllegalArgumentException("gc.previous ${gc.previous::class.java.simpleName} should be ObjectGene")
 
-        // here we drop last
-        val mutatedElements = gc.current.elements.dropLast(1).zip(gc.previous.elements.dropLast(1)) { cf, pf ->
+        val mutatedElements = gc.current.elements.zip(gc.previous.elements) { cf, pf ->
             Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
         }.filter { !it.second }.map { it.first }
 
@@ -62,8 +60,6 @@ class TupleGeneImpact (
             val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1, numOfMutatedGene = gc.numOfMutatedGene * mutatedElements.size)
             fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
-
-        // TODO here might need to handle impact of last gene especially, eg selection
     }
 
     override fun validate(gene: Gene): Boolean = gene is TupleGene
