@@ -24,5 +24,5 @@ public class CustomizedRequestValueDto {
      * specify the value if it is only applicable to specified input with the name
      * Note that it is nullable indicating that the value could be applied for all input params
      */
-    public String specificInputParamName;
+//    public String specificInputParamName;
 }

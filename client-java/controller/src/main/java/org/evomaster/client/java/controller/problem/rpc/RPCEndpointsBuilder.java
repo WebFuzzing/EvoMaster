@@ -213,7 +213,7 @@ public class RPCEndpointsBuilder {
     private static List<CustomizedRequestValueDto> getRelatedCustomization(List<CustomizedRequestValueDto> customizedRequestValueDtos, Method method){
         if (customizedRequestValueDtos == null) return null;
         List<String> annotations = Arrays.stream(method.getAnnotations()).map(s-> s.annotationType().getName()).collect(Collectors.toList());
-        return customizedRequestValueDtos.stream().filter(s-> (s.annotationOnEndpoint != null && annotations.contains(s.annotationOnEndpoint))).collect(Collectors.toList());
+        return customizedRequestValueDtos.stream().filter(s-> s.annotationOnEndpoint == null || annotations.contains(s.annotationOnEndpoint)).collect(Collectors.toList());
     }
 
     private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type, List<String> fields) {
