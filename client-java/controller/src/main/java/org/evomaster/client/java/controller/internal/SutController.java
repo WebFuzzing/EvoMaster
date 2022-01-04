@@ -7,7 +7,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.evomaster.client.java.controller.CustomizedResponseHandler;
+import org.evomaster.client.java.controller.CustomizationHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
@@ -50,7 +50,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * that is responsible to start/stop/restart the tested application,
  * ie the system under test (SUT)
  */
-public abstract class SutController implements SutHandler, CustomizedResponseHandler {
+public abstract class SutController implements SutHandler, CustomizationHandler {
 
     private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
@@ -318,7 +318,7 @@ public abstract class SutController implements SutHandler, CustomizedResponseHan
             return;
         }
         try {
-            RPCEndpointsBuilder.validateRPCAuthInRequest(getInfoForAuthentication());
+            RPCEndpointsBuilder.validateKeyValuePairs(getCustomizedValueInRequests());
 
             RPCProblem rpcp = (RPCProblem) getProblemInfo();
             for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
@@ -327,7 +327,8 @@ public abstract class SutController implements SutHandler, CustomizedResponseHan
                         rpcp.skipEndpointsByAnnotation!=null?rpcp.skipEndpointsByAnnotation.get(interfaceName):null,
                         rpcp.involveEndpointsByName!=null? rpcp.involveEndpointsByName.get(interfaceName):null,
                         rpcp.involveEndpointsByAnnotation!=null? rpcp.involveEndpointsByAnnotation.get(interfaceName):null,
-                        getInfoForAuthentication());
+                        getInfoForAuthentication(),
+                        getCustomizedValueInRequests());
                 rpcInterfaceSchema.put(interfaceName, schema);
             }
         }catch (Exception e){
@@ -717,6 +718,11 @@ public abstract class SutController implements SutHandler, CustomizedResponseHan
 
     @Override
     public CustomizedCallResultCode categorizeBasedOnResponse(Object response) {
+        return null;
+    }
+
+    @Override
+    public List<CustomizedRequestValueDto> getCustomizedValueInRequests() {
         return null;
     }
 }

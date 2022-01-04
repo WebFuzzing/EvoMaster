@@ -38,10 +38,6 @@ public class AuthenticationDto {
      */
     public JsonAuthEndpointDto jsonAuthEndpoint;
 
-    /**
-     * auth with annotation on endpoints
-     */
-    public AuthInRequestDto authInRequest;
 
     public AuthenticationDto() {
     }

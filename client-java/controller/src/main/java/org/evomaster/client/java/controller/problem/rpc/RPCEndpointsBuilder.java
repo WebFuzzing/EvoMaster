@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
-import org.evomaster.client.java.controller.api.dto.AuthInRequestDto;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
@@ -34,29 +34,35 @@ public class RPCEndpointsBuilder {
     }
 
     /**
-     * for auth info specified with annotations
-     * 1) regarding same annotation, they should have consistent keys
-     * 2) annotation should not be null
-     * @param authenticationDtoList
+     * for key value info specified with annotations
+     * 1) for any CustomizedRequestValueDto, keyValuePairs and keyValues could not be specified or null at the same time
+     * 2) regarding same annotation, they should have consistent keys
+     * 3) annotation should not be null
+     * @param customizedRequestValueDtos
      */
-    public static void validateRPCAuthInRequest(List<AuthenticationDto> authenticationDtoList){
-        if (authenticationDtoList == null || authenticationDtoList.isEmpty()) return;
+    public static void validateKeyValuePairs(List<CustomizedRequestValueDto> customizedRequestValueDtos){
+        if (customizedRequestValueDtos == null || customizedRequestValueDtos.isEmpty()) return;
 
-        Map<String, List<AuthInRequestDto>> group = new HashMap<>();
-        authenticationDtoList.stream().filter(s-> s.authInRequest !=null).forEach(s->{
-            if (s.authInRequest.annotationOnEndpoint == null)
-                throw new RuntimeException("annotationName must be specified for auth info at index "+ authenticationDtoList.indexOf(s));
-            if (!group.containsKey(s.authInRequest.annotationOnEndpoint))
-                group.put(s.authInRequest.annotationOnEndpoint, new ArrayList<>());
-            group.get(s.authInRequest.annotationOnEndpoint).add(s.authInRequest);
+        customizedRequestValueDtos.forEach(s->{
+            if (s.keyValues != null && s.keyValuePairs != null)
+                throw new IllegalArgumentException("Driver Config Error: keyValues and keyValuePairs should not be specified at the same time");
+            if (s.keyValues == null && s.keyValuePairs == null)
+                throw new IllegalArgumentException("Driver Config Error: one of keyValues and keyValuePairs must be specified, could not be null at the same time");
+        });
+
+        Map<String, List<CustomizedRequestValueDto>> group = new HashMap<>();
+        customizedRequestValueDtos.stream().filter(s-> s.annotationOnEndpoint!= null && s.keyValuePairs !=null && !s.keyValuePairs.isEmpty()).forEach(s->{
+            if (!group.containsKey(s.annotationOnEndpoint))
+                group.put(s.annotationOnEndpoint, new ArrayList<>());
+            group.get(s.annotationOnEndpoint).add(s);
         });
         group.values().forEach(g->{
             if (g.size() > 1){
-                List<String> keys = g.get(0).values.stream().map(a-> a.fieldKey).collect(Collectors.toList());
+                List<String> keys = g.get(0).keyValuePairs.stream().map(a-> a.fieldKey).collect(Collectors.toList());
                 g.forEach(a->{
-                    List<String> akeys = a.values.stream().map(k-> k.fieldKey).collect(Collectors.toList());
+                    List<String> akeys = a.keyValuePairs.stream().map(k-> k.fieldKey).collect(Collectors.toList());
                     if (akeys.size() != keys.size() || !akeys.containsAll(keys)){
-                        throw new RuntimeException("keys for same annotation "+a.annotationOnEndpoint +" must be specified with same keys");
+                        throw new IllegalArgumentException("Driver Config Error: keys for same annotation "+a.annotationOnEndpoint +" must be specified with same keys");
                     }
                 });
             }
@@ -71,7 +77,8 @@ public class RPCEndpointsBuilder {
     public static InterfaceSchema build(String interfaceName, RPCType rpcType, Object client,
                                         List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
                                         List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation,
-                                        List<AuthenticationDto> authenticationDtoList) {
+                                        List<AuthenticationDto> authenticationDtoList,
+                                        List<CustomizedRequestValueDto> customizedRequestValueDtos) {
         List<EndpointSchema> endpoints = new ArrayList<>();
         List<String> skippedEndpoints = new ArrayList<>();
         Map<Integer, EndpointSchema> authEndpoints = new HashMap<>();
@@ -80,7 +87,7 @@ public class RPCEndpointsBuilder {
             InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints);
             for (Method m : interfaze.getDeclaredMethods()) {
                 if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation))
-                    endpoints.add(build(schema, m, rpcType, authenticationDtoList));
+                    endpoints.add(build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos));
                 else {
                     skippedEndpoints.add(m.getName());
                 }
@@ -91,7 +98,7 @@ public class RPCEndpointsBuilder {
                     /*
                         handle endpoint which is for auth setup
                      */
-                    authEndpoints.put(index, build(schema, m, rpcType, null));
+                    authEndpoints.put(index, build(schema, m, rpcType, null, customizedRequestValueDtos));
                 }
             }
             return schema;
@@ -111,9 +118,9 @@ public class RPCEndpointsBuilder {
                                         List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
                                         List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation){
         if (skipEndpointsByName != null && involveEndpointsByName != null)
-            throw new IllegalArgumentException("Error: skipEndpointsByName and involveEndpointsByName should not be specified at same time.");
+            throw new IllegalArgumentException("Driver Config Error: skipEndpointsByName and involveEndpointsByName should not be specified at same time.");
         if (skipEndpointsByAnnotation != null && involveEndpointsByAnnotation != null)
-            throw new IllegalArgumentException("Error: skipEndpointsByAnnotation and involveEndpointsByAnnotation should not be specified at same time.");
+            throw new IllegalArgumentException("Driver Config Error: skipEndpointsByAnnotation and involveEndpointsByAnnotation should not be specified at same time.");
 
         if (skipEndpointsByName != null || skipEndpointsByAnnotation != null)
             return !anyMatchByNameAndAnnotation(endpoint, skipEndpointsByName, skipEndpointsByAnnotation);
@@ -161,21 +168,22 @@ public class RPCEndpointsBuilder {
 
     }
 
-    private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType, List<AuthenticationDto> authenticationDtoList) {
+    private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType, List<AuthenticationDto> authenticationDtoList, List<CustomizedRequestValueDto> customizedRequestValueDtos) {
         List<NamedTypedValue> requestParams = new ArrayList<>();
 
         List<AuthenticationDto> authAnnotationDtos = getRelatedAuth(authenticationDtoList, method);
         List<Integer> authKeys = null;
         if (authAnnotationDtos != null)
             authKeys = authAnnotationDtos.stream().map(s-> authenticationDtoList.indexOf(s)).collect(Collectors.toList());
-        List<String> authFields = null;
-        if (authAnnotationDtos!= null && !authAnnotationDtos.isEmpty()){
-            Optional<AuthenticationDto> authInRequest = authAnnotationDtos.stream().filter(s-> s.authInRequest != null).findAny();
-            if (authInRequest.isPresent())
-                authFields = authInRequest.get().authInRequest.values.stream().map(s-> s.fieldKey).collect(Collectors.toList());
+        List<String> customizedFields = null;
+        List<CustomizedRequestValueDto> customizationDtos = getRelatedCustomization(customizedRequestValueDtos, method);
+        if (customizationDtos!= null && !customizationDtos.isEmpty()){
+            Optional<CustomizedRequestValueDto> candidate = customizationDtos.stream().filter(s-> s.annotationOnEndpoint != null).findAny();
+            if (candidate.isPresent())
+                customizedFields = candidate.get().keyValuePairs!=null? candidate.get().keyValuePairs.stream().map(s-> s.fieldKey).collect(Collectors.toList()): Arrays.asList(candidate.get().keyValues.key);
         }
         for (Parameter p : method.getParameters()) {
-            requestParams.add(buildInputParameter(schema, p, rpcType, authFields));
+            requestParams.add(buildInputParameter(schema, p, rpcType, customizedFields));
         }
         NamedTypedValue response = null;
         if (!method.getReturnType().equals(Void.TYPE)) {
@@ -199,8 +207,13 @@ public class RPCEndpointsBuilder {
     private static List<AuthenticationDto> getRelatedAuth(List<AuthenticationDto> authenticationDtoList, Method method){
         if (authenticationDtoList == null) return null;
         List<String> annotations = Arrays.stream(method.getAnnotations()).map(s-> s.annotationType().getName()).collect(Collectors.toList());
-        return authenticationDtoList.stream().filter(s-> (s.jsonAuthEndpoint != null && s.jsonAuthEndpoint.annotationOnEndpoint != null && annotations.contains(s.jsonAuthEndpoint.annotationOnEndpoint)) ||
-                (s.authInRequest != null && s.authInRequest.annotationOnEndpoint != null && annotations.contains(s.authInRequest.annotationOnEndpoint))).collect(Collectors.toList());
+        return authenticationDtoList.stream().filter(s-> (s.jsonAuthEndpoint != null && s.jsonAuthEndpoint.annotationOnEndpoint != null && annotations.contains(s.jsonAuthEndpoint.annotationOnEndpoint))).collect(Collectors.toList());
+    }
+
+    private static List<CustomizedRequestValueDto> getRelatedCustomization(List<CustomizedRequestValueDto> customizedRequestValueDtos, Method method){
+        if (customizedRequestValueDtos == null) return null;
+        List<String> annotations = Arrays.stream(method.getAnnotations()).map(s-> s.annotationType().getName()).collect(Collectors.toList());
+        return customizedRequestValueDtos.stream().filter(s-> (s.annotationOnEndpoint != null && annotations.contains(s.annotationOnEndpoint))).collect(Collectors.toList());
     }
 
     private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type, List<String> fields) {
@@ -215,7 +228,7 @@ public class RPCEndpointsBuilder {
         return namedTypedValue;
     }
 
-    private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth, List<String> authFieldKeys) {
+    private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth, List<String> customizedFieldKeys) {
         depth.add(getObjectTypeNameWithFlag(clazz, clazz.getName()));
         NamedTypedValue namedValue = null;
 
@@ -243,7 +256,7 @@ public class RPCEndpointsBuilder {
                     templateClazz = clazz.getComponentType();
                 }
 
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, authFieldKeys);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizedFieldKeys);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
@@ -257,7 +270,7 @@ public class RPCEndpointsBuilder {
                     throw new RuntimeException("genericType should not be null for List and Set class");
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 Class<?> templateClazz = getTemplateClass(type);
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, authFieldKeys);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizedFieldKeys);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
@@ -272,11 +285,11 @@ public class RPCEndpointsBuilder {
                 Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
                 Class<?> keyTemplateClazz = getTemplateClass(keyType);
-                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, authFieldKeys);
+                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizedFieldKeys);
                 keyTemplate.setNullable(false);
 
                 Class<?> valueTemplateClazz = getTemplateClass(valueType);
-                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, authFieldKeys);
+                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizedFieldKeys);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate)), clazz);
                 mtype.depth = getDepthLevel(clazz, depth);
                 namedValue = new MapParam(name, mtype);
@@ -302,7 +315,7 @@ public class RPCEndpointsBuilder {
                             thrift_metamap = f;
                             continue;
                         }
-                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, authFieldKeys);
+                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, customizedFieldKeys);
                         for (Annotation annotation : f.getAnnotations()){
                             handleConstraint(field, annotation);
                         }
@@ -331,8 +344,8 @@ public class RPCEndpointsBuilder {
                     name, clazz.getName(), genericType==null?"null":genericType.getTypeName(), genericType==null?"null":genericType.getClass().getName(), String.join(",", depth), e.getMessage()));
         }
 
-        if (authFieldKeys!=null && authFieldKeys.contains(namedValue.getName())){
-            namedValue.setForAuth(true);
+        if (customizedFieldKeys!=null && customizedFieldKeys.contains(namedValue.getName())){
+            namedValue.setHasSpecifiedCandidates(true);
         }
 
         return namedValue;

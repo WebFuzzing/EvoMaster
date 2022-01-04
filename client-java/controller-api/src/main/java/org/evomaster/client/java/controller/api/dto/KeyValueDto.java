@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.api.dto;
 
-public class AuthKeyValueDto {
+public class KeyValueDto {
 
     /**
      * field name which is related to auth in request

@@ -2,8 +2,11 @@ package org.evomaster.client.java.controller;
 
 
 import org.evomaster.client.java.controller.api.dto.CustomizedCallResultCode;
+import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 
-public interface CustomizedResponseHandler {
+import java.util.List;
+
+public interface CustomizationHandler {
 
 
     // CustomizedCallResultCode categorizeBasedOnValue(Object value);
@@ -19,4 +22,15 @@ public interface CustomizedResponseHandler {
      *
      */
     CustomizedCallResultCode categorizeBasedOnResponse(Object response);
+
+    /**
+     * <p>
+     * specify candidate values in requests
+     * </p>
+     *
+     *
+     * @return a list of specified values for requests
+     *
+     */
+    List<CustomizedRequestValueDto> getCustomizedValueInRequests();
 }
