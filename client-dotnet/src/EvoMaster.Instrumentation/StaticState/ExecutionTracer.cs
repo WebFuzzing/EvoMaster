@@ -215,8 +215,24 @@ namespace EvoMaster.Instrumentation.StaticState {
             ObjectiveRecorder.Update(id, value);
         }
 
+        /**
+         * get fitness value of target with given id
+         */
         public static double GetValue(string id){
             return ObjectiveCoverage[id].Value ?? 0.0;
+        }
+
+        /**
+         * return number of objectives which are not covered but reached
+         */
+        public static int getNumberOfNonCoveredObjectives(string prefix){
+            // debugging purpose
+            foreach (var keyValuePair in ObjectiveCoverage){
+                Console.WriteLine(keyValuePair.Key);
+                Console.WriteLine(keyValuePair.Value.Value);
+            }
+
+            return ObjectiveCoverage.Values.Count(x => x.DescriptiveId.StartsWith(prefix) && x.Value < 1);
         }
 
         private static AdditionalInfo GetCurrentAdditionalInfo() {

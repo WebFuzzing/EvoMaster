@@ -9,7 +9,25 @@ namespace EvoMaster.Instrumentation {
     public class Probes{
 
         static Probes(){
-            var targets = InitializeTargets();
+            InitializeTargets();
+            SimpleLogger.Info("All targets are registered.");
+
+        }
+        
+        /**
+         * With Dotnet, units info are collected based on json file,
+         * then require to initialize them based on it
+         */
+        private static void InitializeTargets(){
+            
+            var bin = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+            if (bin == null) throw new Exception("Executing directory not found");
+
+            var json = File.ReadAllText(Path.Combine(bin, "Targets.json"));
+
+            var targets = Newtonsoft.Json.JsonConvert.DeserializeObject<RegisteredTargets>(json);
+            
             foreach (var targetsClass in targets.Classes){
                 UnitsInfoRecorder.MarkNewUnit(targetsClass);
                 ObjectiveRecorder.RegisterTarget(targetsClass);
@@ -24,21 +42,8 @@ namespace EvoMaster.Instrumentation {
                 UnitsInfoRecorder.MarkNewBranch();
                 ObjectiveRecorder.RegisterTarget(targetsBranch);
             }
-        }
-        
-        /**
-         * With Dotnet, units info are collected based on json file,
-         * then require to initialize them based on it
-         */
-        public static RegisteredTargets InitializeTargets(){
             
-            var bin = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            if (bin == null) throw new Exception("Executing directory not found");
-
-            var json = File.ReadAllText(Path.Combine(bin, "Targets.json"));
-
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<RegisteredTargets>(json);
+            //TODO for statement if needed
 
         }
 
