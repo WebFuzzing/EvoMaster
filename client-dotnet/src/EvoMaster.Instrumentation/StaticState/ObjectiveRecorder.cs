@@ -202,8 +202,6 @@ namespace EvoMaster.Instrumentation.StaticState {
                 return x;
             });
             //reversedIdMapping.computeIfAbsent(id, k -> descriptiveId);
-            // only for debugging, remove later
-            Console.WriteLine(id);
             return id;
         }
 

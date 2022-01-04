@@ -33,9 +33,9 @@ namespace EvoMaster.Instrumentation {
             ids.ToList().ForEach(id => {
                 var descriptiveId = ObjectiveRecorder.GetDescriptiveId(id);
 
-                var info = objectives[descriptiveId];
-
-                info = info == null ? TargetInfo.NotReached(id) : info.WithMappedId(id).WithNoDescriptiveId();
+                var has = objectives.TryGetValue(descriptiveId, out var info);
+                
+                info = (info == null || !has) ? TargetInfo.NotReached(id) : info.WithMappedId(id).WithNoDescriptiveId();
 
                 list.Add(info);
             });
