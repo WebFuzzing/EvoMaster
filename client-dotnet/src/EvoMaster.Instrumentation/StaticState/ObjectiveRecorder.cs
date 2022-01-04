@@ -140,7 +140,7 @@ namespace EvoMaster.Instrumentation.StaticState {
                 return 1d;
             }
 
-            return (double)covered / (double)n;
+            return (double) covered / (double) n;
         }
 
         // public static void PrintCoveragePerTarget(PrintWriter writer)
@@ -187,7 +187,7 @@ namespace EvoMaster.Instrumentation.StaticState {
             else {
                 var old = MaxObjectiveCoverage[id];
                 if (value > old) {
-                    MaxObjectiveCoverage.Add(id, value);
+                    MaxObjectiveCoverage[id] = value;
                 }
             }
         }
@@ -197,7 +197,7 @@ namespace EvoMaster.Instrumentation.StaticState {
                 //int x = IdMappingCounter.getAndIncrement();
                 int x = IdMappingCounter;
                 Interlocked.Increment(ref IdMappingCounter);
-            
+
                 _reversedIdMapping.ComputeIfAbsent(x, t => descriptiveId);
                 return x;
             });
