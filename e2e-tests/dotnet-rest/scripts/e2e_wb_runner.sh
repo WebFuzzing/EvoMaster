@@ -10,7 +10,10 @@ DRIVER_NAME=$2
 # How many fitness evaluations for the search
 BUDGET=$3
 
-NPARAMS=3
+# whether to export covered targets
+EXPORT_CTARGETS=$4
+
+NPARAMS=4
 
 echo $(date) Executing White-Box E2E for $SUT_FOLDER
 
@@ -45,8 +48,12 @@ TEST_NAME="EvoMasterE2ETest"
 OUTPUT_FOLDER=$PROJECT_ROOT$SUT_FOLDER/generated
 TEST_LOCATION=$OUTPUT_FOLDER/$TEST_NAME.cs
 
+TARGET_FILE="coveredTargets.txt"
+TARGET_LOCATION=$OUTPUT_FOLDER/$TARGET_FILE
+
 # Deleting previously generated tests, if any
 rm -f $OUTPUT_FOLDER/*Test.cs
+rm -f TARGET_LOCATION
 mkdir -p $OUTPUT_FOLDER
 
 
@@ -70,7 +77,7 @@ PID=$!
 sleep 60
 
 echo $(date) Starting EvoMaster
-java -jar $JAR --seed 42 --maxActionEvaluations $BUDGET  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME  --sutControllerPort $PORT
+java -jar $JAR --seed 42 --maxActionEvaluations $BUDGET  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME  --sutControllerPort $PORT --coveredTargetFile $TARGET_LOCATION --exportCoveredTarget=$EXPORT_CTARGETS
 
 # stop driver, which was run in background
 kill $PID
@@ -81,6 +88,7 @@ else
     echo $(date) "ERROR. Failed to locate generated tests at: $TEST_LOCATION"
     exit 1
 fi
+
 
 # run the tests
 echo $(date) Running the generated tests
@@ -111,6 +119,24 @@ if [ $N -gt $NPARAMS ]; then
     fi
   done
 fi
+
+
+doExport=${EXPORT_CTARGETS^^}
+
+echo "whether to export covered targets: $doExport"
+if [ "$doExport" = "TRUE" ]; then
+    if [ -f "$TARGET_LOCATION" ]; then
+        echo $(date) "Covered targets correctly generated at: $TARGET_LOCATION"
+        FOUND=`cat $TARGET_LOCATION | grep "Line_at_" | wc -l`
+        if [ $FOUND -eq 0 ]; then
+          echo "ERROR. Not found covered line targets"
+          exit 1
+        fi
+    else
+        echo $(date) "ERROR. Failed to locate covered targets at: $TARGET_LOCATION"
+        exit 1
+    fi
+fi;
 
 echo $(date) All checks have successfuly completed for this test
 
