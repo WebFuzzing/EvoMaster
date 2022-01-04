@@ -17,7 +17,7 @@ public abstract class RPCEndpointsBuilderTestBase {
 
      class FakeClient{}
 
-    public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new FakeClient(), null, null, null, null, null);
+    public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new FakeClient(), null, null, null, null, null, null);
 
     public abstract String getInterfaceName();
 
