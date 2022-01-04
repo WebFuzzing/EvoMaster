@@ -106,15 +106,19 @@ class RPCEndpointsHandler {
      * setup auth for [action] with an auth info at random
      */
     fun actionWithRandomAuth(action: RPCCallAction, randomness: Randomness){
+
         val gs = authentications.values.filter { it.isGlobal }
         if (gs.isNotEmpty())
             action.auth = randomness.choose(gs)
+        else
+            action.auth = RPCNoAuth()
         if (action is AuthorizedRPCCallAction){
             val ss = authorizedActionAuthMap[action.id]
             if (!ss.isNullOrEmpty()){
                 val sId = randomness.choose(ss)
                 action.requiredAuth = authentications[sId]?:throw IllegalStateException("could not find auth with id $sId in authentication map")
-            }
+            }else
+                action.requiredAuth = RPCNoAuth()
         }
     }
 

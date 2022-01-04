@@ -78,7 +78,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
      * sample an action from [actionCluster] at random
      * @param noAuthProbability specifies a probability which does not apply any auth
      */
-    fun sampleRandomAction(noAuthProbability: Double): RPCCallAction {
+    fun sampleRandomAction(noAuthProbability: Double = 0.05): RPCCallAction {
         val action = randomness.choose(actionCluster).copy() as RPCCallAction
         randomizeActionGenes(action)
         if (randomness.nextBoolean(noAuthProbability)){
