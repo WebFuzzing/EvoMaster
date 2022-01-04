@@ -121,7 +121,7 @@ namespace EvoMaster.Controller {
 
         //TODO: Complete this method
         public void ResetExtraHeuristics() {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         //TODO: Complete this method
@@ -164,13 +164,14 @@ namespace EvoMaster.Controller {
          * Man: I modified this, please check Amid.
          */
         public void NewTest() {
-            //_actionIndex = -1;
+            _actionIndex = -1;
 
-            // resetExtraHeuristics();
-            // extras.clear();
+             ResetExtraHeuristics();
+             _extras.Clear();
             NewTestSpecificHandler();
         }
-
+        
+        
         /**
          * As some heuristics are based on which action (eg HTTP call, or click of button)
          * in the test sequence is executed, and their order, we need to keep track of which
@@ -180,12 +181,12 @@ namespace EvoMaster.Controller {
          */
         //TODO: Complete this method. Man: modified, please check
         public void NewAction(ActionDto dto) {
-            // if (dto.index > extras.size()) {
-            //     extras.add(computeExtraHeuristics());
-            // }
-            // this.actionIndex = dto.index;
-            //
-            // resetExtraHeuristics();
+            if (dto.Index > _extras.Count) {
+                //_extras.Add(ComputeExtraHeuristics());
+            }
+            this._actionIndex = dto.Index;
+            
+            ResetExtraHeuristics();
 
             NewActionSpecificHandler(dto);
         }

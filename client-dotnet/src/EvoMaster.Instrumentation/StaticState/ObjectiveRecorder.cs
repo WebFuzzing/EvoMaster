@@ -197,12 +197,13 @@ namespace EvoMaster.Instrumentation.StaticState {
                 //int x = IdMappingCounter.getAndIncrement();
                 int x = IdMappingCounter;
                 Interlocked.Increment(ref IdMappingCounter);
-
+            
                 _reversedIdMapping.ComputeIfAbsent(x, t => descriptiveId);
                 return x;
             });
             //reversedIdMapping.computeIfAbsent(id, k -> descriptiveId);
-
+            // only for debugging, remove later
+            Console.WriteLine(id);
             return id;
         }
 
