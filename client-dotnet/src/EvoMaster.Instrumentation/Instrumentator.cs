@@ -169,6 +169,6 @@ namespace EvoMaster.Instrumentation {
         private static bool IsBranchInstruction(Instruction instruction) =>
             (instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
              instruction.OpCode != OpCodes.Box) || (instruction.OpCode == OpCodes.Throw) ||
-            (instruction.OpCode == OpCodes.Rethrow);
+            (instruction.OpCode == OpCodes.Rethrow) || (instruction.OpCode == OpCodes.Endfinally);
     }
 }
