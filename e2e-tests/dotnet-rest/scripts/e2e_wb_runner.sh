@@ -53,7 +53,7 @@ TARGET_LOCATION=$OUTPUT_FOLDER/$TARGET_FILE
 
 # Deleting previously generated tests, if any
 rm -f $OUTPUT_FOLDER/*Test.cs
-rm -f TARGET_LOCATION
+rm -f $TARGET_LOCATION
 mkdir -p $OUTPUT_FOLDER
 
 
