@@ -13,7 +13,6 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.api.service.param.Param
-import org.evomaster.core.problem.rpc.AuthorizedRPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
@@ -55,7 +54,7 @@ class RPCEndpointsHandler {
      * - Key is the id of action (which is consistent with key of [actionSchemaCluster])
      * - Value is a list of auth (which is based on key of [authentications])
      */
-    private val authorizedActionAuthMap = mutableMapOf<String, MutableList<Int>>()
+//    private val authorizedActionAuthMap = mutableMapOf<String, MutableList<Int>>()
     /**
      * key is type in the schema
      * value is object gene for it
@@ -82,7 +81,7 @@ class RPCEndpointsHandler {
     }
 
     private fun handleRPCAuthDto(index: Int, auth: AuthenticationDto) : Boolean{
-        if (auth.authInRequest == null && auth.jsonAuthEndpoint == null)
+        if (auth.jsonAuthEndpoint == null)
             return false
         if (auth.jsonAuthEndpoint != null){
             authentications[index] = RPCAuthenticationInfo(auth.name?:"untitled",
@@ -90,13 +89,6 @@ class RPCEndpointsHandler {
                 auth.jsonAuthEndpoint.annotationOnEndpoint == null,
                 null, auth.jsonAuthEndpoint.endpointName,
             )
-        }
-        if (auth.authInRequest != null){
-            authentications[index] = RPCAuthenticationInfo(auth.name?:"untitled", index,
-                auth.jsonAuthEndpoint.annotationOnEndpoint == null,
-                auth.authInRequest.values.associate {
-                    it.fieldKey to it.fieldValue
-                }.toMutableMap(), null)
         }
 
         return true
@@ -112,14 +104,14 @@ class RPCEndpointsHandler {
             action.auth = randomness.choose(gs)
         else
             action.auth = RPCNoAuth()
-        if (action is AuthorizedRPCCallAction){
-            val ss = authorizedActionAuthMap[action.id]
-            if (!ss.isNullOrEmpty()){
-                val sId = randomness.choose(ss)
-                action.requiredAuth = authentications[sId]?:throw IllegalStateException("could not find auth with id $sId in authentication map")
-            }else
-                action.requiredAuth = RPCNoAuth()
-        }
+//        if (action is AuthorizedRPCCallAction){
+//            val ss = authorizedActionAuthMap[action.id]
+//            if (!ss.isNullOrEmpty()){
+//                val sId = randomness.choose(ss)
+//                action.requiredAuth = authentications[sId]?:throw IllegalStateException("could not find auth with id $sId in authentication map")
+//            }else
+//                action.requiredAuth = RPCNoAuth()
+//        }
     }
 
     /**
@@ -130,20 +122,20 @@ class RPCEndpointsHandler {
         authentications.values.filter {it.isGlobal}.plus(listOf(RPCNoAuth())).forEach { u ->
             val actionWithAuth = action.copy()
 
-            if (action is AuthorizedRPCCallAction){
-                (actionWithAuth as AuthorizedRPCCallAction).auth = u
-                actionWithAuth.requiredAuth = RPCNoAuth()
-                results.add(actionWithAuth)
-
-                authorizedActionAuthMap[action.id]?.forEach { ru->
-                    val actionWithRAuth = actionWithAuth.copy() as AuthorizedRPCCallAction
-                    actionWithAuth.requiredAuth = authentications[ru]?:throw IllegalStateException("could not find auth with id $ru in authentication map")
-                    results.add(actionWithRAuth)
-                }
-            }else{
+//            if (action is AuthorizedRPCCallAction){
+//                (actionWithAuth as AuthorizedRPCCallAction).auth = u
+//                actionWithAuth.requiredAuth = RPCNoAuth()
+//                results.add(actionWithAuth)
+//
+//                authorizedActionAuthMap[action.id]?.forEach { ru->
+//                    val actionWithRAuth = actionWithAuth.copy() as AuthorizedRPCCallAction
+//                    actionWithAuth.requiredAuth = authentications[ru]?:throw IllegalStateException("could not find auth with id $ru in authentication map")
+//                    results.add(actionWithRAuth)
+//                }
+//            }else{
                 (actionWithAuth as RPCCallAction).auth = u
                 results.add(actionWithAuth)
-            }
+//            }
 
         }
 
@@ -176,9 +168,9 @@ class RPCEndpointsHandler {
                 if (actionCluster.containsKey(name))
                     throw IllegalStateException("$name exists in the actionCluster")
                 actionCluster[name] = processEndpoint(name, e, e.isAuthorized)
-                if (e.isAuthorized && e.requiredAuthCandidates != null){
-                    authorizedActionAuthMap[name] = e.requiredAuthCandidates
-                }
+//                if (e.isAuthorized && e.requiredAuthCandidates != null){
+//                    authorizedActionAuthMap[name] = e.requiredAuthCandidates
+//                }
             }
         }
 
@@ -431,8 +423,8 @@ class RPCEndpointsHandler {
         /*
             TODO Man exception
          */
-        if (isAuthorized)
-            return AuthorizedRPCCallAction(name, params, responseTemplate = response, response = null)
+//        if (isAuthorized)
+//            return AuthorizedRPCCallAction(name, params, responseTemplate = response, response = null)
         return RPCCallAction(name, params, responseTemplate = response, response = null )
     }
 

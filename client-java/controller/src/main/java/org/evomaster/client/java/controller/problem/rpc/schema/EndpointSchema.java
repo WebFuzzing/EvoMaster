@@ -50,6 +50,7 @@ public final class EndpointSchema {
 
     /**
      * a list of index of auth info based on what are configured in the driver
+     * TODO need to fix this
      */
     private final List<Integer> requiredAuthCandidates;
 
@@ -91,6 +92,7 @@ public final class EndpointSchema {
         dto.requestParams = requestParams.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         if (response != null)
             dto.responseParam = response.getDto();
+        dto.isAuthorized = authRequired;
         return dto;
     }
 
