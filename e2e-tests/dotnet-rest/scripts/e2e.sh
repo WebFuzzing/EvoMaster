@@ -13,7 +13,7 @@ cd $SCRIPT_FOLDER_LOCATION || exit 1
 # Note that here we will run the instrumented version of the SUT, i.e
 WB="bash ./e2e_wb_runner.sh"
     
-$WB /e2e-tests/dotnet-rest/test/RestApis.Tests.HelloWorld  EmbeddedEvoMasterController.cs 100 true HelloWorld
+$WB /e2e-tests/dotnet-rest/test/RestApis.Tests.HelloWorld  EmbeddedEvoMasterController.cs 100 true HelloWorld 500 Statement_HelloWorldController_00014_13
 if [ $? -ne 0 ] ; then
    echo $(date) "ERROR: Test failed for HelloWorld. Exist status " $?
    exit 1

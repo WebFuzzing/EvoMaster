@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 
 namespace RestApis.HelloWorld.Controllers {
     [ApiController]
@@ -6,5 +7,12 @@ namespace RestApis.HelloWorld.Controllers {
     public class HelloWorldController : ControllerBase {
         [HttpGet]
         public IActionResult Get() => Ok("HelloWorld");
+
+        [HttpGet]
+        [Route("{value}")]
+        public IActionResult GetError([FromRoute] string value){
+            int result = Int32.Parse(value);
+            return Ok("int value");
+        }
     }
 }
