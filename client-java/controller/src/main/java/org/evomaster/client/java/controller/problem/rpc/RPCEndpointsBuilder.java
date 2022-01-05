@@ -44,9 +44,9 @@ public class RPCEndpointsBuilder {
         if (customizedRequestValueDtos == null || customizedRequestValueDtos.isEmpty()) return;
 
         customizedRequestValueDtos.forEach(s->{
-            if (s.keyValues != null && s.keyValuePairs != null)
+            if (s.keyValues != null && s.combinedKeyValuePairs != null)
                 throw new IllegalArgumentException("Driver Config Error: keyValues and keyValuePairs should not be specified at the same time");
-            if (s.keyValues == null && s.keyValuePairs == null)
+            if (s.keyValues == null && s.combinedKeyValuePairs == null)
                 throw new IllegalArgumentException("Driver Config Error: one of keyValues and keyValuePairs must be specified, could not be null at the same time");
         });
 
@@ -73,7 +73,7 @@ public class RPCEndpointsBuilder {
 
     private static void validateKeyValuePairs(List<CustomizedRequestValueDto> customizedRequestValueDtos){
         Map<String, List<CustomizedRequestValueDto>> group = new HashMap<>();
-        customizedRequestValueDtos.stream().filter(s-> s.keyValuePairs !=null && !s.keyValuePairs.isEmpty()).forEach(s->{
+        customizedRequestValueDtos.stream().filter(s-> s.combinedKeyValuePairs !=null && !s.combinedKeyValuePairs.isEmpty()).forEach(s->{
 
             String key = getKeyForCustomizedRequestValueDto(s);
             if (key.length() != 0){
@@ -85,9 +85,9 @@ public class RPCEndpointsBuilder {
 
         group.forEach((key, g) -> {
             if (g.size() > 1) {
-                List<String> keys = g.get(0).keyValuePairs.stream().map(a -> a.fieldKey).collect(Collectors.toList());
+                List<String> keys = g.get(0).combinedKeyValuePairs.stream().map(a -> a.fieldKey).collect(Collectors.toList());
                 g.forEach(a -> {
-                    List<String> akeys = a.keyValuePairs.stream().map(k -> k.fieldKey).collect(Collectors.toList());
+                    List<String> akeys = a.combinedKeyValuePairs.stream().map(k -> k.fieldKey).collect(Collectors.toList());
                     if (akeys.size() != keys.size() || !akeys.containsAll(keys)) {
                         throw new IllegalArgumentException("Driver Config Error: keys for same " + key + " must be specified with same keys");
                     }
@@ -400,7 +400,7 @@ public class RPCEndpointsBuilder {
         }
 
         // check for keysValues
-        List<CustomizedRequestValueDto> keySet = customizationDtos.stream().filter(s-> s.keyValuePairs!= null && s.keyValuePairs.stream().anyMatch(k-> k.fieldKey.equals(namedTypedValue.getName())) &&
+        List<CustomizedRequestValueDto> keySet = customizationDtos.stream().filter(s-> s.combinedKeyValuePairs != null && s.combinedKeyValuePairs.stream().anyMatch(k-> k.fieldKey.equals(namedTypedValue.getName())) &&
                 (s.specificRequestTypeName== null || s.specificRequestTypeName.equals(namedTypedValue.getType().getFullTypeName()))).collect(Collectors.toList());
         if (!keySet.isEmpty()){
             if (handled)
