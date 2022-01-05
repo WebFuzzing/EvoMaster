@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * a named instance of the type with its value, eg Param/Field
@@ -33,33 +34,32 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     private boolean isNullable = true;
 
 
-    public boolean isHasSpecifiedCandidates() {
-        return hasSpecifiedCandidates;
+    public boolean isHasDependentCandidates() {
+        return hasDependentCandidates;
     }
 
-    public void setHasSpecifiedCandidates(boolean hasSpecifiedCandidates) {
-        this.hasSpecifiedCandidates = hasSpecifiedCandidates;
-    }
-
-    /**
-     * represent whether there are specified candidates
-     */
-    private boolean hasSpecifiedCandidates = false;
-
-    public List<NamedTypedValue> getIndependentCandidates() {
-        return independentCandidates;
-    }
-
-    public void setIndependentCandidates(List<NamedTypedValue> independentCandidates) {
-        this.independentCandidates = independentCandidates;
+    public void setHasDependentCandidates(boolean hasDependentCandidates) {
+        this.hasDependentCandidates = hasDependentCandidates;
     }
 
     /**
-     * represent independent candidates
-     * note that if [independentCandidates] is null and [hasSpecifiedCandidates] is true,
-     * it means that there exist some dependent candidates
+     * represent whether there are specified dependent candidates
      */
-    private List<NamedTypedValue> independentCandidates;
+    private boolean hasDependentCandidates = false;
+
+    public List<NamedTypedValue> getCandidates() {
+        return candidates;
+    }
+
+    public void setCandidates(List<NamedTypedValue> candidates) {
+        this.candidates = candidates;
+    }
+
+    /**
+     * represent candidates
+     */
+    private List<NamedTypedValue> candidates;
+
 
     public NamedTypedValue(String name, T type) {
         this.name = name;
@@ -101,8 +101,8 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         dto.name = name;
         dto.type = type.getDto();
         dto.isNullable = isNullable;
-        dto.isForAuth = hasSpecifiedCandidates;
-        //TODO for candidates
+        if (candidates!=null)
+            dto.candidates = candidates.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;
     }
 

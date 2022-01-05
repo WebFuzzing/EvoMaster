@@ -248,7 +248,13 @@ class RPCEndpointsHandler {
             is FloatGene -> dto.stringValue = valueGene.value.toString()
             is BooleanGene -> dto.stringValue = valueGene.value.toString()
             is StringGene -> dto.stringValue = valueGene.getValueAsRawString()
-            is EnumGene<*> -> dto.stringValue = valueGene.index.toString()
+            is EnumGene<*> -> {
+                if (dto.candidates!= null && dto.candidateReferences == null){
+                    dto.stringValue = getValueForGeneWithCandidates(valueGene)
+                }else{
+                    dto.stringValue = valueGene.index.toString()
+                }
+            }
             is LongGene -> dto.stringValue = valueGene.value.toString()
             is ArrayGene<*> -> {
                 val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a collection is null")
@@ -455,11 +461,46 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
         }
 
-        // if this param is related to auth in request dto, build it as DisruptiveGene with 0.0 probability (ie, not mutable)
-        if (param.isForAuth)
+        if (param.candidates != null && param.candidateReferences == null){
+            val candidates = param.candidates.map {p-> gene.copy().apply { setGeneBasedOnParamDto(this, p) } }.toList()
+            if (candidates.isNotEmpty()){
+                return wrapWithOptionalGene(handleGeneWithCandidateAsEnumGene(gene, candidates), param.isNullable)
+            }
+        }
+
+        // if this param is related to any candidate which is also related to other candidates, build it as DisruptiveGene with 0.0 probability (ie, not mutable)
+        if (param.candidates != null && param.candidateReferences != null){
+            Lazy.assert { param.candidates.size == param.candidateReferences.size }
+            //TODO handle candidate reference
             return DisruptiveGene(param.name, gene, 0.0)
+        }
+
 
         return wrapWithOptionalGene(gene, param.isNullable)
+    }
+
+    private fun handleGeneWithCandidateAsEnumGene(gene: Gene, candidates: List<Gene>) : EnumGene<*>{
+        return when (gene) {
+            is StringGene -> EnumGene(gene.name, candidates.map { it as StringGene })
+            is IntegerGene -> EnumGene(gene.name, candidates.map { it as IntegerGene })
+            is FloatGene -> EnumGene(gene.name, candidates.map { it as FloatGene })
+            is LongGene -> EnumGene(gene.name, candidates.map { it as LongGene })
+            else -> {
+                throw IllegalStateException("Do not support configuring candidates for ${gene::class.java.simpleName} gene type")
+            }
+        }
+    }
+
+    private fun getValueForGeneWithCandidates(gene: EnumGene<*>) : String{
+        return when (gene.values.first()) {
+            is StringGene -> (gene.values[gene.index] as StringGene).value
+            is IntegerGene -> (gene.values[gene.index] as IntegerGene).value.toString()
+            is FloatGene -> (gene.values[gene.index] as FloatGene).value.toString()
+            is LongGene -> (gene.values[gene.index] as LongGene).value.toString()
+            else -> {
+                throw IllegalStateException("Do not support configuring candidates for ${gene::class.java.simpleName} gene type")
+            }
+        }
     }
 
     private fun handleUtilDate(param: ParamDto) : DateTimeGene{

@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,10 +56,9 @@ public class ParamDto {
      */
     public Long maxValue;
 
-    /**
-     * if the param is for handling auth
-     */
-    public boolean isForAuth;
+    public List<ParamDto> candidates;
+
+    public List<String> candidateReferences;
 
     /**
      * create a copy
@@ -75,7 +75,12 @@ public class ParamDto {
         copy.minSize = minSize;
         copy.minValue = minValue;
         copy.maxValue = maxValue;
-        copy.isForAuth = isForAuth;
+
+        if (candidates != null)
+            copy.candidates = candidates.stream().map(ParamDto::copy).collect(Collectors.toList());
+
+        if (candidateReferences != null)
+            copy.candidateReferences = new ArrayList<>(candidateReferences);
         return copy;
     }
 

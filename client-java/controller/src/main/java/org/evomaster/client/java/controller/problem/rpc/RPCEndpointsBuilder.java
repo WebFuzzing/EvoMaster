@@ -219,14 +219,6 @@ public class RPCEndpointsBuilder {
         if (authAnnotationDtos != null)
             authKeys = authAnnotationDtos.stream().map(s-> authenticationDtoList.indexOf(s)).collect(Collectors.toList());
 
-//        List<String> customizedFields = null;
-//        List<CustomizedRequestValueDto> customizationDtos = getRelatedCustomization(customizedRequestValueDtos, method);
-//        if (customizationDtos!= null && !customizationDtos.isEmpty()){
-//            Optional<CustomizedRequestValueDto> candidate = customizationDtos.stream().filter(s-> s.annotationOnEndpoint != null).findAny();
-//            if (candidate.isPresent())
-//                customizedFields = candidate.get().keyValuePairs!=null? candidate.get().keyValuePairs.stream().map(s-> s.fieldKey).collect(Collectors.toList()): Arrays.asList(candidate.get().keyValues.key);
-//        }
-
         for (Parameter p : method.getParameters()) {
             requestParams.add(buildInputParameter(schema, p, rpcType, getRelatedCustomization(customizedRequestValueDtos, method)));
         }
@@ -414,8 +406,9 @@ public class RPCEndpointsBuilder {
             if (handled)
                 throw new IllegalStateException("Error: a param/field ("+namedTypedValue.getName()+") could not have key value with "+getKeyForCustomizedRequestValueDto(ikey.get(0))
                         +" and keySet combination with "+ getKeyForCustomizedRequestValueDto(keySet.get(0))+" at the same time");
-            namedTypedValue.setHasSpecifiedCandidates(true);
-            namedTypedValue.setIndependentCandidates(null);
+            namedTypedValue.setHasDependentCandidates(true);
+            namedTypedValue.setCandidates(null);
+            // TODO handle candidates for dependent keys
         }
 
     }
@@ -447,8 +440,7 @@ public class RPCEndpointsBuilder {
         }
 
         if (handled){
-            namedTypedValue.setHasSpecifiedCandidates(true);
-            namedTypedValue.setIndependentCandidates(candidates);
+            namedTypedValue.setCandidates(candidates);
         }
         return handled;
     }
