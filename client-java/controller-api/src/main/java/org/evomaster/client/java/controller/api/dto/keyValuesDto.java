@@ -1,6 +1,8 @@
 package org.evomaster.client.java.controller.api.dto;
 
 
+import java.util.List;
+
 public class keyValuesDto {
 
     /**
@@ -12,6 +14,6 @@ public class keyValuesDto {
     /**
      * candidate values of the key
      */
-    public String[] values;
+    public List<String> values;
 
 }

@@ -60,7 +60,7 @@ public class RPCEndpointsBuilder {
         customizedRequestValueDtos.stream().filter(s-> s.keyValues !=null).forEach(s->{
             if (s.keyValues.key == null)
                 throw new IllegalArgumentException("Driver Config Error: key must be specified when customizing keyValues");
-            if (s.keyValues.values.length == 0){
+            if (s.keyValues.values.isEmpty()){
                 throw new IllegalArgumentException("Driver Config Error: at least one values is needed for customizing keyValues with the key "+s.keyValues.key);
             }
             String key = "key:"+s.keyValues.key+""+getKeyForCustomizedRequestValueDto(s);
@@ -74,6 +74,7 @@ public class RPCEndpointsBuilder {
     private static void validateKeyValuePairs(List<CustomizedRequestValueDto> customizedRequestValueDtos){
         Map<String, List<CustomizedRequestValueDto>> group = new HashMap<>();
         customizedRequestValueDtos.stream().filter(s-> s.keyValuePairs !=null && !s.keyValuePairs.isEmpty()).forEach(s->{
+
             String key = getKeyForCustomizedRequestValueDto(s);
             if (key.length() != 0){
                 if (!group.containsKey(key))
@@ -217,15 +218,17 @@ public class RPCEndpointsBuilder {
         List<Integer> authKeys = null;
         if (authAnnotationDtos != null)
             authKeys = authAnnotationDtos.stream().map(s-> authenticationDtoList.indexOf(s)).collect(Collectors.toList());
-        List<String> customizedFields = null;
-        List<CustomizedRequestValueDto> customizationDtos = getRelatedCustomization(customizedRequestValueDtos, method);
-        if (customizationDtos!= null && !customizationDtos.isEmpty()){
-            Optional<CustomizedRequestValueDto> candidate = customizationDtos.stream().filter(s-> s.annotationOnEndpoint != null).findAny();
-            if (candidate.isPresent())
-                customizedFields = candidate.get().keyValuePairs!=null? candidate.get().keyValuePairs.stream().map(s-> s.fieldKey).collect(Collectors.toList()): Arrays.asList(candidate.get().keyValues.key);
-        }
+
+//        List<String> customizedFields = null;
+//        List<CustomizedRequestValueDto> customizationDtos = getRelatedCustomization(customizedRequestValueDtos, method);
+//        if (customizationDtos!= null && !customizationDtos.isEmpty()){
+//            Optional<CustomizedRequestValueDto> candidate = customizationDtos.stream().filter(s-> s.annotationOnEndpoint != null).findAny();
+//            if (candidate.isPresent())
+//                customizedFields = candidate.get().keyValuePairs!=null? candidate.get().keyValuePairs.stream().map(s-> s.fieldKey).collect(Collectors.toList()): Arrays.asList(candidate.get().keyValues.key);
+//        }
+
         for (Parameter p : method.getParameters()) {
-            requestParams.add(buildInputParameter(schema, p, rpcType, customizedFields));
+            requestParams.add(buildInputParameter(schema, p, rpcType, getRelatedCustomization(customizedRequestValueDtos, method)));
         }
         NamedTypedValue response = null;
         if (!method.getReturnType().equals(Void.TYPE)) {
@@ -258,11 +261,11 @@ public class RPCEndpointsBuilder {
         return customizedRequestValueDtos.stream().filter(s-> s.annotationOnEndpoint == null || annotations.contains(s.annotationOnEndpoint)).collect(Collectors.toList());
     }
 
-    private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type, List<String> fields) {
+    private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type, List<CustomizedRequestValueDto> customizationDtos) {
         String name = parameter.getName();
         Class<?> clazz = parameter.getType();
         List<String> depth = new ArrayList<>();
-        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, fields);
+        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, customizationDtos);
 
         for (Annotation annotation: parameter.getAnnotations()){
             handleConstraint(namedTypedValue, annotation);
@@ -270,7 +273,7 @@ public class RPCEndpointsBuilder {
         return namedTypedValue;
     }
 
-    private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth, List<String> customizedFieldKeys) {
+    private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth, List<CustomizedRequestValueDto> customizationDtos) {
         depth.add(getObjectTypeNameWithFlag(clazz, clazz.getName()));
         NamedTypedValue namedValue = null;
 
@@ -298,7 +301,7 @@ public class RPCEndpointsBuilder {
                     templateClazz = clazz.getComponentType();
                 }
 
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizedFieldKeys);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
@@ -312,7 +315,7 @@ public class RPCEndpointsBuilder {
                     throw new RuntimeException("genericType should not be null for List and Set class");
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 Class<?> templateClazz = getTemplateClass(type);
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizedFieldKeys);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
@@ -327,11 +330,11 @@ public class RPCEndpointsBuilder {
                 Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
                 Class<?> keyTemplateClazz = getTemplateClass(keyType);
-                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizedFieldKeys);
+                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizationDtos);
                 keyTemplate.setNullable(false);
 
                 Class<?> valueTemplateClazz = getTemplateClass(valueType);
-                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizedFieldKeys);
+                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate)), clazz);
                 mtype.depth = getDepthLevel(clazz, depth);
                 namedValue = new MapParam(name, mtype);
@@ -357,7 +360,7 @@ public class RPCEndpointsBuilder {
                             thrift_metamap = f;
                             continue;
                         }
-                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, customizedFieldKeys);
+                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, customizationDtos);
                         for (Annotation annotation : f.getAnnotations()){
                             handleConstraint(field, annotation);
                         }
@@ -386,11 +389,68 @@ public class RPCEndpointsBuilder {
                     name, clazz.getName(), genericType==null?"null":genericType.getTypeName(), genericType==null?"null":genericType.getClass().getName(), String.join(",", depth), e.getMessage()));
         }
 
-        if (customizedFieldKeys!=null && customizedFieldKeys.contains(namedValue.getName())){
-            namedValue.setHasSpecifiedCandidates(true);
+        if (customizationDtos!=null){
+            handleNamedValueWithCustomizedDto(namedValue, customizationDtos);
         }
 
         return namedValue;
+    }
+
+    private static void handleNamedValueWithCustomizedDto(NamedTypedValue namedTypedValue, List<CustomizedRequestValueDto> customizationDtos){
+        boolean handled = false;
+        // check for keyValues
+        List<CustomizedRequestValueDto> ikey = customizationDtos.stream().filter(s-> s.keyValues!= null && s.keyValues.key.equals(namedTypedValue.getName()) &&
+                (s.specificRequestTypeName== null || s.specificRequestTypeName.equals(namedTypedValue.getType().getFullTypeName()))).collect(Collectors.toList());
+        if (ikey.size() == 1){
+            handled = setCandidatesForNamedValue(namedTypedValue, ikey.get(0));
+        } else if (ikey.size() > 1){
+            throw new IllegalStateException("Error: more than one Dto for independent key with "+getKeyForCustomizedRequestValueDto(ikey.get(0)));
+        }
+
+        // check for keysValues
+        List<CustomizedRequestValueDto> keySet = customizationDtos.stream().filter(s-> s.keyValuePairs!= null && s.keyValuePairs.stream().anyMatch(k-> k.fieldKey.equals(namedTypedValue.getName())) &&
+                (s.specificRequestTypeName== null || s.specificRequestTypeName.equals(namedTypedValue.getType().getFullTypeName()))).collect(Collectors.toList());
+        if (!keySet.isEmpty()){
+            if (handled)
+                throw new IllegalStateException("Error: a param/field ("+namedTypedValue.getName()+") could not have key value with "+getKeyForCustomizedRequestValueDto(ikey.get(0))
+                        +" and keySet combination with "+ getKeyForCustomizedRequestValueDto(keySet.get(0))+" at the same time");
+            namedTypedValue.setHasSpecifiedCandidates(true);
+            namedTypedValue.setIndependentCandidates(null);
+        }
+
+    }
+
+    private static boolean setCandidatesForNamedValue(NamedTypedValue namedTypedValue, CustomizedRequestValueDto customizedRequestValueDto){
+        boolean handled = true;
+        List<NamedTypedValue> candidates = new ArrayList<>();
+        if (namedTypedValue instanceof PrimitiveOrWrapperParam || namedTypedValue instanceof StringParam || namedTypedValue instanceof ByteBufferParam){
+
+            for (String v: customizedRequestValueDto.keyValues.values){
+                NamedTypedValue copy= namedTypedValue.copyStructure();
+                try {
+                    if (copy instanceof PrimitiveOrWrapperParam){
+                        ((PrimitiveOrWrapperParam) copy).setValueBasedOnStringValue(v);
+                    }else if (copy instanceof StringParam)
+                        copy.setValue(v);
+                    else if (copy instanceof ByteBufferParam)
+                        copy.setValue(v.getBytes());
+
+                    candidates.add(copy);
+                }catch (RuntimeException exception){
+                    SimpleLogger.info("Error: fail to generate candidates with string value "+v+" for "+namedTypedValue.getName() +" with type "+namedTypedValue.getType().getFullTypeName());
+                    handled = false;
+                }
+            }
+        }else {
+            SimpleLogger.info("Error: Do not support configuring pre-defined values for the type "+namedTypedValue.getType().getFullTypeName());
+            return false;
+        }
+
+        if (handled){
+            namedTypedValue.setHasSpecifiedCandidates(true);
+            namedTypedValue.setIndependentCandidates(candidates);
+        }
+        return handled;
     }
 
     private static void handleConstraint(NamedTypedValue namedTypedValue, Annotation annotation){
