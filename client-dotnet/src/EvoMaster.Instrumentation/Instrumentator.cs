@@ -33,13 +33,13 @@ namespace EvoMaster.Instrumentation {
 
             _completedProbe =
                 module.ImportReference(
-                    typeof(Probes).GetMethod(name: nameof(Probes.CompletedStatement),
-                        types: new[] {typeof(string), typeof(int), typeof(int)}));
+                    typeof(Probes).GetMethod(nameof(Probes.CompletedStatement),
+                        new[] {typeof(string), typeof(int), typeof(int)}));
 
             _enteringProbe =
                 module.ImportReference(
-                    typeof(Probes).GetMethod(name: nameof(Probes.EnteringStatement),
-                        types: new[] {typeof(string), typeof(int), typeof(int)}));
+                    typeof(Probes).GetMethod(nameof(Probes.EnteringStatement),
+                        new[] {typeof(string), typeof(int), typeof(int)}));
 
             foreach (var type in module.Types) {
                 if (type.Name == "<Module>") continue;
@@ -74,20 +74,13 @@ namespace EvoMaster.Instrumentation {
                             continue;
 
                         if (lastEnteredLine != 0 && lastEnteredColumn != 0) {
-                            //This is to prevent insertion of completed probe after branch opcode
-                            if (IsBranchInstruction(instruction.Previous)) {
-                                i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
-                                    lastEnteredLine, lastEnteredColumn);
-                            }
-                            else {
-                                i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
-                                    lastEnteredLine, lastEnteredColumn);
-                            }
+                            i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
+                                lastEnteredLine, lastEnteredColumn);
                         }
 
                         if (sequencePoint == null) continue;
 
-                        if (instruction.Previous != null && IsBranchInstruction(instruction.Previous) &&
+                        if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous) &&
                             instruction.Next != null) {
                             i = InsertEnteringStatementProbe(instruction.Next, ilProcessor, i, type.Name,
                                 sequencePoint.StartLine,
@@ -128,14 +121,20 @@ namespace EvoMaster.Instrumentation {
         private int InsertCompletedStatementProbe(Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int columnNo) {
             if (alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
+
+            if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous)) {
+                return InsertCompletedStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
+                    lineNo, columnNo);
+            }
+
             //TODO: check if we should register statements or not
             //register all targets(description of all targets, including units, lines and branches)
             _registeredTargets.Classes.Add(ObjectiveNaming.ClassObjectiveName(className));
             _registeredTargets.Lines.Add(ObjectiveNaming.LineObjectiveName(className, lineNo));
 
             alreadyCompletedPoints.Add(new CodeCoordinate(lineNo, columnNo));
-            
-            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
+
+            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, instruction.ToString());
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _completedProbe);
@@ -157,7 +156,7 @@ namespace EvoMaster.Instrumentation {
             //Do not add inserted probe if the statement is already covered by completed probe
             if (alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
 
-            if (instruction.Previous != null && IsJumpInstruction(instruction.Previous)) {
+            if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous)) {
                 return InsertEnteringStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
                     lineNo, columnNo);
             }
@@ -179,7 +178,7 @@ namespace EvoMaster.Instrumentation {
             return byteCodeIndex;
         }
 
-        private static bool IsBranchInstruction(Instruction instruction) =>
+        private static bool IsJumpOrExitInstruction(Instruction instruction) =>
             IsJumpInstruction(instruction) || IsExitInstruction(instruction);
 
         //to detect instructions which jump to another instruction
