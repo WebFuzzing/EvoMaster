@@ -13,6 +13,8 @@ namespace EvoMaster.Instrumentation {
 
         private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
 
+        private List<CodeCoordinate> alreadyCompletedPoints = new List<CodeCoordinate>();
+
         /// <summary>
         /// This method instruments an assembly file and saves its instrumented version in the specified destination directory
         /// </summary>
@@ -41,6 +43,8 @@ namespace EvoMaster.Instrumentation {
 
             foreach (var type in module.Types) {
                 if (type.Name == "<Module>") continue;
+
+                alreadyCompletedPoints.Clear();
 
                 foreach (var method in type.Methods) {
                     if (!method.HasBody) continue;
@@ -123,13 +127,15 @@ namespace EvoMaster.Instrumentation {
 
         private int InsertCompletedStatementProbe(Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int columnNo) {
+            if (alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
             //TODO: check if we should register statements or not
             //register all targets(description of all targets, including units, lines and branches)
             _registeredTargets.Classes.Add(ObjectiveNaming.ClassObjectiveName(className));
             _registeredTargets.Lines.Add(ObjectiveNaming.LineObjectiveName(className, lineNo));
 
-            var classNameInstruction =
-                ilProcessor.Create(OpCodes.Ldstr, className);
+            alreadyCompletedPoints.Add(new CodeCoordinate(lineNo, columnNo));
+            
+            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _completedProbe);
@@ -148,8 +154,15 @@ namespace EvoMaster.Instrumentation {
 
         private int InsertEnteringStatementProbe(Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int columnNo) {
-            var classNameInstruction =
-                ilProcessor.Create(OpCodes.Ldstr, className);
+            //Do not add inserted probe if the statement is already covered by completed probe
+            if (alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
+
+            if (instruction.Previous != null && IsJumpInstruction(instruction.Previous)) {
+                return InsertEnteringStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
+                    lineNo, columnNo);
+            }
+
+            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringProbe);
@@ -167,8 +180,19 @@ namespace EvoMaster.Instrumentation {
         }
 
         private static bool IsBranchInstruction(Instruction instruction) =>
-            (instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
-             instruction.OpCode != OpCodes.Box) || (instruction.OpCode == OpCodes.Throw) ||
-            (instruction.OpCode == OpCodes.Rethrow) || (instruction.OpCode == OpCodes.Endfinally);
+            IsJumpInstruction(instruction) || IsExitInstruction(instruction);
+
+        //to detect instructions which jump to another instruction
+        private static bool IsJumpInstruction(Instruction instruction) {
+            return (instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
+                    instruction.OpCode != OpCodes.Box) || (instruction.OpCode == OpCodes.Leave) ||
+                   (instruction.OpCode == OpCodes.Leave_S);
+        }
+
+        //to detect instruction which deviate the control flow but do not jump to a specific instruction
+        private static bool IsExitInstruction(Instruction instruction) {
+            return (instruction.OpCode == OpCodes.Throw) ||
+                   (instruction.OpCode == OpCodes.Rethrow) || (instruction.OpCode == OpCodes.Endfinally);
+        }
     }
 }

@@ -14,22 +14,4 @@ namespace EvoMaster.Instrumentation_Shared {
         private static bool HasEqualFinishPointWith(this SequencePoint first, SequencePoint second) =>
             first.EndLine == second.EndLine && first.EndColumn == second.EndColumn;
     }
-
-    public class CodeCoordination {
-        public int Line { get; set; }
-        public int Column { get; set; }
-
-        public override bool Equals(object obj) {
-            var casted = (CodeCoordination) obj;
-            return Equals(casted);
-        }
-
-        private bool Equals(CodeCoordination other) {
-            return Line == other.Line && Column == other.Column;
-        }
-
-        private static CodeCoordination Cast(object obj) {
-            return (CodeCoordination) obj;
-        }
-    }
 }
