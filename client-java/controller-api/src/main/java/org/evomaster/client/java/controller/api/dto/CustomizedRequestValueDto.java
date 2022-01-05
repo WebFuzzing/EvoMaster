@@ -7,7 +7,7 @@ public class CustomizedRequestValueDto {
     /**
      * a set of fields and corresponding values in request
      */
-    public List<KeyValueDto> combinedKeyValuePairs;
+    public List<KeyValuePairDto> combinedKeyValuePairs;
 
     /**
      * a key with a set of candidate values
