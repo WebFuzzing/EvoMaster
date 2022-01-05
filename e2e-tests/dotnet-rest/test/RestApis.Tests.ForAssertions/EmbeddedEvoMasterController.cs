@@ -14,19 +14,18 @@ namespace RestApis.Tests.ForAssertions {
 
         public static void Main (string[] args) {
 
-            var controllerPort = 40100;
+            var embeddedEvoMasterController = new EmbeddedEvoMasterController();
+
             if (args.Length > 0) {
-                controllerPort = int.Parse(args[0]);
+                var controllerPort = int.Parse(args[0]);
+                embeddedEvoMasterController.SetControllerPort(controllerPort);
             }
-            
-            var embeddedEvoMasterController = new EmbeddedEvoMasterController ();
-            embeddedEvoMasterController.SetControllerPort(controllerPort);
-            
-            var instrumentedSutStarter = new InstrumentedSutStarter (embeddedEvoMasterController);
 
-            System.Console.WriteLine ($"Driver is starting on port {controllerPort}...\n");
+            var instrumentedSutStarter = new InstrumentedSutStarter(embeddedEvoMasterController);
 
-            instrumentedSutStarter.Start ();
+            Console.WriteLine("Driver is starting...\n");
+
+            instrumentedSutStarter.Start();
         }
 
         public override string GetDatabaseDriverName () => null;
