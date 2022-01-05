@@ -44,13 +44,14 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
         return new ByteParam(getName(), getType());
     }
 
+
     @Override
-    public void setValueBasedOnDto(ParamDto dto) {
+    public void setValueBasedOnStringValue(String stringValue) {
         try {
-            if (dto.stringValue != null)
-                setValue(Byte.parseByte(dto.stringValue));
+            if (stringValue != null)
+                setValue(Byte.parseByte(stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as byte value");
+            throw new RuntimeException("ERROR: fail to convert "+stringValue +" as byte value");
         }
     }
 

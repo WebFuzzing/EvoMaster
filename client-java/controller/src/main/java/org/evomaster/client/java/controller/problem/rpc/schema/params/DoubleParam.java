@@ -44,13 +44,14 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
         return new DoubleParam(getName(), getType());
     }
 
+
     @Override
-    public void setValueBasedOnDto(ParamDto dto) {
+    public void setValueBasedOnStringValue(String stringValue) {
         try {
-            if (dto.stringValue != null)
-                setValue(Double.parseDouble(dto.stringValue));
+            if (stringValue != null)
+                setValue(Double.parseDouble(stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as double value");
+            throw new RuntimeException("ERROR: fail to convert "+stringValue +" as double value");
         }
     }
 

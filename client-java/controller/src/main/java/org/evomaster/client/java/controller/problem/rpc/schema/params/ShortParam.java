@@ -43,12 +43,12 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     }
 
     @Override
-    public void setValueBasedOnDto(ParamDto dto) {
+    public void setValueBasedOnStringValue(String stringValue) {
         try {
-            if (dto.stringValue != null)
-                setValue(Short.parseShort(dto.stringValue));
+            if (stringValue != null)
+                setValue(Short.parseShort(stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as short value");
+            throw new RuntimeException("ERROR: fail to convert "+stringValue +" as short value");
         }
     }
 

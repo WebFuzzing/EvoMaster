@@ -40,14 +40,13 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
         return new BooleanParam(getName(), getType());
     }
 
-
     @Override
-    public void setValueBasedOnDto(ParamDto dto) {
+    public void setValueBasedOnStringValue(String stringValue) {
         try {
-            if (dto.stringValue != null)
-                setValue(Boolean.parseBoolean(dto.stringValue));
+            if (stringValue != null)
+                setValue(Boolean.parseBoolean(stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as boolean value");
+            throw new RuntimeException("ERROR: fail to convert "+stringValue +" as boolean value");
         }
     }
 

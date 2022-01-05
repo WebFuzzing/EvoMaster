@@ -40,14 +40,15 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
         return new CharParam(getName(), getType());
     }
 
+
     @Override
-    public void setValueBasedOnDto(ParamDto dto) {
-        if (dto.stringValue == null)
+    public void setValueBasedOnStringValue(String stringValue) {
+        if (stringValue == null)
             return;
-        if (dto.stringValue.length() > 1){
-            throw new RuntimeException("ERROR: a length of a char with its string value is more than 1, i.e., "+ dto.stringValue.length());
-        } else if (dto.stringValue.length() == 1){
-            setValue(dto.stringValue.charAt(0));
+        if (stringValue.length() > 1){
+            throw new RuntimeException("ERROR: a length of a char with its string value is more than 1, i.e., "+ stringValue.length());
+        } else if (stringValue.length() == 1){
+            setValue(stringValue.charAt(0));
         }
     }
 

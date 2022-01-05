@@ -47,15 +47,15 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
         return new IntParam(getName(), getType());
     }
 
-    @Override
-    public void setValueBasedOnDto(ParamDto dto) {
-        try {
-            if (dto.stringValue != null)
-                setValue(Integer.parseInt(dto.stringValue));
-        }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as int value");
-        }
 
+    @Override
+    public void setValueBasedOnStringValue(String stringValue) {
+        try {
+            if (stringValue != null)
+                setValue(Integer.parseInt(stringValue));
+        }catch (NumberFormatException e){
+            throw new RuntimeException("ERROR: fail to convert "+stringValue +" as int value");
+        }
     }
 
     @Override

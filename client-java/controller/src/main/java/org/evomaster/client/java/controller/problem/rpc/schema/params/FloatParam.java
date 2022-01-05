@@ -45,13 +45,14 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
         return new FloatParam(getName(), getType());
     }
 
+
     @Override
-    public void setValueBasedOnDto(ParamDto dto) {
+    public void setValueBasedOnStringValue(String stringValue) {
         try {
-            if (dto.stringValue != null)
-                setValue(Float.parseFloat(dto.stringValue));
+            if (stringValue != null)
+                setValue(Float.parseFloat(stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as float value");
+            throw new RuntimeException("ERROR: fail to convert "+stringValue +" as float value");
         }
     }
 

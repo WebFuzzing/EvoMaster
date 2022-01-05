@@ -32,10 +32,6 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      */
     private boolean isNullable = true;
 
-    /*
-        TODO handle constraints
-        ind1 uses javax-validation
-     */
 
     public boolean isHasSpecifiedCandidates() {
         return hasSpecifiedCandidates;
@@ -45,7 +41,25 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         this.hasSpecifiedCandidates = hasSpecifiedCandidates;
     }
 
+    /**
+     * represent whether there are specified candidates
+     */
     private boolean hasSpecifiedCandidates = false;
+
+    public List<NamedTypedValue> getIndependentCandidates() {
+        return independentCandidates;
+    }
+
+    public void setIndependentCandidates(List<NamedTypedValue> independentCandidates) {
+        this.independentCandidates = independentCandidates;
+    }
+
+    /**
+     * represent independent candidates
+     * note that if [independentCandidates] is null and [hasSpecifiedCandidates] is true,
+     * it means that there exist some dependent candidates
+     */
+    private List<NamedTypedValue> independentCandidates;
 
     public NamedTypedValue(String name, T type) {
         this.name = name;
@@ -88,6 +102,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         dto.type = type.getDto();
         dto.isNullable = isNullable;
         dto.isForAuth = hasSpecifiedCandidates;
+        //TODO for candidates
         return dto;
     }
 

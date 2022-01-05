@@ -94,4 +94,11 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         return Collections.singletonList(sb.toString());
     }
 
+    @Override
+    public void setValueBasedOnDto(ParamDto dto) {
+        setValueBasedOnStringValue(dto.stringValue);
+    }
+
+    abstract public void setValueBasedOnStringValue(String stringValue);
+
 }

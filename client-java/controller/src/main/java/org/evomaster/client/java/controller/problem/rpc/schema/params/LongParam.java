@@ -42,12 +42,12 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
 
 
     @Override
-    public void setValueBasedOnDto(ParamDto dto) {
+    public void setValueBasedOnStringValue(String stringValue) {
         try {
-            if (dto.stringValue != null)
-                setValue(Long.parseLong(dto.stringValue));
+            if (stringValue != null)
+                setValue(Long.parseLong(stringValue));
         }catch (NumberFormatException e){
-            throw new RuntimeException("ERROR: fail to convert "+dto.stringValue +" as long value");
+            throw new RuntimeException("ERROR: fail to convert "+stringValue +" as long value");
         }
     }
 
