@@ -10,14 +10,9 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-// import javax.servlet.ServletInputStream;
-// import java.io.IOException;
-// import java.lang.reflect.InvocationTargetException;
-// import java.lang.reflect.Method;
+public class NettyHttpUtilClassReplacement extends ThirdPartyMethodReplacementClass {
 
-public class JettyHttpUtilClassReplacement extends ThirdPartyMethodReplacementClass {
-
-    private static final JettyHttpUtilClassReplacement singleton = new JettyHttpUtilClassReplacement();
+    private static final NettyHttpUtilClassReplacement singleton = new NettyHttpUtilClassReplacement();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
@@ -38,7 +33,7 @@ public class JettyHttpUtilClassReplacement extends ThirdPartyMethodReplacementCl
         try {
             return original.invoke(caller, h, httpVersion, true);
         } catch (IllegalAccessException e){
-            throw new RuntimeException(e);// ah, the beauty of Java...
+            throw new RuntimeException(e);
         } catch (InvocationTargetException e){
             throw (RuntimeException) e.getCause();
         }

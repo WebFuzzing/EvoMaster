@@ -2,7 +2,14 @@ package com.foo.micronaut.rest;
 
 import io.micronaut.runtime.Micronaut;
 import io.micronaut.context.ApplicationContext;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Info;
 
+@OpenAPIDefinition(
+        info = @Info(
+                title = "micronaut",
+                version = "latest",
+                description = "Micronaut E2E Test API"))
 public class MicronautApplication {
 
     private final int port;

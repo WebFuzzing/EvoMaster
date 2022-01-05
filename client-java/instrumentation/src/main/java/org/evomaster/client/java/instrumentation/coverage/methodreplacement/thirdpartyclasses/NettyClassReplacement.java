@@ -7,14 +7,9 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
-// import javax.servlet.ServletInputStream;
-// import java.io.IOException;
-// import java.lang.reflect.InvocationTargetException;
-// import java.lang.reflect.Method;
+public class NettyClassReplacement extends ThirdPartyMethodReplacementClass {
 
-public class JettyClassReplacement extends ThirdPartyMethodReplacementClass {
-
-    private static final JettyClassReplacement singleton = new JettyClassReplacement();
+    private static final NettyClassReplacement singleton = new NettyClassReplacement();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {

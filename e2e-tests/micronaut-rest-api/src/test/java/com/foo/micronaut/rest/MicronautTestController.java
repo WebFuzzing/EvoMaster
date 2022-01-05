@@ -72,7 +72,7 @@ public class MicronautTestController extends EmbeddedSutController {
     @Override
     public ProblemInfo getProblemInfo() {
         return new RestProblem(
-                "http://localhost:8080"+"/api/swagger.json",
+                "http://localhost:"+ application.getPort() +"/swagger/micronaut-latest.yml",
                 null
         );
     }
