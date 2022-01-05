@@ -318,7 +318,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             return;
         }
         try {
-            RPCEndpointsBuilder.validateKeyValuePairs(getCustomizedValueInRequests());
+            RPCEndpointsBuilder.validateCustomizedValueInRequests(getCustomizedValueInRequests());
 
             RPCProblem rpcp = (RPCProblem) getProblemInfo();
             for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){

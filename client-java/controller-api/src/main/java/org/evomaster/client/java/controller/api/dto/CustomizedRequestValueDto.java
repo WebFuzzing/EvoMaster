@@ -21,8 +21,15 @@ public class CustomizedRequestValueDto {
     public String annotationOnEndpoint;
 
     /**
-     * specify the value if it is only applicable to specified input with the name
-     * Note that it is nullable indicating that the value could be applied for all input params
+     * specify the value which is only applicable to the specified endpoint
+     * Note that it is nullable indicating that the value could be applied for endpoint with any name
      */
-//    public String specificInputParamName;
+    public String specificEndpointName;
+
+    /**
+     * specify the value if it is only applicable to input with the specific type
+     * Note that it is nullable indicating that the value could be applied for all types of input params
+     * which contains field or param with name as key
+     */
+    public String specificRequestTypeName;
 }

@@ -34,13 +34,13 @@ public class RPCEndpointsBuilder {
     }
 
     /**
-     * for key value info specified with annotations
+     * validate CustomizedRequestValueDto, eg,
      * 1) for any CustomizedRequestValueDto, keyValuePairs and keyValues could not be specified or null at the same time
-     * 2) regarding same annotation, they should have consistent keys
-     * 3) annotation should not be null
-     * @param customizedRequestValueDtos
+     * 2) for keyValuePairs, if annotationOnEndpoint or specificEndpointName or specificRequestTypeName are specified, they should have consistent keys
+     * 3) keyValues with respect to any specific annotationOnEndpoint or specificEndpointName or specificRequestTypeName should be specified only one time
+     * @param customizedRequestValueDtos are customized info to be checked
      */
-    public static void validateKeyValuePairs(List<CustomizedRequestValueDto> customizedRequestValueDtos){
+    public static void validateCustomizedValueInRequests(List<CustomizedRequestValueDto> customizedRequestValueDtos){
         if (customizedRequestValueDtos == null || customizedRequestValueDtos.isEmpty()) return;
 
         customizedRequestValueDtos.forEach(s->{
@@ -50,28 +50,72 @@ public class RPCEndpointsBuilder {
                 throw new IllegalArgumentException("Driver Config Error: one of keyValues and keyValuePairs must be specified, could not be null at the same time");
         });
 
-        Map<String, List<CustomizedRequestValueDto>> group = new HashMap<>();
-        customizedRequestValueDtos.stream().filter(s-> s.annotationOnEndpoint!= null && s.keyValuePairs !=null && !s.keyValuePairs.isEmpty()).forEach(s->{
-            if (!group.containsKey(s.annotationOnEndpoint))
-                group.put(s.annotationOnEndpoint, new ArrayList<>());
-            group.get(s.annotationOnEndpoint).add(s);
+        validateKeyValuePairs(customizedRequestValueDtos);
+        validateKeyValues(customizedRequestValueDtos);
+    }
+
+
+    private static void validateKeyValues(List<CustomizedRequestValueDto> customizedRequestValueDtos){
+        List<String> handled = new ArrayList<>();
+        customizedRequestValueDtos.stream().filter(s-> s.keyValues !=null).forEach(s->{
+            if (s.keyValues.key == null)
+                throw new IllegalArgumentException("Driver Config Error: key must be specified when customizing keyValues");
+            if (s.keyValues.values.length == 0){
+                throw new IllegalArgumentException("Driver Config Error: at least one values is needed for customizing keyValues with the key "+s.keyValues.key);
+            }
+            String key = "key:"+s.keyValues.key+""+getKeyForCustomizedRequestValueDto(s);
+            if (handled.contains(key))
+                throw new IllegalArgumentException("Driver Config Error: "+key+" should be specified only once");
+            handled.add(key);
         });
-        group.values().forEach(g->{
-            if (g.size() > 1){
-                List<String> keys = g.get(0).keyValuePairs.stream().map(a-> a.fieldKey).collect(Collectors.toList());
-                g.forEach(a->{
-                    List<String> akeys = a.keyValuePairs.stream().map(k-> k.fieldKey).collect(Collectors.toList());
-                    if (akeys.size() != keys.size() || !akeys.containsAll(keys)){
-                        throw new IllegalArgumentException("Driver Config Error: keys for same annotation "+a.annotationOnEndpoint +" must be specified with same keys");
+    }
+
+
+    private static void validateKeyValuePairs(List<CustomizedRequestValueDto> customizedRequestValueDtos){
+        Map<String, List<CustomizedRequestValueDto>> group = new HashMap<>();
+        customizedRequestValueDtos.stream().filter(s-> s.keyValuePairs !=null && !s.keyValuePairs.isEmpty()).forEach(s->{
+            String key = getKeyForCustomizedRequestValueDto(s);
+            if (key.length() != 0){
+                if (!group.containsKey(key))
+                    group.put(key, new ArrayList<>());
+                group.get(key).add(s);
+            }
+        });
+
+        group.forEach((key, g) -> {
+            if (g.size() > 1) {
+                List<String> keys = g.get(0).keyValuePairs.stream().map(a -> a.fieldKey).collect(Collectors.toList());
+                g.forEach(a -> {
+                    List<String> akeys = a.keyValuePairs.stream().map(k -> k.fieldKey).collect(Collectors.toList());
+                    if (akeys.size() != keys.size() || !akeys.containsAll(keys)) {
+                        throw new IllegalArgumentException("Driver Config Error: keys for same " + key + " must be specified with same keys");
                     }
                 });
             }
         });
     }
 
+    private static String getKeyForCustomizedRequestValueDto(CustomizedRequestValueDto s){
+        String key = "";
+        if (s.annotationOnEndpoint != null)
+            key += " annotationOnEndpoint:"+s.annotationOnEndpoint;
+        if (s.specificEndpointName != null)
+            key += " specificEndpointName:"+s.specificEndpointName;
+        if (s.specificRequestTypeName != null)
+            key += " specificRequestTypeName:"+s.specificRequestTypeName;
+        return key;
+    }
+
     /**
      * @param interfaceName the name of interface
      * @param rpcType          is the type of RPC, e.g., gRPC, Thrift
+     * @param client is the corresponding client to maniplute the interface
+     * @param skipEndpointsByName specifies a list of names of endpoints to be skipped during testing
+     * @param skipEndpointsByAnnotation specifies a list of annotations applied on endpoints that could be skipped during testing
+     * @param involveEndpointsByName specifies a list of names of endpoints to be involved during testing
+     * @param involveEndpointsByAnnotation specifies a list of annotations applied on endpoints that are involved during testing
+     * @param authenticationDtoList specifies a list of authentication info
+     * @param customizedRequestValueDtos specifies a list of candidate values in requests
      * @return an interface schema for evomaster to access
      */
     public static InterfaceSchema build(String interfaceName, RPCType rpcType, Object client,
@@ -95,9 +139,7 @@ public class RPCEndpointsBuilder {
                 AuthenticationDto auth = getRelatedAuthEndpoint(authenticationDtoList, interfaceName, m);
                 if (auth != null){
                     int index = authenticationDtoList.indexOf(auth);
-                    /*
-                        handle endpoint which is for auth setup
-                     */
+                    // handle endpoint which is for auth setup
                     authEndpoints.put(index, build(schema, m, rpcType, null, customizedRequestValueDtos));
                 }
             }
