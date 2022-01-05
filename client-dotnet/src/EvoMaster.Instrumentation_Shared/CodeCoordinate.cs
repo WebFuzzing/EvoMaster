@@ -1,3 +1,5 @@
+using System;
+
 namespace EvoMaster.Instrumentation_Shared {
     public class CodeCoordinate {
         
@@ -6,20 +8,7 @@ namespace EvoMaster.Instrumentation_Shared {
             Column = column;
         }
         
-        public int Line { get; set; }
-        public int Column { get; set; }
-
-        public override bool Equals(object obj) {
-            var casted = (CodeCoordinate) obj;
-            return Equals(casted);
-        }
-
-        private bool Equals(CodeCoordinate other) {
-            return Line == other.Line && Column == other.Column;
-        }
-
-        private static CodeCoordinate Cast(object obj) {
-            return (CodeCoordinate) obj;
-        }
+        public int Line { get; }
+        public int Column { get; }
     }
 }
