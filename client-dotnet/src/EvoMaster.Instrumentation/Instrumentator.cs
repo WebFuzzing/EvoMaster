@@ -52,7 +52,7 @@ namespace EvoMaster.Instrumentation {
                     var ilProcessor = method.Body.GetILProcessor();
 
                     var mapping = method.DebugInformation.GetSequencePointMapping();
-
+`
                     var lastEnteredLine = 0;
                     var lastEnteredColumn = 0;
 
