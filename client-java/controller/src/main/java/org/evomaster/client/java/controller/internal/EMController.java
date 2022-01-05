@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
+import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.db.QueryResult;
@@ -16,6 +17,7 @@ import org.evomaster.client.java.controller.problem.GraphQlProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.RestProblem;
+import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -213,6 +215,18 @@ public class EMController {
                 schemas.add(s.getDto());
             }
             dto.rpcProblem.schemas = schemas;
+
+            Map<String, NamedTypedValue> cluster = sutController.getCandidateCluster();
+            if (!cluster.isEmpty()){
+                dto.rpcProblem.candidateCluster = new ArrayList<>();
+                dto.rpcProblem.candidateGroupReference = new ArrayList<>();
+                dto.rpcProblem.candidateReferences = new ArrayList<>();
+                cluster.forEach((k, v)->{
+                    dto.rpcProblem.candidateCluster.add(v.getDto());
+                    dto.rpcProblem.candidateReferences.add(k);
+                    dto.rpcProblem.candidateGroupReference.add(RPCEndpointsBuilder.getGroupNameOfCustomizedCandidateReferenceKey(k));
+                });
+            }
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);

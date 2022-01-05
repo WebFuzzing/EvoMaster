@@ -99,11 +99,11 @@ public class RPCEndpointsBuilder {
     private static String getKeyForCustomizedRequestValueDto(CustomizedRequestValueDto s){
         String key = "";
         if (s.annotationOnEndpoint != null)
-            key += " annotationOnEndpoint:"+s.annotationOnEndpoint;
+            key += " annotationOnEndpoint_"+s.annotationOnEndpoint;
         if (s.specificEndpointName != null)
-            key += " specificEndpointName:"+s.specificEndpointName;
+            key += " specificEndpointName_"+s.specificEndpointName;
         if (s.specificRequestTypeName != null)
-            key += " specificRequestTypeName:"+s.specificRequestTypeName;
+            key += " specificRequestTypeName_"+s.specificRequestTypeName;
         return key;
     }
 
@@ -123,7 +123,8 @@ public class RPCEndpointsBuilder {
                                         List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
                                         List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation,
                                         List<AuthenticationDto> authenticationDtoList,
-                                        List<CustomizedRequestValueDto> customizedRequestValueDtos) {
+                                        List<CustomizedRequestValueDto> customizedRequestValueDtos,
+                                        Map<String, NamedTypedValue> candidateCluster) {
         List<EndpointSchema> endpoints = new ArrayList<>();
         List<String> skippedEndpoints = new ArrayList<>();
         Map<Integer, EndpointSchema> authEndpoints = new HashMap<>();
@@ -132,7 +133,7 @@ public class RPCEndpointsBuilder {
             InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints);
             for (Method m : interfaze.getDeclaredMethods()) {
                 if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation))
-                    endpoints.add(build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos));
+                    endpoints.add(build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos, candidateCluster));
                 else {
                     skippedEndpoints.add(m.getName());
                 }
@@ -141,7 +142,7 @@ public class RPCEndpointsBuilder {
                 if (auth != null){
                     int index = authenticationDtoList.indexOf(auth);
                     // handle endpoint which is for auth setup
-                    authEndpoints.put(index, build(schema, m, rpcType, null, customizedRequestValueDtos));
+                    authEndpoints.put(index, build(schema, m, rpcType, null, customizedRequestValueDtos, candidateCluster));
                 }
             }
             return schema;
@@ -211,7 +212,9 @@ public class RPCEndpointsBuilder {
 
     }
 
-    private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType, List<AuthenticationDto> authenticationDtoList, List<CustomizedRequestValueDto> customizedRequestValueDtos) {
+    private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType, List<AuthenticationDto> authenticationDtoList,
+                                        List<CustomizedRequestValueDto> customizedRequestValueDtos,
+                                        Map<String, NamedTypedValue> candidateCluster) {
         List<NamedTypedValue> requestParams = new ArrayList<>();
 
         List<AuthenticationDto> authAnnotationDtos = getRelatedAuth(authenticationDtoList, method);
@@ -220,11 +223,11 @@ public class RPCEndpointsBuilder {
             authKeys = authAnnotationDtos.stream().map(s-> authenticationDtoList.indexOf(s)).collect(Collectors.toList());
 
         for (Parameter p : method.getParameters()) {
-            requestParams.add(buildInputParameter(schema, p, rpcType, getRelatedCustomization(customizedRequestValueDtos, method)));
+            requestParams.add(buildInputParameter(schema, p, rpcType, getRelatedCustomization(customizedRequestValueDtos, method), candidateCluster));
         }
         NamedTypedValue response = null;
         if (!method.getReturnType().equals(Void.TYPE)) {
-            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null);
+            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null, null);
         }
 
         List<NamedTypedValue> exceptions = null;
@@ -232,7 +235,7 @@ public class RPCEndpointsBuilder {
             exceptions = new ArrayList<>();
             for (int i = 0; i < method.getExceptionTypes().length; i++){
                 NamedTypedValue exception = build(schema, method.getExceptionTypes()[i],
-                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>(), null);
+                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>(), null, null);
                 exceptions.add(exception);
             }
         }
@@ -247,17 +250,22 @@ public class RPCEndpointsBuilder {
         return authenticationDtoList.stream().filter(s-> (s.jsonAuthEndpoint != null && s.jsonAuthEndpoint.annotationOnEndpoint != null && annotations.contains(s.jsonAuthEndpoint.annotationOnEndpoint))).collect(Collectors.toList());
     }
 
-    private static List<CustomizedRequestValueDto> getRelatedCustomization(List<CustomizedRequestValueDto> customizedRequestValueDtos, Method method){
+    private static Map<Integer, CustomizedRequestValueDto> getRelatedCustomization(List<CustomizedRequestValueDto> customizedRequestValueDtos, Method method){
         if (customizedRequestValueDtos == null) return null;
         List<String> annotations = Arrays.stream(method.getAnnotations()).map(s-> s.annotationType().getName()).collect(Collectors.toList());
-        return customizedRequestValueDtos.stream().filter(s-> s.annotationOnEndpoint == null || annotations.contains(s.annotationOnEndpoint)).collect(Collectors.toList());
+        List<CustomizedRequestValueDto> list = customizedRequestValueDtos.stream().filter(s-> s.annotationOnEndpoint == null || annotations.contains(s.annotationOnEndpoint)).collect(Collectors.toList());
+        if (list.isEmpty()) return null;
+        Map<Integer, CustomizedRequestValueDto> map = new HashMap<>();
+        list.forEach(s->map.put(customizedRequestValueDtos.indexOf(s), s));
+        return map;
     }
 
-    private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type, List<CustomizedRequestValueDto> customizationDtos) {
+    private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type,
+                                                       Map<Integer,CustomizedRequestValueDto> customizationDtos, Map<String, NamedTypedValue> candidateCluster) {
         String name = parameter.getName();
         Class<?> clazz = parameter.getType();
         List<String> depth = new ArrayList<>();
-        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, customizationDtos);
+        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, customizationDtos, candidateCluster);
 
         for (Annotation annotation: parameter.getAnnotations()){
             handleConstraint(namedTypedValue, annotation);
@@ -265,7 +273,8 @@ public class RPCEndpointsBuilder {
         return namedTypedValue;
     }
 
-    private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth, List<CustomizedRequestValueDto> customizationDtos) {
+    private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth,
+                                         Map<Integer, CustomizedRequestValueDto> customizationDtos, Map<String, NamedTypedValue> candidateCluster) {
         depth.add(getObjectTypeNameWithFlag(clazz, clazz.getName()));
         NamedTypedValue namedValue = null;
 
@@ -293,7 +302,7 @@ public class RPCEndpointsBuilder {
                     templateClazz = clazz.getComponentType();
                 }
 
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, candidateCluster);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
@@ -307,7 +316,7 @@ public class RPCEndpointsBuilder {
                     throw new RuntimeException("genericType should not be null for List and Set class");
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 Class<?> templateClazz = getTemplateClass(type);
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, candidateCluster);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
@@ -322,11 +331,11 @@ public class RPCEndpointsBuilder {
                 Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
                 Class<?> keyTemplateClazz = getTemplateClass(keyType);
-                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizationDtos);
+                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizationDtos, candidateCluster);
                 keyTemplate.setNullable(false);
 
                 Class<?> valueTemplateClazz = getTemplateClass(valueType);
-                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos);
+                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos, candidateCluster);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate)), clazz);
                 mtype.depth = getDepthLevel(clazz, depth);
                 namedValue = new MapParam(name, mtype);
@@ -352,7 +361,7 @@ public class RPCEndpointsBuilder {
                             thrift_metamap = f;
                             continue;
                         }
-                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, customizationDtos);
+                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, customizationDtos, candidateCluster);
                         for (Annotation annotation : f.getAnnotations()){
                             handleConstraint(field, annotation);
                         }
@@ -382,67 +391,100 @@ public class RPCEndpointsBuilder {
         }
 
         if (customizationDtos!=null){
-            handleNamedValueWithCustomizedDto(namedValue, customizationDtos);
+            handleNamedValueWithCustomizedDto(namedValue, customizationDtos, candidateCluster);
         }
 
         return namedValue;
     }
 
-    private static void handleNamedValueWithCustomizedDto(NamedTypedValue namedTypedValue, List<CustomizedRequestValueDto> customizationDtos){
+    private static void handleNamedValueWithCustomizedDto(NamedTypedValue namedTypedValue, Map<Integer, CustomizedRequestValueDto> customizationDtos, Map<String, NamedTypedValue> candidateCluster){
         boolean handled = false;
+
+        Map<String, NamedTypedValue> candidates = new HashMap<>();
+        customizationDtos.forEach((i, dto)->{
+            if (dto.combinedKeyValuePairs != null && (dto.specificRequestTypeName == null || dto.specificRequestTypeName.equals(namedTypedValue.getType().getFullTypeName()))){
+                dto.combinedKeyValuePairs.forEach(p->{
+                    if (p.fieldKey.equals(namedTypedValue.getName())){
+                        NamedTypedValue copy = namedTypedValue.copyStructure();
+                        boolean ok = setNamedValueBasedOnCandidates(copy, p.fieldValue);
+                        if (ok){
+                            String key = getCustomizedCandidateReferenceKey(i, dto, p.fieldKey);
+                            if (!candidates.containsKey(key))
+                                candidates.put(key, copy);
+                            else
+                                throw new IllegalArgumentException("Error: there should not exist same key with the name "+p.fieldKey+"in a combinedKeyValuePairs");
+                        }
+                    }
+                });
+            }
+        });
+
+        candidates.forEach((k, v)->{
+            if (candidateCluster.containsKey(k)){
+                if (candidateCluster.get(k).getType().getFullTypeName().equals(v.getType().getFullTypeName())){
+                    throw new IllegalStateException("there exist mismatched type ("+candidateCluster.get(k).getType().getFullTypeName() +" vs. "+v.getType().getFullTypeName()+")for same candidate "+k);
+                }
+            }else
+                candidateCluster.put(k, v);
+        });
+
+        namedTypedValue.setCandidateReferences(new ArrayList<>(candidateCluster.keySet()));
+
+        if (handled) return;
+
         // check for keyValues
-        List<CustomizedRequestValueDto> ikey = customizationDtos.stream().filter(s-> s.keyValues!= null && s.keyValues.key.equals(namedTypedValue.getName()) &&
+        List<CustomizedRequestValueDto> ikey = customizationDtos.values().stream().filter(s-> s.keyValues!= null && s.keyValues.key.equals(namedTypedValue.getName()) &&
                 (s.specificRequestTypeName== null || s.specificRequestTypeName.equals(namedTypedValue.getType().getFullTypeName()))).collect(Collectors.toList());
         if (ikey.size() == 1){
-            handled = setCandidatesForNamedValue(namedTypedValue, ikey.get(0));
+            setCandidatesForNamedValue(namedTypedValue, ikey.get(0));
         } else if (ikey.size() > 1){
             throw new IllegalStateException("Error: more than one Dto for independent key with "+getKeyForCustomizedRequestValueDto(ikey.get(0)));
         }
-
-        // check for keysValues
-        List<CustomizedRequestValueDto> keySet = customizationDtos.stream().filter(s-> s.combinedKeyValuePairs != null && s.combinedKeyValuePairs.stream().anyMatch(k-> k.fieldKey.equals(namedTypedValue.getName())) &&
-                (s.specificRequestTypeName== null || s.specificRequestTypeName.equals(namedTypedValue.getType().getFullTypeName()))).collect(Collectors.toList());
-        if (!keySet.isEmpty()){
-            if (handled)
-                throw new IllegalStateException("Error: a param/field ("+namedTypedValue.getName()+") could not have key value with "+getKeyForCustomizedRequestValueDto(ikey.get(0))
-                        +" and keySet combination with "+ getKeyForCustomizedRequestValueDto(keySet.get(0))+" at the same time");
-            namedTypedValue.setHasDependentCandidates(true);
-            namedTypedValue.setCandidates(null);
-            // TODO handle candidates for dependent keys
-        }
-
     }
 
-    private static boolean setCandidatesForNamedValue(NamedTypedValue namedTypedValue, CustomizedRequestValueDto customizedRequestValueDto){
+    private static String getCustomizedCandidateReferenceKey(int index, CustomizedRequestValueDto dto, String keyField){
+        return String.format("%d--%s--%s", index, getKeyForCustomizedRequestValueDto(dto), keyField);
+    }
+
+    public static String getGroupNameOfCustomizedCandidateReferenceKey(String key){
+        return key.split("--")[0];
+    }
+
+    private static void setCandidatesForNamedValue(NamedTypedValue namedTypedValue, CustomizedRequestValueDto customizedRequestValueDto){
         boolean handled = true;
         List<NamedTypedValue> candidates = new ArrayList<>();
         if (namedTypedValue instanceof PrimitiveOrWrapperParam || namedTypedValue instanceof StringParam || namedTypedValue instanceof ByteBufferParam){
 
             for (String v: customizedRequestValueDto.keyValues.values){
                 NamedTypedValue copy= namedTypedValue.copyStructure();
-                try {
-                    if (copy instanceof PrimitiveOrWrapperParam){
-                        ((PrimitiveOrWrapperParam) copy).setValueBasedOnStringValue(v);
-                    }else if (copy instanceof StringParam)
-                        copy.setValue(v);
-                    else if (copy instanceof ByteBufferParam)
-                        copy.setValue(v.getBytes());
-
-                    candidates.add(copy);
-                }catch (RuntimeException exception){
-                    SimpleLogger.info("Error: fail to generate candidates with string value "+v+" for "+namedTypedValue.getName() +" with type "+namedTypedValue.getType().getFullTypeName());
-                    handled = false;
-                }
+                handled = handled && setNamedValueBasedOnCandidates(copy, v);
+                candidates.add(copy);
             }
         }else {
             SimpleLogger.info("Error: Do not support configuring pre-defined values for the type "+namedTypedValue.getType().getFullTypeName());
-            return false;
+            return;
         }
 
         if (handled){
             namedTypedValue.setCandidates(candidates);
         }
-        return handled;
+    }
+
+    private static boolean setNamedValueBasedOnCandidates(NamedTypedValue copy, String value){
+        try {
+            if (copy instanceof PrimitiveOrWrapperParam){
+                ((PrimitiveOrWrapperParam) copy).setValueBasedOnStringValue(value);
+            }else if (copy instanceof StringParam)
+                copy.setValue(value);
+            else if (copy instanceof ByteBufferParam)
+                copy.setValue(value.getBytes());
+
+
+        }catch (RuntimeException exception){
+            SimpleLogger.info("Error: fail to generate candidates with string value "+value+" for "+copy.getName() +" with type "+copy.getType().getFullTypeName());
+            return false;
+        }
+        return true;
     }
 
     private static void handleConstraint(NamedTypedValue namedTypedValue, Annotation annotation){

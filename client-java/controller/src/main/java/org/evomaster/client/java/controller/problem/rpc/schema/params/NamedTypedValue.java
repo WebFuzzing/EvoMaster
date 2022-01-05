@@ -60,6 +60,19 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      */
     private List<NamedTypedValue> candidates;
 
+    public List<String> getCandidateReferences() {
+        return candidateReferences;
+    }
+
+    public void setCandidateReferences(List<String> candidateReferences) {
+        this.candidateReferences = candidateReferences;
+    }
+
+    /**
+     * represent candidates
+     */
+    private List<String> candidateReferences;
+
 
     public NamedTypedValue(String name, T type) {
         this.name = name;
