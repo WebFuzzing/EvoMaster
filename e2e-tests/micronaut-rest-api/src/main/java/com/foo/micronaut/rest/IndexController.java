@@ -30,13 +30,13 @@ public class IndexController {
     }
 
 
-    @Put(value = "/noroute", produces = MediaType.TEXT_PLAIN)
-    public HttpResponse<String> noroute() {
-        return HttpResponse.status(HttpStatus.NOT_IMPLEMENTED).body("Not implemented");
-    }
-
-    @Patch(value = "/outoforder", produces = MediaType.TEXT_PLAIN)
-    public HttpResponse<String> outoforder() {
-        return HttpResponse.status(HttpStatus.SERVICE_UNAVAILABLE).body("Out of order!");
-    }
+//    @Put(value = "/noroute", produces = MediaType.TEXT_PLAIN)
+//    public HttpResponse<String> noroute() {
+//        return HttpResponse.status(HttpStatus.NOT_IMPLEMENTED).body("Not implemented");
+//    }
+//
+//    @Patch(value = "/outoforder", produces = MediaType.TEXT_PLAIN)
+//    public HttpResponse<String> outoforder() {
+//        return HttpResponse.status(HttpStatus.SERVICE_UNAVAILABLE).body("Out of order!");
+//    }
 }

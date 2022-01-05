@@ -39,8 +39,8 @@ public class MicronautTest extends RestTestBase {
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 500);
             assertHasAtLeastOne(solution, HttpVerb.POST, 200);
-            assertHasAtLeastOne(solution, HttpVerb.PUT, 501);
-            assertHasAtLeastOne(solution, HttpVerb.PATCH, 503);
+//            assertHasAtLeastOne(solution, HttpVerb.PUT, 501);
+//            assertHasAtLeastOne(solution, HttpVerb.PATCH, 503);
             assertEquals(HttpHeaderValues.KEEP_ALIVE, HttpHeaderValues.KEEP_ALIVE);
         });
     }
