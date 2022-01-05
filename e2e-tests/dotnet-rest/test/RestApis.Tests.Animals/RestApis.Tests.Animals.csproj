@@ -12,6 +12,11 @@
   <Target Name="appsettings" AfterTargets="AfterBuild">
     <Copy SourceFiles="../../src/RestApis.Animals/appsettings.json" DestinationFolder="$(MSBuildProjectDirectory)" />
   </Target>
+
+  <Target Name="PostClean" AfterTargets="Clean">
+    <RemoveDir Directories="generated" />
+    <RemoveDir Directories="bin-temp" />
+  </Target>
   
   <ItemGroup>
     <PackageReference Include="DotNet.Testcontainers" Version="1.4.0" />

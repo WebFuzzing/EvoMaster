@@ -20,6 +20,11 @@
 <!--        <PackageReference Include="EvoMaster.Controller" Version="1.1.1-SNAPSHOT"/>-->
     </ItemGroup>
 
+    <Target Name="PostClean" AfterTargets="Clean">
+        <RemoveDir Directories="generated" />
+        <RemoveDir Directories="bin-temp" />
+    </Target>
+    
     <ItemGroup>
         <ProjectReference Include="../../src/RestApis.HelloWorld/RestApis.HelloWorld.csproj" />
         <ProjectReference Include="../../../../client-dotnet/src/EvoMaster.Controller/EvoMaster.Controller.csproj" />
