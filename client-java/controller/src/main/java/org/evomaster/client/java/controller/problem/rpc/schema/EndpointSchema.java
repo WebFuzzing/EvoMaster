@@ -5,7 +5,9 @@ import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -54,10 +56,12 @@ public final class EndpointSchema {
      */
     private final List<Integer> requiredAuthCandidates;
 
+    private final Set<String> relatedCustomizedCandidates;
+
 
     public EndpointSchema(String name, String interfaceName, String clientTypeName,
                           List<NamedTypedValue> requestParams, NamedTypedValue response, List<NamedTypedValue> exceptions,
-                          boolean authRequired, List<Integer> requiredAuthCandidates) {
+                          boolean authRequired, List<Integer> requiredAuthCandidates, Set<String> relatedCustomizedCandidates) {
         this.name = name;
         this.interfaceName = interfaceName;
         this.clientTypeName = clientTypeName;
@@ -66,6 +70,7 @@ public final class EndpointSchema {
         this.exceptions = exceptions;
         this.authRequired = authRequired;
         this.requiredAuthCandidates = requiredAuthCandidates;
+        this.relatedCustomizedCandidates = relatedCustomizedCandidates;
     }
 
     public String getName() {
@@ -92,6 +97,10 @@ public final class EndpointSchema {
         dto.requestParams = requestParams.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         if (response != null)
             dto.responseParam = response.getDto();
+        if (relatedCustomizedCandidates != null)
+            dto.relatedCustomization = new HashSet<>(relatedCustomizedCandidates);
+        if (requiredAuthCandidates != null)
+            dto.requiredAuthCandidates = new ArrayList<>(requiredAuthCandidates);
         dto.isAuthorized = authRequired;
         return dto;
     }
@@ -118,7 +127,7 @@ public final class EndpointSchema {
                 name, interfaceName, clientTypeName,
                 requestParams == null? null: requestParams.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
                 response == null? null: response.copyStructure(), exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
-                authRequired, requiredAuthCandidates);
+                authRequired, requiredAuthCandidates, relatedCustomizedCandidates);
     }
 
     /**

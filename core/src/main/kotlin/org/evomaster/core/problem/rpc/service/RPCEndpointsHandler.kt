@@ -21,6 +21,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.impact.impactinfocollection.value.SeededGeneImpact
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -36,6 +37,9 @@ class RPCEndpointsHandler {
 
     @Inject
     protected lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var randomness: Randomness
 
 
     /**
@@ -55,6 +59,15 @@ class RPCEndpointsHandler {
      * - Value is a list of auth (which is based on key of [authentications])
      */
 //    private val authorizedActionAuthMap = mutableMapOf<String, MutableList<Int>>()
+
+
+    /**
+     * a map of actions with available customized candidates
+     * - Key is the id of action (which is consistent with key of [actionSchemaCluster])
+     * - Value is a set of customized candidates (which is based on index of customization info)
+     */
+    private val actionWithCustomizedCandidatesMap = mutableMapOf<String, MutableSet<String>>()
+
     /**
      * key is type in the schema
      * value is object gene for it
@@ -97,7 +110,7 @@ class RPCEndpointsHandler {
     /**
      * setup auth for [action] with an auth info at random
      */
-    fun actionWithRandomAuth(action: RPCCallAction, randomness: Randomness){
+    fun actionWithRandomAuth(action: RPCCallAction){
 
         val gs = authentications.values.filter { it.isGlobal }
         if (gs.isNotEmpty())
@@ -145,6 +158,47 @@ class RPCEndpointsHandler {
         return results
     }
 
+    fun actionWithAllCandidates(action: RPCCallAction): List<RPCCallAction>{
+        val results = mutableListOf<RPCCallAction>()
+        actionWithCustomizedCandidatesMap[action.id]?.forEach {
+            results.add((action.copy() as RPCCallAction).apply { handleActionWithSeededCandidates(this, it) })
+        }
+        val noSeed = action.copy() as RPCCallAction
+        handleActionNoSeededCandidates(noSeed)
+        results.add(noSeed)
+        return results;
+    }
+
+    fun actionWithRandomSeeded(action: RPCCallAction, noSeedProbability: Double): RPCCallAction{
+        val candidates = actionWithCustomizedCandidatesMap[action.id]
+        if (candidates== null || candidates.isEmpty()) return action
+        if (randomness.nextBoolean(noSeedProbability))
+            handleActionNoSeededCandidates(action)
+        else{
+            val selected = randomness.choose(candidates)
+            handleActionWithSeededCandidates(action, selected)
+        }
+        return action
+    }
+
+
+    private fun handleActionWithSeededCandidates(action: RPCCallAction, candidateKey: String){
+        action.seeGenes().filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
+            val index = ((g as DisruptiveGene<*>).gene as SeededGene<*>).seeded.values.indexOfFirst { it.name == candidateKey }
+            if (index != -1){
+                (g.gene as SeededGene<*>).employSeeded = true
+                g.gene.seeded.index = index
+            }
+        }
+    }
+
+    private fun handleActionNoSeededCandidates(action: RPCCallAction){
+        action.seeGenes().filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
+            ((g as DisruptiveGene<*>).gene as SeededGene<*>).employSeeded = false
+            (g.gene as SeededGene<*>).gene.randomize(randomness, false)
+        }
+    }
+
     /**
      * reset [actionCluster] based on interface schemas specified in [problem]
      */
@@ -171,6 +225,9 @@ class RPCEndpointsHandler {
 //                if (e.isAuthorized && e.requiredAuthCandidates != null){
 //                    authorizedActionAuthMap[name] = e.requiredAuthCandidates
 //                }
+                if (e.relatedCustomization != null){
+                    actionWithCustomizedCandidatesMap[name] = e.relatedCustomization
+                }
             }
         }
 
@@ -248,13 +305,8 @@ class RPCEndpointsHandler {
             is FloatGene -> dto.stringValue = valueGene.value.toString()
             is BooleanGene -> dto.stringValue = valueGene.value.toString()
             is StringGene -> dto.stringValue = valueGene.getValueAsRawString()
-            is EnumGene<*> -> {
-                if (dto.candidates!= null && dto.candidateReferences == null){
-                    dto.stringValue = getValueForGeneWithCandidates(valueGene)
-                }else{
-                    dto.stringValue = valueGene.index.toString()
-                }
-            }
+            is EnumGene<*> -> dto.stringValue = valueGene.index.toString()
+            is SeededGene<*> -> dto.stringValue = getValueForSeededGene(valueGene)
             is LongGene -> dto.stringValue = valueGene.value.toString()
             is ArrayGene<*> -> {
                 val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a collection is null")
@@ -322,6 +374,7 @@ class RPCEndpointsHandler {
                 is StringGene -> valueGene.value = dto.stringValue
                 is LongGene -> valueGene.value = dto.stringValue.toLong()
                 is EnumGene<*> -> valueGene.index = dto.stringValue.toInt()
+                is SeededGene<*> -> TODO()
                 is PairGene<*, *> -> {
                     Lazy.assert { dto.innerContent.size == 2 }
                     setGeneBasedOnParamDto(valueGene.first, dto.innerContent[0])
@@ -468,35 +521,37 @@ class RPCEndpointsHandler {
                     Lazy.assert { param.candidates.size == param.candidateReferences.size }
                     candidates.forEachIndexed { index, g ->  g.name = param.candidateReferences[index] }
                 }
-                val enumGene = handleGeneWithCandidateAsEnumGene(gene, candidates)
-                if (param.candidateReferences == null)
-                    return wrapWithOptionalGene(enumGene, param.isNullable)
+                val seededGene = handleGeneWithCandidateAsEnumGene(gene, candidates)
 
-                return DisruptiveGene(param.name, enumGene, 0.0)
+                if (param.candidateReferences == null)
+                    return wrapWithOptionalGene(seededGene, param.isNullable)
+
+                return DisruptiveGene(param.name, seededGene, 0.0)
             }
         }
 
         return wrapWithOptionalGene(gene, param.isNullable)
     }
 
-    private fun handleGeneWithCandidateAsEnumGene(gene: Gene, candidates: List<Gene>) : EnumGene<*>{
-        return when (gene) {
-            is StringGene -> EnumGene(gene.name, candidates.map { it as StringGene })
-            is IntegerGene -> EnumGene(gene.name, candidates.map { it as IntegerGene })
-            is FloatGene -> EnumGene(gene.name, candidates.map { it as FloatGene })
-            is LongGene -> EnumGene(gene.name, candidates.map { it as LongGene })
+    private fun handleGeneWithCandidateAsEnumGene(gene: Gene, candidates: List<Gene>) : SeededGene<*>{
+        return  when (gene) {
+            is StringGene -> SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as StringGene }))
+            is IntegerGene -> SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as IntegerGene }))
+            is FloatGene ->  SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as FloatGene }))
+            is LongGene ->  SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as LongGene }))
+            // might be DateGene
             else -> {
                 throw IllegalStateException("Do not support configuring candidates for ${gene::class.java.simpleName} gene type")
             }
         }
     }
 
-    private fun getValueForGeneWithCandidates(gene: EnumGene<*>) : String{
-        return when (gene.values.first()) {
-            is StringGene -> (gene.values[gene.index] as StringGene).value
-            is IntegerGene -> (gene.values[gene.index] as IntegerGene).value.toString()
-            is FloatGene -> (gene.values[gene.index] as FloatGene).value.toString()
-            is LongGene -> (gene.values[gene.index] as LongGene).value.toString()
+    private fun getValueForSeededGene(gene: SeededGene<*>) : String{
+        return when (val pGene = gene.getPhenotype()) {
+            is StringGene -> pGene.getValueAsRawString()
+            is IntegerGene -> pGene.value.toString()
+            is FloatGene -> pGene.value.toString()
+            is LongGene -> pGene.value.toString()
             else -> {
                 throw IllegalStateException("Do not support configuring candidates for ${gene::class.java.simpleName} gene type")
             }

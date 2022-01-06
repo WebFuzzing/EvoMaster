@@ -215,18 +215,6 @@ public class EMController {
                 schemas.add(s.getDto());
             }
             dto.rpcProblem.schemas = schemas;
-
-            Map<String, NamedTypedValue> cluster = sutController.getCandidateCluster();
-            if (!cluster.isEmpty()){
-                dto.rpcProblem.candidateCluster = new ArrayList<>();
-                dto.rpcProblem.candidateGroupReference = new ArrayList<>();
-                dto.rpcProblem.candidateReferences = new ArrayList<>();
-                cluster.forEach((k, v)->{
-                    dto.rpcProblem.candidateCluster.add(v.getDto());
-                    dto.rpcProblem.candidateReferences.add(k);
-                    dto.rpcProblem.candidateGroupReference.add(RPCEndpointsBuilder.getGroupNameOfCustomizedCandidateReferenceKey(k));
-                });
-            }
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);

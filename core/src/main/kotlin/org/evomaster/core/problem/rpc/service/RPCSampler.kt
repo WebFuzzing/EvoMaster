@@ -76,13 +76,16 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
      * sample an action from [actionCluster] at random
      * @param noAuthProbability specifies a probability which does not apply any auth
      */
-    fun sampleRandomAction(noAuthProbability: Double = 0.05): RPCCallAction {
+    fun sampleRandomAction(noAuthProbability: Double = 0.05, noSeedProbability: Double = 0.05): RPCCallAction {
         val action = randomness.choose(actionCluster).copy() as RPCCallAction
         randomizeActionGenes(action)
         if (randomness.nextBoolean(noAuthProbability)){
             action.setNoAuth()
         }else
-            rpcHandler.actionWithRandomAuth(action, randomness)
+            rpcHandler.actionWithRandomAuth(action)
+
+        rpcHandler.actionWithRandomSeeded(action, noSeedProbability)
+
         return action
     }
 
@@ -115,8 +118,10 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
                     val copy = a.value.copy() as RPCCallAction
                     randomizeActionGenes(copy)
                     rpcHandler.actionWithAllAuth(copy).forEach { actionWithAuth->
-                        val ind = createRPCIndividual(mutableListOf(actionWithAuth))
-                        adHocInitialIndividuals.add(ind)
+                        rpcHandler.actionWithAllCandidates(actionWithAuth).forEach { actionWithSeeded->
+                            val ind = createRPCIndividual(mutableListOf(actionWithSeeded))
+                            adHocInitialIndividuals.add(ind)
+                        }
                     }
                 }
     }

@@ -1,7 +1,9 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -64,6 +66,15 @@ public class RPCActionDto {
      */
     public List<Integer> requiredAuthCandidates;
 
+    /**
+     * related candidates to customize values in request of this endpoint
+     */
+    public Set<String> relatedCustomization;
+
+    /**
+     *
+     * @return a copy of RPCActionDto for enabling its invocation
+     */
     public RPCActionDto copy(){
         RPCActionDto copy = new RPCActionDto();
         copy.interfaceId = interfaceId;
@@ -77,8 +88,20 @@ public class RPCActionDto {
         copy.doGenerateAssertions = doGenerateAssertions;
         copy.doGenerateTestScript = doGenerateTestScript;
         copy.isAuthorized = isAuthorized;
+        return copy;
+    }
+
+    /**
+     *
+     * @return a complete copy of RPCActionDto including its schema info,
+     * eg, possible auth candidates and pe-defined values in requests
+     */
+    public RPCActionDto copyComplete(){
+        RPCActionDto copy = copy();
         if (copy.requiredAuthCandidates != null)
             copy.requiredAuthCandidates = new ArrayList<>(requiredAuthCandidates);
+        if (copy.relatedCustomization != null)
+            copy.relatedCustomization = new HashSet<>(relatedCustomization);
         return copy;
     }
 

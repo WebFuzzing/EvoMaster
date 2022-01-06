@@ -14,7 +14,7 @@ class SeededGene<T : ComparableGene>(
     name: String,
     val gene: T,
     val seeded: EnumGene<T>,
-    var employSeeded: Boolean
+    var employSeeded: Boolean = false
 ) : Gene(name, mutableListOf(gene, seeded)) {
 
     /**

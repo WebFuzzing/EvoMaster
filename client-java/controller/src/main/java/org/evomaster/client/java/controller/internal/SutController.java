@@ -76,11 +76,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private final Map<String, InterfaceSchema> rpcInterfaceSchema = new HashMap<>();
 
     /**
-     * a map of combined key value pair cluster
-     */
-    private final Map<String, NamedTypedValue> candidateCluster = new HashMap<>();
-
-    /**
      * handle parsing RPCActionDto based on json string.
      * Note that it is only used for RPC
      */
@@ -306,14 +301,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return rpcInterfaceSchema;
     }
 
-    /**
-     *
-     * @return
-     */
-    public final Map<String, NamedTypedValue> getCandidateCluster(){
-        return candidateCluster;
-    }
-
 
     /**
      * extract endpoints info of the RPC interface by reflection based on the specified service interface name
@@ -333,7 +320,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
         try {
             RPCEndpointsBuilder.validateCustomizedValueInRequests(getCustomizedValueInRequests());
-            candidateCluster.clear();
             RPCProblem rpcp = (RPCProblem) getProblemInfo();
             for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
                 InterfaceSchema schema = RPCEndpointsBuilder.build(interfaceName, rpcp.getType(), rpcp.getClient(interfaceName),
@@ -342,7 +328,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         rpcp.involveEndpointsByName!=null? rpcp.involveEndpointsByName.get(interfaceName):null,
                         rpcp.involveEndpointsByAnnotation!=null? rpcp.involveEndpointsByAnnotation.get(interfaceName):null,
                         getInfoForAuthentication(),
-                        getCustomizedValueInRequests(), candidateCluster);
+                        getCustomizedValueInRequests());
                 rpcInterfaceSchema.put(interfaceName, schema);
             }
         }catch (Exception e){
