@@ -483,6 +483,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 throw (Exception) e.getTargetException();
             else
                 res = e.getTargetException();
+        } catch (Exception e){
+            SimpleLogger.error("ERROR: other exception exists "+ e.getMessage());
+            if (throwTargetException) throw e;
+            else res = e;
         }
         return res;
     }
@@ -523,13 +527,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new RuntimeException("ERROR: fail to instance value of input parameters based on dto/schema, msg error:"+e.getMessage());
         }
 
-        try {
-            Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);
+        Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);
 
-            return method.invoke(client, params);
-        } catch (NullPointerException e){
-            throw new RuntimeException("null pointer");
-        }
+        return method.invoke(client, params);
     }
 
     private EndpointSchema getEndpointSchema(RPCActionDto dto){

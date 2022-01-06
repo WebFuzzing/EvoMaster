@@ -11,6 +11,7 @@ import org.evomaster.core.search.gene.CollectionGene;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.MapGene;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,29 +42,36 @@ public class RPCTestBase extends WsTestBase{
 
 
     public static void assertContentInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, String content){
-        boolean ok = containsContent(solution, methodName, content);
-        assertTrue(ok);
+        List<String> comparedHistory = new ArrayList<>();
+        boolean ok = containsContent(solution, methodName, content, comparedHistory);
+        String errorMsg = "cannot find the content " +content+ "from responses" +System.lineSeparator() + String.join(System.lineSeparator(), comparedHistory);
+        assertTrue(ok, errorMsg);
 
     }
 
     public static void assertAnyContentInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, List<String> contents){
-        boolean ok = contents.stream().anyMatch(content->containsContent(solution, methodName, content));
-        assertTrue(ok);
+        List<String> comparedHistory = new ArrayList<>();
+        boolean ok = contents.stream().anyMatch(content->containsContent(solution, methodName, content, comparedHistory));
+        String errorMsg = "cannot find any of " +String.join(",", contents)+ "from responses" +System.lineSeparator() + String.join(System.lineSeparator(), comparedHistory);
+
+        assertTrue(ok, errorMsg);
     }
 
     public static void assertAllContentInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, List<String> contents){
-        boolean ok = contents.stream().allMatch(content->containsContent(solution, methodName, content));
-        assertTrue(ok);
+        List<String> comparedHistory = new ArrayList<>();
+        boolean ok = contents.stream().allMatch(content->containsContent(solution, methodName, content, comparedHistory));
+        String errorMsg = "cannot find all " +String.join(",", contents)+ "from responses" +System.lineSeparator() + String.join(System.lineSeparator(), comparedHistory);
+        assertTrue(ok, errorMsg);
     }
 
-    public static boolean containsContent(Solution<RPCIndividual> solution, String methodName, String content){
+    public static boolean containsContent(Solution<RPCIndividual> solution, String methodName, String content, List<String> comparedHistory){
         return solution.getIndividuals().stream().anyMatch(s->
                 s.getIndividual().seeActions().stream().anyMatch(a-> {
                     if (a.getName().equals(methodName)){
                         Gene gene = null;
                         if (a.getResponse() != null)
                             gene = a.getResponse().getGene();
-                        return containContent(gene, content);
+                        return containContent(gene, content, comparedHistory);
                     }else return false;
                 }));
     }
@@ -91,12 +99,13 @@ public class RPCTestBase extends WsTestBase{
         assertTrue(ok);
     }
 
-    private static boolean containContent(Gene gene, String content){
+    private static boolean containContent(Gene gene, String content, List<String> comparedHistory){
         if (content == null) return true;
         if (gene == null) return false;
 
         Gene valueGene = ParamUtil.Companion.getValueGene(gene);
         if (valueGene.isPrintable()){
+            comparedHistory.add(valueGene.getValueAsRawString());
             return valueGene.getValueAsRawString().contains(content);
         }
         //TODO fix other types
