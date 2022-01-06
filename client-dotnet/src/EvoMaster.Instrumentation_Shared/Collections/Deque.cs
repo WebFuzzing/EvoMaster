@@ -47,16 +47,16 @@ namespace EvoMaster.Instrumentation_Shared.Collections
         #region Fields
 
         // The node at the front of the deque.
-        private Node front;
+        private Node _front;
 
         // The node at the back of the deque.
-        private Node back;
+        private Node _back;
 
         // The number of elements in the deque.
-        private int count;
+        private int _count;
 
         // The version of the deque.
-        private long version;        
+        private long _version;        
 
         #endregion
 
@@ -87,7 +87,7 @@ namespace EvoMaster.Instrumentation_Shared.Collections
 
             #endregion
 
-            foreach(T item in collection)
+            foreach(var item in collection)
             {
                 PushBack(item);
             }
@@ -102,11 +102,11 @@ namespace EvoMaster.Instrumentation_Shared.Collections
         /// </summary>
         public virtual void Clear()
         {
-            count = 0;
+            _count = 0;
 
-            front = back = null;
+            _front = _back = null;
 
-            version++;
+            _version++;
 
             #region Invariant
 
@@ -127,7 +127,7 @@ namespace EvoMaster.Instrumentation_Shared.Collections
         /// </returns>
         public virtual bool Contains(T obj)
         {
-            foreach(T o in this)
+            foreach(var o in this)
             {
                 if(EqualityComparer<T>.Default.Equals(o, obj))
                 {
@@ -147,33 +147,33 @@ namespace EvoMaster.Instrumentation_Shared.Collections
         public virtual void PushFront(T item)
         {
             // The new node to add to the front of the deque.
-            Node newNode = new Node(item);
+            var newNode = new Node(item);
 
             // Link the new node to the front node. The current front node at 
             // the front of the deque is now the second node in the deque.
-            newNode.Next = front;
+            newNode.Next = _front;
 
             // If the deque isn't empty.
             if(Count > 0)
             {
                 // Link the current front to the new node.
-                front.Previous = newNode;
+                _front.Previous = newNode;
             }
 
             // Make the new node the front of the deque.
-            front = newNode;            
+            _front = newNode;            
 
             // Keep track of the number of elements in the deque.
-            count++;
+            _count++;
 
             // If this is the first element in the deque.
             if(Count == 1)
             {
                 // The front and back nodes are the same.
-                back = front;
+                _back = _front;
             }
 
-            version++;
+            _version++;
 
             #region Invariant
 
@@ -191,34 +191,34 @@ namespace EvoMaster.Instrumentation_Shared.Collections
         public virtual void PushBack(T item)
         {
             // The new node to add to the back of the deque.
-            Node newNode = new Node(item);
+            var newNode = new Node(item);
             
             // Link the new node to the back node. The current back node at 
             // the back of the deque is now the second to the last node in the
             // deque.
-            newNode.Previous = back;
+            newNode.Previous = _back;
 
             // If the deque is not empty.
             if(Count > 0)
             {
                 // Link the current back node to the new node.
-                back.Next = newNode;
+                _back.Next = newNode;
             }
 
             // Make the new node the back of the deque.
-            back = newNode;            
+            _back = newNode;            
 
             // Keep track of the number of elements in the deque.
-            count++;
+            _count++;
 
             // If this is the first element in the deque.
             if(Count == 1)
             {
                 // The front and back nodes are the same.
-                front = back;
+                _front = _back;
             }
 
-            version++;
+            _version++;
 
             #region Invariant
 
@@ -248,28 +248,28 @@ namespace EvoMaster.Instrumentation_Shared.Collections
             #endregion
 
             // Get the object at the front of the deque.
-            T item = front.Value;
+            var item = _front.Value;
 
             // Move the front back one node.
-            front = front.Next;
+            _front = _front.Next;
 
             // Keep track of the number of nodes in the deque.
-            count--;
+            _count--;
 
             // If the deque is not empty.
             if(Count > 0)
             {
                 // Tie off the previous link in the front node.
-                front.Previous = null;
+                _front.Previous = null;
             }
             // Else the deque is empty.
             else
             {
                 // Indicate that there is no back node.
-                back = null;
+                _back = null;
             }           
 
-            version++;
+            _version++;
 
             #region Invariant
 
@@ -301,28 +301,28 @@ namespace EvoMaster.Instrumentation_Shared.Collections
             #endregion
 
             // Get the object at the back of the deque.
-            T item = back.Value;
+            var item = _back.Value;
 
             // Move back node forward one node.
-            back = back.Previous;
+            _back = _back.Previous;
 
             // Keep track of the number of nodes in the deque.
-            count--;
+            _count--;
 
             // If the deque is not empty.
             if(Count > 0)
             {
                 // Tie off the next link in the back node.
-                back.Next = null;
+                _back.Next = null;
             }
             // Else the deque is empty.
             else
             {
                 // Indicate that there is no front node.
-                front = null;
+                _front = null;
             }
 
-            version++;
+            _version++;
 
             #region Invariant
 
@@ -353,7 +353,7 @@ namespace EvoMaster.Instrumentation_Shared.Collections
 
             #endregion
 
-            return front.Value;
+            return _front.Value;
         }
 
         /// <summary>
@@ -376,7 +376,7 @@ namespace EvoMaster.Instrumentation_Shared.Collections
 
             #endregion
 
-            return back.Value;
+            return _back.Value;
         }
 
         /// <summary>
@@ -387,10 +387,10 @@ namespace EvoMaster.Instrumentation_Shared.Collections
         /// </returns>
         public virtual T[] ToArray()
         {
-            T[] array = new T[Count];
-            int index = 0;
+            var array = new T[Count];
+            var index = 0;
 
-            foreach(T item in this)
+            foreach(var item in this)
             {
                 array[index] = item;
                 index++;
@@ -425,8 +425,8 @@ namespace EvoMaster.Instrumentation_Shared.Collections
         [Conditional("DEBUG")]
         private void AssertValid()
         {
-            int n = 0;
-            Node current = front;
+            var n = 0;
+            var current = _front;
 
             while(current != null)
             {
@@ -438,10 +438,10 @@ namespace EvoMaster.Instrumentation_Shared.Collections
 
             if(Count > 0)
             {
-                Debug.Assert(front != null && back != null, "Front/Back Null Test - Count > 0");
+                Debug.Assert(_front != null && _back != null, "Front/Back Null Test - Count > 0");
 
-                Node f = front;
-                Node b = back;
+                var f = _front;
+                var b = _back;
 
                 while(f.Next != null && b.Previous != null)
                 {
@@ -450,11 +450,11 @@ namespace EvoMaster.Instrumentation_Shared.Collections
                 }
 
                 Debug.Assert(f.Next == null && b.Previous == null, "Front/Back Termination Test");
-                Debug.Assert(f == back && b == front, "Front/Back Equality Test");
+                Debug.Assert(f == _back && b == _front, "Front/Back Equality Test");
             }
             else
             {
-                Debug.Assert(front == null && back == null, "Front/Back Null Test - Count == 0");
+                Debug.Assert(_front == null && _back == null, "Front/Back Null Test - Count == 0");
             }
         }
 
@@ -483,7 +483,7 @@ namespace EvoMaster.Instrumentation_Shared.Collections
         {
             get
             {
-                return count;
+                return _count;
             }
         }
 
@@ -530,7 +530,7 @@ namespace EvoMaster.Instrumentation_Shared.Collections
 
             #endregion
 
-            int i = index;
+            var i = index;
 
             foreach(object obj in this)
             {
@@ -577,9 +577,9 @@ namespace EvoMaster.Instrumentation_Shared.Collections
         /// </returns>
         public virtual object Clone()
         {
-            Deque<T> clone = new Deque<T>(this);
+            var clone = new Deque<T>(this);
 
-            clone.version = this.version;
+            clone._version = this._version;
 
             return clone;
         }

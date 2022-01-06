@@ -1,69 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace EvoMaster.Instrumentation_Shared.Collections
-{
-public partial class Deque<T>
-    {
+namespace EvoMaster.Instrumentation_Shared.Collections {
+    public partial class Deque<T> {
         #region Enumerator Class
 
         [Serializable()]
-        private class Enumerator : IEnumerator<T>
-        {
-            private Deque<T> owner;
+        private class Enumerator : IEnumerator<T> {
+            private Deque<T> _owner;
 
-            private Node currentNode;
+            private Node _currentNode;
 
-            private T current;
+            private T _current;
 
-            private bool moveResult;
+            private bool _moveResult;
 
-            private long version;
+            private long _version;
 
             // A value indicating whether the enumerator has been disposed.
-            private bool disposed;
+            private bool _disposed;
 
-            public Enumerator(Deque<T> owner)
-            {
-                this.owner = owner;
-                currentNode = owner.front;
-                this.version = owner.version;
+            public Enumerator(Deque<T> owner) {
+                this._owner = owner;
+                _currentNode = owner._front;
+                this._version = owner._version;
             }
 
             #region IEnumerator Members
 
-            public void Reset()
-            {
+            public void Reset() {
                 #region Require
 
-                if(disposed)
-                {
+                if (_disposed) {
                     throw new ObjectDisposedException(this.GetType().Name);
                 }
-                else if(version != owner.version)
-                {
+                else if (_version != _owner._version) {
                     throw new InvalidOperationException(
                         "The Deque was modified after the enumerator was created.");
                 }
 
                 #endregion
 
-                currentNode = owner.front;
-                moveResult = false;
+                _currentNode = _owner._front;
+                _moveResult = false;
             }
 
-            public object Current
-            {
-                get
-                {
+            public object Current {
+                get {
                     #region Require
 
-                    if(disposed)
-                    {
+                    if (_disposed) {
                         throw new ObjectDisposedException(this.GetType().Name);
                     }
-                    else if(!moveResult)
-                    {
+                    else if (!_moveResult) {
                         throw new InvalidOperationException(
                             "The enumerator is positioned before the first " +
                             "element of the Deque or after the last element.");
@@ -71,57 +60,48 @@ public partial class Deque<T>
 
                     #endregion
 
-                    return current;
+                    return _current;
                 }
             }
 
-            public bool MoveNext()
-            {
+            public bool MoveNext() {
                 #region Require
 
-                if(disposed)
-                {
+                if (_disposed) {
                     throw new ObjectDisposedException(this.GetType().Name);
                 }
-                else if(version != owner.version)
-                {
+                else if (_version != _owner._version) {
                     throw new InvalidOperationException(
                         "The Deque was modified after the enumerator was created.");
                 }
 
                 #endregion
 
-                if(currentNode != null)
-                {
-                    current = currentNode.Value;
-                    currentNode = currentNode.Next;
+                if (_currentNode != null) {
+                    _current = _currentNode.Value;
+                    _currentNode = _currentNode.Next;
 
-                    moveResult = true;
+                    _moveResult = true;
                 }
-                else
-                {
-                    moveResult = false;
+                else {
+                    _moveResult = false;
                 }
 
-                return moveResult;
+                return _moveResult;
             }
 
             #endregion
 
             #region IEnumerator<T> Members
 
-            T IEnumerator<T>.Current
-            {
-                get
-                {
+            T IEnumerator<T>.Current {
+                get {
                     #region Require
 
-                    if(disposed)
-                    {
+                    if (_disposed) {
                         throw new ObjectDisposedException(this.GetType().Name);
                     }
-                    else if(!moveResult)
-                    {
+                    else if (!_moveResult) {
                         throw new InvalidOperationException(
                             "The enumerator is positioned before the first " +
                             "element of the Deque or after the last element.");
@@ -129,7 +109,7 @@ public partial class Deque<T>
 
                     #endregion
 
-                    return current;
+                    return _current;
                 }
             }
 
@@ -137,9 +117,8 @@ public partial class Deque<T>
 
             #region IDisposable Members
 
-            public void Dispose()
-            {
-                disposed = true;
+            public void Dispose() {
+                _disposed = true;
             }
 
             #endregion

@@ -1,15 +1,13 @@
 ﻿using System;
 
-namespace EvoMaster.Instrumentation
-{
+namespace EvoMaster.Instrumentation {
     /**
      * Info related to SQL command execution.
      *
      * This class is IMMUTABLE
     */
     [Serializable]
-    public class SqlInfo
-    {
+    public class SqlInfo {
         [NonSerialized] public static readonly long FAILURE_EXTIME = -1L;
 
         //The actual SQL string with the command that was executed
@@ -30,35 +28,29 @@ namespace EvoMaster.Instrumentation
         private readonly long _executionTime;
 
         public SqlInfo(string command, bool noResult, bool exception) : this(command, noResult, exception,
-            FAILURE_EXTIME)
-        {
+            FAILURE_EXTIME) {
         }
 
-        public SqlInfo(string command, bool noResult, bool exception, long executionTime)
-        {
+        public SqlInfo(string command, bool noResult, bool exception, long executionTime) {
             _command = command;
             _noResult = noResult;
             _exception = exception;
             _executionTime = executionTime;
         }
 
-        public string GetCommand()
-        {
+        public string GetCommand() {
             return _command;
         }
 
-        public bool IsNoResult()
-        {
+        public bool IsNoResult() {
             return _noResult;
         }
 
-        public bool IsException()
-        {
+        public bool IsException() {
             return _exception;
         }
 
-        public override bool Equals(object o)
-        {
+        public override bool Equals(object o) {
             if (this == o) return true;
             if (o == null || GetType() != o.GetType()) return false;
             var sqlInfo = (SqlInfo) o;
@@ -66,13 +58,11 @@ namespace EvoMaster.Instrumentation
                    Equals(_command, sqlInfo._command);
         }
 
-        public override int GetHashCode()
-        {
+        public override int GetHashCode() {
             return HashCode.Combine(_command, _noResult, _exception);
         }
 
-        public long GetExecutionTime()
-        {
+        public long GetExecutionTime() {
             return _executionTime;
         }
     }

@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace EvoMaster.Instrumentation_Shared
-{
-    public class StringSpecializationInfo //:ISerializable
-    {
+namespace EvoMaster.Instrumentation_Shared {
+    [Serializable]
+    public class StringSpecializationInfo {
         private readonly StringSpecialization _stringSpecialization;
 
         /**
@@ -15,13 +14,11 @@ namespace EvoMaster.Instrumentation_Shared
 
         private readonly TaintType _type;
 
-        public StringSpecializationInfo(StringSpecialization stringSpecialization, string value, TaintType taintType)
-        {
+        public StringSpecializationInfo(StringSpecialization stringSpecialization, string value, TaintType taintType) {
             if (stringSpecialization.Equals(null)) throw new NullReferenceException();
             _stringSpecialization = stringSpecialization;
             _value = value;
-            if (taintType == TaintType.NONE)
-            {
+            if (taintType == TaintType.NONE) {
                 throw new ArgumentException("Invalid type: " + taintType);
             }
 
@@ -29,8 +26,7 @@ namespace EvoMaster.Instrumentation_Shared
         }
 
         public StringSpecializationInfo(StringSpecialization stringSpecialization, string value) : this(
-            stringSpecialization, value, TaintType.FULL_MATCH)
-        {
+            stringSpecialization, value, TaintType.FULL_MATCH) {
         }
 
         public StringSpecialization GetStringSpecialization() => _stringSpecialization;
@@ -40,8 +36,7 @@ namespace EvoMaster.Instrumentation_Shared
         public TaintType GetTaintType() =>
             _type; //Java counterpart: GetType, name is changed here to prevent hiding GetType of object
 
-        public override bool Equals(object o)
-        {
+        public override bool Equals(object o) {
             if (this == o) return true;
 
             if (o == null || GetType() != o.GetType()) return false;

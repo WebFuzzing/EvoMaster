@@ -7,9 +7,9 @@ namespace EvoMaster.Instrumentation_Shared {
             Line = line;
             Column = column;
         }
-        
-        public int Line { get; }
-        public int Column { get; }
+
+        private int Line { get; }
+        private int Column { get; }
 
         public override bool Equals(object obj) {
             

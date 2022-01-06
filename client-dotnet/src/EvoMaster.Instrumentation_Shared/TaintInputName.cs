@@ -2,10 +2,8 @@ using System;
 using System.Text.RegularExpressions;
 using EvoMaster.Client.Util.Extensions;
 
-namespace EvoMaster.Instrumentation_Shared
-{
-    public class TaintInputName
-    {
+namespace EvoMaster.Instrumentation_Shared {
+    public class TaintInputName {
         /*
             WARNING:
             the naming here has to be kept in sync in ALL implementations of this class,
@@ -33,10 +31,8 @@ namespace EvoMaster.Instrumentation_Shared
         /**
      * Create a tainted value, with the input id being part of it
      */
-        public static string GetTaintName(int id)
-        {
-            if (id < 0)
-            {
+        public static string GetTaintName(int id) {
+            if (id < 0) {
                 throw new ArgumentException("Negative id");
             }
 
@@ -55,8 +51,7 @@ namespace EvoMaster.Instrumentation_Shared
      * Not sure if there is really any simple workaround... but hopefully should be
      * so rare that we can live with it
      */
-        public static int GetTaintNameMaxLength()
-        {
+        public static int GetTaintNameMaxLength() {
             return Prefix.Length + Postfix.Length + 6;
         }
     }

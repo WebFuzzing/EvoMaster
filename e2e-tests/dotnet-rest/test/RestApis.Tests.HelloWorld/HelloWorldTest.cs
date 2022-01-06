@@ -12,7 +12,7 @@ namespace RestApis.Tests.HelloWorld {
         [InlineData("swagger", 200)]
         [InlineData("wrongUri", 404)]
         public async Task StartApi_RetrunExpectedStatusCode(string uri, int expectedStatusCode) {
-            EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController();
+            var evoMasterController = new EmbeddedEvoMasterController();
 
             var baseUrl = evoMasterController.StartSut();
 
@@ -25,7 +25,7 @@ namespace RestApis.Tests.HelloWorld {
 
         [Fact]
         public async Task CallApiWhenStopped_Fail() {
-            EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController();
+            var evoMasterController = new EmbeddedEvoMasterController();
 
             var baseUrl = evoMasterController.StartSut();
 
@@ -36,7 +36,7 @@ namespace RestApis.Tests.HelloWorld {
 
         [Fact]
         public void StartApi_IsSutRunningShouldReturnTrue() {
-            EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController();
+            var evoMasterController = new EmbeddedEvoMasterController();
 
             evoMasterController.StartSut();
 
@@ -47,7 +47,7 @@ namespace RestApis.Tests.HelloWorld {
 
         [Fact]
         public void StartAndStopApi_IsSutRunningShouldReturnFalse() {
-            EmbeddedEvoMasterController evoMasterController = new EmbeddedEvoMasterController();
+            var evoMasterController = new EmbeddedEvoMasterController();
 
             evoMasterController.StartSut();
 

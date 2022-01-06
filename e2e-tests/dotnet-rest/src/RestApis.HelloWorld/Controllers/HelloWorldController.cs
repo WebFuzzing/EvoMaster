@@ -11,7 +11,7 @@ namespace RestApis.HelloWorld.Controllers {
         [HttpGet]
         [Route("{value}")]
         public IActionResult GetError([FromRoute] string value){
-            int result = Int32.Parse(value);
+            var result = Int32.Parse(value);
             return Ok("int value");
         }
     }

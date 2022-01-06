@@ -8,7 +8,6 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 
 namespace EvoMaster.Instrumentation {
-    
     /// <summary>
     /// This class is responsible for instrumenting c# libraries.
     /// Instrumentation is done by the aid of Mono.Cecil library
@@ -126,7 +125,7 @@ namespace EvoMaster.Instrumentation {
         private int InsertCompletedStatementProbe(Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int columnNo) {
             if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
-            
+
             //to prevent becoming the probe unreachable
             if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous)) {
                 return InsertCompletedStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
@@ -161,7 +160,7 @@ namespace EvoMaster.Instrumentation {
             int byteCodeIndex, string className, int lineNo, int columnNo) {
             //Do not add inserted probe if the statement is already covered by completed probe
             if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
-            
+
             //to prevent becoming the probe unreachable
             if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous)) {
                 return InsertEnteringStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,

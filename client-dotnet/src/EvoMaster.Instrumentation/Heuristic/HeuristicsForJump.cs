@@ -33,8 +33,8 @@ namespace EvoMaster.Instrumentation.Heuristic {
 
 
         public static Truthness GetForValueComparison(int firstValue, int secondValue, Code opcode) {
-            int a = firstValue;
-            int b = secondValue;
+            var a = firstValue;
+            var b = secondValue;
 
             switch (opcode) {
                 case Code.Beq: // ie, a == b; JB: IF_ICMPEQ

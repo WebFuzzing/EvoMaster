@@ -21,8 +21,8 @@ namespace EvoMaster.Controller {
     ///ie the system under test (SUT)
     ///</summary>
     public abstract class SutController : ISutHandler {
-        private int _controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
-        private string _controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
+        private int _controllerPort = ControllerConstants.DefaultControllerPort;
+        private string _controllerHost = ControllerConstants.DefaultControllerHost;
 
         //TODO: To be added
         //private final SqlHandler sqlHandler = new SqlHandler();
@@ -380,7 +380,7 @@ namespace EvoMaster.Controller {
 
             tcpListener.Start();
 
-            int port = ((IPEndPoint) tcpListener.LocalEndpoint).Port;
+            var port = ((IPEndPoint) tcpListener.LocalEndpoint).Port;
 
             tcpListener.Stop();
 

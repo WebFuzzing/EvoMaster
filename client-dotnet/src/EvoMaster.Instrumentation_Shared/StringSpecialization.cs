@@ -1,7 +1,5 @@
-﻿namespace EvoMaster.Instrumentation_Shared
-{
-    public enum StringSpecialization
-    {
+﻿namespace EvoMaster.Instrumentation_Shared {
+    public enum StringSpecialization {
         /**
      * String used as a Date with unknown format
      */
@@ -83,4 +81,3 @@
         EQUAL
     }
 }
-

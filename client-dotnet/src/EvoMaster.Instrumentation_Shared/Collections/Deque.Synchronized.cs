@@ -17,10 +17,10 @@ public partial class Deque<T>
             #region Fields
 
             // The wrapped deque.
-            private Deque<T> deque;
+            private Deque<T> _deque;
 
             // The object to lock on.
-            private object root;
+            private object _root;
 
             #endregion
 
@@ -37,8 +37,8 @@ public partial class Deque<T>
 
                 #endregion
 
-                this.deque = deque;
-                this.root = deque.SyncRoot;
+                this._deque = deque;
+                this._root = deque.SyncRoot;
             }
 
             #endregion
@@ -47,97 +47,97 @@ public partial class Deque<T>
 
             public override void Clear()
             {
-                lock(root)
+                lock(_root)
                 {
-                    deque.Clear();
+                    _deque.Clear();
                 }
             }
 
             public override bool Contains(T item)
             {
-                lock(root)
+                lock(_root)
                 {
-                    return deque.Contains(item);
+                    return _deque.Contains(item);
                 }
             }
 
             public override void PushFront(T item)
             {
-                lock(root)
+                lock(_root)
                 {
-                    deque.PushFront(item);
+                    _deque.PushFront(item);
                 }
             }
 
             public override void PushBack(T item)
             {
-                lock(root)
+                lock(_root)
                 {
-                    deque.PushBack(item);
+                    _deque.PushBack(item);
                 }
             }
 
             public override T PopFront()
             {
-                lock(root)
+                lock(_root)
                 {
-                    return deque.PopFront();
+                    return _deque.PopFront();
                 }
             }
 
             public override T PopBack()
             {
-                lock(root)
+                lock(_root)
                 {
-                    return deque.PopBack();
+                    return _deque.PopBack();
                 }
             }
 
             public override T PeekFront()
             {
-                lock(root)
+                lock(_root)
                 {
-                    return deque.PeekFront();
+                    return _deque.PeekFront();
                 }
             }
 
             public override T PeekBack()
             {
-                lock(root)
+                lock(_root)
                 {
-                    return deque.PeekBack();
+                    return _deque.PeekBack();
                 }
             }
 
             public override T[] ToArray()
             {
-                lock(root)
+                lock(_root)
                 {
-                    return deque.ToArray();
+                    return _deque.ToArray();
                 }
             }
 
             public override object Clone()
             {
-                lock(root)
+                lock(_root)
                 {
-                    return deque.Clone();
+                    return _deque.Clone();
                 }
             }
 
             public override void CopyTo(Array array, int index)
             {
-                lock(root)
+                lock(_root)
                 {
-                    deque.CopyTo(array, index);
+                    _deque.CopyTo(array, index);
                 }
             }
 
             public override IEnumerator<T> GetEnumerator()
             {
-                lock(root)
+                lock(_root)
                 {
-                    return deque.GetEnumerator();
+                    return _deque.GetEnumerator();
                 }
             }
 
@@ -149,9 +149,9 @@ public partial class Deque<T>
             /// </returns>
             IEnumerator IEnumerable.GetEnumerator()
             {
-                lock(root)
+                lock(_root)
                 {
-                    return ((IEnumerable)deque).GetEnumerator();
+                    return ((IEnumerable)_deque).GetEnumerator();
                 }
             }
 
@@ -163,9 +163,9 @@ public partial class Deque<T>
             {
                 get
                 {
-                    lock(root)
+                    lock(_root)
                     {
-                        return deque.Count;
+                        return _deque.Count;
                     }
                 }
             }

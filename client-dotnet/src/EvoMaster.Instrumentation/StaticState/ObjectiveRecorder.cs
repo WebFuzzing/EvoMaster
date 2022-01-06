@@ -128,7 +128,7 @@ namespace EvoMaster.Instrumentation.StaticState {
 
                 n++;
                 if (_idMapping.ContainsKey(id)) {
-                    int numericId = _idMapping[id];
+                    var numericId = _idMapping[id];
                     var h = MaxObjectiveCoverage[numericId];
                     if (h == 1d) {
                         covered++;
@@ -195,7 +195,7 @@ namespace EvoMaster.Instrumentation.StaticState {
         public static int GetMappedId(string descriptiveId) {
             var id = _idMapping.ComputeIfAbsent(descriptiveId, k => {
                 //int x = IdMappingCounter.getAndIncrement();
-                int x = IdMappingCounter;
+                var x = IdMappingCounter;
                 Interlocked.Increment(ref IdMappingCounter);
 
                 _reversedIdMapping.ComputeIfAbsent(x, t => descriptiveId);

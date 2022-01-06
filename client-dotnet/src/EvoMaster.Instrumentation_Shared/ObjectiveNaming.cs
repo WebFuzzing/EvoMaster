@@ -4,54 +4,54 @@ using System.Collections.Generic;
 using EvoMaster.Client.Util.Extensions;
 
 namespace EvoMaster.Instrumentation_Shared {
-    public class ObjectiveNaming {
+    public static class ObjectiveNaming {
         /**
      * Prefix identifier for class coverage objectives.
      * A class is "covered" if at least one of its lines is executed.
      */
-        public static readonly string CLASS = "Class";
+        private const string Class = "Class";
 
         /**
      * Prefix identifier for line coverage objectives
      */
-        public static readonly string LINE = "Line";
+        private const string Line = "Line";
 
         /**
      * Prefix identifier for statement coverage objectives
      */
-        public static readonly string STATEMENT = "Statement";
+        private const string Statement = "Statement";
 
         /**
      * Prefix identifier for branch coverage objectives
      */
-        public static readonly string BRANCH = "Branch";
+        private const string Branch = "Branch";
 
         /**
      * Tag used in a branch id to specify it is for the "true"/then branch
      */
-        public static readonly string TRUE_BRANCH = "_trueBranch";
+        private const string TrueBranch = "_trueBranch";
 
         /**
      * Tag used in a branch id to specify it is for the "false"/else branch
      */
-        public static readonly string FALSE_BRANCH = "_falseBranch";
+        private const string FalseBranch = "_falseBranch";
 
         /**
      * Prefix identifier for MethodReplacement objectives, where we want
      * to cover both possible outcomes, eg true and false
      */
-        public static readonly string METHOD_REPLACEMENT = "MethodReplacement";
+        private const string MethodReplacement = "MethodReplacement";
 
 
         /**
      * Prefix identifier for objectives related to calling methods without exceptions
      */
-        public static readonly string SUCCESS_CALL = "Success_Call";
+        private const string SuccessCall = "Success_Call";
 
         /**
      * Numeric comparison for non-ints, ie long, double and float
      */
-        public static readonly string NUMERIC_COMPARISON = "NumericComparison";
+        private const string NumericComparison = "NumericComparison";
 
         /*
             WARNING: originally where interning all strings, to save memory.
@@ -69,13 +69,13 @@ namespace EvoMaster.Instrumentation_Shared {
         private static readonly IDictionary<string, string> CacheClass = new ConcurrentDictionary<string, string>();
 
         public static string ClassObjectiveName(string className) {
-            return CacheClass.ComputeIfAbsent(className, c => CLASS + "_" + ClassName.Get(c).GetFullNameWithDots());
+            return CacheClass.ComputeIfAbsent(className, c => Class + "_" + ClassName.Get(c).GetFullNameWithDots());
             //string name = CLASS + "_" + ClassName.get(className).getFullNameWithDots();
             //return name;//.intern();
         }
 
         public static string NumericComparisonObjectiveName(string id, int res) {
-            var name = NUMERIC_COMPARISON + "_" + id + "_" + (res == 0 ? "EQ" : (res < 0 ? "LT" : "GT"));
+            var name = NumericComparison + "_" + id + "_" + (res == 0 ? "EQ" : (res < 0 ? "LT" : "GT"));
             return name; //.intern();
         }
 
@@ -88,11 +88,11 @@ namespace EvoMaster.Instrumentation_Shared {
                 LineCache.ComputeIfAbsent(className,
                     c => new ConcurrentDictionary<int, string>()); //TODO: capacity 1000
             return map.ComputeIfAbsent(line,
-                l => LINE + "_at_" + ClassName.Get(className).GetFullNameWithDots() + "_" + PadNumber(line));
+                l => Line + "_at_" + ClassName.Get(className).GetFullNameWithDots() + "_" + PadNumber(line));
         }
 
         public static string StatementObjectiveName(string className, int line, int index) =>
-            STATEMENT + "_" + className + "_"
+            Statement + "_" + className + "_"
             + PadNumber(line) + "_" + index;
 
         //TODO: capacity 10_000
@@ -106,18 +106,18 @@ namespace EvoMaster.Instrumentation_Shared {
             var
                 m1 = m0.ComputeIfAbsent(line, l => new ConcurrentDictionary<int, string>()); //TODO: capacity 10
             return m1.ComputeIfAbsent(index, i =>
-                SUCCESS_CALL + "_at_" + ClassName.Get(className).GetFullNameWithDots() +
+                SuccessCall + "_at_" + ClassName.Get(className).GetFullNameWithDots() +
                 "_" + PadNumber(line) + "_" + index);
         }
 
         public static string MethodReplacementObjectiveNameTemplate(string className, int line, int index) {
-            var name = METHOD_REPLACEMENT + "_at_" + ClassName.Get(className).GetFullNameWithDots() +
+            var name = MethodReplacement + "_at_" + ClassName.Get(className).GetFullNameWithDots() +
                        "_" + PadNumber(line) + "_" + index;
             return name; //.intern();
         }
 
         public static string MethodReplacementObjectiveName(string template, bool result, ReplacementType type) {
-            if (template == null || !template.StartsWith(METHOD_REPLACEMENT)) {
+            if (template == null || !template.StartsWith(MethodReplacement)) {
                 throw new ArgumentException("Invalid template for bool method replacement: " + template);
             }
 
@@ -142,14 +142,14 @@ namespace EvoMaster.Instrumentation_Shared {
                 m2 = m1.ComputeIfAbsent(branchId, k => new ConcurrentDictionary<bool, string>()); //TODO: capacity 2
 
             return m2.ComputeIfAbsent(thenBranch, k => {
-                var name = BRANCH + "_at_" +
+                var name = Branch + "_at_" +
                            ClassName.Get(className).GetFullNameWithDots()
                            + "_at_line_" + PadNumber(line) + "_position_" + branchId;
                 if (thenBranch) {
-                    name += TRUE_BRANCH;
+                    name += TrueBranch;
                 }
                 else {
-                    name += FALSE_BRANCH;
+                    name += FalseBranch;
                 }
 
                 return name;
