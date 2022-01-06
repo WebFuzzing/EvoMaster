@@ -53,7 +53,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
         val problem = infoDto.rpcProblem
-                ?: throw java.lang.IllegalStateException("Missing problem definition object")
+                ?: throw IllegalStateException("Missing problem definition object")
 
         rpcHandler.initActionCluster(problem, actionCluster, infoDto)
 

@@ -461,20 +461,20 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
         }
 
-        if (param.candidates != null && param.candidateReferences == null){
+        if (param.candidates != null){
             val candidates = param.candidates.map {p-> gene.copy().apply { setGeneBasedOnParamDto(this, p) } }.toList()
             if (candidates.isNotEmpty()){
-                return wrapWithOptionalGene(handleGeneWithCandidateAsEnumGene(gene, candidates), param.isNullable)
+                if (param.candidateReferences != null){
+                    Lazy.assert { param.candidates.size == param.candidateReferences.size }
+                    candidates.forEachIndexed { index, g ->  g.name = param.candidateReferences[index] }
+                }
+                val enumGene = handleGeneWithCandidateAsEnumGene(gene, candidates)
+                if (param.candidateReferences == null)
+                    return wrapWithOptionalGene(enumGene, param.isNullable)
+
+                return DisruptiveGene(param.name, enumGene, 0.0)
             }
         }
-
-        // if this param is related to any candidate which is also related to other candidates, build it as DisruptiveGene with 0.0 probability (ie, not mutable)
-        if (param.candidates != null && param.candidateReferences != null){
-            Lazy.assert { param.candidates.size == param.candidateReferences.size }
-            //TODO handle candidate reference
-            return DisruptiveGene(param.name, gene, 0.0)
-        }
-
 
         return wrapWithOptionalGene(gene, param.isNullable)
     }
