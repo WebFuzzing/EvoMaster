@@ -225,13 +225,7 @@ namespace EvoMaster.Instrumentation.StaticState {
         /**
          * return number of objectives which are not covered but reached
          */
-        public static int getNumberOfNonCoveredObjectives(string prefix){
-            // debugging purpose
-            foreach (var keyValuePair in ObjectiveCoverage){
-                Console.WriteLine(keyValuePair.Key);
-                Console.WriteLine(keyValuePair.Value.Value);
-            }
-
+        public static int GetNumberOfNonCoveredObjectives(string prefix){
             return ObjectiveCoverage.Values.Count(x => x.DescriptiveId.StartsWith(prefix) && x.Value < 1);
         }
 

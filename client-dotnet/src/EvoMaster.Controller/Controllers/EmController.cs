@@ -28,23 +28,23 @@ namespace EvoMaster.Controller.Controllers
          However, we want to check it only during testing
          */
         //TODO: check
-        private static readonly ICollection<string> connectedClientsSoFar = new SynchronizedCollection<string>();
-
-        private static readonly SemaphoreLocker _locker = new SemaphoreLocker();
+        private static readonly ICollection<string> ConnectedClientsSoFar = new SynchronizedCollection<string>();
 
         //The html file gets copied inside the SUT's bin folder after build
-        private static readonly string htmlWarning; // =
+        private static readonly string HtmlWarning; // =
         // System.IO.File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "warning.html"));
 
 
-        private readonly object syncLock = new object();
+        private readonly object _syncLock = new object();
 
         static EmController()
         {
             var assembly = Assembly.GetAssembly(typeof(EmController));
+            if (assembly == null) return;
             var resourceStream = assembly.GetManifestResourceStream("EvoMaster.Controller.Resources.warning.html");
+            if (resourceStream == null) return;
             using var reader = new StreamReader(resourceStream, Encoding.UTF8);
-            htmlWarning = reader.ReadToEnd();
+            HtmlWarning = reader.ReadToEnd();
         }
 
 
@@ -60,7 +60,7 @@ namespace EvoMaster.Controller.Controllers
         {
             var source = $"{connectionInfo.RemoteIpAddress}:{connectionInfo.RemotePort}";
 
-            connectedClientsSoFar.Add(source);
+            ConnectedClientsSoFar.Add(source);
 
             return true;
         }
@@ -74,17 +74,17 @@ namespace EvoMaster.Controller.Controllers
 
         //Only used for debugging/testing
         ///<summary>Returns host:port of all clients connected so far</summary>
-        public static ISet<string> GetConnectedClientsSoFar() => connectedClientsSoFar.ToHashSet();
+        public static ISet<string> GetConnectedClientsSoFar() => ConnectedClientsSoFar.ToHashSet();
 
         //Only used for debugging/testing
-        public static void ResetConnectedClientsSoFar() => connectedClientsSoFar.Clear();
+        public static void ResetConnectedClientsSoFar() => ConnectedClientsSoFar.Clear();
 
         [HttpGet("")]
         public IActionResult GetWarning() => new ContentResult
         {
             ContentType = "text/html",
             StatusCode = StatusCodes.Status400BadRequest,
-            Content = htmlWarning
+            Content = HtmlWarning
         };
 
         [HttpGet("controller/api/infoSUT")]
@@ -191,7 +191,7 @@ namespace EvoMaster.Controller.Controllers
 
             if (dto == null || !dto.Run.HasValue)
             {
-                var errorMessage = "Invalid JSON: 'run' field is required";
+                const string errorMessage = "Invalid JSON: 'run' field is required";
 
                 SimpleLogger.Warn(errorMessage);
 
@@ -208,7 +208,7 @@ namespace EvoMaster.Controller.Controllers
 
             lock (_lock)
             {
-                if (dto.Run.HasValue && !dto.Run.Value)
+                if (!dto.Run.Value)
                 {
                     if (doReset)
                     {

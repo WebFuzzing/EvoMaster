@@ -1,19 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using EvoMaster.Instrumentation_Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 
 namespace EvoMaster.Instrumentation {
+    
+    /// <summary>
+    /// This class is responsible for instrumenting c# libraries.
+    /// Instrumentation is done by the aid of Mono.Cecil library
+    /// It generates a new dll file for the instrumented SUT
+    /// </summary>
     public class Instrumentator {
         private MethodReference _completedProbe;
         private MethodReference _enteringProbe;
 
         private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
 
-        private List<CodeCoordinate> alreadyCompletedPoints = new List<CodeCoordinate>();
+        private readonly List<CodeCoordinate> _alreadyCompletedPoints = new List<CodeCoordinate>();
 
         /// <summary>
         /// This method instruments an assembly file and saves its instrumented version in the specified destination directory
@@ -41,10 +48,8 @@ namespace EvoMaster.Instrumentation {
                     typeof(Probes).GetMethod(nameof(Probes.EnteringStatement),
                         new[] {typeof(string), typeof(int), typeof(int)}));
 
-            foreach (var type in module.Types) {
-                if (type.Name == "<Module>") continue;
-
-                alreadyCompletedPoints.Clear();
+            foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
+                _alreadyCompletedPoints.Clear();
 
                 foreach (var method in type.Methods) {
                     if (!method.HasBody) continue;
@@ -110,7 +115,7 @@ namespace EvoMaster.Instrumentation {
                 destination = destination.Remove(destination.Length - 1, 1);
             }
 
-            //saving unitsInfoDto in a json file
+            //saving unitsInfoDto in a json file as we need to retrieve them later during runtime of the instrumented SUT
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(_registeredTargets);
             File.WriteAllText("Targets.json", json);
 
@@ -120,8 +125,9 @@ namespace EvoMaster.Instrumentation {
 
         private int InsertCompletedStatementProbe(Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int columnNo) {
-            if (alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
-
+            if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
+            
+            //to prevent becoming the probe unreachable
             if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous)) {
                 return InsertCompletedStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
                     lineNo, columnNo);
@@ -132,7 +138,7 @@ namespace EvoMaster.Instrumentation {
             _registeredTargets.Classes.Add(ObjectiveNaming.ClassObjectiveName(className));
             _registeredTargets.Lines.Add(ObjectiveNaming.LineObjectiveName(className, lineNo));
 
-            alreadyCompletedPoints.Add(new CodeCoordinate(lineNo, columnNo));
+            _alreadyCompletedPoints.Add(new CodeCoordinate(lineNo, columnNo));
 
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, instruction.ToString());
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
@@ -154,8 +160,9 @@ namespace EvoMaster.Instrumentation {
         private int InsertEnteringStatementProbe(Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int columnNo) {
             //Do not add inserted probe if the statement is already covered by completed probe
-            if (alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
-
+            if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
+            
+            //to prevent becoming the probe unreachable
             if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous)) {
                 return InsertEnteringStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
                     lineNo, columnNo);
