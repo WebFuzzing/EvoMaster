@@ -30,9 +30,7 @@ public class MicronautApplication {
 
     public void run() {
         try {
-            context = Micronaut.run(MicronautApplication.class, new String[]{
-                    "-micronaut.server.port="+ port
-            });
+            context = Micronaut.run(MicronautApplication.class, "-micronaut.server.port="+ port);
         } catch (Exception e) {
             e.printStackTrace();
         }

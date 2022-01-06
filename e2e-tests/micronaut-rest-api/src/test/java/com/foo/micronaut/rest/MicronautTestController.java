@@ -55,9 +55,7 @@ public class MicronautTestController extends EmbeddedSutController {
     }
 
     @Override
-    public void resetStateOfSUT() {
-        //nothing to do
-    }
+    public void resetStateOfSUT() {}
 
     @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
