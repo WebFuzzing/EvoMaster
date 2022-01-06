@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.impact.impactinfocollection.value.SeededGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -110,6 +111,20 @@ class SeededGene<T : ComparableGene>(
         return listOf(gene, seeded)
     }
 
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SeededGeneImpact){
+            if (internalGenes.size != 1)
+                throw IllegalStateException("mismatched input: the internalGenes should only contain one candidate")
+            return if (internalGenes.contains(gene))
+                listOf(gene to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.geneImpact, gene = gene))
+            else if (internalGenes.contains(seeded))
+                listOf(seeded to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.seededGeneImpact, gene = seeded))
+            else
+                throw IllegalStateException("mismatched input: the internalGenes should contain either gene or seeded")
+        }
+        throw IllegalArgumentException("impact is null or not SeedGeneImpact")
+    }
+
     override fun candidatesInternalGenes(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
@@ -123,7 +138,16 @@ class SeededGene<T : ComparableGene>(
             if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
                 changeEmploySeed = randomness.nextBoolean()
             }else{
-                //TODO based on impact
+                if (additionalGeneMutationInfo.impact is SeededGeneImpact){
+                    changeEmploySeed = additionalGeneMutationInfo.impact.employSeedImpact.determinateSelect(
+                        minManipulatedTimes = 5,
+                        times = 1.5,
+                        preferTrue = true,
+                        targets = additionalGeneMutationInfo.targets,
+                        selector = additionalGeneMutationInfo.archiveGeneSelector
+                    )
+                }else
+                    throw IllegalArgumentException("impact is null or not SeededGeneImpact ${additionalGeneMutationInfo.impact}")
             }
         }
 
