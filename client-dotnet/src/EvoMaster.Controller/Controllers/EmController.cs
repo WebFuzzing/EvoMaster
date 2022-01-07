@@ -40,7 +40,10 @@ namespace EvoMaster.Controller.Controllers
         static EmController()
         {
             var assembly = Assembly.GetAssembly(typeof(EmController));
-            if (assembly == null) return;
+            if (assembly == null) {
+                SimpleLogger.Warn("Assembly of EmController not found. warning.html couldn't be fetched.");
+                return;
+            }
             var resourceStream = assembly.GetManifestResourceStream("EvoMaster.Controller.Resources.warning.html");
             if (resourceStream == null) return;
             using var reader = new StreamReader(resourceStream, Encoding.UTF8);
@@ -131,7 +134,8 @@ namespace EvoMaster.Controller.Controllers
 
                 return StatusCode(StatusCodes.Status500InternalServerError, WrappedResponseDto<string>.WithError(msg));
             }
-            else if (info is RestProblem)
+
+            if (info is RestProblem)
             {
                 var rp = (RestProblem) info;
                 dto.RestProblem = new RestProblemDto();
@@ -247,11 +251,6 @@ namespace EvoMaster.Controller.Controllers
 
                         //TODO: uncomment
                         // _sutController.InitSqlHandler ();
-                    }
-                    else
-                    {
-                        //TODO as starting should be blocking, need to check
-                        //if initialized, and wait if not
                     }
 
                     /*
