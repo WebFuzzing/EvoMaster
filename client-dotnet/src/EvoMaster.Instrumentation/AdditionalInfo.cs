@@ -7,11 +7,9 @@ using EvoMaster.Instrumentation.StaticState;
 using EvoMaster.Instrumentation_Shared;
 using EvoMaster.Instrumentation_Shared.Collections;
 
-namespace EvoMaster.Instrumentation
-{
-    [Serializable]
-    public class AdditionalInfo
-    {
+namespace EvoMaster.Instrumentation {
+
+    public class AdditionalInfo {
         /**
      * In REST APIs, it can happen that some query parameters do not
      * appear in the schema if they are indirectly accessed via
@@ -36,7 +34,7 @@ namespace EvoMaster.Instrumentation
      */
         private readonly IDictionary<string, ICollection<StringSpecializationInfo>> _stringSpecializations =
             new ConcurrentDictionary<string, ICollection<StringSpecializationInfo>>();
-        
+
 
         /**
      * Keep track of the last executed statement done in the SUT.
@@ -93,10 +91,8 @@ namespace EvoMaster.Instrumentation
         public void SetRawAccessOfHttpBodyPayload(bool rawAccessOfHttpBodyPayload) =>
             _rawAccessOfHttpBodyPayload = rawAccessOfHttpBodyPayload;
 
-        public void AddSpecialization(string taintInputName, StringSpecializationInfo info)
-        {
-            if (!ExecutionTracer.GetTaintType(taintInputName).IsTainted())
-            {
+        public void AddSpecialization(string taintInputName, StringSpecializationInfo info) {
+            if (!ExecutionTracer.GetTaintType(taintInputName).IsTainted()) {
                 throw new ArgumentException("No valid input name: " + taintInputName);
             }
 
@@ -107,40 +103,32 @@ namespace EvoMaster.Instrumentation
             set.Add(info);
         }
 
-        public IReadOnlyDictionary<string, ICollection<StringSpecializationInfo>> GetStringSpecializationsView()
-        {
+        public IReadOnlyDictionary<string, ICollection<StringSpecializationInfo>> GetStringSpecializationsView() {
             //TODO: check if this does not prevent modifying the sets inside it
             return (IReadOnlyDictionary<string, ICollection<StringSpecializationInfo>>) _stringSpecializations;
         }
 
-        public void AddQueryParameter(string param)
-        {
-            if (!string.IsNullOrEmpty(param))
-            {
+        public void AddQueryParameter(string param) {
+            if (!string.IsNullOrEmpty(param)) {
                 _queryParameters.Add(param);
             }
         }
 
-        public IReadOnlyCollection<string> GetQueryParametersView()
-        {
+        public IReadOnlyCollection<string> GetQueryParametersView() {
             return (IReadOnlyCollection<string>) _queryParameters;
         }
 
-        public void AddHeader(string header)
-        {
-            if (!string.IsNullOrEmpty(header))
-            {
+        public void AddHeader(string header) {
+            if (!string.IsNullOrEmpty(header)) {
                 _headers.Add(header);
             }
         }
 
-        public IReadOnlyCollection<string> GetHeadersView()
-        {
+        public IReadOnlyCollection<string> GetHeadersView() {
             return (IReadOnlyCollection<string>) _headers;
         }
 
-        public string GetLastExecutedStatement()
-        {
+        public string GetLastExecutedStatement() {
 //        if(lastExecutedStatementStacks.values().stream().allMatch(s -> s.isEmpty())){
             /*
                 TODO: not super-sure about this... we could have several threads in theory, but hard to
@@ -149,21 +137,18 @@ namespace EvoMaster.Instrumentation
              */
 
             Deque<string> stack = null;
-            if (_lastExecutingThread != null)
-            {
+            if (_lastExecutingThread != null) {
                 stack = _lastExecutedStatementStacks[_lastExecutingThread];
             }
 
             if (_lastExecutingThread == null || stack == null || stack.IsEmpty()) {
-                
                 return _noExceptionStatement;
             }
 
             return stack.PeekFront();
         }
 
-        public void PushLastExecutedStatement(string statementId)
-        {
+        public void PushLastExecutedStatement(string statementId) {
             var key = GetThreadIdentifier();
             _lastExecutingThread = key;
             _lastExecutedStatementStacks.TryAdd(key,
@@ -177,14 +162,12 @@ namespace EvoMaster.Instrumentation
 
         private string GetThreadIdentifier() => Thread.CurrentThread.ManagedThreadId.ToString();
 
-        public void PopLastExecutedStatement()
-        {
+        public void PopLastExecutedStatement() {
             var key = GetThreadIdentifier();
 
             var stack = _lastExecutedStatementStacks[key];
 
-            if (stack == null || stack.IsEmpty())
-            {
+            if (stack == null || stack.IsEmpty()) {
                 //throw new IllegalStateException("[ERROR] EvoMaster: invalid stack pop on thread " + key);
                 SimpleLogger.Warn("EvoMaster instrumentation was left in an inconsistent state." +
                                   " This could happen if you have threads executing business logic in your instrumented" +
@@ -200,8 +183,7 @@ namespace EvoMaster.Instrumentation
 
             var statementDescription = stack.PopFront();
 
-            if (stack.IsEmpty())
-            {
+            if (stack.IsEmpty()) {
                 _noExceptionStatement = statementDescription;
             }
         }
