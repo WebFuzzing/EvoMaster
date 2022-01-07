@@ -56,6 +56,10 @@ public final class EndpointSchema {
      */
     private final List<Integer> requiredAuthCandidates;
 
+    public Set<String> getRelatedCustomizedCandidates() {
+        return relatedCustomizedCandidates;
+    }
+
     private final Set<String> relatedCustomizedCandidates;
 
 

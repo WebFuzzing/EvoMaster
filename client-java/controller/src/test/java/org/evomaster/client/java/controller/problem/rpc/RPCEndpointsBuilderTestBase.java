@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
 import com.thrift.example.real.thrift.test.ThriftTest;
+import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
@@ -15,13 +16,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public abstract class RPCEndpointsBuilderTestBase {
 
-     class FakeClient{}
+    class FakeClient{}
 
-    public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new FakeClient(), null, null, null, null, null, null);
+    public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new FakeClient(), null, null, null, null, null, getCustomizedValueInRequests());
 
     public abstract String getInterfaceName();
 
     public abstract int expectedNumberOfEndpoints();
+
+    public List<CustomizedRequestValueDto> getCustomizedValueInRequests(){
+        return null;
+    }
 
     public RPCType getRPCType(){
         return RPCType.THRIFT;

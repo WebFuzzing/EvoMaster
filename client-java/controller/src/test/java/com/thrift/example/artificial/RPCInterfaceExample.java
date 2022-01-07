@@ -34,4 +34,9 @@ public interface RPCInterfaceExample {
 
     public String constraintInputs(ConstrainedRequest arg0, @NotNull String arg1);
 
+
+    public String handleCustomizedRequestA(CustomizedRequestA request);
+
+    public String handleCustomizedRequestB(CustomizedRequestB request);
+
 }

@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
+import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
+import org.evomaster.client.java.controller.api.dto.KeyValuePairDto;
+import org.evomaster.client.java.controller.api.dto.keyValuesDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
@@ -8,6 +11,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.org.apache.commons.lang.math.IntRange;
 
 import java.text.ParseException;
 import java.util.Arrays;
@@ -30,7 +34,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 12;
+        return 14;
     }
 
     @Override
@@ -38,9 +42,125 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         return RPCType.GENERAL;
     }
 
+    @Override
+    public List<CustomizedRequestValueDto> getCustomizedValueInRequests() {
+        return Arrays.asList(
+                new CustomizedRequestValueDto(){{
+                    specificEndpointName = "handleCustomizedRequestA";
+                    combinedKeyValuePairs = Arrays.asList(
+                            new KeyValuePairDto(){{
+                                fieldKey = "id";
+                                fieldValue = "foo";
+                            }},
+                            new KeyValuePairDto(){{
+                                fieldKey = "passcode";
+                                fieldValue = "foo_passcode";
+                            }}
+                    );
+                }},
+                new CustomizedRequestValueDto(){{
+                    specificEndpointName = "handleCustomizedRequestA";
+                    combinedKeyValuePairs = Arrays.asList(
+                            new KeyValuePairDto(){{
+                                fieldKey = "id";
+                                fieldValue = "bar";
+                            }},
+                            new KeyValuePairDto(){{
+                                fieldKey = "passcode";
+                                fieldValue = "bar_passcode";
+                            }}
+                    );
+                }},
+                new CustomizedRequestValueDto(){{
+                    specificEndpointName = "handleCustomizedRequestB";
+                    keyValues = new keyValuesDto(){{
+                        key = "value";
+                        values = Arrays.asList("0.42", "42.42", "100.42");
+                    }};
+                }}
+        );
+    }
+
     @Test
     public void testEndpointsLoad(){
         assertEquals(expectedNumberOfEndpoints(), schema.getEndpoints().size());
+    }
+
+
+    @Test
+    public void testHandleCustomizedRequestA(){
+        EndpointSchema endpoint = getOneEndpoint("handleCustomizedRequestA");
+        assertNotNull(endpoint.getRelatedCustomizedCandidates());
+        assertEquals(2, endpoint.getRelatedCustomizedCandidates().size());
+        assertTrue(endpoint.getRelatedCustomizedCandidates().containsAll(Arrays.asList("0", "1")));
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+        assertTrue(p1.isNullable());
+        assertEquals(3, ((ObjectParam) p1).getType().getFields().size());
+
+        for (NamedTypedValue f: ((ObjectParam) p1).getType().getFields()){
+            if (f.getName().equals("value")){
+                assertTrue(f instanceof IntParam);
+                assertNull(((IntParam)f).getMin());
+                assertNull(((IntParam)f).getMax());
+            } else if (f.getName().equals("id")){
+                assertTrue(f instanceof StringParam);
+                assertNotNull(f.getCandidateReferences());
+                assertNotNull(f.getCandidates());
+                assertEquals(2, f.getCandidates().size());
+                assertEquals(2, f.getCandidateReferences().size());
+                IntStream.range(0, 1).forEach(i->{
+                    assertTrue(f.getCandidates().get(i) instanceof StringParam);
+                    String value = ((StringParam)f.getCandidates().get(i)).getValue();
+                    if (f.getCandidateReferences().get(i).equals("0")){
+                        assertEquals("foo", value);
+                    } else if (f.getCandidateReferences().get(i).equals("1")){
+                        assertEquals("bar", value);
+                    }
+                });
+            } else if (f.getName().equals("passcode")){
+                assertTrue(f instanceof StringParam);
+                assertNotNull(f.getCandidateReferences());
+                assertNotNull(f.getCandidates());
+                assertEquals(2, f.getCandidates().size());
+                assertEquals(2, f.getCandidateReferences().size());
+                IntStream.range(0, 1).forEach(i->{
+                    assertTrue(f.getCandidates().get(i) instanceof StringParam);
+                    String value = ((StringParam)f.getCandidates().get(i)).getValue();
+                    if (f.getCandidateReferences().get(i).equals("0")){
+                        assertEquals("foo_passcode", value);
+                    } else if (f.getCandidateReferences().get(i).equals("1")){
+                        assertEquals("bar_passcode", value);
+                    }
+                });
+            } else
+                fail("do not handle param "+ f.getName());
+        }
+    }
+
+    @Test
+    public void testHandleCustomizedRequestB(){
+        EndpointSchema endpoint = getOneEndpoint("handleCustomizedRequestB");
+
+        assertNotNull(endpoint.getRelatedCustomizedCandidates());
+        assertEquals(0, endpoint.getRelatedCustomizedCandidates().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+        assertTrue(p1.isNullable());
+        assertEquals(1, ((ObjectParam) p1).getType().getFields().size());
+
+        NamedTypedValue f = ((ObjectParam) p1).getType().getFields().get(0);
+        assertNull(f.getCandidateReferences());
+        assertNotNull(f.getCandidates());
+
+        assertEquals(3, f.getCandidates().size());
+        List<Double> candidates = Arrays.asList(0.42, 42.42, 100.42);
+        IntStream.range(0, 2).forEach(i->{
+            assertTrue(f.getCandidates().get(i) instanceof DoubleParam);
+            Double value = ((DoubleParam)f.getCandidates().get(i)).getValue();
+            assertTrue(candidates.contains(value));
+        });
     }
 
     @Test

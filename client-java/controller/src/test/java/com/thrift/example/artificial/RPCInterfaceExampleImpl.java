@@ -92,4 +92,13 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         return null;
     }
 
+    @Override
+    public String handleCustomizedRequestA(CustomizedRequestA request) {
+        return null;
+    }
+
+    @Override
+    public String handleCustomizedRequestB(CustomizedRequestB request) {
+        return null;
+    }
 }
