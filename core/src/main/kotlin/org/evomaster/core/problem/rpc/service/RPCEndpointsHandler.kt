@@ -183,7 +183,7 @@ class RPCEndpointsHandler {
 
 
     private fun handleActionWithSeededCandidates(action: RPCCallAction, candidateKey: String){
-        action.seeGenes().filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
+        action.seeGenes().flatMap { it.flatView() }.filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
             val index = ((g as DisruptiveGene<*>).gene as SeededGene<*>).seeded.values.indexOfFirst { it.name == candidateKey }
             if (index != -1){
                 (g.gene as SeededGene<*>).employSeeded = true
@@ -539,6 +539,7 @@ class RPCEndpointsHandler {
             is IntegerGene -> SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as IntegerGene }))
             is FloatGene ->  SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as FloatGene }))
             is LongGene ->  SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as LongGene }))
+            is DoubleGene -> SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as DoubleGene }))
             // might be DateGene
             else -> {
                 throw IllegalStateException("Do not support configuring candidates for ${gene::class.java.simpleName} gene type")
@@ -552,6 +553,7 @@ class RPCEndpointsHandler {
             is IntegerGene -> pGene.value.toString()
             is FloatGene -> pGene.value.toString()
             is LongGene -> pGene.value.toString()
+            is DoubleGene -> pGene.value.toString()
             else -> {
                 throw IllegalStateException("Do not support configuring candidates for ${gene::class.java.simpleName} gene type")
             }

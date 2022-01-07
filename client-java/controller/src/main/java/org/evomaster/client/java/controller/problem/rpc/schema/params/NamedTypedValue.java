@@ -3,6 +3,8 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -116,6 +118,8 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         dto.isNullable = isNullable;
         if (candidates!=null)
             dto.candidates = candidates.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
+        if (candidateReferences!=null)
+            dto.candidateReferences = new ArrayList<>(candidateReferences);
         return dto;
     }
 

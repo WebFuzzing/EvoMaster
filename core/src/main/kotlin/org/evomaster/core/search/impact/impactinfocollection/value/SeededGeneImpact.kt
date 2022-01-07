@@ -33,6 +33,26 @@ class SeededGeneImpact(
         seededGeneImpact = ImpactUtils.createGeneImpact(seededGene.seeded, "seeded") as EnumGeneImpact
     )
 
+    override fun copy(): SeededGeneImpact {
+        return SeededGeneImpact(
+            shared.copy(),
+            specific.copy(),
+            employSeedImpact.copy(),
+            geneImpact.copy(),
+            seededGeneImpact.copy()
+        )
+    }
+
+    override fun clone(): SeededGeneImpact {
+        return SeededGeneImpact(
+            shared,
+            specific.copy(),
+            employSeedImpact.clone(),
+            geneImpact.clone(),
+            seededGeneImpact.clone()
+        )
+    }
+
     override fun validate(gene: Gene): Boolean {
         return gene is SeededGene<*>
     }
