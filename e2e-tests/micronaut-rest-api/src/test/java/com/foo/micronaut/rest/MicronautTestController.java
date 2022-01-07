@@ -1,10 +1,8 @@
 package com.foo.micronaut.rest;
 
 import org.evomaster.client.java.controller.EmbeddedSutController;
-import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
-import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 
@@ -19,7 +17,7 @@ public class MicronautTestController extends EmbeddedSutController {
 
     @Override
     public String startSut() {
-        application = new MicronautApplication(0);
+        application = new MicronautApplication(-1);
         try {
             application.run();
         } catch (Exception e) {
@@ -44,7 +42,7 @@ public class MicronautTestController extends EmbeddedSutController {
 
     @Override
     public void stopSut() {
-        if (application == null) {
+        if (application != null) {
             try {
                 application.stop();
             } catch (Exception e) {

@@ -1,9 +1,7 @@
 package org.evomaster.e2etests.micronaut.rest;
 
 import com.foo.micronaut.rest.MicronautTestController;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpHeaders;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;

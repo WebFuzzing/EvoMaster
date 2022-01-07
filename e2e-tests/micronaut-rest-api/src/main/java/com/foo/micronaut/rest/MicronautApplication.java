@@ -22,7 +22,7 @@ public class MicronautApplication {
     public static void main(String[] args) {
 
         try {
-            new MicronautApplication(9001).run();
+            new MicronautApplication(-1).run();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -30,7 +30,7 @@ public class MicronautApplication {
 
     public void run() {
         try {
-            context = Micronaut.run(MicronautApplication.class, "-micronaut.server.port="+ port,
+            context = Micronaut.run(MicronautApplication.class, "-micronaut.server.port=" + port,
                     "-micronaut.router.static-resources.swagger.paths=classpath:META-INF/swagger",
                     "-micronaut.router.static-resources.swagger.mapping=/swagger/**");
         } catch (Exception e) {
@@ -39,7 +39,7 @@ public class MicronautApplication {
     }
 
     public int getPort() {
-        return this.port;
+        return context.getEnvironment().getProperty("micronaut.server.port", Integer.class).get();
     }
 
     public boolean isRunning() {

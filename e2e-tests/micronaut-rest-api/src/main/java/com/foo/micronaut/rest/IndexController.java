@@ -1,6 +1,7 @@
 package com.foo.micronaut.rest;
 
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,7 +17,8 @@ public class IndexController {
     @Get(produces = MediaType.TEXT_PLAIN)
     public HttpResponse<String> index() {
         // it is expected the application to send connection close when it crashes
-        throw new ExperimentalException();
+//        throw new ExperimentalException();
+        return HttpResponse.status(HttpStatus.OK).body("OK");
     }
 
     @Operation(summary = "POST Controller for test",
