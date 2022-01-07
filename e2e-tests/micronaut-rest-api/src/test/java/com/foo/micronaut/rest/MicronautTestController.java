@@ -13,11 +13,11 @@ public class MicronautTestController extends EmbeddedSutController {
 
     private MicronautApplication application;
 
-    public MicronautTestController() {}
+    public MicronautTestController() { setControllerPort(0);}
 
     @Override
     public String startSut() {
-        application = new MicronautApplication(-1);
+        application = new MicronautApplication();
         try {
             application.run();
         } catch (Exception e) {

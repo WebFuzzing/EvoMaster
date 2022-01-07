@@ -12,17 +12,14 @@ import io.swagger.v3.oas.annotations.info.Info;
                 description = "Micronaut E2E Test API"))
 public class MicronautApplication {
 
-    private final int port;
     private ApplicationContext context;
 
-    public MicronautApplication(int port) {
-        this.port = port;
-    }
+    public MicronautApplication() {}
 
     public static void main(String[] args) {
 
         try {
-            new MicronautApplication(-1).run();
+            new MicronautApplication().run();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -30,7 +27,7 @@ public class MicronautApplication {
 
     public void run() {
         try {
-            context = Micronaut.run(MicronautApplication.class, "-micronaut.server.port=" + port,
+            context = Micronaut.run(MicronautApplication.class, "-micronaut.server.port=${random.port}",
                     "-micronaut.router.static-resources.swagger.paths=classpath:META-INF/swagger",
                     "-micronaut.router.static-resources.swagger.mapping=/swagger/**");
         } catch (Exception e) {
@@ -39,7 +36,7 @@ public class MicronautApplication {
     }
 
     public int getPort() {
-        return context.getEnvironment().getProperty("micronaut.server.port", Integer.class).get();
+        return (context.getEnvironment().getProperty("micronaut.server.port", Integer.class).isPresent()) ? context.getEnvironment().getProperty("micronaut.server.port", Integer.class).get() : 0;
     }
 
     public boolean isRunning() {

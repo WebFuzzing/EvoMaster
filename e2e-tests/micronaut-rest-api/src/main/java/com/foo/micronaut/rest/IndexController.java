@@ -17,8 +17,7 @@ public class IndexController {
     @Get(produces = MediaType.TEXT_PLAIN)
     public HttpResponse<String> index() {
         // it is expected the application to send connection close when it crashes
-//        throw new ExperimentalException();
-        return HttpResponse.status(HttpStatus.OK).body("OK");
+        throw new ExperimentalException();
     }
 
     @Operation(summary = "POST Controller for test",
