@@ -30,7 +30,9 @@ public class MicronautApplication {
 
     public void run() {
         try {
-            context = Micronaut.run(MicronautApplication.class, "-micronaut.server.port="+ port);
+            context = Micronaut.run(MicronautApplication.class, "-micronaut.server.port="+ port,
+                    "-micronaut.router.static-resources.swagger.paths=classpath:META-INF/swagger",
+                    "-micronaut.router.static-resources.swagger.mapping=/swagger/**");
         } catch (Exception e) {
             e.printStackTrace();
         }

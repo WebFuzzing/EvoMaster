@@ -19,7 +19,7 @@ public class MicronautTestController extends EmbeddedSutController {
 
     @Override
     public String startSut() {
-        application = new MicronautApplication(9000);
+        application = new MicronautApplication(0);
         try {
             application.run();
         } catch (Exception e) {
@@ -28,6 +28,10 @@ public class MicronautTestController extends EmbeddedSutController {
         }
 
         return "http://localhost:" + application.getPort();
+    }
+
+    protected int getSutPort() {
+        return application.getPort();
     }
 
     @Override
