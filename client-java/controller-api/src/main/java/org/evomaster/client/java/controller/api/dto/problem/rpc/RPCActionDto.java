@@ -72,6 +72,11 @@ public class RPCActionDto {
     public Set<String> relatedCustomization;
 
     /**
+     * an action to setup auth
+     */
+    public RPCActionDto authSetup;
+
+    /**
      *
      * @return a copy of RPCActionDto for enabling its invocation
      */

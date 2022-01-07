@@ -32,4 +32,8 @@ public class RPCInterfaceSchemaDto {
      */
     public List<String> skippedEndpoints;
 
+    public List<RPCActionDto> authEndpoints;
+
+    public List<Integer> authEndpointReferences;
+
 }

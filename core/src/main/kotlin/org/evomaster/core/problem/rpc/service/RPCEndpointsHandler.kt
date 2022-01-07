@@ -58,7 +58,7 @@ class RPCEndpointsHandler {
      * - Key is the id of action (which is consistent with key of [actionSchemaCluster])
      * - Value is a list of auth (which is based on key of [authentications])
      */
-//    private val authorizedActionAuthMap = mutableMapOf<String, MutableList<Int>>()
+    private val authorizedActionAuthMap = mutableMapOf<String, MutableList<Int>>()
 
 
     /**
@@ -67,6 +67,8 @@ class RPCEndpointsHandler {
      * - Value is a set of customized candidates (which is based on index of customization info)
      */
     private val actionWithCustomizedCandidatesMap = mutableMapOf<String, MutableSet<String>>()
+
+    private val authEndpointCluster = mutableMapOf<Int, RPCActionDto>()
 
     /**
      * key is type in the schema
@@ -98,9 +100,8 @@ class RPCEndpointsHandler {
             return false
         if (auth.jsonAuthEndpoint != null){
             authentications[index] = RPCAuthenticationInfo(auth.name?:"untitled",
-                index,
                 auth.jsonAuthEndpoint.annotationOnEndpoint == null,
-                null, auth.jsonAuthEndpoint.endpointName,
+                index//authEndpointCluster[index]?:throw IllegalStateException("could not find the auth endpoint with index $index"),
             )
         }
 
@@ -112,48 +113,26 @@ class RPCEndpointsHandler {
      */
     fun actionWithRandomAuth(action: RPCCallAction){
 
-        val gs = authentications.values.filter { it.isGlobal }
+        val gs = getRelatedAuthInfo(action)
         if (gs.isNotEmpty())
             action.auth = randomness.choose(gs)
         else
             action.auth = RPCNoAuth()
-//        if (action is AuthorizedRPCCallAction){
-//            val ss = authorizedActionAuthMap[action.id]
-//            if (!ss.isNullOrEmpty()){
-//                val sId = randomness.choose(ss)
-//                action.requiredAuth = authentications[sId]?:throw IllegalStateException("could not find auth with id $sId in authentication map")
-//            }else
-//                action.requiredAuth = RPCNoAuth()
-//        }
     }
+
+    private fun getRelatedAuthInfo(action: RPCCallAction) : List<RPCAuthenticationInfo> = authentications.values.filter { it.isGlobal }.plus(authorizedActionAuthMap[action.id]?.map { authentications[it]!! }?: listOf())
 
     /**
      * setup auth info for [action] with all auth candidates, ie, [authorizedActionAuthMap] and [authentications]
      */
     fun actionWithAllAuth(action: RPCCallAction): List<RPCCallAction>{
         val results = mutableListOf<RPCCallAction>()
-        authentications.values.filter {it.isGlobal}.plus(listOf(RPCNoAuth())).forEach { u ->
+        getRelatedAuthInfo(action).plus(listOf(RPCNoAuth())).forEach { u ->
             val actionWithAuth = action.copy()
-
-//            if (action is AuthorizedRPCCallAction){
-//                (actionWithAuth as AuthorizedRPCCallAction).auth = u
-//                actionWithAuth.requiredAuth = RPCNoAuth()
-//                results.add(actionWithAuth)
-//
-//                authorizedActionAuthMap[action.id]?.forEach { ru->
-//                    val actionWithRAuth = actionWithAuth.copy() as AuthorizedRPCCallAction
-//                    actionWithAuth.requiredAuth = authentications[ru]?:throw IllegalStateException("could not find auth with id $ru in authentication map")
-//                    results.add(actionWithRAuth)
-//                }
-//            }else{
-                (actionWithAuth as RPCCallAction).auth = u
-                results.add(actionWithAuth)
-//            }
+            (actionWithAuth as RPCCallAction).auth = u
+            results.add(actionWithAuth)
 
         }
-
-        if (results.isEmpty())
-            throw IllegalStateException("should return at least the action itself")
 
         return results
     }
@@ -204,8 +183,6 @@ class RPCEndpointsHandler {
      */
     fun initActionCluster(problem: RPCProblemDto, actionCluster: MutableMap<String, Action>, infoDto: SutInfoDto){
 
-        setAuthInfo(infoDto)
-
         problem.schemas.forEach { i->
             i.types.sortedBy { it.type.depth }
                 .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
@@ -221,15 +198,24 @@ class RPCEndpointsHandler {
                 val name = actionName(i.interfaceId, e.actionName)
                 if (actionCluster.containsKey(name))
                     throw IllegalStateException("$name exists in the actionCluster")
-                actionCluster[name] = processEndpoint(name, e, e.isAuthorized)
-//                if (e.isAuthorized && e.requiredAuthCandidates != null){
-//                    authorizedActionAuthMap[name] = e.requiredAuthCandidates
-//                }
+                actionCluster[name] = processEndpoint(name, e)
+                if (e.isAuthorized && e.requiredAuthCandidates != null){
+                    authorizedActionAuthMap[name] = e.requiredAuthCandidates
+                }
                 if (e.relatedCustomization != null){
                     actionWithCustomizedCandidatesMap[name] = e.relatedCustomization
                 }
             }
+            Lazy.assert { i.authEndpoints.size == i.authEndpointReferences.size }
+            i.authEndpoints.forEachIndexed { index, e ->
+                val name = actionName(i.interfaceId, e.actionName)
+                if (authEndpointCluster.containsKey(index))
+                    throw IllegalStateException("auth info at $index exists in the authEndpointCluster")
+                authEndpointCluster[index] = e //processEndpoint(name, e, true)
+            }
         }
+
+        setAuthInfo(infoDto)
 
         // report statistic of endpoints
         reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 })
@@ -265,6 +251,11 @@ class RPCEndpointsHandler {
         }
         if (rpcAction.doGenerateTestScript || rpcAction.doGenerateAssertions)
             rpcAction.responseVariable = generateResponseVariable(index)
+
+        if (action.auth !is RPCNoAuth){
+            rpcAction.authSetup = authEndpointCluster[action.auth.authIndex]?.copy()
+                ?: throw IllegalStateException("cannot specified auth index ${action.auth.authIndex} from the authEndpointCluster")
+        }
 
         return rpcAction
     }
@@ -465,12 +456,15 @@ class RPCEndpointsHandler {
         }
     }
 
-    private fun processEndpoint(name: String, endpointSchema: RPCActionDto, isAuthorized: Boolean) : RPCCallAction{
+    private fun processEndpoint(name: String, endpointSchema: RPCActionDto, doAssignGeneValue: Boolean = false) : RPCCallAction{
         val params = mutableListOf<Param>()
 
         endpointSchema.requestParams.forEach { p->
             val gene = handleDtoParam(p)
             params.add(RPCParam(p.name, gene))
+            if (doAssignGeneValue){
+                setGeneBasedOnParamDto(gene, p)
+            }
         }
 
         var response: RPCParam? = null
@@ -482,8 +476,7 @@ class RPCEndpointsHandler {
         /*
             TODO Man exception
          */
-//        if (isAuthorized)
-//            return AuthorizedRPCCallAction(name, params, responseTemplate = response, response = null)
+
         return RPCCallAction(name, params, responseTemplate = response, response = null )
     }
 

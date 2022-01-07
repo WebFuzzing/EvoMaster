@@ -1,9 +1,11 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import java.util.List;
+
 /**
  * process auth setting with endpoints in interfaces
  */
-public class JsonAuthEndpointDto {
+public class JsonAuthRPCEndpointDto {
 
     /**
      * The id representing this user that is going to login
@@ -21,14 +23,14 @@ public class JsonAuthEndpointDto {
     public String endpointName;
 
     /**
-     * The payload to send, as stringified JSON object
+     * a list of the payload to send, as stringified JSON object
      */
-    public String jsonPayload;
+    public List<String> jsonPayloads;
 
     /**
-     * the class name of the json object
+     * a list of the class name of the json object
      */
-    public String className;
+    public List<String> classNames;
 
     /**
      * specify the auth if it is only applicable to specified endpoints with corresponding annotation

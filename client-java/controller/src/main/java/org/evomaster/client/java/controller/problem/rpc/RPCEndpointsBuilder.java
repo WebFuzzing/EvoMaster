@@ -1,7 +1,11 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
+import org.evomaster.client.java.controller.api.dto.JsonAuthRPCEndpointDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
@@ -14,11 +18,14 @@ import java.lang.reflect.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * created by manzhang on 2021/11/4
  */
 public class RPCEndpointsBuilder {
+
+    private final static ObjectMapper objectMapper = new ObjectMapper();
 
     private final static String OBJECT_FLAG = "OBJECT";
     private static String getObjectTypeNameWithFlag(Class<?> clazz, String name) {
@@ -129,7 +136,7 @@ public class RPCEndpointsBuilder {
         Map<Integer, EndpointSchema> authEndpoints = new HashMap<>();
         try {
             Class<?> interfaze = Class.forName(interfaceName);
-            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints);
+            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints, authEndpoints);
 
             for (Method m : interfaze.getDeclaredMethods()) {
                 if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation))
@@ -140,15 +147,39 @@ public class RPCEndpointsBuilder {
 
                 AuthenticationDto auth = getRelatedAuthEndpoint(authenticationDtoList, interfaceName, m);
                 if (auth != null){
+                    if (auth.jsonAuthEndpoint == null){
+                        throw new IllegalArgumentException("Driver Config Error: now we only support auth info specified with JsonAuthRPCEndpointDto");
+                    }
+                    if (auth.jsonAuthEndpoint.classNames.size() != auth.jsonAuthEndpoint.jsonPayloads.size())
+                        throw new IllegalArgumentException("Driver Config Error: to specify inputs for auth endpoint, classNames and jsonPayloads should have same size");
                     int index = authenticationDtoList.indexOf(auth);
                     // handle endpoint which is for auth setup
-                    authEndpoints.put(index, build(schema, m, rpcType, null, customizedRequestValueDtos));
+                    EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos);
+                    // set value based on specified info
+                    if (authEndpoint.getRequestParams().size() != auth.jsonAuthEndpoint.jsonPayloads.size())
+                        throw new IllegalArgumentException("Driver Config Error: mismatched size of jsonPayloads ("+auth.jsonAuthEndpoint.classNames.size()+") with real endpoint ("+authEndpoint.getRequestParams().size()+").");
+                    setAuthEndpoint(authEndpoint, auth.jsonAuthEndpoint);
+                    authEndpoints.put(index, authEndpoint);
                 }
             }
             return schema;
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("cannot find the interface with the name (" + interfaceName + ") and the error message is " + e.getMessage());
         }
+    }
+
+    private static void setAuthEndpoint(EndpointSchema authEndpoint, JsonAuthRPCEndpointDto jsonAuthEndpoint) throws ClassNotFoundException{
+
+        for (int i = 0; i < authEndpoint.getRequestParams().size(); i++){
+            Class<?> clazz = Class.forName(jsonAuthEndpoint.classNames.get(i));
+            try {
+                Object value = objectMapper.readValue(jsonAuthEndpoint.jsonPayloads.get(i), clazz);
+                authEndpoint.getRequestParams().get(i).setValue(value);
+            } catch (JsonProcessingException e) {
+                throw new  IllegalStateException("Driver Config Error: a jsonPayload at ("+i+") is specified incorrectly");
+            }
+        }
+
     }
 
     private static AuthenticationDto getRelatedAuthEndpoint(List<AuthenticationDto> authenticationDtos, String interfaceName, Method method){

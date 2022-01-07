@@ -36,7 +36,7 @@ public class AuthenticationDto {
      * if the auth is processed based on RPC endpoints,
      * specify what info are required to execute the endpoint
      */
-    public JsonAuthEndpointDto jsonAuthEndpoint;
+    public JsonAuthRPCEndpointDto jsonAuthEndpoint;
 
 
     public AuthenticationDto() {
