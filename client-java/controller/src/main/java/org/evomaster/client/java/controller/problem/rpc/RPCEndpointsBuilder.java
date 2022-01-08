@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
@@ -172,13 +173,40 @@ public class RPCEndpointsBuilder {
 
         for (int i = 0; i < authEndpoint.getRequestParams().size(); i++){
             Class<?> clazz = Class.forName(jsonAuthEndpoint.classNames.get(i));
+            NamedTypedValue inputParam = authEndpoint.getRequestParams().get(i);
+            String jsonString = jsonAuthEndpoint.jsonPayloads.get(i);
             try {
-                Object value = objectMapper.readValue(jsonAuthEndpoint.jsonPayloads.get(i), clazz);
-                authEndpoint.getRequestParams().get(i).setValue(value);
+                Object value = objectMapper.readValue(jsonString, clazz);
+                inputParam.setValue(value);
             } catch (JsonProcessingException e) {
-                throw new  IllegalStateException("Driver Config Error: a jsonPayload at ("+i+") is specified incorrectly");
+                SimpleLogger.error("Driver Config Error: a jsonPayload at ("+i+") cannot be read as the object "+jsonAuthEndpoint.classNames.get(i));
+                setNamedValueBasedOnJsonString(inputParam,jsonString, i);
             }
         }
+    }
+
+    private static void setNamedValueBasedOnJsonString(NamedTypedValue inputParam, String jsonString, int index){
+        if (inputParam instanceof StringParam || inputParam instanceof PrimitiveOrWrapperParam || inputParam instanceof ByteBufferParam){
+            setNamedValueBasedOnCandidates(inputParam, jsonString);
+        } else if (inputParam instanceof ObjectParam){
+            try {
+                JsonNode node = objectMapper.readTree(jsonString);
+                List<NamedTypedValue> fields = new ArrayList<>();
+                for (NamedTypedValue f: ((ObjectParam) inputParam).getType().getFields()){
+                    NamedTypedValue v = f.copyStructure();
+                    if (node.has(v.getName())){
+                        setNamedValueBasedOnCandidates(f, node.textValue());
+                        fields.add(v);
+                    }else {
+                        SimpleLogger.error("Driver Config Error: cannot find field with the name "+v.getName()+" in the specified json");
+                    }
+                }
+                inputParam.setValue(fields);
+            } catch (JsonProcessingException ex) {
+                SimpleLogger.error("Driver Config Error: a jsonPayload at ("+index+") cannot be read as a JSON object with error:" +ex.getMessage());
+            }
+        }
+
 
     }
 
