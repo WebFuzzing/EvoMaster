@@ -111,6 +111,10 @@ public final class InterfaceSchema{
     public EndpointSchema getOneEndpoint(RPCActionDto dto){
         List<EndpointSchema> list = endpoints.stream().filter(s-> s.sameEndpoint(dto)).collect(Collectors.toList());
 
+        if (list.isEmpty()){
+            list.addAll(authEndpoints.values().stream().filter(s-> s.sameEndpoint(dto)).collect(Collectors.toList()));
+        }
+
         if (list.size() == 1)
             return list.get(0);
 

@@ -177,7 +177,7 @@ public class RPCEndpointsBuilder {
             String jsonString = jsonAuthEndpoint.jsonPayloads.get(i);
             try {
                 Object value = objectMapper.readValue(jsonString, clazz);
-                inputParam.setValue(value);
+                inputParam.setValueBasedOnInstance(value);
             } catch (JsonProcessingException e) {
                 SimpleLogger.error("Driver Config Error: a jsonPayload at ("+i+") cannot be read as the object "+jsonAuthEndpoint.classNames.get(i));
                 setNamedValueBasedOnJsonString(inputParam,jsonString, i);
@@ -206,15 +206,20 @@ public class RPCEndpointsBuilder {
                 SimpleLogger.error("Driver Config Error: a jsonPayload at ("+index+") cannot be read as a JSON object with error:" +ex.getMessage());
             }
         }
-
-
     }
+
+
 
     private static AuthenticationDto getRelatedAuthEndpoint(List<AuthenticationDto> authenticationDtos, String interfaceName, Method method){
         if (authenticationDtos == null) return null;
+        for (AuthenticationDto dto : authenticationDtos){
+            if (dto.jsonAuthEndpoint == null || dto.jsonAuthEndpoint.endpointName == null || dto.jsonAuthEndpoint.interfaceName == null){
+                SimpleLogger.error("Driver Config Error: To specify JsonAuthRPCEndpointDto, endpointName and interfaceName cannot be null");
+            }
+        }
         return authenticationDtos.stream().filter(a-> a.jsonAuthEndpoint != null
                 && a.jsonAuthEndpoint.endpointName.equals(method.getName())
-                && a.jsonAuthEndpoint.interfaceName.equals(interfaceName)).findAny().orElseGet(null);
+                && a.jsonAuthEndpoint.interfaceName.equals(interfaceName)).findAny().orElse(null);
     }
 
     private static boolean filterMethod(Method endpoint,

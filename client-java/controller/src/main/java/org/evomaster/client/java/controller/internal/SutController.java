@@ -333,6 +333,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             }
         }catch (Exception e){
             SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
+            //TODO throw exception
         }
     }
 
