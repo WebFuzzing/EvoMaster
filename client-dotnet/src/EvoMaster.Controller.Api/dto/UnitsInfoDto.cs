@@ -54,6 +54,6 @@ namespace EvoMaster.Controller.Api {
             Value -> OpenAPI object schema
             TODO should consider if also adding info on type, eg JSON vs XML
          */
-        public IReadOnlyDictionary<string, string> ParsedDtos { get; set; }
+        public IDictionary<string, string> ParsedDtos { get; set; }
     }
 }

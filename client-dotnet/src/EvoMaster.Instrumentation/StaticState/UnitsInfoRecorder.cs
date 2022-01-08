@@ -91,11 +91,11 @@ namespace EvoMaster.Instrumentation.StaticState{
             return _unitNames.Count;
         }
 
-        public IReadOnlyCollection<string> GetUnitNames(){
+        public ICollection<string> GetUnitNames(){
             return _unitNames;
         }
 
-        public IReadOnlyDictionary<string, string> GetParsedDtos(){
+        public IDictionary<string, string> GetParsedDtos(){
             return _parsedDtos;
         }
 
