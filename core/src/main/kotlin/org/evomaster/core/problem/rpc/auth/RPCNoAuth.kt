@@ -1,3 +1,3 @@
 package org.evomaster.core.problem.rpc.auth
 
-class RPCNoAuth : RPCAuthenticationInfo("NoAuth", -1, true, null, null)
+class RPCNoAuth : RPCAuthenticationInfo("NoAuth", true,  -1)
