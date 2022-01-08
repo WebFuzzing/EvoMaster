@@ -215,13 +215,16 @@ class RPCEndpointsHandler {
                     actionWithCustomizedCandidatesMap[name] = e.relatedCustomization
                 }
             }
-            Lazy.assert { i.authEndpoints.size == i.authEndpointReferences.size }
-            i.authEndpoints.forEachIndexed { index, e ->
-                val name = actionName(i.interfaceId, e.actionName)
-                if (authEndpointCluster.containsKey(index))
-                    throw IllegalStateException("auth info at $index exists in the authEndpointCluster")
-                authEndpointCluster[index] = e //processEndpoint(name, e, true)
+            if (i.authEndpoints != null && i.authEndpointReferences != null){
+                Lazy.assert { i.authEndpoints.size == i.authEndpointReferences.size }
+                i.authEndpoints.forEachIndexed { index, e ->
+                    //val name = actionName(i.interfaceId, e.actionName)
+                    if (authEndpointCluster.containsKey(index))
+                        throw IllegalStateException("auth info at $index exists in the authEndpointCluster")
+                    authEndpointCluster[index] = e //processEndpoint(name, e, true)
+                }
             }
+
         }
 
         setAuthInfo(infoDto)
