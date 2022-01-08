@@ -505,12 +505,22 @@ public class EMController {
             //this MUST not be inside a noKillSwitch, as it sets to false
             sutController.newAction(dto);
 
-
             if (dto.rpcCall != null){
+
+                if (dto.rpcCall.authSetup != null){
+                    // execute auth setup
+                    ActionResponseDto authResponseDto = new ActionResponseDto();
+                    try{
+                        sutController.executeAction(dto.rpcCall.authSetup, authResponseDto);
+                    }catch (Exception e){
+                        String msg = "Fail to execute auth setup and thrown exception: " + e.getMessage();
+                        SimpleLogger.error(msg, e);
+                    }
+                }
+
                 ActionResponseDto responseDto = new ActionResponseDto();
                 responseDto.index = index;
                 try{
-                    // TODO RPC execute action here and return its response
                     sutController.executeAction(dto.rpcCall, responseDto);
                     return Response.status(200).entity(WrappedResponseDto.withData(responseDto)).build();
                 }catch (Exception e){
