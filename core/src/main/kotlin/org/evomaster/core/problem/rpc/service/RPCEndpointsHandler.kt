@@ -137,6 +137,10 @@ class RPCEndpointsHandler {
         return results
     }
 
+    /**
+     * @param action to be generated with its all seeds
+     * @return a list of adhoc actions with its specified candidate input request
+     */
     fun actionWithAllCandidates(action: RPCCallAction): List<RPCCallAction>{
         val results = mutableListOf<RPCCallAction>()
         actionWithCustomizedCandidatesMap[action.id]?.forEach {
@@ -148,6 +152,11 @@ class RPCEndpointsHandler {
         return results;
     }
 
+    /**
+     * @param action to be set with one seed at random
+     * @param noSeedProbability  is a probability to not apply any seed
+     * @return an action with/without seed
+     */
     fun actionWithRandomSeeded(action: RPCCallAction, noSeedProbability: Double): RPCCallAction{
         val candidates = actionWithCustomizedCandidatesMap[action.id]
         if (candidates== null || candidates.isEmpty()) return action
@@ -276,6 +285,9 @@ class RPCEndpointsHandler {
         return objectMapper.writeValueAsString(dto)
     }
 
+    /**
+     * @return a string json of a RPC param [dto]
+     */
     fun getParamDtoJson(dto: ParamDto) : String {
         return objectMapper.writeValueAsString(dto)
     }
