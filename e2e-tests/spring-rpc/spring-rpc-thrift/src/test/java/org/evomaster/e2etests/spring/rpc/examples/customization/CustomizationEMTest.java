@@ -27,7 +27,7 @@ public class CustomizationEMTest extends SpringRPCTestBase {
         assertThrows(Throwable.class, ()-> runTestHandlingFlakyAndCompilation(
                 "CustomizationEM",
                 "org.bar.CustomizationEM",
-                200,
+                300,
                 (args) -> {
 
                     Solution<RPCIndividual> solution = initAndRun(args);

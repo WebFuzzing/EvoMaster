@@ -26,7 +26,7 @@ public class CustomizationWithSeedEMTest extends SpringRPCTestBase {
         runTestHandlingFlakyAndCompilation(
                 "CustomizationWithSeedEM",
                 "org.bar.CustomizationWithSeedEM",
-                200,
+                300,
                 (args) -> {
 
                     Solution<RPCIndividual> solution = initAndRun(args);
