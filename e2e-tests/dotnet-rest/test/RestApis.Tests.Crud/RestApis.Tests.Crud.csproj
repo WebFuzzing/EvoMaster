@@ -30,6 +30,8 @@
     <ItemGroup>
         <Folder Include="generated" />
     </ItemGroup>
-
+    <Target Name="PostClean" AfterTargets="Clean">
+        <RemoveDir Directories="generated" />
+    </Target>
 
 </Project>
