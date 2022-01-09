@@ -28,7 +28,7 @@ namespace RestApis.Tests.Animals {
 
             var response = await Client.GetAsync($"{_fixture.BaseUrlOfSut}/mammals");
 
-            string responseBody = await response.Content.ReadAsStringAsync();
+            var responseBody = await response.Content.ReadAsStringAsync();
 
             // //just to show how deserialization can be done
             // var body = (JsonConvert.DeserializeObject<IEnumerable<Animal>>(responseBody) ?? Array.Empty<Animal>())
@@ -63,8 +63,8 @@ namespace RestApis.Tests.Animals {
 
         [Fact]
         public async Task Test_404() {
-            HttpResponseMessage response = await Client.GetAsync($"{_fixture.BaseUrlOfSut}/fishes");
-            string responseBody = await response.Content.ReadAsStringAsync();
+            var response = await Client.GetAsync($"{_fixture.BaseUrlOfSut}/fishes");
+            var responseBody = await response.Content.ReadAsStringAsync();
             var body = (JsonConvert.DeserializeObject<IEnumerable<Animal>>(responseBody) ?? Array.Empty<Animal>())
                 .ToList();
 
