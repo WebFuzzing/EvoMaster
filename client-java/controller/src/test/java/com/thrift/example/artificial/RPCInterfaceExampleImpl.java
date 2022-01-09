@@ -101,4 +101,9 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     public String handleCustomizedRequestB(CustomizedRequestB request) {
         return null;
     }
+
+    @Override
+    public void login(AuthLoginDto dto) {
+
+    }
 }

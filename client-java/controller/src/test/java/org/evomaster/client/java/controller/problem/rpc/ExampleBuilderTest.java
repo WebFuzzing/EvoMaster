@@ -1,8 +1,8 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
-import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
-import org.evomaster.client.java.controller.api.dto.KeyValuePairDto;
-import org.evomaster.client.java.controller.api.dto.keyValuesDto;
+import com.thrift.example.artificial.AuthLoginDto;
+import com.thrift.example.artificial.RPCInterfaceExample;
+import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
@@ -11,12 +11,12 @@ import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.org.apache.commons.lang.math.IntRange;
 
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -34,7 +34,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 14;
+        return 15;
     }
 
     @Override
@@ -43,37 +43,76 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     }
 
     @Override
+    public List<AuthenticationDto> getAuthInfo() {
+        return Arrays.asList(
+                new AuthenticationDto() {{
+                    name = "foo";
+                    jsonAuthEndpoint = new JsonAuthRPCEndpointDto() {{
+                        endpointName = "login";
+                        interfaceName = RPCInterfaceExample.class.getName();
+                        jsonPayloads = Arrays.asList(
+                                "{\n" +
+                                        "\"id\":\"foo\",\n" +
+                                        "\"passcode\":\"zXQV47zsrjfJRnTD\"\n" +
+                                        "}"
+                        );
+                        classNames = Arrays.asList(
+                                AuthLoginDto.class.getName()
+                        );
+                    }};
+                }},
+                new AuthenticationDto() {{
+                    name = "bar";
+                    jsonAuthEndpoint = new JsonAuthRPCEndpointDto() {{
+                        endpointName = "login";
+                        interfaceName = RPCInterfaceExample.class.getName();
+                        jsonPayloads = Arrays.asList(
+                                "{\n" +
+                                        "\"id\":\"bar\",\n" +
+                                        "\"passcode\":\"5jbNvXvaejDG5MhS\"\n" +
+                                        "}"
+                        );
+                        classNames = Arrays.asList(
+                                AuthLoginDto.class.getName()
+                        );
+                    }};
+                }}
+
+        );
+    }
+
+    @Override
     public List<CustomizedRequestValueDto> getCustomizedValueInRequests() {
         return Arrays.asList(
-                new CustomizedRequestValueDto(){{
+                new CustomizedRequestValueDto() {{
                     specificEndpointName = "handleCustomizedRequestA";
                     combinedKeyValuePairs = Arrays.asList(
-                            new KeyValuePairDto(){{
+                            new KeyValuePairDto() {{
                                 fieldKey = "id";
                                 fieldValue = "foo";
                             }},
-                            new KeyValuePairDto(){{
+                            new KeyValuePairDto() {{
                                 fieldKey = "passcode";
                                 fieldValue = "foo_passcode";
                             }}
                     );
                 }},
-                new CustomizedRequestValueDto(){{
+                new CustomizedRequestValueDto() {{
                     specificEndpointName = "handleCustomizedRequestA";
                     combinedKeyValuePairs = Arrays.asList(
-                            new KeyValuePairDto(){{
+                            new KeyValuePairDto() {{
                                 fieldKey = "id";
                                 fieldValue = "bar";
                             }},
-                            new KeyValuePairDto(){{
+                            new KeyValuePairDto() {{
                                 fieldKey = "passcode";
                                 fieldValue = "bar_passcode";
                             }}
                     );
                 }},
-                new CustomizedRequestValueDto(){{
+                new CustomizedRequestValueDto() {{
                     specificEndpointName = "handleCustomizedRequestB";
-                    keyValues = new keyValuesDto(){{
+                    keyValues = new keyValuesDto() {{
                         key = "value";
                         values = Arrays.asList("0.42", "42.42", "100.42");
                     }};
@@ -82,13 +121,34 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     }
 
     @Test
-    public void testEndpointsLoad(){
+    public void testEndpointsLoad() {
         assertEquals(expectedNumberOfEndpoints(), schema.getEndpoints().size());
     }
 
+    @Test
+    public void testAuthValueSetup() throws ClassNotFoundException {
+        assertNotNull(schema.getAuthEndpoints());
+        assertEquals(2, schema.getAuthEndpoints().size());
+
+        for (Map.Entry<Integer, EndpointSchema> entry : schema.getAuthEndpoints().entrySet()){
+            EndpointSchema endpointSchema = entry.getValue();
+            assertEquals(1, endpointSchema.getRequestParams().size());
+            NamedTypedValue p1 = endpointSchema.getRequestParams().get(0);
+            assertTrue(p1 instanceof ObjectParam);
+            Object p1Instance = p1.newInstance();
+            assertTrue(p1Instance instanceof AuthLoginDto);
+            if (entry.getKey().equals(0)){
+                assertEquals("foo", ((AuthLoginDto) p1Instance).id);
+                assertEquals("zXQV47zsrjfJRnTD", ((AuthLoginDto) p1Instance).passcode);
+            }else if (entry.getKey().equals(1)){
+                assertEquals("bar", ((AuthLoginDto) p1Instance).id);
+                assertEquals("5jbNvXvaejDG5MhS", ((AuthLoginDto) p1Instance).passcode);
+            }
+        }
+    }
 
     @Test
-    public void testHandleCustomizedRequestA(){
+    public void testHandleCustomizedRequestA() {
         EndpointSchema endpoint = getOneEndpoint("handleCustomizedRequestA");
         assertNotNull(endpoint.getRelatedCustomizedCandidates());
         assertEquals(2, endpoint.getRelatedCustomizedCandidates().size());
@@ -98,48 +158,48 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertTrue(p1.isNullable());
         assertEquals(3, ((ObjectParam) p1).getType().getFields().size());
 
-        for (NamedTypedValue f: ((ObjectParam) p1).getType().getFields()){
-            if (f.getName().equals("value")){
+        for (NamedTypedValue f : ((ObjectParam) p1).getType().getFields()) {
+            if (f.getName().equals("value")) {
                 assertTrue(f instanceof IntParam);
-                assertNull(((IntParam)f).getMin());
-                assertNull(((IntParam)f).getMax());
-            } else if (f.getName().equals("id")){
+                assertNull(((IntParam) f).getMin());
+                assertNull(((IntParam) f).getMax());
+            } else if (f.getName().equals("id")) {
                 assertTrue(f instanceof StringParam);
                 assertNotNull(f.getCandidateReferences());
                 assertNotNull(f.getCandidates());
                 assertEquals(2, f.getCandidates().size());
                 assertEquals(2, f.getCandidateReferences().size());
-                IntStream.range(0, 1).forEach(i->{
+                IntStream.range(0, 1).forEach(i -> {
                     assertTrue(f.getCandidates().get(i) instanceof StringParam);
-                    String value = ((StringParam)f.getCandidates().get(i)).getValue();
-                    if (f.getCandidateReferences().get(i).equals("0")){
+                    String value = ((StringParam) f.getCandidates().get(i)).getValue();
+                    if (f.getCandidateReferences().get(i).equals("0")) {
                         assertEquals("foo", value);
-                    } else if (f.getCandidateReferences().get(i).equals("1")){
+                    } else if (f.getCandidateReferences().get(i).equals("1")) {
                         assertEquals("bar", value);
                     }
                 });
-            } else if (f.getName().equals("passcode")){
+            } else if (f.getName().equals("passcode")) {
                 assertTrue(f instanceof StringParam);
                 assertNotNull(f.getCandidateReferences());
                 assertNotNull(f.getCandidates());
                 assertEquals(2, f.getCandidates().size());
                 assertEquals(2, f.getCandidateReferences().size());
-                IntStream.range(0, 1).forEach(i->{
+                IntStream.range(0, 1).forEach(i -> {
                     assertTrue(f.getCandidates().get(i) instanceof StringParam);
-                    String value = ((StringParam)f.getCandidates().get(i)).getValue();
-                    if (f.getCandidateReferences().get(i).equals("0")){
+                    String value = ((StringParam) f.getCandidates().get(i)).getValue();
+                    if (f.getCandidateReferences().get(i).equals("0")) {
                         assertEquals("foo_passcode", value);
-                    } else if (f.getCandidateReferences().get(i).equals("1")){
+                    } else if (f.getCandidateReferences().get(i).equals("1")) {
                         assertEquals("bar_passcode", value);
                     }
                 });
             } else
-                fail("do not handle param "+ f.getName());
+                fail("do not handle param " + f.getName());
         }
     }
 
     @Test
-    public void testHandleCustomizedRequestB(){
+    public void testHandleCustomizedRequestB() {
         EndpointSchema endpoint = getOneEndpoint("handleCustomizedRequestB");
 
         assertNotNull(endpoint.getRelatedCustomizedCandidates());
@@ -156,15 +216,15 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         assertEquals(3, f.getCandidates().size());
         List<Double> candidates = Arrays.asList(0.42, 42.42, 100.42);
-        IntStream.range(0, 2).forEach(i->{
+        IntStream.range(0, 2).forEach(i -> {
             assertTrue(f.getCandidates().get(i) instanceof DoubleParam);
-            Double value = ((DoubleParam)f.getCandidates().get(i)).getValue();
+            Double value = ((DoubleParam) f.getCandidates().get(i)).getValue();
             assertTrue(candidates.contains(value));
         });
     }
 
     @Test
-    public void testConstraintInputs(){
+    public void testConstraintInputs() {
         EndpointSchema endpoint = getOneEndpoint("constraintInputs");
 
         assertNotNull(endpoint.getResponse());
@@ -174,36 +234,36 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertTrue(p1 instanceof ObjectParam);
         assertTrue(p1.isNullable());
         assertEquals(7, ((ObjectParam) p1).getType().getFields().size());
-        for (NamedTypedValue f: ((ObjectParam) p1).getType().getFields()){
-            if (f.getName().equals("list")){
+        for (NamedTypedValue f : ((ObjectParam) p1).getType().getFields()) {
+            if (f.getName().equals("list")) {
                 assertTrue(f instanceof ListParam);
                 assertFalse(f.isNullable());
-                assertEquals(1, ((ListParam)f).getMinSize());
-            } else if (f.getName().equals("listSize")){
+                assertEquals(1, ((ListParam) f).getMinSize());
+            } else if (f.getName().equals("listSize")) {
                 assertTrue(f instanceof ListParam);
-                assertEquals(1, ((ListParam)f).getMinSize());
-                assertEquals(10, ((ListParam)f).getMaxSize());
-            } else if (f.getName().equals("intWithMinMax")){
+                assertEquals(1, ((ListParam) f).getMinSize());
+                assertEquals(10, ((ListParam) f).getMaxSize());
+            } else if (f.getName().equals("intWithMinMax")) {
                 assertTrue(f instanceof IntParam);
-                assertEquals(0, ((IntParam)f).getMin().intValue());
-                assertEquals(100, ((IntParam)f).getMax().intValue());
-            } else if (f.getName().equals("longWithMinMax")){
+                assertEquals(0, ((IntParam) f).getMin().intValue());
+                assertEquals(100, ((IntParam) f).getMax().intValue());
+            } else if (f.getName().equals("longWithMinMax")) {
                 assertTrue(f instanceof LongParam);
-                assertEquals(-100L, ((LongParam)f).getMin());
-                assertEquals(1000L, ((LongParam)f).getMax());
-            } else if (f.getName().equals("notBlankString")){
+                assertEquals(-100L, ((LongParam) f).getMin());
+                assertEquals(1000L, ((LongParam) f).getMax());
+            } else if (f.getName().equals("notBlankString")) {
                 assertTrue(f instanceof StringParam);
                 assertFalse(f.isNullable());
-                assertEquals(1, ((StringParam)f).getMinSize());
-            } else if (f.getName().equals("nullableString")){
+                assertEquals(1, ((StringParam) f).getMinSize());
+            } else if (f.getName().equals("nullableString")) {
                 assertTrue(f instanceof StringParam);
                 assertTrue(f.isNullable());
-            } else if (f.getName().equals("stringSize")){
+            } else if (f.getName().equals("stringSize")) {
                 assertTrue(f instanceof StringParam);
-                assertEquals(2, ((StringParam)f).getMinSize());
-                assertEquals(10, ((StringParam)f).getMaxSize());
+                assertEquals(2, ((StringParam) f).getMinSize());
+                assertEquals(10, ((StringParam) f).getMaxSize());
             } else
-                fail("do not handle param "+ f.getName());
+                fail("do not handle param " + f.getName());
         }
 
 
@@ -228,7 +288,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         p1.setValueBasedOnInstance(date);
         Object instance = p1.newInstance();
-        assertTrue(instance instanceof  Date);
+        assertTrue(instance instanceof Date);
         assertEquals(time, ((Date) instance).getTime());
 
         ParamDto dto = p1.getDto();
@@ -246,14 +306,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(5, javacode.size());
         assertEquals("java.util.Date arg0 = null;", javacode.get(0));
         assertEquals("{", javacode.get(1));
-        assertEquals(" // Date is "+stringDate, javacode.get(2));
-        assertEquals(" arg0 = new java.util.Date("+time+"L);", javacode.get(3));
+        assertEquals(" // Date is " + stringDate, javacode.get(2));
+        assertEquals(" arg0 = new java.util.Date(" + time + "L);", javacode.get(3));
         assertEquals("}", javacode.get(4));
 
     }
 
     @Test
-    public void testSimplePrimitive(){
+    public void testSimplePrimitive() {
 
         EndpointSchema endpoint = getOneEndpoint("simplePrimitive");
         assertNotNull(endpoint.getResponse());
@@ -275,14 +335,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         EndpointSchema endpoint = getOneEndpoint("simplePrimitive");
         RPCActionDto dto = endpoint.getDto().copy();
         assertEquals(8, dto.requestParams.size());
-        dto.requestParams.get(0).stringValue = ""+42;
-        dto.requestParams.get(1).stringValue = ""+4.2f;
-        dto.requestParams.get(2).stringValue = ""+42L;
-        dto.requestParams.get(3).stringValue = ""+4.2;
-        dto.requestParams.get(4).stringValue = ""+'x';
-        dto.requestParams.get(5).stringValue = ""+ Byte.parseByte("42");
-        dto.requestParams.get(6).stringValue = ""+ false;
-        dto.requestParams.get(7).stringValue = ""+ Short.parseShort("42");
+        dto.requestParams.get(0).stringValue = "" + 42;
+        dto.requestParams.get(1).stringValue = "" + 4.2f;
+        dto.requestParams.get(2).stringValue = "" + 42L;
+        dto.requestParams.get(3).stringValue = "" + 4.2;
+        dto.requestParams.get(4).stringValue = "" + 'x';
+        dto.requestParams.get(5).stringValue = "" + Byte.parseByte("42");
+        dto.requestParams.get(6).stringValue = "" + false;
+        dto.requestParams.get(7).stringValue = "" + Short.parseShort("42");
         endpoint.setValue(dto);
         assertEquals(42, endpoint.getRequestParams().get(0).newInstance());
         assertEquals(4.2f, endpoint.getRequestParams().get(1).newInstance());
@@ -296,7 +356,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     }
 
     @Test
-    public void testSimpleWrapPrimitive(){
+    public void testSimpleWrapPrimitive() {
 
         EndpointSchema endpoint = getOneEndpoint("simpleWrapPrimitive");
         assertNotNull(endpoint.getResponse());
@@ -318,14 +378,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         EndpointSchema endpoint = getOneEndpoint("simpleWrapPrimitive");
         RPCActionDto dto = endpoint.getDto().copy();
         assertEquals(8, dto.requestParams.size());
-        dto.requestParams.get(0).stringValue = ""+42;
-        dto.requestParams.get(1).stringValue = ""+4.2f;
-        dto.requestParams.get(2).stringValue = ""+42L;
-        dto.requestParams.get(3).stringValue = ""+4.2;
-        dto.requestParams.get(4).stringValue = ""+'x';
-        dto.requestParams.get(5).stringValue = ""+ Byte.parseByte("42");
-        dto.requestParams.get(6).stringValue = ""+ false;
-        dto.requestParams.get(7).stringValue = ""+ Short.parseShort("42");
+        dto.requestParams.get(0).stringValue = "" + 42;
+        dto.requestParams.get(1).stringValue = "" + 4.2f;
+        dto.requestParams.get(2).stringValue = "" + 42L;
+        dto.requestParams.get(3).stringValue = "" + 4.2;
+        dto.requestParams.get(4).stringValue = "" + 'x';
+        dto.requestParams.get(5).stringValue = "" + Byte.parseByte("42");
+        dto.requestParams.get(6).stringValue = "" + false;
+        dto.requestParams.get(7).stringValue = "" + Short.parseShort("42");
         endpoint.setValue(dto);
         assertEquals(42, endpoint.getRequestParams().get(0).newInstance());
         assertEquals(4.2f, endpoint.getRequestParams().get(1).newInstance());
@@ -339,7 +399,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     }
 
     @Test
-    public void testArray(){
+    public void testArray() {
 
         EndpointSchema endpoint = getOneEndpoint("array");
         assertNotNull(endpoint.getResponse());
@@ -369,9 +429,9 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         ParamDto paramExampleExampleDto = paramExampleDto.type.example;
         assertEquals(RPCSupportedDataType.STRING, paramExampleExampleDto.type.type);
 
-        List<ParamDto> strs = IntStream.range(0, 3).mapToObj(i->{
+        List<ParamDto> strs = IntStream.range(0, 3).mapToObj(i -> {
             ParamDto p = paramExampleExampleDto.copy();
-            p.stringValue = "str_"+ i;
+            p.stringValue = "str_" + i;
             return p;
         }).collect(Collectors.toList());
 
@@ -384,9 +444,8 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     }
 
 
-
     @Test
-    public void testArrayBoolean(){
+    public void testArrayBoolean() {
 
         EndpointSchema endpoint = getOneEndpoint("arrayboolean");
         assertNotNull(endpoint.getResponse());
@@ -399,7 +458,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     }
 
     @Test
-    public void testList(){
+    public void testList() {
 
         EndpointSchema endpoint = getOneEndpoint("list");
         assertNotNull(endpoint.getResponse());
@@ -413,7 +472,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     }
 
     @Test
-    public void testMap(){
+    public void testMap() {
 
         EndpointSchema endpoint = getOneEndpoint("map");
         assertNotNull(endpoint.getResponse());
@@ -434,7 +493,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     }
 
     @Test
-    public void testListAndMap(){
+    public void testListAndMap() {
 
         EndpointSchema endpoint = getOneEndpoint("listAndMap");
         assertNotNull(endpoint.getResponse());
@@ -461,7 +520,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
 
     @Test
-    public void testObjResponse(){
+    public void testObjResponse() {
 
         EndpointSchema endpoint = getOneEndpoint("objResponse");
         assertEquals(0, endpoint.getRequestParams().size());
@@ -485,7 +544,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     }
 
     @Test
-    public void testObjCycleA(){
+    public void testObjCycleA() {
 
         EndpointSchema endpoint = getOneEndpoint("objCycleA");
         assertEquals(0, endpoint.getRequestParams().size());
@@ -498,13 +557,13 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         List<NamedTypedValue> fs = ((ObjectType) param.getType()).getFields();
         assertEquals(1, fs.size());
         assertTrue(fs.get(0) instanceof ObjectParam);
-        assertEquals(1, ((ObjectParam)fs.get(0)).getType().getFields().size());
-        assertTrue(((ObjectParam)fs.get(0)).getType().getFields().get(0).getType() instanceof CycleObjectType);
+        assertEquals(1, ((ObjectParam) fs.get(0)).getType().getFields().size());
+        assertTrue(((ObjectParam) fs.get(0)).getType().getFields().get(0).getType() instanceof CycleObjectType);
 
     }
 
     @Test
-    public void testObjCycleB(){
+    public void testObjCycleB() {
 
         EndpointSchema endpoint = getOneEndpoint("objCycleB");
         assertEquals(0, endpoint.getRequestParams().size());
@@ -517,8 +576,8 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         List<NamedTypedValue> fs = ((ObjectType) param.getType()).getFields();
         assertEquals(1, fs.size());
         assertTrue(fs.get(0) instanceof ObjectParam);
-        assertEquals(1, ((ObjectParam)fs.get(0)).getType().getFields().size());
-        assertTrue(((ObjectParam)fs.get(0)).getType().getFields().get(0).getType() instanceof CycleObjectType);
+        assertEquals(1, ((ObjectParam) fs.get(0)).getType().getFields().size());
+        assertTrue(((ObjectParam) fs.get(0)).getType().getFields().get(0).getType() instanceof CycleObjectType);
 
     }
 

@@ -32,6 +32,10 @@ public final class InterfaceSchema{
      */
     private List<EndpointSchema> endpoints;
 
+    public Map<Integer, EndpointSchema> getAuthEndpoints() {
+        return authEndpoints;
+    }
+
     /**
      * a list of endpoints for handling authentication
      */
@@ -99,7 +103,10 @@ public final class InterfaceSchema{
      * @return a list of endpoints based on the specified name
      */
     public List<EndpointSchema> findEndpoints(String name){
-        return endpoints.stream().filter(s-> s.getName().equals(name)).collect(Collectors.toList());
+        List<EndpointSchema> found = endpoints.stream().filter(s-> s.getName().equals(name)).collect(Collectors.toList());
+        if (found.isEmpty() && authEndpoints!=null && !authEndpoints.isEmpty())
+            return authEndpoints.values().stream().filter(s-> s.getName().equals(name)).collect(Collectors.toList());
+        return found;
     }
 
     /**

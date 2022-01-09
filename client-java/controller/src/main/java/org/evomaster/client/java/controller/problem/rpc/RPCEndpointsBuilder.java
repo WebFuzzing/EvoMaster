@@ -146,21 +146,23 @@ public class RPCEndpointsBuilder {
                     skippedEndpoints.add(m.getName());
                 }
 
-                AuthenticationDto auth = getRelatedAuthEndpoint(authenticationDtoList, interfaceName, m);
-                if (auth != null){
-                    if (auth.jsonAuthEndpoint == null){
-                        throw new IllegalArgumentException("Driver Config Error: now we only support auth info specified with JsonAuthRPCEndpointDto");
+                List<AuthenticationDto> auths = getRelatedAuthEndpoint(authenticationDtoList, interfaceName, m);
+                if (auths != null && !auths.isEmpty()){
+                    for (AuthenticationDto auth: auths){
+                        if (auth.jsonAuthEndpoint == null){
+                            throw new IllegalArgumentException("Driver Config Error: now we only support auth info specified with JsonAuthRPCEndpointDto");
+                        }
+                        if (auth.jsonAuthEndpoint.classNames.size() != auth.jsonAuthEndpoint.jsonPayloads.size())
+                            throw new IllegalArgumentException("Driver Config Error: to specify inputs for auth endpoint, classNames and jsonPayloads should have same size");
+                        int index = authenticationDtoList.indexOf(auth);
+                        // handle endpoint which is for auth setup
+                        EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos);
+                        // set value based on specified info
+                        if (authEndpoint.getRequestParams().size() != auth.jsonAuthEndpoint.jsonPayloads.size())
+                            throw new IllegalArgumentException("Driver Config Error: mismatched size of jsonPayloads ("+auth.jsonAuthEndpoint.classNames.size()+") with real endpoint ("+authEndpoint.getRequestParams().size()+").");
+                        setAuthEndpoint(authEndpoint, auth.jsonAuthEndpoint);
+                        authEndpoints.put(index, authEndpoint);
                     }
-                    if (auth.jsonAuthEndpoint.classNames.size() != auth.jsonAuthEndpoint.jsonPayloads.size())
-                        throw new IllegalArgumentException("Driver Config Error: to specify inputs for auth endpoint, classNames and jsonPayloads should have same size");
-                    int index = authenticationDtoList.indexOf(auth);
-                    // handle endpoint which is for auth setup
-                    EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos);
-                    // set value based on specified info
-                    if (authEndpoint.getRequestParams().size() != auth.jsonAuthEndpoint.jsonPayloads.size())
-                        throw new IllegalArgumentException("Driver Config Error: mismatched size of jsonPayloads ("+auth.jsonAuthEndpoint.classNames.size()+") with real endpoint ("+authEndpoint.getRequestParams().size()+").");
-                    setAuthEndpoint(authEndpoint, auth.jsonAuthEndpoint);
-                    authEndpoints.put(index, authEndpoint);
                 }
             }
             return schema;
@@ -210,7 +212,7 @@ public class RPCEndpointsBuilder {
 
 
 
-    private static AuthenticationDto getRelatedAuthEndpoint(List<AuthenticationDto> authenticationDtos, String interfaceName, Method method){
+    private static List<AuthenticationDto> getRelatedAuthEndpoint(List<AuthenticationDto> authenticationDtos, String interfaceName, Method method){
         if (authenticationDtos == null) return null;
         for (AuthenticationDto dto : authenticationDtos){
             if (dto.jsonAuthEndpoint == null || dto.jsonAuthEndpoint.endpointName == null || dto.jsonAuthEndpoint.interfaceName == null){
@@ -219,7 +221,7 @@ public class RPCEndpointsBuilder {
         }
         return authenticationDtos.stream().filter(a-> a.jsonAuthEndpoint != null
                 && a.jsonAuthEndpoint.endpointName.equals(method.getName())
-                && a.jsonAuthEndpoint.interfaceName.equals(interfaceName)).findAny().orElse(null);
+                && a.jsonAuthEndpoint.interfaceName.equals(interfaceName)).collect(Collectors.toList());
     }
 
     private static boolean filterMethod(Method endpoint,
@@ -317,13 +319,18 @@ public class RPCEndpointsBuilder {
     private static List<AuthenticationDto> getRelatedAuth(List<AuthenticationDto> authenticationDtoList, Method method){
         if (authenticationDtoList == null) return null;
         List<String> annotations = Arrays.stream(method.getAnnotations()).map(s-> s.annotationType().getName()).collect(Collectors.toList());
-        return authenticationDtoList.stream().filter(s-> (s.jsonAuthEndpoint != null && s.jsonAuthEndpoint.annotationOnEndpoint != null && annotations.contains(s.jsonAuthEndpoint.annotationOnEndpoint))).collect(Collectors.toList());
+        return authenticationDtoList.stream().filter(s-> (s.jsonAuthEndpoint != null &&
+                (s.jsonAuthEndpoint.annotationOnEndpoint != null && annotations.contains(s.jsonAuthEndpoint.annotationOnEndpoint) )
+        )).collect(Collectors.toList());
     }
 
     private static Map<Integer, CustomizedRequestValueDto> getRelatedCustomization(List<CustomizedRequestValueDto> customizedRequestValueDtos, Method method){
         if (customizedRequestValueDtos == null) return null;
         List<String> annotations = Arrays.stream(method.getAnnotations()).map(s-> s.annotationType().getName()).collect(Collectors.toList());
-        List<CustomizedRequestValueDto> list = customizedRequestValueDtos.stream().filter(s-> s.annotationOnEndpoint == null || annotations.contains(s.annotationOnEndpoint)).collect(Collectors.toList());
+        List<CustomizedRequestValueDto> list = customizedRequestValueDtos.stream().filter(
+                s-> (s.annotationOnEndpoint == null || annotations.contains(s.annotationOnEndpoint)) &&
+                        (s.specificEndpointName == null || s.specificEndpointName.contains(method.getName()))
+        ).collect(Collectors.toList());
         if (list.isEmpty()) return null;
         Map<Integer, CustomizedRequestValueDto> map = new HashMap<>();
         list.forEach(s->map.put(customizedRequestValueDtos.indexOf(s), s));

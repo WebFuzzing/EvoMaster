@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
 import com.thrift.example.real.thrift.test.ThriftTest;
+import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
@@ -18,7 +19,7 @@ public abstract class RPCEndpointsBuilderTestBase {
 
     class FakeClient{}
 
-    public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new FakeClient(), null, null, null, null, null, getCustomizedValueInRequests());
+    public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new FakeClient(), null, null, null, null, getAuthInfo(), getCustomizedValueInRequests());
 
     public abstract String getInterfaceName();
 
@@ -27,6 +28,8 @@ public abstract class RPCEndpointsBuilderTestBase {
     public List<CustomizedRequestValueDto> getCustomizedValueInRequests(){
         return null;
     }
+
+    public List<AuthenticationDto> getAuthInfo(){return null;}
 
     public RPCType getRPCType(){
         return RPCType.THRIFT;
