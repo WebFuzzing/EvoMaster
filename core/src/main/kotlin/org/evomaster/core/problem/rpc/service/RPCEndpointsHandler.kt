@@ -272,6 +272,8 @@ class RPCEndpointsHandler {
         return rpcAction
     }
 
+
+
     /**
      * generate response variable name for RPC action based on its [index] in a test
      */
@@ -293,6 +295,19 @@ class RPCEndpointsHandler {
      */
     fun getParamDtoJson(dto: ParamDto) : String {
         return objectMapper.writeValueAsString(dto)
+    }
+
+    /**
+     * @return a string json of a RPCAction [dto]
+     */
+    fun getRPCActionDtoJson(dto: RPCActionDto) : String {
+        return objectMapper.writeValueAsString(dto)
+    }
+
+    fun getRPCAuthActionDto(action: RPCCallAction) : RPCActionDto?{
+        if (action.auth is RPCNoAuth)
+            return null
+        return authEndpointCluster[action.auth.authIndex]
     }
 
     private fun transformGeneToParamDto(gene: Gene, dto: ParamDto){

@@ -2,7 +2,6 @@ package org.evomaster.e2etests.spring.rpc.examples.authsetup;
 
 import com.foo.rpc.examples.spring.authsetup.AuthSetupController;
 import com.foo.rpc.examples.spring.authsetup.AuthSetupService;
-import org.evomaster.ci.utils.CIUtils;
 import org.evomaster.core.problem.rpc.RPCIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.rpc.examples.SpringRPCTestBase;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AuthSetupEMTest extends SpringRPCTestBase {
@@ -25,13 +23,10 @@ public class AuthSetupEMTest extends SpringRPCTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        //TODO bug
-        CIUtils.skipIfOnGA();
-
-        assertThrows(Throwable.class, ()-> runTestHandlingFlakyAndCompilation(
+        runTestHandlingFlakyAndCompilation(
                 "AuthSetupEM",
                 "org.bar.AuthSetupEM",
-                200,
+                10,
                 (args) -> {
 
                     Solution<RPCIndividual> solution = initAndRun(args);
@@ -40,6 +35,6 @@ public class AuthSetupEMTest extends SpringRPCTestBase {
                     assertAllContentInResponseForEndpoint(solution, AuthSetupService.Iface.class.getName()+":access",
                             Arrays.asList("HELLO", "SORRY"));
 
-                }));
+                });
     }
 }

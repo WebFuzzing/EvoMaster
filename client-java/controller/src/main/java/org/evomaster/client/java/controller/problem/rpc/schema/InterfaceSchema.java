@@ -41,6 +41,8 @@ public final class InterfaceSchema{
      */
     private Map<Integer, EndpointSchema> authEndpoints;
 
+    private List<EndpointSchema> endpointsForAuth;
+
     /**
      * key is the full name of type
      * value is its type schema
@@ -61,16 +63,17 @@ public final class InterfaceSchema{
     private final List<String> skippedEndpoints;
 
     public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client, RPCType rpcType) {
-        this(name, endpoints, client, rpcType, null, null);
+        this(name, endpoints, client, rpcType, null, null, null);
     }
 
-    public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client, RPCType rpcType, List<String> skippedEndpoints, Map<Integer, EndpointSchema> authEndpoints) {
+    public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client, RPCType rpcType, List<String> skippedEndpoints, Map<Integer, EndpointSchema> authEndpoints, List<EndpointSchema> endpointsForAuth) {
         this.name = name;
         this.endpoints = endpoints;
         this.clientInfo = client;
         this.rpcType = rpcType;
         this.skippedEndpoints = skippedEndpoints;
         this.authEndpoints = authEndpoints;
+        this.endpointsForAuth = endpointsForAuth;
     }
 
     public void registerType(TypeSchema type, NamedTypedValue param){
@@ -104,8 +107,8 @@ public final class InterfaceSchema{
      */
     public List<EndpointSchema> findEndpoints(String name){
         List<EndpointSchema> found = endpoints.stream().filter(s-> s.getName().equals(name)).collect(Collectors.toList());
-        if (found.isEmpty() && authEndpoints!=null && !authEndpoints.isEmpty())
-            return authEndpoints.values().stream().filter(s-> s.getName().equals(name)).collect(Collectors.toList());
+        if (found.isEmpty() && endpointsForAuth!=null && !endpointsForAuth.isEmpty())
+            return endpointsForAuth.stream().filter(s-> s.getName().equals(name)).collect(Collectors.toList());
         return found;
     }
 
@@ -119,7 +122,7 @@ public final class InterfaceSchema{
         List<EndpointSchema> list = endpoints.stream().filter(s-> s.sameEndpoint(dto)).collect(Collectors.toList());
 
         if (list.isEmpty()){
-            list.addAll(authEndpoints.values().stream().filter(s-> s.sameEndpoint(dto)).collect(Collectors.toList()));
+            list.addAll(endpointsForAuth.stream().filter(s-> s.sameEndpoint(dto)).collect(Collectors.toList()));
         }
 
         if (list.size() == 1)

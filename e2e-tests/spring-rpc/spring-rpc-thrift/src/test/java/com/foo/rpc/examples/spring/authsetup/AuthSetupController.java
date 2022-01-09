@@ -68,7 +68,7 @@ public class AuthSetupController extends SpringController {
             }};
         }},
                 new AuthenticationDto() {{
-                    name = "foo";
+                    name = "bar";
                     jsonAuthEndpoint = new JsonAuthRPCEndpointDto() {{
                         endpointName = "login";
                         interfaceName = AuthSetupService.Iface.class.getName();
@@ -85,5 +85,21 @@ public class AuthSetupController extends SpringController {
                 }}
 
         );
+    }
+
+    @Override
+    public void resetStateOfSUT() {
+        if (client != null) {
+            try {
+                client.logout();
+            } catch (TException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void stopSut() {
+
     }
 }

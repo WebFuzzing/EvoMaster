@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.SutProblemException
@@ -63,6 +64,13 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
 
         updateConfigForTestOutput(infoDto)
         log.debug("Done initializing {}", RPCSampler::class.simpleName)
+    }
+
+    override fun smartSample(): RPCIndividual {
+        if (adHocInitialIndividuals.isNotEmpty()) {
+            return adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
+        }
+        return sampleAtRandom()
     }
 
     override fun initSqlInfo(infoDto: SutInfoDto) {

@@ -6,6 +6,7 @@ import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.service.RPCEndpointsHandler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
@@ -111,6 +112,10 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
                 executeActionWithSutHandler(lines, resVarName, rpcCallAction)
             }
         }else{
+            val authAction = rpcHandler.getRPCAuthActionDto(rpcCallAction)
+            if (authAction!=null){
+                executeActionWithSutHandler(lines, resVarName+"_auth_"+rpcCallAction.auth.authIndex, rpcHandler.getRPCActionDtoJson(authAction))
+            }
             executeActionWithSutHandler(lines, resVarName, rpcCallAction)
         }
         return resVarName
@@ -132,8 +137,11 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
     }
 
     private fun executeActionWithSutHandler(lines: Lines, resVarName: String, rpcCallAction: RPCCallAction){
-
         val executionJson = rpcHandler.getRPCActionJson(rpcCallAction)
+        executeActionWithSutHandler(lines, resVarName, executionJson)
+
+    }
+    private fun executeActionWithSutHandler(lines: Lines, resVarName: String, executionJson: String){
 
         when {
             format.isKotlin() -> lines.add("val $resVarName = ${TestSuiteWriter.controller}.executeRPCEndpoint(")

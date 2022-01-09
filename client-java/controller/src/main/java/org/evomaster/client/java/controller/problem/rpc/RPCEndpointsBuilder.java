@@ -133,11 +133,12 @@ public class RPCEndpointsBuilder {
                                         List<AuthenticationDto> authenticationDtoList,
                                         List<CustomizedRequestValueDto> customizedRequestValueDtos) {
         List<EndpointSchema> endpoints = new ArrayList<>();
+        List<EndpointSchema> endpointsForAuth = new ArrayList<>();
         List<String> skippedEndpoints = new ArrayList<>();
         Map<Integer, EndpointSchema> authEndpoints = new HashMap<>();
         try {
             Class<?> interfaze = Class.forName(interfaceName);
-            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints, authEndpoints);
+            InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints, authEndpoints, endpointsForAuth);
 
             for (Method m : interfaze.getDeclaredMethods()) {
                 if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation))
@@ -148,20 +149,23 @@ public class RPCEndpointsBuilder {
 
                 List<AuthenticationDto> auths = getRelatedAuthEndpoint(authenticationDtoList, interfaceName, m);
                 if (auths != null && !auths.isEmpty()){
+                    // handle endpoint which is for auth setup
+                    EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos);
+                    endpointsForAuth.add(authEndpoint);
                     for (AuthenticationDto auth: auths){
+                        EndpointSchema copy = authEndpoint.copyStructure();
                         if (auth.jsonAuthEndpoint == null){
                             throw new IllegalArgumentException("Driver Config Error: now we only support auth info specified with JsonAuthRPCEndpointDto");
                         }
                         if (auth.jsonAuthEndpoint.classNames.size() != auth.jsonAuthEndpoint.jsonPayloads.size())
                             throw new IllegalArgumentException("Driver Config Error: to specify inputs for auth endpoint, classNames and jsonPayloads should have same size");
                         int index = authenticationDtoList.indexOf(auth);
-                        // handle endpoint which is for auth setup
-                        EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos);
+
                         // set value based on specified info
-                        if (authEndpoint.getRequestParams().size() != auth.jsonAuthEndpoint.jsonPayloads.size())
+                        if (copy.getRequestParams().size() != auth.jsonAuthEndpoint.jsonPayloads.size())
                             throw new IllegalArgumentException("Driver Config Error: mismatched size of jsonPayloads ("+auth.jsonAuthEndpoint.classNames.size()+") with real endpoint ("+authEndpoint.getRequestParams().size()+").");
-                        setAuthEndpoint(authEndpoint, auth.jsonAuthEndpoint);
-                        authEndpoints.put(index, authEndpoint);
+                        setAuthEndpoint(copy, auth.jsonAuthEndpoint);
+                        authEndpoints.put(index, copy);
                     }
                 }
             }

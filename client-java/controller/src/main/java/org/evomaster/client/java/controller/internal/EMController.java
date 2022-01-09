@@ -506,10 +506,10 @@ public class EMController {
             sutController.newAction(dto);
 
             if (dto.rpcCall != null){
-
+                ActionResponseDto authResponseDto = null;
                 if (dto.rpcCall.authSetup != null){
                     // execute auth setup
-                    ActionResponseDto authResponseDto = new ActionResponseDto();
+                    authResponseDto = new ActionResponseDto();
                     try{
                         sutController.executeAction(dto.rpcCall.authSetup, authResponseDto);
                     }catch (Exception e){
@@ -522,6 +522,9 @@ public class EMController {
                 responseDto.index = index;
                 try{
                     sutController.executeAction(dto.rpcCall, responseDto);
+                    if (authResponseDto!= null && authResponseDto.testScript!=null && !authResponseDto.testScript.isEmpty()){
+                        responseDto.testScript.addAll(0, authResponseDto.testScript);
+                    }
                     return Response.status(200).entity(WrappedResponseDto.withData(responseDto)).build();
                 }catch (Exception e){
                     // TODO handle exception on responseDto later
