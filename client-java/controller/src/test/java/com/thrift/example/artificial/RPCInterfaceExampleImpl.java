@@ -106,4 +106,9 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     public void login(AuthLoginDto dto) {
 
     }
+
+    @Override
+    public PrivateFieldInResponseDto accessFieldDtoCheck(PrivateFieldInRequestDto dto) {
+        return null;
+    }
 }

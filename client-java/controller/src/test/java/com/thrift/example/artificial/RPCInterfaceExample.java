@@ -40,4 +40,6 @@ public interface RPCInterfaceExample {
     public String handleCustomizedRequestB(CustomizedRequestB request);
 
     public void login(AuthLoginDto dto);
+
+    public PrivateFieldInResponseDto accessFieldDtoCheck(PrivateFieldInRequestDto dto);
 }
