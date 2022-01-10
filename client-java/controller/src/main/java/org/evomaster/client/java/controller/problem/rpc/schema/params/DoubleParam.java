@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 import java.util.ArrayList;
@@ -12,12 +13,12 @@ import java.util.List;
  * double param
  */
 public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
-    public DoubleParam(String name, String type, String fullTypeName, Class<?> clazz) {
-        super(name, type, fullTypeName, clazz);
+    public DoubleParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
+        super(name, type, fullTypeName, clazz, accessibleSchema);
     }
 
-    public DoubleParam(String name, PrimitiveOrWrapperType type) {
-        super(name, type);
+    public DoubleParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
     @Override
@@ -41,7 +42,7 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
 
     @Override
     public DoubleParam copyStructure() {
-        return new DoubleParam(getName(), getType());
+        return new DoubleParam(getName(), getType(), accessibleSchema);
     }
 
 

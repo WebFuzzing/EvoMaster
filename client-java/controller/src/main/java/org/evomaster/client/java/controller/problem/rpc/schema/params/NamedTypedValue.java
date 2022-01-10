@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
 import java.util.ArrayList;
@@ -34,6 +35,8 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * represent whether this value is nullable
      */
     private boolean isNullable = true;
+
+    public final AccessibleSchema accessibleSchema;
 
 
     public boolean isHasDependentCandidates() {
@@ -76,9 +79,10 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     private List<String> candidateReferences;
 
 
-    public NamedTypedValue(String name, T type) {
+    public NamedTypedValue(String name, T type, AccessibleSchema accessibleSchema) {
         this.name = name;
         this.type = type;
+        this.accessibleSchema = accessibleSchema;
     }
 
     public String getName() {

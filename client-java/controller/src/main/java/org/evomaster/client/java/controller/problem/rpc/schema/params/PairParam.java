@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PairType;
 
 import java.util.AbstractMap;
@@ -14,8 +15,8 @@ import java.util.Map;
 public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry<NamedTypedValue, NamedTypedValue>>{
     public final static String PAIR_NAME = "MAP_ENTRY";
 
-    public PairParam(PairType type) {
-        super(PAIR_NAME, type);
+    public PairParam(PairType type, AccessibleSchema accessibleSchema) {
+        super(PAIR_NAME, type, accessibleSchema);
     }
 
     @Override
@@ -34,7 +35,7 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
 
     @Override
     public PairParam copyStructure() {
-        return new PairParam(getType());
+        return new PairParam(getType(), accessibleSchema);
     }
 
     @Override

@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ByteBufferType;
 
 import java.nio.ByteBuffer;
@@ -16,8 +17,8 @@ import java.util.List;
  */
 public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>{
 
-    public ByteBufferParam(String name) {
-        super(name, new ByteBufferType());
+    public ByteBufferParam(String name, AccessibleSchema accessibleSchema) {
+        super(name, new ByteBufferType(), accessibleSchema);
     }
 
     public void setValue(byte[] value) {
@@ -44,7 +45,7 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
 
     @Override
     public ByteBufferParam copyStructure() {
-        return new ByteBufferParam(getName());
+        return new ByteBufferParam(getName(), accessibleSchema);
     }
 
     @Override

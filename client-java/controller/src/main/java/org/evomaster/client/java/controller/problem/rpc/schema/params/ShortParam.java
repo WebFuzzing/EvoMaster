@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 /**
@@ -9,12 +10,12 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOr
  */
 public class ShortParam extends PrimitiveOrWrapperParam<Short> {
 
-    public ShortParam(String name, String type, String fullTypeName, Class<?> clazz) {
-        super(name, type, fullTypeName, clazz);
+    public ShortParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
+        super(name, type, fullTypeName, clazz, accessibleSchema);
     }
 
-    public ShortParam(String name, PrimitiveOrWrapperType type) {
-        super(name, type);
+    public ShortParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
     @Override
@@ -39,7 +40,7 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
 
     @Override
     public ShortParam copyStructure() {
-        return new ShortParam(getName(), getType());
+        return new ShortParam(getName(), getType(), accessibleSchema);
     }
 
     @Override

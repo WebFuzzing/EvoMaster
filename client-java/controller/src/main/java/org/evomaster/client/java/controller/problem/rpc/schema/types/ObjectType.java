@@ -16,6 +16,7 @@ public class ObjectType extends TypeSchema {
      */
     private final List<NamedTypedValue> fields;
 
+
     public ObjectType(String type, String fullTypeName, List<NamedTypedValue> fields, Class<?> clazz) {
         super(type, fullTypeName, clazz);
         this.fields = fields;

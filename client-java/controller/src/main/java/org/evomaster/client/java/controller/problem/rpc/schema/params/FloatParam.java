@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 import java.util.ArrayList;
@@ -12,12 +13,12 @@ import java.util.List;
  * float param
  */
 public class FloatParam extends PrimitiveOrWrapperParam<Float> {
-    public FloatParam(String name, String type, String fullTypeName, Class<?> clazz) {
-        super(name, type, fullTypeName, clazz);
+    public FloatParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
+        super(name, type, fullTypeName, clazz, accessibleSchema);
     }
 
-    public FloatParam(String name, PrimitiveOrWrapperType type) {
-        super(name, type);
+    public FloatParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
     @Override
@@ -42,7 +43,7 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
 
     @Override
     public FloatParam copyStructure() {
-        return new FloatParam(getName(), getType());
+        return new FloatParam(getName(), getType(), accessibleSchema);
     }
 
 

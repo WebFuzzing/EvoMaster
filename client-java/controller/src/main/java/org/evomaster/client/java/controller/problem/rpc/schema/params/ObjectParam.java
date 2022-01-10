@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -13,8 +14,8 @@ import java.util.stream.Collectors;
  */
 public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValue>> {
 
-    public ObjectParam(String name, ObjectType type) {
-        super(name, type);
+    public ObjectParam(String name, ObjectType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
     @Override
@@ -43,7 +44,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
     @Override
     public ObjectParam copyStructure() {
-        return new ObjectParam(getName(), getType());
+        return new ObjectParam(getName(), getType(), accessibleSchema);
     }
 
     @Override

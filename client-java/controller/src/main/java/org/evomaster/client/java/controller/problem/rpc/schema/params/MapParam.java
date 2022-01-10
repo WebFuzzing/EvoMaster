@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.MapType;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -18,8 +19,8 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
     private Integer minSize;
     private Integer maxSize;
 
-    public MapParam(String name, MapType type) {
-        super(name, type);
+    public MapParam(String name, MapType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
     @Override
@@ -51,7 +52,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
 
     @Override
     public MapParam copyStructure() {
-        return new MapParam(getName(), getType());
+        return new MapParam(getName(), getType(), accessibleSchema);
     }
 
     @Override

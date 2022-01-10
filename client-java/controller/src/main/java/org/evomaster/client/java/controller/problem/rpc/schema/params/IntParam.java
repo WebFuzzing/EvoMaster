@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 /**
@@ -9,16 +10,20 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOr
  */
 public class IntParam extends PrimitiveOrWrapperParam<Integer> {
 
-    public IntParam(String name, String type, String fullTypeName, Class<?> clazz) {
-        super(name, type, fullTypeName, clazz);
+    public IntParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
+        super(name, type, fullTypeName, clazz, accessibleSchema);
     }
 
-    public IntParam(String name, PrimitiveOrWrapperType type) {
-        super(name, type);
+    public IntParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
-    public IntParam(String name) {
-        super(name, new PrimitiveOrWrapperType(int.class.getSimpleName(), int.class.getName(), false, int.class));
+    public IntParam(String name, AccessibleSchema accessibleSchema) {
+        super(name, new PrimitiveOrWrapperType(int.class.getSimpleName(), int.class.getName(), false, int.class), accessibleSchema);
+    }
+
+    public IntParam(String name){
+        this(name, null);
     }
 
 
@@ -44,7 +49,7 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
 
     @Override
     public IntParam copyStructure() {
-        return new IntParam(getName(), getType());
+        return new IntParam(getName(), getType(), accessibleSchema);
     }
 
 

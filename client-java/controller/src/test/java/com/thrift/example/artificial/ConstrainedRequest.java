@@ -6,24 +6,24 @@ import java.util.List;
 public class ConstrainedRequest {
 
     @NotEmpty@NotNull
-    List<String> list;
+    public List<String> list;
 
     @Max(100)@Min(0)
-    int intWithMinMax;
+    public int intWithMinMax;
 
     @Max(1000L)@Min(-100L)
-    long longWithMinMax;
+    public long longWithMinMax;
 
     @NotBlank@NotNull
-    String notBlankString;
+    public String notBlankString;
 
-    String nullableString;
+    public String nullableString;
 
     @Size(min=2, max = 10)
-    String stringSize;
+    public String stringSize;
 
     @Size(min= 1, max = 10)
-    List<Integer> listSize;
+    public List<Integer> listSize;
 
     //TODO eg, @DecimalMin(value = "0.1", inclusive = false)
 

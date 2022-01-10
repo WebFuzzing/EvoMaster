@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
 import java.util.ArrayList;
@@ -14,8 +15,8 @@ import java.util.stream.Collectors;
  */
 public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
 
-    public ArrayParam(String name, CollectionType type) {
-        super(name, type);
+    public ArrayParam(String name, CollectionType type, AccessibleSchema accessibleSchema) {
+        super(name, type,accessibleSchema);
     }
 
     @Override
@@ -43,7 +44,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
 
     @Override
     public ArrayParam copyStructure() {
-        return new ArrayParam(getName(), getType());
+        return new ArrayParam(getName(), getType(), accessibleSchema);
     }
 
 

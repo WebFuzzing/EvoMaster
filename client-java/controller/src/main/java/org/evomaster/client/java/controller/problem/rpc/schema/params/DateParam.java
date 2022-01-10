@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.DateType;
 
 import java.util.ArrayList;
@@ -12,12 +13,12 @@ import java.util.stream.Collectors;
 
 public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
 
-    public DateParam(String name, DateType type) {
-        super(name, type);
+    public DateParam(String name, DateType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
-    public DateParam(String name){
-        this(name, new DateType());
+    public DateParam(String name, AccessibleSchema accessibleSchema){
+        this(name, new DateType(), accessibleSchema);
     }
 
     @Override
@@ -28,7 +29,7 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
 
     @Override
     public DateParam copyStructure() {
-        return new DateParam(getName(), getType());
+        return new DateParam(getName(), getType(), accessibleSchema);
     }
 
     @Override

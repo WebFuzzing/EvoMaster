@@ -2,18 +2,19 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 /**
  * char param
  */
 public class CharParam extends PrimitiveOrWrapperParam<Character> {
-    public CharParam(String name, String type, String fullTypeName, Class<?> clazz) {
-        super(name, type, fullTypeName, clazz);
+    public CharParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
+        super(name, type, fullTypeName, clazz, accessibleSchema);
     }
 
-    public CharParam(String name, PrimitiveOrWrapperType type) {
-        super(name, type);
+    public CharParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
     @Override
@@ -37,7 +38,7 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
 
     @Override
     public CharParam copyStructure() {
-        return new CharParam(getName(), getType());
+        return new CharParam(getName(), getType(), accessibleSchema);
     }
 
 

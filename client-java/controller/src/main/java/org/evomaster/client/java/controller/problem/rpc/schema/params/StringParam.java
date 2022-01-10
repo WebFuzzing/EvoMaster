@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.StringType;
 
 import java.util.Collections;
@@ -18,8 +19,8 @@ public class StringParam extends NamedTypedValue<StringType, String> {
     private Long min;
     private Long max;
 
-    public StringParam(String name) {
-        super(name, new StringType());
+    public StringParam(String name, AccessibleSchema accessibleSchema) {
+        super(name, new StringType(), accessibleSchema);
     }
 
 
@@ -64,7 +65,7 @@ public class StringParam extends NamedTypedValue<StringType, String> {
 
     @Override
     public StringParam copyStructure() {
-        return new StringParam(getName());
+        return new StringParam(getName(), accessibleSchema);
     }
 
     @Override

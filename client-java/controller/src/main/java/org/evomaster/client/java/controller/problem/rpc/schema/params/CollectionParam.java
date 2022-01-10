@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
 public abstract class CollectionParam<V> extends NamedTypedValue<CollectionType, V>{
@@ -8,8 +9,8 @@ public abstract class CollectionParam<V> extends NamedTypedValue<CollectionType,
     private Integer minSize;
     private Integer maxSize;
 
-    public CollectionParam(String name, CollectionType type) {
-        super(name, type);
+    public CollectionParam(String name, CollectionType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
 

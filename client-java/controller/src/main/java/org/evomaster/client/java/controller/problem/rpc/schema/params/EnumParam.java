@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 import net.sf.jsqlparser.expression.WindowOffset;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.EnumType;
 
 import java.lang.reflect.InvocationTargetException;
@@ -16,8 +17,8 @@ import java.util.List;
 public class EnumParam extends NamedTypedValue<EnumType, Integer> {
 
 
-    public EnumParam(String name, EnumType type) {
-        super(name, type);
+    public EnumParam(String name, EnumType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
     @Override
@@ -39,7 +40,7 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
 
     @Override
     public EnumParam copyStructure() {
-        return new EnumParam(getName(), getType());
+        return new EnumParam(getName(), getType(), accessibleSchema);
     }
 
     @Override

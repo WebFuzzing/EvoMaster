@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 /**
@@ -12,12 +13,12 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     public final static String TYPE_NAME = byte.class.getSimpleName();
     public final static String FULL_TYPE_NAME = byte.class.getName();
 
-    public ByteParam(String name, String type, String fullTypeName, Class<?> clazz) {
-        super(name, type, fullTypeName, clazz);
+    public ByteParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
+        super(name, type, fullTypeName, clazz, accessibleSchema);
     }
 
-    public ByteParam(String name, PrimitiveOrWrapperType type) {
-        super(name, type);
+    public ByteParam(String name, PrimitiveOrWrapperType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
     }
 
     @Override
@@ -41,7 +42,7 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
 
     @Override
     public ByteParam copyStructure() {
-        return new ByteParam(getName(), getType());
+        return new ByteParam(getName(), getType(), accessibleSchema);
     }
 
 
