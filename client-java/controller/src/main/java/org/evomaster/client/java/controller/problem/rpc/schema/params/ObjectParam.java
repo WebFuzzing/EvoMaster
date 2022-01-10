@@ -80,10 +80,16 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     protected void setValueBasedOnValidInstance(Object instance) {
         List<NamedTypedValue> values = new ArrayList<>();
         List<NamedTypedValue> fields = getType().getFields();
+        Class<?> clazz;
+        try {
+            clazz = Class.forName(getType().getFullTypeName());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("ERROR: fail to get class with the name"+getType().getFullTypeName()+" Msg:"+e.getMessage());
+        }
         for (NamedTypedValue f: fields){
             NamedTypedValue copy = f.copyStructure();
             try {
-                Field fi = instance.getClass().getDeclaredField(f.getName());
+                Field fi = clazz.getDeclaredField(f.getName());
                 fi.setAccessible(true);
                 Object fiv = fi.get(instance);
                 copy.setValueBasedOnInstance(fiv);
@@ -112,8 +118,18 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         // new obj
         CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstanceObject(typeName, varName), indent+1);
         for (NamedTypedValue f : getValue()){
-            String fName = varName+"."+f.getName();
-            codes.addAll(f.newInstanceWithJava(false, true, fName, indent+1));
+            if (f.accessibleSchema == null || f.accessibleSchema.isAccessible){
+                String fName = varName+"."+f.getName();
+                codes.addAll(f.newInstanceWithJava(false, true, fName, indent+1));
+            }else{
+                String fName = varName;
+                boolean fdeclar = false;
+                if (f instanceof ObjectParam){
+                     fName = varName+"_"+f.getName();
+                     fdeclar = true;
+                }
+                codes.addAll(f.newInstanceWithJava(fdeclar, true, fName, indent+1));
+            }
         }
 
         CodeJavaGenerator.addCode(codes, "}", indent);
@@ -128,7 +144,14 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             return codes;
         }
         for (NamedTypedValue f : getValue()){
-            String fName = responseVarName+"."+f.getName();
+            String fName;
+            if (f.accessibleSchema == null || f.accessibleSchema.isAccessible)
+                fName = responseVarName+"."+f.getName();
+            else{
+                if (f.accessibleSchema.getterMethodName == null)
+                    throw new IllegalStateException("Error: private field, but there is no getter method");
+                fName = responseVarName+"."+f.accessibleSchema.getterMethodName+"()";
+            }
             codes.addAll(f.newAssertionWithJava(indent, fName));
         }
         return codes;

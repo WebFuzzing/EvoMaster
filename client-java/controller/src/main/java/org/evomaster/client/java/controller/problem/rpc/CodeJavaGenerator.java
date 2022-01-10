@@ -50,6 +50,14 @@ public class CodeJavaGenerator {
         return sb.toString();
     }
 
+    public static String oneLineSetterInstance(String setterMethodName, String fullName, String varName, String value){
+        String stringValue = NULL_EXP;
+        if (value != null)
+            stringValue = value;
+
+        return String.format("%s.%s((%s)%s);", varName, setterMethodName, handleNestedSymbolInTypeName(fullName), stringValue);
+    }
+
     /**
      * process [varName] = new Object()
      * @param varName specifies the variable name

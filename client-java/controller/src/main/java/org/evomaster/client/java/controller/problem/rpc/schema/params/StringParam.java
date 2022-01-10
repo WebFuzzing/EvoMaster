@@ -100,7 +100,18 @@ public class StringParam extends NamedTypedValue<StringType, String> {
         String value = null;
         if (getValue() != null)
             value = getValueAsJavaString();
-        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value));
+
+        String code;
+        if (accessibleSchema == null || accessibleSchema.isAccessible)
+            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value);
+        else{
+            if (accessibleSchema.setterMethodName == null)
+                throw new IllegalStateException("Error: private field, but there is no setter method");
+            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, value);
+        }
+        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
+
+//        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value));
     }
 
     @Override

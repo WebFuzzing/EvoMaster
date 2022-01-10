@@ -77,7 +77,15 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
 
     @Override
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString()));
+        String code;
+        if (accessibleSchema == null || accessibleSchema.isAccessible)
+            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+        else{
+            if (accessibleSchema.setterMethodName == null)
+                throw new IllegalStateException("Error: private field, but there is no setter method");
+            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+        }
+        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
     }
 
     @Override

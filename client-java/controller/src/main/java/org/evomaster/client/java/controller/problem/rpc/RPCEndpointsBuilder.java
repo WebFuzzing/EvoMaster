@@ -458,7 +458,7 @@ public class RPCEndpointsBuilder {
                             faccessSchema = new AccessibleSchema();
                         } else{
                             // find getter and setter
-                            faccessSchema = new AccessibleSchema(true, findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
+                            faccessSchema = new AccessibleSchema(false, findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
                         }
                         NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, customizationDtos, relatedCustomization, faccessSchema);
                         for (Annotation annotation : f.getAnnotations()){
@@ -500,13 +500,13 @@ public class RPCEndpointsBuilder {
         List<Method> found;
         if (findGetter){
             found = Arrays.stream(clazz.getMethods()).filter(m->
-                    m.isAccessible() &&
+                    Modifier.isPublic(m.getModifiers()) &&
                             m.getName().equalsIgnoreCase("get"+field.getName()) &&
                             m.getParameterCount() == 0
             ).collect(Collectors.toList());
         }else {
             found = Arrays.stream(clazz.getMethods()).filter(m->
-                    m.isAccessible() &&
+                    Modifier.isPublic(m.getModifiers()) &&
                             m.getName().equalsIgnoreCase("set"+field.getName()) &&
                             m.getParameterCount() == 1 &&
                             m.getParameterTypes()[0].equals(field.getType())
