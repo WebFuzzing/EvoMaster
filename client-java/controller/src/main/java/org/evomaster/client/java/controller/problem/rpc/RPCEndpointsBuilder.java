@@ -157,8 +157,6 @@ public class RPCEndpointsBuilder {
                         if (auth.jsonAuthEndpoint == null){
                             throw new IllegalArgumentException("Driver Config Error: now we only support auth info specified with JsonAuthRPCEndpointDto");
                         }
-                        if (auth.jsonAuthEndpoint.classNames.size() != auth.jsonAuthEndpoint.jsonPayloads.size())
-                            throw new IllegalArgumentException("Driver Config Error: to specify inputs for auth endpoint, classNames and jsonPayloads should have same size");
                         int index = authenticationDtoList.indexOf(auth);
 
                         // set value based on specified info
@@ -177,17 +175,28 @@ public class RPCEndpointsBuilder {
 
     private static void setAuthEndpoint(EndpointSchema authEndpoint, JsonAuthRPCEndpointDto jsonAuthEndpoint) throws ClassNotFoundException{
 
+        if (jsonAuthEndpoint.classNames != null && jsonAuthEndpoint.classNames.size() != jsonAuthEndpoint.jsonPayloads.size())
+            throw new IllegalArgumentException("Driver Config Error: to specify inputs for auth endpoint, classNames and jsonPayloads should have same size");
+
+
         for (int i = 0; i < authEndpoint.getRequestParams().size(); i++){
-            Class<?> clazz = Class.forName(jsonAuthEndpoint.classNames.get(i));
             NamedTypedValue inputParam = authEndpoint.getRequestParams().get(i);
             String jsonString = jsonAuthEndpoint.jsonPayloads.get(i);
-            try {
-                Object value = objectMapper.readValue(jsonString, clazz);
-                inputParam.setValueBasedOnInstance(value);
-            } catch (JsonProcessingException e) {
-                SimpleLogger.uniqueWarn("Driver Config Error: a jsonPayload at ("+i+") cannot be read as the object "+jsonAuthEndpoint.classNames.get(i));
+
+            if (jsonAuthEndpoint.classNames == null){
                 setNamedValueBasedOnJsonString(inputParam,jsonString, i);
+            }else{
+                Class<?> clazz = Class.forName(jsonAuthEndpoint.classNames.get(i));
+
+                try {
+                    Object value = objectMapper.readValue(jsonString, clazz);
+                    inputParam.setValueBasedOnInstance(value);
+                } catch (JsonProcessingException e) {
+                    SimpleLogger.uniqueWarn("Driver Config Error: a jsonPayload at ("+i+") cannot be read as the object "+jsonAuthEndpoint.classNames.get(i));
+                    setNamedValueBasedOnJsonString(inputParam,jsonString, i);
+                }
             }
+
         }
     }
 
