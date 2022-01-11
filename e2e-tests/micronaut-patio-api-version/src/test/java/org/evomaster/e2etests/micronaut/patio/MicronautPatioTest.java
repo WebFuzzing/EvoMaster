@@ -1,8 +1,6 @@
 package org.evomaster.e2etests.micronaut.patio;
 
 import com.foo.micronaut.patio.MicronautPatioTestController;
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
@@ -31,7 +29,5 @@ public class MicronautPatioTest extends RestTestBase {
             assertTrue(solution.getIndividuals().size() >= 1);
             assertHasAtLeastOne(solution, HttpVerb.GET, 500);
         } );
-
-        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
     }
 }

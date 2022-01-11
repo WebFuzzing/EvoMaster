@@ -18,8 +18,8 @@ public class NettyClassReplacement extends ThirdPartyMethodReplacementClass {
 
     @Replacement(replacingStatic = false,
         type = ReplacementType.TRACKER,
-        id = "isKeepAliveDefault",
-        usageFilter = UsageFilter.ONLY_SUT)
+        id = "isKeepAliveDefault_boolean_class",
+        usageFilter = UsageFilter.ANY)
     public boolean isKeepAliveDefault() {
         return true;
     }

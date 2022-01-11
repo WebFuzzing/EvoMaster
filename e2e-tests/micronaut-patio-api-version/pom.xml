@@ -154,7 +154,7 @@
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.micronaut</groupId>
-                            <artifactId>micronaut-http-validation</artifactId>
+                            <artifactId>micronaut-validation</artifactId>
                             <version>${micronaut.version}</version>
                         </path>
                         <path>
