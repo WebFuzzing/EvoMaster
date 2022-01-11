@@ -79,7 +79,7 @@ namespace EvoMaster.Controller.Controllers.db {
                     }
 
                     // with java: throw new RuntimeException(e);
-                    throw new SystemException();
+                    throw new SystemException(msg, ex);
                 }
             }
         }
