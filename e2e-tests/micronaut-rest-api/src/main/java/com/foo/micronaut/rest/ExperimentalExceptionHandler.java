@@ -15,7 +15,7 @@ public class ExperimentalExceptionHandler implements ExceptionHandler<Experiment
 
     @Override
     public HttpResponse<String> handle(HttpRequest request, ExperimentalException exception) {
-        return HttpResponse.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Crashed!");
+        return HttpResponse.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"message\":\"Crashed\"}");
     }
 
 }
