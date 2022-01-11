@@ -446,8 +446,7 @@ public class RPCEndpointsBuilder {
 
                     Field thrift_metamap = null;
 
-                    Map<Integer, CustomizedRequestValueDto> objRelatedCustomizationDtos = customizationDtos.entrySet().stream().filter(s-> s.getValue().specificRequestTypeName == null ||
-                            s.getValue().specificRequestTypeName.equals(clazz.getName())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                    Map<Integer, CustomizedRequestValueDto> objRelatedCustomizationDtos = getCustomizationBasedOnSpecifiedType(customizationDtos, clazz.getName());
 
                     for(Field f: clazz.getDeclaredFields()){
                         if (doSkipReflection(f.getName()) || doSkipField(f, rpcType))
@@ -498,6 +497,12 @@ public class RPCEndpointsBuilder {
         }
 
         return namedValue;
+    }
+
+    private static Map<Integer, CustomizedRequestValueDto> getCustomizationBasedOnSpecifiedType(Map<Integer, CustomizedRequestValueDto> customizationDtos, String objTypeName){
+        if (customizationDtos == null) return null;
+        return customizationDtos.entrySet().stream().filter(s-> s.getValue().specificRequestTypeName == null ||
+                s.getValue().specificRequestTypeName.equals(objTypeName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private static String findGetterOrSetter(Class<?> clazz, Field field, boolean findGetter){
