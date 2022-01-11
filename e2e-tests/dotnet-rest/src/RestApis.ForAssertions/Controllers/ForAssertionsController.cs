@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
 namespace RestApis.ForAssertions.Controllers {
@@ -70,7 +69,7 @@ namespace RestApis.ForAssertions.Controllers {
         [Route("/arrayObject")]
         [Produces("application/json")]
         public IActionResult GetArrayObject() {
-            return Ok(new Object[]{new {x=777}, new {x=888}});
+            return Ok(new object[]{new {x=777}, new {x=888}});
         }
         
         [HttpGet]

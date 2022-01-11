@@ -117,7 +117,7 @@ public class DistanceHelper {
         if (a.Equals(null)) throw new ArgumentNullException(nameof(a));
         if (b.Equals(null)) throw new ArgumentNullException(nameof(b));
 
-        return DistanceHelper.GetDistanceToEquality(ConvertToTimestamp(a), ConvertToTimestamp(b));
+        return GetDistanceToEquality(ConvertToTimestamp(a), ConvertToTimestamp(b));
     }
 
     private static long ConvertToTimestamp(DateTime value) {
@@ -143,13 +143,13 @@ public class DistanceHelper {
             // Byte
             var a = (byte)left;
             var b = (byte)right;
-            distance = DistanceHelper.GetDistanceToEquality(Convert.ToInt64(a), Convert.ToInt64(b));
+            distance = GetDistanceToEquality(Convert.ToInt64(a), Convert.ToInt64(b));
         }
         else if (left is short && right is short) {
             // Short
             var a = (short)left;
             var b = (short)right;
-            distance = DistanceHelper.GetDistanceToEquality(Convert.ToInt64(a), Convert.ToInt64(b));
+            distance = GetDistanceToEquality(Convert.ToInt64(a), Convert.ToInt64(b));
         }
         else if (left is int && right is int) {
             // Integer

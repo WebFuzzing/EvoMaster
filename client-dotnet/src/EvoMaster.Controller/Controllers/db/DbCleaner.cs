@@ -44,7 +44,7 @@ namespace EvoMaster.Controller.Controllers.db {
                     ConnectionStateCheck(connection);
 
                     // Create the command.
-                    DbCommand command = connection.CreateCommand();
+                    var command = connection.CreateCommand();
 
                     //disable referential integrity constraint for cleaning the data in tables
                     DisableReferentialIntegrity(command, type);
@@ -64,7 +64,7 @@ namespace EvoMaster.Controller.Controllers.db {
                         this could happen if there is a current transaction with a lock on any table.
                         We could check the content of INFORMATION_SCHEMA.LOCKS, or simply look at error message
                      */
-                    string msg = ex.Message;
+                    var msg = ex.Message;
                     if (msg.ToLower().Contains("timeout")) {
                         if (retries > 0) {
                             SimpleLogger.Warn("Timeout issue with cleaning DB. Trying again.");
@@ -158,7 +158,7 @@ namespace EvoMaster.Controller.Controllers.db {
             }
         }
 
-        private static String GetAllTableHasIdentify(DatabaseType type, String schema) {
+        private static string GetAllTableHasIdentify(DatabaseType type, string schema) {
             if (type != DatabaseType.MS_SQL_SERVER)
                 throw new InvalidOperationException("getAllTableHasIdentify only supports for MS_SQL_SERVER, not for " +
                                                     type);
@@ -242,7 +242,7 @@ namespace EvoMaster.Controller.Controllers.db {
         }
 
         private static string GetAllSequenceCommand(DatabaseType type, string schema) {
-            string command = "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES";
+            var command = "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES";
             switch (type) {
                 case DatabaseType.MYSQL:
                 case DatabaseType.MARIADB:

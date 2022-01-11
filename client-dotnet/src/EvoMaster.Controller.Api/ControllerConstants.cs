@@ -1,25 +1,25 @@
 namespace EvoMaster.Controller.Api {
     public class ControllerConstants {
-        public static readonly int DEFAULT_CONTROLLER_PORT = 40100;
+        public const int DefaultControllerPort = 40100;
 
-        public static readonly string DEFAULT_CONTROLLER_HOST = "localhost";
+        public const string DefaultControllerHost = "localhost";
 
-        public static readonly string BASE_PATH = "/controller/api";
+        public const string BasePath = "/controller/api";
 
-        public static readonly string INFO_SUT_PATH = "/infoSUT";
+        public const string InfoSutPath = "/infoSUT";
 
-        public static readonly string RUN_SUT_PATH = "/runSUT";
+        public const string RunSutPath = "/runSUT";
 
-        public static readonly string TEST_RESULTS = "/testResults";
+        public const string TestResults = "/testResults";
 
-        public static readonly string CONTROLLER_INFO = "/controllerInfo";
+        public const string ControllerInfo = "/controllerInfo";
 
-        public static readonly string NEW_SEARCH = "/newSearch";
+        public const string NewSearch = "/newSearch";
 
-        public static readonly string NEW_ACTION = "/newAction";
+        public const string NewAction = "/newAction";
 
-        public static readonly string EXTRA_HEURISTICS = "/extraHeuristics";
+        public const string ExtraHeuristics = "/extraHeuristics";
 
-        public static readonly string DATABASE_COMMAND = "/databaseCommand";
+        public const string DatabaseCommand = "/databaseCommand";
     }
 }

@@ -33,7 +33,7 @@ namespace EvoMaster.Client.Util {
         }
 
         public bool Remove(T item) {
-            return _dictionary.TryRemove(item ?? throw new ArgumentNullException(nameof(item)), out byte b);
+            return _dictionary.TryRemove(item ?? throw new ArgumentNullException(nameof(item)), out var b);
         }
 
         IEnumerator IEnumerable.GetEnumerator() {

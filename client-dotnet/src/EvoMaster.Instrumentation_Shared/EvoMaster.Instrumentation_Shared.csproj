@@ -16,6 +16,10 @@
     <ProjectReference Include="..\EvoMaster.Client.Util\EvoMaster.Client.Util.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.3" />
+  </ItemGroup>
+
   <Target Name="PublishNuGetLocally" AfterTargets="Build">
     <Exec Command="dotnet pack $(ProjectPath) -c $(ConfigurationName)" />
 
