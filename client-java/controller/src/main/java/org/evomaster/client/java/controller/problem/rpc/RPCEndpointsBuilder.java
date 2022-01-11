@@ -445,6 +445,10 @@ public class RPCEndpointsBuilder {
                     List<NamedTypedValue> fields = new ArrayList<>();
 
                     Field thrift_metamap = null;
+
+                    Map<Integer, CustomizedRequestValueDto> objRelatedCustomizationDtos = customizationDtos.entrySet().stream().filter(s-> s.getValue().specificRequestTypeName == null ||
+                            s.getValue().specificRequestTypeName.equals(clazz.getName())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
                     for(Field f: clazz.getDeclaredFields()){
                         if (doSkipReflection(f.getName()) || doSkipField(f, rpcType))
                             continue;
@@ -460,7 +464,7 @@ public class RPCEndpointsBuilder {
                             // find getter and setter
                             faccessSchema = new AccessibleSchema(false, findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
                         }
-                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, customizationDtos, relatedCustomization, faccessSchema);
+                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, objRelatedCustomizationDtos, relatedCustomization, faccessSchema);
                         for (Annotation annotation : f.getAnnotations()){
                             handleConstraint(field, annotation);
                         }
@@ -529,7 +533,9 @@ public class RPCEndpointsBuilder {
         List<String> candidateReferences = new ArrayList<>();
         List<NamedTypedValue> candidates = new ArrayList<>();
         customizationDtos.forEach((i, dto)->{
-            if (dto.combinedKeyValuePairs != null && (dto.specificRequestTypeName == null || dto.specificRequestTypeName.equals(namedTypedValue.getType().getFullTypeName()))){
+            if (dto.combinedKeyValuePairs != null
+                   // && (dto.specificRequestTypeName == null || dto.specificRequestTypeName.equals(namedTypedValue.getType().getFullTypeName()))
+            ){
                 dto.combinedKeyValuePairs.forEach(p->{
                     if (p.fieldKey.equals(namedTypedValue.getName())){
                         NamedTypedValue copy = namedTypedValue.copyStructure();
@@ -554,8 +560,9 @@ public class RPCEndpointsBuilder {
         }
 
         // check for keyValues
-        List<CustomizedRequestValueDto> ikey = customizationDtos.values().stream().filter(s-> s.keyValues!= null && s.keyValues.key.equals(namedTypedValue.getName()) &&
-                (s.specificRequestTypeName== null || s.specificRequestTypeName.equals(namedTypedValue.getType().getFullTypeName()))).collect(Collectors.toList());
+        List<CustomizedRequestValueDto> ikey = customizationDtos.values().stream().filter(s-> s.keyValues!= null && s.keyValues.key.equals(namedTypedValue.getName())
+                //&& (s.specificRequestTypeName== null || s.specificRequestTypeName.equals(namedTypedValue.getType().getFullTypeName()))
+        ).collect(Collectors.toList());
         if (ikey.size() == 1){
             setCandidatesForNamedValue(namedTypedValue, ikey.get(0));
         } else if (ikey.size() > 1){
