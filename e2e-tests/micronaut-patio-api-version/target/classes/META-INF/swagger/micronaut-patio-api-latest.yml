@@ -1,0 +1,15 @@
+openapi: 3.0.1
+info:
+  title: Micronaut Patio API
+  description: My API
+  version: latest
+paths:
+  /:
+    get:
+      summary: Index controller to crash micronaut with 500
+      description: To test the crash scenario.
+      operationId: index
+      parameters: []
+      responses:
+        500:
+          description: Expected outcome

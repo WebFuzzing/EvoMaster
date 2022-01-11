@@ -1,4 +1,4 @@
-package com.foo.micronaut.rest;
+package com.foo.micronaut.patio;
 
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
@@ -9,15 +9,15 @@ import org.evomaster.client.java.controller.problem.RestProblem;
 import java.sql.Connection;
 import java.util.List;
 
-public class MicronautTestController extends EmbeddedSutController {
+public class MicronautPatioTestController extends EmbeddedSutController {
 
-    private MicronautApplication application;
+    private MicronautPatioApplication application;
 
-    public MicronautTestController() { setControllerPort(0); }
+    public MicronautPatioTestController() { setControllerPort(0); }
 
     @Override
     public String startSut() {
-        application = new MicronautApplication();
+        application = new MicronautPatioApplication();
         try {
             application.run();
         } catch (Exception e) {
@@ -53,7 +53,7 @@ public class MicronautTestController extends EmbeddedSutController {
 
     @Override
     public String getPackagePrefixesToCover() {
-        return "com.foo.micronaut.rest";
+        return "com.foo.micronaut.patio";
     }
 
     @Override
@@ -72,7 +72,7 @@ public class MicronautTestController extends EmbeddedSutController {
     @Override
     public ProblemInfo getProblemInfo() {
         return new RestProblem(
-                "http://localhost:"+ application.getPort() +"/swagger/micronaut-latest.yml",
+                "http://localhost:"+ application.getPort() +"/swagger/micronaut-patio-api-latest.yml",
                 null
         );
     }
