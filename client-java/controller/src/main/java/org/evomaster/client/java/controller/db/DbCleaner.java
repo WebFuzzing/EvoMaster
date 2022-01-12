@@ -205,7 +205,7 @@ public class DbCleaner {
                         then it will cause a problem to reset identify
                     */
                     if (type  == DatabaseType.MS_SQL_SERVER)
-                        deleteTables(statement, t, tablesHaveIdentifies);
+                        deleteTables(statement, t, schema, tablesHaveIdentifies);
                     else
                         truncateTables(statement, t);
                 }
@@ -218,11 +218,14 @@ public class DbCleaner {
         statement.executeUpdate("DROP TABLE IF EXISTS " +table);
     }
 
-    private static void deleteTables(Statement statement, String table, Set<String> tableHasIdentify) throws SQLException {
-        statement.executeUpdate("DELETE FROM "+table);
+    private static void deleteTables(Statement statement, String table, String schema, Set<String> tableHasIdentify) throws SQLException {
+        String tableWithSchema = table;
+        if (!schema.isEmpty() && !schema.equals(getDefaultSchema(DatabaseType.MS_SQL_SERVER)))
+            tableWithSchema = schema+"."+schema;
+        statement.executeUpdate("DELETE FROM "+tableWithSchema);
 //        NOTE TAHT ideally we should reseed identify here, but there would case an issue, i.e., does not contain an identity column
         if (tableHasIdentify.contains(table))
-            statement.executeUpdate("DBCC CHECKIDENT ('"+table+"', RESEED, 0)");
+            statement.executeUpdate("DBCC CHECKIDENT ('"+tableWithSchema+"', RESEED, 0)");
     }
 
     private static void truncateTables(Statement statement, String table) throws SQLException {
