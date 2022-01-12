@@ -151,7 +151,7 @@ namespace EvoMaster.Controller.Controllers.db {
                 foreach (var t in tablesToClear) {
                     if (doDropTable) DropTables(command, t);
                     else {
-                        if (type == DatabaseType.MS_SQL_SERVER) DeleteTables(command, t, tablesHaveIdentifies);
+                        if (type == DatabaseType.MS_SQL_SERVER) DeleteTables(command, t, schema,tablesHaveIdentifies);
                         else TruncateTables(command, t);
                     }
                 }
@@ -171,11 +171,15 @@ namespace EvoMaster.Controller.Controllers.db {
             command.ExecuteNonQuery();
         }
 
-        private static void DeleteTables(DbCommand command, string table, ISet<string> tableHasIdentify) {
-            command.CommandText = "DELETE FROM " + table;
+        private static void DeleteTables(DbCommand command, string table, string schmea, ISet<string> tableHasIdentify){
+            var tableWithSchema = table;
+            if (schmea.Length > 0 && !schmea.Equals(GetSchema(DatabaseType.MS_SQL_SERVER))){
+                tableWithSchema = schmea + "." + table;
+            }
+            command.CommandText = "DELETE FROM " + tableWithSchema;
             command.ExecuteNonQuery();
             if (tableHasIdentify.Contains(table)) {
-                command.CommandText = "DBCC CHECKIDENT ('" + table + "', RESEED, 0)";
+                command.CommandText = "DBCC CHECKIDENT ('" + tableWithSchema + "', RESEED, 0)";
                 command.ExecuteNonQuery();
             }
         }
