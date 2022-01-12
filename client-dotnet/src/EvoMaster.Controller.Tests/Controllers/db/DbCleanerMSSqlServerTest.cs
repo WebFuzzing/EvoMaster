@@ -36,7 +36,7 @@ namespace EvoMaster.Controller.Tests.Controllers.db {
         }
 
         public async Task DisposeAsync() {
-            DbCleaner.ClearDatabase(_connection, null, GetDbType(), "");
+            DbCleaner.ClearDatabase(_connection, null, GetDbType(), "Foo");
 
             await _connection.CloseAsync();
             await _msSql.StopAsync();
@@ -44,7 +44,7 @@ namespace EvoMaster.Controller.Tests.Controllers.db {
 
 
         protected override void CleanDb(List<string> tablesToSkip) {
-            DbCleaner.ClearDatabase(_connection, tablesToSkip, GetDbType(), "");
+            DbCleaner.ClearDatabase(_connection, tablesToSkip, GetDbType(), "Foo");
         }
     }
 }
