@@ -52,13 +52,7 @@ namespace EvoMaster.Instrumentation {
                     typeof(Probes).GetMethod(nameof(Probes.EnteringBranch),
                         new[] {typeof(string), typeof(int), typeof(int)}));
 
-            foreach (var type in module.Types.Where(type =>
-                         type.Name != "<Module>" 
-                        // && !type.Name.Contains("Program") &&
-                        // !type.Name.ToLower().Contains("startup") && !type.Name.Contains("WebHostExtensions") &&
-                         //!type.Name.Contains("SecurityRequirementsOperationFilter")
-                         )) 
-            {
+            foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
                 _alreadyCompletedPoints.Clear();
 
                 foreach (var method in type.Methods) {
@@ -82,21 +76,20 @@ namespace EvoMaster.Instrumentation {
                             break;
                         }
 
-                        // if (instruction.Next != null && instruction.Next.Next != null) {
-                        //     if (IsConditionalJumpWithTwoArgs(instruction.Next.Next)) {
-                        //         mapping.TryGetValue(instruction, out var sp);
-                        //
-                        //         var l = lastEnteredLine;
-                        //         var c = lastEnteredColumn;
-                        //
-                        //         if (sp != null) {
-                        //             l = sp.StartLine;
-                        //             c = sp.StartColumn;
-                        //         }
-                        //
-                        //         i = InsertEnteringBranchProbe(instruction, ilProcessor, i, type.Name, l, c);
-                        //     }
-                        // }
+                        if (instruction.Next != null && instruction.Next.Next != null) {
+                            if (IsConditionalJumpWithTwoArgs(instruction.Next.Next)) {
+                                mapping.TryGetValue(instruction, out var sp);
+
+                                var l = lastEnteredLine;
+                                var c = lastEnteredColumn;
+
+                                if (sp != null) {
+                                    l = sp.StartLine;
+                                    c = sp.StartColumn;
+                                }
+                                i = InsertEnteringBranchProbe(instruction, ilProcessor, i, type.Name, l, c);
+                            }
+                        }
 
                         mapping.TryGetValue(instruction, out var sequencePoint);
                         //
@@ -166,7 +159,7 @@ namespace EvoMaster.Instrumentation {
 
             _alreadyCompletedPoints.Add(new CodeCoordinate(lineNo, columnNo));
 
-            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, $"{instruction}");
+            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _completedProbe);
@@ -209,45 +202,6 @@ namespace EvoMaster.Instrumentation {
             byteCodeIndex++;
 
             return byteCodeIndex;
-
-            // // Do not add inserted probe if the statement is already covered by completed probe
-            // if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
-            //
-            // //to prevent becoming the probe unreachable
-            // // if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous)) {
-            // //     // _mapping.TryGetValue(instruction.Previous, out var sequencePoint);
-            // //     // if (sequencePoint == null)
-            // //     return InsertEnteringStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
-            // //         lineNo, columnNo);
-            // //     // else
-            // //     //     return InsertEnteringStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
-            // //     //         sequencePoint.StartLine, sequencePoint.StartColumn);
-            // // }
-            //
-            // // lastEnteredLine = lineNo;
-            // // lastEnteredColumn = columnNo;
-            // //
-            // // var isBranch = instruction.Previous != null && IsJumpInstruction(instruction.Previous.Previous);
-            //
-            // var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, $"{instruction}");
-            // var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
-            // var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
-            // // var isBranchInstruction =
-            // //     isBranch ? ilProcessor.Create(OpCodes.Ldc_I4_1) : ilProcessor.Create(OpCodes.Ldc_I4_0);
-            // var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringProbe);
-            //
-            // ilProcessor.InsertBefore(instruction, classNameInstruction);
-            // byteCodeIndex++;
-            // ilProcessor.InsertBefore(instruction, lineNumberInstruction);
-            // byteCodeIndex++;
-            // ilProcessor.InsertBefore(instruction, columnNumberInstruction);
-            // byteCodeIndex++;
-            // // ilProcessor.InsertBefore(instruction, isBranchInstruction);
-            // // byteCodeIndex++;
-            // ilProcessor.InsertBefore(instruction, methodCallInstruction);
-            // byteCodeIndex++;
-            //
-            // return byteCodeIndex;
         }
 
         private int InsertEnteringBranchProbe(Instruction instruction, ILProcessor ilProcessor,
