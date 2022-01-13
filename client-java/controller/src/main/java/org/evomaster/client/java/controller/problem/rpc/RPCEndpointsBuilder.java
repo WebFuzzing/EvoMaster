@@ -615,9 +615,11 @@ public class RPCEndpointsBuilder {
     private static void handleConstraint(NamedTypedValue namedTypedValue, Annotation annotation){
         if (annotation.annotationType().getName().startsWith("javax.validation.constraints")){
             JavaXConstraintHandler.handleParam(namedTypedValue, annotation);
-        } else {
-            SimpleLogger.info("annotation with "+ annotation.annotationType().getName()+" is not handled");
         }
+        // remove the log for the moment, might need it later
+//        else {
+//            SimpleLogger.info("annotation with "+ annotation.annotationType().getName()+" is not handled");
+//        }
     }
 
     private static Class<?> getTemplateClass(Type type){
