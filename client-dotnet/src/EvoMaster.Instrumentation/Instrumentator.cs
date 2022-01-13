@@ -98,7 +98,7 @@ namespace EvoMaster.Instrumentation {
 
                                 instruction.UpdateJumpsToTheCurrentInstruction(probeFirstInstruction,
                                     method.Body.Instructions);
-                                
+
                                 jumpsPerLineCounter++;
                             }
                         }
@@ -219,6 +219,9 @@ namespace EvoMaster.Instrumentation {
         private (int index, Instruction probe) InsertEnteringBranchProbe(Instruction instruction,
             ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int branchId) {
+            _registeredTargets.Branches.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, true));
+            _registeredTargets.Branches.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, false));
+
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, branchId);
