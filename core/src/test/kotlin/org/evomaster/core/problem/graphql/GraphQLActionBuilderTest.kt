@@ -113,6 +113,7 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Disabled
     @Test
     fun anigListSchemaTest() {
 
@@ -199,6 +200,7 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Disabled
     @Test
     fun catalysisHubSchemaTest() {
 
@@ -285,6 +287,7 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Disabled
     @Test
     fun digitransitHSLSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -501,6 +504,7 @@ class GraphQLActionBuilderTest {
     }
 
 
+    @Disabled
     @Test
     fun interfaceEgTest() {
 
@@ -546,6 +550,7 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Disabled
     @Test
     fun interfaceInternalEgTest() {
 
@@ -598,6 +603,7 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Disabled
     @Test
     fun unionInternalEgTest() {
 
@@ -638,6 +644,7 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Disabled
     @Test
     fun unionInternalRecEgTest() {
 
@@ -705,6 +712,7 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Disabled
     @Test
     fun interfaceHisTest() {
         val actionCluster = mutableMapOf<String, Action>()
