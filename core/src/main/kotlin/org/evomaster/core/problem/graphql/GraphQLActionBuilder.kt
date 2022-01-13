@@ -919,7 +919,7 @@ object GraphQLActionBuilder {
             }
 
             //handling the return param, should put all the fields optional
-            val gene = getReturnGene(
+            val gene = constructTupleGenes(
                 state,
                 tableFieldType,
                 kindOfTableField,
@@ -944,7 +944,7 @@ object GraphQLActionBuilder {
         } else {
             //The action does not contain arguments, it only contain a return type
             //in handling the return param, should put all the fields optional
-            val gene = getReturnGene(
+            val gene = constructTupleGenes(
                 state,
                 tableFieldType,
                 kindOfTableField,
@@ -970,6 +970,372 @@ object GraphQLActionBuilder {
         return params
     }
 
+    /*
+  this will take as input the root return param
+*/
+    private fun constructTupleGenes(
+        state: TempState,
+        tableFieldType: String,
+        kindOfTableField: String?,
+        kindOfTableFieldType: String,
+        tableType: String,
+        history: Deque<String>,
+        isKindOfTableFieldTypeOptional: Boolean,
+        isKindOfTableFieldOptional: Boolean,
+        enumValues: MutableList<String>,
+        methodName: String,
+        unionTypes: MutableList<String>,
+        interfaceTypes: MutableList<String>,
+        accum: Int,
+        maxNumberOfGenes: Int,
+        tableFieldWithArgs: Boolean
+    ): Gene {
+        /*
+        How about the depth and history?
+         */
+
+        when (kindOfTableField?.lowercase()) {
+
+            GqlConst.LIST -> {
+                val template = constructTupleGenes(
+                    state,
+                    tableType,
+                    kindOfTableFieldType,
+                    kindOfTableField,
+                    tableFieldType,
+                    history,
+                    isKindOfTableFieldTypeOptional,
+                    isKindOfTableFieldOptional,
+                    enumValues,
+                    methodName,
+                    unionTypes,
+                    interfaceTypes,
+                    accum,
+                    maxNumberOfGenes,
+                    tableFieldWithArgs
+                )
+
+                return OptionalGene(methodName, ArrayGene(tableType, template))
+            }
+
+            GqlConst.OBJECT -> {
+                return if (checkDepth(accum, maxNumberOfGenes)) {
+                    history.addLast(tableType)
+                    if (history.count { it == tableType } == 1) {
+
+                        val objGene = createTupleGene(
+                            state, tableType, kindOfTableFieldType, history,
+                            isKindOfTableFieldTypeOptional, isKindOfTableFieldOptional, methodName, accum,
+                            maxNumberOfGenes, tableFieldWithArgs
+                        )
+                        history.removeLast()
+                        OptionalGene(methodName, objGene)
+                    } else {
+                        history.removeLast()
+                        (OptionalGene(methodName, CycleObjectGene(methodName)))
+                    }
+
+                } else {
+                    OptionalGene(tableType, LimitObjectGene(tableType))
+                }
+            }
+            "null" ->
+                return constructTupleGenes(
+                    state,
+                    tableType,
+                    kindOfTableFieldType,
+                    kindOfTableField,
+                    tableFieldType,
+                    history,
+                    isKindOfTableFieldTypeOptional,
+                    isKindOfTableFieldOptional,
+                    enumValues,
+                    methodName,
+                    unionTypes,
+                    interfaceTypes,
+                    accum,
+                    maxNumberOfGenes,
+                    tableFieldWithArgs
+                )
+
+            GqlConst.SCALAR ->
+                return createScalarGene(
+                    tableType,
+                    kindOfTableField,
+                )
+            GqlConst.ENUM ->
+                return createEnumGene(
+                    kindOfTableField,
+                    enumValues,
+                )
+            else ->
+                return OptionalGene(tableType, StringGene(tableType))
+        }
+
+
+    }
+
+    /*
+   Create the fields of an object as tuples.
+   Create tuples
+    */
+    private fun createTupleGene(
+        state: TempState,
+        tableType: String,
+        kindOfTableFieldType: String,
+        /**
+         * This history store the names of the object, union and interface types (i.e. tableFieldType in Table.kt ).
+         * It is used in cycles managements (detecting cycles due to object, union and interface types).
+         */
+        history: Deque<String>,
+        isKindOfTableFieldTypeOptional: Boolean,
+        isKindOfTableFieldOptional: Boolean,
+        methodName: String,
+        accum: Int,
+        maxNumberOfGenes: Int,
+        tableFieldWithArgs: Boolean
+    ): Gene {
+
+        /*
+        List of all fields (tuples)
+         */
+        val tuples: MutableList<Gene> = mutableListOf()
+
+        /*
+        Look after each field (tuple) and construct it recursively
+         */
+        for (tableElement in state.tables) {
+
+            /*
+            Contains the elements of a tuple
+             */
+            val elements: MutableList<Gene> = mutableListOf()
+
+            /*
+            it is not the field (tuple) that we are constructing
+             */
+            if (tableElement.tableType != tableType) {
+                continue
+            }
+
+            val tuple = tableElement.tableField
+            val ktfType = tableElement.kindOfTableFieldType.toString()
+            val ktf = tableElement.kindOfTableField.toString()
+
+            /*
+             The tuple (the field) is with arguments (n-1 elements):
+             construct its arguments and;
+             its last element (return)
+             */
+            if (tableElement.tableFieldWithArgs) {
+                /*
+                 Construct field s arguments (the n-1 elements of the tuple) first
+                 */
+                for (argElement in state.argsTables) {
+                    if (argElement.tableType == tableElement.tableField) {
+                        if (argElement.kindOfTableFieldType == SCALAR || argElement.kindOfTableFieldType == ENUM) {
+                            /*
+                            array scalar type or array enum type, the gene is constructed from getInputGene to take the correct names
+                             */
+                            val gene = getInputScalarListOrEnumListGene(
+                                state,
+                                argElement.tableFieldType,
+                                argElement.kindOfTableField.toString(),
+                                argElement.kindOfTableFieldType.toString(),
+                                argElement.tableType.toString(),
+                                history,
+                                argElement.isKindOfTableFieldTypeOptional,
+                                argElement.isKindOfTableFieldOptional,
+                                argElement.enumValues,
+                                argElement.tableField,
+                                argElement.tableFieldWithArgs
+                            )
+                            /*
+                            Adding one element to the tuple
+                             */
+                            elements.add(gene)
+                        } else {
+                            /*
+                            for input objects types and objects types
+                             */
+                            val gene = getInputGene(
+                                state,
+                                argElement.tableFieldType,
+                                argElement.kindOfTableField.toString(),
+                                argElement.kindOfTableFieldType.toString(),
+                                argElement.tableType.toString(),
+                                history,
+                                argElement.isKindOfTableFieldTypeOptional,
+                                argElement.isKindOfTableFieldOptional,
+                                argElement.enumValues,
+                                argElement.tableField,
+                                argElement.unionTypes,
+                                argElement.interfaceTypes, maxNumberOfGenes,
+                                argElement.tableFieldWithArgs
+                            )
+                            elements.add(gene)
+                        }
+                    }
+                }
+                /*
+                 Construct the last element (the return)
+                 */
+                if (ktfType.lowercase() == GqlConst.OBJECT) {
+                    val gene =
+                        getReturnGene(
+                            state,
+                            tableElement.tableFieldType,
+                            ktfType,
+                            ktf,
+                            tableElement.tableFieldType,
+                            history,
+                            isKindOfTableFieldTypeOptional,
+                            isKindOfTableFieldOptional,
+                            tableElement.enumValues,
+                            tableElement.tableField,
+                            tableElement.unionTypes,
+                            tableElement.interfaceTypes,
+                            accum,
+                            maxNumberOfGenes,
+                            tableElement.tableFieldWithArgs
+                        )
+                    elements.add(gene)
+                } else {
+                    if (ktfType.lowercase() == GqlConst.SCALAR) {
+
+                        val gene = createScalarGene(
+                            tableElement.tableFieldType,
+                            tableElement.tableField,
+                        )
+                        elements.add(gene)
+                    } else {
+                        if (ktf.lowercase() == GqlConst.LIST) {
+                            val gene =
+                                getReturnGene(
+                                    state,
+                                    tableElement.tableFieldType,
+                                    ktf,
+                                    ktfType,
+                                    tableElement.tableFieldType,
+                                    history,
+                                    isKindOfTableFieldTypeOptional,
+                                    isKindOfTableFieldOptional,
+                                    tableElement.enumValues,
+                                    tableElement.tableField,
+                                    tableElement.unionTypes,
+                                    tableElement.interfaceTypes,
+                                    accum,
+                                    maxNumberOfGenes,
+                                    tableElement.tableFieldWithArgs
+                                )
+                            elements.add(gene)
+                        } else {
+                            if (ktfType.lowercase() == GqlConst.ENUM) {
+                                val gene = createEnumGene(
+                                    tableElement.tableField,
+                                    tableElement.enumValues
+                                )
+                                elements.add(gene)
+                            }
+                            /*
+                            why there is no null here, investigate todo
+                             */
+                        }
+                    }
+                }
+
+                /*
+                The field (the tuple) is constructed
+                put it into an optional ? todo
+                 */
+                val oneTupleConstructed = OptionalGene(elements.last().name, TupleGene(elements.last().name, elements))
+                tuples.add(oneTupleConstructed)
+
+            } else {
+                /*
+                Tuple (field) without arguments.
+                Construct only the last element (the return)
+                 */
+                if (ktfType.lowercase() == GqlConst.OBJECT) {
+                    val gene =
+                        getReturnGene(
+                            state,
+                            tableElement.tableFieldType,
+                            ktfType,
+                            ktf,
+                            tableElement.tableFieldType,
+                            history,
+                            isKindOfTableFieldTypeOptional,
+                            isKindOfTableFieldOptional,
+                            tableElement.enumValues,
+                            tableElement.tableField,
+                            tableElement.unionTypes,
+                            tableElement.interfaceTypes,
+                            accum,
+                            maxNumberOfGenes,
+                            tableElement.tableFieldWithArgs
+                        )
+
+                    elements.add(gene)
+                } else {
+                    if (ktfType.lowercase() == GqlConst.SCALAR) {
+
+                        val gene = createScalarGene(
+                            tableElement.tableFieldType,
+                            tableElement.tableField,
+                        )
+                        elements.add(gene)
+                    } else {
+                        if (ktf.lowercase() == GqlConst.LIST) {
+                            val gene =
+                                getReturnGene(
+                                    state,
+                                    tableElement.tableFieldType,
+                                    ktf,
+                                    ktfType,
+                                    tableElement.tableFieldType,
+                                    history,
+                                    isKindOfTableFieldTypeOptional,
+                                    isKindOfTableFieldOptional,
+                                    tableElement.enumValues,
+                                    tableElement.tableField,
+                                    tableElement.unionTypes,
+                                    tableElement.interfaceTypes,
+                                    accum,
+                                    maxNumberOfGenes,
+                                    tableElement.tableFieldWithArgs
+                                )
+                            elements.add(gene)
+                        } else {
+                            if (ktfType.lowercase() == GqlConst.ENUM) {
+                                val gene = createEnumGene(
+                                    tableElement.tableField,
+                                    tableElement.enumValues
+                                )
+                                elements.add(gene)
+                            }
+                            /*
+                            why there is no null here, investigate todo
+                             */
+                        }
+                    }
+                }
+                /*
+                 The field (the tuple) is constructed
+                 put it into an optional ? todo
+                  */
+                val oneTupleConstructed = OptionalGene(elements.last().name, TupleGene(elements.last().name, elements))
+                tuples.add(oneTupleConstructed)
+            }
+
+
+        }
+
+        return ObjectGene(methodName, tuples, methodName)
+    }
+
+
+
     private fun isPrimitiveType(
         gene: Gene
     ): Boolean {
@@ -988,12 +1354,11 @@ object GraphQLActionBuilder {
                 && !(gene is OptionalGene && gene.gene is EnumGene<*>))
     }
 
+
     /**Note: There are tree functions containing blocs of "when": two functions for inputs and one for return.
      *For the inputs: blocs of "when" could not be refactored since they are different because the names are different.
      *And for the return: it could not be refactored with inputs because we do not consider optional/non optional cases (unlike in inputs) .
      */
-
-
     /**
      * For Scalar arrays types and Enum arrays types
      */
@@ -1592,85 +1957,253 @@ object GraphQLActionBuilder {
         maxNumberOfGenes: Int,
         tableFieldWithArgs: Boolean
     ): Gene {
-        val fields: MutableList<Gene> = mutableListOf()
+
+       // val fields: MutableList<Gene> = mutableListOf()
         var accum = accum
 
-        for (element in state.tables) {
+        val tuples: MutableList<Gene> = mutableListOf()
+        /*
+        TODO Need to be refactored
+         */
 
-            if (element.tableType != tableType) {
+        /*
+        Look after each field (tuple) and construct it recursively
+          */
+        for (tableElement in state.tables) {
+
+            /*
+            Contains the elements of a tuple
+             */
+            val elements: MutableList<Gene> = mutableListOf()
+
+            /*
+            it is not the field (tuple) that we are constructing
+             */
+            if (tableElement.tableType != tableType) {
                 continue
             }
 
-            val ktfType = element.kindOfTableFieldType.toString()
-            val ktf = element.kindOfTableField.toString()
+            val tuple = tableElement.tableField
+            val ktfType = tableElement.kindOfTableFieldType.toString()
+            val ktf = tableElement.kindOfTableField.toString()
 
-            if (ktfType.lowercase() == GqlConst.SCALAR) {
-                val field = element.tableField
-                val template = createScalarGene(
-                    element.tableFieldType,
-                    field,
-                )
-                fields.add(template)
-            } else {
-                if (ktf.lowercase() == GqlConst.LIST) {
-                    val template =
-                        getReturnGene(
-                            state,
-                            element.tableFieldType,
-                            ktf,
-                            ktfType,
-                            element.tableFieldType,
-                            history,
-                            isKindOfTableFieldTypeOptional,
-                            isKindOfTableFieldOptional,
-                            element.enumValues,
-                            element.tableField,
-                            element.unionTypes,
-                            element.interfaceTypes,
-                            accum,
-                            maxNumberOfGenes,
-                            tableFieldWithArgs
-                        )
-
-                    fields.add(template)
-                } else
-                    if (ktfType.lowercase() == GqlConst.OBJECT) {
-
-                        val template =
-                            getReturnGene(
+            /*
+             The tuple (the field) is with arguments (n-1 elements):
+             construct its arguments and;
+             its last element (return)
+             */
+            if (tableElement.tableFieldWithArgs) {
+                /*
+                 Construct field s arguments (the n-1 elements of the tuple) first
+                 */
+                for (argElement in state.argsTables) {
+                    if (argElement.tableType == tableElement.tableField) {
+                        if (argElement.kindOfTableFieldType == SCALAR || argElement.kindOfTableFieldType == ENUM) {
+                            /*
+                            array scalar type or array enum type, the gene is constructed from getInputGene to take the correct names
+                             */
+                            val gene = getInputScalarListOrEnumListGene(
                                 state,
-                                element.tableFieldType,
-                                ktfType,
-                                ktf,
-                                element.tableFieldType,
+                                argElement.tableFieldType,
+                                argElement.kindOfTableField.toString(),
+                                argElement.kindOfTableFieldType.toString(),
+                                argElement.tableType.toString(),
                                 history,
-                                isKindOfTableFieldTypeOptional,
-                                isKindOfTableFieldOptional,
-                                element.enumValues,
-                                element.tableField,
-                                element.unionTypes,
-                                element.interfaceTypes,
-                                accum,
-                                maxNumberOfGenes,
-                                tableFieldWithArgs
+                                argElement.isKindOfTableFieldTypeOptional,
+                                argElement.isKindOfTableFieldOptional,
+                                argElement.enumValues,
+                                argElement.tableField,
+                                argElement.tableFieldWithArgs
                             )
-
-                        fields.add(template)
-
-
-                    } else if (ktfType.lowercase() == GqlConst.ENUM) {
-                        val field = element.tableField
-                        val template = createEnumGene(
-                            field,
-                            element.enumValues
-                        )
-
-                        fields.add(template)
-
+                            /*
+                            Adding one element to the tuple
+                             */
+                            elements.add(gene)
+                        } else {
+                            /*
+                            for input objects types and objects types
+                             */
+                            val gene = getInputGene(
+                                state,
+                                argElement.tableFieldType,
+                                argElement.kindOfTableField.toString(),
+                                argElement.kindOfTableFieldType.toString(),
+                                argElement.tableType.toString(),
+                                history,
+                                argElement.isKindOfTableFieldTypeOptional,
+                                argElement.isKindOfTableFieldOptional,
+                                argElement.enumValues,
+                                argElement.tableField,
+                                argElement.unionTypes,
+                                argElement.interfaceTypes, maxNumberOfGenes,
+                                argElement.tableFieldWithArgs
+                            )
+                            elements.add(gene)
+                        }
                     }
+                }
+                /*
+                 Construct the last element (the return)
+                 */
+                if (ktfType.lowercase() == GqlConst.OBJECT) {
+                    val gene =
+                        getReturnGene(
+                            state,
+                            tableElement.tableFieldType,
+                            ktfType,
+                            ktf,
+                            tableElement.tableFieldType,
+                            history,
+                            isKindOfTableFieldTypeOptional,
+                            isKindOfTableFieldOptional,
+                            tableElement.enumValues,
+                            tableElement.tableField,
+                            tableElement.unionTypes,
+                            tableElement.interfaceTypes,
+                            accum,
+                            maxNumberOfGenes,
+                            tableElement.tableFieldWithArgs
+                        )
+                    elements.add(gene)
+                } else {
+                    if (ktfType.lowercase() == GqlConst.SCALAR) {
 
-                /* else
-                    if (ktfType.lowercase() == GqlConst.UNION) {
+                        val gene = createScalarGene(
+                            tableElement.tableFieldType,
+                            tableElement.tableField,
+                        )
+                        elements.add(gene)
+                    } else {
+                        if (ktf.lowercase() == GqlConst.LIST) {
+                            val gene =
+                                getReturnGene(
+                                    state,
+                                    tableElement.tableFieldType,
+                                    ktf,
+                                    ktfType,
+                                    tableElement.tableFieldType,
+                                    history,
+                                    isKindOfTableFieldTypeOptional,
+                                    isKindOfTableFieldOptional,
+                                    tableElement.enumValues,
+                                    tableElement.tableField,
+                                    tableElement.unionTypes,
+                                    tableElement.interfaceTypes,
+                                    accum,
+                                    maxNumberOfGenes,
+                                    tableElement.tableFieldWithArgs
+                                )
+                            elements.add(gene)
+                        } else {
+                            if (ktfType.lowercase() == GqlConst.ENUM) {
+                                val gene = createEnumGene(
+                                    tableElement.tableField,
+                                    tableElement.enumValues
+                                )
+                                elements.add(gene)
+                            }
+                            /*
+                            why there is no null here, investigate todo
+                             */
+                        }
+                    }
+                }
+
+                /*
+                The field (the tuple) is constructed
+                put it into an optional ? todo
+                 */
+                val oneTupleConstructed =
+                    OptionalGene(elements.last().name, TupleGene(elements.last().name, elements))
+                tuples.add(oneTupleConstructed)
+
+            } else {
+                /*
+                Tuple (field) without arguments.
+                Construct only the last element (the return)
+                 */
+                if (ktfType.lowercase() == GqlConst.OBJECT) {
+                    val gene =
+                        getReturnGene(
+                            state,
+                            tableElement.tableFieldType,
+                            ktfType,
+                            ktf,
+                            tableElement.tableFieldType,
+                            history,
+                            isKindOfTableFieldTypeOptional,
+                            isKindOfTableFieldOptional,
+                            tableElement.enumValues,
+                            tableElement.tableField,
+                            tableElement.unionTypes,
+                            tableElement.interfaceTypes,
+                            accum,
+                            maxNumberOfGenes,
+                            tableElement.tableFieldWithArgs
+                        )
+
+                    elements.add(gene)
+                } else {
+                    if (ktfType.lowercase() == GqlConst.SCALAR) {
+
+                        val gene = createScalarGene(
+                            tableElement.tableFieldType,
+                            tableElement.tableField,
+                        )
+                        elements.add(gene)
+                    } else {
+                        if (ktf.lowercase() == GqlConst.LIST) {
+                            val gene =
+                                getReturnGene(
+                                    state,
+                                    tableElement.tableFieldType,
+                                    ktf,
+                                    ktfType,
+                                    tableElement.tableFieldType,
+                                    history,
+                                    isKindOfTableFieldTypeOptional,
+                                    isKindOfTableFieldOptional,
+                                    tableElement.enumValues,
+                                    tableElement.tableField,
+                                    tableElement.unionTypes,
+                                    tableElement.interfaceTypes,
+                                    accum,
+                                    maxNumberOfGenes,
+                                    tableElement.tableFieldWithArgs
+                                )
+                            elements.add(gene)
+                        } else {
+                            if (ktfType.lowercase() == GqlConst.ENUM) {
+                                val gene = createEnumGene(
+                                    tableElement.tableField,
+                                    tableElement.enumValues
+                                )
+                                elements.add(gene)
+                            }/* else
+                if (ktfType.lowercase() == GqlConst.UNION) {
+                val template =
+                    getReturnGene(
+                        state,
+                        element.tableFieldType,
+                        ktfType,
+                        ktf,
+                        element.tableFieldType,
+                        history,
+                        isKindOfTableFieldTypeOptional,
+                        isKindOfTableFieldOptional,
+                        element.enumValues,
+                        element.tableField,
+                        element.unionTypes,
+                        element.interfaceTypes,
+                        accum,
+                        maxNumberOfGenes,
+                        tableFieldWithArgs
+                    )
+
+                fields.add(template)
+
+            } else
+                if (ktfType.lowercase() == GqlConst.INTERFACE) {
                     val template =
                         getReturnGene(
                             state,
@@ -1692,34 +2225,24 @@ object GraphQLActionBuilder {
 
                     fields.add(template)
 
-                } else
-                    if (ktfType.lowercase() == GqlConst.INTERFACE) {
-                        val template =
-                            getReturnGene(
-                                state,
-                                element.tableFieldType,
-                                ktfType,
-                                ktf,
-                                element.tableFieldType,
-                                history,
-                                isKindOfTableFieldTypeOptional,
-                                isKindOfTableFieldOptional,
-                                element.enumValues,
-                                element.tableField,
-                                element.unionTypes,
-                                element.interfaceTypes,
-                                accum,
-                                maxNumberOfGenes,
-                                tableFieldWithArgs
-                            )
+                }*/
+                            /*
+                            why there is no null here, investigate todo
+                             */
+                        }
+                    }
+                }
+                /*
+                 The field (the tuple) is constructed
+                 put it into an optional ? todo
+                  */
+                val oneTupleConstructed =
+                    OptionalGene(elements.last().name, TupleGene(elements.last().name, elements))
+                tuples.add(oneTupleConstructed)
 
-                        fields.add(template)
-
-                    }*/
             }
-
         }
-        return ObjectGene(methodName, fields, tableType)
+        return ObjectGene(methodName, tuples, tableType)
     }
 
     /**
