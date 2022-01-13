@@ -34,7 +34,11 @@
 		<None Remove="bin-temp\**"/>
 	</ItemGroup>
 
-
+	<Target Name="PostClean" AfterTargets="Clean">
+		<RemoveDir Directories="generated" />
+		<RemoveDir Directories="bin-temp" />
+	</Target>
+	
 	<!-- Read all the comments below to get an understanding of what's happening for putting up the scaffolding
          In Summary, what's happeing here is nothing but the instrumentation of the SUT and creating a new dll for it
          For more details, read the codes & comments below

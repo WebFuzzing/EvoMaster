@@ -53,9 +53,9 @@ namespace EvoMaster.Instrumentation {
             ExecutionTracer.EnteringStatement(className, lineNo, columnNo);
         }
 
-        public static void EnteringBranch(string className, int lineNo, int columnNo) {
+        public static void EnteringBranch(string className, int lineNo, int branchId) {
             if (!className.Contains("PrivateImplementationDetails"))
-                Console.WriteLine($"****** branch detected at {className}: {lineNo}, {columnNo}");
+                Console.WriteLine($"****** branch detected at {className}: {lineNo}, {branchId}");
         }
     }
 }

@@ -67,6 +67,8 @@ namespace EvoMaster.Instrumentation {
 
                     method.Body.SimplifyMacros(); //This is to prevent overflow of short branch opcodes
 
+                    var jumpsPerLineCounter = 0;
+
                     for (var i = 0; i < int.MaxValue; i++) {
                         Instruction instruction;
                         try {
@@ -77,22 +79,32 @@ namespace EvoMaster.Instrumentation {
                         }
 
                         if (instruction.Next != null && instruction.Next.Next != null) {
-                            if (IsConditionalJumpWithTwoArgs(instruction.Next.Next)) {
+                            if (instruction.Next.Next.IsConditionalJumpWithTwoArgs() &&
+                                !instruction.IsConditionalJumpWithTwoArgs() &&
+                                !instruction.Next.IsConditionalJumpWithTwoArgs()) {
                                 mapping.TryGetValue(instruction, out var sp);
 
                                 var l = lastEnteredLine;
-                                var c = lastEnteredColumn;
 
                                 if (sp != null) {
                                     l = sp.StartLine;
-                                    c = sp.StartColumn;
                                 }
-                                i = InsertEnteringBranchProbe(instruction, ilProcessor, i, type.Name, l, c);
+
+                                if (l != lastEnteredLine) jumpsPerLineCounter = 0;
+                                Instruction probeFirstInstruction;
+                                (i, probeFirstInstruction) = InsertEnteringBranchProbe(instruction, ilProcessor, i,
+                                    type.Name, l,
+                                    jumpsPerLineCounter);
+
+                                instruction.UpdateJumpsToTheCurrentInstruction(probeFirstInstruction,
+                                    method.Body.Instructions);
+                                
+                                jumpsPerLineCounter++;
                             }
                         }
 
                         mapping.TryGetValue(instruction, out var sequencePoint);
-                        //
+
                         // //skip return instructions which do not have any sequence point info
                         if ((sequencePoint == null || sequencePoint.IsHidden) && instruction.OpCode != OpCodes.Ret)
                             continue;
@@ -104,7 +116,7 @@ namespace EvoMaster.Instrumentation {
 
                         if (sequencePoint == null) continue;
 
-                        if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous) &&
+                        if (instruction.Previous != null && instruction.Previous.IsJumpOrExitInstruction() &&
                             instruction.Next != null) {
                             i = InsertEnteringStatementProbe(instruction.Next, ilProcessor, i, type.Name,
                                 sequencePoint.StartLine,
@@ -147,7 +159,7 @@ namespace EvoMaster.Instrumentation {
             if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
 
             //to prevent becoming the probe unreachable
-            if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous)) {
+            if (instruction.Previous != null && instruction.Previous.IsJumpOrExitInstruction()) {
                 return InsertCompletedStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
                     lineNo, columnNo);
             }
@@ -182,7 +194,7 @@ namespace EvoMaster.Instrumentation {
             if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
 
             //to prevent becoming the probe unreachable
-            if (instruction.Previous != null && IsJumpOrExitInstruction(instruction.Previous)) {
+            if (instruction.Previous != null && instruction.Previous.IsJumpOrExitInstruction()) {
                 return InsertEnteringStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
                     lineNo, columnNo);
             }
@@ -204,11 +216,12 @@ namespace EvoMaster.Instrumentation {
             return byteCodeIndex;
         }
 
-        private int InsertEnteringBranchProbe(Instruction instruction, ILProcessor ilProcessor,
-            int byteCodeIndex, string className, int lineNo, int columnNo) {
+        private (int index, Instruction probe) InsertEnteringBranchProbe(Instruction instruction,
+            ILProcessor ilProcessor,
+            int byteCodeIndex, string className, int lineNo, int branchId) {
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
-            var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
+            var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, branchId);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringBranchProbe);
 
             ilProcessor.InsertBefore(instruction, classNameInstruction);
@@ -220,61 +233,7 @@ namespace EvoMaster.Instrumentation {
             ilProcessor.InsertBefore(instruction, methodCallInstruction);
             byteCodeIndex++;
 
-            return byteCodeIndex;
+            return (byteCodeIndex, classNameInstruction);
         }
-
-        private static bool IsJumpOrExitInstruction(Instruction instruction) =>
-            IsJumpInstruction(instruction) || IsExitInstruction(instruction);
-
-        //to detect instructions which jump to another instruction
-        private static bool IsJumpInstruction(Instruction instruction) {
-            return (instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
-                    instruction.OpCode != OpCodes.Box) ||
-                   (instruction.OpCode == OpCodes.Ceq) ||
-                   (instruction.OpCode == OpCodes.Cgt) ||
-                   (instruction.OpCode == OpCodes.Cgt_Un) ||
-                   (instruction.OpCode == OpCodes.Clt) ||
-                   (instruction.OpCode == OpCodes.Clt_Un);
-        }
-
-        private static bool IsExitInstruction(Instruction instruction) {
-            return (instruction.OpCode == OpCodes.Throw) ||
-                   (instruction.OpCode == OpCodes.Rethrow) || (instruction.OpCode == OpCodes.Endfinally) ||
-                   (instruction.OpCode == OpCodes.Leave) ||
-                   (instruction.OpCode == OpCodes.Leave_S);
-        }
-
-        private static bool IsConditionalJumpWithTwoArgs(Instruction instruction) =>
-            instruction.OpCode == OpCodes.Ceq ||
-            instruction.OpCode == OpCodes.Clt ||
-            instruction.OpCode == OpCodes.Clt_Un ||
-            instruction.OpCode == OpCodes.Cgt ||
-            instruction.OpCode == OpCodes.Cgt_Un ||
-            instruction.OpCode == OpCodes.Bgt ||
-            instruction.OpCode == OpCodes.Bgt_S ||
-            instruction.OpCode == OpCodes.Bgt_Un ||
-            instruction.OpCode == OpCodes.Bgt_Un_S ||
-            instruction.OpCode == OpCodes.Beq ||
-            instruction.OpCode == OpCodes.Beq_S ||
-            instruction.OpCode == OpCodes.Bge ||
-            instruction.OpCode == OpCodes.Bge_S ||
-            instruction.OpCode == OpCodes.Bge_Un ||
-            instruction.OpCode == OpCodes.Bge_Un_S ||
-            instruction.OpCode == OpCodes.Ble ||
-            instruction.OpCode == OpCodes.Ble_S ||
-            instruction.OpCode == OpCodes.Ble_Un ||
-            instruction.OpCode == OpCodes.Ble_Un_S ||
-            instruction.OpCode == OpCodes.Blt ||
-            instruction.OpCode == OpCodes.Blt_S ||
-            instruction.OpCode == OpCodes.Blt_Un ||
-            instruction.OpCode == OpCodes.Blt_Un_S ||
-            instruction.OpCode == OpCodes.Bne_Un ||
-            instruction.OpCode == OpCodes.Bne_Un_S;
-
-        private static bool IsConditionalJumpWithOneArg(Instruction instruction) =>
-            instruction.OpCode == OpCodes.Brfalse ||
-            instruction.OpCode == OpCodes.Brfalse_S ||
-            instruction.OpCode == OpCodes.Brtrue ||
-            instruction.OpCode == OpCodes.Brtrue_S;
     }
 }
