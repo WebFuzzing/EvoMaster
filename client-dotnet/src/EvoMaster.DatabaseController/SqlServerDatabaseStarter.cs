@@ -2,6 +2,7 @@ using System;
 using System.Data.Common;
 using System.Threading.Tasks;
 using Docker.DotNet;
+using EvoMaster.Client.Util;
 using EvoMaster.DatabaseController.Abstractions;
 using EvoMaster.DatabaseController.Containers;
 using Microsoft.Data.SqlClient;
@@ -39,7 +40,7 @@ namespace EvoMaster.DatabaseController {
             var connectionString = _sqlServerContainer.GetConnectionString(DatabaseName);
 
             //TODO: use logger
-            Console.WriteLine($"*** SQL Server database started and the connection string is: \"{connectionString}\"");
+            SimpleLogger.Info($"*** SQL Server database started and the connection string is: \"{connectionString}\"");
 
             var connection = new SqlConnection(connectionString);
 

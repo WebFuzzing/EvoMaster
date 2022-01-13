@@ -16,7 +16,7 @@ namespace EvoMaster.Controller.Tests.Controllers.db {
         public void TestAllClean() {
             seedFKData(GetConnection(), GetDbType());
 
-            DbDataReader reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Bar;");
+            var reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Bar;");
             Assert.True(reader.HasRows);
             reader.Close();
 
@@ -39,7 +39,7 @@ namespace EvoMaster.Controller.Tests.Controllers.db {
         public void TestCleanWithSkip() {
             seedFKData(GetConnection(), GetDbType());
 
-            DbDataReader reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Bar;");
+            var reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Bar;");
             Assert.True(reader.HasRows);
             reader.Close();
 

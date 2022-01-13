@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using EvoMaster.Instrumentation_Shared;
 
 namespace EvoMaster.Instrumentation.StaticState {
@@ -24,7 +23,7 @@ namespace EvoMaster.Instrumentation.StaticState {
         When we get the best distance for a testing target, we might
         also want to know which action in the test led to it.
         */
-        private static int _actionIndex = 0;
+        private static int _actionIndex;
 
         /*
         A set of possible values used in the tests, needed for some kinds
@@ -43,16 +42,16 @@ namespace EvoMaster.Instrumentation.StaticState {
         Keep track of expensive operations. Might want to skip doing them if too many.
         This should be re-set for each action
         */
-        private static int _expensiveOperation = 0;
+        private static int _expensiveOperation;
 
-        private static readonly object _lock = new object();
+        private static readonly object Lock = new object();
 
 
         /*
          One problem is that, once a test case is evaluated, some background tests might still be running.
          We want to kill them to avoid issue (eg, when evaluating new tests while previous threads are still running).
          */
-        private static volatile bool _killSwitch = false;
+        private static volatile bool _killSwitch;
 
         static ExecutionTracer() {
             Reset();
@@ -60,7 +59,7 @@ namespace EvoMaster.Instrumentation.StaticState {
 
 
         public static void Reset() {
-            lock (_lock) {
+            lock (Lock) {
                 ObjectiveCoverage.Clear();
                 _actionIndex = 0;
                 AdditionalInfoList.Clear();
@@ -76,7 +75,7 @@ namespace EvoMaster.Instrumentation.StaticState {
         }
 
         public static void SetAction(Action action) {
-            lock (_lock) {
+            lock (Lock) {
                 SetKillSwitch(false);
                 _expensiveOperation = 0;
                 if (action.GetIndex() != _actionIndex) {
@@ -91,49 +90,78 @@ namespace EvoMaster.Instrumentation.StaticState {
         }
 
         public static void SetKillSwitch(bool killSwitch) {
-            ExecutionTracer._killSwitch = killSwitch;
+            _killSwitch = killSwitch;
         }
 
-        public static IList<AdditionalInfo> ExposeAdditionalInfoList() {
+
+        /// <summary>
+        /// This could be based on static info of the input (eg, according to a precise name convention given
+        /// by TaintInputName), or dynamic info given directly by the test itself (eg, the test at action can
+        /// register a list of values to check for)
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns>bool</returns>
+        public static bool IsTaintInput(string input) {
+            return TaintInputName.IsTaintInput(input) || _inputVariables.Contains(input);
+        }
+
+        public static TaintType GetTaintType(string input) {
+            if (input == null) {
+                return TaintType.NONE;
+            }
+
+            if (IsTaintInput(input)) {
+                return TaintType.FULL_MATCH;
+            }
+
+            if (TaintInputName.IncludesTaintInput(input)
+                || _inputVariables.ToList().Any(input.Contains)) {
+                return TaintType.PARTIAL_MATCH;
+            }
+
+            return TaintType.NONE;
+        }
+
+        public static IEnumerable<AdditionalInfo> ExposeAdditionalInfoList() {
             return AdditionalInfoList;
         }
 
 
         ///<summary>Report on the fact that a given line has been executed.</summary>
-        public static void ExecutedLine(string className, string methodName, string descriptor, int line) {
-            //This is done to prevent the SUT keep on executing code after a test case is evaluated
-            if (IsKillSwitch()) {
-                //TODO
-                // var initClass = Arrays.stream(Thread.CurrentThread..getStackTrace())
-                //     .anyMatch(e -> e.getMethodName().equals("<clinit>"));
-
-                /*
-                    must NOT stop the initialization of a class, otherwise the SUT will be left in an
-                    inconsistent state in the following calls
-                 */
-
-                // if (!initClass)
-                // {
-                //     throw new KillSwitchException();
-                // }
-            }
-
-            //TODO
-            //for targets to cover
-            var lineId = ObjectiveNaming.LineObjectiveName(className, line);
-            var classId = ObjectiveNaming.ClassObjectiveName(className);
-            UpdateObjective(lineId, 1d);
-            UpdateObjective(classId, 1d);
-
-            //to calculate last executed line
-            var lastLine = className + "_" + line + "_" + methodName;
-            var lastMethod = className + "_" + methodName + "_" + descriptor;
-            MarkLastExecutedStatement(lastLine, lastMethod);
-        }
-
-        public static void MarkLastExecutedStatement(string lastLine, string lastMethod) {
-            //TODO
-            //GetCurrentAdditionalInfo().PushLastExecutedStatement(lastLine, lastMethod);
+        // public static void ExecutedLine(string className, string methodName, string descriptor, int line)
+        // {
+        //     //This is done to prevent the SUT keep on executing code after a test case is evaluated
+        //     if (IsKillSwitch())
+        //     {
+        //         //TODO
+        //         // var initClass = Arrays.stream(Thread.CurrentThread..getStackTrace())
+        //         //     .anyMatch(e -> e.getMethodName().equals("<clinit>"));
+        //
+        //         /*
+        //             must NOT stop the initialization of a class, otherwise the SUT will be left in an
+        //             inconsistent state in the following calls
+        //          */
+        //
+        //         // if (!initClass)
+        //         // {
+        //         //     throw new KillSwitchException();
+        //         // }
+        //     }
+        //
+        //     //TODO
+        //     //for targets to cover
+        //     var lineId = ObjectiveNaming.LineObjectiveName(className, line);
+        //     var classId = ObjectiveNaming.ClassObjectiveName(className);
+        //     UpdateObjective(lineId, 1d);
+        //     UpdateObjective(classId, 1d);
+        //
+        //     //to calculate last executed line
+        //     var lastLine = className + "_" + line + "_" + methodName;
+        //     var lastMethod = className + "_" + methodName + "_" + descriptor;
+        //     MarkLastExecutedStatement(statementId);
+        // }
+        public static void MarkLastExecutedStatement(string statementId) {
+            GetCurrentAdditionalInfo().PushLastExecutedStatement(statementId);
         }
 
         ///<returns>the number of objectives that have been encountered during the test execution</returns>
@@ -141,8 +169,30 @@ namespace EvoMaster.Instrumentation.StaticState {
 
         public static int GetNumberOfObjectives(string prefix) =>
             ObjectiveCoverage.Count(e => prefix == null || e.Key.StartsWith(prefix));
-        
+
         public static IDictionary<string, TargetInfo> GetInternalReferenceToObjectiveCoverage() => ObjectiveCoverage;
+
+        public static void EnteringStatement(string className, int lineNo, int index) {
+            var lineId = ObjectiveNaming.LineObjectiveName(className, lineNo);
+            var classId = ObjectiveNaming.ClassObjectiveName(className);
+            var statementId = ObjectiveNaming.StatementObjectiveName(className, lineNo, index);
+
+            UpdateObjective(lineId, 1);
+            UpdateObjective(classId, 1);
+            UpdateObjective(statementId, 0.5);
+
+            MarkLastExecutedStatement(statementId);
+        }
+
+        public static void CompletedStatement(string className, int lineNo, int index) {
+            var statementId = ObjectiveNaming.StatementObjectiveName(className, lineNo, index);
+
+            UpdateObjective(statementId, 1);
+
+            MarkLastExecutedStatement(statementId);
+
+            //HeuristicsForBooleans.clearLastEvaluation();
+        }
 
         private static void UpdateObjective(string id, double value) {
             if (value < 0d || value > 1d) {
@@ -150,11 +200,11 @@ namespace EvoMaster.Instrumentation.StaticState {
             }
 
             //In the same execution, a target could be reached several times, so we should keep track of the best value found so far
-            lock (_lock) {
+            lock (Lock) {
                 if (ObjectiveCoverage.ContainsKey(id)) {
                     var previous = ObjectiveCoverage[id].Value;
                     if (value > previous) {
-                        ObjectiveCoverage.Add(id, new TargetInfo(null, id, value, _actionIndex));
+                        ObjectiveCoverage[id] = new TargetInfo(null, id, value, _actionIndex);
                     }
                 }
                 else {
@@ -165,8 +215,22 @@ namespace EvoMaster.Instrumentation.StaticState {
             ObjectiveRecorder.Update(id, value);
         }
 
+        /**
+         * get fitness value of target with given id
+         */
+        public static double GetValue(string id){
+            return ObjectiveCoverage[id].Value ?? 0.0;
+        }
+
+        /**
+         * return number of objectives which are not covered but reached
+         */
+        public static int GetNumberOfNonCoveredObjectives(string prefix){
+            return ObjectiveCoverage.Values.Count(x => x.DescriptiveId.StartsWith(prefix) && x.Value < 1);
+        }
+
         private static AdditionalInfo GetCurrentAdditionalInfo() {
-            lock (_lock) {
+            lock (Lock) {
                 return AdditionalInfoList[_actionIndex];
             }
         }

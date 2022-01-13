@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using EvoMaster.Client.Util;
@@ -129,7 +128,7 @@ namespace EvoMaster.Instrumentation.StaticState {
 
                 n++;
                 if (_idMapping.ContainsKey(id)) {
-                    int numericId = _idMapping[id];
+                    var numericId = _idMapping[id];
                     var h = MaxObjectiveCoverage[numericId];
                     if (h == 1d) {
                         covered++;
@@ -141,7 +140,7 @@ namespace EvoMaster.Instrumentation.StaticState {
                 return 1d;
             }
 
-            return (double)covered / (double)n;
+            return (double) covered / (double) n;
         }
 
         // public static void PrintCoveragePerTarget(PrintWriter writer)
@@ -188,7 +187,7 @@ namespace EvoMaster.Instrumentation.StaticState {
             else {
                 var old = MaxObjectiveCoverage[id];
                 if (value > old) {
-                    MaxObjectiveCoverage.Add(id, value);
+                    MaxObjectiveCoverage[id] = value;
                 }
             }
         }
@@ -196,14 +195,13 @@ namespace EvoMaster.Instrumentation.StaticState {
         public static int GetMappedId(string descriptiveId) {
             var id = _idMapping.ComputeIfAbsent(descriptiveId, k => {
                 //int x = IdMappingCounter.getAndIncrement();
-                int x = IdMappingCounter;
+                var x = IdMappingCounter;
                 Interlocked.Increment(ref IdMappingCounter);
 
                 _reversedIdMapping.ComputeIfAbsent(x, t => descriptiveId);
                 return x;
             });
             //reversedIdMapping.computeIfAbsent(id, k -> descriptiveId);
-
             return id;
         }
 

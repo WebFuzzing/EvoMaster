@@ -6,7 +6,7 @@ namespace EvoMaster.Instrumentation {
     public static class InstrumentationController {
         public static void ResetForNewSearch() {
             ExecutionTracer.Reset();
-            //ObjectiveRecorder.reset(false);
+            ObjectiveRecorder.Reset(false);
         }
 
         /*
@@ -22,11 +22,10 @@ namespace EvoMaster.Instrumentation {
                would be lost, as EM will have no way to ask for them later, unless
                we explicitly say to return ALL targets
              */
-            //ObjectiveRecorder.clearFirstTimeEncountered();
+            ObjectiveRecorder.ClearFirstTimeEncountered();
         }
 
         public static List<TargetInfo> GetTargetInfos(IEnumerable<int> ids) {
-            
             var list = new List<TargetInfo>();
 
             var objectives = ExecutionTracer.GetInternalReferenceToObjectiveCoverage();
@@ -34,16 +33,15 @@ namespace EvoMaster.Instrumentation {
             ids.ToList().ForEach(id => {
                 var descriptiveId = ObjectiveRecorder.GetDescriptiveId(id);
 
-                var info = objectives[descriptiveId];
-                
-                info = info == null ? TargetInfo.NotReached(id) : info.WithMappedId(id).WithNoDescriptiveId();
+                var has = objectives.TryGetValue(descriptiveId, out var info);
+
+                info = (info == null || !has) ? TargetInfo.NotReached(id) : info.WithMappedId(id).WithNoDescriptiveId();
 
                 list.Add(info);
             });
 
             //If new targets were found, we add them even if not requested by EM
-            ObjectiveRecorder.GetTargetsSeenFirstTime().ToList().ForEach(s=> {
-                
+            ObjectiveRecorder.GetTargetsSeenFirstTime().ToList().ForEach(s => {
                 var mappedId = ObjectiveRecorder.GetMappedId(s);
 
                 var info = objectives[s].WithMappedId(mappedId);

@@ -4,7 +4,7 @@ namespace EvoMaster.Controller.Controllers.db {
     //Man: I just enable a method to execute the command, and this needs to be further extended based on java version.
     public static class SqlScriptRunner {
         public static void ExecCommand(DbConnection connection, string command) {
-            DbCommand cmd = connection.CreateCommand();
+            var cmd = connection.CreateCommand();
             ExecCommand(cmd, command);
         }
 
@@ -22,7 +22,7 @@ namespace EvoMaster.Controller.Controllers.db {
 
 
         public static DbDataReader ExecCommandWithDataReader(DbConnection connection, string command) {
-            DbCommand cmd = connection.CreateCommand();
+            var cmd = connection.CreateCommand();
             return ExecCommandWithDataReader(cmd, command);
         }
     }

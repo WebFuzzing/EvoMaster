@@ -18,7 +18,7 @@ namespace EvoMaster.Controller.Api {
          * If this is not null, then "data" must be null.
          */
         public static WrappedResponseDto<K> WithData<K>(K data) {
-            WrappedResponseDto<K> dto = new WrappedResponseDto<K>();
+            var dto = new WrappedResponseDto<K>();
 
             dto.Data = data;
 
@@ -36,7 +36,7 @@ namespace EvoMaster.Controller.Api {
                 throw new ArgumentException("Empty error message");
             }
 
-            WrappedResponseDto dto = new WrappedResponseDto();
+            var dto = new WrappedResponseDto();
 
             dto.Error = error;
 
