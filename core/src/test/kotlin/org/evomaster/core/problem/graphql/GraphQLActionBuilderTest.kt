@@ -803,48 +803,7 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Test
-    fun functionInReturnedObjectsWithBooleanSelectionWithUsersTest() {
-        /*
-        without pageInfo, with boolean selection
-         */
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/anilist(Fragment1Users).json").readText()
-
-        val config = EMConfig()
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
-
-        assertEquals(1, actionCluster.size)
-
-        val page = actionCluster.get("page") as GraphQLAction
-        assertEquals(2, page.parameters.size)
-        assertTrue(page.parameters[0] is GQInputParam)
-        assertTrue((page.parameters[0].gene as OptionalGene).gene is IntegerGene)
-        assertTrue(page.parameters[1] is GQReturnParam)
-        assertTrue((page.parameters[1].gene  is ObjectGene))
-        val objPage = (page.parameters[1].gene as ObjectGene)
-        assertEquals(1, objPage.fields.size)
-
-        assertTrue(objPage.fields.any { it is TupleGene && it.name == "users" })
-
-        val tupleUsers = objPage.fields.first { it.name == "users" }  as TupleGene
-        assertEquals(2, tupleUsers.elements.size)
-        assertTrue(tupleUsers.elements.any {it is OptionalGene &&  it.gene is ObjectGene && it.name == "users" })
-        assertTrue(tupleUsers.elements.any {it is OptionalGene &&  it.gene is StringGene && it.name == "Search" })
-
-        val objUser = (tupleUsers.elements.last() as OptionalGene).gene as ObjectGene
-        assertEquals(1, objUser.fields.size)
-        assertTrue(objUser.fields.any { it is TupleGene && it.name == "about" })
-
-        val tupleAbout = (objUser.fields.first { it.name == "about" }  as TupleGene)
-        assertEquals(2, tupleUsers.elements.size)
-
-        assertTrue(tupleAbout.elements.any {it is OptionalGene &&  it.gene is BooleanGene && it.name == "AsHtml" })
-        assertTrue(tupleAbout.elements.any  { it is BooleanGene && it.name == "about" })
-
-    }
-
-    @Disabled
+   //@Disabled
     @Test
     fun functionInReturnedObjectsTest() {
 
