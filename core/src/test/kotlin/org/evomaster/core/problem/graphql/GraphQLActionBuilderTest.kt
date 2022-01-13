@@ -177,7 +177,7 @@ class GraphQLActionBuilderTest {
 
     }
 
-
+    @Disabled
     @Test
     fun bitquerySchemaTest() {
 
@@ -447,6 +447,7 @@ class GraphQLActionBuilderTest {
         assertTrue(logging.parameters[0].gene is ObjectGene)
     }
 
+    @Disabled
     @Test
     fun universeSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
