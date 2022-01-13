@@ -844,8 +844,9 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Disabled
     @Test
-    fun functionInReturnedObjectsWithBooleanSelectionWithPageInfo3AndUsers2Test() {
+    fun functionInReturnedObjectsTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/anilist(Fragment1PageInfo3Users2).json").readText()
@@ -1022,7 +1023,7 @@ class GraphQLActionBuilderTest {
     }
     @Disabled
     @Test
-    fun functionInReturnedObjectsWithOutBooleanSelectionWithPageInfo3AndUsers2Test() {
+    fun functionInReturnedObjectsWithOutBooleanSelectionTest() {
         /*
         with pageInfo3, with page info 4, WITH PAGE INFO5
          */
