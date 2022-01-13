@@ -974,53 +974,9 @@ class GraphQLActionBuilderTest {
     }
 
     /*
-    The tests underneath are for testing schemas without the boolean selection.
+    The test underneath are for testing schemas without the boolean selection.
     It helps when investigating the structure of each component
      */
-
-    @Disabled
-    @Test
-    fun functionInReturnedObjectsWithOutBooleanSelectionWithUsersForListTest() {
-        /*
-        without pageInfo, with Page as a list
-         */
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/anilist(Fragment1UsersList).json").readText()
-
-        val config = EMConfig()
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
-
-        assertEquals(1, actionCluster.size)
-        val page = actionCluster.get("page") as GraphQLAction
-        assertEquals(2, page.parameters.size)
-        assertTrue(page.parameters[0] is GQInputParam)
-        assertTrue((page.parameters[0].gene as OptionalGene).gene is IntegerGene)
-        assertTrue(page.parameters[1] is GQReturnParam)
-        assertTrue((page.parameters[1].gene as OptionalGene).gene is ArrayGene<*>)
-        val arrayPage = (page.parameters[1].gene as OptionalGene).gene as ArrayGene<*>
-
-        assertTrue((arrayPage.template as OptionalGene).gene is ObjectGene)
-
-        val objPage = (arrayPage.template as OptionalGene).gene as ObjectGene
-
-        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "users" })
-
-        val tupleUsers = (objPage.fields.first { it.name == "users" } as OptionalGene).gene as TupleGene
-        assertEquals(2, tupleUsers.elements.size)
-        assertTrue(tupleUsers.elements.any {it is OptionalGene &&  it.gene is StringGene && it.name == "Search" })
-        assertTrue(tupleUsers.elements.any {it is OptionalGene &&  it.gene is ObjectGene && it.name == "users" })
-
-        val objUser = (tupleUsers.elements.last() as OptionalGene).gene as ObjectGene
-        assertEquals(1, objUser.fields.size)
-        assertTrue(objUser.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "about" })
-
-        val tupleAbout = (objUser.fields.first { it.name == "about" } as OptionalGene).gene as TupleGene
-        assertEquals(2, tupleUsers.elements.size)
-
-        assertTrue(tupleAbout.elements.any {it is OptionalGene &&  it.gene is BooleanGene && it.name == "AsHtml" })
-        assertTrue(tupleAbout.elements.any {it is OptionalGene &&  it.gene is StringGene && it.name == "about" })
-
-    }
     @Disabled
     @Test
     fun functionInReturnedObjectsWithOutBooleanSelectionTest() {
