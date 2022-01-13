@@ -37,6 +37,10 @@ public class MicronautTest extends RestTestBase {
 
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
+        /*
+            Below test checks for keep-alive header even when the server crashes.
+        */
+
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
