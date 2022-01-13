@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using EvoMaster.Instrumentation.Examples.Triangle;
 using EvoMaster.Instrumentation.StaticState;
 using EvoMaster.Instrumentation_Shared;
@@ -10,7 +7,7 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
-    public class LineCovTcTest {
+    public class LineCovTcTest : CovTcTestBase {
         private readonly ITestOutputHelper _testOutputHelper;
 
         public LineCovTcTest(ITestOutputHelper testOutputHelper) {
@@ -128,16 +125,6 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
             var targets = GetRegisteredTargets();
 
             Assert.Equal(expectedClasses, targets.Classes);
-        }
-
-        private RegisteredTargets GetRegisteredTargets() {
-            var bin = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            if (bin == null) throw new Exception("Executing directory not found");
-
-            var json = File.ReadAllText(Path.Combine(bin, "Targets.json"));
-
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<RegisteredTargets>(json);
         }
     }
 }
