@@ -375,6 +375,7 @@ class GraphQLActionBuilderTest {
         assertTrue(objAgency.fields.any { it is BooleanGene && it.name == "phone" })
     }
 
+    @Disabled
     @Test
     fun eHRISchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -495,6 +496,7 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Disabled
     @Test
     fun travelgateXSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
