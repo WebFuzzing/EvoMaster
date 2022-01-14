@@ -465,33 +465,21 @@ class GraphQLActionBuilderTest {
         assertTrue(ppackage.parameters[1].gene is ObjectGene)
 
         val objPackage = ppackage.parameters[1].gene as ObjectGene
-
         assertTrue(objPackage.fields.any { it is TupleGene && it.name == "isMain" })
+        assertTrue(objPackage.fields.any { it is TupleGene && it.name == "version" })
+
         val tupleIsMain = objPackage.fields.first { it.name == "isMain" } as TupleGene
         assertTrue(tupleIsMain.elements.any { it is BooleanGene && it.name == "isMain" })
 
+        val tupleVersion = objPackage.fields.first { it.name == "version" } as TupleGene
+        assertTrue(tupleVersion.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "version" })
 
+        val objVersion = (tupleVersion.elements.last() as OptionalGene).gene as ObjectGene
+        assertTrue(objVersion.fields.any { it is TupleGene && it.name == "name" })
 
-        //assertTrue(objPage.fields.any { it is TupleGene && it.name == "pageInfo" })
-
-/*
- assertEquals(8, objPage.fields.size)
-        assertTrue(objPage.fields.any { it is TupleGene && it.name == "pageInfo" })
-
-        val tuplePageInfo = objPage.fields.first { it.name == "pageInfo" } as TupleGene
-        assertEquals(1, tuplePageInfo.elements.size)
-        assertTrue(tuplePageInfo.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo" })
-
-        val objPageInfo = (tuplePageInfo.elements.last() as OptionalGene).gene as ObjectGene
-        assertEquals(1, objPageInfo.fields.size)
-        assertTrue(objPageInfo.fields.any { it is TupleGene && it.name == "total" })
- */
-
-        assertTrue(objPackage.fields.any { it is BooleanGene && it.name == "isMain" })
-        assertTrue(objPackage.fields[2] is OptionalGene)
-        val objVersion = (objPackage.fields[2] as OptionalGene).gene as ObjectGene
-        objVersion.fields.any { it is BooleanGene && it.name == "name" }
-
+        val tupleName = objVersion.fields.first { it.name == "name" } as TupleGene
+        assertEquals(1, tupleName.elements.size)
+        assertTrue(tupleName.elements.any { it is BooleanGene && it.name == "name" })
 
     }
 
