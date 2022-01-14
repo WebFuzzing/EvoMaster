@@ -48,9 +48,7 @@ namespace EvoMaster.Controller.Tests.Controllers.db {
         }
 
         public override void SeedFKData(DbConnection connection){
-            if (GetDbType() == DatabaseType.MS_SQL_SERVER){
-                SqlScriptRunner.ExecCommand(connection, "CREATE SCHEMA Foo AUTHORIZATION dbo;");
-            }
+            SqlScriptRunner.ExecCommand(connection, "CREATE SCHEMA Foo AUTHORIZATION dbo;");
             base.SeedFKData(connection);
         }
 
