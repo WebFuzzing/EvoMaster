@@ -10,7 +10,7 @@ using EvoMaster.Controller.Controllers.db;
 using Xunit;
 
 namespace EvoMaster.Controller.Tests.Controllers.db {
-    public class DbCleanerMsSqlServerTest : DbCleanTestBase, IAsyncLifetime {
+    public class DbCleanerWithSchemaMsSqlServerTest : DbCleanTestBase, IAsyncLifetime {
         private static ITestcontainersBuilder<MsSqlTestcontainer> msSQLBuilder =
             new TestcontainersBuilder<MsSqlTestcontainer>()
                 .WithDatabase(new MsSqlTestcontainerConfiguration("mcr.microsoft.com/mssql/server:2017-CU14-ubuntu") {
@@ -36,7 +36,7 @@ namespace EvoMaster.Controller.Tests.Controllers.db {
         }
 
         public async Task DisposeAsync() {
-            DbCleaner.ClearDatabase(_connection, null, GetDbType(), "");
+            DbCleaner.ClearDatabase(_connection, null, GetDbType(), "Foo");
 
             await _connection.CloseAsync();
             await _msSql.StopAsync();
@@ -44,7 +44,30 @@ namespace EvoMaster.Controller.Tests.Controllers.db {
 
 
         protected override void CleanDb(List<string> tablesToSkip) {
-            DbCleaner.ClearDatabase(_connection, tablesToSkip, GetDbType(), "");
+            DbCleaner.ClearDatabase(_connection, tablesToSkip, GetDbType(), "Foo");
         }
+
+        public override void SeedFKData(DbConnection connection){
+            if (GetDbType() == DatabaseType.MS_SQL_SERVER){
+                SqlScriptRunner.ExecCommand(connection, "CREATE SCHEMA Foo AUTHORIZATION dbo;");
+            }
+            base.SeedFKData(connection);
+        }
+
+        /*
+         * in order to test if the dbcleaner is capable of cleaning
+         * data in a table under a schema.
+         * inside [seedFKData], we created a schema (Foo).
+         * then here, we need to return a table name with the schema, ie, Foo.Foo
+         */
+        public override string GetFooTable() => "Foo.Foo";
+        
+        /*
+         * in order to test if the dbcleaner is capable of cleaning
+         * data in a table under a schema.
+         * inside [seedFKData], we created a schema (Foo).
+         * then here, we need to return a table name with the schema, ie, Foo.Bar
+         */
+        public override string GetBarTable() => "Foo.Bar";
     }
 }
