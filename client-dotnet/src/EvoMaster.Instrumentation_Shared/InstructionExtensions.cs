@@ -3,6 +3,15 @@ using Mono.Cecil.Cil;
 
 namespace EvoMaster.Instrumentation_Shared {
     public static class InstructionExtensions {
+        /// <summary>
+        /// Find any jump to the old instruction and make them refer to the new instruction.
+        /// This will prevent the newly inserted instruction become unreachable
+        /// An Example of the issue: jump oldIns; ... ; oldIns => jump oldIns; ... ; newIns; oldIns; (newIns is unreachable)
+        /// How it will look like after this method: jump newIns; ... ; newIns; oldIns (newIns isn't unreachable anymore)
+        /// </summary>
+        /// <param name="oldTarget">The old instruction which shouldn't be jumped to anymore</param>
+        /// <param name="newTarget">The new instruction to jump to</param>
+        /// <param name="instructions">Instructions of the method's body</param>
         public static void UpdateJumpsToTheCurrentInstruction(this Instruction oldTarget, Instruction newTarget,
             IEnumerable<Instruction> instructions) {
             foreach (var t in instructions) {
@@ -12,7 +21,7 @@ namespace EvoMaster.Instrumentation_Shared {
             }
         }
 
-        public static bool IsConditionalJumpWithTwoArgs(this Instruction instruction) {
+        public static bool IsConditionalInstructionWithTwoArgs(this Instruction instruction) {
             var conditionalInstructions = new List<OpCode> {
                 OpCodes.Ceq,
                 OpCodes.Clt,
@@ -50,22 +59,13 @@ namespace EvoMaster.Instrumentation_Shared {
             instruction.OpCode == OpCodes.Brtrue ||
             instruction.OpCode == OpCodes.Brtrue_S;
 
-        public static bool IsUnConditionalJump(this Instruction instruction) =>
-            instruction.OpCode == OpCodes.Br || instruction.OpCode == OpCodes.Br_S;
-
-        public static bool IsJumpOrExitInstruction(this Instruction instruction) =>
-            IsJumpInstruction(instruction) || IsExitInstruction(instruction);
-
         public static bool IsUnConditionalJumpOrExitInstruction(this Instruction instruction) =>
             IsUnConditionalJump(instruction) || IsExitInstruction(instruction);
 
-        //to detect instructions which jump to another instruction
-        public static bool IsJumpInstruction(this Instruction instruction) {
-            return (instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
-                    instruction.OpCode != OpCodes.Box);
-        }
+        private static bool IsUnConditionalJump(this Instruction instruction) =>
+            instruction.OpCode == OpCodes.Br || instruction.OpCode == OpCodes.Br_S;
 
-        public static bool IsExitInstruction(this Instruction instruction) {
+        private static bool IsExitInstruction(this Instruction instruction) {
             return (instruction.OpCode == OpCodes.Throw) || (instruction.OpCode == OpCodes.Rethrow) ||
                    (instruction.OpCode == OpCodes.Endfinally) ||
                    (instruction.OpCode == OpCodes.Leave) || (instruction.OpCode == OpCodes.Leave_S) ||
