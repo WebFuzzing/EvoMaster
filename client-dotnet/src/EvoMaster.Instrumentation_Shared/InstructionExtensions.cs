@@ -50,25 +50,26 @@ namespace EvoMaster.Instrumentation_Shared {
             instruction.OpCode == OpCodes.Brtrue ||
             instruction.OpCode == OpCodes.Brtrue_S;
 
+        public static bool IsUnConditionalJump(this Instruction instruction) =>
+            instruction.OpCode == OpCodes.Br || instruction.OpCode == OpCodes.Br_S;
+
         public static bool IsJumpOrExitInstruction(this Instruction instruction) =>
             IsJumpInstruction(instruction) || IsExitInstruction(instruction);
 
+        public static bool IsUnConditionalJumpOrExitInstruction(this Instruction instruction) =>
+            IsUnConditionalJump(instruction) || IsExitInstruction(instruction);
+
         //to detect instructions which jump to another instruction
-        private static bool IsJumpInstruction(this Instruction instruction) {
+        public static bool IsJumpInstruction(this Instruction instruction) {
             return (instruction.OpCode.ToString().ToLower()[0].Equals('b') && instruction.OpCode != OpCodes.Break &&
-                    instruction.OpCode != OpCodes.Box) ||
-                   (instruction.OpCode == OpCodes.Ceq) ||
-                   (instruction.OpCode == OpCodes.Cgt) ||
-                   (instruction.OpCode == OpCodes.Cgt_Un) ||
-                   (instruction.OpCode == OpCodes.Clt) ||
-                   (instruction.OpCode == OpCodes.Clt_Un);
+                    instruction.OpCode != OpCodes.Box);
         }
 
-        private static bool IsExitInstruction(this Instruction instruction) {
-            return (instruction.OpCode == OpCodes.Throw) ||
-                   (instruction.OpCode == OpCodes.Rethrow) || (instruction.OpCode == OpCodes.Endfinally) ||
-                   (instruction.OpCode == OpCodes.Leave) ||
-                   (instruction.OpCode == OpCodes.Leave_S);
+        public static bool IsExitInstruction(this Instruction instruction) {
+            return (instruction.OpCode == OpCodes.Throw) || (instruction.OpCode == OpCodes.Rethrow) ||
+                   (instruction.OpCode == OpCodes.Endfinally) ||
+                   (instruction.OpCode == OpCodes.Leave) || (instruction.OpCode == OpCodes.Leave_S) ||
+                   (instruction.OpCode == OpCodes.Ret);
         }
     }
 }

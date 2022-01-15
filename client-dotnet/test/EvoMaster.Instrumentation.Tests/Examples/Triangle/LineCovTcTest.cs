@@ -52,11 +52,12 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         }
 
         [Theory]
-        [InlineData(-1, 0, 0)]
-        [InlineData(6, 6, 6)]
-        [InlineData(10, 6, 3)]
-        [InlineData(7, 6, 7)]
-        [InlineData(7, 6, 5)]
+        // [InlineData(-1, 0, 0)]
+        // [InlineData(6, 6, 6)]
+        // [InlineData(10, 6, 3)]
+        // [InlineData(7, 6, 7)]
+        // [InlineData(7, 6, 5)]
+        [InlineData(6,8,10)]
         public void TestLastLineCoverage(int a, int b, int c) {
             ITriangleClassification tc = new TriangleClassificationImpl();
 

@@ -218,8 +218,12 @@ namespace EvoMaster.Instrumentation.StaticState {
         /**
          * get fitness value of target with given id
          */
-        public static double GetValue(string id){
-            return ObjectiveCoverage[id].Value ?? 0.0;
+        public static double GetValue(string id) {
+             ObjectiveCoverage.TryGetValue(id, out var value);
+             
+             if (value is {Value: { }}) return value.Value.Value;
+             
+             return 0;
         }
 
         /**

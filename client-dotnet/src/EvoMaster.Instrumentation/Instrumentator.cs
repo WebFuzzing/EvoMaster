@@ -91,13 +91,10 @@ namespace EvoMaster.Instrumentation {
                                 }
 
                                 if (l != lastEnteredLine) jumpsPerLineCounter = 0;
-                                Instruction probeFirstInstruction;
-                                (i, probeFirstInstruction) = InsertEnteringBranchProbe(instruction, ilProcessor, i,
+
+                                i = InsertEnteringBranchProbe(instruction, method.Body.Instructions, ilProcessor, i,
                                     type.Name, l,
                                     jumpsPerLineCounter);
-
-                                instruction.UpdateJumpsToTheCurrentInstruction(probeFirstInstruction,
-                                    method.Body.Instructions);
 
                                 jumpsPerLineCounter++;
                             }
@@ -110,29 +107,34 @@ namespace EvoMaster.Instrumentation {
                             continue;
 
                         if (lastEnteredLine != 0 && lastEnteredColumn != 0) {
-                            i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
+                            i = InsertCompletedStatementProbe(instruction.Previous,
+                                method.Body.Instructions,
+                                ilProcessor, i, type.Name,
                                 lastEnteredLine, lastEnteredColumn);
                         }
 
                         if (sequencePoint == null) continue;
 
-                        if (instruction.Previous != null && instruction.Previous.IsJumpOrExitInstruction() &&
-                            instruction.Next != null) {
-                            i = InsertEnteringStatementProbe(instruction.Next, ilProcessor, i, type.Name,
-                                sequencePoint.StartLine,
-                                sequencePoint.StartColumn);
-                        }
-                        else {
-                            i = InsertEnteringStatementProbe(instruction, ilProcessor, i, type.Name,
-                                sequencePoint.StartLine,
-                                sequencePoint.StartColumn);
-                        }
+                        // if (instruction.Previous != null && instruction.Previous.IsJumpOrExitInstruction() &&
+                        //     instruction.Next != null) {
+                        //     i = InsertEnteringStatementProbe(instruction.Next, ilProcessor, i, type.Name,
+                        //         sequencePoint.StartLine,
+                        //         sequencePoint.StartColumn);
+                        // }
+                        // else {
+                        i = InsertEnteringStatementProbe(instruction, method.Body.Instructions, ilProcessor,
+                            i, type.Name,
+                            sequencePoint.StartLine,
+                            sequencePoint.StartColumn);
+                        // }
 
-                        //To cover cases when ret has line number
-                        if (instruction.OpCode == OpCodes.Ret) {
-                            i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
-                                sequencePoint.StartLine, sequencePoint.StartColumn);
-                        }
+                        // //To cover cases when ret has line number
+                        // if (instruction.OpCode == OpCodes.Ret) {
+                        //     Instruction probeFirstInstruction;
+                        //     i = InsertCompletedStatementProbe(instruction, method.Body.Instructions, ilProcessor, i,
+                        //         type.Name,
+                        //         sequencePoint.StartLine, sequencePoint.StartColumn);
+                        // }
 
                         lastEnteredColumn = sequencePoint.StartColumn;
                         lastEnteredLine = sequencePoint.StartLine;
@@ -154,13 +156,24 @@ namespace EvoMaster.Instrumentation {
             Client.Util.SimpleLogger.Info($"Instrumented File Saved at \"{destination}\"");
         }
 
-        private int InsertCompletedStatementProbe(Instruction instruction, ILProcessor ilProcessor,
+        private int InsertCompletedStatementProbe(Instruction instruction,
+            IEnumerable<Instruction> instructions,
+            ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int columnNo) {
             if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
 
             //to prevent becoming the probe unreachable
-            if (instruction.Previous != null && instruction.Previous.IsJumpOrExitInstruction()) {
-                return InsertCompletedStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
+            if (instruction.OpCode == OpCodes.Call &&
+                instruction.Operand.ToString()!.Contains("EvoMaster.Instrumentation")) {
+                return InsertCompletedStatementProbe(instruction.Previous.Previous.Previous, instructions, ilProcessor,
+                    byteCodeIndex,
+                    className,
+                    lineNo, columnNo);
+            }
+
+            if (instruction.Previous != null && instruction.Previous.IsUnConditionalJumpOrExitInstruction()) {
+                return InsertCompletedStatementProbe(instruction.Previous, instructions, ilProcessor, byteCodeIndex,
+                    className,
                     lineNo, columnNo);
             }
 
@@ -171,7 +184,7 @@ namespace EvoMaster.Instrumentation {
 
             _alreadyCompletedPoints.Add(new CodeCoordinate(lineNo, columnNo));
 
-            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
+            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, instruction.ToString());//todo
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _completedProbe);
@@ -185,21 +198,25 @@ namespace EvoMaster.Instrumentation {
             ilProcessor.InsertBefore(instruction, methodCallInstruction);
             byteCodeIndex++;
 
+            instruction.UpdateJumpsToTheCurrentInstruction(classNameInstruction, instructions);
+
             return byteCodeIndex;
         }
 
-        private int InsertEnteringStatementProbe(Instruction instruction, ILProcessor ilProcessor,
+        private int InsertEnteringStatementProbe(Instruction instruction, IEnumerable<Instruction> instructions,
+            ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int columnNo) {
             //Do not add inserted probe if the statement is already covered by completed probe
             if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
 
             //to prevent becoming the probe unreachable
-            if (instruction.Previous != null && instruction.Previous.IsJumpOrExitInstruction()) {
-                return InsertEnteringStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex, className,
+            if (instruction.Previous != null && instruction.Previous.IsUnConditionalJumpOrExitInstruction()) {
+                return InsertEnteringStatementProbe(instruction.Previous, instructions, ilProcessor, byteCodeIndex,
+                    className,
                     lineNo, columnNo);
             }
 
-            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
+            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, instruction.ToString());//todo
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringProbe);
@@ -213,16 +230,24 @@ namespace EvoMaster.Instrumentation {
             ilProcessor.InsertBefore(instruction, methodCallInstruction);
             byteCodeIndex++;
 
+            instruction.UpdateJumpsToTheCurrentInstruction(classNameInstruction, instructions);
+
             return byteCodeIndex;
         }
 
-        private (int index, Instruction probe) InsertEnteringBranchProbe(Instruction instruction,
+        private int InsertEnteringBranchProbe(Instruction instruction, IEnumerable<Instruction> instructions,
             ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int branchId) {
             _registeredTargets.Branches.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, true));
             _registeredTargets.Branches.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, false));
 
-            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
+            if (instruction.Previous != null && instruction.Previous.IsUnConditionalJumpOrExitInstruction()) {
+                return InsertEnteringBranchProbe(instruction.Previous, instructions, ilProcessor, byteCodeIndex,
+                    className,
+                    lineNo, branchId);
+            }
+
+            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, instruction.ToString());//todo
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, branchId);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringBranchProbe);
@@ -236,7 +261,7 @@ namespace EvoMaster.Instrumentation {
             ilProcessor.InsertBefore(instruction, methodCallInstruction);
             byteCodeIndex++;
 
-            return (byteCodeIndex, classNameInstruction);
+            return byteCodeIndex;
         }
     }
 }
