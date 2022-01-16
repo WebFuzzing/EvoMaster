@@ -5,21 +5,20 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Thir
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
+public class MicronautNettyHttpServerReplacement extends ThirdPartyMethodReplacementClass  {
 
-public class NettyClassReplacement extends ThirdPartyMethodReplacementClass {
-
-    private static final NettyClassReplacement singleton = new NettyClassReplacement();
+    private static final MicronautNettyHttpServerReplacement singleton = new MicronautNettyHttpServerReplacement();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
-        return "io.netty.handler.codec.http.HttpVersion";
+        return "io.micronaut.http.server.netty.NettyHttpServer";
     }
 
     @Replacement(replacingStatic = false,
-        type = ReplacementType.TRACKER,
-        id = "isKeepAliveDefault_boolean_class",
-        usageFilter = UsageFilter.ONLY_SUT)
-    public boolean isKeepAliveDefault() {
+            type = ReplacementType.TRACKER,
+            id = "isKeepAlive_boolean_class",
+            usageFilter = UsageFilter.ONLY_SUT)
+    public boolean isKeepAlive() {
         /*
             Micronaut 1.3.4 closes the connection when there is a server error
             (in micronaut case it checks for http status code > 299) or isKeepAliveDefault()
@@ -29,4 +28,5 @@ public class NettyClassReplacement extends ThirdPartyMethodReplacementClass {
         */
         return true;
     }
+
 }

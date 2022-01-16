@@ -15,7 +15,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled
+//@Disabled
 public class MicronautPatioEMTest extends RestTestBase {
 
     @BeforeClass

@@ -31,6 +31,7 @@ public class NettyHttpUtilClassReplacement extends ThirdPartyMethodReplacementCl
         Method original = getOriginal(singleton, "setKeepAlive_void_class", caller);
 
         try {
+            // the below implementation allows to keep the connection alive always even the code sets to false
             return original.invoke(caller, h, httpVersion, true);
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);
