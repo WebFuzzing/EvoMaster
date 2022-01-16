@@ -6,10 +6,16 @@ import org.junit.jupiter.api.Test;
 public class InstrumentingIssuesTest {
 
     @Test
-    public void testIssueWithMySQLIO() throws Exception {
+    public void testIssueWithMySQLIO() throws ClassNotFoundException {
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("does.not.matter");
+        cl.setCrashWhenFailedInstrumentation(true);
 
-         cl.loadClass("com.mysql.jdbc.MysqlIO").newInstance();
+        //this should not crash
+        cl.loadClass("com.mysql.jdbc.MysqlIO");
+
+        /*
+            The bug here was that we were skipping JSR inlining in the <clinit>
+         */
     }
 }
