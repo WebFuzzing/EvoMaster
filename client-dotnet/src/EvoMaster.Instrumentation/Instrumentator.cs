@@ -106,17 +106,24 @@ namespace EvoMaster.Instrumentation {
                         if ((sequencePoint == null || sequencePoint.IsHidden) && instruction.OpCode != OpCodes.Ret)
                             continue;
 
+                        if (lastEnteredLine != 0 && lastEnteredColumn != 0) {
+                            i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
+                                lastEnteredLine,
+                                lastEnteredColumn);
+                        }
+
                         if (sequencePoint != null) {
                             i = InsertEnteringStatementProbe(instruction, method.Body, ilProcessor,
                                 i, type.Name, sequencePoint.StartLine, sequencePoint.StartColumn);
 
                             lastEnteredColumn = sequencePoint.StartColumn;
                             lastEnteredLine = sequencePoint.StartLine;
-                        }
 
-                        if (lastEnteredLine != 0 && lastEnteredColumn != 0) {
-                            i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name, lastEnteredLine,
-                                lastEnteredColumn);
+                            if (method.Body.Instructions.Last().Equals(instruction) &&
+                                instruction.OpCode == OpCodes.Ret) {
+                                i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
+                                    lastEnteredLine, lastEnteredColumn);
+                            }
                         }
                     }
 
@@ -142,8 +149,14 @@ namespace EvoMaster.Instrumentation {
 
             if (instruction.IsUnConditionalJumpOrExitInstruction()) {
                 return InsertCompletedStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex,
-                    className,
-                    lineNo, columnNo);
+                    className, lineNo, columnNo);
+            }
+
+            if (instruction.OpCode == OpCodes.Call &&
+                instruction.Operand.ToString()!.Contains("EvoMaster.Instrumentation.Probes::EnteringBranch")) {
+                return InsertCompletedStatementProbe(instruction.Previous.Previous.Previous.Previous, ilProcessor,
+                    byteCodeIndex,
+                    className, lineNo, columnNo);
             }
 
             //TODO: check if we should register statements or not
