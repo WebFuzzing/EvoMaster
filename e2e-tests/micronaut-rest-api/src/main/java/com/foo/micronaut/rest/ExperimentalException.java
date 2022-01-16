@@ -1,6 +1,8 @@
 package com.foo.micronaut.rest;
 
-// runtime exception added to handle the crashing scenario
+/**
+ * A runtime exception to simulate the crashing scenario
+ */
 public class ExperimentalException extends RuntimeException {
 
 }

@@ -1,30 +1,30 @@
-package org.evomaster.e2etests.micronaut.patio;
+package org.evomaster.e2etests.micronaut.rest;
 
-import com.foo.micronaut.patio.MicronautPatioTestController;
+import com.foo.micronaut.rest.MicronautTestController;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.utils.RestTestBase;
-import org.junit.Test;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static org.hamcrest.core.Is.is;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class MicronautPatioTest extends RestTestBase {
+public class MicronautEMTest extends RestTestBase {
 
-    @BeforeClass
+    @BeforeAll
     public static void initClass() throws Exception {
-        RestTestBase.initClass(new MicronautPatioTestController());
+        RestTestBase.initClass(new MicronautTestController());
     }
 
     @Test
     public void testRunEM() throws Throwable {
 
-        runTestHandlingFlaky("MicronautPatioTest", "com.foo.MicronautPatioTest", 100, false, (args) -> {
+        runTestHandlingFlaky("MicronautTest", "com.foo.MicronautTest", 10000, false, (args) -> {
             args.add("--killSwitch");
             args.add("false");
 
@@ -32,23 +32,22 @@ public class MicronautPatioTest extends RestTestBase {
 
             assertTrue(solution.getIndividuals().size() >= 1);
             assertHasAtLeastOne(solution, HttpVerb.GET, 500);
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200);
         } );
 
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
         /*
-            It is expected to have keep-alive in connection header to maintain
-            the connection even the application crashes. Since the method implementation
-            is not working properly, for the moment below test checks for close header
-            value for connection.
+            Below test checks for keep-alive header even when the server crashes.
         */
+
         given()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/")
                 .then()
                 .statusCode(500)
-                .header("connection", is("close"))
+                .header("connection", is("keep-alive"))
                 .body("message", is("Crashed"));
     }
 }

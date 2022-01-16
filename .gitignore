@@ -114,3 +114,6 @@ Migrations/
 .vs/
 *launchsettings.json
 *csproj.user
+
+/e2e-tests/micronaut-patio-api-version/target
+/e2e-tests/micronaut-rest-api/target

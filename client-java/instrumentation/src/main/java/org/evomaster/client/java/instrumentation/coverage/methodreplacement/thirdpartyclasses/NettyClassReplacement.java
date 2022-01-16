@@ -18,7 +18,7 @@ public class NettyClassReplacement extends ThirdPartyMethodReplacementClass {
     @Replacement(replacingStatic = false,
         type = ReplacementType.TRACKER,
         id = "isKeepAliveDefault_boolean_class",
-        usageFilter = UsageFilter.ANY)
+        usageFilter = UsageFilter.ONLY_SUT)
     public boolean isKeepAliveDefault() {
         /*
             Micronaut 1.3.4 closes the connection when there is a server error
