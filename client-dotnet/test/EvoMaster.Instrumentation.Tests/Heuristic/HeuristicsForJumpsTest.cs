@@ -1,7 +1,6 @@
 using EvoMaster.Instrumentation.Heuristic;
 using Mono.Cecil.Cil;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EvoMaster.Instrumentation.Tests.Heuristic{
     public class HeuristicsForJumpsTest{
@@ -134,7 +133,7 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
          * then use GetForValueComparison(val, 0) here
          */
         [Fact]
-        public void test_IFLT_0(){
+        public void test_Blt_0(){
             //val < 0
             Code code = Code.Blt;
 
@@ -148,7 +147,7 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
          * then use GetForValueComparison(val, 0) here
          */
         [Fact]
-        public void test_IFGE(){
+        public void test_Bge_0(){
             //val >= 0
 
             int[] values = new int[]{-11, -3, 0, 5, 7};
