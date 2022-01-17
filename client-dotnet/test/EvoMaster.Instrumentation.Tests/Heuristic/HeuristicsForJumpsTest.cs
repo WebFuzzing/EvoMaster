@@ -536,30 +536,5 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
         //         Assert.Equal(nn.GetOfTrue(), nu.GetOfFalse(), 0.001);
         //     }
         // }
-
-        private readonly ITestOutputHelper _testOutputHelper;
-
-        public HeuristicsForJumpsTest(ITestOutputHelper testOutputHelper){
-            _testOutputHelper = testOutputHelper;
-        }
-
-        [Fact]
-        public void TestObjectComparision(){
-            var var1 = new{Name = "foo", Value = 42};
-            var var2 = new{Name = "bar", Value = 0};
-            var notNull = var1 != null;
-            var equal = var1 == var2;
-
-            if (notNull){
-                _testOutputHelper.WriteLine("null");
-            } else
-                _testOutputHelper.WriteLine("not null");
-
-            if (equal){
-                _testOutputHelper.WriteLine("equal");
-            } else{
-                _testOutputHelper.WriteLine("not equal");
-            }
-        }
     }
 }
