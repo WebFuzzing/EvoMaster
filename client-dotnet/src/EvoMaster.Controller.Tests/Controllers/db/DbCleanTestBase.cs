@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using EvoMaster.Controller.Api;
 using EvoMaster.Controller.Controllers.db;
 using Xunit;
@@ -14,78 +15,90 @@ namespace EvoMaster.Controller.Tests.Controllers.db {
 
         [Fact]
         public void TestAllClean() {
-            seedFKData(GetConnection(), GetDbType());
+            SeedFKData(GetConnection());
 
-            var reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Bar;");
+            var reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM "+GetBarTable()+";");
             Assert.True(reader.HasRows);
             reader.Close();
 
-            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Foo;");
+            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM "+GetFooTable()+";");
             Assert.True(reader.HasRows);
             reader.Close();
 
             //clean all
             CleanDb(null);
-            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Foo;");
+            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM "+GetFooTable()+";");
             Assert.False(reader.HasRows);
             reader.Close();
 
-            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Bar;");
+            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM "+GetBarTable()+";");
             Assert.False(reader.HasRows);
             reader.Close();
         }
 
         [Fact]
         public void TestCleanWithSkip() {
-            seedFKData(GetConnection(), GetDbType());
+            SeedFKData(GetConnection());
 
-            var reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Bar;");
+            var reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM "+GetBarTable()+";");
             Assert.True(reader.HasRows);
             reader.Close();
 
-            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Foo;");
+            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM "+GetFooTable()+";");
             Assert.True(reader.HasRows);
             reader.Close();
 
             //clean all except Foo
             CleanDb(new List<string>() { "Foo" });
-            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Foo;");
+            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM "+GetFooTable()+";");
             Assert.True(reader.HasRows);
             reader.Close();
 
-            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM Bar;");
+            reader = SqlScriptRunner.ExecCommandWithDataReader(GetConnection(), "SELECT * FROM "+GetBarTable()+";");
             Assert.False(reader.HasRows);
             reader.Close();
         }
 
         [Fact]
         public void TestCleanException() {
-            seedFKData(GetConnection(), GetDbType());
+            SeedFKData(GetConnection());
 
             // throws exception with incorrect skip table
             Assert.Throws<SystemException>(() => CleanDb(new List<string>() { "zoo" }));
         }
 
 
-        public static void seedFKData(DbConnection connection, DatabaseType type = DatabaseType.H2) {
-            SqlScriptRunner.ExecCommand(connection, "CREATE TABLE Foo(x int, primary key (x));");
-            SqlScriptRunner.ExecCommand(connection, "CREATE TABLE Bar(y int, primary key (y));");
+        public virtual void SeedFKData(DbConnection connection) {
+            
+            SqlScriptRunner.ExecCommand(connection, "CREATE TABLE "+GetFooTable()+"(x int, primary key (x));");
+            SqlScriptRunner.ExecCommand(connection, "CREATE TABLE "+GetBarTable()+"(y int, primary key (y));");
 
-            switch (type) {
+            switch (GetDbType()) {
                 case DatabaseType.MS_SQL_SERVER:
                 case DatabaseType.POSTGRES:
                     SqlScriptRunner.ExecCommand(connection,
-                        "alter table Bar add constraint FK foreign key (y) references Foo;");
+                        "alter table "+GetBarTable()+" add constraint FK foreign key (y) references "+GetFooTable()+";");
                     break;
                 case DatabaseType.MYSQL:
-                    SqlScriptRunner.ExecCommand(connection, "alter table Bar add foreign key (y) references Foo(x);");
+                    SqlScriptRunner.ExecCommand(connection, "alter table "+GetBarTable()+" add foreign key (y) references "+GetFooTable()+"(x);");
                     break;
                 default:
                     throw new InvalidOperationException("NOT SUPPORT");
             }
 
-            SqlScriptRunner.ExecCommand(connection, "INSERT INTO Foo (x) VALUES (42)");
-            SqlScriptRunner.ExecCommand(connection, "INSERT INTO Bar (y) VALUES (42)");
+            SqlScriptRunner.ExecCommand(connection, "INSERT INTO "+GetFooTable()+" (x) VALUES (42)");
+            SqlScriptRunner.ExecCommand(connection, "INSERT INTO "+GetBarTable()+" (y) VALUES (42)");
         }
+
+        /**
+         * Foo table is used for seeding test data for db cleaner
+         */
+        public virtual string GetFooTable() => "Foo";
+        
+        
+        /**
+         * Bar table is used for seeding test data for db cleaner
+         */
+        public virtual string GetBarTable() => "Bar";
     }
 }
