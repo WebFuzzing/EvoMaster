@@ -40,8 +40,6 @@ public class ReplacementList {
                 new ServletRequestClassReplacement(),
                 new WebRequestClassReplacement(),
                 new NettyClassReplacement(),
-                new NettyHttpUtilClassReplacement(),
-                new MicronautConfigurationReplacement(),
                 new MicronautNettyHttpServerReplacement()
         );
     }
