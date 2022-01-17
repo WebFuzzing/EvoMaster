@@ -32,6 +32,8 @@ public class ThirdPartyClassVisitor extends ClassVisitor {
         MethodVisitor mv = super.visitMethod(
                 methodAccess, name, descriptor, signature, exceptions);
 
+        mv = new JSRInlinerAdapter(mv, methodAccess, name, descriptor, signature, exceptions);
+
         if (Constants.isMethodSyntheticOrBridge(methodAccess)) {
             return mv;
         }
@@ -40,7 +42,6 @@ public class ThirdPartyClassVisitor extends ClassVisitor {
             return mv;
         }
 
-        mv = new JSRInlinerAdapter(mv, methodAccess, name, descriptor, signature, exceptions);
         mv = new MethodReplacementMethodVisitor(false, false, mv, bytecodeClassName, name, descriptor);
 
         return mv;
