@@ -140,6 +140,11 @@ public class SqlHandler {
         return executionDto;
     }
 
+    /**
+     * compute (SELECT, DELETE and UPDATE) sql distance for sql commands which exists in [buffer]
+     *      Note that we skip `SELECT 1` (typically for testing sql connection) since its distance is 0
+     * @return a list of heuristics for sql commands
+     */
     public List<PairCommandDistance> getDistances() {
 
         if (connection == null || !calculateHeuristics) {
@@ -149,10 +154,6 @@ public class SqlHandler {
 
         buffer.stream()
                 .forEach(sql -> {
-                    /*
-                        for `SELECT 1`, the dist is always 0, might skip to compute heuristics for it
-                        check with Andrea
-                     */
                     if (!isSelectOne(sql) && (isSelect(sql) || isDelete(sql) || isUpdate(sql))) {
                         double dist;
                         try {
