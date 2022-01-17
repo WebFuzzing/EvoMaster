@@ -43,6 +43,17 @@ public class ParserUtils {
         return input!= null && input.trim().toLowerCase().matches(".*(currval|nextval).*");
     }
 
+    /**
+     * check if the sql is `Select 1`
+     * detected by proxyprint as
+     *      ERROR - FAILED TO COMPUTE HEURISTICS FOR SQL: SELECT 1
+     *
+     * https://stackoverflow.com/questions/3668506/efficient-sql-test-query-or-validation-query-that-will-work-across-all-or-most
+     */
+    public static boolean isSelectOne(String sql) {
+        return sql!= null && sql.trim().toLowerCase().matches("select\\s+1\\s*;?");
+    }
+
 
     public static Expression getWhere(Statement statement) {
 
