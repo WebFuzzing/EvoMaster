@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * created by manzhang on 2021/11/27
+ * a dto to collect info of param of endpoints to be tested
+ * that is used by both core (for identifying genes) and driver (for endpoint invocation) sides
  */
 public class ParamDto {
 
@@ -56,8 +57,15 @@ public class ParamDto {
      */
     public Long maxValue;
 
+    /**
+     * a list of candidates for the param customized by user
+     */
     public List<ParamDto> candidates;
 
+    /**
+     * a list of references to candidates which are used for
+     * dependent candidates which have same reference
+     */
     public List<String> candidateReferences;
 
     /**

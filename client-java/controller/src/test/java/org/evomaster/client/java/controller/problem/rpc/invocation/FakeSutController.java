@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.invocation;
 
+import com.thrift.example.artificial.RPCInterfaceExample;
 import com.thrift.example.artificial.RPCInterfaceExampleImpl;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
@@ -58,7 +59,7 @@ public class FakeSutController extends EmbeddedSutController {
     public ProblemInfo getProblemInfo() {
         RPCInterfaceExampleImpl client = new RPCInterfaceExampleImpl();
         return new RPCProblem(new HashMap<String, Object>(){{
-            put("com.thrift.example.artificial.RPCInterfaceExample", client);
+            put(RPCInterfaceExample.class.getName(), client);
         }});
     }
 

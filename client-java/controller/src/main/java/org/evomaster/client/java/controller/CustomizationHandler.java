@@ -6,10 +6,12 @@ import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 
 import java.util.List;
 
+/**
+ * contains a set of method to customize info for testing
+ *
+ * need to check with Andrea if putting them in this interface or moving them to SutController
+ */
 public interface CustomizationHandler {
-
-
-    // CustomizedCallResultCode categorizeBasedOnValue(Object value);
 
 
     /**

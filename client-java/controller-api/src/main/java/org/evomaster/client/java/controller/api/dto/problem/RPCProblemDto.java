@@ -1,12 +1,12 @@
 package org.evomaster.client.java.controller.api.dto.problem;
 
-import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 
 import java.util.List;
 
 /**
- * created by manzhang on 2021/11/4
+ * a dto to collect info of RPC problem to be tested
+ * that is sent to core
  */
 public class RPCProblemDto {
     /**

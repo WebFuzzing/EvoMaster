@@ -7,7 +7,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * created by manzhang on 2021/11/27
+ * a dto to collect info of endpoints to be tested
+ * that is used by both core (for identifying action) and driver (for endpoint invocation) sides
  */
 public class RPCActionDto {
 
@@ -72,13 +73,14 @@ public class RPCActionDto {
     public Set<String> relatedCustomization;
 
     /**
-     * an action to setup auth
+     * an action to setup auth in this invocation
      */
     public RPCActionDto authSetup;
 
     /**
      *
      * @return a copy of RPCActionDto for enabling its invocation
+     * eg, exclude all possible candidates of param values and auth
      */
     public RPCActionDto copy(){
         RPCActionDto copy = new RPCActionDto();

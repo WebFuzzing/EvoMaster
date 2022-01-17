@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 /**
- * created by manzhang on 2021/11/27
+ * a dto to collect info of type of the param of endpoints to be tested
  */
 public class TypeDto {
     /**
@@ -10,12 +10,13 @@ public class TypeDto {
     public String fullTypeName;
 
     /**
-     * extracted type
+     * extracted type for the param
      */
     public RPCSupportedDataType type;
 
     /**
      *  an example of the type
+     *  eg, for generic type of list, set, array
      */
     public ParamDto example;
 
@@ -26,6 +27,7 @@ public class TypeDto {
 
     /**
      * fixed items in this types
+     * eg, items for Enum
      */
     public String[] fixedItems;
 }

@@ -4,9 +4,20 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+/**
+ * a set of util for generating instance creation and assertion with java in tests
+ * in order to make endpoint invocation
+ */
 public class CodeJavaGenerator {
 
+    /**
+     * a null expression in java
+     */
     private final static String NULL_EXP = "null";
+
+    /**
+     * a method in SutHandler in order to get RPC client
+     */
     private final static String GET_CLIENT_METHOD = "getRPCClient";
 
     /**
@@ -33,9 +44,16 @@ public class CodeJavaGenerator {
         return sb.toString();
     }
 
+    /**
+     *
+     * @param enumTypeName the enum name
+     * @param itemName the item name of the enum
+     * @return a string which could retrieve the item of a Enum type, eg, Gender.Female
+     */
     public static String enumValue(String enumTypeName, String itemName){
         return String.format("%s.%s", handleNestedSymbolInTypeName(enumTypeName), itemName);
     }
+
 
     public static String oneLineInstance(boolean isDeclaration, boolean doesIncludeName, String fullName, String varName, String value){
         StringBuilder sb = new StringBuilder();

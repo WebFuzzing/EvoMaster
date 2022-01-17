@@ -4,10 +4,14 @@ package org.evomaster.client.java.controller.api.dto.problem.rpc.exception;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 
 /**
- * currently, we only collect thrift
+ * a list of RPC exception type handled by evomaster
  */
 public enum RPCExceptionType {
 
+    /**
+     * customized exception
+     * eg, CustomizedException extends Exception{}
+     */
     CUSTOMIZED_EXCEPTION(RPCExceptionCategory.OTHERS, new RPCType[]{RPCType.THRIFT}, -1),
 
     /**
@@ -59,8 +63,21 @@ public enum RPCExceptionType {
     PROTO_UNKNOWN(RPCExceptionCategory.PROTOCOL, new RPCType[]{RPCType.THRIFT}, 0)
     ;
 
+    /**
+     * an exception could exist in which RPC schemas,
+     * eg, APP_INTERNAL_ERROR might be identified by thrift and gRPC with a specific exception
+     */
     public final RPCType[] supportedRPC;
+
+    /**
+     * a category for the exception
+     */
     public final RPCExceptionCategory category;
+
+    /**
+     * a value for this exception
+     * it could be used for identifying the exception
+     */
     public final int intValue;
 
     RPCExceptionType(RPCExceptionCategory category, RPCType[] types, int intValue){

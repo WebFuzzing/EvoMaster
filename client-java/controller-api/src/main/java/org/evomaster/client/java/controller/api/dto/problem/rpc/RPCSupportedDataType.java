@@ -1,17 +1,132 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 /**
- * created by manzhang on 2021/11/27
+ * a list of types we support for RPC
  */
 public enum RPCSupportedDataType {
-    P_INT, P_BYTE, P_SHORT, P_LONG, P_FLOAT, P_DOUBLE, P_BOOLEAN, P_CHAR,
-    INT, BYTE, SHORT, LONG, FLOAT, DOUBLE, BOOLEAN, CHAR,
+    /**
+     *  primitive int
+     */
+    P_INT,
+
+    /**
+     * primitive byte
+     */
+    P_BYTE,
+
+    /**
+     * primitive short
+     */
+    P_SHORT,
+    /**
+     * primitive long
+     */
+    P_LONG,
+    /**
+     * primitive float
+     */
+    P_FLOAT,
+    /**
+     * primitive double
+     */
+    P_DOUBLE,
+    /**
+     * primitive boolean
+     */
+    P_BOOLEAN,
+    /**
+     * primitive boolean
+     */
+    P_CHAR,
+
+    /**
+     * integer
+     */
+    INT,
+    /**
+     * byte
+     */
+    BYTE,
+    /**
+     * short
+     */
+    SHORT,
+    /**
+     * long
+     */
+    LONG,
+    /**
+     * float
+     */
+    FLOAT,
+    /**
+     * double
+     */
+    DOUBLE,
+    /**
+     * boolean
+     */
+    BOOLEAN,
+    /**
+     * char
+     */
+    CHAR,
+    /**
+     * string
+     */
     STRING,
+
+    /**
+     * enumeration
+     */
     ENUM,
-    ARRAY, LIST, SET, MAP,
+
+    /**
+     * array
+     */
+    ARRAY,
+    /**
+     * list
+     */
+    LIST,
+    /**
+     * set
+     */
+    SET,
+    /**
+     * map
+     */
+    MAP,
+    /**
+     * java.util.Date
+     */
     UTIL_DATE,
-    PAIR, // for map
-    BYTEBUFFER, //Thrift
+
+    /**
+     * only for map
+     */
+    PAIR,
+
+    /**
+     * java.nio.ByteBuffer
+     * note that it is used by Thrift
+     */
+    BYTEBUFFER,
+
+    /**
+     * object
+     */
     CUSTOM_OBJECT,
+
+    /**
+     * object which contains cycle references
+     * eg, A -> B -> A (Cycle)
+     *     A {
+     *          B b;
+     *     }
+     *     B {
+     *         A a;
+     *     }
+     */
     CUSTOM_CYCLE_OBJECT
 }
