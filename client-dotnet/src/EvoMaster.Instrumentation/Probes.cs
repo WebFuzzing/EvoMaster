@@ -54,8 +54,6 @@ namespace EvoMaster.Instrumentation {
         }
 
         public static void EnteringBranch(string className, int lineNo, int branchId) {
-            //todo: add a comment 
-            if (className.Contains("PrivateImplementationDetails")) return;
             //TODO: remove
             SimpleLogger.Info($"****** branch detected at {className}: {lineNo}, {branchId}");
         }

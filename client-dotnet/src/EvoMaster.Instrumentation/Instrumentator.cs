@@ -151,7 +151,7 @@ namespace EvoMaster.Instrumentation {
                 return InsertCompletedStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex,
                     className, lineNo, columnNo);
             }
-
+            
             if (instruction.OpCode == OpCodes.Call &&
                 instruction.Operand.ToString()!.Contains("EvoMaster.Instrumentation.Probes::EnteringBranch")) {
                 return InsertCompletedStatementProbe(instruction.Previous.Previous.Previous.Previous, ilProcessor,
@@ -187,17 +187,38 @@ namespace EvoMaster.Instrumentation {
             ILProcessor ilProcessor, int byteCodeIndex, string className, int lineNo, int columnNo) {
             //Do not add inserted probe if the statement is already covered by completed probe
             if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
+            
+            if (instruction.Previous != null && instruction.OpCode == instruction.Previous.OpCode &&
+                instruction.OpCode == OpCodes.Leave) {
+                return byteCodeIndex; //todo: shouldn't be skipped
+            }
 
             //Check if the current instruction is the first instruction after a finally block
+            var updateHandlerEnd = false;
             ExceptionHandler exceptionHandler = null;
             if (instruction.Previous != null && instruction.Previous.OpCode == OpCodes.Endfinally) {
                 exceptionHandler = methodBody.ExceptionHandlers.FirstOrDefault(x => x.HandlerEnd == instruction);
+
+                if (exceptionHandler != null) updateHandlerEnd = true;
+            }
+
+            if (!updateHandlerEnd && instruction.Previous != null &&
+                instruction.Previous.OpCode == OpCodes.Leave) {
+                exceptionHandler = methodBody.ExceptionHandlers.FirstOrDefault(x => x.TryEnd == instruction);
+                if (exceptionHandler != null)
+                    return byteCodeIndex; //todo: shouldn't be skipped
+            }
+            //prevents the probe becoming unreachable at the end of a try block
+            if (instruction.Previous != null && instruction.Previous.OpCode == OpCodes.Leave && instruction.Next.OpCode == OpCodes.Leave) {
+                return InsertEnteringStatementProbe(instruction.Next, methodBody, ilProcessor, byteCodeIndex, className,
+                    lineNo, columnNo);
             }
 
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringProbe);
+
 
             ilProcessor.InsertBefore(instruction, classNameInstruction);
             byteCodeIndex++;
