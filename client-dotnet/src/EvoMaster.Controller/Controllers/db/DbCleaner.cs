@@ -44,7 +44,7 @@ namespace EvoMaster.Controller.Controllers.db {
                     ConnectionStateCheck(connection);
 
                     // Create the command.
-                    DbCommand command = connection.CreateCommand();
+                    var command = connection.CreateCommand();
 
                     //disable referential integrity constraint for cleaning the data in tables
                     DisableReferentialIntegrity(command, type);
@@ -64,7 +64,7 @@ namespace EvoMaster.Controller.Controllers.db {
                         this could happen if there is a current transaction with a lock on any table.
                         We could check the content of INFORMATION_SCHEMA.LOCKS, or simply look at error message
                      */
-                    string msg = ex.Message;
+                    var msg = ex.Message;
                     if (msg.ToLower().Contains("timeout")) {
                         if (retries > 0) {
                             SimpleLogger.Warn("Timeout issue with cleaning DB. Trying again.");
@@ -79,7 +79,7 @@ namespace EvoMaster.Controller.Controllers.db {
                     }
 
                     // with java: throw new RuntimeException(e);
-                    throw new SystemException();
+                    throw new SystemException(msg, ex);
                 }
             }
         }
@@ -151,14 +151,14 @@ namespace EvoMaster.Controller.Controllers.db {
                 foreach (var t in tablesToClear) {
                     if (doDropTable) DropTables(command, t);
                     else {
-                        if (type == DatabaseType.MS_SQL_SERVER) DeleteTables(command, t, tablesHaveIdentifies);
+                        if (type == DatabaseType.MS_SQL_SERVER) DeleteTables(command, t, schema,tablesHaveIdentifies);
                         else TruncateTables(command, t);
                     }
                 }
             }
         }
 
-        private static String GetAllTableHasIdentify(DatabaseType type, String schema) {
+        private static string GetAllTableHasIdentify(DatabaseType type, string schema) {
             if (type != DatabaseType.MS_SQL_SERVER)
                 throw new InvalidOperationException("getAllTableHasIdentify only supports for MS_SQL_SERVER, not for " +
                                                     type);
@@ -171,11 +171,20 @@ namespace EvoMaster.Controller.Controllers.db {
             command.ExecuteNonQuery();
         }
 
-        private static void DeleteTables(DbCommand command, string table, ISet<string> tableHasIdentify) {
-            command.CommandText = "DELETE FROM " + table;
+        private static void DeleteTables(DbCommand command, string table, string schmea, ISet<string> tableHasIdentify){
+            var tableWithSchema = table;
+            /*
+             * for MS SQL, the delete command should consider its schema,
+             * but such schema info is not returned when retrieving table name with select command, see [GetAllTableCommand]
+             * then here, we need to reformat the table name with schema
+             */
+            if (schmea.Length > 0 && !schmea.Equals(GetSchema(DatabaseType.MS_SQL_SERVER))){
+                tableWithSchema = schmea + "." + table;
+            }
+            command.CommandText = "DELETE FROM " + tableWithSchema;
             command.ExecuteNonQuery();
             if (tableHasIdentify.Contains(table)) {
-                command.CommandText = "DBCC CHECKIDENT ('" + table + "', RESEED, 0)";
+                command.CommandText = "DBCC CHECKIDENT ('" + tableWithSchema + "', RESEED, 0)";
                 command.ExecuteNonQuery();
             }
         }
@@ -242,7 +251,7 @@ namespace EvoMaster.Controller.Controllers.db {
         }
 
         private static string GetAllSequenceCommand(DatabaseType type, string schema) {
-            string command = "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES";
+            var command = "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES";
             switch (type) {
                 case DatabaseType.MYSQL:
                 case DatabaseType.MARIADB:

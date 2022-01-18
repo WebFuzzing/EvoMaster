@@ -107,6 +107,16 @@
             <artifactId>micronaut-http-server-netty</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <!--  Old version on purpose, to check a specific bug -->
+            <version>5.1.49</version>
+            <scope>test</scope>
+        </dependency>
+
+
     </dependencies>
 
     <build>

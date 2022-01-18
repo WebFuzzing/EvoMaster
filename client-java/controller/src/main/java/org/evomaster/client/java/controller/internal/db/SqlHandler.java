@@ -140,6 +140,11 @@ public class SqlHandler {
         return executionDto;
     }
 
+    /**
+     * compute (SELECT, DELETE and UPDATE) sql distance for sql commands which exists in [buffer]
+     *      Note that we skip `SELECT 1` (typically for testing sql connection) since its distance is 0
+     * @return a list of heuristics for sql commands
+     */
     public List<PairCommandDistance> getDistances() {
 
         if (connection == null || !calculateHeuristics) {
@@ -149,7 +154,7 @@ public class SqlHandler {
 
         buffer.stream()
                 .forEach(sql -> {
-                    if (isSelect(sql) || isDelete(sql) || isUpdate(sql)) {
+                    if (!isSelectOne(sql) && (isSelect(sql) || isDelete(sql) || isUpdate(sql))) {
                         double dist;
                         try {
                              dist = computeDistance(sql);
@@ -269,12 +274,13 @@ public class SqlHandler {
 
         Map<String, Set<String>> data = new HashMap<>();
 
-        SqlNameContext context = new SqlNameContext(statement);
-
+        // move getWhere before SqlNameContext, otherwise null where would cause exception in new SqlNameContext
         Expression where = ParserUtils.getWhere(statement);
         if (where == null) {
             return data;
         }
+
+        SqlNameContext context = new SqlNameContext(statement);
 
         ExpressionVisitor visitor = new ExpressionVisitorAdapter() {
             @Override

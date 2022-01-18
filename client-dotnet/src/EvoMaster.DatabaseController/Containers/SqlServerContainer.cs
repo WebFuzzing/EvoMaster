@@ -9,8 +9,8 @@ namespace EvoMaster.DatabaseController.Containers {
         private readonly string _saPassword;
         private readonly int _port;
 
-        public SqlServerContainer(int port, string saPassword)
-            : base("mcr.microsoft.com/mssql/server:2017-latest",
+        public SqlServerContainer(int port, string saPassword, string imageName)
+            : base(imageName,
                 $"{ContainerPrefix}{Guid.NewGuid().ToString()}") {
             this._port = port;
             _saPassword = saPassword;

@@ -13,7 +13,7 @@ namespace RestApis.ForAssertions {
 
             if (args.Length > 0) {
 
-                int port = Convert.ToInt32 (args[0]);
+                var port = Convert.ToInt32 (args[0]);
 
                 tokens.TryAdd (port, new CancellationTokenSource ());
 

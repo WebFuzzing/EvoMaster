@@ -34,6 +34,8 @@ public class CoverageClassVisitor extends ClassVisitor {
         MethodVisitor mv = super.visitMethod(
                 methodAccess, name, descriptor, signature, exceptions);
 
+        mv = new JSRInlinerAdapter(mv, methodAccess, name, descriptor, signature, exceptions);
+
         /*
             Methods added by the compiler (eg synthetics and bridges) are
             not interesting, so we can just skip them. More info:
@@ -69,7 +71,6 @@ public class CoverageClassVisitor extends ClassVisitor {
 
         ObjectiveRecorder.registerTarget(ObjectiveNaming.classObjectiveName(bytecodeClassName));
 
-        mv = new JSRInlinerAdapter(mv, methodAccess, name, descriptor, signature, exceptions);
         mv = new LineCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new BranchCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new SuccessCallMethodVisitor(mv, bytecodeClassName, name, descriptor);
