@@ -15,7 +15,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MicronautPatioEMTest extends RestTestBase {
+public class TcpPortMicronautEMTest extends RestTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
@@ -25,7 +25,7 @@ public class MicronautPatioEMTest extends RestTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        runTestHandlingFlaky("MicronautPatioTest", "com.foo.MicronautPatioTest", 100, false, (args) -> {
+        runTestHandlingFlaky("TcpPortMicronautEMTest", "com.foo.TcpPortMicronautEMTest", 100, false, (args) -> {
             args.add("--killSwitch");
             args.add("false");
 

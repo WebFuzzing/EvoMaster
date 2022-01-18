@@ -2,7 +2,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-<!--    <groupId>com.foo.micronaut.rest</groupId>-->
     <artifactId>evomaster-e2e-tests-micronaut-rest-api</artifactId>
     <packaging>jar</packaging>
 
@@ -17,7 +16,7 @@
         <exec.mainClass>com.foo.micronaut.rest.MicronautApplication</exec.mainClass>
         <micronaut.runtime>netty</micronaut.runtime>
         <micronaut.data.version>1.0.2</micronaut.data.version>
-        <micronaut.version>3.2.3</micronaut.version>
+        <micronaut.version>3.2.5</micronaut.version>
         <micronaut-openapi.version>3.2.0</micronaut-openapi.version>
     </properties>
 
@@ -59,11 +58,13 @@
         <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-inject</artifactId>
+            <version>${micronaut.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-validation</artifactId>
+            <version>${micronaut.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -84,16 +85,19 @@
         <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-http-client</artifactId>
+            <version>${micronaut.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-http-server-netty</artifactId>
+            <version>${micronaut.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-runtime</artifactId>
+            <version>${micronaut.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
