@@ -7,9 +7,9 @@ import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.utils.RestTestBase;
-import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.jupiter.api.Disabled;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.Is.is;
@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MicronautPatioEMTest extends RestTestBase {
 
-    @BeforeClass
+    @BeforeAll
     public static void initClass() throws Exception {
         RestTestBase.initClass(new MicronautPatioTestController());
     }
