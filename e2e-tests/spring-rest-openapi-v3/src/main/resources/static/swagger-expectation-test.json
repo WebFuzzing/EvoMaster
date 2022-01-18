@@ -6,7 +6,7 @@
     "title": "API"
   },
   "host": "localhost:8080",
-  "basePath": "/",
+  "basePath": "/api/expectations",
   "tags": [
     {
       "name": "expectations-test",
@@ -14,7 +14,7 @@
     }
   ],
   "paths": {
-    "/api/basicResponsesString/{value}": {
+    "/basicResponsesString/{value}": {
       "get": {
         "tags":[
           "expectations-test"
@@ -53,7 +53,7 @@
         "deprecated": false
       }
     },
-    "/api/basicResponsesNumeric/{value}": {
+    "/basicResponsesNumeric/{value}": {
       "get": {
         "tags":[
           "expectations-test"
@@ -92,7 +92,7 @@
         "deprecated": false
       }
     },
-    "/api/basicInput/{value}": {
+    "/basicInput/{value}": {
       "get": {
         "tags":[
           "expectations-test"
@@ -131,7 +131,7 @@
         "deprecated": false
       }
     },
-    "/api/responseObj/{value}": {
+    "/responseObj/{value}": {
       "get": {
         "tags":[
           "expectations-test"
@@ -173,7 +173,7 @@
         "deprecated": false
       }
     },
-    "/api/responseUnsupObj/{value}": {
+    "/responseUnsupObj/{value}": {
       "get": {
         "tags":[
           "expectations-test"
@@ -212,7 +212,7 @@
         "deprecated": false
       }
     },
-    "/api/responseMultipleObjs/{value}": {
+    "/responseMultipleObjs/{value}": {
       "get": {
         "tags":[
           "expectations-test"

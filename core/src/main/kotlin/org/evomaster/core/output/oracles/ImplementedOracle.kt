@@ -97,10 +97,11 @@ abstract class ImplementedOracle {
         if the basepath is not empty, ignoring it also causes problems.
          */
 
-        var adjustedBasePath = ""
-
-        if (basePath.endsWith("/")) {
-            adjustedBasePath = basePath.dropLast(1)
+        val adjustedBasePath = if (basePath.endsWith("/")) {
+            basePath.dropLast(1)
+        }
+        else{
+            basePath
         }
 
         val possibleItems = objectGenerator.getSwagger().paths.filter{ e ->
