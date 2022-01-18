@@ -11,7 +11,7 @@ namespace EvoMaster.Controller.Api {
         /**
      * Then name of all the units (eg classes) in the SUT
      */
-        public ISet<string> UnitNames = new HashSet<string>();
+        public IEnumerable<string> UnitNames { get; set; }
 
         /**
      * The total number of lines/statements/instructions in all

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ServiceModel;
 using System.Threading.Tasks;
 using EvoMaster.Controller;
 using EvoMaster.Controller.Api;
@@ -9,6 +10,7 @@ using DotNet.Testcontainers.Containers.Builders;
 using DotNet.Testcontainers.Containers.Configurations.Databases;
 using DotNet.Testcontainers.Containers.Modules.Abstractions;
 using DotNet.Testcontainers.Containers.Modules.Databases;
+using EvoMaster.Client.Util;
 using Npgsql;
 
 namespace RestApis.Tests.Animals.Controller {
@@ -23,13 +25,13 @@ namespace RestApis.Tests.Animals.Controller {
             var embeddedEvoMasterController = new EmbeddedEvoMasterController();
 
             if (args.Length > 0) {
-                var controllerPort = Int32.Parse(args[0]);
+                var controllerPort = int.Parse(args[0]);
                 embeddedEvoMasterController.SetControllerPort(controllerPort);
             }
 
             var instrumentedSutStarter = new InstrumentedSutStarter(embeddedEvoMasterController);
-
-            System.Console.WriteLine("Driver is starting...\n");
+            
+            SimpleLogger.Info("Driver is starting...\n");
 
             instrumentedSutStarter.Start();
         }
@@ -64,7 +66,7 @@ namespace RestApis.Tests.Animals.Controller {
                 RestApis.Animals.Program.Main(new[] { ephemeralPort.ToString(), connectionString });
             });
 
-            WaitUntilSutIsRunning(ephemeralPort, 190);
+            WaitUntilSutIsRunning(ephemeralPort);
 
             _sutPort = ephemeralPort;
 

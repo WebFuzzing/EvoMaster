@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,8 +13,8 @@ using Action = EvoMaster.Instrumentation.Action;
 namespace EvoMaster.Controller {
     public abstract class EmbeddedSutController : SutController {
         public sealed override UnitsInfoDto GetUnitsInfoDto() {
-            //TODO
-            return new UnitsInfoDto();
+            // return GetUnitsInfoDto(UnitsInfoRecorder.GetInstance());
+            return GetUnitsInfoDto(UnitsInfoRecorder.GetInstance());
         }
 
         public sealed override bool IsInstrumentationActivated() => false;
@@ -38,12 +39,14 @@ namespace EvoMaster.Controller {
             InstrumentationController.ResetForNewTest();
         }
 
+        public override void SetKillSwitch(bool b) => ExecutionTracer.SetKillSwitch(b);
+
         /// <summary>
         /// This method checks whether the SUT is listening on the port number
         /// </summary>
         /// <param name="port">The port number on the localhost</param>
         /// <param name="timeout">The amount of time in seconds the driver should give up if the SUT did not start </param>
-        protected static void WaitUntilSutIsRunning(int port, int timeout = 60) {
+        protected static void WaitUntilSutIsRunning(int port, int timeout = 30) {
             var task = Task.Run(() => {
                 using var tcpClient = new TcpClient();
                 while (true) {

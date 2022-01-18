@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EvoMaster.Client.Util\EvoMaster.Client.Util.csproj" />
     <ProjectReference Include="..\EvoMaster.DatabaseController.Abstractions\EvoMaster.DatabaseController.Abstractions.csproj" />
   </ItemGroup>
 
