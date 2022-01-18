@@ -677,6 +677,20 @@
                 <version>2.23.4</version>
                 <scope>test</scope>
             </dependency>
+            <!--     used by evomaster-e2e-tests-micronaut-patio-api-version       -->
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+
             <dependency>
                 <!-- To use Docker from tests -->
                 <groupId>org.testcontainers</groupId>
