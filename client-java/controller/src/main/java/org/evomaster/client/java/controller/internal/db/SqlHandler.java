@@ -292,6 +292,9 @@ public class SqlHandler {
                         This is a bug in the JsqlParser library. Until we upgrade it, or fix it if not fixed yet,
                         we use this workaround.
                         TODO remove it once library upgraded/fixed
+
+                        //SELECT activity0_.id AS id1_0_0_, activitypr1_.id AS id1_2_1_, activitypr1_.activity_id AS activit20_2_1_, activitypr1_.age_max AS age_max2_2_1_, activitypr1_.age_min AS age_min3_2_1_, activitypr1_.author_id AS author_21_2_1_, activitypr1_.date_created AS date_cre4_2_1_, activitypr1_.date_published AS date_pub5_2_1_, activitypr1_.date_updated AS date_upd6_2_1_, activitypr1_.description_introduction AS descript7_2_1_, activitypr1_.description_main AS descript8_2_1_, activitypr1_.description_material AS descript9_2_1_, activitypr1_.description_notes AS descrip10_2_1_, activitypr1_.description_prepare AS descrip11_2_1_, activitypr1_.description_safety AS descrip12_2_1_, activitypr1_.featured AS feature13_2_1_, activitypr1_.name AS name14_2_1_, activitypr1_.participants_max AS partici15_2_1_, activitypr1_.participants_min AS partici16_2_1_, activitypr1_.publishing_activity_id AS publish22_2_1_, activitypr1_.source AS source17_2_1_, activitypr1_.time_max AS time_ma18_2_1_, activitypr1_.time_min AS time_mi19_2_1_ FROM ACTIVITY activity0_ INNER JOIN ACTIVITY_PROPERTIES activitypr1_ ON activity0_.id = activitypr1_.publishing_activity_id CROSS JOIN ACTIVITY_DERIVED activityde2_ WHERE activity0_.id = activityde2_.activity_id AND (upper(activitypr1_.name) LIKE '%MXB4FQ%') AND activitypr1_.featured = TRUE AND activityde2_.ratings_avg >= 0.9880941796974582 AND activityde2_.ratings_count >= 152 ORDER BY activityde2_.favourites_count LIMIT ?
+                        //issue with: activitypr1_.featured = TRUE
                      */
                     return;
                 }
