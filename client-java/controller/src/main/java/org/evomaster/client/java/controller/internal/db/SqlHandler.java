@@ -8,6 +8,7 @@ import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.instrumentation.SqlInfo;
@@ -26,6 +27,10 @@ import static org.evomaster.client.java.controller.internal.db.ParserUtils.*;
  * Class used to act upon SQL commands executed by the SUT
  */
 public class SqlHandler {
+
+    private final static Set<String> booleanConstantNames = Collections.unmodifiableSet(
+            new LinkedHashSet<>(Arrays.asList("t","true","f","false","yes","y","no","n","on","off","unknown"))
+    );
 
     /**
      * Computing heuristics on SQL is expensive, as we need to run
@@ -54,6 +59,12 @@ public class SqlHandler {
     private volatile boolean calculateHeuristics;
 
     private volatile boolean extractSqlExecution;
+
+    /**
+     * WARNING: in general we shouldn't use mutable DTO as internal data structures.
+     * But, here, what we need is very simple (just checking for names).
+     */
+    private volatile DbSchemaDto schema;
 
     public SqlHandler() {
         buffer = new CopyOnWriteArrayList<>();
@@ -84,6 +95,10 @@ public class SqlHandler {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public void setSchema(DbSchemaDto schema) {
+        this.schema = schema;
     }
 
     /**
@@ -264,7 +279,7 @@ public class SqlHandler {
      *  Check the fields involved in the WHERE clause (if any).
      *  Return a map from table name to column names of the involved fields.
      */
-    public static Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement) {
+    public Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement) {
 
         /*
            TODO
@@ -281,28 +296,45 @@ public class SqlHandler {
         }
 
         SqlNameContext context = new SqlNameContext(statement);
+        if(schema != null) {
+            context.setSchema(schema);
+        }
 
         ExpressionVisitor visitor = new ExpressionVisitorAdapter() {
             @Override
             public void visit(Column column) {
-                String cn = column.getColumnName();
-
-                if(cn.equals("false")){
-                    /*
-                        This is a bug in the JsqlParser library. Until we upgrade it, or fix it if not fixed yet,
-                        we use this workaround.
-                        TODO remove it once library upgraded/fixed
-
-                        //SELECT activity0_.id AS id1_0_0_, activitypr1_.id AS id1_2_1_, activitypr1_.activity_id AS activit20_2_1_, activitypr1_.age_max AS age_max2_2_1_, activitypr1_.age_min AS age_min3_2_1_, activitypr1_.author_id AS author_21_2_1_, activitypr1_.date_created AS date_cre4_2_1_, activitypr1_.date_published AS date_pub5_2_1_, activitypr1_.date_updated AS date_upd6_2_1_, activitypr1_.description_introduction AS descript7_2_1_, activitypr1_.description_main AS descript8_2_1_, activitypr1_.description_material AS descript9_2_1_, activitypr1_.description_notes AS descrip10_2_1_, activitypr1_.description_prepare AS descrip11_2_1_, activitypr1_.description_safety AS descrip12_2_1_, activitypr1_.featured AS feature13_2_1_, activitypr1_.name AS name14_2_1_, activitypr1_.participants_max AS partici15_2_1_, activitypr1_.participants_min AS partici16_2_1_, activitypr1_.publishing_activity_id AS publish22_2_1_, activitypr1_.source AS source17_2_1_, activitypr1_.time_max AS time_ma18_2_1_, activitypr1_.time_min AS time_mi19_2_1_ FROM ACTIVITY activity0_ INNER JOIN ACTIVITY_PROPERTIES activitypr1_ ON activity0_.id = activitypr1_.publishing_activity_id CROSS JOIN ACTIVITY_DERIVED activityde2_ WHERE activity0_.id = activityde2_.activity_id AND (upper(activitypr1_.name) LIKE '%MXB4FQ%') AND activitypr1_.featured = TRUE AND activityde2_.ratings_avg >= 0.9880941796974582 AND activityde2_.ratings_count >= 152 ORDER BY activityde2_.favourites_count LIMIT ?
-                        //issue with: activitypr1_.featured = TRUE
-                     */
-                    return;
-                }
 
                 String tn = context.getTableName(column);
 
                 if(tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)){
                     // TODO handle it properly when ll have support for sub-selects
+                    return;
+                }
+
+                String cn = column.getColumnName().toLowerCase();
+
+                if(! context.hasColumn(tn, cn)) {
+
+                    /*
+                        This is an issue with the JsqlParser library. Until we upgrade it, or fix it if not fixed yet,
+                        we use this workaround.
+
+                        The problem is that some SQL databases do not have support for boolean types, so parser can
+                        interpret constants like TRUE as column names.
+                        And all databases have differences on how booleans are treated, eg.
+                        - H2: TRUE, FALSE, and UNKNOWN (NULL).
+                          http://www.h2database.com/html/datatypes.html#boolean_type
+                        - Postgres:  true, yes, on, 1, false, no, off, 0 (as well as abbreviations like t and f)
+                          https://www.postgresql.org/docs/9.5/datatype-boolean.html
+
+                     */
+
+                    if (booleanConstantNames.contains(cn)) {
+                        //case in which a boolean constant is wrongly treated as a column name.
+                        //TODO not sure what we can really do here without modifying the parser
+                    } else {
+                        SimpleLogger.warn("Cannot find column '" + cn +"' in table '" + tn +"'");
+                    }
                     return;
                 }
 
