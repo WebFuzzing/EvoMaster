@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.api.dto;
 
 /**
  * dto is used to specify a seed for a field
- * which is typically used for specifying combined fields @see {@link CustomizedRequestValueDto#combinedKeyValuePairs)}
+ * which is typically used for specifying combined fields [CustomizedRequestValueDto#combinedKeyValuePairs]
  * eg, ID and corresponding passcode
  */
 public class KeyValuePairDto {

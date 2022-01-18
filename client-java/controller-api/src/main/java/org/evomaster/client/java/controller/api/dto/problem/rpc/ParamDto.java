@@ -69,7 +69,7 @@ public class ParamDto {
     public List<String> candidateReferences;
 
     /**
-     * create a copy
+     * @return a copy of the paramDto
      */
     public ParamDto copy(){
         ParamDto copy = new ParamDto();

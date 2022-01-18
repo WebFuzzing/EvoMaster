@@ -120,7 +120,7 @@ public enum RPCSupportedDataType {
 
     /**
      * object which contains cycle references
-     * eg, A -> B -> A (Cycle)
+     * eg, A - B - A (Cycle)
      *     A {
      *          B b;
      *     }
