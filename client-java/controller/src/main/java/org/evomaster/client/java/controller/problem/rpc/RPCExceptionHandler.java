@@ -12,10 +12,22 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+/**
+ * handle RPC exception, for instance
+ * - extract possible category eg, application, protocol, if possible
+ * - extract exception info, eg, customized exception, message, or status code
+ */
 public class RPCExceptionHandler {
 
     private final static String THRIFT_EXCEPTION_ROOT= "org.apache.thrift.TException";
 
+    /**
+     *
+     * @param e is an exception instance thrown after the endpoint invocation
+     * @param dto represents the endpoint which was invoked
+     * @param endpointSchema is the schema of the endpoint
+     * @param type is the RPC type
+     */
     public static void handle(Object e, ActionResponseDto dto, EndpointSchema endpointSchema, RPCType type){
 
         try {
@@ -132,6 +144,12 @@ public class RPCExceptionHandler {
         return Class.forName(name).isInstance(e);
     }
 
+    /**
+     * Note that now we only support categorize exception for thrift
+     * @param e is the exception instance
+     * @return a category
+     * @throws ClassNotFoundException could not find the TException of the thrift
+     */
     private static RPCExceptionCategory extract(Object e) throws ClassNotFoundException {
         if (isInstanceOf(e, "org.apache.thrift.TApplicationException"))
             return RPCExceptionCategory.APPLICATION;

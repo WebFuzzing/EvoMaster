@@ -11,10 +11,26 @@ import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * the abstract individual for API based SUT, such as REST, GraphQL, RPC
+ */
 abstract class ApiWsIndividual (
+    /**
+     * a list of db actions for its Initialization
+     */
     private val dbInitialization: MutableList<DbAction> = mutableListOf(),
+    /**
+     * a tracked operator to manipulate the individual (nullable)
+     */
     trackOperator: TrackOperator? = null,
+    /**
+     * an index of individual indicating when the individual is initialized during the search
+     * negative number means that such info is not collected
+     */
     index : Int = -1,
+    /**
+     * a list of children of the individual
+     */
     children: List<out StructuralElement>
 ): Individual(trackOperator, index, children){
 

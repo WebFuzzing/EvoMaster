@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 /**
  * a named instance of the type with its value, eg Param/Field
+ * it could be a request param or a response
  */
 public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
@@ -36,6 +37,9 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      */
     private boolean isNullable = true;
 
+    /**
+     * a schema for collecting if the param is accessaible
+     */
     public final AccessibleSchema accessibleSchema;
 
 
@@ -159,6 +163,11 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
             throw new IllegalStateException("class of the instance ("+ instance.getClass().getName() +") does not conform with this param: "+getType().getFullTypeName());
     }
 
+    /**
+     * set the value of the param based on instance
+     * compared with [setValueBasedOnInstance], the type of the instance here is evaluated as valid
+     * @param instance is the instance
+     */
     protected abstract void setValueBasedOnValidInstance(Object instance);
 
     /**
@@ -201,9 +210,19 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      */
     public abstract List<String> newAssertionWithJava(int indent, String responseVarName);
 
+    /**
+     *
+     * @param responseVarName is the variable name of the response
+     * @return a list of assertions based on this which could be a response
+     */
     public List<String> newAssertionWithJava(String responseVarName){
         return newAssertionWithJava(0, responseVarName);
     }
 
+    /**
+     *
+     * @return a string which could representing the value of the param with java
+     * eg, float 4.2 could be 4.2f
+     */
     public abstract String getValueAsJavaString();
 }

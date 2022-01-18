@@ -52,7 +52,6 @@ public final class EndpointSchema {
 
     /**
      * a list of index of auth info based on what are configured in the driver
-     * TODO need to fix this
      */
     private final List<Integer> requiredAuthCandidates;
 
@@ -60,9 +59,26 @@ public final class EndpointSchema {
         return relatedCustomizedCandidates;
     }
 
+    /**
+     * a list of references of the related customizations related to this endpoint
+     * the reference now is defined based on the index of a list specified in the driver
+     */
     private final Set<String> relatedCustomizedCandidates;
 
 
+    /**
+     *
+     * @param name is the name of the endpoint, ie, method name
+     * @param interfaceName is the full name of the interface
+     * @param clientTypeName is the client type with its full name
+     * @param requestParams is a list of parameters in request
+     * @param response is the response, ie, return
+     * @param exceptions is related to exception for this endpoint
+     * @param authRequired specifies whether the endpoint clearly declares that it requires auth, eg with annotation
+     *                     note that if authRequired is false, the endpoint could also apply global auth setup
+     * @param requiredAuthCandidates represents required candidates for its auth setup
+     * @param relatedCustomizedCandidates represents related customizations based on their references
+     */
     public EndpointSchema(String name, String interfaceName, String clientTypeName,
                           List<NamedTypedValue> requestParams, NamedTypedValue response, List<NamedTypedValue> exceptions,
                           boolean authRequired, List<Integer> requiredAuthCandidates, Set<String> relatedCustomizedCandidates) {
@@ -93,6 +109,11 @@ public final class EndpointSchema {
         return exceptions;
     }
 
+    /**
+     *
+     * @return a dto with a respect to this endpoint
+     * such dto would be used between core and driver
+     */
     public RPCActionDto getDto(){
         RPCActionDto dto = new RPCActionDto();
         dto.actionName = name;

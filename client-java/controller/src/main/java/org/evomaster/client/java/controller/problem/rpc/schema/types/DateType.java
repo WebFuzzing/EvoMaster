@@ -11,18 +11,51 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * type schema for date
+ */
 public class DateType extends TypeSchema {
 
+    /**
+     * represent the type employs SimpleDateFormat as [SIMPLE_DATE_FORMATTER]
+     */
     public final boolean EMPLOY_SIMPLE_Format;
 
+    /**
+     * year field
+     */
     public final IntParam year = new IntParam("year");
+    /**
+     * month field
+     */
     public final IntParam month = new IntParam("month");
+    /**
+     * day field
+     */
     public final IntParam day = new IntParam("day");
+    /**
+     * hour field
+     */
     public final IntParam hour = new IntParam("hour");
+    /**
+     * minute field
+     */
     public final IntParam minute = new IntParam("minute");
+    /**
+     * second field
+     */
     public final IntParam second = new IntParam("second");
+    /**
+     * millisecond field
+     */
     public final IntParam millisecond = new IntParam("millisecond");
+    /**
+     * time zone field
+     */
     public final IntParam timezone = new IntParam("timezone");
+    /**
+     * a sequence of fields representing the date
+     */
     public final List<IntParam> dateFields;
 
     /**
@@ -39,6 +72,13 @@ public class DateType extends TypeSchema {
      */
     public final static SimpleDateFormat DATE_FORMATTER =new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ");
 
+    /**
+     *
+     * @param type is the type name
+     * @param fullTypeName is the full type name
+     * @param clazz is the class representing the type
+     * @param simpleFormat specifies if use simple format as SIMPLE_DATE_FORMATTER
+     */
     public DateType(String type, String fullTypeName, Class<?> clazz, boolean simpleFormat) {
         super(type, fullTypeName, clazz);
         EMPLOY_SIMPLE_Format = simpleFormat;
@@ -48,19 +88,37 @@ public class DateType extends TypeSchema {
             dateFields = Arrays.asList(year, month, day, hour, minute, second, millisecond, timezone);
 
     }
-
+    /**
+     * DateType with simpleFormat
+     * @param type is the type name
+     * @param fullTypeName is the full type name
+     * @param clazz is the class representing the type
+     *
+     */
     public DateType(String type, String fullTypeName, Class<?> clazz) {
         this(type, fullTypeName, clazz, true);
     }
 
+    /**
+     * a java.util.Date with simple format
+     */
     public DateType(){
         this(Date.class.getSimpleName(), Date.class.getName(), Date.class);
     }
 
+    /**
+     *
+     * @return a list of date fields used in this type
+     */
     public List<IntParam> getDateFields(){
         return dateFields;
     }
 
+    /**
+     *
+     * @param values are a list of values for the date
+     * @return a date instance based on the values
+     */
     public Date getDateInstance(List<IntParam> values){
         String stringValue = getDateString(values);
         try {
@@ -73,6 +131,11 @@ public class DateType extends TypeSchema {
         }
     }
 
+    /**
+     *
+     * @param values are a list of values for the date
+     * @return a string representing the date with the specified values
+     */
     public String getDateString(List<IntParam> values){
         if (values.size() != dateFields.size())
             throw new RuntimeException("mismatched size of values, it should be "+dateFields.size() + ", but it is "+values.size());
@@ -115,6 +178,11 @@ public class DateType extends TypeSchema {
         return stringValue;
     }
 
+    /**
+     * extract value of fields based on the date instance
+     * @param date is an instance of Date
+     * @return a list of fields which contains specific values
+     */
     public List<IntParam> getIntValues(Date date){
         String stringValue = DATE_FORMATTER.format(date);
         String[] strValues = stringValue.split(" ");

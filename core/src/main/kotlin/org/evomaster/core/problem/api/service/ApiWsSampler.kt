@@ -12,6 +12,9 @@ import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * abstract sampler for handling API based SUT, such as REST, GraphQL, RPC
+ */
 abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual {
 
     companion object {

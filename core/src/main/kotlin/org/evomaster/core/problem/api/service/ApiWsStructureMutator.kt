@@ -16,6 +16,9 @@ import org.slf4j.LoggerFactory
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ * the abstract structure mutator for API based SUT, such as REST, GraphQL, RPC
+ */
 abstract class ApiWsStructureMutator : StructureMutator(){
 
     companion object {

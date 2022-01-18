@@ -35,6 +35,9 @@ import java.nio.file.StandardOpenOption
 import javax.annotation.PostConstruct
 import javax.ws.rs.core.Response
 
+/**
+ * abstract class for handling fitness of API based SUT, such as REST, GraphQL, RPC
+ */
 abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
 
     companion object {

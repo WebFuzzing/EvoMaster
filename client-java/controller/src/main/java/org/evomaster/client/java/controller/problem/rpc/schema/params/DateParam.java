@@ -11,6 +11,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * handle date param with java.util.Date
+ */
 public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
 
     public DateParam(String name, DateType type, AccessibleSchema accessibleSchema) {

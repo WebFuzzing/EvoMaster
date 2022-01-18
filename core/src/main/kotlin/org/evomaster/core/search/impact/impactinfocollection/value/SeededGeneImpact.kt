@@ -6,6 +6,9 @@ import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.EnumGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.BinaryGeneImpact
 
+/**
+ * impact info for SeededGene
+ */
 class SeededGeneImpact(
     sharedImpactInfo: SharedImpactInfo,
     specificImpactInfo: SpecificImpactInfo,

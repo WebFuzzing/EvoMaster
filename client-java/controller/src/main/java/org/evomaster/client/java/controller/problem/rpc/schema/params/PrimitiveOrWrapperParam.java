@@ -13,7 +13,14 @@ import java.util.List;
  */
 public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> {
 
+    /**
+     * min value if it is specified
+     */
     private Long min;
+
+    /**
+     * max value of it is specified
+     */
     private Long max;
 
     public PrimitiveOrWrapperParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema){

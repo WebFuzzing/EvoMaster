@@ -21,6 +21,10 @@ public class TypeSchema {
      */
     private final Class<?> clazz;
 
+    /**
+     * a depth of the type that are used by other types
+     * eg, A contains B, and B contains C, then the depth for A is 2
+     */
     public int depth;
 
     public TypeSchema(String type, String fullTypeName, Class<?> clazz){

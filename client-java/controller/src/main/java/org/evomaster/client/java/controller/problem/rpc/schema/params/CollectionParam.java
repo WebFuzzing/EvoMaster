@@ -4,9 +4,20 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
+/**
+ * collection param
+ * @param <V> representing the value of the collection
+ */
 public abstract class CollectionParam<V> extends NamedTypedValue<CollectionType, V>{
 
+    /**
+     * min size of the collection if it is specified
+     */
     private Integer minSize;
+
+    /**
+     * max size of the collection if it is specified
+     */
     private Integer maxSize;
 
     public CollectionParam(String name, CollectionType type, AccessibleSchema accessibleSchema) {

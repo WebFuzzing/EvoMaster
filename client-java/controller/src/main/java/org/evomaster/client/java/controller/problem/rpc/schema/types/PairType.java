@@ -9,12 +9,12 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 
 /**
- * created by manzhang on 2021/11/27
+ * used AbstractMap.SimpleEntry for handling map
  */
 public class PairType extends TypeSchema{
 
-    public final static String PAIR_TYPE_NAME = AbstractMap.SimpleEntry.class.getSimpleName();
-    public final static String FULL_PAIR_TYPE_NAME = AbstractMap.SimpleEntry.class.getName();
+    private final static String PAIR_TYPE_NAME = AbstractMap.SimpleEntry.class.getSimpleName();
+    private final static String FULL_PAIR_TYPE_NAME = AbstractMap.SimpleEntry.class.getName();
     /**
      * template of first
      */

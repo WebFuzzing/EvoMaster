@@ -4,8 +4,12 @@ import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.Action
 
-//should be immutable
-
+/**
+ * should be immutable
+ *
+ * AuthenticationInfo for http based SUT
+ *
+ */
 open class HttpWsAuthenticationInfo(
     name: String,
     val headers: List<AuthenticationHeader>,

@@ -54,7 +54,16 @@ public class CodeJavaGenerator {
         return String.format("%s.%s", handleNestedSymbolInTypeName(enumTypeName), itemName);
     }
 
-
+    /**
+     * create an instance with one line
+     * eg, fullName varName = value;
+     * @param isDeclaration whether the instance is also for declaration
+     * @param doesIncludeName whether to include variable name
+     * @param fullName is the full name of the variable
+     * @param varName is the variable name
+     * @param value is string to create the instance
+     * @return a string which could create the instance
+     */
     public static String oneLineInstance(boolean isDeclaration, boolean doesIncludeName, String fullName, String varName, String value){
         StringBuilder sb = new StringBuilder();
         if (isDeclaration)
@@ -68,6 +77,15 @@ public class CodeJavaGenerator {
         return sb.toString();
     }
 
+    /**
+     * set instance with setter
+     * eg, varName.setterMethodName((fullName)value)
+     * @param setterMethodName is the setter method name
+     * @param fullName is full name of the instance
+     * @param varName is variable name
+     * @param value of the instance
+     * @return a string which set instance
+     */
     public static String oneLineSetterInstance(String setterMethodName, String fullName, String varName, String value){
         String stringValue = NULL_EXP;
         if (value != null)
@@ -128,36 +146,73 @@ public class CodeJavaGenerator {
         return String.format("new %s(%s)", handleNestedSymbolInTypeName(fullName), params);
     }
 
+    /**
+     *
+     * @param fullName is full name of the type
+     * @param length is length of array to new
+     * @return a string which could create a new array, eg, new String[5]
+     */
     public static String newArray(String fullName, int length){
         return String.format("new %s[%d]", fullName, length);
     }
 
+    /**
+     * @return a string which could create a new HashSet
+     */
     public static String newSet(){
         return "new "+ HashSet.class.getName()+"<>()";
     }
-
+    /**
+     * @return a string which could create a new HashMap
+     */
     public static String newMap(){
         return "new " + HashMap.class.getName()+"<>()";
     }
-
+    /**
+     * @return a string which could create a new ArrayList
+     */
     public static String newList(){
         return "new "+ArrayList.class.getName()+"<>()";
     }
 
+    /**
+     * @param indent is a number of indent (here we use space)
+     * @return a string which contains [indent] space
+     */
     public static String getIndent(int indent){
         return String.join("", Collections.nCopies(indent, " "));
     }
 
+    /**
+     *
+     * @param codes a list of codes, could be a block
+     * @param indent is a number of indent for the codes
+     * @return a list of indented codes
+     */
     public static List<String> getStringListWithIndent(List<String> codes, int indent){
         codes.replaceAll(s-> CodeJavaGenerator.getIndent(indent)+s);
         return codes;
     }
 
+    /**
+     *
+     * @param codes is a list of current code
+     * @param code is one line code to be appended to the [codes]
+     * @param indent is a number of indent for the [code]
+     * @return a list of codes appended with the [code]
+     */
     public static List<String> addCode(List<String> codes, String code, int indent){
         codes.add(getIndent(indent) + code);
         return codes;
     }
 
+    /**
+     *
+     * @param codes is a list of current code
+     * @param comment is one line comment
+     * @param indent is a number of indent for the [code]
+     * @return a list of codes with comment
+     */
     public static List<String> addComment(List<String> codes, String comment, int indent){
         codes.add(getIndent(indent) + "// " + comment);
         return codes;
@@ -201,30 +256,65 @@ public class CodeJavaGenerator {
         return String.format("%s.%s(%s)", obj, methodName, params);
     }
 
+    /**
+     * handle last for java
+     * @return a string which appends ; at last
+     */
     public static String appendLast(){
         return ";";
     }
 
+    /**
+     *
+     * @param expectedValue is the excepted value
+     * @param variableName is the variable name to be checked
+     * @return an assertion for equal with junit
+     */
     public static String junitAssertEquals(String expectedValue, String variableName){
         return String.format("assertEquals(%s, %s)", expectedValue, variableName) + appendLast();
     }
 
+    /**
+     *
+     * @param variableName is the variable name to be checked
+     * @return a null assertion with junit
+     */
     public static String junitAssertNull(String variableName){
         return String.format("assertNull(%s)", variableName) + appendLast();
     }
 
+    /**
+     *
+     * @param variableName is the variable which has size() method
+     * @return a string to get size() of the variable
+     */
     public static String withSize(String variableName){
         return String.format("%s.size()", variableName);
     }
-
+    /**
+     *
+     * @param variableName is the variable which has length field
+     * @return a string to get length of the variable
+     */
     public static String withLength(String variableName){
         return String.format("%s.length", variableName);
     }
 
+    /**
+     * junit does not support equal assertions for double type, then employ numbersMatch here
+     * @param expectedValue is the excepted value
+     * @param variableName is the variable name to be checked
+     * @return a True assertion with numbersMatch method.
+     */
     public static String junitAssertNumbersMatch(String expectedValue, String variableName){
         return String.format("assertTrue(numbersMatch(%s, %s))", expectedValue, variableName) + appendLast();
     }
 
+    /**
+     * some variable name might contain invalid symbol such as ., then need to reformat them
+     * @param original is the original name of the variable
+     * @return a reformatted variable name
+     */
     public static String handleVariableName(String original){
         return original.replaceAll("\\.","_");
     }

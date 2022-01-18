@@ -10,10 +10,23 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
+/**
+ * represent gene which contains seeded values customized by user with the driver
+ */
 class SeededGene<T : ComparableGene>(
     name: String,
+    /**
+     * the gene and its value could be randomized and handled during the search
+     */
     val gene: T,
+    /**
+     * a set of candidates specified by user, the search could manipluate which one is applied
+     */
     val seeded: EnumGene<T>,
+    /**
+     * representing if the [seeded] is applied to represent this
+     * otherwise apply [gene]
+     */
     var employSeeded: Boolean = false
 ) : Gene(name, mutableListOf(gene, seeded)) {
 
@@ -24,6 +37,9 @@ class SeededGene<T : ComparableGene>(
         private set
 
 
+    /**
+     * forbid changing [employSeeded] during the search
+     */
     fun forbidEmploySeededMutable(){
         isEmploySeededMutable = false
     }
@@ -50,6 +66,9 @@ class SeededGene<T : ComparableGene>(
         return copy
     }
 
+    /**
+     * @return a gene representing [this]
+     */
     fun getPhenotype() : T{
         return if (!employSeeded) gene else seeded.values[seeded.index]
     }

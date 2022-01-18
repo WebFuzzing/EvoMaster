@@ -37,10 +37,19 @@ public final class InterfaceSchema{
     }
 
     /**
-     * a list of endpoints for handling authentication
+     * a map of endpoints with their references for handling authentication
+     * key - index of the auth info specified in the driver
+     * value - the endpoint for handling such authentication with concrete info
+     *
+     * note that compared with [endpointsForAuth], authEndpoints contain concrete info for invocation
+     * eg, for a login endpoint, it might have different inputs representing different authentication
      */
     private Map<Integer, EndpointSchema> authEndpoints;
 
+    /**
+     * a list of endpoints (in this interface) which are responsible for auth setup
+     * eg, login
+     */
     private List<EndpointSchema> endpointsForAuth;
 
     /**
@@ -60,12 +69,34 @@ public final class InterfaceSchema{
      */
     private final RPCType rpcType;
 
+    /**
+     * a list of endpoints which are skipped to test
+     */
     private final List<String> skippedEndpoints;
 
+    /**
+     *
+     * @param name is the name of the interface
+     * @param endpoints is a list of endpoints which are involved for testing
+     * @param client is the client name
+     * @param rpcType is the rpc type
+     */
     public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client, RPCType rpcType) {
         this(name, endpoints, client, rpcType, null, null, null);
     }
 
+    /**
+     *
+     * @param name is the name of the interface
+     * @param endpoints is a list of endpoints which are involved for testing
+     * @param client is the client name
+     * @param rpcType is the rpc type
+     * @param skippedEndpoints is a list of endpoints which are specified to be skipped
+     * @param authEndpoints is a map of authentication info which could be handled with the endpoint
+     *                      key - index of authentication info in the driver
+     *                      value - the endpoint which contains concrete info for its invocation
+     * @param endpointsForAuth is a list of endpoints in this interface that are responsible for auth setup
+     */
     public InterfaceSchema(String name, List<EndpointSchema> endpoints, String client, RPCType rpcType, List<String> skippedEndpoints, Map<Integer, EndpointSchema> authEndpoints, List<EndpointSchema> endpointsForAuth) {
         this.name = name;
         this.endpoints = endpoints;
@@ -76,6 +107,12 @@ public final class InterfaceSchema{
         this.endpointsForAuth = endpointsForAuth;
     }
 
+    /**
+     * this method is used to collect all objects in sut
+     * @param type is the type schema of the param for an object
+     * @param param is the concrete param example
+     *              note that multiple params could belong to the same type schema
+     */
     public void registerType(TypeSchema type, NamedTypedValue param){
         String typeName = type.getFullTypeName();
         if (!(type instanceof CycleObjectType)){
@@ -102,7 +139,9 @@ public final class InterfaceSchema{
     }
 
     /**
-     * @param name is a name of an endpoint
+     * find endpoints based on the name
+     * note that [endpoints] and [endpointsForAuth] contains all endpoints could be invoked in this interface
+     * @param name is the name of an endpoint
      * @return a list of endpoints based on the specified name
      */
     public List<EndpointSchema> findEndpoints(String name){
@@ -146,6 +185,10 @@ public final class InterfaceSchema{
         return typeCollections;
     }
 
+    /**
+     *
+     * @return a dto of the RPC interface schema which would be sent to core as a part of sut info
+     */
     public RPCInterfaceSchemaDto getDto(){
         RPCInterfaceSchemaDto dto = new RPCInterfaceSchemaDto();
         dto.types = objParamCollections.values().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());

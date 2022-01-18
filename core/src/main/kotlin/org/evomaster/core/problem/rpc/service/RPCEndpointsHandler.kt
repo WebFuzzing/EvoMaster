@@ -43,7 +43,9 @@ class RPCEndpointsHandler {
 
 
     /**
-     * a list of available auth info configured through driver by user, retrieving from em driver side
+     * a map of available auth info configured through driver by user, retrieving from em driver side
+     * - Key is auth reference based on the index of auth info specified in the dirver
+     * - value is the detailed auth info
      */
     protected val authentications: MutableMap<Int, RPCAuthenticationInfo> = mutableMapOf()
 
@@ -68,6 +70,11 @@ class RPCEndpointsHandler {
      */
     private val actionWithCustomizedCandidatesMap = mutableMapOf<String, MutableSet<String>>()
 
+    /**
+     * a map of auth info which could be setup with RPC endpoints
+     * - key is the reference of the auth see [authentications]
+     * - value is the action for auth setup
+     */
     private val authEndpointCluster = mutableMapOf<Int, RPCActionDto>()
 
     /**
@@ -76,6 +83,7 @@ class RPCEndpointsHandler {
      */
     private val typeCache = mutableMapOf<String, Gene>()
 
+    // used to handle dto and its string json
     private val objectMapper = ObjectMapper()
 
     /**
@@ -304,6 +312,9 @@ class RPCEndpointsHandler {
         return objectMapper.writeValueAsString(dto)
     }
 
+    /**
+     * @return an endpoint auth setup (ie, RPCActionDto) for the [action]
+     */
     fun getRPCAuthActionDto(action: RPCCallAction) : RPCActionDto?{
         if (action.auth is RPCNoAuth)
             return null
@@ -395,7 +406,9 @@ class RPCEndpointsHandler {
                 is StringGene -> valueGene.value = dto.stringValue
                 is LongGene -> valueGene.value = dto.stringValue.toLong()
                 is EnumGene<*> -> valueGene.index = dto.stringValue.toInt()
-                is SeededGene<*> -> TODO()
+                is SeededGene<*> -> {
+                    throw IllegalStateException("for SeededGene, its value is not assigned based on ParamDto")
+                }
                 is PairGene<*, *> -> {
                     Lazy.assert { dto.innerContent.size == 2 }
                     setGeneBasedOnParamDto(valueGene.first, dto.innerContent[0])

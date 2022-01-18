@@ -13,10 +13,30 @@ import java.util.List;
  */
 public class StringParam extends NamedTypedValue<StringType, String> {
 
+    /**
+     * min length of the string
+     */
     private Integer minSize;
+
+    /**
+     * max length of the string
+     */
     private Integer maxSize;
 
+    /**
+     * min value of the string
+     * note that a string might be specified with its min value, eg, representing sth like UUID
+     * then we still need to collect such info
+     * if a string has such info, when init gene, we will add a specification as LongGene for it
+     */
     private Long min;
+
+    /**
+     * max value of the string
+     * note that a string might be specified with its max value, eg, representing sth like UUID
+     * then we still need to collect such info
+     * if a string has such info, when init gene, we will add a specification as LongGene for it
+     */
     private Long max;
 
     public StringParam(String name, AccessibleSchema accessibleSchema) {
@@ -110,8 +130,6 @@ public class StringParam extends NamedTypedValue<StringType, String> {
             code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, value);
         }
         return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
-
-//        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value));
     }
 
     @Override

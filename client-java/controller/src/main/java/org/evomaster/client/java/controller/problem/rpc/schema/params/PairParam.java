@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * created by manzhang on 2021/11/27
+ * map entry which is only used for handling map
  */
 public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry<NamedTypedValue, NamedTypedValue>>{
     public final static String PAIR_NAME = "MAP_ENTRY";

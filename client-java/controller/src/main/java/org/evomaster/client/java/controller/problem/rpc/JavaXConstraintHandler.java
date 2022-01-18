@@ -7,10 +7,17 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/package-summary.html
+ * this class is to handle constraints defined with javax.validation.constraints
+ * following the link
+ *         https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/package-summary.html
  */
 public class JavaXConstraintHandler {
 
+    /**
+     * set constraints of the param based on the given annotation
+     * @param namedTypedValue is the extracted param
+     * @param annotation is the annotation to be handled
+     */
     public static void handleParam(NamedTypedValue namedTypedValue, Annotation annotation){
         Class<?> cons = annotation.annotationType();
         if (cons.getSimpleName().equals("NotNull")){
@@ -35,7 +42,7 @@ public class JavaXConstraintHandler {
         }
     }
 
-    public static boolean handlePrimitiveOrWrapperParam(PrimitiveOrWrapperParam param, Annotation annotation){
+    private static boolean handlePrimitiveOrWrapperParam(PrimitiveOrWrapperParam param, Annotation annotation){
         Long max = handleMax(annotation);
         if (max != null){
             param.setMax(max);
@@ -49,7 +56,7 @@ public class JavaXConstraintHandler {
         return false;
     }
 
-    public static boolean handleCollection(CollectionParam param, Annotation annotation){
+    private static boolean handleCollection(CollectionParam param, Annotation annotation){
         if (handleNotEmpty(annotation)){
             param.setMinSize(1);
             return true;
@@ -66,7 +73,7 @@ public class JavaXConstraintHandler {
 
     }
 
-    public static boolean handleMapParam(MapParam param, Annotation annotation){
+    private static boolean handleMapParam(MapParam param, Annotation annotation){
         if (handleNotEmpty(annotation)){
             param.setMinSize(1);
             return true;
@@ -83,7 +90,7 @@ public class JavaXConstraintHandler {
 
     }
 
-    public static boolean handleStringParam(StringParam param, Annotation annotation) {
+    private static boolean handleStringParam(StringParam param, Annotation annotation) {
         if (handleNotBlank(annotation)){
             param.setMinSize(1);
             return true;
@@ -110,7 +117,7 @@ public class JavaXConstraintHandler {
         return false;
     }
 
-    public static boolean handleNotBlank(Annotation annotation)  {
+    private static boolean handleNotBlank(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
         if (cons.getSimpleName().equals("NotBlank")){
             return true;
@@ -118,7 +125,7 @@ public class JavaXConstraintHandler {
         return false;
     }
 
-    public static boolean handleNotEmpty(Annotation annotation)  {
+    private static boolean handleNotEmpty(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
         if (cons.getSimpleName().equals("NotEmpty")){
             return true;
@@ -126,7 +133,7 @@ public class JavaXConstraintHandler {
         return false;
     }
 
-    public static Integer[] handleSize(Annotation annotation)  {
+    private static Integer[] handleSize(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
         if (cons.getSimpleName().equals("Size")){
             Integer[] size = new Integer[2];
@@ -143,7 +150,7 @@ public class JavaXConstraintHandler {
         return null;
     }
 
-    public static Long handleMax(Annotation annotation)  {
+    private static Long handleMax(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
         if (cons.getSimpleName().equals("Max")){
             try {
@@ -155,7 +162,7 @@ public class JavaXConstraintHandler {
         return null;
     }
 
-    public static Long handleMin(Annotation annotation)  {
+    private static Long handleMin(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
         if (cons.getSimpleName().equals("Min")){
             try {
