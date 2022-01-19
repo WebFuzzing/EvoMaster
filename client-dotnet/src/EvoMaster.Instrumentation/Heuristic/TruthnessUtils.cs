@@ -57,6 +57,19 @@ public class TruthnessUtils{
             a != b ? 1d : 0d
         );
     }
+    
+    /**
+     * calculate less than for double
+     * the implementation is based on Long and js for less than
+     * TODO need to check this with Andrea
+     */
+    public static Truthness GetLessThanTruthness(double a, double b) {
+        double distance = DistanceHelper.GetDistanceToEquality(a, b);
+        return new Truthness(
+            a < b ? 1d : 1d / (1.1d + distance),
+            a >= b ? 1d : 1d / (1.1d + distance)
+        );
+    }
 
     ///<param name="len">A positive value for a length</param>
     public static Truthness GetTruthnessToEmpty(int len){

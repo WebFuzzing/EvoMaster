@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Mono.Cecil.Cil;
 
 namespace EvoMaster.Instrumentation.Heuristic {
@@ -9,8 +10,17 @@ namespace EvoMaster.Instrumentation.Heuristic {
      * on the stack
      * */
     public class HeuristicsForJumps {
-        //This are values compared against 0, like {@code value < 0}
+        
+        public static readonly ISet<Code> CODES = new HashSet<Code>(){
+            Code.Brfalse, Code.Brfalse_S, Code.Brtrue, Code.Brtrue_S,
+            Code.Beq, Code.Beq_S, Code.Bne_Un, Code.Bne_Un_S, 
+            Code.Blt, Code.Blt_S, Code.Blt_Un, Code.Blt_Un_S,
+            Code.Ble, Code.Ble_S, Code.Ble_Un, Code.Ble_Un_S,
+            Code.Bgt, Code.Bgt_S, Code.Bgt_Un, Code.Bgt_Un_S,
+            Code.Bge, Code.Bge_S, Code.Bge_Un, Code.Bge_Un_S
+        };
 
+        //This are values compared against 0, like {@code value < 0}
         public static Truthness GetForSingleValueJump(int value, Code opcode) {
             switch (opcode) {
                 

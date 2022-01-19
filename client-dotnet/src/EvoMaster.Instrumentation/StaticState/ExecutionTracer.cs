@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using EvoMaster.Instrumentation.Heuristic;
 using EvoMaster.Instrumentation_Shared;
 
 namespace EvoMaster.Instrumentation.StaticState {
@@ -224,6 +225,22 @@ namespace EvoMaster.Instrumentation.StaticState {
              if (value is {Value: { }}) return value.Value.Value;
              
              return 0;
+        }
+        
+        // public static void ExecutedNumericComparison(string idTemplate, double lt, double eq, double gt) {
+        //
+        //     UpdateObjective(ObjectiveNaming.NumericComparisonObjectiveName(idTemplate, -1), lt);
+        //     UpdateObjective(ObjectiveNaming.NumericComparisonObjectiveName(idTemplate, 0), eq);
+        //     UpdateObjective(ObjectiveNaming.NumericComparisonObjectiveName(idTemplate, +1), gt);
+        // }
+
+        public static void UpdateBranchDistance(string className, int line, int branchId, Truthness t){
+            var forThen = ObjectiveNaming.BranchObjectiveName(className, line, branchId, true);
+            var forElse = ObjectiveNaming.BranchObjectiveName(className, line, branchId, false);
+
+            UpdateObjective(forThen, t.GetOfTrue());
+            UpdateObjective(forElse, t.GetOfFalse());
+            
         }
 
         /**
