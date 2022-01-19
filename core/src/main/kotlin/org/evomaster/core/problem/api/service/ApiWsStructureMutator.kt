@@ -1,14 +1,17 @@
-package org.evomaster.core.problem.api.service
+package org.evomaster.core.problem.httpws.service
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.rest.service.ResourceDepManageService
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
@@ -24,18 +27,17 @@ abstract class ApiWsStructureMutator : StructureMutator(){
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ApiWsStructureMutator::class.java)
     }
-
     fun<T : ApiWsIndividual> addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
         if (!config.shouldGenerateSqlData()) {
             return
         }
 
         val ind = individual.individual as? T
-                ?: throw IllegalArgumentException("Invalid individual type")
+            ?: throw IllegalArgumentException("Invalid individual type")
 
         val fw = individual.fitness.getViewOfAggregatedFailedWhere()
-                //TODO likely to remove/change once we ll support VIEWs
-                .filter { sampler.canInsertInto(it.key) }
+            //TODO likely to remove/change once we ll support VIEWs
+            .filter { sampler.canInsertInto(it.key) }
 
         if (fw.isEmpty()) {
             return
@@ -49,15 +51,19 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         // update impact based on added genes
         if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
             individual.updateImpactGeneDueToAddedInitializationGenes(
-                    mutatedGenes,
-                    old,
-                    addedInsertions
+                mutatedGenes,
+                old,
+                addedInsertions
             )
         }
     }
 
     fun<T : ApiWsIndividual> handleFailedWhereSQL(
-        ind: T, fw: Map<String, Set<String>>,
+        ind: T,
+        /**
+         * Map of FAILED WHERE clauses. from table name key to column name values
+         */
+        fw: Map<String, Set<String>>,
         mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
     ): MutableList<List<Action>>?{
 

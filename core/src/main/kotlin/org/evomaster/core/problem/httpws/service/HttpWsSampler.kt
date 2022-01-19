@@ -54,8 +54,9 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     protected fun addAuthFromConfig(){
 
         val headers = listOf(config.header0, config.header1, config.header2)
+                .filter { it.isNotBlank() }
 
-        if(headers.all { it.isBlank() }){
+        if(headers.isEmpty()){
             return //nothing to do
         }
 
