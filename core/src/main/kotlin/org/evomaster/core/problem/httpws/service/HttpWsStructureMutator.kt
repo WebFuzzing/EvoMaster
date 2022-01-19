@@ -25,7 +25,11 @@ abstract class HttpWsStructureMutator : StructureMutator(){
 
 
     fun<T : HttpWsIndividual> handleFailedWhereSQL(
-        ind: T, fw: Map<String, Set<String>>,
+        ind: T,
+        /**
+         * Map of FAILED WHERE clauses. from table name key to column name values
+         */
+        fw: Map<String, Set<String>>,
         mutatedGenes: MutatedGeneSpecification?, sampler: HttpWsSampler<T>
     ): MutableList<List<Action>>?{
 
