@@ -19,17 +19,6 @@
 
     <ItemGroup>
         <EmbeddedResource Include="Resources\warning.html" />
-<!--        <Content Include="Resources/warning.html">-->
-<!--            <Pack>true</Pack>-->
-<!--            <PackagePath>content\any\any;contentFiles\any\any\;;</PackagePath>-->
-<!--            <PackageCopyToOutput>true</PackageCopyToOutput>-->
-<!--        </Content>-->
-
-        <None Include="build/EvoMaster.Controller.props">
-            <Pack>true</Pack>
-            <PackagePath>build\$(TargetFramework)</PackagePath>
-            <PackageCopyToOutput>true</PackageCopyToOutput>
-        </None>
     </ItemGroup>
 
     <Target Name="PublishNuGetLocally" AfterTargets="Build">
