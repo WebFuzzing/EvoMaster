@@ -49,8 +49,8 @@ namespace EvoMaster.Instrumentation {
 
             _enteringBranchProbe =
                 module.ImportReference(
-                    typeof(Probes).GetMethod(nameof(Probes.EnteringBranch),
-                        new[] {typeof(string), typeof(int), typeof(int)}));
+                    typeof(Probes).GetMethod(nameof(Probes.ComputingBranchDistance),
+                        new[] {typeof(string), typeof(int), typeof(int), typeof(object), typeof(object), typeof(OpCode)}));
 
             foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
                 _alreadyCompletedPoints.Clear();
@@ -242,12 +242,17 @@ namespace EvoMaster.Instrumentation {
             ILProcessor ilProcessor, int byteCodeIndex, string className, int lineNo, int branchId) {
             _registeredTargets.Branches.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, true));
             _registeredTargets.Branches.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, false));
-
+            
+            
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var branchIdInstruction = ilProcessor.Create(OpCodes.Ldc_I4, branchId);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringBranchProbe);
-
+            
+            //insert value1            
+            //insert value2
+            //insert opcode
+            
             ilProcessor.InsertBefore(instruction, classNameInstruction);
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, lineNumberInstruction);

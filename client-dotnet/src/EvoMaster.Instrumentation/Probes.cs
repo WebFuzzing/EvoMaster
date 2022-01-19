@@ -4,6 +4,7 @@ using System.Reflection;
 using EvoMaster.Client.Util;
 using EvoMaster.Instrumentation.StaticState;
 using EvoMaster.Instrumentation_Shared;
+using Mono.Cecil.Cil;
 
 namespace EvoMaster.Instrumentation {
     public class Probes {
@@ -53,7 +54,7 @@ namespace EvoMaster.Instrumentation {
             ExecutionTracer.EnteringStatement(className, lineNo, columnNo);
         }
 
-        public static void EnteringBranch(string className, int lineNo, int branchId) {
+        public static void ComputingBranchDistance(string className, int lineNo, int branchId, object firstValue, object secondValue, OpCode opCode) {
             //TODO: remove
             SimpleLogger.Info($"****** branch detected at {className}: {lineNo}, {branchId}");
         }
