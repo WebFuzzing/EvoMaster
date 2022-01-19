@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.api.service.ApiWsStructureMutator
+import org.evomaster.core.problem.httpws.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo

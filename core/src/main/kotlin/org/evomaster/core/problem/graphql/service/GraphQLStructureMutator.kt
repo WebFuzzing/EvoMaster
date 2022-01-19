@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.api.service.ApiWsStructureMutator
+import org.evomaster.core.problem.httpws.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
