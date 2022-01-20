@@ -5,7 +5,6 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleS
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -206,17 +205,18 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * create assertions with java for response
      * @param indent specifies the current indent of the code
      * @param responseVarName a variable name for responses
+     * @param maxAssertionForDataInCollection
      * @return a list of string for assertions
      */
-    public abstract List<String> newAssertionWithJava(int indent, String responseVarName);
+    public abstract List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection);
 
     /**
      *
      * @param responseVarName is the variable name of the response
      * @return a list of assertions based on this which could be a response
      */
-    public List<String> newAssertionWithJava(String responseVarName){
-        return newAssertionWithJava(0, responseVarName);
+    public List<String> newAssertionWithJava(String responseVarName, int maxAssertionForDataInCollection){
+        return newAssertionWithJava(0, responseVarName, maxAssertionForDataInCollection);
     }
 
     /**

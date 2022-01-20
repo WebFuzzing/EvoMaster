@@ -8,7 +8,9 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionT
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * thrift
@@ -98,7 +100,7 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
             CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
@@ -106,12 +108,19 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
         }
 
         CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withSize(responseVarName)), indent);
-        int index = 0;
-        for (NamedTypedValue e: getValue()){
+
+        List<Integer> nvalue = null;
+        if (maxAssertionForDataInCollection > 0 && getValue().size() > maxAssertionForDataInCollection){
+            nvalue = CodeJavaGenerator.randomNInt(getValue().size(), maxAssertionForDataInCollection);
+        }else
+            nvalue = IntStream.range(0, getValue().size()).boxed().collect(Collectors.toList());
+
+        for (int index : nvalue){
+            NamedTypedValue e = getValue().get(index);
             String eVar = responseVarName+".get("+index+")";
-            codes.addAll(e.newAssertionWithJava(indent, eVar));
-            index++;
+            codes.addAll(e.newAssertionWithJava(indent, eVar, maxAssertionForDataInCollection));
         }
+
         return codes;
     }
 

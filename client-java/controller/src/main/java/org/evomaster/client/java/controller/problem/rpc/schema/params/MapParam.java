@@ -9,6 +9,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * thrift
@@ -114,7 +115,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
             CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
@@ -123,15 +124,23 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
         CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withSize(responseVarName)), indent);
 
         if (doAssertion(getType().getTemplate().getType().getFirstTemplate())){
-            for (PairParam e: getValue()){
+            List<Integer> nvalue = null;
+            if (maxAssertionForDataInCollection > 0 && getValue().size() > maxAssertionForDataInCollection){
+                nvalue = CodeJavaGenerator.randomNInt(getValue().size(), maxAssertionForDataInCollection);
+            }else
+                nvalue = IntStream.range(0, getValue().size()).boxed().collect(Collectors.toList());
+
+            for (int index : nvalue){
+                PairParam e = getValue().get(index);
                 String key = e.getValue().getKey().getValueAsJavaString();
                 if (key == null)
                     throw new RuntimeException("key is null");
                 String eValueVarName = responseVarName+".get("+key+")";
                 if (e.getValue().getValue() == null)
                     throw new RuntimeException("value should not been null");
-                codes.addAll(e.getValue().getValue().newAssertionWithJava(indent, eValueVarName));
+                codes.addAll(e.getValue().getValue().newAssertionWithJava(indent, eValueVarName, maxAssertionForDataInCollection));
             }
+
         }else{
             SimpleLogger.error("ERROR: do not support to generate assertions for Map with key :"+getType().getTemplate().getValue().getKey().getType().getFullTypeName());
         }

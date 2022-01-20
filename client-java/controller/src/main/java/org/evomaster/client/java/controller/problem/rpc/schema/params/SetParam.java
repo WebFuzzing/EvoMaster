@@ -99,7 +99,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
             CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);

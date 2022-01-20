@@ -38,6 +38,28 @@ public class RPCActionDto {
     public ParamDto responseParam;
 
     /**
+     * if the action requires auth to access
+     */
+    public boolean isAuthorized;
+
+    /**
+     * possible candidates for auth to access the endpoint
+     */
+    public List<Integer> requiredAuthCandidates;
+
+    /**
+     * related candidates to customize values in request of this endpoint
+     */
+    public Set<String> relatedCustomization;
+
+    /**
+     * an action to setup auth in this invocation
+     */
+    public RPCActionDto authSetup;
+
+
+    // test generation configuration, might be removed later
+    /**
      * variable name of response
      */
     public String responseVariable;
@@ -58,24 +80,10 @@ public class RPCActionDto {
     public boolean doGenerateTestScript;
 
     /**
-     * if the action requires auth to access
+     * the maximum number of assertions to be generated for data in collections
+     * zero or negative number means that assertions would be generated for all data in collection
      */
-    public boolean isAuthorized;
-
-    /**
-     * possible candidates for auth to access the endpoint
-     */
-    public List<Integer> requiredAuthCandidates;
-
-    /**
-     * related candidates to customize values in request of this endpoint
-     */
-    public Set<String> relatedCustomization;
-
-    /**
-     * an action to setup auth in this invocation
-     */
-    public RPCActionDto authSetup;
+    public int maxAssertionForDataInCollection;
 
     /**
      *
@@ -94,6 +102,7 @@ public class RPCActionDto {
         copy.controllerVariable = controllerVariable;
         copy.doGenerateAssertions = doGenerateAssertions;
         copy.doGenerateTestScript = doGenerateTestScript;
+        copy.maxAssertionForDataInCollection = maxAssertionForDataInCollection;
         copy.isAuthorized = isAuthorized;
         return copy;
     }

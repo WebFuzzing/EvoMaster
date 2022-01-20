@@ -436,7 +436,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         resSchema.setValueBasedOnInstance(response);
                         responseDto.rpcResponse = resSchema.getDto();
                         if (dto.doGenerateAssertions && dto.responseVariable != null)
-                            responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable);
+                            responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
                         else
                             responseDto.jsonResponse = objectMapper.writeValueAsString(response);
                     } catch (Exception e){

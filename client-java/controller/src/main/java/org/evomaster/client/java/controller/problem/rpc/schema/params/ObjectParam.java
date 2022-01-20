@@ -137,7 +137,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         List<String> codes = new ArrayList<>();
         if (getValue() == null){
             CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertNull(responseVarName), indent);
@@ -152,7 +152,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                     throw new IllegalStateException("Error: private field, but there is no getter method");
                 fName = responseVarName+"."+f.accessibleSchema.getterMethodName+"()";
             }
-            codes.addAll(f.newAssertionWithJava(indent, fName));
+            codes.addAll(f.newAssertionWithJava(indent, fName, maxAssertionForDataInCollection));
         }
         return codes;
     }

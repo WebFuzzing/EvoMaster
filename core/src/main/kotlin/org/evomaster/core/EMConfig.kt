@@ -1558,6 +1558,11 @@ class EMConfig {
     @Cfg("Whether to generate RPC Assertions based on instance")
     var enableRPCAssertionWithInstance = false
 
+    @Experimental
+    @Cfg("Specify a maximum number of data in a collection to be asserted in generated tests." +
+            "Note that a zero or negative value means all data in the collection should be asserted.")
+    var maxAssertionForDataInCollection = -1
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds

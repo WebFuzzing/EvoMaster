@@ -314,7 +314,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0.pubField = \"foo\";", javaCodes.get(3));
         assertEquals(" arg0.setPriField((java.lang.String)\"bar\");", javaCodes.get(4));
         assertEquals("}", javaCodes.get(5));
-        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1");
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
         assertEquals(2, assertionJavaCode.size());
         assertEquals("assertEquals(\"foo\", res1.pubField);", assertionJavaCode.get(0));
         assertEquals("assertEquals(\"bar\", res1.getPriField());", assertionJavaCode.get(1));
@@ -342,7 +342,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" }", javaCodesForResponse.get(9));
         assertEquals("}", javaCodesForResponse.get(10));
 
-        List<String> assertionJavaCodeForResponse = res.newAssertionWithJava(0, "res1");
+        List<String> assertionJavaCodeForResponse = res.newAssertionWithJava(0, "res1", -1);
         assertEquals(3, assertionJavaCodeForResponse.size());
         assertEquals("assertEquals(42, res1.pubField);", assertionJavaCodeForResponse.get(0));
         assertEquals("assertEquals(\"foo\", res1.getPriRequest().pubField);", assertionJavaCodeForResponse.get(1));

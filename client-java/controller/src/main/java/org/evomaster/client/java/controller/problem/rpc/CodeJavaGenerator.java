@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc;
 
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -317,5 +318,23 @@ public class CodeJavaGenerator {
      */
     public static String handleVariableName(String original){
         return original.replaceAll("\\.","_");
+    }
+
+
+    /**
+     * select n int from a range [0, max)
+     * Note that this is only used for deciding a number of data in collection to be asserted
+     * then it should not have any side-effect to randomness of search
+     * @param max
+     * @param n
+     * @return
+     */
+    public static List<Integer> randomNInt(int max, int n){
+        if (n >= max){
+            throw new IllegalStateException("count should be less than max");
+        }
+        List<Integer> candidates = IntStream.range(0, max).boxed().collect(Collectors.toList());
+        Collections.shuffle(candidates);
+        return  candidates.subList(0, n);
     }
 }

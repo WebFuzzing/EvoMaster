@@ -68,8 +68,8 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName) {
-        if (getValue() == null) return super.newAssertionWithJava(indent, responseVarName);
+    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
+        if (getValue() == null) return super.newAssertionWithJava(indent, responseVarName, maxAssertionForDataInCollection);
 
         List<String> codes = new ArrayList<>();
         if ((getValue().isInfinite() || getValue().isNaN())){

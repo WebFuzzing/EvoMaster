@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
-import net.sf.jsqlparser.expression.WindowOffset;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
@@ -78,7 +77,7 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         StringBuilder sb = new StringBuilder();
         sb.append(CodeJavaGenerator.getIndent(indent));
         if (getValue() == null)

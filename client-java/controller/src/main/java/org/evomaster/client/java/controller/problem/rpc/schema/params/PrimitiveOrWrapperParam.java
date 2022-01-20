@@ -96,7 +96,7 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         StringBuilder sb = new StringBuilder();
         sb.append(CodeJavaGenerator.getIndent(indent));
         if (getValue() == null)

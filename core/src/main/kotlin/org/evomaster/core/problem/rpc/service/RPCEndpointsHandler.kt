@@ -263,14 +263,17 @@ class RPCEndpointsHandler {
             }
         }
 
+        // check generation configuration, might be removed later
         rpcAction.doGenerateTestScript = config.enablePureRPCTestGeneration && (index != -1)
         rpcAction.doGenerateAssertions = config.enableRPCAssertionWithInstance
 
         if (rpcAction.doGenerateTestScript){
             rpcAction.controllerVariable = TestSuiteWriter.controller
         }
-        if (rpcAction.doGenerateTestScript || rpcAction.doGenerateAssertions)
+        if (rpcAction.doGenerateTestScript || rpcAction.doGenerateAssertions){
             rpcAction.responseVariable = generateResponseVariable(index)
+            rpcAction.maxAssertionForDataInCollection = config.maxAssertionForDataInCollection
+        }
 
         if (action.auth !is RPCNoAuth){
             rpcAction.authSetup = authEndpointCluster[action.auth.authIndex]?.copy()

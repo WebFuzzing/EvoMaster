@@ -90,7 +90,7 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
     }
 
     @Override
-    public List<String> newAssertionWithJava(int indent, String responseVarName) {
+    public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {
         StringBuilder sb = new StringBuilder();
         sb.append(CodeJavaGenerator.getIndent(indent));
         if (getValue() == null)
