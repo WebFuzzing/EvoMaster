@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.api.dto.JsonAuthRPCEndpointDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
@@ -19,7 +19,6 @@ import java.lang.reflect.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * created by manzhang on 2021/11/4
@@ -147,7 +146,7 @@ public class RPCEndpointsBuilder {
                     skippedEndpoints.add(m.getName());
                 }
 
-                List<AuthenticationDto> auths = getRelatedAuthEndpoint(authenticationDtoList, interfaceName, m);
+                List<AuthenticationDto> auths = getAuthEndpointInInterface(authenticationDtoList, interfaceName, m);
                 if (auths != null && !auths.isEmpty()){
                     // handle endpoint which is for auth setup
                     EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos);
@@ -171,6 +170,26 @@ public class RPCEndpointsBuilder {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("cannot find the interface with the name (" + interfaceName + ") and the error message is " + e.getMessage());
         }
+    }
+
+    /**
+     * build the local auth setup
+     * @param authenticationDtoList a list of auth info specified by user
+     * @return a map of such local auth setup
+     *      key - index at a list of auth info specified by user
+     *      value - local endpoint
+     */
+    public static Map<Integer, LocalAuthSetupSchema> buildLocalAuthSetup(List<AuthenticationDto> authenticationDtoList){
+        Map<Integer, LocalAuthSetupSchema> map = new HashMap<>();
+        for (AuthenticationDto dto : authenticationDtoList){
+            if (dto.localAuthSetup != null){
+                int index = authenticationDtoList.indexOf(dto);
+                LocalAuthSetupSchema local = new LocalAuthSetupSchema();
+                local.getRequestParams().get(0).setValueBasedOnInstance(dto.localAuthSetup.authenticationInfo);
+                map.put(index, local);
+            }
+        }
+        return map;
     }
 
     private static void setAuthEndpoint(EndpointSchema authEndpoint, JsonAuthRPCEndpointDto jsonAuthEndpoint) throws ClassNotFoundException{
@@ -225,11 +244,12 @@ public class RPCEndpointsBuilder {
 
 
 
-    private static List<AuthenticationDto> getRelatedAuthEndpoint(List<AuthenticationDto> authenticationDtos, String interfaceName, Method method){
+    private static List<AuthenticationDto> getAuthEndpointInInterface(List<AuthenticationDto> authenticationDtos, String interfaceName, Method method){
         if (authenticationDtos == null) return null;
         for (AuthenticationDto dto : authenticationDtos){
-            if (dto.jsonAuthEndpoint == null || dto.jsonAuthEndpoint.endpointName == null || dto.jsonAuthEndpoint.interfaceName == null){
-                SimpleLogger.uniqueWarn("Driver Config Error: To specify JsonAuthRPCEndpointDto, endpointName and interfaceName cannot be null");
+            if (dto.localAuthSetup == null && (dto.jsonAuthEndpoint == null || dto.jsonAuthEndpoint.endpointName == null || dto.jsonAuthEndpoint.interfaceName == null)){
+                SimpleLogger.uniqueWarn("Driver Config Error: To specify auth for RPC, either localAuthSetup or jsonAuthEndpoint should be specified." +
+                        "For JsonAuthRPCEndpointDto, endpointName and interfaceName cannot be null");
             }
         }
         return authenticationDtos.stream().filter(a-> a.jsonAuthEndpoint != null
@@ -295,7 +315,7 @@ public class RPCEndpointsBuilder {
                                         List<CustomizedRequestValueDto> customizedRequestValueDtos) {
         List<NamedTypedValue> requestParams = new ArrayList<>();
 
-        List<AuthenticationDto> authAnnotationDtos = getRelatedAuth(authenticationDtoList, method);
+        List<AuthenticationDto> authAnnotationDtos = getSpecificRelatedAuth(authenticationDtoList, method);
         List<Integer> authKeys = null;
         if (authAnnotationDtos != null)
             authKeys = authAnnotationDtos.stream().map(s-> authenticationDtoList.indexOf(s)).collect(Collectors.toList());
@@ -329,12 +349,13 @@ public class RPCEndpointsBuilder {
     }
 
 
-    private static List<AuthenticationDto> getRelatedAuth(List<AuthenticationDto> authenticationDtoList, Method method){
+    private static List<AuthenticationDto> getSpecificRelatedAuth(List<AuthenticationDto> authenticationDtoList, Method method){
         if (authenticationDtoList == null) return null;
         List<String> annotations = Arrays.stream(method.getAnnotations()).map(s-> s.annotationType().getName()).collect(Collectors.toList());
-        return authenticationDtoList.stream().filter(s-> (s.jsonAuthEndpoint != null &&
-                (s.jsonAuthEndpoint.annotationOnEndpoint != null && annotations.contains(s.jsonAuthEndpoint.annotationOnEndpoint) )
-        )).collect(Collectors.toList());
+        return authenticationDtoList.stream().filter(s->
+                (s.localAuthSetup != null && s.localAuthSetup.annotationOnEndpoint != null && annotations.contains(s.localAuthSetup.annotationOnEndpoint)) ||
+                (s.jsonAuthEndpoint != null && s.jsonAuthEndpoint.annotationOnEndpoint != null && annotations.contains(s.jsonAuthEndpoint.annotationOnEndpoint))
+        ).collect(Collectors.toList());
     }
 
     private static Map<Integer, CustomizedRequestValueDto> getRelatedCustomization(List<CustomizedRequestValueDto> customizedRequestValueDtos, Method method){

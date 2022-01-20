@@ -615,6 +615,21 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public abstract List<AuthenticationDto> getInfoForAuthentication();
 
+    public final static String HANDLE_LOCAL_AUTHENTICATION_SETUP_METHOD_NAME = "handleLocalAuthenticationSetup";
+
+    /**
+     * <p>
+     *     authentication setup might be handled locally.
+     *     then we provide this interface to define it.
+     * </p>
+     *
+     * @param authenticationInfo info for the authentication setup
+     * @return if the authentication is set up successfully
+     */
+    public boolean handleLocalAuthenticationSetup(String authenticationInfo){
+        return true;
+    }
+
     /**
      * <p>
      * If the system under test (SUT) uses a SQL database, we need to have a

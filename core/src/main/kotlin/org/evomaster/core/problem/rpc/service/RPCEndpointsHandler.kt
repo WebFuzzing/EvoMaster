@@ -104,7 +104,7 @@ class RPCEndpointsHandler {
     }
 
     private fun handleRPCAuthDto(index: Int, auth: AuthenticationDto) : Boolean{
-        if (auth.jsonAuthEndpoint == null)
+        if (auth.jsonAuthEndpoint == null && auth.localAuthSetup == null)
             return false
         if (auth.jsonAuthEndpoint != null){
             authentications[index] = RPCAuthenticationInfo(auth.name?:"untitled",
@@ -112,7 +112,10 @@ class RPCEndpointsHandler {
                 index//authEndpointCluster[index]?:throw IllegalStateException("could not find the auth endpoint with index $index"),
             )
         }
-
+        if (auth.localAuthSetup != null){
+            authentications[index] = RPCAuthenticationInfo(auth.name?:"untitled",
+                auth.localAuthSetup.annotationOnEndpoint == null, index)
+        }
         return true
     }
 
@@ -229,10 +232,20 @@ class RPCEndpointsHandler {
                     //val name = actionName(i.interfaceId, e.actionName)
                     if (authEndpointCluster.containsKey(index))
                         throw IllegalStateException("auth info at $index exists in the authEndpointCluster")
-                    authEndpointCluster[index] = e //processEndpoint(name, e, true)
+                    val key = i.authEndpointReferences[index]
+                    authEndpointCluster[key] = e //processEndpoint(name, e, true)
                 }
             }
 
+        }
+
+        if (problem.localAuthEndpoints!= null && problem.localAuthEndpointReferences != null){
+            Lazy.assert {
+                problem.localAuthEndpoints.size == problem.localAuthEndpointReferences.size
+            }
+            problem.localAuthEndpoints.forEachIndexed { index, rpcActionDto ->
+                authEndpointCluster[problem.localAuthEndpointReferences[index]] = rpcActionDto
+            }
         }
 
         setAuthInfo(infoDto)

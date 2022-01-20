@@ -17,7 +17,7 @@ import org.evomaster.client.java.controller.problem.GraphQlProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.RestProblem;
-import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -215,6 +215,16 @@ public class EMController {
                 schemas.add(s.getDto());
             }
             dto.rpcProblem.schemas = schemas;
+            Map<Integer, LocalAuthSetupSchema> localMap = RPCEndpointsBuilder.buildLocalAuthSetup(sutController.getInfoForAuthentication());
+            if (!localMap.isEmpty()){
+                dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
+                dto.rpcProblem.localAuthEndpoints = new ArrayList<>();
+                for (Map.Entry<Integer, LocalAuthSetupSchema> e : localMap.entrySet()){
+                    dto.rpcProblem.localAuthEndpointReferences.add(e.getKey());
+                    dto.rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
+                }
+            }
+
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);
@@ -511,7 +521,11 @@ public class EMController {
                     // execute auth setup
                     authResponseDto = new ActionResponseDto();
                     try{
-                        sutController.executeAction(dto.rpcCall.authSetup, authResponseDto);
+                        if (LocalAuthSetupSchema.isLocalAuthSetup(dto.rpcCall.authSetup)){
+                            String info = dto.rpcCall.authSetup.requestParams.get(0).stringValue;
+                            sutController.handleLocalAuthenticationSetup(info);
+                        }else
+                            sutController.executeAction(dto.rpcCall.authSetup, authResponseDto);
                     }catch (Exception e){
                         String msg = "Fail to execute auth setup and thrown exception: " + e.getMessage();
                         SimpleLogger.error(msg, e);

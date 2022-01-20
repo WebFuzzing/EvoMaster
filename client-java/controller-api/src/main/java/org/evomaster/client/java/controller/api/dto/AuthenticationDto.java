@@ -38,6 +38,12 @@ public class AuthenticationDto {
      */
     public JsonAuthRPCEndpointDto jsonAuthEndpoint;
 
+    /**
+     * if the auth is processed with handleLocalAuthenticationSetup
+     * specify what info is as input to setup auth with handleLocalAuthenticationSetup
+     */
+    public LocalAuthenticationDto localAuthSetup;
+
 
     public AuthenticationDto() {
     }

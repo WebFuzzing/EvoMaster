@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
-import com.thrift.example.real.thrift.test.ThriftTest;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;

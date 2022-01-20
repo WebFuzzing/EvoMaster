@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 /**
  * endpoint dto for RPC service
  */
-public final class EndpointSchema {
+public class EndpointSchema {
     /**
      * name of the endpoint
      */
@@ -119,7 +119,8 @@ public final class EndpointSchema {
         dto.actionName = name;
         dto.interfaceId = interfaceName;
         dto.clientInfo = clientTypeName;
-        dto.requestParams = requestParams.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
+        if (requestParams != null)
+            dto.requestParams = requestParams.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         if (response != null)
             dto.responseParam = response.getDto();
         if (relatedCustomizedCandidates != null)
@@ -139,7 +140,7 @@ public final class EndpointSchema {
         return dto.actionName.equals(name)
                 // only check input parameters
                 // && (getResponse() == null || getResponse().sameParam(dto.responseParam))
-                && getRequestParams().size() == dto.requestParams.size()
+                && ((getRequestParams() == null && dto.requestParams == null) || getRequestParams().size() == dto.requestParams.size())
                 && IntStream.range(0, getRequestParams().size()).allMatch(i-> getRequestParams().get(i).sameParam(dto.requestParams.get(i)));
     }
 
