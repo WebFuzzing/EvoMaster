@@ -180,6 +180,7 @@ public class RPCEndpointsBuilder {
      *      value - local endpoint
      */
     public static Map<Integer, LocalAuthSetupSchema> buildLocalAuthSetup(List<AuthenticationDto> authenticationDtoList){
+        if (authenticationDtoList==null || authenticationDtoList.isEmpty()) return null;
         Map<Integer, LocalAuthSetupSchema> map = new HashMap<>();
         for (AuthenticationDto dto : authenticationDtoList){
             if (dto.localAuthSetup != null){

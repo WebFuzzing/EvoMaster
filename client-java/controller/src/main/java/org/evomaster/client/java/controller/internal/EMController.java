@@ -216,7 +216,7 @@ public class EMController {
             }
             dto.rpcProblem.schemas = schemas;
             Map<Integer, LocalAuthSetupSchema> localMap = RPCEndpointsBuilder.buildLocalAuthSetup(sutController.getInfoForAuthentication());
-            if (!localMap.isEmpty()){
+            if (localMap!= null && !localMap.isEmpty()){
                 dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
                 dto.rpcProblem.localAuthEndpoints = new ArrayList<>();
                 for (Map.Entry<Integer, LocalAuthSetupSchema> e : localMap.entrySet()){
