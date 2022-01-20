@@ -546,6 +546,9 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("assertEquals(101, res1.get(100));", assertionJavaCode.get(3));
         assertEquals("assertEquals(43, res1.get(42));", assertionJavaCode.get(4));
 
+        assertionJavaCode = p1.newAssertionWithJava(0, "res1", 2);
+        assertEquals(1+2, assertionJavaCode.size());
+
     }
 
     @Test
@@ -674,6 +677,9 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
         assertEquals(1, assertionJavaCode.size());
         assertEquals("assertEquals(3, res1.size());", assertionJavaCode.get(0));
+
+        assertionJavaCode = p1.newAssertionWithJava(0, "res1", 2);
+        assertEquals(1, assertionJavaCode.size());
     }
 
     @Test
@@ -729,6 +735,9 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("assertEquals(1, res1.get(0));", assertionJavaCode.get(1));
         assertEquals("assertEquals(2, res1.get(1));", assertionJavaCode.get(2));
         assertEquals("assertEquals(3, res1.get(2));", assertionJavaCode.get(3));
+
+        assertionJavaCode = p1.newAssertionWithJava(0, "res1", 2);
+        assertEquals(1+2, assertionJavaCode.size());
     }
 
     @Test
@@ -880,6 +889,10 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("assertEquals(2, res1.get(2).get(1));", assertionJavaCode.get(5));
         assertEquals("assertEquals(4, res1.get(2).get(2));", assertionJavaCode.get(6));
         assertEquals("assertEquals(6, res1.get(2).get(3));", assertionJavaCode.get(7));
+
+        assertionJavaCode = response.newAssertionWithJava(0, "res1", 1);
+        // 2 set size + at most 1 check for value (there is no value at index 0)
+        assertTrue(2+1 >= assertionJavaCode.size());
     }
 
     @Test

@@ -8,7 +8,6 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionT
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
