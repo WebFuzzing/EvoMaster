@@ -411,8 +411,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
         EndpointSchema endpointSchema = getEndpointSchema(dto);
-        if (dto.responseVariable != null && dto.doGenerateTestScript)
-            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable);
+        if (dto.responseVariable != null && dto.doGenerateTestScript){
+            try{
+                responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable);
+            }catch (Exception e){
+                SimpleLogger.warn("Fail to generate test script"+e.getMessage());
+            }
+            if (responseDto.testScript ==null)
+                SimpleLogger.warn("Null test script for action "+dto.actionName);
+        }
 
         Object response;
         try {
