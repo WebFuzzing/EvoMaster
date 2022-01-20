@@ -114,7 +114,18 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
         }else{
             val authAction = rpcHandler.getRPCAuthActionDto(rpcCallAction)
             if (authAction!=null){
-                executeActionWithSutHandler(lines, resVarName+"_auth_"+rpcCallAction.auth.authIndex, rpcHandler.getRPCActionDtoJson(authAction))
+                // check if it is local
+                if (authAction.clientInfo == null){
+                    val authInfo = "\"" +GeneUtils.applyEscapes(authAction.requestParams[0].stringValue, GeneUtils.EscapeMode.JSON, format) +"\""
+
+                    if (format.isJavaOrKotlin()){
+                        lines.add(TestSuiteWriter.controller+"."+authAction.actionName+"("+authInfo+")")
+
+                        lines.appendSemicolon(format)
+                    }
+
+                }else
+                    executeActionWithSutHandler(lines, resVarName+"_auth_"+rpcCallAction.auth.authIndex, rpcHandler.getRPCActionDtoJson(authAction))
             }
             executeActionWithSutHandler(lines, resVarName, rpcCallAction)
         }

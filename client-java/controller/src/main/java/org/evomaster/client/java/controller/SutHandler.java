@@ -129,4 +129,17 @@ public interface SutHandler {
      * this method is required
      */
     default void extractRPCSchema(){}
+
+
+    /**
+     * <p>
+     *     authentication setup might be handled locally.
+     *     then we provide this interface to define it.
+     * </p>
+     *
+     * @param authenticationInfo info for the authentication setup
+     * @return if the authentication is set up successfully
+     */
+    default boolean handleLocalAuthenticationSetup(String authenticationInfo){return true;}
+
 }

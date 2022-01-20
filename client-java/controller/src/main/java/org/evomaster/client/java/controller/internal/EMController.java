@@ -215,7 +215,7 @@ public class EMController {
                 schemas.add(s.getDto());
             }
             dto.rpcProblem.schemas = schemas;
-            Map<Integer, LocalAuthSetupSchema> localMap = RPCEndpointsBuilder.buildLocalAuthSetup(sutController.getInfoForAuthentication());
+            Map<Integer, LocalAuthSetupSchema> localMap = sutController.getLocalAuthSetupSchemaMap();
             if (localMap!= null && !localMap.isEmpty()){
                 dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
                 dto.rpcProblem.localAuthEndpoints = new ArrayList<>();
@@ -522,8 +522,7 @@ public class EMController {
                     authResponseDto = new ActionResponseDto();
                     try{
                         if (LocalAuthSetupSchema.isLocalAuthSetup(dto.rpcCall.authSetup)){
-                            String info = dto.rpcCall.authSetup.requestParams.get(0).stringValue;
-                            sutController.handleLocalAuthenticationSetup(info);
+                            sutController.executeHandleLocalAuthenticationSetup(dto.rpcCall.authSetup, authResponseDto);
                         }else
                             sutController.executeAction(dto.rpcCall.authSetup, authResponseDto);
                     }catch (Exception e){

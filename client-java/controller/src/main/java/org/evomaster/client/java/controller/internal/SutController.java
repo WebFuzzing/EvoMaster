@@ -10,12 +10,12 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.CustomizationHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
@@ -74,6 +74,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * a map of interface schemas for RPC service under test
      */
     private final Map<String, InterfaceSchema> rpcInterfaceSchema = new HashMap<>();
+
+    /**
+     * a map of local auth setup schemas for RPC service under test
+     */
+    private final Map<Integer, LocalAuthSetupSchema> localAuthSetupSchemaMap = new HashMap<>();
 
     /**
      * handle parsing RPCActionDto based on json string.
@@ -302,6 +307,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return rpcInterfaceSchema;
     }
 
+    /**
+     *
+     * @return a map of auth local method
+     */
+    public Map<Integer, LocalAuthSetupSchema> getLocalAuthSetupSchemaMap() {
+        return localAuthSetupSchemaMap;
+    }
 
     /**
      * extract endpoints info of the RPC interface by reflection based on the specified service interface name
@@ -332,6 +344,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         getCustomizedValueInRequests());
                 rpcInterfaceSchema.put(interfaceName, schema);
             }
+            localAuthSetupSchemaMap.clear();
+            Map<Integer, LocalAuthSetupSchema> local = RPCEndpointsBuilder.buildLocalAuthSetup(getInfoForAuthentication());
+            if (local!=null && !local.isEmpty())
+                localAuthSetupSchemaMap.putAll(local);
         }catch (Exception e){
             SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
             //TODO throw exception
@@ -403,6 +419,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         resetExtraHeuristics();
 
         newActionSpecificHandler(dto);
+    }
+
+    public final void executeHandleLocalAuthenticationSetup(RPCActionDto dto, ActionResponseDto responseDto){
+
+        LocalAuthSetupSchema endpointSchema = new LocalAuthSetupSchema();
+        endpointSchema.setValue(dto);
+        handleLocalAuthenticationSetup(endpointSchema.getAuthenticationInfo());
+
+        if (dto.responseVariable != null && dto.doGenerateTestScript){
+            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable);
+        }
     }
 
     /**
@@ -621,21 +648,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *      * none is necessary
      */
     public abstract List<AuthenticationDto> getInfoForAuthentication();
-
-    public final static String HANDLE_LOCAL_AUTHENTICATION_SETUP_METHOD_NAME = "handleLocalAuthenticationSetup";
-
-    /**
-     * <p>
-     *     authentication setup might be handled locally.
-     *     then we provide this interface to define it.
-     * </p>
-     *
-     * @param authenticationInfo info for the authentication setup
-     * @return if the authentication is set up successfully
-     */
-    public boolean handleLocalAuthenticationSetup(String authenticationInfo){
-        return true;
-    }
 
     /**
      * <p>
