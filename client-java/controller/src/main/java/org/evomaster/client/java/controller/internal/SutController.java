@@ -184,6 +184,7 @@ public abstract class SutController implements SutHandler {
      */
     public final void initSqlHandler() {
         sqlHandler.setConnection(getConnection());
+        sqlHandler.setSchema(getSqlDatabaseSchema());
     }
 
     public final void resetExtraHeuristics() {
