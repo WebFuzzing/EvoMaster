@@ -29,4 +29,8 @@ public class ColumnDto {
      */
     public int precision = -1;
 
+    /**
+     * The number of dimensions for arrays, matrixs, etc.
+     */
+    public int numberOfDimensions = 0;
 }

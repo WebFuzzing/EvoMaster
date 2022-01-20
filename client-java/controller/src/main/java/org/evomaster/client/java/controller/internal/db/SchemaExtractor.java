@@ -205,9 +205,29 @@ public class SchemaExtractor {
          */
         addConstraints(connection, dt, schemaDto);
 
+        if (dt.equals(DatabaseType.POSTGRES)) {
+            List<ColumnAttributes> columnAttributes = getPostgresColumnAttributes(connection);
+            addColumnAttributes(schemaDto, columnAttributes);
+        }
+
         assert validate(schemaDto);
 
         return schemaDto;
+    }
+
+    private static void addColumnAttributes(DbSchemaDto schemaDto, List<ColumnAttributes> listOfColumnAttributes) {
+        for (ColumnAttributes columnAttributes : listOfColumnAttributes) {
+            String tableName = columnAttributes.tableName;
+            String columnName = columnAttributes.columnName;
+            ColumnDto columnDto = getColumnDto(schemaDto, tableName, columnName);
+            columnDto.numberOfDimensions = columnAttributes.numberOfDimensions;
+        }
+    }
+
+    private static ColumnDto getColumnDto(DbSchemaDto schemaDto, String tableName, String columnName) {
+        TableDto tableDto = schemaDto.tables.stream().filter(t -> t.name.equals(tableName.toLowerCase())).findFirst().orElse(null);
+        ColumnDto columnDto = tableDto.columns.stream().filter(c -> c.name.equals(columnName.toLowerCase())).findFirst().orElse(null);
+        return columnDto;
     }
 
     private static String getSchemaName(Connection connection, DatabaseType dt) throws SQLException {
@@ -234,6 +254,44 @@ public class SchemaExtractor {
             schemaName = schemaName.toUpperCase();
         }
         return schemaName;
+    }
+
+    private static class ColumnAttributes {
+        public String tableName;
+        public String columnName;
+        public int numberOfDimensions;
+    }
+
+    private static List<ColumnAttributes> getPostgresColumnAttributes(Connection connection) throws SQLException {
+        String query = "SELECT pg_namespace.nspname as TABLE_NAMESPACE, pg_class.relname as TABLE_NAME, pg_attribute.attname as COLUMN_NAME, pg_attribute.attndims as NUMBER_OF_DIMENSIONS \n" +
+                "FROM pg_attribute \n" +
+                "INNER JOIN pg_class ON pg_class.oid = pg_attribute.attrelid " +
+                "INNER JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace " +
+                "WHERE pg_namespace.nspname != 'pg_catalog' ";
+
+        List<ColumnAttributes> listOfColumnAttributes = new LinkedList<>();
+        try (Statement stmt = connection.createStatement()) {
+            ResultSet columnAttributesResultSet = stmt.executeQuery(query);
+            while (columnAttributesResultSet.next()) {
+                String tableNamesapce = columnAttributesResultSet.getString("TABLE_NAMESPACE");
+                String tableName = columnAttributesResultSet.getString("TABLE_NAME");
+                String columnName = columnAttributesResultSet.getString("COLUMN_NAME");
+                int numberOfDimensions = columnAttributesResultSet.getInt("NUMBER_OF_DIMENSIONS");
+
+                if (numberOfDimensions == 0) {
+                    // skip attribute rows when data types are not arrays, matrixes, etc.
+                    continue;
+                }
+
+                ColumnAttributes columnAttributes = new ColumnAttributes();
+                columnAttributes.tableName = tableName;
+                columnAttributes.columnName = columnName;
+                columnAttributes.numberOfDimensions = numberOfDimensions;
+
+                listOfColumnAttributes.add(columnAttributes);
+            }
+        }
+        return listOfColumnAttributes;
     }
 
     private static Map<String, Set<String>> getPostgresEnumTypes(Connection connection) throws SQLException {
@@ -307,7 +365,7 @@ public class SchemaExtractor {
             String tableName = constraint.getTableName();
             TableDto tableDto = schemaDto.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);
 
-            if (tableDto==null) {
+            if (tableDto == null) {
                 throw new NullPointerException("TableDto for table " + tableName + " was not found in the schemaDto");
             }
 

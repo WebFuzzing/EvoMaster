@@ -39,6 +39,7 @@ class DbActionGeneBuilder {
         val fk = getForeignKey(table, column)
 
         var gene = when {
+
             //TODO handle all constraints and cases
             column.autoIncrement ->
                 SqlAutoIncrementGene(column.name)
@@ -102,7 +103,6 @@ class DbActionGeneBuilder {
                  * VARCHAR(N) is assumed to be a String with a maximum length of N.
                  * N could be as large as Integer.MAX_VALUE
                  */
-                ColumnDataType.ARRAY_VARCHAR, //FIXME need general solution for arrays
                 ColumnDataType.TINYTEXT,
                 ColumnDataType.TEXT,
                 ColumnDataType.VARCHAR,
@@ -264,6 +264,11 @@ class DbActionGeneBuilder {
         if (column.nullable && fk == null) {
             //FKs handle nullability in their own custom way
             gene = SqlNullable(column.name, gene)
+        }
+
+        if (column.dimension > 0) {
+            // if the column type is an array, matrix, etc.
+            gene = SqlMultidimensionalArrayGene<Gene>(column.name, template = gene, numberOfDimensions = column.dimension)
         }
 
         return gene

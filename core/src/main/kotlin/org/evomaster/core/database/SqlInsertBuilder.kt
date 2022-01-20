@@ -501,7 +501,7 @@ class SqlInsertBuilder(
 
                 for (i in 0 until pks.size) {
                     val pkName = pks[i].name
-                    val inQuotes = pks[i].type.shouldBePrintedInQuotes()
+                    val inQuotes = pks[i].type.shouldBePrintedInQuotes() || pks[i].dimension>0
                     val data = ImmutableDataHolderGene(pkName, r.columnData[i], inQuotes)
                     val pk = SqlPrimaryKeyGene(pkName, table.name, data, id)
                     genes.add(pk)
@@ -582,7 +582,7 @@ class SqlInsertBuilder(
             if (row!!.columnData[i] != "NULL") {
 
                 val colName = cols[i].name
-                val inQuotes = cols[i].type.shouldBePrintedInQuotes()
+                val inQuotes = cols[i].type.shouldBePrintedInQuotes() || cols[i].dimension>0
 
                 val gene = if (cols[i].primaryKey) {
                     SqlPrimaryKeyGene(

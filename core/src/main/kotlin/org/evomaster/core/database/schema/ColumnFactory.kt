@@ -15,6 +15,7 @@ object ColumnFactory {
             name = columnDto.name,
             size = columnDto.size,
             type = if (columnDto.isEnumeratedType) ColumnDataType.VARCHAR else parseColumnDataType(columnDto),
+            dimension = columnDto.numberOfDimensions,
             isUnsigned = columnDto.isUnsigned,
             primaryKey = columnDto.primaryKey,
             autoIncrement = columnDto.autoIncrement,
@@ -35,7 +36,7 @@ object ColumnFactory {
         val typeAsString = columnDto.type
         try {
             val t =
-                if (typeAsString.startsWith("_")) "ARRAY${typeAsString.uppercase()}" else typeAsString.uppercase()
+                if (typeAsString.startsWith("_")) typeAsString.substring(1).uppercase() else typeAsString.uppercase()
             return ColumnDataType.valueOf(t)
         } catch (e: Exception) {
             throw IllegalArgumentException(

@@ -28,6 +28,7 @@ enum class ColumnDataType(dataTypeName: String) {
     DATETIME("DATETIME"),
     TIME("TIME"),
 
+
     /**
      * year (1 or 2) or 4
      * https://dev.mysql.com/doc/refman/8.0/en/year.html
@@ -201,10 +202,6 @@ enum class ColumnDataType(dataTypeName: String) {
 
     SERIAL("SERIAL"),
 
-    //TODO tmp for dealing with arrays of chars in patio-api. would need more general solution, see:
-    //https://www.postgresql.org/docs/9.1/arrays.html
-    ARRAY_VARCHAR("_VARCHAR"),
-
     // POSTGRES
     // https://www.postgresql.org/docs/14/datatype-numeric.html
     FLOAT4("FLOAT4"),
@@ -249,7 +246,6 @@ enum class ColumnDataType(dataTypeName: String) {
 
     // https://www.postgresql.org/docs/14/datatype-json.html#DATATYPE-JSONPATH
     JSONPATH("JSONPATH"),
-
 
     // https://www.postgresql.org/docs/14/rangetypes.html
     INT4RANGE("INT4RANGE"),
