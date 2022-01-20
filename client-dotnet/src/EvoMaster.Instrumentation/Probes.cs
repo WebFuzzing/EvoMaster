@@ -54,9 +54,14 @@ namespace EvoMaster.Instrumentation {
             ExecutionTracer.EnteringStatement(className, lineNo, columnNo);
         }
 
-        public static void ComputingBranchDistance(string className, int lineNo, int branchId, object firstValue, object secondValue, OpCode opCode) {
+        public static void ComputingBranchDistance(string className, int lineNo, int branchId) {
             //TODO: remove
             SimpleLogger.Info($"****** branch detected at {className}: {lineNo}, {branchId}");
+        }
+
+        public static int Ceq(int val1, int val2) {
+            Console.WriteLine($"{val1} & {val2}");
+            return val1 == val2 ? 1 : 0;
         }
     }
 }
