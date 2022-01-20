@@ -124,11 +124,15 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             }else{
                 String fName = varName;
                 boolean fdeclar = false;
-                if (f instanceof ObjectParam){
+                if (f instanceof ObjectParam || f instanceof CollectionParam){
                      fName = varName+"_"+f.getName();
                      fdeclar = true;
                 }
                 codes.addAll(f.newInstanceWithJava(fdeclar, true, fName, indent+1));
+
+                if (f instanceof ObjectParam || f instanceof CollectionParam){
+                    CodeJavaGenerator.addCode(codes, CodeJavaGenerator.methodInvocation(varName, f.accessibleSchema.setterMethodName, fName)+CodeJavaGenerator.appendLast(),indent+1);
+                }
             }
         }
 
