@@ -102,7 +102,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("java.lang.String res1 = null;", endpointJavaCode.get(0));
         assertEquals("{", endpointJavaCode.get(1));
         assertEquals(" java.lang.String arg0 = \"foo\";", endpointJavaCode.get(2));
-        assertEquals(" res1 = ((org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilderTestBase.FakeClient)controller.getRPCClient(\"com.thrift.example.real.thrift.test.ThriftTest$Iface\")).testString(arg0);", endpointJavaCode.get(3));
+        assertEquals(" res1 = ((org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilderTestBase.FakeClient)(controller.getRPCClient(\"com.thrift.example.real.thrift.test.ThriftTest$Iface\"))).testString(arg0);", endpointJavaCode.get(3));
         assertEquals("}", endpointJavaCode.get(4));
 
         List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
