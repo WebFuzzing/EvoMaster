@@ -4,6 +4,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
+import org.evomaster.client.java.utils.SimpleLogger;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -148,15 +150,20 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             return codes;
         }
         for (NamedTypedValue f : getValue()){
-            String fName;
+            String fName = null;
             if (f.accessibleSchema == null || f.accessibleSchema.isAccessible)
                 fName = responseVarName+"."+f.getName();
             else{
-                if (f.accessibleSchema.getterMethodName == null)
-                    throw new IllegalStateException("Error: private field, but there is no getter method");
-                fName = responseVarName+"."+f.accessibleSchema.getterMethodName+"()";
+                if (f.accessibleSchema.getterMethodName == null){
+                    String msg = "Error: Object("+getType().getFullTypeName()+") has private field "+f.getName()+", but there is no getter method";
+                    SimpleLogger.uniqueWarn(msg);
+                    CodeJavaGenerator.addComment(codes, msg, indent);
+                }else{
+                    fName = responseVarName+"."+f.accessibleSchema.getterMethodName+"()";
+                }
             }
-            codes.addAll(f.newAssertionWithJava(indent, fName, maxAssertionForDataInCollection));
+            if (fName != null)
+                codes.addAll(f.newAssertionWithJava(indent, fName, maxAssertionForDataInCollection));
         }
         return codes;
     }
