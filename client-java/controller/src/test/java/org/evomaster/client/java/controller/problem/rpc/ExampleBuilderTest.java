@@ -318,7 +318,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("{", javaCodes.get(1));
         assertEquals(" arg0 = new com.thrift.example.artificial.PrivateFieldInRequestDto();", javaCodes.get(2));
         assertEquals(" arg0.pubField = \"foo\";", javaCodes.get(3));
-        assertEquals(" arg0.setPriField((java.lang.String)\"bar\");", javaCodes.get(4));
+        assertEquals(" arg0.setPriField(((java.lang.String)\"bar\"));", javaCodes.get(4));
         assertEquals(" java.util.List<java.lang.String> arg0_stringList = null;", javaCodes.get(5));
         assertEquals(" {", javaCodes.get(6));
         assertEquals("  arg0_stringList = new java.util.ArrayList<>();", javaCodes.get(7));
@@ -356,7 +356,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" {", javaCodesForResponse.get(5));
         assertEquals("  tmp_priRequest = new com.thrift.example.artificial.PrivateFieldInRequestDto();", javaCodesForResponse.get(6));
         assertEquals("  tmp_priRequest.pubField = \"foo\";", javaCodesForResponse.get(7));
-        assertEquals("  tmp_priRequest.setPriField((java.lang.String)\"bar\");", javaCodesForResponse.get(8));
+        assertEquals("  tmp_priRequest.setPriField(((java.lang.String)\"bar\"));", javaCodesForResponse.get(8));
         assertEquals("  java.util.List<java.lang.String> tmp_priRequest_stringList = null;", javaCodesForResponse.get(9));
         assertEquals("  {", javaCodesForResponse.get(10));
         assertEquals("   tmp_priRequest_stringList = new java.util.ArrayList<>();", javaCodesForResponse.get(11));
