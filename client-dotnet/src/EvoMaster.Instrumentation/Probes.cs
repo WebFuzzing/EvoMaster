@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Reflection;
 using EvoMaster.Client.Util;
 using EvoMaster.Instrumentation.StaticState;
@@ -57,11 +56,6 @@ namespace EvoMaster.Instrumentation {
         public static void ComputingBranchDistance(string className, int lineNo, int branchId) {
             //TODO: remove
             SimpleLogger.Info($"****** branch detected at {className}: {lineNo}, {branchId}");
-        }
-
-        public static int Ceq(int val1, int val2) {
-            Console.WriteLine($"{val1} & {val2}");
-            return val1 == val2 ? 1 : 0;
         }
     }
 }

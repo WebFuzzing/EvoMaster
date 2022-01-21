@@ -18,7 +18,8 @@ namespace EvoMaster.Instrumentation {
         private MethodReference _enteringProbe;
         private MethodReference _enteringBranchProbe;
         private MethodReference _printProbe;
-        private MethodReference _ceqProbe;
+        private MethodReference _ceq;
+        private MethodReference _cgt;
         private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
 
         private readonly List<CodeCoordinate> _alreadyCompletedPoints = new List<CodeCoordinate>();
@@ -59,9 +60,13 @@ namespace EvoMaster.Instrumentation {
                     typeof(System.Console).GetMethod(nameof(Console.WriteLine),
                         new[] {typeof(int)}));
 
-            _ceqProbe =
+            _ceq =
                 module.ImportReference(
-                    typeof(Probes).GetMethod(nameof(Probes.Ceq),
+                    typeof(BranchInstructionReplacement).GetMethod(nameof(BranchInstructionReplacement.Ceq),
+                        new[] {typeof(int), typeof(int)}));
+            _cgt =
+                module.ImportReference(
+                    typeof(BranchInstructionReplacement).GetMethod(nameof(BranchInstructionReplacement.Cgt),
                         new[] {typeof(int), typeof(int)}));
 
             foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
@@ -119,22 +124,22 @@ namespace EvoMaster.Instrumentation {
                             continue;
 
                         if (lastEnteredLine != 0 && lastEnteredColumn != 0) {
-                            // i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
-                            //     lastEnteredLine,
-                            //     lastEnteredColumn);
+                            i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
+                                lastEnteredLine,
+                                lastEnteredColumn);
                         }
 
                         if (sequencePoint != null) {
-                            // i = InsertEnteringStatementProbe(instruction, method.Body, ilProcessor,
-                            //     i, type.Name, sequencePoint.StartLine, sequencePoint.StartColumn);
+                            i = InsertEnteringStatementProbe(instruction, method.Body, ilProcessor,
+                                i, type.Name, sequencePoint.StartLine, sequencePoint.StartColumn);
 
                             lastEnteredColumn = sequencePoint.StartColumn;
                             lastEnteredLine = sequencePoint.StartLine;
 
                             if (method.Body.Instructions.Last().Equals(instruction) &&
                                 instruction.OpCode == OpCodes.Ret) {
-                                // i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
-                                //     lastEnteredLine, lastEnteredColumn);
+                                i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
+                                    lastEnteredLine, lastEnteredColumn);
                             }
                         }
                     }
@@ -275,39 +280,15 @@ namespace EvoMaster.Instrumentation {
 
             var branchIns = instruction.Next.Next;
             if (branchIns.OpCode == OpCodes.Ceq)
-                ilProcessor.Replace(branchIns, ilProcessor.Create(OpCodes.Call, _ceqProbe));
-
-            // ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Dup));
-            // byteCodeIndex++;
-            // ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Pop));
-            // byteCodeIndex++;
-            // ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Call, _printProbe));
-            // byteCodeIndex++;
-
-
-            // var stloc = ilProcessor.Create(OpCodes.Stloc_0);
-            // ilProcessor.InsertBefore(branchIns, stloc);
-            // byteCodeIndex++;
-            // ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Stloc_1));
-            // byteCodeIndex++;
-
-            // ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Ldloc_1));
-            // byteCodeIndex++;
-            // ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Ldloc_0));
-            // byteCodeIndex++;
-
-            // ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Ldloc_1));
-            // byteCodeIndex++;
-            // ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Ldloc_0));
-            // byteCodeIndex++;
-            //
-            // ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Call, _printProbe));
-            // byteCodeIndex++;
-            // ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Call, _printProbe));
-            // byteCodeIndex++;
-
-            // branchIns.UpdateJumpsToTheCurrentInstruction(stloc, instructions);
-
+                ilProcessor.Replace(branchIns, ilProcessor.Create(OpCodes.Call, _ceq));
+            else if (branchIns.OpCode == OpCodes.Cgt)
+                ilProcessor.Replace(branchIns, ilProcessor.Create(OpCodes.Call, _cgt));
+            else if (branchIns.OpCode == OpCodes.Beq) {
+                ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Call, _ceq));
+                var target = branchIns.Operand;
+                ilProcessor.Replace(branchIns, ilProcessor.Create(OpCodes.Brtrue, (Instruction) target));
+            }
+            
             return byteCodeIndex;
         }
     }

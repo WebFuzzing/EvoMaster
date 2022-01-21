@@ -50,8 +50,9 @@ namespace EvoMaster.Instrumentation_Shared {
                 OpCodes.Bne_Un_S
             };
 
-            return conditionalInstructions.Contains(instruction.OpCode);
-        }
+            return conditionalInstructions.Contains(instruction.OpCode) ||
+                   (instruction.OpCode==OpCodes.Call && instruction.Operand.ToString().Contains(nameof(BranchInstructionReplacement)));
+}
 
         public static bool IsConditionalJumpWithOneArg(this Instruction instruction) =>
             instruction.OpCode == OpCodes.Brfalse ||
