@@ -409,9 +409,11 @@ class RPCEndpointsHandler {
      * note that it is typically used for handling responses of RPC endpoints
      */
     fun setGeneBasedOnParamDto(gene: Gene, dto: ParamDto){
-        if (!isValidToSetValue(gene, dto))
-            throw IllegalStateException("the types of gene and its dto are mismatched, i.e., gene (${gene::class.java.simpleName}) vs. dto (${dto.type.type})")
+
         val valueGene = ParamUtil.getValueGene(gene)
+
+        if (!isValidToSetValue(valueGene, dto))
+            throw IllegalStateException("the types of gene and its dto are mismatched, i.e., gene (${valueGene::class.java.simpleName}) vs. dto (${dto.type.type})")
 
         if (!isNullDto(dto)){
             when(valueGene){
