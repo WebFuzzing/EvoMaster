@@ -36,7 +36,7 @@ public class RPCEndpointsBuilder {
     private static boolean isNotCustomizedObject(Class<?> clazz){
         return PrimitiveOrWrapperType.isPrimitiveOrTypes(clazz) || clazz == String.class ||
                 clazz == ByteBuffer.class || clazz.isEnum() || clazz.isArray() ||
-                clazz.isAssignableFrom(List.class) || clazz.isAssignableFrom(Set.class);
+                List.class.isAssignableFrom(clazz) || Set.class.isAssignableFrom(clazz);
 
     }
 
@@ -423,7 +423,7 @@ public class RPCEndpointsBuilder {
             } else if (clazz == ByteBuffer.class){
                 // handle binary of thrift
                 namedValue = new ByteBufferParam(name, accessibleSchema);
-            } else if (clazz.isAssignableFrom(List.class) || clazz.isAssignableFrom(Set.class)){
+            } else if (List.class.isAssignableFrom(clazz) || Set.class.isAssignableFrom(clazz)){
                 if (genericType == null)
                     throw new RuntimeException("genericType should not be null for List and Set class");
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
@@ -432,11 +432,11 @@ public class RPCEndpointsBuilder {
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
-                if (clazz.isAssignableFrom(List.class))
+                if (List.class.isAssignableFrom(clazz))
                     namedValue = new ListParam(name, ctype, accessibleSchema);
                 else
                     namedValue = new SetParam(name, ctype, accessibleSchema);
-            } else if (clazz.isAssignableFrom(Map.class)){
+            } else if (Map.class.isAssignableFrom(clazz)){
                 if (genericType == null)
                     throw new RuntimeException("genericType should not be null for List and Set class");
                 Type keyType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
@@ -451,7 +451,7 @@ public class RPCEndpointsBuilder {
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate), null), clazz);
                 mtype.depth = getDepthLevel(clazz, depth);
                 namedValue = new MapParam(name, mtype, accessibleSchema);
-            } else if (clazz.isAssignableFrom(Date.class)){
+            } else if (Date.class.isAssignableFrom(clazz)){
                 if (clazz == Date.class)
                     namedValue = new DateParam(name, accessibleSchema);
                 else
@@ -682,7 +682,7 @@ public class RPCEndpointsBuilder {
     private static boolean doSkipSchemas(Field field){
         if (!field.getName().equals("schemes")) return false;
 
-        return field.getType().isAssignableFrom(Map.class)
+        return Map.class.isAssignableFrom(field.getType())
                 && getTemplateClass(((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]).isAssignableFrom(Class.class);
     }
 
@@ -695,7 +695,7 @@ public class RPCEndpointsBuilder {
 
     private static boolean isMetaMap(Field field){
         boolean result = field.getName().equals("metaDataMap")
-                && field.getType().isAssignableFrom(Map.class);
+                && Map.class.isAssignableFrom(field.getType());
         if (!result) return result;
         Type genericType = field.getGenericType();
 

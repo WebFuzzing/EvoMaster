@@ -51,7 +51,7 @@ public class RPCExceptionHandler {
     private static RPCExceptionInfoDto handleUnexpectedException(Object e){
         RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
         dto.type = RPCExceptionType.UNEXPECTED_EXCEPTION;
-        if (e.getClass().isAssignableFrom(Exception.class)){
+        if (Exception.class.isAssignableFrom(e.getClass())){
             dto.exceptionName = e.getClass().getName();
             dto.exceptionMessage = getExceptionMessage(e);
         }else
