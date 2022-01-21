@@ -226,7 +226,7 @@ public class CodeJavaGenerator {
      * @return a java code which casts obj to a type
      */
     public static String castToType(String typeName, String objCode){
-        return String.format("((%s)%s)", handleNestedSymbolInTypeName(typeName), objCode);
+        return String.format("((%s)(%s))", handleNestedSymbolInTypeName(typeName), objCode);
     }
 
     private static String handleNestedSymbolInTypeName(String typeName){
