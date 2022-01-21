@@ -25,7 +25,7 @@ public class AuthLocalSetupEMTest extends SpringRPCTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "AuthLocalSetupEM",
-                "org.bar.AuthSetupEM",
+                "org.bar.AuthLocalSetupEM",
                 10,
                 (args) -> {
 

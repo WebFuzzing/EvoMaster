@@ -97,9 +97,4 @@ public class AuthSetupController extends SpringController {
             }
         }
     }
-
-    @Override
-    public void stopSut() {
-
-    }
 }

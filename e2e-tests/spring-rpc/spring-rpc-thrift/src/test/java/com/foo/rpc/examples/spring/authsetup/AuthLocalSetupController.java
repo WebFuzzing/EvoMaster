@@ -90,8 +90,4 @@ public class AuthLocalSetupController extends SpringController {
         }
     }
 
-    @Override
-    public void stopSut() {
-
-    }
 }
