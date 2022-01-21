@@ -425,7 +425,11 @@ class RPCEndpointsHandler {
                 is LongGene -> valueGene.value = dto.stringValue.toLong()
                 is EnumGene<*> -> valueGene.index = dto.stringValue.toInt()
                 is SeededGene<*> -> {
-                    throw IllegalStateException("for SeededGene, its value is not assigned based on ParamDto")
+                    /*
+                        response might refer to input dto, then it might exist seeded gene
+                     */
+                    valueGene.employSeeded = false
+                    setGeneBasedOnParamDto(valueGene.gene, dto)
                 }
                 is PairGene<*, *> -> {
                     Lazy.assert { dto.innerContent.size == 2 }
