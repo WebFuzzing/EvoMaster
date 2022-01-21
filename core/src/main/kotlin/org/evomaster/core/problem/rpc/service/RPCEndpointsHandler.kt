@@ -498,6 +498,9 @@ class RPCEndpointsHandler {
      */
     private fun isValidToSetValue(gene: Gene, dto: ParamDto) : Boolean{
         val valueGene = ParamUtil.getValueGene(gene)
+        if (valueGene is SeededGene<*>)
+            return isValidToSetValue(valueGene.gene, dto)
+
         return when(dto.type.type){
             RPCSupportedDataType.P_INT, RPCSupportedDataType.INT,
             RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT,
