@@ -94,6 +94,8 @@ public class RPCExceptionHandler {
 
     private static RPCExceptionInfoDto handleDefinedException(Object e, EndpointSchema endpointSchema, RPCType rpcType) throws ClassNotFoundException {
 
+        if (endpointSchema.getExceptions() == null) return null;
+
         for (NamedTypedValue p : endpointSchema.getExceptions()){
             String type = p.getType().getFullTypeName();
             // skip to handle root TException here
