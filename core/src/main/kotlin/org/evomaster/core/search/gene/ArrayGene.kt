@@ -10,7 +10,6 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.IllegalStateException
 
 
 /**
@@ -91,7 +90,8 @@ class ArrayGene<T>(
         }
 
         clearElements()
-        this.elements = other.elements.map { e -> e.copyContent() as T }.toMutableList()
+        // check maxSize
+        this.elements = (if(maxSize!= null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copyContent() as T }.toMutableList()
         // build parents for [element]
         addChildren(this.elements)
     }
@@ -247,6 +247,9 @@ class ArrayGene<T>(
      * add an element [element] to [elements]
      */
     fun addElement(element: T){
+        if (maxSize!= null && elements.size == maxSize)
+            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+
         elements.add(element)
         addChild(element)
     }
@@ -260,6 +263,9 @@ class ArrayGene<T>(
      */
     fun addElement(element: Gene) : Boolean{
         element as? T ?: return false
+        if (maxSize!= null && elements.size == maxSize)
+            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+
         elements.add(element)
         addChild(element)
         return true

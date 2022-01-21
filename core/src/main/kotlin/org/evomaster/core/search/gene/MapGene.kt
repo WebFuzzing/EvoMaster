@@ -67,7 +67,8 @@ class MapGene<K, V>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         clearElements()
-        this.elements = other.elements.map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
+        // maxSize
+        this.elements = (if (maxSize!=null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
         addChildren(this.elements)
     }
 
@@ -225,6 +226,9 @@ class MapGene<K, V>(
      * we replace the existing one with [element]
      */
     fun addElement(element: PairGene<K, V>){
+        if (maxSize!= null && elements.size == maxSize)
+            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
         }
@@ -238,6 +242,9 @@ class MapGene<K, V>(
      */
     fun addElement(element: Gene) : Boolean{
         element as? PairGene<K, V> ?:return false
+        if (maxSize!= null && elements.size == maxSize)
+            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
         }
