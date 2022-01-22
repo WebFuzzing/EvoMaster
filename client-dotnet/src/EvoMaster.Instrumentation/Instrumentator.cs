@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml.Linq;
 using EvoMaster.Instrumentation_Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -18,8 +19,7 @@ namespace EvoMaster.Instrumentation {
         private MethodReference _enteringProbe;
         private MethodReference _enteringBranchProbe;
         private MethodReference _printProbe;
-        private MethodReference _ceq;
-        private MethodReference _cgt;
+        private MethodReference _branchAndComputeDistanceProbe;
         private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
 
         private readonly List<CodeCoordinate> _alreadyCompletedPoints = new List<CodeCoordinate>();
@@ -52,7 +52,7 @@ namespace EvoMaster.Instrumentation {
 
             _enteringBranchProbe =
                 module.ImportReference(
-                    typeof(Probes).GetMethod(nameof(Probes.ComputingBranchDistance),
+                    typeof(Probes).GetMethod(nameof(Probes.EnteringBranch),
                         new[] {typeof(string), typeof(int), typeof(int)}));
 
             _printProbe =
@@ -60,14 +60,10 @@ namespace EvoMaster.Instrumentation {
                     typeof(System.Console).GetMethod(nameof(Console.WriteLine),
                         new[] {typeof(int)}));
 
-            _ceq =
+            _branchAndComputeDistanceProbe =
                 module.ImportReference(
-                    typeof(BranchInstructionReplacement).GetMethod(nameof(BranchInstructionReplacement.Ceq),
-                        new[] {typeof(int), typeof(int)}));
-            _cgt =
-                module.ImportReference(
-                    typeof(BranchInstructionReplacement).GetMethod(nameof(BranchInstructionReplacement.Cgt),
-                        new[] {typeof(int), typeof(int)}));
+                    typeof(Probes).GetMethod(nameof(Probes.BranchAndComputeDistance),
+                        new[] {typeof(int), typeof(int), typeof(string), typeof(string)}));
 
             foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
                 _alreadyCompletedPoints.Clear();
@@ -96,10 +92,7 @@ namespace EvoMaster.Instrumentation {
                         }
 
                         if (instruction.Next != null && instruction.Next.Next != null) {
-                            if (instruction.Next.Next.IsConditionalInstructionWithTwoArgs() 
-                                // && !instruction.IsConditionalInstructionWithTwoArgs() &&
-                                // !instruction.Next.IsConditionalInstructionWithTwoArgs()
-                                ) {
+                            if (instruction.Next.Next.IsConditionalInstructionWithTwoArgs()) {
                                 mapping.TryGetValue(instruction, out var sp);
 
                                 var l = lastEnteredLine;
@@ -116,6 +109,16 @@ namespace EvoMaster.Instrumentation {
 
                                 jumpsPerLineCounter++;
                             }
+                        }
+
+                        //check if it is brtrue or brfalse, provided that it is not added by instruction replacement
+                        if (instruction.IsConditionalJumpWithOneArg() &&
+                            !(instruction.Previous.OpCode == OpCodes.Call &&
+                              instruction.Previous.ToString().Contains(nameof(Probes.BranchAndComputeDistance)))) {
+                            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Dup));
+                            i++;
+                            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Call, _printProbe));
+                            i++;
                         }
 
                         mapping.TryGetValue(instruction, out var sequencePoint);
@@ -280,16 +283,55 @@ namespace EvoMaster.Instrumentation {
             instruction.UpdateJumpsToTheCurrentInstruction(classNameInstruction, instructions);
 
             var branchIns = instruction.Next.Next;
-            if (branchIns.OpCode == OpCodes.Ceq)
-                ilProcessor.Replace(branchIns, ilProcessor.Create(OpCodes.Call, _ceq));
-            else if (branchIns.OpCode == OpCodes.Cgt)
-                ilProcessor.Replace(branchIns, ilProcessor.Create(OpCodes.Call, _cgt));
-            else if (branchIns.OpCode == OpCodes.Beq) {
-                ilProcessor.InsertBefore(branchIns, ilProcessor.Create(OpCodes.Call, _ceq));
-                var target = branchIns.Operand;
-                ilProcessor.Replace(branchIns, ilProcessor.Create(OpCodes.Brtrue, (Instruction) target));
+
+            byteCodeIndex = InsertBranchAndComputeDistanceProbe(branchIns, ilProcessor, byteCodeIndex);
+
+            return byteCodeIndex;
+        }
+
+        private int InsertBranchAndComputeDistanceProbe(Instruction instruction, ILProcessor ilProcessor,
+            int byteCodeIndex) {
+            if (instruction.OpCode == OpCodes.Ceq) {
+                byteCodeIndex =
+                    InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, instruction.OpCode);
+                ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Call, _branchAndComputeDistanceProbe));
             }
-            
+            else if (instruction.OpCode == OpCodes.Cgt) {
+                byteCodeIndex =
+                    InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, instruction.OpCode);
+                ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Call, _branchAndComputeDistanceProbe));
+            }
+            else if (instruction.OpCode == OpCodes.Bne_Un) {
+                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex,
+                    instruction.OpCode, OpCodes.Ceq);
+                ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Call, _branchAndComputeDistanceProbe));
+                byteCodeIndex++;
+
+                var target = instruction.Operand;
+                ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Brfalse, (Instruction) target));
+            }
+            else if (instruction.OpCode == OpCodes.Beq) {
+                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex,
+                    instruction.OpCode, OpCodes.Ceq);
+                ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Call, _branchAndComputeDistanceProbe));
+                byteCodeIndex++;
+
+                var target = instruction.Operand;
+                ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Brtrue, (Instruction) target));
+            }
+
+            return byteCodeIndex;
+        }
+
+        private int InsertValuesBeforeBranchInstruction(Instruction instruction, ILProcessor ilProcessor,
+            int byteCodeIndex, OpCode originalOpCode, OpCode? newOpcode = null) {
+            newOpcode ??= originalOpCode;
+
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, originalOpCode.ToString()));
+            byteCodeIndex++;
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, newOpcode.Value.ToString()));
+            byteCodeIndex++;
+
             return byteCodeIndex;
         }
     }

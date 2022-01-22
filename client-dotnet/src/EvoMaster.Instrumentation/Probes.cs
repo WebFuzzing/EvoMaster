@@ -54,25 +54,22 @@ namespace EvoMaster.Instrumentation {
             ExecutionTracer.EnteringStatement(className, lineNo, columnNo);
         }
 
-        public static void ComputingBranchDistance(string className, int lineNo, int branchId) {
+        public static void EnteringBranch(string className, int lineNo, int branchId) {
             //TODO: remove
             SimpleLogger.Info($"****** branch detected at {className}: {lineNo}, {branchId}");
         }
-    }
-    public class BranchInstructionReplacement {
-        public static int Ceq(int val1, int val2) {
-            Console.WriteLine($"ceq: {val1} & {val2}");//todo
-            return val1 == val2 ? 1 : 0;
-        }
 
-        public static int Cgt(int val1, int val2) {
-            Console.WriteLine($"cgt: {val1} & {val2}");//todo
-            return val1 > val2 ? 1 : 0;
-        }
+        public static int BranchAndComputeDistance(int val1, int val2, string originalOpCode, string newOpCode) {
+            Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
 
-        // public static int Compare(int val1, int val2) {
-        //     Console.WriteLine($"compare: {val1} & {val2}");
-        //     return val1 == val2 ? 1 : 0;
-        // }
+            switch (newOpCode) {
+                case "cgt":
+                    return val1 > val2 ? 1 : 0;
+                case "ceq":
+                    return val1 == val2 ? 1 : 0;
+            }
+
+            throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
+        }
     }
 }
