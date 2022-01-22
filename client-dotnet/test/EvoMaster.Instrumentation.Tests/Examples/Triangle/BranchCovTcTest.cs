@@ -10,7 +10,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
             const string className = "TriangleClassificationImpl";
 
             var expectedBranchTargets = new List<string>();
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < 4; i++) {
                 expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 6, i, true));
                 expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 6, i, false));
             }
@@ -20,7 +20,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
                 expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 10, i, false));
             }
 
-            for (var i = 0; i < 6; i++) {
+            for (var i = 0; i < 7; i++) {
                 expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 16, i, true));
                 expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 16, i, false));
             }

@@ -96,9 +96,10 @@ namespace EvoMaster.Instrumentation {
                         }
 
                         if (instruction.Next != null && instruction.Next.Next != null) {
-                            if (instruction.Next.Next.IsConditionalInstructionWithTwoArgs() &&
-                                !instruction.IsConditionalInstructionWithTwoArgs() &&
-                                !instruction.Next.IsConditionalInstructionWithTwoArgs()) {
+                            if (instruction.Next.Next.IsConditionalInstructionWithTwoArgs() 
+                                // && !instruction.IsConditionalInstructionWithTwoArgs() &&
+                                // !instruction.Next.IsConditionalInstructionWithTwoArgs()
+                                ) {
                                 mapping.TryGetValue(instruction, out var sp);
 
                                 var l = lastEnteredLine;
