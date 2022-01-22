@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using EvoMaster.Instrumentation.Examples.Triangle;
 using EvoMaster.Instrumentation_Shared;
+using Xunit;
 
 namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
     public abstract class CovTcTestBase {
