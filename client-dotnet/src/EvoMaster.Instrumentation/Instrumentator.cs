@@ -18,7 +18,6 @@ namespace EvoMaster.Instrumentation {
         private MethodReference _completedProbe;
         private MethodReference _enteringProbe;
         private MethodReference _enteringBranchProbe;
-        private MethodReference _printProbe;
         private MethodReference _compareAndComputeDistanceProbe;
         private MethodReference _computeDistanceForOneArgJumpsProbe;
         private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
@@ -55,11 +54,6 @@ namespace EvoMaster.Instrumentation {
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.EnteringBranch),
                         new[] {typeof(string), typeof(int), typeof(int)}));
-
-            _printProbe =
-                module.ImportReference(
-                    typeof(System.Console).GetMethod(nameof(Console.WriteLine),
-                        new[] {typeof(int)}));
 
             _compareAndComputeDistanceProbe =
                 module.ImportReference(
