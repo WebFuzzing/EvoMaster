@@ -59,7 +59,7 @@ namespace EvoMaster.Instrumentation {
             SimpleLogger.Info($"****** branch detected at {className}: {lineNo}, {branchId}");
         }
 
-        public static int BranchAndComputeDistance(int val1, int val2, string originalOpCode, string newOpCode) {
+        public static int CompareAndComputeDistance(int val1, int val2, string originalOpCode, string newOpCode) {
             Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
 
             switch (newOpCode) {
@@ -70,6 +70,11 @@ namespace EvoMaster.Instrumentation {
             }
 
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
+        }
+        
+        public static void ComputeDistanceForOneArgJumps(int val, string opCode) {
+            Console.WriteLine($"{opCode}: {val}"); //todo
+            
         }
     }
 }
