@@ -64,11 +64,14 @@ namespace EvoMaster.Instrumentation {
             _compareAndComputeDistanceProbe =
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
-                        new[] {typeof(int), typeof(int), typeof(string), typeof(string), typeof(string),typeof(int)}));
+                        new[] {
+                            typeof(int), typeof(int), typeof(string), typeof(string), typeof(string), typeof(int),
+                            typeof(int)
+                        }));
 
             _computeDistanceForOneArgJumpsProbe = module.ImportReference(
                 typeof(Probes).GetMethod(nameof(Probes.ComputeDistanceForOneArgJumps),
-                    new[] {typeof(int), typeof(string), typeof(string), typeof(int)}));
+                    new[] {typeof(int), typeof(string), typeof(string), typeof(int), typeof(int)}));
 
             foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
                 _alreadyCompletedPoints.Clear();
@@ -85,7 +88,7 @@ namespace EvoMaster.Instrumentation {
 
                     method.Body.SimplifyMacros(); //This is to prevent overflow of short branch opcodes
 
-                    var jumpsPerLineCounter = 0;
+                    var lastBranch = 0; //jumps per line counter
 
                     for (var i = 0; i < int.MaxValue; i++) {
                         Instruction instruction;
@@ -106,13 +109,13 @@ namespace EvoMaster.Instrumentation {
                                     l = sp.StartLine;
                                 }
 
-                                if (l != lastEnteredLine) jumpsPerLineCounter = 0;
+                                if (l != lastEnteredLine) lastBranch = 0;
 
                                 i = InsertEnteringBranchProbe(instruction, method.Body.Instructions, ilProcessor, i,
                                     type.Name, l,
-                                    jumpsPerLineCounter);
+                                    lastBranch);
 
-                                jumpsPerLineCounter++;
+                                lastBranch++;
                             }
                         }
 
@@ -127,8 +130,9 @@ namespace EvoMaster.Instrumentation {
                             if (sp != null) {
                                 l = sp.StartLine;
                             }
-                            
-                            i = InsertComputeDistanceForOneArgJumpsProbe(instruction, ilProcessor, i, type.Name, l);
+
+                            i = InsertComputeDistanceForOneArgJumpsProbe(instruction, ilProcessor, i, type.Name, l,
+                                lastBranch - 1);//TODO: do further check for branchId
                         }
 
                         mapping.TryGetValue(instruction, out var sequencePoint);
@@ -294,23 +298,27 @@ namespace EvoMaster.Instrumentation {
 
             var branchIns = instruction.Next.Next;
 
-            byteCodeIndex = InsertCompareAndComputeDistanceProbe(branchIns, ilProcessor, byteCodeIndex, className, lineNo);
+            byteCodeIndex =
+                InsertCompareAndComputeDistanceProbe(branchIns, ilProcessor, byteCodeIndex, className, lineNo,
+                    branchId);
 
             return byteCodeIndex;
         }
 
         private int InsertCompareAndComputeDistanceProbe(Instruction instruction, ILProcessor ilProcessor,
-            int byteCodeIndex, string className, int lineNo) {
+            int byteCodeIndex, string className, int lineNo, int branchId) {
             if (instruction.IsCompareWithTwoArgs()) {
                 byteCodeIndex =
                     InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className, lineNo,
+                        branchId,
                         instruction.OpCode);
                 ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
             }
             //the rest are the jump instructions which we should replace them with a compare and jump
             //bgt equals to cgt + brtrue
             else if (instruction.OpCode == OpCodes.Bgt || instruction.OpCode == OpCodes.Bgt_Un) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className, lineNo,
+                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className,
+                    lineNo, branchId,
                     instruction.OpCode, OpCodes.Cgt);
                 ilProcessor.InsertBefore(instruction,
                     ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
@@ -321,7 +329,8 @@ namespace EvoMaster.Instrumentation {
             }
             //beq equals to ceq + brtrue
             else if (instruction.OpCode == OpCodes.Beq) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className, lineNo,
+                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className,
+                    lineNo, branchId,
                     instruction.OpCode, OpCodes.Ceq);
                 ilProcessor.InsertBefore(instruction,
                     ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
@@ -332,7 +341,8 @@ namespace EvoMaster.Instrumentation {
             }
             //bge equals to clt + brfalse
             else if (instruction.OpCode == OpCodes.Bge || instruction.OpCode == OpCodes.Bge_Un) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className, lineNo,
+                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className,
+                    lineNo, branchId,
                     instruction.OpCode, OpCodes.Clt);
                 ilProcessor.InsertBefore(instruction,
                     ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
@@ -343,7 +353,8 @@ namespace EvoMaster.Instrumentation {
             }
             //ble equals to cgt + brfalse
             else if (instruction.OpCode == OpCodes.Ble || instruction.OpCode == OpCodes.Ble_Un) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className, lineNo,
+                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className,
+                    lineNo, branchId,
                     instruction.OpCode, OpCodes.Cgt);
                 ilProcessor.InsertBefore(instruction,
                     ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
@@ -354,7 +365,8 @@ namespace EvoMaster.Instrumentation {
             }
             //blt equals to clt + brtrue
             else if (instruction.OpCode == OpCodes.Blt || instruction.OpCode == OpCodes.Blt_Un) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className, lineNo,
+                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className,
+                    lineNo, branchId,
                     instruction.OpCode, OpCodes.Clt);
                 ilProcessor.InsertBefore(instruction,
                     ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
@@ -365,7 +377,8 @@ namespace EvoMaster.Instrumentation {
             }
             //bne equals to ceq + brfalse
             else if (instruction.OpCode == OpCodes.Bne_Un) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className, lineNo,
+                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, className,
+                    lineNo, branchId,
                     instruction.OpCode, OpCodes.Ceq);
                 ilProcessor.InsertBefore(instruction,
                     ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
@@ -379,7 +392,8 @@ namespace EvoMaster.Instrumentation {
         }
 
         private int InsertValuesBeforeBranchInstruction(Instruction instruction, ILProcessor ilProcessor,
-            int byteCodeIndex, string className, int lineNo, OpCode originalOpCode, OpCode? newOpcode = null) {
+            int byteCodeIndex, string className, int lineNo, int branchId, OpCode originalOpCode,
+            OpCode? newOpcode = null) {
             newOpcode ??= originalOpCode;
 
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, originalOpCode.ToString()));
@@ -390,12 +404,14 @@ namespace EvoMaster.Instrumentation {
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, lineNo));
             byteCodeIndex++;
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, branchId));
+            byteCodeIndex++;
 
             return byteCodeIndex;
         }
 
         private int InsertComputeDistanceForOneArgJumpsProbe(Instruction instruction, ILProcessor ilProcessor,
-            int byteCodeIndex, string className, int lineNo) {
+            int byteCodeIndex, string className, int lineNo, int branchId) {
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Dup));
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, instruction.OpCode.ToString()));
@@ -404,6 +420,9 @@ namespace EvoMaster.Instrumentation {
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, lineNo));
             byteCodeIndex++;
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, branchId));
+            byteCodeIndex++;
+
             ilProcessor.InsertBefore(instruction,
                 ilProcessor.Create(OpCodes.Call, _computeDistanceForOneArgJumpsProbe));
             byteCodeIndex++;
