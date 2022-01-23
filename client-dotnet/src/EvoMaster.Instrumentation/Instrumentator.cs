@@ -299,7 +299,27 @@ namespace EvoMaster.Instrumentation {
                     InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, instruction.OpCode);
                 ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
             }
-            
+            else if (instruction.OpCode == OpCodes.Bgt || instruction.OpCode == OpCodes.Bgt_Un) {
+                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex,
+                    instruction.OpCode, OpCodes.Cgt);
+                ilProcessor.InsertBefore(instruction,
+                    ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
+                byteCodeIndex++;
+
+                var target = instruction.Operand;
+                ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Brtrue, (Instruction) target));
+            }
+            else if (instruction.OpCode == OpCodes.Blt || instruction.OpCode == OpCodes.Blt_Un) {
+                byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex,
+                    instruction.OpCode, OpCodes.Clt);
+                ilProcessor.InsertBefore(instruction,
+                    ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
+                byteCodeIndex++;
+
+                var target = instruction.Operand;
+                ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Brtrue, (Instruction) target));
+            }
+
             else if (instruction.OpCode == OpCodes.Bne_Un) {
                 byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex,
                     instruction.OpCode, OpCodes.Ceq);
