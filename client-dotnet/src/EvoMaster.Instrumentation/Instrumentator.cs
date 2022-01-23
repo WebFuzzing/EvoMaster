@@ -292,17 +292,14 @@ namespace EvoMaster.Instrumentation {
         }
 
         private int InsertCompareAndComputeDistanceProbe(Instruction instruction, ILProcessor ilProcessor,
-            int byteCodeIndex) {
-            if (instruction.OpCode == OpCodes.Ceq) {
+            int byteCodeIndex) { 
+            
+            if (instruction.IsCompareWithTwoArgs()) {
                 byteCodeIndex =
                     InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, instruction.OpCode);
                 ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
             }
-            else if (instruction.OpCode == OpCodes.Cgt) {
-                byteCodeIndex =
-                    InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex, instruction.OpCode);
-                ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Call, _compareAndComputeDistanceProbe));
-            }
+            
             else if (instruction.OpCode == OpCodes.Bne_Un) {
                 byteCodeIndex = InsertValuesBeforeBranchInstruction(instruction, ilProcessor, byteCodeIndex,
                     instruction.OpCode, OpCodes.Ceq);

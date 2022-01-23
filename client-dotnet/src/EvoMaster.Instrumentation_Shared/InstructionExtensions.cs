@@ -21,13 +21,22 @@ namespace EvoMaster.Instrumentation_Shared {
             }
         }
 
-        public static bool IsConditionalInstructionWithTwoArgs(this Instruction instruction) {
-            var conditionalInstructions = new List<OpCode> {
+        public static bool IsConditionalInstructionWithTwoArgs(this Instruction instruction) =>
+            instruction.IsCompareWithTwoArgs() || instruction.IsBranchWithTwoArgs();
+
+        public static bool IsCompareWithTwoArgs(this Instruction instruction) {
+            var instructions = new List<OpCode> {
                 OpCodes.Ceq,
                 OpCodes.Clt,
                 OpCodes.Clt_Un,
                 OpCodes.Cgt,
-                OpCodes.Cgt_Un,
+                OpCodes.Cgt_Un
+            };
+            return instructions.Contains(instruction.OpCode);
+        }
+
+        public static bool IsBranchWithTwoArgs(this Instruction instruction) {
+            var instructions = new List<OpCode> {
                 OpCodes.Bgt,
                 OpCodes.Bgt_S,
                 OpCodes.Bgt_Un,
@@ -50,7 +59,7 @@ namespace EvoMaster.Instrumentation_Shared {
                 OpCodes.Bne_Un_S
             };
 
-            return conditionalInstructions.Contains(instruction.OpCode);
+            return instructions.Contains(instruction.OpCode);
         }
 
         public static bool IsConditionalJumpWithOneArg(this Instruction instruction) =>

@@ -62,11 +62,17 @@ namespace EvoMaster.Instrumentation {
         public static int CompareAndComputeDistance(int val1, int val2, string originalOpCode, string newOpCode) {
             Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
 
-            switch (newOpCode) {
-                case "cgt":
-                    return val1 > val2 ? 1 : 0;
+            switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1 == val2 ? 1 : 0;
+                case "clt":
+                    return val1 < val2 ? 1 : 0;
+                case "clt_un":
+                    return val1 < val2 ? 1 : 0;
+                case "cgt":
+                    return val1 > val2 ? 1 : 0;
+                case "cgt_un":
+                    return val1 > val2 ? 1 : 0;
             }
 
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
@@ -74,7 +80,6 @@ namespace EvoMaster.Instrumentation {
         
         public static void ComputeDistanceForOneArgJumps(int val, string opCode) {
             Console.WriteLine($"{opCode}: {val}"); //todo
-            
         }
     }
 }
