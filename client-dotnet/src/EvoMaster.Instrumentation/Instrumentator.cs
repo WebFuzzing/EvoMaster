@@ -104,7 +104,8 @@ namespace EvoMaster.Instrumentation {
                                 }
 
                                 if (l != lastEnteredLine) lastBranch = 0;
-
+                                if(l==4)
+                                    Console.WriteLine("4");
                                 i = InsertEnteringBranchProbe(instruction, method.Body.Instructions, ilProcessor, i,
                                     type.Name, l,
                                     lastBranch);
