@@ -31,6 +31,13 @@ class IntegerGene(
     override val max: Int = Int.MAX_VALUE
 ) : NumberGene<Int>(name, value, min, max) {
 
+    init {
+        if (min == max)
+            this.value = min
+        if (max < min)
+            throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
+    }
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(IntegerGene::class.java)
     }
