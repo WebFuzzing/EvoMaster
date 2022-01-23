@@ -152,4 +152,8 @@ class IntegerGene(
         return this.toInt().compareTo(other.toInt())
     }
 
+    override fun isMutable(): Boolean {
+        return this.max > this.min
+    }
+
 }
