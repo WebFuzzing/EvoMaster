@@ -5,31 +5,25 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Thir
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
-import javax.servlet.ServletInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class MicronautNettyHttpServerReplacement extends ThirdPartyMethodReplacementClass  {
+public class MicronautConfigurationReplacement extends ThirdPartyMethodReplacementClass {
+
+    private static final MicronautConfigurationReplacement singleton = new MicronautConfigurationReplacement();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
-        return "io.micronaut.http.server.netty.NettyHttpServer";
+        return "io.micronaut.http.server.netty.configuration.NettyHttpServerConfiguration";
     }
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
-            id = "isKeepAlive_boolean_class",
+            id = "micronautNettyServerConfiguration_class",
             usageFilter = UsageFilter.ONLY_SUT)
-    public static boolean isKeepAlive(Object caller) {
-        /*
-            Micronaut 1.3.4 closes the connection when there is a server error
-            (in micronaut case it checks for http status code > 299) or isKeepAliveDefault()
-            set to false (default false). This method replacement is to change it to true.
-
-            TODO: the implementation needs to be reviewed
-        */
+    public static boolean isKeepAliveOnServerError(Object caller) {
         return true;
     }
-
 }

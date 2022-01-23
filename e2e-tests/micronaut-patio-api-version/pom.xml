@@ -19,6 +19,7 @@
         <micronaut-openapi.version>1.4.0</micronaut-openapi.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
         <jakarta.inject.api.version>2.0.1</jakarta.inject.api.version>
+        <rest.assured.version>4.2.0</rest.assured.version>
     </properties>
 
 
@@ -105,6 +106,7 @@
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
+            <version>${rest.assured.version}</version>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>

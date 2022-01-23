@@ -9,13 +9,15 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.utils.RestTestBase;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class TcpPortMicronautEMTest extends RestTestBase {
+@Disabled
+public class TcpPortMicronautPatioEMTest extends RestTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
@@ -25,7 +27,7 @@ public class TcpPortMicronautEMTest extends RestTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        runTestHandlingFlaky("TcpPortMicronautEMTest", "com.foo.TcpPortMicronautEMTest", 100, false, (args) -> {
+        runTestHandlingFlaky("TcpPortMicronautPatioEMTest.java", "com.foo.TcpPortMicronautPatioEMTest.java", 100, false, (args) -> {
             args.add("--killSwitch");
             args.add("false");
 
@@ -33,9 +35,19 @@ public class TcpPortMicronautEMTest extends RestTestBase {
 
             assertTrue(solution.getIndividuals().size() >= 1);
             assertHasAtLeastOne(solution, HttpVerb.GET, 500);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/tcpPort", null);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/tcpPortFailed", null);
         } );
 
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+
+        given().contentType(ContentType.JSON)
+                .accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/tcpPort")
+                .then()
+                .statusCode(200)
+                .body("size()", is(2)); // 1 from search, and 1 here from RestAssured
+
 
         /*
             It is expected to have keep-alive in connection header to maintain

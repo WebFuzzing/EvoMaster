@@ -5,10 +5,11 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Thir
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 
 public class NettyClassReplacement extends ThirdPartyMethodReplacementClass {
-
-    private static final NettyClassReplacement singleton = new NettyClassReplacement();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
@@ -27,6 +28,6 @@ public class NettyClassReplacement extends ThirdPartyMethodReplacementClass {
 
             TODO: the implementation needs to be reviewed
         */
-        return true;
+        return false;
     }
 }

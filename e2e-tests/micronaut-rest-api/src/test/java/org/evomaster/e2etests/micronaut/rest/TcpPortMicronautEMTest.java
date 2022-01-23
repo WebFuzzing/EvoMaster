@@ -15,8 +15,7 @@ import static org.hamcrest.core.Is.is;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled
-public class MicronautEMTest extends RestTestBase {
+public class TcpPortMicronautEMTest extends RestTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
@@ -26,18 +25,27 @@ public class MicronautEMTest extends RestTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        runTestHandlingFlaky("MicronautTest", "com.foo.MicronautTest", 10000, false, (args) -> {
+        runTestHandlingFlaky("TcpPortMicronautEMTest", "com.foo.TcpPortMicronautEMTest", 100, false, (args) -> {
             args.add("--killSwitch");
             args.add("false");
 
             Solution<RestIndividual> solution = initAndRun(args);
 
             assertTrue(solution.getIndividuals().size() >= 1);
-            assertHasAtLeastOne(solution, HttpVerb.GET, 500);
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/", null);
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/", null);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/tcpPort", null);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/tcpPortFailed", null);
         } );
 
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+
+        given().contentType(ContentType.JSON)
+                .accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/tcpPort")
+                .then()
+                .statusCode(200)
+                .body("size()", is(2)); // 1 from search, and 1 here from RestAssured
 
         /*
             Below test checks for keep-alive header even when the server crashes.
