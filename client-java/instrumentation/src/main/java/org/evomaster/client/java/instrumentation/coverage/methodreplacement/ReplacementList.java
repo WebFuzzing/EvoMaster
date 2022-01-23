@@ -41,7 +41,7 @@ public class ReplacementList {
                 new WebRequestClassReplacement(),
                 new NettyClassReplacement(),
                 new MicronautNettyHttpServerReplacement(),
-                new NettyHttpUtilClassReplacement(),
+//                new NettyHttpUtilClassReplacement(), // TODO: implementation should be reviewed
                 new MicronautConfigurationReplacement()
         );
     }
