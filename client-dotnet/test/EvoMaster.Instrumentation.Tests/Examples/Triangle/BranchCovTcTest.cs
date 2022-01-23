@@ -30,8 +30,8 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
                 expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 22, i, false));
             }
 
-            var actualBranchTargets = GetRegisteredTargets().Branches;
-            var diff = actualBranchTargets.Except(expectedBranchTargets).ToList();
+            var actualBranchTargets = GetRegisteredTargets().Branches.Where(x=>x.Contains("TriangleClassification"));
+            
             Assert.Equal(expectedBranchTargets, actualBranchTargets);
         }
     }
