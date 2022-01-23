@@ -7,6 +7,18 @@ namespace EvoMaster.Instrumentation.Heuristic{
     public class HeuristicsForBooleans{
 
         /**
+         * compute heuristics for single value  
+         */
+        public static void CompareSingleValueJump(string className, int line, int branchId, int value, Code code){
+            if (HeuristicsForJumps.CODES.Contains(code)){
+                var t = HeuristicsForJumps.GetForSingleValueJump(value, code);
+                ExecutionTracer.UpdateBranchDistance(className, line, branchId, t);
+            }else{
+                SimpleLogger.Warn("Do not support to compute single value jump with opcode" + code);
+            }
+        }
+
+        /**
          * compute heuristics for comparison method with opcode
          */
         public static void Compare(string className, int line, int branchId, object firstValue, object secondValue, Code code){
