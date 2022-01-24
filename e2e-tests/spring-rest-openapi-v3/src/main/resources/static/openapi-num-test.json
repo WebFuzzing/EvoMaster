@@ -1,0 +1,58 @@
+{
+  "openapi" : "3.0.1",
+  "info": {
+    "title": "Basic Num Test",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/api/num/exp",
+      "description": "Basic num"
+    }
+  ],
+  "paths": {
+    "/basicNum/{s}" : {
+      "get": {
+        "tags": [
+          "num-test"
+        ],
+        "summary": "get-num",
+        "operationId": "numBehaviour",
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200" : {
+            "description": "OK",
+            "content": {
+              "*/*" : {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  }
+}
