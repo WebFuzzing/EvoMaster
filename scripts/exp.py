@@ -176,6 +176,9 @@ SUTS = [
         # GRAPHQL
         Sut("petclinic", 1, JDK_8),
         Sut("patio-api", 1, JDK_11),
+        Sut("timbuctoo", 1, JDK11),
+        Sut("graphql-ncs", 1, JDK_8),
+        Sut("graphql-scs", 1, JDK_8),
         # Sut("ind0", 1, JDK_8),
         # Sut("ocvn-rest", 1, JDK_8),
         # Sut("ncs-js", 1, JS),
