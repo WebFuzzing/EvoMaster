@@ -227,7 +227,7 @@ class MapGene<K, V>(
      */
     fun addElement(element: PairGene<K, V>){
         if (maxSize!= null && elements.size == maxSize)
-            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+            throw IllegalStateException("maxSize is ${maxSize}, cannot add more elements for the gene $name")
 
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
@@ -243,7 +243,7 @@ class MapGene<K, V>(
     fun addElement(element: Gene) : Boolean{
         element as? PairGene<K, V> ?:return false
         if (maxSize!= null && elements.size == maxSize)
-            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+            throw IllegalStateException("maxSize is ${maxSize}, cannot add more elements for the gene $name")
 
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
