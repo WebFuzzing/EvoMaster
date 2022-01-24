@@ -143,6 +143,7 @@ else:
 JDK_8 = "JDK_8"
 JDK_11 = "JDK_11"
 JS = "JS"
+DOTNET_3 = "DOTNET_3"
 
 class Sut:
     def __init__(self, name, timeWeight, platform):
@@ -174,11 +175,16 @@ SUTS = [
         Sut("languagetool", 3, JDK_8),
         # GRAPHQL
         Sut("petclinic", 1, JDK_8),
-        Sut("patio-api", 1, JDK_11)
+        Sut("patio-api", 1, JDK_11),
         # Sut("ind0", 1, JDK_8),
         # Sut("ocvn-rest", 1, JDK_8),
         # Sut("ncs-js", 1, JS),
         # Sut("scs-js", 1, JS)
+        # .Net
+        Sut("cs-rest-ncs",1,DOTNET_3),
+        Sut("cs-rest-scs",1,DOTNET_3),
+        Sut("sampleproject",1,DOTNET_3),
+        Sut("menu-api",1,DOTNET_3)
 ]
 
 # Specify if using any industrial case study
@@ -233,6 +239,7 @@ else:
 EVOMASTER_JAVA_OPTIONS = " -Xms2G -Xmx4G  -jar evomaster.jar "
 AGENT = "evomaster-agent.jar"
 EM_POSTFIX = "-evomaster-runner.jar"
+EM_POSTFIX_DOTNET = "-evomaster-runner.dll"
 SUT_POSTFIX = "-sut.jar"
 
 if NJOBS < len(SUTS):
@@ -276,9 +283,10 @@ if not CLUSTER:
             # copy jar files
             shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX), BASE_DIR)
             shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX), BASE_DIR)
-        elif sut.platform == JS:
+        elif sut.platform == JS or sut.platform == DOTNET_3:
             # copy folders, which include both SUT and EM Controller
             shutil.copytree(os.path.join(CASESTUDY_DIR, sut.name), os.path.join(BASE_DIR, sut.name))
+
 
     shutil.copy(os.path.join(CASESTUDY_DIR, AGENT), BASE_DIR)
     shutil.copy(os.path.join(EVOMASTER_DIR, "evomaster.jar"), BASE_DIR)
@@ -348,7 +356,7 @@ def createJobHead(port, sut, timeoutMinutes):
         if sut.platform == JDK_8:
             script.write("\nmodule load Java/1.8.0_212\n\n")
         else:
-            print("ERROR: currently not handling " + sut.platform)
+            print("ERROR: currently not handling " + sut.platform + " for experiments on cluster")
             exit(1)
 
         # To speed-up I/O, copy files over to SCRATCH folder
@@ -385,6 +393,9 @@ def createJobHead(port, sut, timeoutMinutes):
         command = " EM_PORT=" + controllerPort + " npm run em > " + sut_log + " 2>&1 & "
         command = before + command
 
+    elif sut.platform == DOTNET_3:
+        params = " " + controllerPort + " " + sutPort
+        command = "dotnet " + sut.name+"/"+sut.name + EM_POSTFIX_DOTNET + " " + params + " > " + sut_log + " 2>&1 &"
 
     if not CLUSTER:
         script.write("\n\necho \"Starting EM Runner with: " + command + "\"\n")
