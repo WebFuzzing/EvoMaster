@@ -108,6 +108,9 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
 
         CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withSize(responseVarName)), indent);
 
+        if (maxAssertionForDataInCollection == 0)
+            return codes;
+
         List<Integer> nvalue = null;
         if (maxAssertionForDataInCollection > 0 && getValue().size() > maxAssertionForDataInCollection){
             nvalue = CodeJavaGenerator.randomNInt(getValue().size(), maxAssertionForDataInCollection);
