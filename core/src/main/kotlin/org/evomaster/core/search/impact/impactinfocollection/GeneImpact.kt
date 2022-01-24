@@ -3,8 +3,11 @@ package org.evomaster.core.search.impact.impactinfocollection
 import org.evomaster.core.search.gene.Gene
 
 /**
- * created by manzh on 2019-09-03
- * @property genes refer to genes in their current individual, i.e., you can find what latest updated genes are. this info should not be shared
+ * TO enable gene impact with inner impacts
+ * 1. override [clone] and [copy], such methods could be used iteratively for inner impacts.
+ *  eg [org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact.clone]
+ * 2. override [validate] to check if the gene type is correct
+ * 3. override [countImpactWithMutatedGeneWithContext], this method could also be used iteratively for inner impacts
  */
 open class GeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo) : Impact(sharedImpactInfo, specificImpactInfo){
 
