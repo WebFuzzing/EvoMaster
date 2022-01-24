@@ -59,13 +59,13 @@ namespace EvoMaster.Instrumentation {
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
                         new[] {
-                            typeof(object), typeof(object), typeof(string), typeof(string), typeof(string), typeof(int),
+                            typeof(int), typeof(int), typeof(string), typeof(string), typeof(string), typeof(int),
                             typeof(int)
                         }));
 
             _computeDistanceForOneArgJumpsProbe = module.ImportReference(
                 typeof(Probes).GetMethod(nameof(Probes.ComputeDistanceForOneArgJumps),
-                    new[] {typeof(object), typeof(string), typeof(string), typeof(int), typeof(int)}));
+                    new[] {typeof(int), typeof(string), typeof(string), typeof(int), typeof(int)}));
 
             foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
                 _alreadyCompletedPoints.Clear();
@@ -104,8 +104,7 @@ namespace EvoMaster.Instrumentation {
                                 }
 
                                 if (l != lastEnteredLine) lastBranch = 0;
-                                if(l==4)
-                                    Console.WriteLine("4");
+
                                 i = InsertEnteringBranchProbe(instruction, method.Body.Instructions, ilProcessor, i,
                                     type.Name, l,
                                     lastBranch);
