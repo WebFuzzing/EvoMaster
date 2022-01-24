@@ -449,8 +449,11 @@ class RPCEndpointsHandler {
                     val template = valueGene.template
                     dto.innerContent.forEach { p->
                         val copy = template.copyContent()
-                        setGeneBasedOnParamDto(copy, p)
-                        valueGene.addElement(copy)
+                        // TODO need to handle cycle object gene in responses
+                        if (copy !is CycleObjectGene){
+                            setGeneBasedOnParamDto(copy, p)
+                            valueGene.addElement(copy)
+                        }
                     }
                 }
                 is MapGene<*, *> ->{
