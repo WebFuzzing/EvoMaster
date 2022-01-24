@@ -1551,16 +1551,16 @@ class EMConfig {
     var enableRPCCustomizedResponseTargets = false
 
     @Experimental
-    @Cfg("Whether to generate RPC tests which is independent from EM driver.")
+    @Cfg("Whether to generate RPC endpoint invocation which is independent from EM driver.")
     var enablePureRPCTestGeneration = false
 
     @Experimental
-    @Cfg("Whether to generate RPC Assertions based on instance")
+    @Cfg("Whether to generate RPC Assertions based on response instance")
     var enableRPCAssertionWithInstance = false
 
     @Experimental
     @Cfg("Specify a maximum number of data in a collection to be asserted in generated tests." +
-            "Note that a zero or negative value means all data in the collection should be asserted.")
+            "Note that zero means tht only size of the collection would be asserted and a negative value means all data in the collection should be asserted.")
     var maxAssertionForDataInCollection = -1
 
     fun timeLimitInSeconds(): Int {

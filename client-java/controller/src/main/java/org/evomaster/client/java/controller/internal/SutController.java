@@ -72,13 +72,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     /**
      * a map of interface schemas for RPC service under test
+     * - key is full name of the interface
+     * - value is extracted interface schema
      */
-    private final Map<String, InterfaceSchema> rpcInterfaceSchema = new HashMap<>();
+    private final Map<String, InterfaceSchema> rpcInterfaceSchema = new LinkedHashMap <>();
 
     /**
      * a map of local auth setup schemas for RPC service under test
+     * - key is the index of the auth info which is specified in the driver
+     * - value is extracted local auth setup schema
      */
-    private final Map<Integer, LocalAuthSetupSchema> localAuthSetupSchemaMap = new HashMap<>();
+    private final Map<Integer, LocalAuthSetupSchema> localAuthSetupSchemaMap = new LinkedHashMap <>();
 
     /**
      * handle parsing RPCActionDto based on json string.

@@ -116,7 +116,7 @@ class RPCCallResult : ActionResult {
         when(result){
             CustomizedCallResultCode.SUCCESS -> addResultValue(CUSTOM_BUSINESS_LOGIC_CODE, CUSTOM_BUSINESS_LOGIC_SUCCESS.toString())
             CustomizedCallResultCode.SERVICE_ERROR -> addResultValue(CUSTOM_BUSINESS_LOGIC_CODE, CUSTOM_BUSINESS_LOGIC_SERVICE_ERROR.toString())
-            CustomizedCallResultCode.OTHERWISE_ERROR -> addResultValue(CUSTOM_BUSINESS_LOGIC_CODE, CUSTOM_BUSINESS_LOGIC_OTHERWISE_ERROR.toString())
+            CustomizedCallResultCode.OTHER_ERROR -> addResultValue(CUSTOM_BUSINESS_LOGIC_CODE, CUSTOM_BUSINESS_LOGIC_OTHERWISE_ERROR.toString())
         }
 
     }

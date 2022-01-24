@@ -7,7 +7,7 @@ import java.util.List;
  * dto is used to specify multiple seeds for a field.
  * the field could be regarded as independent [CustomizedRequestValueDto#keyValues]
  */
-public class keyValuesDto {
+public class KeyValuesDto {
 
     /**
      * an independent key

@@ -29,6 +29,9 @@ public class JsonAuthRPCEndpointDto {
 
     /**
      * a list of the class name of the json object
+     *
+     * [jsonPayloads] are used to specify values of params for RPC endpoints
+     * here are needed to explicitly specify what param type are with its full class name if they are not java.lang.String
      */
     public List<String> classNames;
 

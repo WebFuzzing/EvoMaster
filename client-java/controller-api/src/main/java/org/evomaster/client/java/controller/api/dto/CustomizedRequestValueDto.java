@@ -6,13 +6,17 @@ public class CustomizedRequestValueDto {
 
     /**
      * a set of fields and corresponding values in request
+     *
+     * note that [combinedKeyValuePairs] represents a candidate for a set of dependent keys
      */
     public List<KeyValuePairDto> combinedKeyValuePairs;
 
     /**
      * a key with a set of candidate values
-     */
-    public keyValuesDto keyValues;
+     *
+     * note that [keyValues] represents a set of candidates for one key
+     * */
+    public KeyValuesDto keyValues;
 
     /**
      * specify the value if it is only applicable to specified endpoints with corresponding annotation
