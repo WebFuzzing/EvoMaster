@@ -14,13 +14,14 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         public LineCovTcTest(ITestOutputHelper testOutputHelper) {
             _testOutputHelper = testOutputHelper;
             ExecutionTracer.Reset();
-            ObjectiveRecorder.Reset(false);
+            ObjectiveRecorder.Reset(false);//TODO
         }
 
         [Fact]
         public void TestLineCoverage() {
             ITriangleClassification tc = new TriangleClassificationImpl();
-
+            ExecutionTracer.Reset();
+            ObjectiveRecorder.Reset(false);
             Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
 
             tc.Classify(-1, 0, 0);
@@ -39,7 +40,8 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         public void TestSpecificLineCoverage(int a, int b, int c, string returnLine) {
             _testOutputHelper.WriteLine("Test " + a);
             ITriangleClassification tc = new TriangleClassificationImpl();
-
+            ExecutionTracer.Reset();
+            ObjectiveRecorder.Reset(false);
             Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
 
             tc.Classify(a, b, c);
@@ -57,14 +59,16 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         [InlineData(7, 6, 5)]
         public void TestLastLineCoverage(int a, int b, int c) {
             ITriangleClassification tc = new TriangleClassificationImpl();
-
+        
+            ExecutionTracer.Reset();
+            ObjectiveRecorder.Reset(false);
+            
             Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
-
+        
             tc.Classify(a, b, c);
-
+        
             //assert that the last line of the method is reached
-            // Assert.Contains("Line_at_TriangleClassificationImpl_00027", ObjectiveRecorder.AllTargets);
-
+        
             Assert.Equal(1.0, ExecutionTracer.GetValue("Line_at_TriangleClassificationImpl_00027"));
         }
 
@@ -72,7 +76,10 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         [Fact]
         public void TestAllTargetsGettingRegistered() {
             ITriangleClassification tc = new TriangleClassificationImpl();
-
+            
+            ExecutionTracer.Reset();
+            ObjectiveRecorder.Reset(false);
+            
             tc.Classify(3, 4, 5);
 
             var expectedLineNumbers = new List<int> {
@@ -106,6 +113,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
 
         [Fact]
         public void TestAllClassesGettingRegistered() {
+
             var expectedClassNames = new List<string> {
                 nameof(TriangleClassificationImpl),
                 nameof(NumericOperations),
@@ -134,6 +142,55 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
             var res = tc.Classify(a, b, c);
 
             Assert.Equal(expectedOutcome, res);
+        }
+        
+        
+        private readonly NumericOperations _numericOperations = new NumericOperations();
+        [Theory]
+        [InlineData(8, 7, true)]
+        [InlineData(4, 4400, false)]
+        [InlineData(99, 99, false)]
+        public void TestGreaterThan(double a, double b, bool expectedResult) {
+            var actualResult = _numericOperations.GreaterThan(a, b);
+        
+            Assert.Equal(expectedResult, actualResult);
+        }
+        
+        [Theory]
+        [InlineData(10, 1)]
+        [InlineData(7, 0)]
+        [InlineData(2, -1)]
+        public void TestCompareWithLocalVariable(int a, int expectedResult) {
+            var actualResult = _numericOperations.CompareWithLocalVariable(a);
+        
+            Assert.Equal(expectedResult, actualResult);
+        }
+        
+        [Theory]
+        [InlineData(10, 1)]
+        [InlineData(7, 0)]
+        [InlineData(2, -1)]
+        public void TestCompareWithGlobalVariable(int a, int expectedResult) {
+            var actualResult = _numericOperations.CompareWithGlobalVariable(a);
+        
+            Assert.Equal(expectedResult, actualResult);
+        }
+        
+        [Theory]
+        [InlineData(10, 1)]
+        [InlineData(7, 0)]
+        [InlineData(2, -1)]
+        public void TestCompareWithStaticVariable(int a, int expectedResult) {
+            var actualResult = _numericOperations.CompareWithStaticVariable(a);
+        
+            Assert.Equal(expectedResult, actualResult);
+        }
+        
+        [Fact]
+        public void TestCompareTwoGlobalVariables() {
+            var actualResult = _numericOperations.CompareTwoGlobalVariables();
+            
+            Assert.Equal(1, actualResult);
         }
     }
 }

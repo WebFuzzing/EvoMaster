@@ -126,7 +126,7 @@ namespace EvoMaster.Instrumentation_Shared {
         }
 
 
-        private static readonly IDictionary<string, IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>
+        private static readonly ConcurrentDictionary<string, IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>
             BranchCache = new
                 ConcurrentDictionary<string,
                     IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>(); //TODO: capacity 10_000
