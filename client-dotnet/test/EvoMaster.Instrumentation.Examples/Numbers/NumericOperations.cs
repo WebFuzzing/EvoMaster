@@ -57,5 +57,17 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
             else
                 return false;
         }
+        public bool GreaterThan(long a, long b) {
+            if (a > b)
+                return true;
+            else
+                return false;
+        }
+        public bool GreaterThan(short a, short b) {
+            if (a > b)
+                return true;
+            else
+                return false;
+        }
     }
 }

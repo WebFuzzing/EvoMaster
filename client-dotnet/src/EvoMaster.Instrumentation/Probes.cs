@@ -99,12 +99,84 @@ namespace EvoMaster.Instrumentation {
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
         
+        public static int CompareAndComputeDistance(float val1, float val2, string originalOpCode,
+            string newOpCode, string className, int lineNo, int branchId) {
+            Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
+
+            switch (newOpCode.ToLower()) {
+                case "ceq":
+                    return val1.Equals(val2) ? 1 : 0;
+                case "clt":
+                    return val1 < val2 ? 1 : 0;
+                case "clt_un":
+                    return val1 < val2 ? 1 : 0;
+                case "cgt":
+                    return val1 > val2 ? 1 : 0;
+                case "cgt_un":
+                    return val1 > val2 ? 1 : 0;
+            }
+
+            throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
+        }
+        
+        public static int CompareAndComputeDistance(long val1, long val2, string originalOpCode,
+            string newOpCode, string className, int lineNo, int branchId) {
+            Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
+
+            switch (newOpCode.ToLower()) {
+                case "ceq":
+                    return val1.Equals(val2) ? 1 : 0;
+                case "clt":
+                    return val1 < val2 ? 1 : 0;
+                case "clt_un":
+                    return val1 < val2 ? 1 : 0;
+                case "cgt":
+                    return val1 > val2 ? 1 : 0;
+                case "cgt_un":
+                    return val1 > val2 ? 1 : 0;
+            }
+
+            throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
+        }
+        
+        public static int CompareAndComputeDistance(short val1, short val2, string originalOpCode,
+            string newOpCode, string className, int lineNo, int branchId) {
+            Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
+
+            switch (newOpCode.ToLower()) {
+                case "ceq":
+                    return val1.Equals(val2) ? 1 : 0;
+                case "clt":
+                    return val1 < val2 ? 1 : 0;
+                case "clt_un":
+                    return val1 < val2 ? 1 : 0;
+                case "cgt":
+                    return val1 > val2 ? 1 : 0;
+                case "cgt_un":
+                    return val1 > val2 ? 1 : 0;
+            }
+
+            throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
+        }
+        
+        
         public static void ComputeDistanceForOneArgJumps(int val, string opCode, string className, int lineNo,
             int branchId) {
             Console.WriteLine($"{opCode}: {val}"); //todo
         }
-        
         public static void ComputeDistanceForOneArgJumps(double val, string opCode, string className, int lineNo,
+            int branchId) {
+            Console.WriteLine($"{opCode}: {val}"); //todo
+        }
+        public static void ComputeDistanceForOneArgJumps(float val, string opCode, string className, int lineNo,
+            int branchId) {
+            Console.WriteLine($"{opCode}: {val}"); //todo
+        }
+        public static void ComputeDistanceForOneArgJumps(long val, string opCode, string className, int lineNo,
+            int branchId) {
+            Console.WriteLine($"{opCode}: {val}"); //todo
+        }
+        public static void ComputeDistanceForOneArgJumps(short val, string opCode, string className, int lineNo,
             int branchId) {
             Console.WriteLine($"{opCode}: {val}"); //todo
         }

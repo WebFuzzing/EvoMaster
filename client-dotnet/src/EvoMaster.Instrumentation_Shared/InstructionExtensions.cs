@@ -106,8 +106,12 @@ namespace EvoMaster.Instrumentation_Shared {
             IReadOnlyDictionary<string, string> localVarTypes) {
             var opCode = instruction.OpCode.ToString();
 
-            if (instruction.Operand is FieldDefinition operand) {
-                return GetCSharpTypeByName(operand.FieldType.Name);
+            if (instruction.Operand is FieldDefinition fieldDefinition) {
+                return GetCSharpTypeByName(fieldDefinition.FieldType.Name);
+            }
+            
+            if (instruction.Operand is VariableDefinition variableDefinition) {
+                return GetCSharpTypeByName(variableDefinition.VariableType.Name);
             }
 
             //get the type based on the associated stloc instruction
@@ -131,21 +135,29 @@ namespace EvoMaster.Instrumentation_Shared {
             if (opCode.Contains("i4", StringComparison.OrdinalIgnoreCase))
                 return typeof(int);
             if (opCode.Contains("i8", StringComparison.OrdinalIgnoreCase))
+                return typeof(long);
+            if (opCode.Contains("r8", StringComparison.OrdinalIgnoreCase))
                 return typeof(double);
+            if (opCode.Contains("r4", StringComparison.OrdinalIgnoreCase))
+                return typeof(float);
 
             throw new Exception($"Unable to detect the associated data type for instruction: {instruction}");
         }
 
         private static Type GetCSharpTypeByName(string typeName) {
             switch (typeName) {
+                case "Int16":
+                    return typeof(short);
                 case "Int32":
                 case "Boolean":
                     return typeof(int);
-                case "Double":
                 case "Int64":
-                    return typeof(double);
+                    return typeof(long);
+
                 case "Single":
                     return typeof(float);
+                case "Double":
+                    return typeof(double);
             }
 
             throw new Exception($"Unable to detect the c# data type for {typeName}");

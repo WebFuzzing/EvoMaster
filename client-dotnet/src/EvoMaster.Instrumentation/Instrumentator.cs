@@ -20,12 +20,18 @@ namespace EvoMaster.Instrumentation {
         private MethodReference _completedProbe;
         private MethodReference _enteringProbe;
         private MethodReference _enteringBranchProbe;
+
         private MethodReference _compareAndComputeDistanceProbeForInt;
         private MethodReference _compareAndComputeDistanceProbeForDouble;
         private MethodReference _compareAndComputeDistanceProbeForFloat;
+        private MethodReference _compareAndComputeDistanceProbeForLong;
+        private MethodReference _compareAndComputeDistanceProbeForShort;
+
         private MethodReference _computeDistanceForOneArgJumpsProbeForInt;
         private MethodReference _computeDistanceForOneArgJumpsProbeForDouble;
         private MethodReference _computeDistanceForOneArgJumpsProbeForFloat;
+        private MethodReference _computeDistanceForOneArgJumpsProbeForLong;
+        private MethodReference _computeDistanceForOneArgJumpsProbeForShort;
         private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
 
         private readonly List<CodeCoordinate> _alreadyCompletedPoints = new List<CodeCoordinate>();
@@ -82,6 +88,20 @@ namespace EvoMaster.Instrumentation {
                             typeof(float), typeof(float), typeof(string), typeof(string), typeof(string), typeof(int),
                             typeof(int)
                         }));
+            _compareAndComputeDistanceProbeForLong =
+                module.ImportReference(
+                    typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
+                        new[] {
+                            typeof(long), typeof(long), typeof(string), typeof(string), typeof(string), typeof(int),
+                            typeof(int)
+                        }));
+            _compareAndComputeDistanceProbeForShort =
+                module.ImportReference(
+                    typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
+                        new[] {
+                            typeof(short), typeof(short), typeof(string), typeof(string), typeof(string), typeof(int),
+                            typeof(int)
+                        }));
 
             _computeDistanceForOneArgJumpsProbeForInt = module.ImportReference(
                 typeof(Probes).GetMethod(nameof(Probes.ComputeDistanceForOneArgJumps),
@@ -94,6 +114,14 @@ namespace EvoMaster.Instrumentation {
             _computeDistanceForOneArgJumpsProbeForFloat = module.ImportReference(
                 typeof(Probes).GetMethod(nameof(Probes.ComputeDistanceForOneArgJumps),
                     new[] {typeof(float), typeof(string), typeof(string), typeof(int), typeof(int)}));
+
+            _computeDistanceForOneArgJumpsProbeForLong = module.ImportReference(
+                typeof(Probes).GetMethod(nameof(Probes.ComputeDistanceForOneArgJumps),
+                    new[] {typeof(long), typeof(string), typeof(string), typeof(int), typeof(int)}));
+
+            _computeDistanceForOneArgJumpsProbeForShort = module.ImportReference(
+                typeof(Probes).GetMethod(nameof(Probes.ComputeDistanceForOneArgJumps),
+                    new[] {typeof(short), typeof(string), typeof(string), typeof(int), typeof(int)}));
 
             foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
                 _alreadyCompletedPoints.Clear();
@@ -338,7 +366,7 @@ namespace EvoMaster.Instrumentation {
             instruction.UpdateJumpsToTheCurrentInstruction(classNameInstruction, instructions);
 
             var branchIns = instruction.Next.Next;
-            
+
             byteCodeIndex =
                 InsertCompareAndComputeDistanceProbe(branchIns, ilProcessor, methodParams, localVarTypes, byteCodeIndex,
                     className,
@@ -363,6 +391,10 @@ namespace EvoMaster.Instrumentation {
                     probe = _compareAndComputeDistanceProbeForDouble;
                 else if (type == typeof(float))
                     probe = _compareAndComputeDistanceProbeForFloat;
+                else if (type == typeof(long))
+                    probe = _compareAndComputeDistanceProbeForLong;
+                else if (type == typeof(short))
+                    probe = _compareAndComputeDistanceProbeForShort;
                 //TODO: other types
             }
 
@@ -490,6 +522,10 @@ namespace EvoMaster.Instrumentation {
                 probe = _computeDistanceForOneArgJumpsProbeForDouble;
             else if (type == typeof(float))
                 probe = _computeDistanceForOneArgJumpsProbeForFloat;
+            else if (type == typeof(long))
+                probe = _computeDistanceForOneArgJumpsProbeForLong;
+            else if (type == typeof(short))
+                probe = _computeDistanceForOneArgJumpsProbeForShort;
             // else probe = _computeDistanceForOneArgJumpsProbeForInt;
             //TODO: other types
 
