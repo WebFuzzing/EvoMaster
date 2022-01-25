@@ -9,6 +9,14 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 To help replicating previous studies, for most of these papers we also provide the scripts used to setup the experiments.
 This explained in more details [here](replicating_studies.md).
 
+### 2022
+
+* M. Zhang, A. Belhadi, A. Arcuri
+  *JavaScript Instrumentation for Search-Based Software Testing: A Study with RESTful APIs*.
+  IEEE International Conference on Software Testing, Validation and Verification (ICST). (*to appear*)
+  [[PDF](publications/2022_icst.pdf)]
+  [[Scripts](exp/2022_icst.py)]
+
 ### 2021
 
 * B. Marculescu, M. Zhang, A. Arcuri.
