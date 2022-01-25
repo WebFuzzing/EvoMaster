@@ -5,7 +5,7 @@ namespace EvoMaster.Client.Util.Extensions {
     public static class DictionaryExtensions {
         //Intended to do as computeIfAbsent does in Java
         public static TVal ComputeIfAbsent<TKey, TVal>(this IDictionary<TKey, TVal> dictionary, TKey key,
-            Func<TKey, TVal> func){
+            Func<TKey, TVal> func) {
             var has = dictionary.TryGetValue(key, out var val);
 
             if (has) return val;
@@ -19,6 +19,11 @@ namespace EvoMaster.Client.Util.Extensions {
 
             return val;
         }
+
+        public static void TryAddOrUpdate<TKey, TVal>(this IDictionary<TKey, TVal> dictionary, TKey key, TVal val) {
+            var addResult = dictionary.TryAdd(key, val);
+            if (!addResult) dictionary[key] = val;
+        }
     }
 
     public static class ObjectExtensions {
@@ -26,7 +31,7 @@ namespace EvoMaster.Client.Util.Extensions {
             if (obj == null)
                 throw new NullReferenceException();
 
-            return (T)obj;
+            return (T) obj;
         }
     }
 }
