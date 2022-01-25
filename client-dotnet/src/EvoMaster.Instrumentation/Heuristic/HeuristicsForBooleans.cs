@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using EvoMaster.Client.Util;
 using EvoMaster.Instrumentation.StaticState;
@@ -7,19 +8,46 @@ namespace EvoMaster.Instrumentation.Heuristic{
     public class HeuristicsForBooleans{
 
         /**
-         * compute heuristics for comparison method with opcode
+         * compute distance for jump with one arguments
          */
-        public static void Compare(string className, int line, int branchId, object firstValue, object secondValue, Code code){
-
+        public static void ComputeDistanceForSingleJump(string className, int line, int branchId, long value, string codeString){
             Truthness t = null;
-            
-            //TODO need to check with Amid about brfalse/brtrue and `null` case
-            
+            var ok = Enum.TryParse(typeof(Code), codeString, out var opcode);
+
+            if (!ok || opcode is Code){
+                SimpleLogger.Warn("cannot parse "+codeString + "as Code");
+                return;
+            }
+
+            var code = (Code) opcode;
+                
             if (HeuristicsForJumps.CODES.Contains(code)){
-                Trace.Assert(firstValue is int);
-                Trace.Assert(secondValue is int);
-                t = HeuristicsForJumps.GetForValueComparison((int)firstValue, (int)secondValue, code);
-            } else if (HeuristicsForNonintegerComparisons.CODES.Contains(code)){
+                t = HeuristicsForJumps.GetForSingleValueJump(value, code);
+            }
+
+            if (t != null){
+                ExecutionTracer.UpdateBranchDistance(className, line, branchId, t);
+            } else{
+                SimpleLogger.Warn("Do not support to compute heuristics for types ("+value.GetType().FullName+")"+ " with opcode" + code);
+            }
+        }
+        
+        /**
+         * compute distance for branch with two arguments
+         */
+        public static void ComputeDistanceForTwoArgs(string className, int line, int branchId, object firstValue, object secondValue, string codeString){
+            
+            Truthness t = null;
+            var ok = Enum.TryParse(typeof(Code), codeString, out var opcode);
+
+            if (!ok || opcode is Code){
+                SimpleLogger.Warn("cannot parse "+codeString + "as Code");
+                return;
+            }
+
+            var code = (Code) opcode;
+
+            if (HeuristicsForNonintegerComparisons.CODES.Contains(code)){
                 if (firstValue is double dfvalue && secondValue is double dsvalue){
                     t = HeuristicsForNonintegerComparisons.GetForFloatAndDoubleComparison(dfvalue,
                         dsvalue, code);
@@ -38,6 +66,6 @@ namespace EvoMaster.Instrumentation.Heuristic{
                 SimpleLogger.Warn("Do not support to compute heuristics for types ("+firstValue.GetType().FullName+","+secondValue.GetType().FullName+")"+ " with opcode" + code);
             }
         }
-
+        
     }
 }

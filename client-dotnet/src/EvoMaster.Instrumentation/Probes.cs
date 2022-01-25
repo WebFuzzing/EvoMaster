@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using EvoMaster.Client.Util;
+using EvoMaster.Instrumentation.Heuristic;
 using EvoMaster.Instrumentation.StaticState;
 using EvoMaster.Instrumentation_Shared;
 using Mono.Cecil.Cil;
@@ -61,7 +62,8 @@ namespace EvoMaster.Instrumentation {
 
         public static int CompareAndComputeDistance(int val1, int val2, string originalOpCode,
             string newOpCode, string className, int lineNo, int branchId) {
-            Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
+            
+            HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
@@ -83,7 +85,8 @@ namespace EvoMaster.Instrumentation {
 
         public static int CompareAndComputeDistance(double val1, double val2, string originalOpCode,
             string newOpCode, string className, int lineNo, int branchId) {
-            Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
+            
+            HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
@@ -105,7 +108,8 @@ namespace EvoMaster.Instrumentation {
         
         public static int CompareAndComputeDistance(float val1, float val2, string originalOpCode,
             string newOpCode, string className, int lineNo, int branchId) {
-            Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
+            
+            HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
@@ -127,7 +131,8 @@ namespace EvoMaster.Instrumentation {
         
         public static int CompareAndComputeDistance(long val1, long val2, string originalOpCode,
             string newOpCode, string className, int lineNo, int branchId) {
-            Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
+            
+            HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
@@ -148,8 +153,9 @@ namespace EvoMaster.Instrumentation {
         }
         
         public static int CompareAndComputeDistance(short val1, short val2, string originalOpCode,
-            string newOpCode, string className, int lineNo, int branchId) {
-            Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
+            string newOpCode, string className, int lineNo, int branchId){
+
+            HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
@@ -172,23 +178,25 @@ namespace EvoMaster.Instrumentation {
         
         public static void ComputeDistanceForOneArgJumps(int val, string opCode, string className, int lineNo,
             int branchId) {
-            Console.WriteLine($"{opCode}: {val}"); //todo
+            HeuristicsForBooleans.ComputeDistanceForSingleJump(className, lineNo, branchId, val, opCode);
         }
         public static void ComputeDistanceForOneArgJumps(double val, string opCode, string className, int lineNo,
             int branchId) {
-            Console.WriteLine($"{opCode}: {val}"); //todo
+            // add warning just in case
+            SimpleLogger.Warn("in theory, opCode should not work with float but found it at " +lineNo+ " in" + className);
         }
         public static void ComputeDistanceForOneArgJumps(float val, string opCode, string className, int lineNo,
             int branchId) {
-            Console.WriteLine($"{opCode}: {val}"); //todo
+            // add warning just in case
+            SimpleLogger.Warn("in theory, opCode should not work with float but found it at " +lineNo+ " in" + className);
         }
         public static void ComputeDistanceForOneArgJumps(long val, string opCode, string className, int lineNo,
             int branchId) {
-            Console.WriteLine($"{opCode}: {val}"); //todo
+            HeuristicsForBooleans.ComputeDistanceForSingleJump(className, lineNo, branchId, val, opCode);
         }
         public static void ComputeDistanceForOneArgJumps(short val, string opCode, string className, int lineNo,
             int branchId) {
-            Console.WriteLine($"{opCode}: {val}"); //todo
+            HeuristicsForBooleans.ComputeDistanceForSingleJump(className, lineNo, branchId, val, opCode);
         }
     }
 }

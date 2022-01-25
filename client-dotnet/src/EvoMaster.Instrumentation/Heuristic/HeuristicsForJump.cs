@@ -21,7 +21,7 @@ namespace EvoMaster.Instrumentation.Heuristic {
         };
 
         //This are values compared against 0, like {@code value < 0}
-        public static Truthness GetForSingleValueJump(int value, Code opcode) {
+        public static Truthness GetForSingleValueJump(long value, Code opcode) {
             switch (opcode) {
                 
                 //0x39	brfalse <int32 (target)>	Branch to target if value is zero (false).
@@ -65,7 +65,7 @@ namespace EvoMaster.Instrumentation.Heuristic {
         }
 
 
-        public static Truthness GetForValueComparison(int firstValue, int secondValue, Code opcode) {
+        public static Truthness GetForValueComparison(long firstValue, long secondValue, Code opcode) {
             var a = firstValue;
             var b = secondValue;
 
