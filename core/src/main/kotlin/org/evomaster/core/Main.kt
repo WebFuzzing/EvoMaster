@@ -200,6 +200,22 @@ class Main {
                     }
                 }
 
+                val n = data.find { it.header == Statistics.DISTINCT_ACTIONS }!!.element.toInt()
+
+                when(config.problemType){
+                    EMConfig.ProblemType.REST -> {
+                        val k = data.find { it.header == Statistics.COVERED_2XX }!!.element.toInt()
+                        val p = String.format("%.0f", (k.toDouble()/n) * 100 )
+                        info("Successfully executed (HTTP code 2xx) $k endpoints out of $n ($p%)")
+                    }
+                    EMConfig.ProblemType.GRAPHQL ->{
+                        val k = data.find { it.header == Statistics.GQL_NO_ERRORS }!!.element.toInt()
+                        val p = String.format("%.0f", (k.toDouble()/n) * 100 )
+                        info("Successfully executed (no 'errors') $k endpoints out of $n ($p%)")
+                    }
+                    //TODO others, eg RPC
+                }
+
                 if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
                         config.maxTime == config.defaultMaxTime) {
                     info(inGreen("To obtain better results, use the '--maxTime' option" +
