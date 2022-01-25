@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using EvoMaster.Client.Util;
 using EvoMaster.Client.Util.Extensions;
 using EvoMaster.Instrumentation_Shared;
+using EvoMaster.Instrumentation_Shared.Exceptions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -382,20 +384,29 @@ namespace EvoMaster.Instrumentation {
             MethodReference probe = null;
 
             if (branchInstruction.IsConditionalInstructionWithTwoArgs()) {
-                var type = branchInstruction.Previous.DetectType(methodParams, localVarTypes) ??
-                           branchInstruction.Previous.Previous.DetectType(methodParams, localVarTypes);
+                try {
+                    var type = branchInstruction.Previous.DetectType(methodParams, localVarTypes) ??
+                               branchInstruction.Previous.Previous.DetectType(methodParams, localVarTypes);
 
-                if (type == typeof(int))
-                    probe = _compareAndComputeDistanceProbeForInt;
-                else if (type == typeof(double))
-                    probe = _compareAndComputeDistanceProbeForDouble;
-                else if (type == typeof(float))
-                    probe = _compareAndComputeDistanceProbeForFloat;
-                else if (type == typeof(long))
-                    probe = _compareAndComputeDistanceProbeForLong;
-                else if (type == typeof(short))
-                    probe = _compareAndComputeDistanceProbeForShort;
-                //TODO: other types
+                    if (type == typeof(int))
+                        probe = _compareAndComputeDistanceProbeForInt;
+                    else if (type == typeof(double))
+                        probe = _compareAndComputeDistanceProbeForDouble;
+                    else if (type == typeof(float))
+                        probe = _compareAndComputeDistanceProbeForFloat;
+                    else if (type == typeof(long))
+                        probe = _compareAndComputeDistanceProbeForLong;
+                    else if (type == typeof(short))
+                        probe = _compareAndComputeDistanceProbeForShort;
+                    //TODO: other types
+                }
+                catch (InstrumentationException e) {
+                    //TODO
+                    //skipping undetected data types
+                    SimpleLogger.Warn(e.ToString());
+
+                    return byteCodeIndex;
+                }
             }
 
             if (branchInstruction.IsCompareWithTwoArgs()) {
@@ -514,7 +525,17 @@ namespace EvoMaster.Instrumentation {
             IReadOnlyList<ParameterDefinition> methodParams, IReadOnlyDictionary<string, string> localVarTypes,
             int byteCodeIndex, string className, int lineNo, int branchId) {
             MethodReference probe = null;
-            var type = branchInstruction.Previous.DetectType(methodParams, localVarTypes);
+            Type type;
+
+            try {
+                type = branchInstruction.Previous.DetectType(methodParams, localVarTypes);
+            }
+            catch (InstrumentationException e) {
+                //TODO
+                //skipping the undetected data types for now
+                SimpleLogger.Warn(e.ToString());
+                return byteCodeIndex;
+            }
 
             if (type == typeof(int))
                 probe = _computeDistanceForOneArgJumpsProbeForInt;
