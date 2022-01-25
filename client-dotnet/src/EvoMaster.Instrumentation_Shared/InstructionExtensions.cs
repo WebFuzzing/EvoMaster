@@ -102,49 +102,60 @@ namespace EvoMaster.Instrumentation_Shared {
                 x.Name.Equals(ldArgInstruction.Operand.ToString(), StringComparison.OrdinalIgnoreCase)).Index;
         }
 
-        public static Type DetectType(this Instruction instruction, IReadOnlyList<ParameterDefinition> methodParams) {
+        public static Type DetectType(this Instruction instruction, IReadOnlyList<ParameterDefinition> methodParams,
+            IReadOnlyDictionary<string, string> localVarTypes) {
             var opCode = instruction.OpCode.ToString();
-            
+
             if (instruction.Operand is FieldDefinition operand) {
-                switch (operand.FieldType.Name) {
-                    case "Int32":
-                        return typeof(int);
-                    case "Double":
-                    case "Int64":
-                        return typeof(double);
+                return GetCSharpTypeByName(operand.FieldType.Name);
+            }
+
+            //get the type based on the associated stloc instruction
+            if (instruction.IsLoadLocalVariable()) {
+                var isTypeInferred = localVarTypes.TryGetValue(instruction.Operand.ToString(), out var typeName);
+
+                if (isTypeInferred) {
+                    return GetCSharpTypeByName(typeName);
                 }
             }
-            
+
             //checking methodParams.Count is for the situations which there exists a ldarg but in fact it is getting the "this"
             if (instruction.IsLoadArgument() && methodParams.Count > 0) {
                 var argIndex = instruction.GetArgumentIndex(methodParams);
 
                 var x = methodParams[argIndex].ParameterType;
 
-                switch (x.Name) {
-                    case "Int32":
-                        return typeof(int);
-                    case "Double":
-                    case "Int64":
-                        return typeof(double);
-                }
-            }
-            else if (opCode.Contains("ldloc", StringComparison.OrdinalIgnoreCase)) {
-                //var typeName = instruction.Operand.
-                Console.WriteLine();
+                return GetCSharpTypeByName(x.Name);
             }
 
             if (opCode.Contains("i4", StringComparison.OrdinalIgnoreCase))
                 return typeof(int);
-            else if (opCode.Contains("i8", StringComparison.OrdinalIgnoreCase))
+            if (opCode.Contains("i8", StringComparison.OrdinalIgnoreCase))
                 return typeof(double);
 
-            // else if (opCode.Contains("ldfld", StringComparison.OrdinalIgnoreCase)) {
-            //     Console.WriteLine();
-            //     
-            // }
-
-            return null; //TODO
+            throw new Exception($"Unable to detect the associated data type for instruction: {instruction}");
         }
+
+        private static Type GetCSharpTypeByName(string typeName) {
+            switch (typeName) {
+                case "Int32":
+                case "Boolean":
+                    return typeof(int);
+                case "Double":
+                case "Int64":
+                    return typeof(double);
+                case "Single":
+                    return typeof(float);
+            }
+
+            throw new Exception($"Unable to detect the c# data type for {typeName}");
+        }
+
+        public static bool IsStoreLocalVariable(this Instruction instruction) =>
+            instruction.OpCode.ToString().StartsWith("stloc", StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsLoadLocalVariable(this Instruction instruction) =>
+            instruction.OpCode.ToString().StartsWith("ldloc", StringComparison.OrdinalIgnoreCase) &&
+            !instruction.OpCode.ToString().StartsWith("ldloca", StringComparison.OrdinalIgnoreCase);
     }
 }

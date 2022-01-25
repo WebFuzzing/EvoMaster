@@ -150,7 +150,17 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         [InlineData(8, 7, true)]
         [InlineData(4, 4400, false)]
         [InlineData(99, 99, false)]
-        public void TestGreaterThan(double a, double b, bool expectedResult) {
+        public void TestGreaterThanForDouble(double a, double b, bool expectedResult) {
+            var actualResult = _numericOperations.GreaterThan(a, b);
+        
+            Assert.Equal(expectedResult, actualResult);
+        }
+        
+        [Theory]
+        [InlineData(8, 7, true)]
+        [InlineData(4, 4400, false)]
+        [InlineData(99, 99, false)]
+        public void TestGreaterThanForFloat(float a, float b, bool expectedResult) {
             var actualResult = _numericOperations.GreaterThan(a, b);
         
             Assert.Equal(expectedResult, actualResult);

@@ -51,11 +51,11 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
             return -1;
         }
         
-        // public bool GreaterThan(float a, float b) {
-        //     if (a > b)
-        //         return true;
-        //     else
-        //         return false;
-        // }
+        public bool GreaterThan(float a, float b) {
+            if (a > b)
+                return true;
+            else
+                return false;
+        }
     }
 }

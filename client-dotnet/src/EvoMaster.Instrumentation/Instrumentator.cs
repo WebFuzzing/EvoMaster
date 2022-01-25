@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using EvoMaster.Client.Util.Extensions;
 using EvoMaster.Instrumentation_Shared;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -21,8 +22,10 @@ namespace EvoMaster.Instrumentation {
         private MethodReference _enteringBranchProbe;
         private MethodReference _compareAndComputeDistanceProbeForInt;
         private MethodReference _compareAndComputeDistanceProbeForDouble;
+        private MethodReference _compareAndComputeDistanceProbeForFloat;
         private MethodReference _computeDistanceForOneArgJumpsProbeForInt;
         private MethodReference _computeDistanceForOneArgJumpsProbeForDouble;
+        private MethodReference _computeDistanceForOneArgJumpsProbeForFloat;
         private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
 
         private readonly List<CodeCoordinate> _alreadyCompletedPoints = new List<CodeCoordinate>();
@@ -72,6 +75,13 @@ namespace EvoMaster.Instrumentation {
                             typeof(double), typeof(double), typeof(string), typeof(string), typeof(string), typeof(int),
                             typeof(int)
                         }));
+            _compareAndComputeDistanceProbeForFloat =
+                module.ImportReference(
+                    typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
+                        new[] {
+                            typeof(float), typeof(float), typeof(string), typeof(string), typeof(string), typeof(int),
+                            typeof(int)
+                        }));
 
             _computeDistanceForOneArgJumpsProbeForInt = module.ImportReference(
                 typeof(Probes).GetMethod(nameof(Probes.ComputeDistanceForOneArgJumps),
@@ -80,6 +90,10 @@ namespace EvoMaster.Instrumentation {
             _computeDistanceForOneArgJumpsProbeForDouble = module.ImportReference(
                 typeof(Probes).GetMethod(nameof(Probes.ComputeDistanceForOneArgJumps),
                     new[] {typeof(double), typeof(string), typeof(string), typeof(int), typeof(int)}));
+
+            _computeDistanceForOneArgJumpsProbeForFloat = module.ImportReference(
+                typeof(Probes).GetMethod(nameof(Probes.ComputeDistanceForOneArgJumps),
+                    new[] {typeof(float), typeof(string), typeof(string), typeof(int), typeof(int)}));
 
             foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
                 _alreadyCompletedPoints.Clear();
@@ -98,6 +112,8 @@ namespace EvoMaster.Instrumentation {
 
                     var lastBranch = 0; //jumps per line counter
 
+                    var localVariableTypes = new Dictionary<string, string>();
+
                     for (var i = 0; i < int.MaxValue; i++) {
                         Instruction instruction;
                         try {
@@ -105,6 +121,19 @@ namespace EvoMaster.Instrumentation {
                         }
                         catch (ArgumentOutOfRangeException) {
                             break;
+                        }
+
+                        if (instruction.IsStoreLocalVariable()) {
+                            switch (instruction.Operand) {
+                                case VariableDefinition definition:
+                                    localVariableTypes.TryAddOrUpdate(definition.ToString(),
+                                        definition.VariableType.Name);
+                                    break;
+                                case FieldDefinition fieldDefinition:
+                                    localVariableTypes.TryAddOrUpdate(fieldDefinition.ToString(),
+                                        fieldDefinition.FieldType.Name);
+                                    break;
+                            }
                         }
 
                         if (instruction.Next != null && instruction.Next.Next != null) {
@@ -120,7 +149,7 @@ namespace EvoMaster.Instrumentation {
                                 if (l != lastEnteredLine) lastBranch = 0;
 
                                 i = InsertEnteringBranchProbe(instruction, method.Body.Instructions, ilProcessor,
-                                    method.Parameters.ToList(), i,
+                                    method.Parameters.ToList(), localVariableTypes, i,
                                     type.Name, l,
                                     lastBranch);
 
@@ -141,7 +170,7 @@ namespace EvoMaster.Instrumentation {
                             }
 
                             i = InsertComputeDistanceForOneArgJumpsProbe(instruction, ilProcessor,
-                                method.Parameters.ToList(), i, type.Name, l,
+                                method.Parameters.ToList(), localVariableTypes, i, type.Name, l,
                                 lastBranch - 1); //TODO: do further check for branchId
                         }
 
@@ -286,7 +315,8 @@ namespace EvoMaster.Instrumentation {
         }
 
         private int InsertEnteringBranchProbe(Instruction instruction, IEnumerable<Instruction> instructions,
-            ILProcessor ilProcessor, IReadOnlyList<ParameterDefinition> methodParams, int byteCodeIndex,
+            ILProcessor ilProcessor, IReadOnlyList<ParameterDefinition> methodParams,
+            IReadOnlyDictionary<string, string> localVarTypes, int byteCodeIndex,
             string className, int lineNo, int branchId) {
             _registeredTargets.Branches.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, true));
             _registeredTargets.Branches.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, false));
@@ -308,11 +338,10 @@ namespace EvoMaster.Instrumentation {
             instruction.UpdateJumpsToTheCurrentInstruction(classNameInstruction, instructions);
 
             var branchIns = instruction.Next.Next;
-            Console.WriteLine($"1* {instruction}");
-            Console.WriteLine($"2* {instruction.Next}");
-            Console.WriteLine($"3* {instruction.Next.Next}");
+            
             byteCodeIndex =
-                InsertCompareAndComputeDistanceProbe(branchIns, ilProcessor, methodParams, byteCodeIndex, className,
+                InsertCompareAndComputeDistanceProbe(branchIns, ilProcessor, methodParams, localVarTypes, byteCodeIndex,
+                    className,
                     lineNo,
                     branchId);
 
@@ -320,20 +349,20 @@ namespace EvoMaster.Instrumentation {
         }
 
         private int InsertCompareAndComputeDistanceProbe(Instruction branchInstruction, ILProcessor ilProcessor,
-            IReadOnlyList<ParameterDefinition> methodParams,
+            IReadOnlyList<ParameterDefinition> methodParams, IReadOnlyDictionary<string, string> localVarTypes,
             int byteCodeIndex, string className, int lineNo, int branchId) {
             MethodReference probe = null;
 
             if (branchInstruction.IsConditionalInstructionWithTwoArgs()) {
-                var type = branchInstruction.Previous.DetectType(methodParams) ??
-                           branchInstruction.Previous.Previous.DetectType(methodParams);
+                var type = branchInstruction.Previous.DetectType(methodParams, localVarTypes) ??
+                           branchInstruction.Previous.Previous.DetectType(methodParams, localVarTypes);
 
                 if (type == typeof(int))
                     probe = _compareAndComputeDistanceProbeForInt;
                 else if (type == typeof(double))
                     probe = _compareAndComputeDistanceProbeForDouble;
-                else if(type==null)
-                    probe = _compareAndComputeDistanceProbeForInt; //TODO
+                else if (type == typeof(float))
+                    probe = _compareAndComputeDistanceProbeForFloat;
                 //TODO: other types
             }
 
@@ -450,17 +479,19 @@ namespace EvoMaster.Instrumentation {
         }
 
         private int InsertComputeDistanceForOneArgJumpsProbe(Instruction branchInstruction, ILProcessor ilProcessor,
-            IReadOnlyList<ParameterDefinition> methodParams,
+            IReadOnlyList<ParameterDefinition> methodParams, IReadOnlyDictionary<string, string> localVarTypes,
             int byteCodeIndex, string className, int lineNo, int branchId) {
             MethodReference probe = null;
-            var type = branchInstruction.Previous.DetectType(methodParams);
+            var type = branchInstruction.Previous.DetectType(methodParams, localVarTypes);
 
             if (type == typeof(int))
                 probe = _computeDistanceForOneArgJumpsProbeForInt;
             else if (type == typeof(double))
                 probe = _computeDistanceForOneArgJumpsProbeForDouble;
-            else if (type ==null)
-                probe = _computeDistanceForOneArgJumpsProbeForInt;//TODO
+            else if (type == typeof(float))
+                probe = _computeDistanceForOneArgJumpsProbeForFloat;
+            // else probe = _computeDistanceForOneArgJumpsProbeForInt;
+            //TODO: other types
 
             ilProcessor.InsertBefore(branchInstruction, ilProcessor.Create(OpCodes.Dup));
             byteCodeIndex++;
