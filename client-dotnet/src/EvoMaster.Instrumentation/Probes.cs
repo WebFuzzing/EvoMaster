@@ -65,14 +65,16 @@ namespace EvoMaster.Instrumentation {
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
-                    return val1 == val2 ? 1 : 0;
+                    return val1.Equals(val2) ? 1 : 0;
+                
                 case "clt":
-                    return val1 < val2 ? 1 : 0;
                 case "clt_un":
+                case "clt.un":
                     return val1 < val2 ? 1 : 0;
+                
                 case "cgt":
-                    return val1 > val2 ? 1 : 0;
                 case "cgt_un":
+                case "cgt.un":
                     return val1 > val2 ? 1 : 0;
             }
 
@@ -86,13 +88,15 @@ namespace EvoMaster.Instrumentation {
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1.Equals(val2) ? 1 : 0;
+                
                 case "clt":
-                    return val1 < val2 ? 1 : 0;
                 case "clt_un":
+                case "clt.un":
                     return val1 < val2 ? 1 : 0;
+                
                 case "cgt":
-                    return val1 > val2 ? 1 : 0;
                 case "cgt_un":
+                case "cgt.un":
                     return val1 > val2 ? 1 : 0;
             }
 
@@ -106,13 +110,15 @@ namespace EvoMaster.Instrumentation {
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1.Equals(val2) ? 1 : 0;
+                
                 case "clt":
-                    return val1 < val2 ? 1 : 0;
                 case "clt_un":
+                case "clt.un":
                     return val1 < val2 ? 1 : 0;
+                
                 case "cgt":
-                    return val1 > val2 ? 1 : 0;
                 case "cgt_un":
+                case "cgt.un":
                     return val1 > val2 ? 1 : 0;
             }
 
@@ -126,13 +132,15 @@ namespace EvoMaster.Instrumentation {
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1.Equals(val2) ? 1 : 0;
+                
                 case "clt":
-                    return val1 < val2 ? 1 : 0;
                 case "clt_un":
+                case "clt.un":
                     return val1 < val2 ? 1 : 0;
+                
                 case "cgt":
-                    return val1 > val2 ? 1 : 0;
                 case "cgt_un":
+                case "cgt.un":
                     return val1 > val2 ? 1 : 0;
             }
 
@@ -146,13 +154,15 @@ namespace EvoMaster.Instrumentation {
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1.Equals(val2) ? 1 : 0;
+                
                 case "clt":
-                    return val1 < val2 ? 1 : 0;
                 case "clt_un":
+                case "clt.un":
                     return val1 < val2 ? 1 : 0;
+                
                 case "cgt":
-                    return val1 > val2 ? 1 : 0;
                 case "cgt_un":
+                case "cgt.un":
                     return val1 > val2 ? 1 : 0;
             }
 
