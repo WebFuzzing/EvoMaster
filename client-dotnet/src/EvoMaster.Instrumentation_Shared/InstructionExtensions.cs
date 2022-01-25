@@ -141,6 +141,9 @@ namespace EvoMaster.Instrumentation_Shared {
             if (opCode.Contains("r4", StringComparison.OrdinalIgnoreCase))
                 return typeof(float);
 
+            if (instruction.OpCode == OpCodes.Ldlen)
+                return typeof(int);
+            
             throw new Exception($"Unable to detect the associated data type for instruction: {instruction}");
         }
 
