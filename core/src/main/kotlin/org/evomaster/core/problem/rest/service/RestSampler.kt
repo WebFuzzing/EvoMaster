@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.tracer.Traceable
@@ -399,14 +399,13 @@ class RestSampler : AbstractRestSampler(){
         }
     }
 
-    private fun createSingleCallOnEachEndpoint(auth: AuthenticationInfo) {
+    private fun createSingleCallOnEachEndpoint(auth: HttpWsAuthenticationInfo) {
         actionCluster.asSequence()
                 .filter { a -> a.value is RestCallAction }
                 .forEach { a ->
                     val copy = a.value.copy() as RestCallAction
                     copy.auth = auth
                     randomizeActionGenes(copy)
-                    randomizeActionGenes(copy, false)
                     val ind = createIndividual(mutableListOf(copy))
                     adHocInitialIndividuals.add(ind)
                 }

@@ -19,6 +19,8 @@ import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.rpc.service.RPCModule
 import org.evomaster.core.problem.web.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
@@ -259,6 +261,8 @@ class Main {
                     config.problemType = EMConfig.ProblemType.REST
                 } else if (info.graphQLProblem != null){
                     config.problemType = EMConfig.ProblemType.GRAPHQL
+                } else if (info.rpcProblem != null){
+                    config.problemType = EMConfig.ProblemType.RPC
                 } else {
                     throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
                 }
@@ -284,6 +288,14 @@ class Main {
                         GraphQLBlackBoxModule(config.bbExperiments)
                     } else {
                         GraphQLModule()
+                    }
+                }
+
+                EMConfig.ProblemType.RPC ->{
+                    if (config.blackBox){
+                        throw IllegalStateException("NOT SUPPORT black-box for RPC yet")
+                    }else{
+                        RPCModule()
                     }
                 }
 
@@ -358,6 +370,25 @@ class Main {
             }
         }
 
+        private fun getAlgorithmKeyRPC(config: EMConfig): Key<out SearchAlgorithm<RPCIndividual>> {
+
+            return when {
+                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+                    Key.get(object : TypeLiteral<RandomAlgorithm<RPCIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.MIO ->
+                    Key.get(object : TypeLiteral<MioAlgorithm<RPCIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.WTS ->
+                    Key.get(object : TypeLiteral<WtsAlgorithm<RPCIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.MOSA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
+
+                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
+            }
+        }
+
         private fun getAlgorithmKeyRest(config: EMConfig): Key<out SearchAlgorithm<RestIndividual>> {
 
             return when {
@@ -389,6 +420,7 @@ class Main {
             val key = when (config.problemType) {
                 EMConfig.ProblemType.REST -> getAlgorithmKeyRest(config)
                 EMConfig.ProblemType.GRAPHQL -> getAlgorithmKeyGraphQL(config)
+                EMConfig.ProblemType.RPC -> getAlgorithmKeyRPC(config)
                 else -> throw IllegalStateException("Unrecognized problem type ${config.problemType}")
             }
 

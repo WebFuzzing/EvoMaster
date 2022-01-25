@@ -3,10 +3,9 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
+import org.evomaster.core.problem.httpws.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
@@ -15,7 +14,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class RestStructureMutator : HttpWsStructureMutator() {
+class RestStructureMutator : ApiWsStructureMutator() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestStructureMutator::class.java)
@@ -26,37 +25,7 @@ class RestStructureMutator : HttpWsStructureMutator() {
 
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
-
-        if (!config.shouldGenerateSqlData()) {
-            return
-        }
-
-        val ind = individual.individual as? RestIndividual
-            ?: throw IllegalArgumentException("Invalid individual type")
-
-        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
-            //TODO likely to remove/change once we ll support VIEWs
-            .filter { sampler.canInsertInto(it.key) }
-
-        if (fw.isEmpty()) {
-            return
-        }
-
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
-
-        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
-        log.trace("{} insertions are added at structure mutator", addedInsertions?.flatten()?.size?:0)
-
-        ind.repairInitializationActions(randomness)
-
-        // update impact based on added genes
-        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                    mutatedGenes,
-                    old,
-                    addedInsertions
-            )
-        }
+        addInitializingActions(individual, mutatedGenes, sampler)
     }
 
 

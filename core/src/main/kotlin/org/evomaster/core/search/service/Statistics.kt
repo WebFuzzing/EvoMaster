@@ -6,7 +6,6 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
-import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger
@@ -201,10 +200,23 @@ class Statistics : SearchListener {
             // failedOracleExpectations - the number of calls in the individual that fail one active partial oracle.
             // However, 5xx are not counted here.
             add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
-            //this is the total of all potential faults, eg distinct500Faults + failedOracleExpectations + any other
+            /**
+             * this is the total of all potential faults, eg distinct500Faults + failedOracleExpectations + any other
+             * for RPC, this comprises internal errors, exceptions (declared and unexpected) and customized service errors
+             */
             //potential oracle we are going to introduce.
             //Note: that 500 (and 5xx in general) MUST not be counted in failedOracles
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
+
+            // RPC
+            add(Pair("rpcUnexpectedException", "" + solution.overall.rpcUnexpectedException(idMapper).size))
+            add(Pair("rpcDeclaredException", "" + solution.overall.rpcDeclaredException(idMapper).size))
+            add(Pair("rpcException", "" + solution.overall.rpcException(idMapper).size))
+            add(Pair("rpcInternalError", "" + solution.overall.rpcInternalError(idMapper).size))
+            add(Pair("rpcHandled", "" + solution.overall.rpcHandled(idMapper).size))
+            add(Pair("rpcHandledAndSuccess", "" + solution.overall.rpcHandledAndSuccess(idMapper).size))
+            add(Pair("rpcHandledButError", "" + solution.overall.rpcHandledButError(idMapper).size))
+            add(Pair("rpcSpecifiedServiceError", "" + solution.overall.rpcServiceError(idMapper).size))
 
             add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
             add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))

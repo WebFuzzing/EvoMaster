@@ -13,6 +13,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
+import org.evomaster.core.search.ActionResult
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -305,6 +306,29 @@ class RemoteController() : DatabaseExecutor {
         }
 
         return getData(dto)
+    }
+
+
+    /**
+     * execute [actionDto] through [ControllerConstants.NEW_ACTION] endpoints of EMController,
+     * @return execution response
+     */
+    fun executeNewRPCActionAndGetResponse(actionDto: ActionDto) : ActionResponseDto?{
+
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.NEW_ACTION)
+                    .request()
+                    .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<ActionResponseDto>>() {})
+
+        if (!checkResponse(response, dto, "Failed to execute RPC call")) {
+            return null
+        }
+
+        return dto?.data
     }
 
     fun registerNewAction(actionDto: ActionDto) : Boolean{

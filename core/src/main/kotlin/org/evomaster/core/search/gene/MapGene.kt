@@ -21,17 +21,24 @@ import org.slf4j.LoggerFactory
 class MapGene<K, V>(
         name: String,
         val template: PairGene<K, V>,
-        var maxSize: Int = MAX_SIZE,
+        var maxSize: Int? = null,
+        var minSize: Int? = null,
         private var elements: MutableList<PairGene<K, V>> = mutableListOf()
 ) : CollectionGene, Gene(name, elements)
         where K : Gene, V: Gene {
 
-    constructor(name : String, key: K, value: V, maxSize: Int): this(name, PairGene("template", key, value), maxSize)
+    constructor(name : String, key: K, value: V, maxSize: Int? = null, minSize: Int? = null): this(name, PairGene("template", key, value), maxSize, minSize)
 
     private var keyCounter = 0
 
     init {
-        if (elements.size > maxSize) {
+
+        if (minSize != null && maxSize != null && minSize!! > maxSize!!){
+            throw IllegalArgumentException(
+                "minSize (${minSize}) is greater than maxSize ($maxSize)")
+        }
+
+        if (maxSize != null && elements.size > maxSize!!) {
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
@@ -50,6 +57,7 @@ class MapGene<K, V>(
         return MapGene(name,
                 template.copyContent() as PairGene<K, V>,
                 maxSize,
+                minSize,
                 elements.map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
         )
     }
@@ -59,7 +67,8 @@ class MapGene<K, V>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         clearElements()
-        this.elements = other.elements.map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
+        // maxSize
+        this.elements = (if (maxSize!=null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
         addChildren(this.elements)
     }
 
@@ -80,17 +89,18 @@ class MapGene<K, V>(
 
         elements.clear()
         log.trace("Randomizing MapGene")
-        val n = randomness.nextInt(maxSize)
+        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeOrDefault())
         (0 until n).forEach {
             val gene = addRandomElement(randomness, false)
-            elements.add(gene)
+            // if the key of gene exists, the value would be replaced with the latest one
+            addElement(gene)
         }
-        addChildren(elements)
+        //addChildren(elements)
     }
 
     override fun isMutable(): Boolean {
         //it wouldn't make much sense to have 0, but let's just be safe here
-        return maxSize > 0
+        return getMaxSizeOrDefault() > 0
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -98,7 +108,7 @@ class MapGene<K, V>(
             throw IllegalStateException("Cannot mutate a immutable array")
         }
         val mutable = elements.filter { it.isMutable() }
-        if ( mutable.isEmpty() || mutable.size > maxSize){
+        if ( mutable.isEmpty() || mutable.size > getMaxSizeOrDefault()){
             return listOf()
         }
 
@@ -121,7 +131,7 @@ class MapGene<K, V>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
+        if(elements.size == getMinSizeOrDefault() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
             val gene = addRandomElement(randomness, false)
             elements.add(gene)
             addChild(gene)
@@ -155,7 +165,7 @@ class MapGene<K, V>(
     private fun isPrintable(pairGene: PairGene<K, V>): Boolean {
         val keyT = ParamUtil.getValueGene(pairGene.first)
         val valueT = pairGene.second
-        return (keyT is LongGene || keyT is StringGene || keyT is IntegerGene) &&
+        return (keyT is LongGene || keyT is StringGene || keyT is IntegerGene || keyT is EnumGene<*>) &&
                 (valueT !is CycleObjectGene && (valueT !is OptionalGene || valueT.isActive))
     }
 
@@ -216,11 +226,31 @@ class MapGene<K, V>(
      * we replace the existing one with [element]
      */
     fun addElement(element: PairGene<K, V>){
+        if (maxSize!= null && elements.size == maxSize)
+            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
         }
         elements.add(element)
         addChild(element)
+    }
+
+    /**
+     * add [element] to [elements]
+     * @return if the element is added successfully
+     */
+    fun addElement(element: Gene) : Boolean{
+        element as? PairGene<K, V> ?:return false
+        if (maxSize!= null && elements.size == maxSize)
+            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+
+        getElementsBy(element).forEach { e->
+            removeExistingElement(e)
+        }
+        elements.add(element)
+        addChild(element)
+        return true
     }
 
     /**
@@ -241,10 +271,10 @@ class MapGene<K, V>(
     private fun getElementsBy(pairGene: PairGene<K, V>): List<PairGene<K, V>>{
         val geneValue = ParamUtil.getValueGene(pairGene.first)
         /*
-            currently we only support Integer, String and LongGene
+            currently we only support Integer, String, LongGene, Enum
             TODO support other types if needed
          */
-        if (geneValue is IntegerGene || geneValue is StringGene || geneValue is LongGene){
+        if (geneValue is IntegerGene || geneValue is StringGene || geneValue is LongGene || geneValue is EnumGene<*>){
             return elements.filter { ParamUtil.getValueGene(it.first).containsSameValueAs(geneValue) }
         }
         return listOf()
@@ -267,4 +297,12 @@ class MapGene<K, V>(
 
         return gene
     }
+
+    override fun isEmpty(): Boolean {
+        return elements.isEmpty()
+    }
+
+    fun getMaxSizeOrDefault() = maxSize?: ArrayGene.MAX_SIZE
+
+    fun getMinSizeOrDefault() = minSize?: 0
 }

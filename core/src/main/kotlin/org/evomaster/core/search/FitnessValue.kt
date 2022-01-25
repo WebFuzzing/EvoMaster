@@ -7,8 +7,6 @@ import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.min
 
 /**
@@ -182,6 +180,83 @@ class FitnessValue(
         return targets.keys
                 .filter{idMapper.isFaultExpectation(it)}
                 .map{idMapper.getDescriptiveId(it)}
+    }
+
+    // RPC
+    /**
+     * a list targets related to RPC internal error
+     */
+    fun rpcInternalError(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCInternalError(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets related to unexpected exception in RPC
+     */
+    fun rpcUnexpectedException(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isUnexpectedException(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets related to declared exception in RPC
+     */
+    fun rpcDeclaredException(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCDeclaredException(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets related to exception in RPC
+     */
+    fun rpcException(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCException(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets representing handled RPC endpoint invocation
+     */
+    fun rpcHandled(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCHandled(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets representing successful RPC endpoint invocation
+     *  eg, such category could be specified by the user with driver
+     */
+    fun rpcHandledAndSuccess(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCHandledAndSuccess(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets representing handled RPC endpoint invocation,
+     * but it might reflect an error
+     *  eg, such category could be specified by the user with driver
+     */
+    fun rpcHandledButError(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCHandledButError(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets related to service error
+     * eg, such category could be specified by the user with driver
+     */
+    fun rpcServiceError(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCServiceError(it)}
+            .map { idMapper.getDescriptiveId(it) }
     }
 
     /**
