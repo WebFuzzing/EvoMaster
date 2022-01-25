@@ -12,7 +12,7 @@ internal class MapGeneTest{
         val s2 = PairGene.createStringPairGene(StringGene("string_2"))
         val targetFormat = OutputFormat.KOTLIN_JUNIT_5
 
-        val map = MapGene("PrintableMap", PairGene.createStringPairGene(StringGene("map")), 7, mutableListOf(s1, s2))
+        val map = MapGene("PrintableMap", PairGene.createStringPairGene(StringGene("map")), 7, null, mutableListOf(s1, s2))
         val mapstring = map.getValueAsPrintableString(targetFormat = targetFormat)
 
         assertTrue(mapstring.contains(s1.getValueAsPrintableString(targetFormat = targetFormat), ignoreCase = true))
@@ -56,5 +56,46 @@ internal class MapGeneTest{
         map.addElement(s4)
         //replace the existing pair with s4
         assertTrue(map.getValueAsPrintableString(targetFormat = targetFormat).contains("\"1\":\"bar\"", ignoreCase = true))
+    }
+
+    @Test
+    fun testEnumKeyStringValue(){
+        val enumValues = listOf("ONE", "TWO", "THREE")
+
+        val enumKey0 = EnumGene("key_1", enumValues)
+        enumKey0.index = enumKey0.values.indexOf("ONE")
+        val strValue0 = StringGene("key_1", "foo")
+
+        val enumKey1 = EnumGene("key_2", enumValues)
+        enumKey1.index = enumKey0.values.indexOf("TWO")
+        val strValue1 = StringGene("key_2", "foo")
+
+
+        val map = MapGene("PrintableMap", enumKey0.copy() as EnumGene<*>, strValue0.copy() as StringGene, 7)
+        val s1 = PairGene("key_1",enumKey0, strValue0)
+        map.addElement(s1)
+        val s2 = PairGene("key_2", enumKey1, strValue1)
+        map.addElement(s2)
+
+        val targetFormat = OutputFormat.KOTLIN_JUNIT_5
+
+        val mapstring = map.getValueAsPrintableString(targetFormat = targetFormat)
+        assertEquals("\"ONE\":\"foo\"", s1.getValueAsPrintableString(targetFormat = targetFormat))
+        assertEquals("\"TWO\":\"foo\"", s2.getValueAsPrintableString(targetFormat = targetFormat))
+
+
+        assertTrue(mapstring.contains("\"ONE\":\"foo\"", ignoreCase = true))
+        assertTrue(mapstring.contains("\"TWO\":\"foo\"", ignoreCase = true))
+
+
+        val enumKey1New = EnumGene("key_2", enumValues)
+        enumKey1New.index = enumKey0.values.indexOf("TWO")
+        val strValue1New = StringGene("key_2", "bar")
+        val s2New = PairGene("key_2",enumKey1New as EnumGene<*>, strValue1New)
+        assertTrue(map.containsKey(s2New))
+        map.addElement(s2New)
+        //replace the existing pair with s2New
+        assertTrue(map.getValueAsPrintableString(targetFormat = targetFormat).contains("\"TWO\":\"bar\"", ignoreCase = true))
+        assertEquals(2, map.getAllElements().size)
     }
 }

@@ -98,6 +98,13 @@ abstract class TestCaseWriter {
      */
     protected abstract fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>)
 
+    /**
+     * handle action call generation
+     * @param action is the call to be generated
+     * @param lines are generated lines which save the generated test scripts
+     * @param result is the execution result of the action
+     * @param baseUrlOfSut is the base url of sut
+     */
     protected abstract fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String)
 
     protected abstract fun shouldFailIfException(result: ActionResult): Boolean

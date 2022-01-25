@@ -14,7 +14,7 @@ public class AHypermuationTestBase extends SpringTestBase {
     @BeforeAll
     public static void initClass() throws Exception {
 
-        SpringTestBase.initClass(new AHypermutationRestController());
+        SpringTestBase.initClass(new AHypermutationRestController(0));
     }
 
 

@@ -130,6 +130,7 @@
         <mariadb.java.client.version>2.7.2</mariadb.java.client.version>
         <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
         <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
+        <thrift.libthrift.version>0.15.0</thrift.libthrift.version>
     </properties>
 
 
@@ -689,6 +690,14 @@
                 <version>${jetbrains.annotations.version}</version>
                 <scope>test</scope>
             </dependency>
+
+            <!-- RPC-->
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${thrift.libthrift.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

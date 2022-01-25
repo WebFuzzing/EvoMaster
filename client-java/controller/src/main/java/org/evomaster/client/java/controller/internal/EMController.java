@@ -6,12 +6,18 @@ import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
+import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
+import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.GraphQlProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.RestProblem;
+import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -196,6 +202,29 @@ public class EMController {
             GraphQlProblem p = (GraphQlProblem) info;
             dto.graphQLProblem = new GraphQLProblemDto();
             dto.graphQLProblem.endpoint= removePrefix(p.getEndpoint(), baseUrlOfSUT);
+        } else if(info instanceof RPCProblem){
+            dto.rpcProblem = new RPCProblemDto();
+            // extract RPCSchema
+            sutController.extractRPCSchema();
+            Map<String, InterfaceSchema> rpcSchemas = sutController.getRPCSchema();
+            if (rpcSchemas == null || rpcSchemas.isEmpty()){
+                return Response.status(500).entity(WrappedResponseDto.withError("Fail to extract RPC interface schema")).build();
+            }
+            List<RPCInterfaceSchemaDto> schemas = new ArrayList<>();
+            for (InterfaceSchema s: rpcSchemas.values()){
+                schemas.add(s.getDto());
+            }
+            dto.rpcProblem.schemas = schemas;
+            Map<Integer, LocalAuthSetupSchema> localMap = sutController.getLocalAuthSetupSchemaMap();
+            if (localMap!= null && !localMap.isEmpty()){
+                dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
+                dto.rpcProblem.localAuthEndpoints = new ArrayList<>();
+                for (Map.Entry<Integer, LocalAuthSetupSchema> e : localMap.entrySet()){
+                    dto.rpcProblem.localAuthEndpointReferences.add(e.getKey());
+                    dto.rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
+                }
+            }
+
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);
@@ -486,6 +515,39 @@ public class EMController {
 
             //this MUST not be inside a noKillSwitch, as it sets to false
             sutController.newAction(dto);
+
+            if (dto.rpcCall != null){
+                ActionResponseDto authResponseDto = null;
+                if (dto.rpcCall.authSetup != null){
+                    // execute auth setup
+                    authResponseDto = new ActionResponseDto();
+                    try{
+                        if (LocalAuthSetupSchema.isLocalAuthSetup(dto.rpcCall.authSetup)){
+                            sutController.executeHandleLocalAuthenticationSetup(dto.rpcCall.authSetup, authResponseDto);
+                        }else
+                            sutController.executeAction(dto.rpcCall.authSetup, authResponseDto);
+                    }catch (Exception e){
+                        String msg = "Fail to execute auth setup and thrown exception: " + e.getMessage();
+                        SimpleLogger.error(msg, e);
+                    }
+                }
+
+                ActionResponseDto responseDto = new ActionResponseDto();
+                responseDto.index = index;
+                try{
+                    sutController.executeAction(dto.rpcCall, responseDto);
+                    if (authResponseDto!= null && authResponseDto.testScript!=null && !authResponseDto.testScript.isEmpty()){
+                        responseDto.testScript.addAll(0, authResponseDto.testScript);
+                    }
+                    return Response.status(200).entity(WrappedResponseDto.withData(responseDto)).build();
+                }catch (Exception e){
+                    // TODO handle exception on responseDto later
+                    String msg = "Thrown exception: " + e.getMessage();
+                    SimpleLogger.error(msg, e);
+                    return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+                }
+
+            }
         }
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();

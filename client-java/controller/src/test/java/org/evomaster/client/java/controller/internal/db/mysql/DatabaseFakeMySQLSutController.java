@@ -29,7 +29,7 @@ public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
 
     @Override
     public ProblemInfo getProblemInfo() {
-        return new RestProblem(null, null);
+        return new RestProblem("null", null);
     }
 
     @Override

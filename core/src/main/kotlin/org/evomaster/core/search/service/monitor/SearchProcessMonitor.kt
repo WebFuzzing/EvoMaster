@@ -9,24 +9,20 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
 import org.evomaster.core.utils.ReportWriter.writeByChannel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
 import javax.annotation.PostConstruct
 
 

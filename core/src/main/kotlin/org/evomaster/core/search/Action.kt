@@ -43,4 +43,16 @@ abstract class Action(children: List<out StructuralElement>) : StructuralElement
         forceNewValue: Boolean,
         all: List<Action> = listOf())
 
+
+    /**
+     * removing all binding which refers to [this] gene
+     */
+    fun removeThisFromItsBindingGenes(){
+        seeGenes().forEach { g->
+            g.flatView().forEach { r->
+                r.removeThisFromItsBindingGenes()
+            }
+        }
+    }
+
 }

@@ -6,8 +6,9 @@ Furthermore, slides of presentations can be  found [here](presentations.md).
 These can be useful if you want to know more on how _EvoMaster_ works internally,
 e.g., details on the Many Independent Objective (MIO) algorithm.
 
-To help replicating previous studies, for most of these papers we also provide the scripts used to setup the experiments.
+To help to replicate previous studies, for most of these papers we also provide the scripts used to setup the experiments.
 This explained in more details [here](replicating_studies.md).
+Also, some of these papers provides full replication packages, which are linked directly in the papers (and not stored in this repository).
 
 ### 2022
 
@@ -15,7 +16,7 @@ This explained in more details [here](replicating_studies.md).
   *JavaScript Instrumentation for Search-Based Software Testing: A Study with RESTful APIs*.
   IEEE International Conference on Software Testing, Validation and Verification (ICST). (*to appear*)
   [[PDF](publications/2022_icst.pdf)]
-  [[Scripts](exp/2022_icst.py)]
+  
 
 ### 2021
 
