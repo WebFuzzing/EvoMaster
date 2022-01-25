@@ -1,16 +1,13 @@
 {
-  "swagger": "2.0",
+  "openapi": "3.0.1",
   "info": {
-    "description": "Expectation test - Expect tests",
     "version": "1.0",
     "title": "API"
   },
-  "host": "localhost:8080",
-  "basePath": "/api/expectations",
-  "tags": [
+  "servers": [
     {
-      "name": "expectations-test",
-      "description": "Expectations Rest"
+      "url": "http://localhost:8080/api/expectations/",
+      "description": "Expectation Test"
     }
   ],
   "paths": {
@@ -21,23 +18,26 @@
         ],
         "summary": "get-string",
         "operationId": "getString",
-        "produces": [
-          "*/*"
-        ],
         "parameters": [
           {
-            "name": "value",
+            "name": "s",
             "in": "path",
             "description": "value",
             "required": true,
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "type": "string"
+            "content": {
+              "*/*" : {
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "401": {
@@ -60,23 +60,26 @@
         ],
         "summary": "get-numeric",
         "operationId": "getNumeric",
-        "produces": [
-          "*/*"
-        ],
         "parameters": [
           {
             "name": "s",
             "in": "path",
             "description": "value",
             "required": true,
-            "type": "integer"
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "type": "string"
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "401": {
@@ -99,23 +102,26 @@
         ],
         "summary": "get-input",
         "operationId": "getInput",
-        "produces": [
-          "*/*"
-        ],
         "parameters": [
           {
             "name": "s",
             "in": "path",
             "description": "value",
             "required": true,
-            "type": "boolean"
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "type": "string"
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
             }
           },
           "401": {
@@ -138,23 +144,26 @@
         ],
         "summary": "get-obj",
         "operationId": "getObject",
-        "produces": [
-          "*/*"
-        ],
         "parameters": [
           {
             "name": "s",
             "in": "path",
             "description": "value",
             "required": true,
-            "type": "integer"
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/ExampleObject"
+            "content": {
+              "*/*" : {
+                "schema": {
+                  "$ref": "#/components/schemas/ExampleObject"
+                }
+              }
             }
           },
           "401": {
@@ -180,23 +189,26 @@
         ],
         "summary": "get-obj",
         "operationId": "getObject",
-        "produces": [
-          "*/*"
-        ],
         "parameters": [
           {
             "name": "s",
             "in": "path",
             "description": "value",
             "required": true,
-            "type": "integer"
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/OtherExampleObject"
+            "content": {
+              "*/*" : {
+                "schema": {
+                  "$ref": "#/components/schemas/OtherExampleObject"
+                }
+              }
             }
           },
           "401": {
@@ -219,25 +231,28 @@
         ],
         "summary": "get-objs",
         "operationId": "getMultipleObjects",
-        "produces": [
-          "*/*"
-        ],
         "parameters": [
           {
             "name": "s",
             "in": "path",
             "description": "value",
             "required": true,
-            "type": "integer"
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "OK",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ExampleObject"
+            "content": {
+              "*/*" : {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExampleObject"
+                  }
+                }
               }
             }
           },
@@ -255,37 +270,40 @@
       }
     }
   },
-  "definitions": {
-    "ExampleObject": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
+  "components": {
+    "schemas": {
+      "ExampleObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
         },
-        "name": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        }
+        "required": ["id", "name"]
       },
-      "required": ["id", "name"]
-    },
-    "OtherExampleObject": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "namn": {
-          "type": "string"
-        },
-        "category": {
-          "type": "string"
+      "OtherExampleObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "namn": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          }
         }
       }
+
     }
   }
 }

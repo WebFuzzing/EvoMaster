@@ -91,8 +91,21 @@ abstract class ImplementedOracle {
         val swagger = objectGenerator.getSwagger()
         val basePath = RestActionBuilderV3.getBasePathFromURL(swagger)
 
+        // This is likely where the problem is.
+        /*
+        If the basepath is empty - it shows up as "/" leading to "//" in the final path.
+        if the basepath is not empty, ignoring it also causes problems.
+         */
+
+        val adjustedBasePath = if (basePath.endsWith("/")) {
+            basePath.dropLast(1)
+        }
+        else{
+            basePath
+        }
+
         val possibleItems = objectGenerator.getSwagger().paths.filter{ e ->
-            call.path.toString().contentEquals(e.key)
+            call.path.toString().contentEquals(adjustedBasePath + e.key)
             //call.path.toString().contentEquals(basePath+e.key)
         }
 

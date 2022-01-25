@@ -1,13 +1,12 @@
 package org.evomaster.e2etests.spring.openapi.v3.expectations
 
-import com.foo.rest.examples.spring.openapi.v3.expectations.ExpectationsTestController
+import com.foo.rest.examples.spring.openapi.v3.expectations.ExpectationBasicTestController
 import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.jetbrains.kotlin.diagnostics.WhenMissingCase
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertTimeoutPreemptively
@@ -15,74 +14,73 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Duration
 
-class ExpectationEMTest : SpringTestBase() {
-
-    companion object {
+class ExpectationBasicEMTest : SpringTestBase() {
+    companion object{
         @BeforeAll
         @JvmStatic
         fun init(){
-            initClass(ExpectationsTestController())
+            initClass(ExpectationBasicTestController())
         }
     }
 
     @Test
     fun testRunEMExpectationsOff() {
-        val outputFolderName = "ExpectationsEM"
-        val className = ClassName("org.foo.ExpectationEMOff")
+        val outputFolderName = "ExpectationsBasicEM"
+        val className = ClassName("org.foo.ExpectationBasicEMOff")
         val splitType = EMConfig.TestSuiteSplitType.NONE
         testRunEMGeneric(false, splitType, className)
 
         val assertion = generatedCodeAssertion(outputFolderName, className.bytecodeName, OutputFormat.KOTLIN_JUNIT_5, false)
-        assertTrue(assertion)
+        Assertions.assertTrue(assertion)
         compileRunAndVerifyTests(outputFolderName, className)
     }
 
     @Test
     fun testRunEMExpectationsOn() {
-        val outputFolderName = "ExpectationsEM"
-        val className = ClassName("org.foo.ExpectationEMOn")
+        val outputFolderName = "ExpectationsBasicEM"
+        val className = ClassName("org.foo.ExpectationBasicEMOn")
         val splitType = EMConfig.TestSuiteSplitType.NONE
         testRunEMGeneric(true, splitType, className)
 
         val assertion = generatedCodeAssertion(outputFolderName, className.bytecodeName, OutputFormat.KOTLIN_JUNIT_5, true)
-        assertTrue(assertion)
+        Assertions.assertTrue(assertion)
         compileRunAndVerifyTests(outputFolderName, className)
     }
 
     @Test
     fun testRunEMJavaExpectationsOff() {
-        val outputFolderName = "ExpectationsEM"
-        val className = ClassName("org.foo.ExpectationEMJavaOff")
+        val outputFolderName = "ExpectationsBasicEM"
+        val className = ClassName("org.foo.ExpectationBasicEMJavaOff")
         val splitType = EMConfig.TestSuiteSplitType.NONE
 
         testRunEMGeneric(false, splitType, className, OutputFormat.JAVA_JUNIT_5)
 
         val assertion = generatedCodeAssertion(outputFolderName, className.bytecodeName, OutputFormat.JAVA_JUNIT_5, false)
-        assertTrue(assertion)
+        Assertions.assertTrue(assertion)
     }
 
     @Test
     fun testRunEMJavaExpectationsOn() {
-        val outputFolderName = "ExpectationsEM"
-        val className = ClassName("org.foo.ExpectationEMJavaOn")
+        val outputFolderName = "ExpectationsBasicEM"
+        val className = ClassName("org.foo.ExpectationBasicEMJavaOn")
         val splitType = EMConfig.TestSuiteSplitType.NONE
 
         testRunEMGeneric(true, splitType, className, OutputFormat.JAVA_JUNIT_5)
 
         val assertion = generatedCodeAssertion(outputFolderName, className.bytecodeName, OutputFormat.JAVA_JUNIT_5, true)
-        assertTrue(assertion)
+        Assertions.assertTrue(assertion)
     }
 
     // Tests to check the split and default values
     @Test
     fun testRunEM_Split_ExpectationsOff() {
-        val outputFolderName = "ExpectationsEM"
-        val className = ClassName("org.foo.ExpectationEMOff")
+        val outputFolderName = "ExpectationsBasicEM"
+        val className = ClassName("org.foo.ExpectationBasicEMOff")
         val splitType = EMConfig.TestSuiteSplitType.CLUSTER
         testRunEMGeneric(false, splitType, className)
 
         val assertion = generatedCodeAssertion(outputFolderName, "${className.bytecodeName}_faults", OutputFormat.KOTLIN_JUNIT_5, false)
-        assertTrue(assertion)
+        Assertions.assertTrue(assertion)
         //compileRunAndVerifyTests(outputFolderName, ClassName("${className.bytecodeName}_faults"))
     }
 
@@ -119,11 +117,12 @@ class ExpectationEMTest : SpringTestBase() {
         else args.set(ind, splitType.name)
     }
 
+
     fun testRunEMGeneric(expectationActive: Boolean = true,
                          testSuiteSplitType: EMConfig.TestSuiteSplitType = EMConfig.TestSuiteSplitType.NONE,
                          className: ClassName,
                          outputFormat: OutputFormat? = OutputFormat.KOTLIN_JUNIT_5){
-        val outputFolderName = "ExpectationsEM"
+        val outputFolderName = "ExpectationsBasicEM"
         val iterations = 1000
 
         val lambda = {args: MutableList<String> ->
@@ -137,24 +136,13 @@ class ExpectationEMTest : SpringTestBase() {
             }*/
 
             val solution = initAndRun(args)
-            assertTrue(solution.individuals.size >= 1)
+            Assertions.assertTrue(solution.individuals.size >= 1)
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/basicResponsesString/{s}", "Success!")
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/basic/exp/okString/{s}", "Success!")
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/basicResponsesNumeric/{s}", "42")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/expectations/basicResponsesNumeric/{s}", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/basic/exp/badString/{s}", null)
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/basicInput/{s}", "42")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/expectations/basicInput/{s}", null)
-
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/responseObj/{s}", "successes")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/responseObj/{s}", "{")
-
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/responseUnsupObj/{s}", "validObject_")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/responseUnsupObj/{s}", "object_")
-
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/responseMultipleObjs/{s}", "[")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/responseMultipleObjs/{s}", "[")
+            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/basic/exp/failString/{s}", null)
 
         }
 
@@ -162,9 +150,9 @@ class ExpectationEMTest : SpringTestBase() {
             clearGeneratedFiles(outputFolderName, className)
             handleFlaky {
                 val args : MutableList<String> = getArgsWithCompilation(iterations,
-                outputFolderName,
-                className,
-                true)
+                        outputFolderName,
+                        className,
+                        true)
                 setOutputFormat(args, outputFormat)
 
                 lambda.invoke(args)

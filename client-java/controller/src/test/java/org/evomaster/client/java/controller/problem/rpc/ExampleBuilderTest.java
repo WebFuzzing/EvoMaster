@@ -114,7 +114,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 }},
                 new CustomizedRequestValueDto() {{
                     specificEndpointName = "handleCustomizedRequestB";
-                    keyValues = new keyValuesDto() {{
+                    keyValues = new KeyValuesDto() {{
                         key = "value";
                         values = Arrays.asList("0.42", "42.42", "100.42");
                     }};

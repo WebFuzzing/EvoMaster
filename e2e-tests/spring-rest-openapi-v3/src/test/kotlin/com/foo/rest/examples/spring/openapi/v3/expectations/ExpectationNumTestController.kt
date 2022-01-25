@@ -4,13 +4,13 @@ import com.foo.rest.examples.spring.openapi.v3.SpringController
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 
-class ExpectationsTestController : SpringController(ExpectationApplication::class.java) {
+class ExpectationNumTestController : SpringController(ExpectationNumApplication::class.java){
 
-    val OpenAPI_V2 = "swagger-expectation-test.json"
-    val OpenAPI_V3 = "openapi-expectation-test.json"
+    val openAPI_v2 = "swagger-num-test.json"
+    val openAPI_v3 = "openapi-num-test.json"
     override fun getProblemInfo(): ProblemInfo {
         return RestProblem(
-                "http://localhost:$sutPort/$OpenAPI_V2",
+                "http://localhost:$sutPort/$openAPI_v2",
                 null
         )
     }

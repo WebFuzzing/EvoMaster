@@ -123,6 +123,9 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
         }
         CodeJavaGenerator.addCode(codes, CodeJavaGenerator.junitAssertEquals(""+getValue().size(), CodeJavaGenerator.withSize(responseVarName)), indent);
 
+        if (maxAssertionForDataInCollection == 0)
+            return codes;
+
         if (doAssertion(getType().getTemplate().getType().getFirstTemplate())){
             List<Integer> nvalue = null;
             if (maxAssertionForDataInCollection > 0 && getValue().size() > maxAssertionForDataInCollection){

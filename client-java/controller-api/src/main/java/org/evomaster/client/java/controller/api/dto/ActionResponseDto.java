@@ -29,11 +29,27 @@ public class ActionResponseDto {
 
     /**
      * code for processing the action
+     *
+     * in generated test scripts, the action could be involved by either
+     * 1) executeRPCAction (a method in SutHandler) or
+     * 2) client.endpoint(args).
+     *
+     * For 1), we could process it from core side,
+     * while for 2), now it is handled from driver side.
+     *
+     * this attribute is to enable 2) generation.
      */
     public List<String> testScript;
 
     /**
      * code for assertions
+     *
+     * currently, the assertion generation is processed
+     * on driver side based on response instance returned after
+     * the endpoint is invoked.
+     *
+     * then this attribute contains a list of generated scripts
+     * for assertions on the response if it is not `void`
      */
     public List<String> assertionScript;
 

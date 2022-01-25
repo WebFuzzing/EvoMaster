@@ -17,5 +17,5 @@ public enum CustomizedCallResultCode {
     /**
      * other error scenarios, eg user error
      */
-    OTHERWISE_ERROR
+    OTHER_ERROR
 }

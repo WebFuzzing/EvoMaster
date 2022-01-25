@@ -24,6 +24,9 @@ class Statistics : SearchListener {
         private const val TEST_INDEX = "indexOfTests"
 
         const val TEST_TIMEOUTS = "testTimeouts"
+        const val DISTINCT_ACTIONS = "distinctActions"
+        const val COVERED_2XX = "covered2xx"
+        const val GQL_NO_ERRORS = "gqlNoErrors"
     }
 
     @Inject
@@ -182,10 +185,10 @@ class Statistics : SearchListener {
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
-            add(Pair("distinctActions", "" + distinctActions()))
+            add(Pair(DISTINCT_ACTIONS, "" + distinctActions()))
             add(Pair("endpoints", "" + distinctActions()))
-            add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
-            add(Pair("gqlNoErrors", "" + solution.overall.gqlNoErrors(idMapper).size))
+            add(Pair(COVERED_2XX, "" + covered2xxEndpoints(solution)))
+            add(Pair(GQL_NO_ERRORS, "" + solution.overall.gqlNoErrors(idMapper).size))
             add(Pair("gqlErrors", "" + solution.overall.gqlErrors(idMapper, withLine = false).size))
             add(Pair("gqlErrorsPerLines", "" + solution.overall.gqlErrors(idMapper, withLine = true).size))
             // Statistics on faults found

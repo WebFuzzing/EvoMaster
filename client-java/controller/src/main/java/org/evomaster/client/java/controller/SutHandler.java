@@ -99,8 +99,7 @@ public interface SutHandler {
      * otherwise return null
      * </p>
      *
-     * TOCHECK with Andrea if it is a proper place where we put this method
-     * this method is required
+     * might change string interfaceName to class interface
      *
      * @param interfaceName a full name of an interface
      * @return a client which could send requests to the interface
@@ -112,8 +111,6 @@ public interface SutHandler {
      * execute an RPC endpoint with evomaster driver
      * </p>
      *
-     * TODO Man: this might be removed later
-     *           or we could keep it as alternative
      *
      * @param json contains info of an RPC endpoint
      * @return value returned by this execution. it is nullable.
@@ -125,8 +122,7 @@ public interface SutHandler {
      * execute an RPC endpoint with evomaster driver
      * </p>
      *
-     * TOCHECK with Andrea if it is a proper place where we put this method
-     * this method is required
+     * TODO remove this later if we do not use test generation with driver
      */
     default void extractRPCSchema(){}
 
