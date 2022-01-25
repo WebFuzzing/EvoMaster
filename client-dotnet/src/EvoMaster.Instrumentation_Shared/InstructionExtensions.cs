@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EvoMaster.Instrumentation_Shared.Exceptions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -147,8 +148,8 @@ namespace EvoMaster.Instrumentation_Shared {
 
             if (instruction.OpCode == OpCodes.Ldlen)
                 return typeof(int);
-            
-            throw new Exception($"Unable to detect the associated data type for instruction: {instruction}");
+
+            throw new InstructionDataTypeNotInferredException(instruction);
         }
 
         private static Type GetCSharpTypeByName(string typeName) {
@@ -167,7 +168,7 @@ namespace EvoMaster.Instrumentation_Shared {
                     return typeof(double);
             }
 
-            throw new Exception($"Unable to detect the c# data type for {typeName}");
+            throw new CSharpDataTypeNotInferredException(typeName);
         }
 
         public static bool IsStoreLocalVariable(this Instruction instruction) =>
