@@ -25,13 +25,4 @@ namespace EvoMaster.Client.Util.Extensions {
             if (!addResult) dictionary[key] = val;
         }
     }
-
-    public static class ObjectExtensions {
-        public static T RequireNonNull<T>(this object obj) {
-            if (obj == null)
-                throw new NullReferenceException();
-
-            return (T) obj;
-        }
-    }
 }
