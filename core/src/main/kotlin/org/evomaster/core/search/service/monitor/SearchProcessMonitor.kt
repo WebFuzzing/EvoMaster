@@ -203,7 +203,7 @@ class SearchProcessMonitor: SearchListener {
         val solution = Solution(individuals = mutableListOf(evalInd), testSuiteNamePrefix = name, testSuiteNameSuffix = "")
         val content = writer.convertToCompilableTestCode(
                 solution = solution,
-                testSuiteFileName = testFile, controllerName = controllerName)
+                testSuiteFileName = testFile, controllerName = controllerName, controllerInput = null)
         writeByChannel(
                 Paths.get(getStepAsPath(index)),
                 content)

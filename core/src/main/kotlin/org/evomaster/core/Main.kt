@@ -468,7 +468,7 @@ class Main {
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
                 splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshotTimestamp) }
+                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshotTimestamp) }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult, snapshotTimestamp)
@@ -479,7 +479,7 @@ class Main {
                     TODO refactor all the PartialOracle stuff that is meant for only REST
                  */
 
-                writer.writeTests(solution, controllerInfoDto?.fullName, snapshotTimestamp)
+                writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshotTimestamp)
             }
         }
 
@@ -505,7 +505,7 @@ class Main {
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
                 splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshot) }
+                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult)
@@ -516,7 +516,7 @@ class Main {
                     TODO refactor all the PartialOracle stuff that is meant for only REST
                  */
 
-                writer.writeTests(solution, controllerInfoDto?.fullName)
+                writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath,)
             }
         }
 
@@ -609,7 +609,7 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             assert(controllerInfoDto == null || controllerInfoDto.fullName != null)
-            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName, snapshotTimestamp)
+            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshotTimestamp)
         }
     }
 }
