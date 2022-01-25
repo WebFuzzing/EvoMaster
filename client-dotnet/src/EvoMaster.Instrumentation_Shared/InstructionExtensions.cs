@@ -113,7 +113,11 @@ namespace EvoMaster.Instrumentation_Shared {
             if (instruction.Operand is VariableDefinition variableDefinition) {
                 return GetCSharpTypeByName(variableDefinition.VariableType.Name);
             }
-
+            
+            if (instruction.Operand is MethodReference methodReference) {
+                return GetCSharpTypeByName(methodReference.ReturnType.Name);
+            }
+            
             //get the type based on the associated stloc instruction
             if (instruction.IsLoadLocalVariable()) {
                 var isTypeInferred = localVarTypes.TryGetValue(instruction.Operand.ToString(), out var typeName);
