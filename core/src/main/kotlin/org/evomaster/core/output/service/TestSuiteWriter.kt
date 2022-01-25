@@ -356,7 +356,7 @@ class TestSuiteWriter {
     private fun staticVariables(controllerName: String?, controllerInput: String?, lines: Lines) {
 
         val executable = if(controllerInput.isNullOrBlank()) ""
-            else "\"$controllerInput\""
+            else "\"$controllerInput\"".replace("\\","\\\\")
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
