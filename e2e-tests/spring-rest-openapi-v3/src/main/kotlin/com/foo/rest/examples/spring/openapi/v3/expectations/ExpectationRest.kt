@@ -21,18 +21,20 @@ class ExpectationRest {
             @PathVariable("s") succeeded: Int
     ): ResponseEntity<Int> {
         val result = if (succeeded >= 0) 42
-                else throw IllegalArgumentException("I don't like negative numbers, and you gave me a $succeeded")
+                else return ResponseEntity.status(500).build()
+                    //throw IllegalArgumentException("I don't like negative numbers, and you gave me a $succeeded")
         return ResponseEntity.ok(result)
     }
 
     // A test looking at getting the wrong input
     @GetMapping(path = ["/basicInput/{s}"])
     fun getInput(
-            @PathVariable("s") succeeded: Int
+            @PathVariable("s") succeeded: Boolean
     ): ResponseEntity<String> {
-        val result = if (succeeded >= 0) 42
-        else throw IllegalArgumentException("I don't like negative numbers, and you gave me a $succeeded")
-        return ResponseEntity.ok("Response: $result")
+        val result = if (succeeded) 42
+        else return ResponseEntity.status(500).build()
+            //throw IllegalArgumentException("I don't like negative numbers, and you gave me a $succeeded")
+        return ResponseEntity.ok("Response: ${result}")
     }
 
     // A test looking at wrong output type

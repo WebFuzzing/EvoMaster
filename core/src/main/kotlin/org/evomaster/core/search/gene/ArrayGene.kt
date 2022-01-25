@@ -10,7 +10,6 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.IllegalStateException
 
 
 /**
@@ -29,8 +28,13 @@ class ArrayGene<T>(
         /**
          *  How max elements to have in this array. Usually arrays are unbound, till the maximum int size (ie, 2 billion
          *  elements on the JVM). But, for search reasons, too large arrays are impractical
+         *
+         *  note that null maxSize means that the maxSize is not restricted,
+         *  then we employ the default max size [MAX_SIZE] for handling mutation and randomizing values
          */
-        var maxSize: Int = MAX_SIZE,
+        var maxSize: Int? = null,
+
+        var minSize: Int? = null,
         /**
          * The actual elements in the array, based on the template. Ie, usually those elements will be clones
          * of the templated, and then mutated/randomized
@@ -45,10 +49,17 @@ class ArrayGene<T>(
             clearElements()
         }
 
-        if (elements.size > maxSize) {
+        if (minSize != null && maxSize != null && minSize!! > maxSize!!){
+            throw IllegalArgumentException(
+                "minSize (${minSize}) is greater than maxSize ($maxSize)")
+        }
+
+        if (maxSize != null && elements.size > maxSize!!) {
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
+
+        // might not check min size in constructor
     }
 
     companion object{
@@ -68,6 +79,7 @@ class ArrayGene<T>(
         return ArrayGene<T>(name,
                 template.copyContent() as T,
                 maxSize,
+                minSize,
                 elements.map { e -> e.copyContent() as T }.toMutableList()
         )
     }
@@ -78,7 +90,8 @@ class ArrayGene<T>(
         }
 
         clearElements()
-        this.elements = other.elements.map { e -> e.copyContent() as T }.toMutableList()
+        // check maxSize
+        this.elements = (if(maxSize!= null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copyContent() as T }.toMutableList()
         // build parents for [element]
         addChildren(this.elements)
     }
@@ -99,7 +112,7 @@ class ArrayGene<T>(
             If it is greater than 0, it can always be mutated, regardless of whether the
             elements can be mutated: we can mutate between empty and 1-element arrays
          */
-        return maxSize > 0
+        return getMaxSizeOrDefault() > 0
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -112,7 +125,7 @@ class ArrayGene<T>(
         //maybe not so important here to complicate code to enable forceNewValue
         clearElements()
         log.trace("Randomizing ArrayGene")
-        val n = randomness.nextInt(maxSize)
+        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeOrDefault())
         (0 until n).forEach {
             val gene = template.copy() as T
 //            gene.parent = this
@@ -127,7 +140,7 @@ class ArrayGene<T>(
             throw IllegalStateException("Cannot mutate a immutable array")
         }
         val mutable = elements.filter { it.isMutable() }
-        if ( mutable.isEmpty() || mutable.size > maxSize){
+        if ( mutable.isEmpty() || mutable.size > getMaxSizeOrDefault()){
             return listOf()
         }
         val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
@@ -151,9 +164,8 @@ class ArrayGene<T>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
+        if(elements.size == getMinSizeOrDefault() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
             val gene = template.copy() as T
-//            gene.parent = this
             gene.randomize(randomness, false)
             elements.add(gene)
             addChild(gene)
@@ -235,9 +247,37 @@ class ArrayGene<T>(
      * add an element [element] to [elements]
      */
     fun addElement(element: T){
+        if (maxSize!= null && elements.size == maxSize)
+            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+
         elements.add(element)
         addChild(element)
     }
 
+    /**
+     * add an element [element] to [elements],
+     *      if the [element] does not conform with the [template], the addition could fail
+     *
+     * @return whether the element could be added into this elements
+     *
+     */
+    fun addElement(element: Gene) : Boolean{
+        element as? T ?: return false
+        if (maxSize!= null && elements.size == maxSize)
+            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+
+        elements.add(element)
+        addChild(element)
+        return true
+    }
+
     fun getAllElements() = elements
+
+    override fun isEmpty(): Boolean {
+        return elements.isEmpty()
+    }
+
+    fun getMaxSizeOrDefault() = maxSize?: MAX_SIZE
+
+    fun getMinSizeOrDefault() = minSize?: 0
 }

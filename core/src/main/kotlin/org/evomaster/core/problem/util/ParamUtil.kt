@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.util
 
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
