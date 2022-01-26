@@ -79,4 +79,11 @@ public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
         }
         return codes;
     }
+
+    @Override
+    public String getPrimitiveValue(String responseVarName) {
+        if (getType().isWrapper)
+            return responseVarName+".doubleValue()";
+        return responseVarName;
+    }
 }

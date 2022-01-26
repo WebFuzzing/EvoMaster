@@ -80,4 +80,11 @@ public class FloatParam extends PrimitiveOrWrapperParam<Float> {
         }
         return codes;
     }
+
+    @Override
+    public String getPrimitiveValue(String responseVarName) {
+        if (getType().isWrapper)
+            return responseVarName+".floatValue()";
+        return responseVarName;
+    }
 }
