@@ -932,6 +932,12 @@
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>0.8.7</version>
+                    <configuration>
+                        <excludes>
+                            <!--  Prevent SUTs in E2E to be part of coverage report -->
+                            <exclude>com/foo/**/*</exclude>
+                        </excludes>
+                    </configuration>
                     <executions>
                         <execution>
                             <id>default-prepare-agent</id>
