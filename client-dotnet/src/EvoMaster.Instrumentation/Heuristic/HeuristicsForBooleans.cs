@@ -12,10 +12,11 @@ namespace EvoMaster.Instrumentation.Heuristic{
          */
         public static void ComputeDistanceForSingleJump(string className, int line, int branchId, long value, string codeString){
             Truthness t = null;
-            var ok = Enum.TryParse(typeof(Code), codeString, true, out var opcode);
+            
+            var ok = Enum.TryParse(typeof(Code), codeString.Replace(".", "_"), true, out var opcode);
 
             if (!ok || !(opcode is Code code)){
-                SimpleLogger.Warn("cannot parse "+codeString + "as Code");
+                SimpleLogger.Warn("cannot parse "+codeString + " as Code");
                 return;
             }
 
@@ -36,10 +37,10 @@ namespace EvoMaster.Instrumentation.Heuristic{
         public static void ComputeDistanceForTwoArgs(string className, int line, int branchId, object firstValue, object secondValue, string codeString){
             
             Truthness t = null;
-            var ok = Enum.TryParse(typeof(Code), codeString, true, out var opcode);
+            var ok = Enum.TryParse(typeof(Code), codeString.Replace(".", "_"), true, out var opcode);
 
             if (!ok || !(opcode is Code code)){
-                SimpleLogger.Warn("cannot parse "+codeString + "as Code");
+                SimpleLogger.Warn("cannot parse "+codeString + " as Code");
                 return;
             }
             
