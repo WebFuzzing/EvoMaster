@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
+import javax.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 
@@ -68,12 +69,17 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
-    public void setKillSwitch(boolean b) {
+    public final void setKillSwitch(boolean b) {
         ExecutionTracer.setKillSwitch(b);
     }
 
     @Override
-    public void setExecutingInitSql(boolean executingInitSql) {
+    public final void setExecutingInitSql(boolean executingInitSql) {
         ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
+
+    @Override
+    public final String getExecutableFullPath(){
+        return null; //not needed for embedded
     }
 }

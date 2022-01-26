@@ -53,11 +53,12 @@ class TestSuiteWriter {
     fun writeTests(
         solution: Solution<*>,
         controllerName: String?,
+        controllerInput: String?,
         snapshotTimestamp: String = ""
     ) {
 
         val name = TestSuiteFileName(solution.getFileName())
-        val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName)
+        val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName, controllerInput)
         saveToDisk(content, config, name)
     }
 
@@ -66,7 +67,8 @@ class TestSuiteWriter {
         solution: Solution<*>,
         testSuiteFileName: TestSuiteFileName,
         timestamp: String = "",
-        controllerName: String?
+        controllerName: String?,
+        controllerInput: String?
     ): String {
 
         val lines = Lines()
@@ -85,7 +87,7 @@ class TestSuiteWriter {
 
         classFields(lines, config.outputFormat)
 
-        beforeAfterMethods(controllerName, lines, config.outputFormat, testSuiteFileName)
+        beforeAfterMethods(controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
 
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
@@ -363,18 +365,21 @@ class TestSuiteWriter {
     }
 
 
-    private fun staticVariables(controllerName: String?, lines: Lines) {
+    private fun staticVariables(controllerName: String?, controllerInput: String?, lines: Lines) {
+
+        val executable = if(controllerInput.isNullOrBlank()) ""
+            else "\"$controllerInput\"".replace("\\","\\\\")
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
-                lines.add("private static final SutHandler $controller = new $controllerName();")
+                lines.add("private static final SutHandler $controller = new $controllerName($executable);")
                 lines.add("private static String $baseUrlOfSut;")
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
             }
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
-                lines.add("private val $controller : SutHandler = $controllerName()")
+                lines.add("private val $controller : SutHandler = $controllerName($executable)")
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\"")
@@ -564,6 +569,7 @@ class TestSuiteWriter {
 
     private fun beforeAfterMethods(
         controllerName: String?,
+        controllerInput: String?,
         lines: Lines,
         format: OutputFormat,
         testSuiteFileName: TestSuiteFileName
@@ -572,7 +578,7 @@ class TestSuiteWriter {
         lines.addEmpty()
 
         val staticInit = {
-            staticVariables(controllerName, lines)
+            staticVariables(controllerName, controllerInput, lines)
 
             if (!format.isCsharp()) {
                 lines.addEmpty(2)

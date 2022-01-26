@@ -251,6 +251,7 @@ public class EMController {
         ControllerInfoDto dto = new ControllerInfoDto();
         dto.fullName = noKillSwitch(() -> sutController.getClass().getName());
         dto.isInstrumentationOn = noKillSwitch(() -> sutController.isInstrumentationActivated());
+        dto.executableFullPath = noKillSwitch(() -> sutController.getExecutableFullPath());
 
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
