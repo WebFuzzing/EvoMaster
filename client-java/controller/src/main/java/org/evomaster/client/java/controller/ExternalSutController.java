@@ -54,12 +54,16 @@ public abstract class ExternalSutController extends SutController {
      */
     private volatile String javaCommand = "java";
 
+    public int getWaitingSecondsForIncomingConnection() {
+        return 20_000;
+    }
+
     @Override
     public final void setupForGeneratedTest(){
         //TODO how to handle P6Spy here??? We don't want the spy.log files
     }
 
-    public void setInstrumentation(boolean instrumentation) {
+    public final void setInstrumentation(boolean instrumentation) {
         this.instrumentation = instrumentation;
     }
 
@@ -138,7 +142,7 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public String startSut() {
+    public final String startSut() {
 
         SimpleLogger.info("Going to start the SUT");
 
@@ -286,13 +290,13 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public boolean isSutRunning() {
+    public final boolean isSutRunning() {
         return process != null && process.isAlive();
     }
 
 
     @Override
-    public void stopSut() {
+    public final void stopSut() {
 
         SimpleLogger.info("Going to stop the SUT");
 
@@ -357,7 +361,7 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public void setKillSwitch(boolean b) {
+    public final void setKillSwitch(boolean b) {
         checkInstrumentation();
 
         serverController.setKillSwitch(b);
@@ -365,11 +369,21 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public void setExecutingInitSql(boolean executingInitSql) {
+    public final void setExecutingInitSql(boolean executingInitSql) {
         checkInstrumentation();
         serverController.setExecutingInitSql(executingInitSql);
         // sync executingInitSql on the local ExecutionTracer
         ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
+
+    @Override
+    public final String getExecutableFullPath(){
+        validateJarPath();
+
+        //this might be relative
+        String path = getPathToExecutableJar();
+
+        return Paths.get(path).toAbsolutePath().toString();
     }
 
     //-----------------------------------------
@@ -475,9 +489,5 @@ public abstract class ExternalSutController extends SutController {
 
             outputPrinter.start();
         }
-    }
-
-    public int getWaitingSecondsForIncomingConnection() {
-        return 20_000;
     }
 }
