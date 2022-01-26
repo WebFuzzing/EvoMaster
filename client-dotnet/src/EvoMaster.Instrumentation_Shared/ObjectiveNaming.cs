@@ -24,17 +24,17 @@ namespace EvoMaster.Instrumentation_Shared {
         /**
      * Prefix identifier for branch coverage objectives
      */
-        private const string Branch = "Branch";
+        public const string Branch = "Branch";
 
         /**
      * Tag used in a branch id to specify it is for the "true"/then branch
      */
-        private const string TrueBranch = "_trueBranch";
+        public const string TrueBranch = "_trueBranch";
 
         /**
      * Tag used in a branch id to specify it is for the "false"/else branch
      */
-        private const string FalseBranch = "_falseBranch";
+        public const string FalseBranch = "_falseBranch";
 
         /**
      * Prefix identifier for MethodReplacement objectives, where we want
