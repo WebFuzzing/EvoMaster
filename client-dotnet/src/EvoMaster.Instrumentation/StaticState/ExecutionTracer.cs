@@ -250,6 +250,17 @@ namespace EvoMaster.Instrumentation.StaticState {
             return ObjectiveCoverage.Values.Count(x => x.DescriptiveId.StartsWith(prefix) && x.Value < 1);
         }
 
+        /**
+         * return a set of description of targets which are not covered
+         */
+        public static ISet<string> GetNonCoveredObjectives(string prefix){
+
+            return ObjectiveCoverage
+                .Where(e => prefix == null || e.Key.StartsWith(prefix))
+                .Where(e => e.Value.Value < 1)
+                .Select(e => e.Key).ToHashSet();
+        }
+        
         private static AdditionalInfo GetCurrentAdditionalInfo() {
             lock (Lock) {
                 return AdditionalInfoList[_actionIndex];

@@ -12,15 +12,13 @@ namespace EvoMaster.Instrumentation.Heuristic{
          */
         public static void ComputeDistanceForSingleJump(string className, int line, int branchId, long value, string codeString){
             Truthness t = null;
-            var ok = Enum.TryParse(typeof(Code), codeString, out var opcode);
+            var ok = Enum.TryParse(typeof(Code), codeString, true, out var opcode);
 
-            if (!ok || opcode is Code){
+            if (!ok || !(opcode is Code code)){
                 SimpleLogger.Warn("cannot parse "+codeString + "as Code");
                 return;
             }
 
-            var code = (Code) opcode;
-                
             if (HeuristicsForJumps.CODES.Contains(code)){
                 t = HeuristicsForJumps.GetForSingleValueJump(value, code);
             }
@@ -38,15 +36,13 @@ namespace EvoMaster.Instrumentation.Heuristic{
         public static void ComputeDistanceForTwoArgs(string className, int line, int branchId, object firstValue, object secondValue, string codeString){
             
             Truthness t = null;
-            var ok = Enum.TryParse(typeof(Code), codeString, out var opcode);
+            var ok = Enum.TryParse(typeof(Code), codeString, true, out var opcode);
 
-            if (!ok || opcode is Code){
+            if (!ok || !(opcode is Code code)){
                 SimpleLogger.Warn("cannot parse "+codeString + "as Code");
                 return;
             }
-
-            var code = (Code) opcode;
-
+            
             if (HeuristicsForNonintegerComparisons.CODES.Contains(code)){
                 if (firstValue is double dfvalue && secondValue is double dsvalue){
                     t = HeuristicsForNonintegerComparisons.GetForFloatAndDoubleComparison(dfvalue,
@@ -57,7 +53,10 @@ namespace EvoMaster.Instrumentation.Heuristic{
                 } else if (firstValue is long lfvalue && secondValue is long lsvalue){
                     t = HeuristicsForNonintegerComparisons.GetForLongComparison(lfvalue,
                         lsvalue, code);
-                } 
+                } else if (firstValue is int ifvalue && secondValue is int isvalue){
+                    t = HeuristicsForNonintegerComparisons.GetForLongComparison(ifvalue,
+                        isvalue, code);
+                }
             }
 
             if (t != null){
