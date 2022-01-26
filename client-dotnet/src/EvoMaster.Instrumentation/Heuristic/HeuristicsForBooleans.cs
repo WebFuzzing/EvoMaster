@@ -24,7 +24,7 @@ namespace EvoMaster.Instrumentation.Heuristic{
             }
 
             if (t != null){
-                ExecutionTracer.UpdateBranchDistance(className, line, branchId, t);
+                ExecutionTracer.UpdateBranchDistance(className, line, branchId, codeString, t);
             } else{
                 SimpleLogger.Warn("Do not support to compute heuristics for types ("+value.GetType().FullName+")"+ " with opcode" + code);
             }
@@ -60,7 +60,7 @@ namespace EvoMaster.Instrumentation.Heuristic{
             }
 
             if (t != null){
-                ExecutionTracer.UpdateBranchDistance(className, line, branchId, t);
+                ExecutionTracer.UpdateBranchDistance(className, line, branchId, codeString, t);
             } else{
                 SimpleLogger.Warn("Do not support to compute heuristics for types ("+firstValue.GetType().FullName+","+secondValue.GetType().FullName+")"+ " with opcode" + code);
             }
