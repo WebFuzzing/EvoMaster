@@ -5,13 +5,14 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
         private int globalVar1 = 7;
         private int globalVar2 = 8;
         private static int staticVar = 7;
+
         public bool GreaterThan(double a, double b) {
             if (a > b)
                 return true;
             else
                 return false;
         }
-        
+
         public bool GreaterThan(int a, int b) {
             if (a > b)
                 return true;
@@ -27,6 +28,7 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
                 return 1;
             return -1;
         }
+
         public int CompareWithGlobalVariable(int a) {
             if (a == globalVar1)
                 return 0;
@@ -34,7 +36,7 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
                 return 1;
             return -1;
         }
-        
+
         public int CompareTwoGlobalVariables() {
             if (globalVar2 == globalVar1)
                 return 0;
@@ -42,7 +44,7 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
                 return 1;
             return -1;
         }
-        
+
         public int CompareWithStaticVariable(int a) {
             if (a == staticVar)
                 return 0;
@@ -50,21 +52,30 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
                 return 1;
             return -1;
         }
-        
+
         public bool GreaterThan(float a, float b) {
             if (a > b)
                 return true;
             else
                 return false;
         }
+
         public bool GreaterThan(long a, long b) {
             if (a > b)
                 return true;
             else
                 return false;
         }
+
         public bool GreaterThan(short a, short b) {
             if (a > b)
+                return true;
+            else
+                return false;
+        }
+
+        public bool CompareWithInfinite(int a, int b) {
+            if (a / 0 > b)
                 return true;
             else
                 return false;
