@@ -111,4 +111,12 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     public PrivateFieldInResponseDto accessFieldDtoCheck(PrivateFieldInRequestDto dto) {
         return null;
     }
+
+    @Override
+    public ByteResponse byteResponse(byte arg1, Byte arg2) {
+        ByteResponse res = new ByteResponse();
+        res.byteValue = arg2;
+        res.pbyteValue = arg1;
+        return res;
+    }
 }

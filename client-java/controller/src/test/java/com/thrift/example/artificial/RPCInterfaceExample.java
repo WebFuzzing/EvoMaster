@@ -42,4 +42,6 @@ public interface RPCInterfaceExample {
     public void login(AuthLoginDto dto);
 
     public PrivateFieldInResponseDto accessFieldDtoCheck(PrivateFieldInRequestDto dto);
+
+    public ByteResponse byteResponse(byte arg1, Byte arg2);
 }
