@@ -70,12 +70,10 @@ namespace EvoMaster.Instrumentation {
                     return val1.Equals(val2) ? 1 : 0;
                 
                 case "clt":
-                case "clt_un":
                 case "clt.un":
                     return val1 < val2 ? 1 : 0;
                 
                 case "cgt":
-                case "cgt_un":
                 case "cgt.un":
                     return val1 > val2 ? 1 : 0;
             }
@@ -93,12 +91,10 @@ namespace EvoMaster.Instrumentation {
                     return val1.Equals(val2) ? 1 : 0;
                 
                 case "clt":
-                case "clt_un":
                 case "clt.un":
                     return val1 < val2 ? 1 : 0;
                 
                 case "cgt":
-                case "cgt_un":
                 case "cgt.un":
                     return val1 > val2 ? 1 : 0;
             }
@@ -116,12 +112,10 @@ namespace EvoMaster.Instrumentation {
                     return val1.Equals(val2) ? 1 : 0;
                 
                 case "clt":
-                case "clt_un":
                 case "clt.un":
                     return val1 < val2 ? 1 : 0;
                 
                 case "cgt":
-                case "cgt_un":
                 case "cgt.un":
                     return val1 > val2 ? 1 : 0;
             }
@@ -139,12 +133,10 @@ namespace EvoMaster.Instrumentation {
                     return val1.Equals(val2) ? 1 : 0;
                 
                 case "clt":
-                case "clt_un":
                 case "clt.un":
                     return val1 < val2 ? 1 : 0;
                 
                 case "cgt":
-                case "cgt_un":
                 case "cgt.un":
                     return val1 > val2 ? 1 : 0;
             }
@@ -162,12 +154,10 @@ namespace EvoMaster.Instrumentation {
                     return val1.Equals(val2) ? 1 : 0;
                 
                 case "clt":
-                case "clt_un":
                 case "clt.un":
                     return val1 < val2 ? 1 : 0;
                 
                 case "cgt":
-                case "cgt_un":
                 case "cgt.un":
                     return val1 > val2 ? 1 : 0;
             }
