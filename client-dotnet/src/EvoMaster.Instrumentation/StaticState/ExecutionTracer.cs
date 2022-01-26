@@ -234,9 +234,9 @@ namespace EvoMaster.Instrumentation.StaticState {
         //     UpdateObjective(ObjectiveNaming.NumericComparisonObjectiveName(idTemplate, +1), gt);
         // }
 
-        public static void UpdateBranchDistance(string className, int line, int branchId, Truthness t){
-            var forThen = ObjectiveNaming.BranchObjectiveName(className, line, branchId, true);
-            var forElse = ObjectiveNaming.BranchObjectiveName(className, line, branchId, false);
+        public static void UpdateBranchDistance(string className, int line, int branchId, string opCode, Truthness t){
+            var forThen = ObjectiveNaming.BranchObjectiveName(className, line, branchId, opCode, true);
+            var forElse = ObjectiveNaming.BranchObjectiveName(className, line, branchId, opCode, false);
 
             UpdateObjective(forThen, t.GetOfTrue());
             UpdateObjective(forElse, t.GetOfFalse());

@@ -131,7 +131,13 @@ namespace EvoMaster.Instrumentation_Shared {
                 ConcurrentDictionary<string,
                     IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>(); //TODO: capacity 10_000
 
-        public static string BranchObjectiveName(string className, int line, int branchId, bool thenBranch) {
+        /**
+         * in .net, a position at a line might result in more than one branch related opCodes,
+         * eg, > could have cgt and brfalse, then in order to describe branch targets, we include opCode to
+         * define its description.
+         * note that opCode is a postfix used in branch description
+         */
+        public static string BranchObjectiveName(string className, int line, int branchId, string opCode, bool thenBranch) {
             var m0 =
                 BranchCache.ComputeIfAbsent(className,
                     k => new ConcurrentDictionary<int,
