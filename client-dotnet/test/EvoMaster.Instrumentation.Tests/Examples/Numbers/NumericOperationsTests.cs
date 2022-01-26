@@ -1,11 +1,12 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using EvoMaster.Instrumentation.Examples.Numbers;
 using Xunit;
 
 namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
     [Collection("Sequential")]
     public class NumericOperationsTests {
-                private readonly NumericOperations _numericOperations = new NumericOperations();
+        private readonly NumericOperations _numericOperations = new NumericOperations();
 
         [Theory]
         [InlineData(8, 7, true)]
@@ -82,6 +83,12 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
             var actualResult = _numericOperations.CompareTwoGlobalVariables();
 
             Assert.Equal(1, actualResult);
+        }
+
+        [Theory]
+        [InlineData(6, 3)]
+        public void TestCompareWithInfinite(int a, int b) {
+            Assert.Throws<DivideByZeroException>(() => _numericOperations.CompareWithInfinite(a, b));
         }
     }
 }
