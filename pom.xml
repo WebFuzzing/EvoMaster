@@ -936,6 +936,7 @@
                         <excludes>
                             <!--  Prevent SUTs in E2E to be part of coverage report -->
                             <exclude>com/foo/**/*</exclude>
+                            <exclude>com/thrift/example/**/*</exclude>
                         </excludes>
                     </configuration>
                     <executions>
