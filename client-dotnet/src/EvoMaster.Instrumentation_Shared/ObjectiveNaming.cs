@@ -69,13 +69,13 @@ namespace EvoMaster.Instrumentation_Shared {
         private static readonly IDictionary<string, string> CacheClass = new ConcurrentDictionary<string, string>();
 
         public static string ClassObjectiveName(string className) {
-            return CacheClass.ComputeIfAbsent(className, c => Class + "_" + ClassName.Get(c).GetFullNameWithDots());
+            return CacheClass.ComputeIfAbsent(className, c => $"{Class}_{ClassName.Get(c).GetFullNameWithDots()}");
             //string name = CLASS + "_" + ClassName.get(className).getFullNameWithDots();
             //return name;//.intern();
         }
 
         public static string NumericComparisonObjectiveName(string id, int res) {
-            var name = NumericComparison + "_" + id + "_" + (res == 0 ? "EQ" : (res < 0 ? "LT" : "GT"));
+            var name = $"{NumericComparison}_{id}_{(res == 0 ? "EQ" : (res < 0 ? "LT" : "GT"))}";
             return name; //.intern();
         }
 
@@ -88,12 +88,11 @@ namespace EvoMaster.Instrumentation_Shared {
                 LineCache.ComputeIfAbsent(className,
                     c => new ConcurrentDictionary<int, string>()); //TODO: capacity 1000
             return map.ComputeIfAbsent(line,
-                l => Line + "_at_" + ClassName.Get(className).GetFullNameWithDots() + "_" + PadNumber(line));
+                l => $"{Line}_at_{ClassName.Get(className).GetFullNameWithDots()}_{PadNumber(line)}");
         }
 
         public static string StatementObjectiveName(string className, int line, int index) =>
-            Statement + "_" + className + "_"
-            + PadNumber(line) + "_" + index;
+            $"{Statement}_{className}_{PadNumber(line)}_{index}";
 
         //TODO: capacity 10_000
         private static readonly IDictionary<string, IDictionary<int, IDictionary<int, string>>> CacheSuccessCall =
@@ -106,27 +105,27 @@ namespace EvoMaster.Instrumentation_Shared {
             var
                 m1 = m0.ComputeIfAbsent(line, l => new ConcurrentDictionary<int, string>()); //TODO: capacity 10
             return m1.ComputeIfAbsent(index, i =>
-                SuccessCall + "_at_" + ClassName.Get(className).GetFullNameWithDots() +
-                "_" + PadNumber(line) + "_" + index);
+                $"{SuccessCall}_at_{ClassName.Get(className).GetFullNameWithDots()}_{PadNumber(line)}_{index}");
         }
 
         public static string MethodReplacementObjectiveNameTemplate(string className, int line, int index) {
-            var name = MethodReplacement + "_at_" + ClassName.Get(className).GetFullNameWithDots() +
-                       "_" + PadNumber(line) + "_" + index;
+            var name =
+                $"{MethodReplacement}_at_{ClassName.Get(className).GetFullNameWithDots()}_{PadNumber(line)}_{index}";
             return name; //.intern();
         }
 
         public static string MethodReplacementObjectiveName(string template, bool result, ReplacementType type) {
             if (template == null || !template.StartsWith(MethodReplacement)) {
-                throw new ArgumentException("Invalid template for bool method replacement: " + template);
+                throw new ArgumentException($"Invalid template for bool method replacement: {template}");
             }
 
-            var name = template + "_" + type + "_" + result;
+            var name = $"{template}_{type}_{result}";
             return name; //.intern();
         }
 
 
-        private static readonly ConcurrentDictionary<string, IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>
+        private static readonly
+            ConcurrentDictionary<string, IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>
             BranchCache = new
                 ConcurrentDictionary<string,
                     IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>(); //TODO: capacity 10_000
@@ -137,7 +136,8 @@ namespace EvoMaster.Instrumentation_Shared {
          * define its description.
          * note that opCode is a postfix used in branch description
          */
-        public static string BranchObjectiveName(string className, int line, int branchId, string opCode, bool thenBranch) {
+        public static string BranchObjectiveName(string className, int line, int branchId, string opCode,
+            bool thenBranch) {
             var m0 =
                 BranchCache.ComputeIfAbsent(className,
                     k => new ConcurrentDictionary<int,
@@ -148,9 +148,8 @@ namespace EvoMaster.Instrumentation_Shared {
                 m2 = m1.ComputeIfAbsent(branchId, k => new ConcurrentDictionary<bool, string>()); //TODO: capacity 2
 
             return m2.ComputeIfAbsent(thenBranch, k => {
-                var name = Branch + "_at_" +
-                           ClassName.Get(className).GetFullNameWithDots()
-                           + "_at_line_" + PadNumber(line) + "_position_" + branchId;
+                var name =
+                    $"{Branch}_at_{ClassName.Get(className).GetFullNameWithDots()}_at_line_{PadNumber(line)}_position_{branchId}_opcode_{opCode}";
                 if (thenBranch) {
                     name += TrueBranch;
                 }
@@ -168,22 +167,22 @@ namespace EvoMaster.Instrumentation_Shared {
             }
 
             if (val < 10) {
-                return "0000" + val;
+                return $"0000{val}";
             }
 
             if (val < 100) {
-                return "000" + val;
+                return $"000{val}";
             }
 
             if (val < 1_000) {
-                return "00" + val;
+                return $"00{val}";
             }
 
             if (val < 10_000) {
-                return "0" + val;
+                return $"0{val}";
             }
             else {
-                return "" + val;
+                return $"{val}";
             }
         }
     }

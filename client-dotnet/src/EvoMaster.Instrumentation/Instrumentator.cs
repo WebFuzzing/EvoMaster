@@ -348,8 +348,11 @@ namespace EvoMaster.Instrumentation {
             ILProcessor ilProcessor, IReadOnlyList<ParameterDefinition> methodParams,
             IReadOnlyDictionary<string, string> localVarTypes, int byteCodeIndex,
             string className, int lineNo, int branchId) {
-            _registeredTargets.Branches.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, true));
-            _registeredTargets.Branches.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, false));
+            var opCode = instruction.OpCode.ToString();
+            _registeredTargets.Branches.Add(
+                ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, opCode, true));
+            _registeredTargets.Branches.Add(
+                ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, opCode, false));
 
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
