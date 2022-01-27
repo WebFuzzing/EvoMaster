@@ -4,8 +4,13 @@ on: [push]
 
 env:
   evomaster-version: 1.3.1
-  # Note: must NOT use 17 or above, due to madness of --add-opens
-  release-jdk: 11
+  # Unfortunately, to use JPackage we need JDK 17 or above :(
+  # Which is really bad due to the madness of --add-opens.
+  # Even if hunt down all cases of reflections in EM, there is still the problem of
+  # third-party libraries, which might do it only in special cases.
+  # For some "hilarious" case, see:
+  # https://github.com/EMResearch/EvoMaster/issues/447
+  release-jdk: 17
   retention-days: 3
 
 
