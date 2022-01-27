@@ -126,10 +126,11 @@ namespace EvoMaster.Instrumentation_Shared {
 
 
         private static readonly
-            ConcurrentDictionary<string, IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>
+            ConcurrentDictionary<string,
+                IDictionary<int, IDictionary<int, IDictionary<string, IDictionary<bool, string>>>>>
             BranchCache = new
                 ConcurrentDictionary<string,
-                    IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>(); //TODO: capacity 10_000
+                    IDictionary<int, IDictionary<int, IDictionary<string, IDictionary<bool, string>>>>>(); //TODO: capacity 10_000
 
         private static readonly ConcurrentHashSet<string> BranchCacheSet = new ConcurrentHashSet<string>();
 
@@ -141,9 +142,33 @@ namespace EvoMaster.Instrumentation_Shared {
          */
         public static string BranchObjectiveName(string className, int line, int branchId, string opCode,
             bool thenBranch) {
-            return thenBranch
-                ? $"{Branch}_at_{ClassName.Get(className).GetFullNameWithDots()}_at_line_{PadNumber(line)}_position_{branchId}_opcode_{opCode}_TrueBranch"
-                : $"{Branch}_at_{ClassName.Get(className).GetFullNameWithDots()}_at_line_{PadNumber(line)}_position_{branchId}_opcode_{opCode}_FalseBranch";
+            // return thenBranch
+            //     ? $"{Branch}_at_{ClassName.Get(className).GetFullNameWithDots()}_at_line_{PadNumber(line)}_position_{branchId}_opcode_{opCode}_TrueBranch"
+            //     : $"{Branch}_at_{ClassName.Get(className).GetFullNameWithDots()}_at_line_{PadNumber(line)}_position_{branchId}_opcode_{opCode}_FalseBranch";
+
+            var m0 =
+                BranchCache.ComputeIfAbsent(className,
+                    k => new ConcurrentDictionary<int,
+                        IDictionary<int, IDictionary<string, IDictionary<bool, string>>>>()); //TODO: capacity 10_000
+            var m1 = m0.ComputeIfAbsent(line,
+                k => new ConcurrentDictionary<int, IDictionary<string, IDictionary<bool, string>>>()); //TODO: capacity 10
+            var
+                m2 = m1.ComputeIfAbsent(branchId, k => new ConcurrentDictionary<string, IDictionary<bool, string>>()); //TODO: capacity 2
+
+            var m3 = m2.ComputeIfAbsent(opCode, k => new ConcurrentDictionary<bool, string>());
+            
+            return m3.ComputeIfAbsent(thenBranch, k => {
+                var name =
+                    $"{Branch}_at_{ClassName.Get(className).GetFullNameWithDots()}_at_line_{PadNumber(line)}_position_{branchId}_opcode_{opCode}";
+                if (thenBranch) {
+                    name += TrueBranch;
+                }
+                else {
+                    name += FalseBranch;
+                }
+
+                return name;
+            });
         }
 
         private static string PadNumber(int val) {
