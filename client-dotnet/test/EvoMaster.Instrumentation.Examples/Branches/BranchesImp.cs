@@ -28,7 +28,7 @@ namespace EvoMaster.Instrumentation.Examples.Branches{
             if(x==0) {
                 return 6;
             }
-
+            
             if(y!=0) {
                 return 7;
             }
