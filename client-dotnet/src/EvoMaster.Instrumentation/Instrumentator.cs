@@ -346,13 +346,15 @@ namespace EvoMaster.Instrumentation {
 
         private int InsertEnteringBranchProbe(Instruction instruction, IEnumerable<Instruction> instructions,
             ILProcessor ilProcessor, IReadOnlyList<ParameterDefinition> methodParams,
-            IReadOnlyDictionary<string, string> localVarTypes, int byteCodeIndex,
-            string className, int lineNo, int branchId) {
-            var opCode = instruction.OpCode.ToString();
+            IReadOnlyDictionary<string, string> localVarTypes, int byteCodeIndex, string className, int lineNo,
+            int branchId) {
+            var branchIns = instruction.Next.Next;
+            var branchOpCode = branchIns.OpCode.ToString();
+
             _registeredTargets.Branches.Add(
-                ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, opCode, true));
+                ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, branchOpCode, true));
             _registeredTargets.Branches.Add(
-                ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, opCode, false));
+                ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, branchOpCode, false));
 
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
@@ -369,8 +371,6 @@ namespace EvoMaster.Instrumentation {
             byteCodeIndex++;
 
             instruction.UpdateJumpsToTheCurrentInstruction(classNameInstruction, instructions);
-
-            var branchIns = instruction.Next.Next;
 
             byteCodeIndex =
                 InsertCompareAndComputeDistanceProbe(branchIns, ilProcessor, methodParams, localVarTypes, byteCodeIndex,
