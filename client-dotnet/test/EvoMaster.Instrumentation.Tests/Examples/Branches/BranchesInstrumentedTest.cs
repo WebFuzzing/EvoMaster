@@ -204,14 +204,8 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Branches{
             Assert.Equal(8, res);
         
             Assert.Equal(8, ExecutionTracer.GetNumberOfObjectives(ObjectiveNaming.Branch));
-            Assert.Equal(1, ExecutionTracer.GetNumberOfNonCoveredObjectives(ObjectiveNaming.Branch));
-            
-            res = bs.Eq(2, -1);
-
-            Assert.Equal(7, res);
-        
-            Assert.Equal(8, ExecutionTracer.GetNumberOfObjectives(ObjectiveNaming.Branch));
             Assert.Equal(0, ExecutionTracer.GetNumberOfNonCoveredObjectives(ObjectiveNaming.Branch));
+            
         }
 
         [Fact]
@@ -234,11 +228,6 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Branches{
             bs.Eq(0, 0);
             bs.Eq(4, 0);
             bs.Eq(5, 5);
-            // it is weird!
-            // y != 0 is converted into cgt.un
-            // in order to cover all branches,
-            // need set y < 0
-            bs.Eq(5, -1);
 
             Assert.Equal(28, ExecutionTracer.GetNumberOfObjectives(ObjectiveNaming.Branch));
             Assert.Equal(0, ExecutionTracer.GetNumberOfNonCoveredObjectives(ObjectiveNaming.Branch));

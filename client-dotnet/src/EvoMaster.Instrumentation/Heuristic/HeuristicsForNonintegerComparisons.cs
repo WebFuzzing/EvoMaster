@@ -23,7 +23,11 @@ namespace EvoMaster.Instrumentation.Heuristic{
             //https://docs.microsoft.com/en-us/dotnet/api/system.reflection.emit.opcodes.cgt_un?view=net-6.0
             Code.Cgt_Un
         };
-        
+
+        public static readonly ISet<Code> UNSIGNED = new HashSet<Code>(){
+            Code.Clt_Un, Code.Cgt_Un
+        };
+
         public static Truthness GetForFloatAndDoubleComparison(double firstValue, double secondValue, Code opcode){
             
             switch(opcode){
@@ -34,7 +38,7 @@ namespace EvoMaster.Instrumentation.Heuristic{
                     return TruthnessUtils.GetLessThanTruthness(firstValue, secondValue);
                 case Code.Cgt:
                 case Code.Cgt_Un:
-                    return TruthnessUtils.GetLessThanTruthness(firstValue, secondValue).Invert();
+                    return TruthnessUtils.GetLessThanTruthness(secondValue, firstValue);
                 
                 default:
                     throw new ArgumentException("Cannot handle opcode " + opcode+ " for double or float");
@@ -51,7 +55,20 @@ namespace EvoMaster.Instrumentation.Heuristic{
                     return TruthnessUtils.GetLessThanTruthness(firstValue, secondValue);
                 case Code.Cgt:
                 case Code.Cgt_Un:
-                    return TruthnessUtils.GetLessThanTruthness(firstValue, secondValue).Invert();
+                    return TruthnessUtils.GetLessThanTruthness(secondValue, firstValue);
+                
+                default:
+                    throw new ArgumentException("Cannot handle opcode " + opcode + " for long");
+            }
+        }
+        
+        public static Truthness GetForULongComparison(ulong firstValue, ulong secondValue, Code opcode){
+            
+            switch(opcode){
+                case Code.Clt_Un:
+                    return TruthnessUtils.GetLessThanTruthness(firstValue, secondValue);
+                case Code.Cgt_Un:
+                    return TruthnessUtils.GetLessThanTruthness(secondValue, firstValue);
                 
                 default:
                     throw new ArgumentException("Cannot handle opcode " + opcode + " for long");
