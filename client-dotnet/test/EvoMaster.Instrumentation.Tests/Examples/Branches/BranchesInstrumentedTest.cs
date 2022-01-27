@@ -207,8 +207,8 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Branches{
             Assert.Equal(1, ExecutionTracer.GetNumberOfNonCoveredObjectives(ObjectiveNaming.Branch));
             
             res = bs.Eq(2, -1);
-            // a bug, it should be 7, not 8
-            Assert.Equal(8, res);
+
+            Assert.Equal(7, res);
         
             Assert.Equal(8, ExecutionTracer.GetNumberOfObjectives(ObjectiveNaming.Branch));
             Assert.Equal(0, ExecutionTracer.GetNumberOfNonCoveredObjectives(ObjectiveNaming.Branch));

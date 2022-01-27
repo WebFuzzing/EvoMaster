@@ -62,20 +62,21 @@ namespace EvoMaster.Instrumentation {
 
         public static int CompareAndComputeDistance(int val1, int val2, string originalOpCode,
             string newOpCode, string className, int lineNo, int branchId) {
-            
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1.Equals(val2) ? 1 : 0;
-                
+
                 case "clt":
-                case "clt.un":
                     return val1 < val2 ? 1 : 0;
-                
+                case "clt.un":
+                    return (uint) val1 < (uint) val2 ? 1 : 0;
+
                 case "cgt":
-                case "cgt.un":
                     return val1 > val2 ? 1 : 0;
+                case "cgt.un":
+                    return (uint) val1 > (uint) val2 ? 1 : 0;
             }
 
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
@@ -83,17 +84,16 @@ namespace EvoMaster.Instrumentation {
 
         public static int CompareAndComputeDistance(double val1, double val2, string originalOpCode,
             string newOpCode, string className, int lineNo, int branchId) {
-            
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1.Equals(val2) ? 1 : 0;
-                
+
                 case "clt":
                 case "clt.un":
                     return val1 < val2 ? 1 : 0;
-                
+
                 case "cgt":
                 case "cgt.un":
                     return val1 > val2 ? 1 : 0;
@@ -101,20 +101,19 @@ namespace EvoMaster.Instrumentation {
 
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
-        
+
         public static int CompareAndComputeDistance(float val1, float val2, string originalOpCode,
             string newOpCode, string className, int lineNo, int branchId) {
-            
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1.Equals(val2) ? 1 : 0;
-                
+
                 case "clt":
                 case "clt.un":
                     return val1 < val2 ? 1 : 0;
-                
+
                 case "cgt":
                 case "cgt.un":
                     return val1 > val2 ? 1 : 0;
@@ -122,68 +121,76 @@ namespace EvoMaster.Instrumentation {
 
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
-        
+
         public static int CompareAndComputeDistance(long val1, long val2, string originalOpCode,
             string newOpCode, string className, int lineNo, int branchId) {
-            
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1.Equals(val2) ? 1 : 0;
-                
+
                 case "clt":
+                    return (ulong) val1 < (ulong) val2 ? 1 : 0;
                 case "clt.un":
                     return val1 < val2 ? 1 : 0;
-                
+
                 case "cgt":
-                case "cgt.un":
                     return val1 > val2 ? 1 : 0;
+                case "cgt.un":
+                    return (ulong) val1 > (ulong) val2 ? 1 : 0;
             }
 
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
-        
+
         public static int CompareAndComputeDistance(short val1, short val2, string originalOpCode,
-            string newOpCode, string className, int lineNo, int branchId){
-
+            string newOpCode, string className, int lineNo, int branchId) {
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1.Equals(val2) ? 1 : 0;
-                
+
                 case "clt":
+                    return (ushort) val1 < (ushort) val2 ? 1 : 0;
                 case "clt.un":
                     return val1 < val2 ? 1 : 0;
-                
+
                 case "cgt":
-                case "cgt.un":
                     return val1 > val2 ? 1 : 0;
+                case "cgt.un":
+                    return (ushort) val1 > (ushort) val2 ? 1 : 0;
             }
 
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
-        
-        
+
+
         public static void ComputeDistanceForOneArgJumps(int val, string opCode, string className, int lineNo,
             int branchId) {
             HeuristicsForBooleans.ComputeDistanceForSingleJump(className, lineNo, branchId, val, opCode);
         }
+
         public static void ComputeDistanceForOneArgJumps(double val, string opCode, string className, int lineNo,
             int branchId) {
             // add warning just in case
-            SimpleLogger.Warn("in theory, opCode should not work with float but found it at " +lineNo+ " in" + className);
+            SimpleLogger.Warn("in theory, opCode should not work with float but found it at " + lineNo + " in" +
+                              className);
         }
+
         public static void ComputeDistanceForOneArgJumps(float val, string opCode, string className, int lineNo,
             int branchId) {
             // add warning just in case
-            SimpleLogger.Warn("in theory, opCode should not work with float but found it at " +lineNo+ " in" + className);
+            SimpleLogger.Warn("in theory, opCode should not work with float but found it at " + lineNo + " in" +
+                              className);
         }
+
         public static void ComputeDistanceForOneArgJumps(long val, string opCode, string className, int lineNo,
             int branchId) {
             HeuristicsForBooleans.ComputeDistanceForSingleJump(className, lineNo, branchId, val, opCode);
         }
+
         public static void ComputeDistanceForOneArgJumps(short val, string opCode, string className, int lineNo,
             int branchId) {
             HeuristicsForBooleans.ComputeDistanceForSingleJump(className, lineNo, branchId, val, opCode);
