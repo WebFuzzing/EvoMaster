@@ -65,4 +65,11 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
     public boolean isValidInstance(Object instance) {
         return instance instanceof Byte;
     }
+
+    @Override
+    public String getPrimitiveValue(String responseVarName) {
+        if (getType().isWrapper)
+            return responseVarName+".byteValue()";
+        return responseVarName;
+    }
 }

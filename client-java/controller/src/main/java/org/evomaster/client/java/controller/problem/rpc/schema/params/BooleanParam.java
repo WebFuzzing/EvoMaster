@@ -60,4 +60,11 @@ public class BooleanParam extends PrimitiveOrWrapperParam<Boolean> {
     public boolean isValidInstance(Object instance) {
         return instance instanceof Boolean;
     }
+
+    @Override
+    public String getPrimitiveValue(String responseVarName) {
+        if (getType().isWrapper)
+            return responseVarName+".booleanValue()";
+        return responseVarName;
+    }
 }

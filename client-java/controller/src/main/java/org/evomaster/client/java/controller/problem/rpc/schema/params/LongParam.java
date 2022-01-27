@@ -62,4 +62,10 @@ public class LongParam extends PrimitiveOrWrapperParam<Long> {
         return instance instanceof Long;
     }
 
+    @Override
+    public String getPrimitiveValue(String responseVarName) {
+        if (getType().isWrapper)
+            return responseVarName+".longValue()";
+        return responseVarName;
+    }
 }

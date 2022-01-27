@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
+import com.thrift.example.artificial.RPCInterfaceExampleImpl;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
@@ -16,9 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public abstract class RPCEndpointsBuilderTestBase {
 
-    class FakeClient{}
-
-    public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new FakeClient(), null, null, null, null, getAuthInfo(), getCustomizedValueInRequests());
+    public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new RPCInterfaceExampleImpl(), null, null, null, null, getAuthInfo(), getCustomizedValueInRequests());
 
     public abstract String getInterfaceName();
 
