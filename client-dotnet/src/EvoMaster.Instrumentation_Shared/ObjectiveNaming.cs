@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using EvoMaster.Client.Util;
 using EvoMaster.Client.Util.Extensions;
 
 namespace EvoMaster.Instrumentation_Shared {
@@ -130,6 +131,8 @@ namespace EvoMaster.Instrumentation_Shared {
                 ConcurrentDictionary<string,
                     IDictionary<int, IDictionary<int, IDictionary<bool, string>>>>(); //TODO: capacity 10_000
 
+        private static readonly ConcurrentHashSet<string> BranchCacheSet = new ConcurrentHashSet<string>();
+
         /**
          * in .net, a position at a line might result in more than one branch related opCodes,
          * eg, > could have cgt and brfalse, then in order to describe branch targets, we include opCode to
@@ -138,27 +141,9 @@ namespace EvoMaster.Instrumentation_Shared {
          */
         public static string BranchObjectiveName(string className, int line, int branchId, string opCode,
             bool thenBranch) {
-            var m0 =
-                BranchCache.ComputeIfAbsent(className,
-                    k => new ConcurrentDictionary<int,
-                        IDictionary<int, IDictionary<bool, string>>>()); //TODO: capacity 10_000
-            var m1 = m0.ComputeIfAbsent(line,
-                k => new ConcurrentDictionary<int, IDictionary<bool, string>>()); //TODO: capacity 10
-            var
-                m2 = m1.ComputeIfAbsent(branchId, k => new ConcurrentDictionary<bool, string>()); //TODO: capacity 2
-
-            return m2.ComputeIfAbsent(thenBranch, k => {
-                var name =
-                    $"{Branch}_at_{ClassName.Get(className).GetFullNameWithDots()}_at_line_{PadNumber(line)}_position_{branchId}_opcode_{opCode}";
-                if (thenBranch) {
-                    name += TrueBranch;
-                }
-                else {
-                    name += FalseBranch;
-                }
-
-                return name;
-            });
+            return thenBranch
+                ? $"{Branch}_at_{ClassName.Get(className).GetFullNameWithDots()}_at_line_{PadNumber(line)}_position_{branchId}_opcode_{opCode}_TrueBranch"
+                : $"{Branch}_at_{ClassName.Get(className).GetFullNameWithDots()}_at_line_{PadNumber(line)}_position_{branchId}_opcode_{opCode}_FalseBranch";
         }
 
         private static string PadNumber(int val) {

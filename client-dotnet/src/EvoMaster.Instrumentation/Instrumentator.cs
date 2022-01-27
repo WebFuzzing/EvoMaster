@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Xml.Linq;
 using EvoMaster.Client.Util;
 using EvoMaster.Client.Util.Extensions;
 using EvoMaster.Instrumentation_Shared;
@@ -10,7 +9,6 @@ using EvoMaster.Instrumentation_Shared.Exceptions;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using TypeReference = System.Reflection.Metadata.TypeReference;
 
 namespace EvoMaster.Instrumentation {
     /// <summary>
@@ -19,9 +17,8 @@ namespace EvoMaster.Instrumentation {
     /// It generates a new dll file for the instrumented SUT
     /// </summary>
     public class Instrumentator {
-        private MethodReference _completedProbe;
-        private MethodReference _enteringProbe;
-        private MethodReference _enteringBranchProbe;
+        private MethodReference _completedStatementProbe;
+        private MethodReference _enteringStatementProbe;
 
         private MethodReference _compareAndComputeDistanceProbeForInt;
         private MethodReference _compareAndComputeDistanceProbeForDouble;
@@ -54,20 +51,19 @@ namespace EvoMaster.Instrumentation {
 
             //TODO: check file extension
 
-            _completedProbe =
+            _completedStatementProbe =
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.CompletedStatement),
                         new[] {typeof(string), typeof(int), typeof(int)}));
 
-            _enteringProbe =
+            _enteringStatementProbe =
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.EnteringStatement),
                         new[] {typeof(string), typeof(int), typeof(int)}));
 
-            _enteringBranchProbe =
-                module.ImportReference(
-                    typeof(Probes).GetMethod(nameof(Probes.EnteringBranch),
-                        new[] {typeof(string), typeof(int), typeof(int)}));
+            module.ImportReference(
+                typeof(Probes).GetMethod(nameof(Probes.EnteringBranch),
+                    new[] {typeof(string), typeof(int), typeof(int)}));
 
             _compareAndComputeDistanceProbeForInt =
                 module.ImportReference(
@@ -178,10 +174,10 @@ namespace EvoMaster.Instrumentation {
 
                                 if (l != lastEnteredLine) lastBranch = 0;
 
-                                i = InsertEnteringBranchProbe(instruction, method.Body.Instructions, ilProcessor,
+                                i = EnteringBranch(instruction.Next.Next, ilProcessor,
                                     method.Parameters.ToList(), localVariableTypes, i,
                                     type.Name, l,
-                                    lastBranch);
+                                    lastBranch, true);
 
                                 lastBranch++;
                             }
@@ -199,9 +195,9 @@ namespace EvoMaster.Instrumentation {
                                 l = sp.StartLine;
                             }
 
-                            i = InsertComputeDistanceForOneArgJumpsProbe(instruction, ilProcessor,
-                                method.Parameters.ToList(), localVariableTypes, i, type.Name, l,
-                                lastBranch - 1); //TODO: do further check for branchId
+                            i = EnteringBranch(instruction, ilProcessor, method.Parameters.ToList(), localVariableTypes,
+                                i,
+                                type.Name, l, lastBranch - 1, false);
                         }
 
                         mapping.TryGetValue(instruction, out var sequencePoint);
@@ -244,7 +240,7 @@ namespace EvoMaster.Instrumentation {
             File.WriteAllText("Targets.json", json);
 
             module.Write($"{destination}/{assembly}");
-            Client.Util.SimpleLogger.Info($"Instrumented File Saved at \"{destination}\"");
+            SimpleLogger.Info($"Instrumented File Saved at \"{destination}\"");
         }
 
         private int InsertCompletedStatementProbe(Instruction instruction,
@@ -273,7 +269,7 @@ namespace EvoMaster.Instrumentation {
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
-            var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _completedProbe);
+            var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _completedStatementProbe);
 
             ilProcessor.InsertAfter(instruction, methodCallInstruction);
             byteCodeIndex++;
@@ -323,7 +319,7 @@ namespace EvoMaster.Instrumentation {
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
-            var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringProbe);
+            var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringStatementProbe);
 
 
             ilProcessor.InsertBefore(instruction, classNameInstruction);
@@ -344,41 +340,32 @@ namespace EvoMaster.Instrumentation {
             return byteCodeIndex;
         }
 
-        private int InsertEnteringBranchProbe(Instruction instruction, IEnumerable<Instruction> instructions,
-            ILProcessor ilProcessor, IReadOnlyList<ParameterDefinition> methodParams,
+        private int EnteringBranch(Instruction branchInstruction, ILProcessor ilProcessor,
+            IReadOnlyList<ParameterDefinition> methodParams,
             IReadOnlyDictionary<string, string> localVarTypes, int byteCodeIndex, string className, int lineNo,
-            int branchId) {
-            var branchIns = instruction.Next.Next;
-            var branchOpCode = branchIns.OpCode.ToString();
+            int branchId, bool isBranchInstructionWithTwoArgs) {
+            RegisterBranchTarget(branchInstruction.OpCode, className, lineNo, branchId);
 
-            _registeredTargets.Branches.Add(
-                ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, branchOpCode, true));
-            _registeredTargets.Branches.Add(
-                ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, branchOpCode, false));
-
-            var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
-            var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
-            var branchIdInstruction = ilProcessor.Create(OpCodes.Ldc_I4, branchId);
-            var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringBranchProbe);
-
-            ilProcessor.InsertBefore(instruction, classNameInstruction);
-            byteCodeIndex++;
-            ilProcessor.InsertBefore(instruction, lineNumberInstruction);
-            byteCodeIndex++;
-            ilProcessor.InsertBefore(instruction, branchIdInstruction);
-            byteCodeIndex++;
-            ilProcessor.InsertBefore(instruction, methodCallInstruction);
-            byteCodeIndex++;
-
-            instruction.UpdateJumpsToTheCurrentInstruction(classNameInstruction, instructions);
-
-            byteCodeIndex =
-                InsertCompareAndComputeDistanceProbe(branchIns, ilProcessor, methodParams, localVarTypes, byteCodeIndex,
-                    className,
-                    lineNo,
-                    branchId);
+            if (isBranchInstructionWithTwoArgs)
+                byteCodeIndex =
+                    InsertCompareAndComputeDistanceProbe(branchInstruction, ilProcessor, methodParams, localVarTypes,
+                        byteCodeIndex,
+                        className,
+                        lineNo,
+                        branchId);
+            else
+                byteCodeIndex = InsertComputeDistanceForOneArgJumpsProbe(branchInstruction, ilProcessor,
+                    methodParams, localVarTypes, byteCodeIndex, className, lineNo,
+                    branchId); //TODO: do further check for branchId
 
             return byteCodeIndex;
+        }
+
+        private void RegisterBranchTarget(OpCode branchOpCode, string className, int lineNo, int branchId) {
+            _registeredTargets.Branches.Add(
+                ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, branchOpCode.ToString(), true));
+            _registeredTargets.Branches.Add(
+                ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, branchOpCode.ToString(), false));
         }
 
         private int InsertCompareAndComputeDistanceProbe(Instruction branchInstruction, ILProcessor ilProcessor,
