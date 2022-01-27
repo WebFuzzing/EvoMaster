@@ -45,6 +45,7 @@ namespace EvoMaster.Instrumentation.Heuristic{
             }
             
             if (HeuristicsForNonintegerComparisons.CODES.Contains(code)){
+                var un = HeuristicsForNonintegerComparisons.UNSIGNED.Contains(code);
                 if (firstValue is double dfvalue && secondValue is double dsvalue){
                     t = HeuristicsForNonintegerComparisons.GetForFloatAndDoubleComparison(dfvalue,
                         dsvalue, code);
@@ -52,12 +53,30 @@ namespace EvoMaster.Instrumentation.Heuristic{
                     t = HeuristicsForNonintegerComparisons.GetForFloatAndDoubleComparison(ffvalue,
                         fsvalue, code);
                 } else if (firstValue is long lfvalue && secondValue is long lsvalue){
-                    t = HeuristicsForNonintegerComparisons.GetForLongComparison(lfvalue,
-                        lsvalue, code);
+                    if (un){
+                        t = HeuristicsForNonintegerComparisons.GetForULongComparison((ulong)lfvalue,
+                            (ulong)lsvalue, code);
+                    } else{
+                        t = HeuristicsForNonintegerComparisons.GetForLongComparison(lfvalue,
+                            lsvalue, code);
+                    }
                 } else if (firstValue is int ifvalue && secondValue is int isvalue){
-                    t = HeuristicsForNonintegerComparisons.GetForLongComparison(ifvalue,
-                        isvalue, code);
-                }
+                    if (un){
+                        t = HeuristicsForNonintegerComparisons.GetForLongComparison((uint)ifvalue,
+                            (uint)isvalue, code);
+                    } else{
+                        t = HeuristicsForNonintegerComparisons.GetForLongComparison(ifvalue,
+                            isvalue, code);
+                    }
+                } else if (firstValue is short sfvalue && secondValue is short ssvalue){
+                    if (un){
+                        t = HeuristicsForNonintegerComparisons.GetForLongComparison((ushort)sfvalue,
+                            (ushort)ssvalue, code);
+                    } else{
+                        t = HeuristicsForNonintegerComparisons.GetForLongComparison(sfvalue,
+                            ssvalue, code);
+                    }
+                } 
             }
 
             if (t != null){
