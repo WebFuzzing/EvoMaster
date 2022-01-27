@@ -11,26 +11,39 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
             const string className = "TriangleClassificationImpl";
 
             var opCode = string.Empty;
+            int lineNo;
+
             var expectedBranchTargets = new List<string>();
             for (var i = 0; i < 4; i++) {
+                lineNo = 6;
                 opCode = "ble";
                 if (i > 1 && i < 3)
                     opCode = "cgt";
                 else if (i > 2)
                     opCode = "ceq";
-                expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 6, i, opCode, true));
-                expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 6, i, opCode, false));
+
+                RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
+
+                if (i == 3) {
+                    opCode = "brfalse";
+                    RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
+                }
             }
 
             for (var i = 0; i < 2; i++) {
+                lineNo = 10;
                 opCode = "bne.un";
-                if (i == 1)
+                if (i == 1) {
+                    opCode = "brfalse";
+                    RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
                     opCode = "ceq";
-                expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 10, i, opCode, true));
-                expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 10, i, opCode, false));
+                }
+
+                RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
             }
 
             for (var i = 0; i < 7; i++) {
+                lineNo = 16;
                 switch (i) {
                     case 0:
                     case 2:
@@ -49,22 +62,37 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
                         break;
                 }
 
-                expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 16, i, opCode, true));
-                expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 16, i, opCode, false));
+                RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
+
+                if (i == 6) {
+                    opCode = "brfalse";
+                    RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
+                }
             }
 
             for (var i = 0; i < 3; i++) {
+                lineNo = 22;
                 opCode = "beq";
-                if (i == 2)
+                if (i == 2) {
+                    opCode = "brfalse";
+                    RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
                     opCode = "ceq";
+                }
 
-                expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 22, i, opCode, true));
-                expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, 22, i, opCode, false));
+                RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
             }
 
-            var actualBranchTargets = GetRegisteredTargets().Branches.Where(x => x.Contains("TriangleClassification"));
+            expectedBranchTargets = expectedBranchTargets.OrderBy(x => x).ToList();
+            var actualBranchTargets = GetRegisteredTargets().Branches.Where(x => x.Contains("TriangleClassification")).OrderBy(x=>x).ToList();
 
             Assert.Equal(expectedBranchTargets, actualBranchTargets);
+        }
+
+        private void RegisterBothBranchTargets(ICollection<string> expectedBranchTargets, string className, int lineNo,
+            int i,
+            string opCode) {
+            expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, i, opCode, true));
+            expectedBranchTargets.Add(ObjectiveNaming.BranchObjectiveName(className, lineNo, i, opCode, false));
         }
     }
 }
