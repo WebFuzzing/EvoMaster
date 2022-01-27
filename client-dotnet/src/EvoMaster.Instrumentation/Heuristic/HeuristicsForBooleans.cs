@@ -47,9 +47,17 @@ namespace EvoMaster.Instrumentation.Heuristic{
             if (HeuristicsForNonintegerComparisons.CODES.Contains(code)){
                 var un = HeuristicsForNonintegerComparisons.UNSIGNED.Contains(code);
                 if (firstValue is double dfvalue && secondValue is double dsvalue){
+                    if (un){
+                        SimpleLogger.Warn("cannot unsgined and unordered opCode "+codeString + " for double");
+                        return;
+                    }
                     t = HeuristicsForNonintegerComparisons.GetForFloatAndDoubleComparison(dfvalue,
                         dsvalue, code);
                 } else if (firstValue is float ffvalue && secondValue is float fsvalue){
+                    if (un){
+                        SimpleLogger.Warn("cannot unsgined and unordered opCode "+codeString + " for float");
+                        return;
+                    }
                     t = HeuristicsForNonintegerComparisons.GetForFloatAndDoubleComparison(ffvalue,
                         fsvalue, code);
                 } else if (firstValue is long lfvalue && secondValue is long lsvalue){
