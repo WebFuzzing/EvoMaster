@@ -49,19 +49,21 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
             Assert.True(a.GetOfTrue() > b.GetOfTrue());
         }
 
-        [Fact]
-        public void test_Brtrue(){
+        [Theory]
+        [InlineData(-10)]
+        [InlineData(-2)]
+        [InlineData(0)]
+        [InlineData(3)]
+        [InlineData(4444)]
+        public void test_Brtrue(int val){
             //val != 0
 
-            int[] values = new int[]{-10, -2, 0, 3, 4444};
-            foreach (int val in values){
-                Truthness ne = HeuristicsForJumps.GetForSingleValueJump(val, Code.Brfalse);
-                Truthness eq = HeuristicsForJumps.GetForSingleValueJump(val, Code.Brtrue);
+            Truthness ne = HeuristicsForJumps.GetForSingleValueJump(val, Code.Brfalse);
+            Truthness eq = HeuristicsForJumps.GetForSingleValueJump(val, Code.Brtrue);
 
-                //their values should be inverted
-                Assert.Equal(ne.GetOfTrue(), eq.GetOfFalse());
-                Assert.Equal(ne.GetOfFalse(), eq.GetOfTrue());
-            }
+            //their values should be inverted
+            Assert.Equal(ne.GetOfTrue(), eq.GetOfFalse());
+            Assert.Equal(ne.GetOfFalse(), eq.GetOfTrue());
         }
 
         /**
@@ -146,37 +148,40 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
          * there is no specific opcode for greater than 0
          * then use GetForValueComparison(val, 0) here
          */
-        [Fact]
-        public void test_Bge_0(){
+        [Theory]
+        [InlineData(-11)]
+        [InlineData(-3)]
+        [InlineData(0)]
+        [InlineData(5)]
+        [InlineData(7)]
+        public void test_Bge_0(int val){
             //val >= 0
 
-            int[] values = new int[]{-11, -3, 0, 5, 7};
-            foreach (var val in values){
-                Truthness lt = HeuristicsForJumps.GetForValueComparison(val, 0, Code.Blt);
-                Truthness ge = HeuristicsForJumps.GetForValueComparison(val, 0, Code.Bge);
+            Truthness lt = HeuristicsForJumps.GetForValueComparison(val, 0, Code.Blt);
+            Truthness ge = HeuristicsForJumps.GetForValueComparison(val, 0, Code.Bge);
 
-                //their values should be inverted
-                Assert.Equal(lt.GetOfTrue(), ge.GetOfFalse());
-                Assert.Equal(lt.GetOfFalse(), ge.GetOfTrue());
-            }
+            //their values should be inverted
+            Assert.Equal(lt.GetOfTrue(), ge.GetOfFalse());
+            Assert.Equal(lt.GetOfFalse(), ge.GetOfTrue());
         }
         /**
          * there is no specific opcode for less than or or equal to 0
          * then use GetForValueComparison(val, 0) here
          */
-        [Fact]
-        public void test_Ble(){
+        [Theory]
+        [InlineData(-2345)]
+        [InlineData(-63)]
+        [InlineData(211)]
+        [InlineData(7888)]
+        public void test_Ble(int val){
             //val <= 0  implies !(-val < 0)
 
-            int[] values = new int[]{-2345, -6, 0, 2, 7888};
-            foreach (int val in values){
-                Truthness le = HeuristicsForJumps.GetForValueComparison(val, 0, Code.Ble);
-                Truthness x = HeuristicsForJumps.GetForValueComparison(-val, 0, Code.Blt).Invert();
+            Truthness le = HeuristicsForJumps.GetForValueComparison(val, 0, Code.Ble);
+            Truthness x = HeuristicsForJumps.GetForValueComparison(-val, 0, Code.Blt).Invert();
 
-                //their values should be the same, as equivalent
-                Assert.Equal(le.GetOfTrue(), x.GetOfTrue());
-                Assert.Equal(le.GetOfFalse(), x.GetOfFalse());
-            }
+            //their values should be the same, as equivalent
+            Assert.Equal(le.GetOfTrue(), x.GetOfTrue());
+            Assert.Equal(le.GetOfFalse(), x.GetOfFalse());
         }
 
 
@@ -184,19 +189,20 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
          * there is no specific opcode for greater than or or equal to 0
          * then use GetForValueComparison(val, 0) here
          */
-        [Fact]
-        public void test_Bge(){
+        [Theory]
+        [InlineData(-2345)]
+        [InlineData(-63)]
+        [InlineData(211)]
+        [InlineData(7888)]
+        public void test_Bge(int val){
             //val > 0
 
-            int[] values = new int[]{-2345, -63, 0, 211, 7888};
-            foreach (int val in values){
-                Truthness gt = HeuristicsForJumps.GetForValueComparison(val, 0, Code.Bgt);
-                Truthness le = HeuristicsForJumps.GetForValueComparison(val, 0, Code.Ble);
+            Truthness gt = HeuristicsForJumps.GetForValueComparison(val, 0, Code.Bgt);
+            Truthness le = HeuristicsForJumps.GetForValueComparison(val, 0, Code.Ble);
 
-                //their values should be inverted
-                Assert.Equal(gt.GetOfTrue(), le.GetOfFalse());
-                Assert.Equal(gt.GetOfFalse(), le.GetOfTrue());
-            }
+            //their values should be inverted
+            Assert.Equal(gt.GetOfTrue(), le.GetOfFalse());
+            Assert.Equal(gt.GetOfFalse(), le.GetOfTrue());
         }
 
 
@@ -283,36 +289,40 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
         }
 
 
-        [Fact]
-        public void test_Beq_eq(){
+        [Theory]
+        [InlineData(-10)]
+        [InlineData(-2)]
+        [InlineData(0)]
+        [InlineData(3)]
+        [InlineData(4444)]
+        public void test_Beq_eq(int val){
             //val != 0
 
-            int[] values = new int[]{-10, -2, 0, 3, 4444};
-            foreach (int val in values){
-                Truthness ne = HeuristicsForJumps.GetForValueComparison(val, val, Code.Bne_Un);
-                Truthness eq = HeuristicsForJumps.GetForValueComparison(val, val, Code.Beq);
+            Truthness ne = HeuristicsForJumps.GetForValueComparison(val, val, Code.Bne_Un);
+            Truthness eq = HeuristicsForJumps.GetForValueComparison(val, val, Code.Beq);
 
-                //their values should be inverted
-                Assert.Equal(ne.GetOfTrue(), eq.GetOfFalse());
-                Assert.Equal(ne.GetOfFalse(), eq.GetOfTrue());
-            }
+            //their values should be inverted
+            Assert.Equal(ne.GetOfTrue(), eq.GetOfFalse());
+            Assert.Equal(ne.GetOfFalse(), eq.GetOfTrue());
         }
 
-        [Fact]
-        public void test_Beq_diff(){
+        [Theory]
+        [InlineData(-10)]
+        [InlineData(-2)]
+        [InlineData(0)]
+        [InlineData(3)]
+        [InlineData(4444)]
+        public void test_Beq_diff(int val){
             //val != 0
 
             int x = 1;
 
-            int[] values = new int[]{-10, -2, 0, 3, 4444};
-            foreach (int val in values){
-                Truthness ne = HeuristicsForJumps.GetForValueComparison(val, x, Code.Bne_Un);
-                Truthness eq = HeuristicsForJumps.GetForValueComparison(val, x, Code.Beq);
+            Truthness ne = HeuristicsForJumps.GetForValueComparison(val, x, Code.Bne_Un);
+            Truthness eq = HeuristicsForJumps.GetForValueComparison(val, x, Code.Beq);
 
-                //their values should be inverted
-                Assert.Equal(ne.GetOfTrue(), eq.GetOfFalse());
-                Assert.Equal(ne.GetOfFalse(), eq.GetOfTrue());
-            }
+            //their values should be inverted
+            Assert.Equal(ne.GetOfTrue(), eq.GetOfFalse());
+            Assert.Equal(ne.GetOfFalse(), eq.GetOfTrue());
         }
 
         [Fact]
@@ -412,52 +422,58 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
         //     }
         // }
 
-        [Fact]
-        public void test_Bge_two(){
+        [Theory]
+        [InlineData(-5)]
+        [InlineData(-2)]
+        [InlineData(0)]
+        [InlineData(3)]
+        [InlineData(7)]
+        public void test_Bge_two(int val){
             // x >= y
             int y = 1;
 
-            int[] values = new int[]{-5, -2, 0, 3, 7};
-            foreach (int val in values){
-                Truthness lt = HeuristicsForJumps.GetForValueComparison(val, y, Code.Blt);
-                Truthness ge = HeuristicsForJumps.GetForValueComparison(val, y, Code.Bge);
+            Truthness lt = HeuristicsForJumps.GetForValueComparison(val, y, Code.Blt);
+            Truthness ge = HeuristicsForJumps.GetForValueComparison(val, y, Code.Bge);
 
-                //should be the inverted
-                Assert.Equal(lt.GetOfTrue(), ge.GetOfFalse());
-                Assert.Equal(lt.GetOfFalse(), ge.GetOfTrue());
-            }
+            //should be the inverted
+            Assert.Equal(lt.GetOfTrue(), ge.GetOfFalse());
+            Assert.Equal(lt.GetOfFalse(), ge.GetOfTrue());
         }
 
-        [Fact]
-        public void test_Ble_two(){
+        [Theory]
+        [InlineData(-5)]
+        [InlineData(-2)]
+        [InlineData(0)]
+        [InlineData(3)]
+        [InlineData(7)]
+        public void test_Ble_two(int val){
             // x <= y  implies  ! (y < x)
             int y = 1;
 
-            int[] values = new int[]{-5, -2, 0, 3, 7};
-            foreach  (int val in values){
-                Truthness le = HeuristicsForJumps.GetForValueComparison(val, y, Code.Ble);
-                Truthness lt = HeuristicsForJumps.GetForValueComparison(y, val,Code.Blt).Invert();
+            Truthness le = HeuristicsForJumps.GetForValueComparison(val, y, Code.Ble);
+            Truthness lt = HeuristicsForJumps.GetForValueComparison(y, val,Code.Blt).Invert();
 
-                //should be the same
-                Assert.Equal(lt.GetOfTrue(), le.GetOfTrue());
-                Assert.Equal(lt.GetOfFalse(), le.GetOfFalse());
-            }
+            //should be the same
+            Assert.Equal(lt.GetOfTrue(), le.GetOfTrue());
+            Assert.Equal(lt.GetOfFalse(), le.GetOfFalse());
         }
 
-        [Fact]
-        public void test_Bgt_two(){
+        [Theory]
+        [InlineData(-5)]
+        [InlineData(-2)]
+        [InlineData(0)]
+        [InlineData(3)]
+        [InlineData(7)]
+        public void test_Bgt_two(int val){
             // x > y  implies  y < x
             int y = 1;
 
-            int[] values = new int[]{-5, -2, 0, 3, 7};
-            foreach (int val in values){
-                Truthness gt = HeuristicsForJumps.GetForValueComparison(val, y, Code.Bgt);
-                Truthness lt = HeuristicsForJumps.GetForValueComparison(y, val, Code.Blt);
+            Truthness gt = HeuristicsForJumps.GetForValueComparison(val, y, Code.Bgt);
+            Truthness lt = HeuristicsForJumps.GetForValueComparison(y, val, Code.Blt);
 
-                //should be the same
-                Assert.Equal(lt.GetOfTrue(), gt.GetOfTrue());
-                Assert.Equal(lt.GetOfFalse(), gt.GetOfFalse());
-            }
+            //should be the same
+            Assert.Equal(lt.GetOfTrue(), gt.GetOfTrue());
+            Assert.Equal(lt.GetOfFalse(), gt.GetOfFalse());
         }
 
         /*

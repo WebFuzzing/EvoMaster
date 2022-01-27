@@ -157,7 +157,6 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
         [Theory]
         [InlineData(-100d)]
         [InlineData(-42.42d)]
-        [InlineData(0d)]
         [InlineData(42.42d)]
         [InlineData(100d)]
         public void testDouble(double first){
@@ -172,7 +171,6 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
         [Theory]
         [InlineData(-2345L)]
         [InlineData(-63L)]
-        [InlineData(0L)]
         [InlineData(211)]
         [InlineData(7888)]
         public void testLong(long first){
