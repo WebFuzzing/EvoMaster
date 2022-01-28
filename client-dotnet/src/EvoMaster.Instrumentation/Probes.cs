@@ -55,11 +55,6 @@ namespace EvoMaster.Instrumentation {
             ExecutionTracer.EnteringStatement(className, lineNo, columnNo);
         }
 
-        public static void EnteringBranch(string className, int lineNo, int branchId) {
-            //TODO: remove
-            SimpleLogger.Info($"****** branch detected at {className}: {lineNo}, {branchId}");
-        }
-        
         //This method (and its other overloadings below) imitate comparison instructions.
         //They do exactly the same, in addition to computing distance
         //We had to do this because we couldn't find a way to duplicate two top values on the evalutation stack which was needed to compute the distance

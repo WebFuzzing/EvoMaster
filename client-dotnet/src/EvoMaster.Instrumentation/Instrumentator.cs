@@ -61,10 +61,6 @@ namespace EvoMaster.Instrumentation {
                     typeof(Probes).GetMethod(nameof(Probes.EnteringStatement),
                         new[] {typeof(string), typeof(int), typeof(int)}));
 
-            module.ImportReference(
-                typeof(Probes).GetMethod(nameof(Probes.EnteringBranch),
-                    new[] {typeof(string), typeof(int), typeof(int)}));
-
             _compareAndComputeDistanceProbeForInt =
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
