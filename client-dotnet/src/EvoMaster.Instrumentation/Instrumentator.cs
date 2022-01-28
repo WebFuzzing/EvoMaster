@@ -170,8 +170,7 @@ namespace EvoMaster.Instrumentation {
 
                                 if (l != lastEnteredLine) lastBranch = 0;
 
-                                i = EnteringBranch(instruction.Next.Next, ilProcessor,
-                                    method.Parameters.ToList(), localVariableTypes, i,
+                                i = EnteringBranch(instruction.Next.Next, method, localVariableTypes, i,
                                     type.Name, l,
                                     lastBranch, true);
 
@@ -191,7 +190,7 @@ namespace EvoMaster.Instrumentation {
                                 l = sp.StartLine;
                             }
 
-                            i = EnteringBranch(instruction, ilProcessor, method.Parameters.ToList(), localVariableTypes,
+                            i = EnteringBranch(instruction, method, localVariableTypes,
                                 i,
                                 type.Name, l, lastBranch - 1, false);
                         }
@@ -303,7 +302,7 @@ namespace EvoMaster.Instrumentation {
                 //skip putting any entering probe right after a leave instruction. This happens at the end of try and also catch blocks.
                 //ideally we should put the probe outside the block which ends by leave instruction, but haven't found any solution for this
                 //for now, just skip to prevent breaking the code TODO
-                return byteCodeIndex; 
+                return byteCodeIndex;
 
                 // exceptionHandler = methodBody.ExceptionHandlers.FirstOrDefault(x => x.TryEnd == instruction);
                 // if (exceptionHandler != null)
@@ -340,22 +339,21 @@ namespace EvoMaster.Instrumentation {
             return byteCodeIndex;
         }
 
-        private int EnteringBranch(Instruction branchInstruction, ILProcessor ilProcessor,
-            IReadOnlyList<ParameterDefinition> methodParams,
+        private int EnteringBranch(Instruction branchInstruction, MethodDefinition methodDefinition,
             IReadOnlyDictionary<string, string> localVarTypes, int byteCodeIndex, string className, int lineNo,
             int branchId, bool isBranchInstructionWithTwoArgs) {
             RegisterBranchTarget(branchInstruction.OpCode, className, lineNo, branchId);
 
             if (isBranchInstructionWithTwoArgs)
                 byteCodeIndex =
-                    InsertCompareAndComputeDistanceProbe(branchInstruction, ilProcessor, methodParams, localVarTypes,
+                    InsertCompareAndComputeDistanceProbe(branchInstruction, methodDefinition, localVarTypes,
                         byteCodeIndex,
                         className,
                         lineNo,
                         branchId);
             else
-                byteCodeIndex = InsertComputeDistanceForOneArgJumpsProbe(branchInstruction, ilProcessor,
-                    methodParams, localVarTypes, byteCodeIndex, className, lineNo,
+                byteCodeIndex = InsertComputeDistanceForOneArgJumpsProbe(branchInstruction, methodDefinition,
+                    localVarTypes, byteCodeIndex, className, lineNo,
                     branchId); //TODO: do further check for branchId
 
             return byteCodeIndex;
@@ -372,15 +370,16 @@ namespace EvoMaster.Instrumentation {
         //To calculate branch distance, we have to duplicate those two values and give them to a method to do that
         //Since we couldn't find a way to duplicate two top values on the stack, we added this method which modifies the bytecode to imitate
         //the behaviour of the branch in addition to calculation of the branch distance
-        private int InsertCompareAndComputeDistanceProbe(Instruction branchInstruction, ILProcessor ilProcessor,
-            IReadOnlyList<ParameterDefinition> methodParams, IReadOnlyDictionary<string, string> localVarTypes,
+        private int InsertCompareAndComputeDistanceProbe(Instruction branchInstruction,
+            MethodDefinition methodDefinition, IReadOnlyDictionary<string, string> localVarTypes,
             int byteCodeIndex, string className, int lineNo, int branchId) {
             MethodReference probe = null;
 
             if (branchInstruction.IsConditionalInstructionWithTwoArgs()) {
                 try {
-                    var type = branchInstruction.Previous.DetectType(methodParams, localVarTypes) ??
-                               branchInstruction.Previous.Previous.DetectType(methodParams, localVarTypes);
+                    var type = branchInstruction.Previous.DetectType(methodDefinition.Parameters, localVarTypes) ??
+                               branchInstruction.Previous.Previous.DetectType(methodDefinition.Parameters,
+                                   localVarTypes);
 
                     if (type == typeof(int))
                         probe = _compareAndComputeDistanceProbeForInt;
@@ -403,106 +402,144 @@ namespace EvoMaster.Instrumentation {
                 }
             }
 
+            var ilProcessor = methodDefinition.Body.GetILProcessor();
+
             //if the instruction is of type comparison (such as ceq and cgt), we imitate it by calling a probe which does exactly what is expected from the instruction
             if (branchInstruction.IsCompareWithTwoArgs()) {
-                byteCodeIndex =
-                    InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex, className,
-                        lineNo,
-                        branchId,
-                        branchInstruction.OpCode);
+                var res = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex, className,
+                    lineNo,
+                    branchId,
+                    branchInstruction.OpCode);
+                byteCodeIndex = res.byteCodeIndex;
 
+                branchInstruction.UpdateJumpsToTheCurrentInstruction(res.firstInstruction,
+                    methodDefinition.Body.Instructions);
                 ilProcessor.Replace(branchInstruction,
                     ilProcessor.Create(OpCodes.Call, probe));
             }
             //the rest are the jump instructions which we should replace them with a compare and jump
             //bgt equals to cgt + brtrue
             else if (branchInstruction.OpCode == OpCodes.Bgt || branchInstruction.OpCode == OpCodes.Bgt_Un) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
+                var res = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
                     className,
                     lineNo, branchId,
                     branchInstruction.OpCode, OpCodes.Cgt);
+                byteCodeIndex = res.byteCodeIndex;
+
                 ilProcessor.InsertBefore(branchInstruction,
                     ilProcessor.Create(OpCodes.Call, probe));
                 byteCodeIndex++;
+
+                branchInstruction.UpdateJumpsToTheCurrentInstruction(res.firstInstruction,
+                    methodDefinition.Body.Instructions);
 
                 var target = branchInstruction.Operand;
                 ilProcessor.Replace(branchInstruction, ilProcessor.Create(OpCodes.Brtrue, (Instruction) target));
             }
             //beq equals to ceq + brtrue
             else if (branchInstruction.OpCode == OpCodes.Beq) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
+                var res = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
                     className,
                     lineNo, branchId,
                     branchInstruction.OpCode, OpCodes.Ceq);
+                byteCodeIndex = res.byteCodeIndex;
+
                 ilProcessor.InsertBefore(branchInstruction,
                     ilProcessor.Create(OpCodes.Call, probe));
                 byteCodeIndex++;
+
+                branchInstruction.UpdateJumpsToTheCurrentInstruction(res.firstInstruction,
+                    methodDefinition.Body.Instructions);
 
                 var target = branchInstruction.Operand;
                 ilProcessor.Replace(branchInstruction, ilProcessor.Create(OpCodes.Brtrue, (Instruction) target));
             }
             //bge equals to clt + brfalse
             else if (branchInstruction.OpCode == OpCodes.Bge || branchInstruction.OpCode == OpCodes.Bge_Un) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
+                var res = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
                     className,
                     lineNo, branchId,
                     branchInstruction.OpCode, OpCodes.Clt);
+                byteCodeIndex = res.byteCodeIndex;
+
                 ilProcessor.InsertBefore(branchInstruction,
                     ilProcessor.Create(OpCodes.Call, probe));
                 byteCodeIndex++;
+
+                branchInstruction.UpdateJumpsToTheCurrentInstruction(res.firstInstruction,
+                    methodDefinition.Body.Instructions);
 
                 var target = branchInstruction.Operand;
                 ilProcessor.Replace(branchInstruction, ilProcessor.Create(OpCodes.Brfalse, (Instruction) target));
             }
             //ble equals to cgt + brfalse
             else if (branchInstruction.OpCode == OpCodes.Ble || branchInstruction.OpCode == OpCodes.Ble_Un) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
+                var res = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
                     className,
                     lineNo, branchId,
                     branchInstruction.OpCode, OpCodes.Cgt);
+                byteCodeIndex = res.byteCodeIndex;
+
                 ilProcessor.InsertBefore(branchInstruction,
                     ilProcessor.Create(OpCodes.Call, probe));
                 byteCodeIndex++;
+
+                branchInstruction.UpdateJumpsToTheCurrentInstruction(res.firstInstruction,
+                    methodDefinition.Body.Instructions);
 
                 var target = branchInstruction.Operand;
                 ilProcessor.Replace(branchInstruction, ilProcessor.Create(OpCodes.Brfalse, (Instruction) target));
             }
             //blt equals to clt + brtrue
             else if (branchInstruction.OpCode == OpCodes.Blt || branchInstruction.OpCode == OpCodes.Blt_Un) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
+                var res = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
                     className,
                     lineNo, branchId,
                     branchInstruction.OpCode, OpCodes.Clt);
+                byteCodeIndex = res.byteCodeIndex;
+
                 ilProcessor.InsertBefore(branchInstruction,
                     ilProcessor.Create(OpCodes.Call, probe));
                 byteCodeIndex++;
+
+                branchInstruction.UpdateJumpsToTheCurrentInstruction(res.firstInstruction,
+                    methodDefinition.Body.Instructions);
 
                 var target = branchInstruction.Operand;
                 ilProcessor.Replace(branchInstruction, ilProcessor.Create(OpCodes.Brtrue, (Instruction) target));
             }
             //bne equals to ceq + brfalse
             else if (branchInstruction.OpCode == OpCodes.Bne_Un) {
-                byteCodeIndex = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
+                var res = InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex,
                     className,
                     lineNo, branchId,
                     branchInstruction.OpCode, OpCodes.Ceq);
+                byteCodeIndex = res.byteCodeIndex;
+
                 ilProcessor.InsertBefore(branchInstruction,
                     ilProcessor.Create(OpCodes.Call, probe));
                 byteCodeIndex++;
+
+                branchInstruction.UpdateJumpsToTheCurrentInstruction(res.firstInstruction,
+                    methodDefinition.Body.Instructions);
 
                 var target = branchInstruction.Operand;
                 ilProcessor.Replace(branchInstruction, ilProcessor.Create(OpCodes.Brfalse, (Instruction) target));
             }
 
+            //instruction.UpdateJumpsToTheCurrentInstruction(classNameInstruction, methodBody.Instructions);
+
             return byteCodeIndex;
         }
 
-        private int InsertValuesBeforeBranchInstruction(Instruction instruction, ILProcessor ilProcessor,
+        private (int byteCodeIndex, Instruction firstInstruction) InsertValuesBeforeBranchInstruction(
+            Instruction instruction, ILProcessor ilProcessor,
             int byteCodeIndex, string className, int lineNo, int branchId, OpCode originalOpCode,
             OpCode? newOpcode = null) {
             newOpcode ??= originalOpCode;
 
-            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, newOpcode.Value.ToString()));
+            var pushOpCodeStringInstruction = ilProcessor.Create(OpCodes.Ldstr, newOpcode.Value.ToString());
+            ilProcessor.InsertBefore(instruction, pushOpCodeStringInstruction);
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, className));
             byteCodeIndex++;
@@ -511,17 +548,17 @@ namespace EvoMaster.Instrumentation {
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, branchId));
             byteCodeIndex++;
 
-            return byteCodeIndex;
+            return (byteCodeIndex, pushOpCodeStringInstruction);
         }
 
-        private int InsertComputeDistanceForOneArgJumpsProbe(Instruction branchInstruction, ILProcessor ilProcessor,
-            IReadOnlyList<ParameterDefinition> methodParams, IReadOnlyDictionary<string, string> localVarTypes,
+        private int InsertComputeDistanceForOneArgJumpsProbe(Instruction branchInstruction,
+            MethodDefinition methodDefinition, IReadOnlyDictionary<string, string> localVarTypes,
             int byteCodeIndex, string className, int lineNo, int branchId) {
             MethodReference probe = null;
             Type type;
 
             try {
-                type = branchInstruction.Previous.DetectType(methodParams, localVarTypes);
+                type = branchInstruction.Previous.DetectType(methodDefinition.Parameters, localVarTypes);
             }
             catch (InstrumentationException e) {
                 //TODO
@@ -543,7 +580,10 @@ namespace EvoMaster.Instrumentation {
             // else probe = _computeDistanceForOneArgJumpsProbeForInt;
             //TODO: other types
 
-            ilProcessor.InsertBefore(branchInstruction, ilProcessor.Create(OpCodes.Dup));
+            var ilProcessor = methodDefinition.Body.GetILProcessor();
+
+            var dupInstruction = ilProcessor.Create(OpCodes.Dup);
+            ilProcessor.InsertBefore(branchInstruction, dupInstruction);
             byteCodeIndex++;
             ilProcessor.InsertBefore(branchInstruction,
                 ilProcessor.Create(OpCodes.Ldstr, branchInstruction.OpCode.ToString()));
@@ -559,6 +599,7 @@ namespace EvoMaster.Instrumentation {
                 ilProcessor.Create(OpCodes.Call, probe));
             byteCodeIndex++;
 
+            branchInstruction.UpdateJumpsToTheCurrentInstruction(dupInstruction, methodDefinition.Body.Instructions);
             return byteCodeIndex;
         }
     }

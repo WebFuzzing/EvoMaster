@@ -90,7 +90,7 @@ namespace EvoMaster.Instrumentation_Shared {
         }
 
         public static int GetArgumentIndex(this Instruction ldArgInstruction,
-            IReadOnlyList<ParameterDefinition> methodParams) {
+            ICollection<ParameterDefinition> methodParams) {
             var opcode = ldArgInstruction.OpCode.ToString().ToLower();
             var arr = opcode.Split('_');
             if (arr.Length > 1) {
@@ -103,7 +103,7 @@ namespace EvoMaster.Instrumentation_Shared {
                 x.Name.Equals(ldArgInstruction.Operand.ToString(), StringComparison.OrdinalIgnoreCase)).Index;
         }
 
-        public static Type DetectType(this Instruction instruction, IReadOnlyList<ParameterDefinition> methodParams,
+        public static Type DetectType(this Instruction instruction, ICollection<ParameterDefinition> methodParams,
             IReadOnlyDictionary<string, string> localVarTypes) {
             var opCode = instruction.OpCode.ToString();
 
@@ -132,7 +132,7 @@ namespace EvoMaster.Instrumentation_Shared {
             if (instruction.IsLoadArgument() && methodParams.Count > 0) {
                 var argIndex = instruction.GetArgumentIndex(methodParams);
 
-                var x = methodParams[argIndex].ParameterType;
+                var x = methodParams.ToArray()[argIndex].ParameterType;
 
                 return GetCSharpTypeByName(x.Name);
             }
