@@ -300,9 +300,14 @@ namespace EvoMaster.Instrumentation {
 
             if (!updateHandlerEnd && instruction.Previous != null &&
                 instruction.Previous.OpCode == OpCodes.Leave) {
-                exceptionHandler = methodBody.ExceptionHandlers.FirstOrDefault(x => x.TryEnd == instruction);
-                if (exceptionHandler != null)
-                    return byteCodeIndex; //todo: shouldn't be skipped
+                //skip putting any entering probe right after a leave instruction. This happens at the end of try and also catch blocks.
+                //ideally we should put the probe outside the block which ends by leave instruction, but haven't found any solution for this
+                //for now, just skip to prevent breaking the code TODO
+                return byteCodeIndex; 
+
+                // exceptionHandler = methodBody.ExceptionHandlers.FirstOrDefault(x => x.TryEnd == instruction);
+                // if (exceptionHandler != null)
+                //     return byteCodeIndex; //todo: shouldn't be skipped
             }
 
             //prevents the probe becoming unreachable at the end of a try block
@@ -316,7 +321,6 @@ namespace EvoMaster.Instrumentation {
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringStatementProbe);
-
 
             ilProcessor.InsertBefore(instruction, classNameInstruction);
             byteCodeIndex++;
@@ -497,7 +501,7 @@ namespace EvoMaster.Instrumentation {
             int byteCodeIndex, string className, int lineNo, int branchId, OpCode originalOpCode,
             OpCode? newOpcode = null) {
             newOpcode ??= originalOpCode;
-            
+
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, newOpcode.Value.ToString()));
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, className));
