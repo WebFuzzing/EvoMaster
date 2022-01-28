@@ -80,5 +80,21 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
             else
                 return false;
         }
+
+        public int Divide(int a, int b) {
+            int result;
+            try {
+                result = a / b;
+            }
+            catch (DivideByZeroException e) {
+                Console.WriteLine("b shouldn't be zero");
+                return int.MaxValue;
+            }
+            finally {
+                Console.WriteLine("reached finally");
+            }
+
+            return result;
+        }
     }
 }

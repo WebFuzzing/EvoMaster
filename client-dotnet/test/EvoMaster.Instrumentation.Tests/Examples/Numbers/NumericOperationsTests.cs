@@ -90,5 +90,14 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         public void TestCompareWithInfinite(int a, int b) {
             Assert.Throws<DivideByZeroException>(() => _numericOperations.CompareWithInfinite(a, b));
         }
+
+        [Theory]
+        [InlineData(12, 3, 4)]
+        [InlineData(121, 11, 11)]
+        [InlineData(100, 0, int.MaxValue)]
+        public void TestDivie(int a, int b, int expectedResult) {
+            var actualResult = _numericOperations.Divide(a, b);
+            Assert.Equal(expectedResult, actualResult);
+        }
     }
 }
