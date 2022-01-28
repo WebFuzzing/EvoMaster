@@ -98,10 +98,7 @@ public class DistanceHelper{
         if (dist < 0){
             dist = long.MaxValue; // overflow
         }
-
-        // Man: Amid, I commented this assert out.
-        // please check why you put such assert here
-        //Trace.Assert(dist >= 0);
+        
         return dist;
     }
 
