@@ -2,7 +2,6 @@
 using System.IO;
 using System.Reflection;
 using EvoMaster.Client.Util;
-using EvoMaster.Instrumentation.Heuristic;
 using EvoMaster.Instrumentation.StaticState;
 using EvoMaster.Instrumentation_Shared;
 using Mono.Cecil.Cil;
@@ -60,15 +59,13 @@ namespace EvoMaster.Instrumentation {
             SimpleLogger.Info($"****** branch detected at {className}: {lineNo}, {branchId}");
         }
 
-        /**
-         * To Amid, add comments here
-         * not sure if we need [originalOpCode] here, since the originalOpCode could be converted to more than one, eg, beg -> ceq + brtrue
-         */
-        public static int CompareAndComputeDistance(int val1, int val2, string originalOpCode, string newOpCode, string className, int lineNo, int branchId) {
+        public static double CompareAndComputeDistance(object value1, object value2, string originalOpCode,
+            string newOpCode, string className, int lineNo, int branchId) {
+            var val1 = value1 as double? ?? (int) value1;
+            var val2 = value2 as double? ?? (int) value2;
+
             Console.WriteLine($"{originalOpCode}: {val1} & {val2}"); //todo
-            var opcode = (Code)Enum.Parse(typeof(Code), newOpCode);
-            HeuristicsForBooleans.Compare(className, lineNo, branchId, val1, val2, opcode);
-            
+
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1 == val2 ? 1 : 0;
@@ -84,12 +81,11 @@ namespace EvoMaster.Instrumentation {
 
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
-        
-        public static void ComputeDistanceForOneArgJumps(int val, string opCode, string className, int lineNo, int branchId) {
-            Console.WriteLine($"{opCode}: {val}"); //todo
-            
-            var op = (Code)Enum.Parse(typeof(Code), opCode);
-            HeuristicsForBooleans.CompareSingleValueJump(className, lineNo, branchId, val, op);
+
+        public static void ComputeDistanceForOneArgJumps(object val, string opCode, string className, int lineNo,
+            int branchId) {
+            var castedValue = val as double? ?? (int) val;
+            Console.WriteLine($"{opCode}: {castedValue}"); //todo
         }
     }
 }
