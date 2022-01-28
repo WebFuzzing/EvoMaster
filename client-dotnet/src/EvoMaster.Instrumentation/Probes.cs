@@ -59,8 +59,11 @@ namespace EvoMaster.Instrumentation {
             //TODO: remove
             SimpleLogger.Info($"****** branch detected at {className}: {lineNo}, {branchId}");
         }
-
-        public static int CompareAndComputeDistance(int val1, int val2, string originalOpCode,
+        
+        //This method (and its other overloadings below) imitate comparison instructions.
+        //They do exactly the same, in addition to computing distance
+        //We had to do this because we couldn't find a way to duplicate two top values on the evalutation stack which was needed to compute the distance
+        public static int CompareAndComputeDistance(int val1, int val2,
             string newOpCode, string className, int lineNo, int branchId) {
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
@@ -82,7 +85,8 @@ namespace EvoMaster.Instrumentation {
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
 
-        public static int CompareAndComputeDistance(double val1, double val2, string originalOpCode,
+        //TODO: check clt.un and cgt.un
+        public static int CompareAndComputeDistance(double val1, double val2,
             string newOpCode, string className, int lineNo, int branchId) {
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
@@ -102,7 +106,8 @@ namespace EvoMaster.Instrumentation {
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
 
-        public static int CompareAndComputeDistance(float val1, float val2, string originalOpCode,
+        //TODO: check clt.un and cgt.un
+        public static int CompareAndComputeDistance(float val1, float val2,
             string newOpCode, string className, int lineNo, int branchId) {
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
@@ -122,7 +127,7 @@ namespace EvoMaster.Instrumentation {
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
 
-        public static int CompareAndComputeDistance(long val1, long val2, string originalOpCode,
+        public static int CompareAndComputeDistance(long val1, long val2,
             string newOpCode, string className, int lineNo, int branchId) {
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
@@ -144,7 +149,7 @@ namespace EvoMaster.Instrumentation {
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
 
-        public static int CompareAndComputeDistance(short val1, short val2, string originalOpCode,
+        public static int CompareAndComputeDistance(short val1, short val2,
             string newOpCode, string className, int lineNo, int branchId) {
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
 
@@ -166,7 +171,10 @@ namespace EvoMaster.Instrumentation {
             throw new Exception($"No match found for the opcode=\"{newOpCode}\"");
         }
 
-
+        //This method computes the distance for the value before a jump instruction with one argument (brtrue & brfalse)
+        //We didn't have to imitate the behaviour of the instruction as it was taking one argument(unlike the methods
+        //above which are aimed for instructions which take two arguments) and we could just add a dup instruction to duplicate
+        //the top value on the evaluation stack (this is done in the Instrumentator.cs)
         public static void ComputeDistanceForOneArgJumps(int val, string opCode, string className, int lineNo,
             int branchId) {
             HeuristicsForBooleans.ComputeDistanceForSingleJump(className, lineNo, branchId, val, opCode);

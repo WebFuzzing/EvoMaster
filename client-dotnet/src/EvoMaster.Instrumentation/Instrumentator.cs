@@ -69,35 +69,35 @@ namespace EvoMaster.Instrumentation {
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
                         new[] {
-                            typeof(int), typeof(int), typeof(string), typeof(string), typeof(string), typeof(int),
+                            typeof(int), typeof(int), typeof(string), typeof(string), typeof(int),
                             typeof(int)
                         }));
             _compareAndComputeDistanceProbeForDouble =
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
                         new[] {
-                            typeof(double), typeof(double), typeof(string), typeof(string), typeof(string), typeof(int),
+                            typeof(double), typeof(double), typeof(string), typeof(string), typeof(int),
                             typeof(int)
                         }));
             _compareAndComputeDistanceProbeForFloat =
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
                         new[] {
-                            typeof(float), typeof(float), typeof(string), typeof(string), typeof(string), typeof(int),
+                            typeof(float), typeof(float), typeof(string), typeof(string), typeof(int),
                             typeof(int)
                         }));
             _compareAndComputeDistanceProbeForLong =
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
                         new[] {
-                            typeof(long), typeof(long), typeof(string), typeof(string), typeof(string), typeof(int),
+                            typeof(long), typeof(long), typeof(string), typeof(string), typeof(int),
                             typeof(int)
                         }));
             _compareAndComputeDistanceProbeForShort =
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.CompareAndComputeDistance),
                         new[] {
-                            typeof(short), typeof(short), typeof(string), typeof(string), typeof(string), typeof(int),
+                            typeof(short), typeof(short), typeof(string), typeof(string), typeof(int),
                             typeof(int)
                         }));
 
@@ -368,6 +368,10 @@ namespace EvoMaster.Instrumentation {
                 ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, branchOpCode.ToString(), false));
         }
 
+        //There are comparison instructions such as ceq and branch instructions such as bgt which pop two values from the evaluation stack
+        //To calculate branch distance, we have to duplicate those two values and give them to a method to do that
+        //Since we couldn't find a way to duplicate two top values on the stack, we added this method which modifies the bytecode to imitate
+        //the behaviour of the branch in addition to calculation of the branch distance
         private int InsertCompareAndComputeDistanceProbe(Instruction branchInstruction, ILProcessor ilProcessor,
             IReadOnlyList<ParameterDefinition> methodParams, IReadOnlyDictionary<string, string> localVarTypes,
             int byteCodeIndex, string className, int lineNo, int branchId) {
@@ -399,6 +403,7 @@ namespace EvoMaster.Instrumentation {
                 }
             }
 
+            //if the instruction is of type comparison (such as ceq and cgt), we imitate it by calling a probe which does exactly what is expected from the instruction
             if (branchInstruction.IsCompareWithTwoArgs()) {
                 byteCodeIndex =
                     InsertValuesBeforeBranchInstruction(branchInstruction, ilProcessor, byteCodeIndex, className,
@@ -496,9 +501,7 @@ namespace EvoMaster.Instrumentation {
             int byteCodeIndex, string className, int lineNo, int branchId, OpCode originalOpCode,
             OpCode? newOpcode = null) {
             newOpcode ??= originalOpCode;
-
-            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, originalOpCode.ToString()));
-            byteCodeIndex++;
+            
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, newOpcode.Value.ToString()));
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, className));
