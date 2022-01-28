@@ -96,5 +96,14 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
 
             return result;
         }
+        
+        public double CgtUnDouble(double a, double x){
+            if (x < 0.0 || a <= 0.0) throw new Exception("Invalid arguments");
+            if (x < (a + 1.0)){
+                return x;
+            }
+
+            return a;
+        }
     }
 }

@@ -99,5 +99,18 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
             var actualResult = _numericOperations.Divide(a, b);
             Assert.Equal(expectedResult, actualResult);
         }
+
+        [Theory]
+        [InlineData(1.0, 2.5, 1.0)]
+        [InlineData(2.0, 1.5, 1.5)]
+        public void TestCgtUnDouble(double a, double x, double expectedResult){
+            var actualResult = _numericOperations.CgtUnDouble(a, x);
+            Assert.Equal(expectedResult, actualResult);
+        }
+        
+        [Fact]
+        public void TestThrows(){
+            Assert.Throws<Exception>(() => _numericOperations.CgtUnDouble(-1.0, 0.0));
+        }
     }
 }
