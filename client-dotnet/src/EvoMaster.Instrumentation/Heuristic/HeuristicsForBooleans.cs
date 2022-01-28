@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using EvoMaster.Client.Util;
 using EvoMaster.Instrumentation.StaticState;
 using Mono.Cecil.Cil;
