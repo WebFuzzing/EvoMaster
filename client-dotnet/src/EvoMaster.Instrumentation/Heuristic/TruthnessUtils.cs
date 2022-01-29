@@ -9,7 +9,7 @@ public class TruthnessUtils{
         if (v < 0){
             throw new ArgumentException("Negative value: " + v);
         }
-
+        
         if (!double.IsFinite(v) || v == double.MaxValue){
             return 1d;
         }
@@ -80,5 +80,19 @@ public class TruthnessUtils{
         var t = len == 0 ? new Truthness(1, 0) : new Truthness(1d / (1d + len), 1);
 
         return t;
+    }
+
+    /**
+     * with dotnet,
+     * for cgt.un and clt.un, push 1 if any value is NaN. more info could be found as below two links
+     * see https://docs.microsoft.com/en-us/dotnet/api/system.reflection.emit.opcodes.cgt_un?view=net-6.0
+     * see https://docs.microsoft.com/en-us/dotnet/api/system.reflection.emit.opcodes.clt_un?view=net-6.0
+     * 
+     * for others, as checked, push 0 if any value is NaN
+     *
+     * need to check a bit with Andrea, if 0 is a proper distance for handling `ofTrue` value for NaN when 0 is pushed
+     */
+    public static Truthness GetTruthnessForNaN(bool isUnOpCode){
+        return isUnOpCode ? new Truthness(1, 0) : new Truthness(0, 1);
     }
 }

@@ -44,8 +44,6 @@ namespace EvoMaster.Instrumentation.Heuristic{
             }
             
             if (HeuristicsForNonintegerComparisons.CODES.Contains(code)){
-                // TODO unclear about how cgt.un and clt.un could work with double and float
-                // then add warning
                 var un = HeuristicsForNonintegerComparisons.UNSIGNED.Contains(code);
                 if (firstValue is double dfvalue && secondValue is double dsvalue){
                     t = HeuristicsForNonintegerComparisons.GetForFloatAndDoubleComparison(dfvalue,

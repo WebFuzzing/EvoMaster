@@ -37,6 +37,11 @@ namespace EvoMaster.Instrumentation.Heuristic{
          * compute distance for floating point value
          */
         public static Truthness GetForFloatAndDoubleComparison(double firstValue, double secondValue, Code opcode){
+
+            var anyNaN = double.IsNaN(firstValue) || double.IsNaN(secondValue);
+            if (anyNaN){
+                return TruthnessUtils.GetTruthnessForNaN(UNSIGNED.Contains(opcode));
+            }
             
             switch(opcode){
                 case Code.Ceq: 
