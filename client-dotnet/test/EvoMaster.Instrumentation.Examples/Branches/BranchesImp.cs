@@ -35,5 +35,41 @@ namespace EvoMaster.Instrumentation.Examples.Branches{
 
             return 8;
         }
+        
+        public int PosDouble(double x, double y){
+            if(x>0){
+                return 9;
+            }
+
+            if(y >= 0){
+                return 10;
+            }
+
+            return 11;
+        }
+
+        public int NegDouble(double x, double y){
+            if(x<0){
+                return 12;
+            }
+
+            if(y <= 0){
+                return 13;
+            }
+
+            return 14;
+        }
+
+        public int EqDouble(double x, double y){
+            if(x==0) {
+                return 15;
+            }
+            
+            if(y!=0) {
+                return 16;
+            }
+
+            return 17;
+        }
     }
 }
