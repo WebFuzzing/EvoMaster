@@ -1,19 +1,11 @@
 package org.evomaster.core.problem.httpws.service
 
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.api.service.ApiWsAction
+import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
-import org.evomaster.core.problem.rest.param.Param
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.problem.api.service.param.Param
 
 abstract class HttpWsAction(
-        var auth: AuthenticationInfo = NoAuth(),
-        val parameters: MutableList<Param>
-) : Action(parameters){
-
-        override fun getChildren(): List<Param> = parameters
-
-        override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-                seeGenes().forEach { it.randomize(randomness, forceNewValue) }
-        }
-}
+    override var auth: HttpWsAuthenticationInfo = NoAuth(),
+    parameters: MutableList<Param>
+) : ApiWsAction(auth, parameters)

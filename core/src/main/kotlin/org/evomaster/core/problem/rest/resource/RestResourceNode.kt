@@ -2,17 +2,14 @@ package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
-import org.evomaster.core.problem.util.BindingBuilder
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.gene.Gene

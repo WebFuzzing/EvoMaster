@@ -173,6 +173,11 @@ namespace EvoMaster.Controller.Controllers.db {
 
         private static void DeleteTables(DbCommand command, string table, string schmea, ISet<string> tableHasIdentify){
             var tableWithSchema = table;
+            /*
+             * for MS SQL, the delete command should consider its schema,
+             * but such schema info is not returned when retrieving table name with select command, see [GetAllTableCommand]
+             * then here, we need to reformat the table name with schema
+             */
             if (schmea.Length > 0 && !schmea.Equals(GetSchema(DatabaseType.MS_SQL_SERVER))){
                 tableWithSchema = schmea + "." + table;
             }

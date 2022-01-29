@@ -15,7 +15,7 @@ import org.evomaster.core.StaticCounter;
 import org.evomaster.core.logging.TestLoggingUtil;
 import org.evomaster.core.output.OutputFormat;
 import org.evomaster.core.output.compiler.CompilerForTestGenerated;
-import org.evomaster.core.problem.httpws.service.HttpWsIndividual;
+import org.evomaster.core.problem.api.service.ApiWsIndividual;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.AfterAll;
@@ -405,7 +405,7 @@ public abstract class WsTestBase {
     }
 
 
-    protected void assertInsertionIntoTable(Solution<? extends HttpWsIndividual> solution, String tableName) {
+    protected void assertInsertionIntoTable(Solution<? extends ApiWsIndividual> solution, String tableName) {
 
         boolean ok = solution.getIndividuals().stream().anyMatch(
                 ind -> ind.getIndividual().seeInitializingActions().stream().anyMatch(
