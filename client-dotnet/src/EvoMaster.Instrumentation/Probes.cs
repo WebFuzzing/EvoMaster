@@ -88,8 +88,14 @@ namespace EvoMaster.Instrumentation {
             newOpCode = newOpCode.ToLower();
 
             if (double.IsNaN(val1) || double.IsNaN(val2)) {
-                if (newOpCode == "cgt.un" || newOpCode == "clt.un") {
-                    return 1;
+                switch (newOpCode) {
+                    case "cgt.un":
+                    case "clt.un":
+                        return 1;
+                    case "ceq":
+                    case "clt":
+                    case "cgt":
+                        return 0;
                 }
             }
 
@@ -112,13 +118,19 @@ namespace EvoMaster.Instrumentation {
         public static int CompareAndComputeDistance(float val1, float val2,
             string newOpCode, string className, int lineNo, int branchId) {
             HeuristicsForBooleans.ComputeDistanceForTwoArgs(className, lineNo, branchId, val1, val2, newOpCode);
-            
-            if (float.IsNaN(val1) || float.IsNaN(val2)) {
-                if (newOpCode == "cgt.un" || newOpCode == "clt.un") {
-                    return 1;
+
+            if (double.IsNaN(val1) || double.IsNaN(val2)) {
+                switch (newOpCode) {
+                    case "cgt.un":
+                    case "clt.un":
+                        return 1;
+                    case "ceq":
+                    case "clt":
+                    case "cgt":
+                        return 0;
                 }
             }
-            
+
             switch (newOpCode.ToLower()) {
                 case "ceq":
                     return val1.Equals(val2) ? 1 : 0;

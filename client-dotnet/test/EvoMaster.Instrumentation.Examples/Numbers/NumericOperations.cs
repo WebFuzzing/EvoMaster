@@ -5,21 +5,14 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
         private int globalVar1 = 7;
         private int globalVar2 = 8;
         private static int staticVar = 7;
-
-        public bool GreaterThan(double a, double b) {
-            if (a > b)
-                return true;
-            else
-                return false;
-        }
-
+        
         public bool GreaterThan(int a, int b) {
             if (a > b)
                 return true;
             else
                 return false;
         }
-
+        
         public int CompareWithLocalVariable(int a) {
             int b = 7;
             if (a == b)
@@ -51,13 +44,6 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
             else if (a > staticVar)
                 return 1;
             return -1;
-        }
-
-        public bool GreaterThan(float a, float b) {
-            if (a > b)
-                return true;
-            else
-                return false;
         }
 
         public bool GreaterThan(long a, long b) {
@@ -104,6 +90,38 @@ namespace EvoMaster.Instrumentation.Examples.Numbers {
             }
 
             return a;
+        }
+
+        public bool AreEqual(double a, double b) {
+            return a == b;
+        }
+        public bool GreaterThan(double a, double b) {
+            if (a > b)
+                return true;
+            else
+                return false;
+        }
+        public bool LowerThan(double a, double b) {
+            if (a < b)
+                return true;
+            else
+                return false;
+        }
+        
+        public bool AreEqual(float a, float b) {
+            return a == b;
+        }
+        public bool GreaterThan(float a, float b) {
+            if (a > b)
+                return true;
+            else
+                return false;
+        }
+        public bool LowerThan(float a, float b) {
+            if (a < b)
+                return true;
+            else
+                return false;
         }
     }
 }

@@ -12,6 +12,9 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [InlineData(8, 7, true)]
         [InlineData(4, 4400, false)]
         [InlineData(99, 99, false)]
+        [InlineData(0.0 / 0.0, 0.0 / 0.0, false)]
+        [InlineData(0.0 / 0.0, 6, false)]
+        [InlineData(-6, 0.0 / 0.0, false)]
         public void TestGreaterThanForDouble(double a, double b, bool expectedResult) {
             var actualResult = _numericOperations.GreaterThan(a, b);
 
@@ -22,8 +25,37 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [InlineData(8, 7, true)]
         [InlineData(4, 4400, false)]
         [InlineData(99, 99, false)]
+        [InlineData(0.0 / 0.0, 0.0 / 0.0, false)]
+        [InlineData(0.0 / 0.0, 6, false)]
+        [InlineData(-6, 0.0 / 0.0, false)]
         public void TestGreaterThanForFloat(float a, float b, bool expectedResult) {
             var actualResult = _numericOperations.GreaterThan(a, b);
+
+            Assert.Equal(expectedResult, actualResult);
+        }
+        
+        [Theory]
+        [InlineData(8, 17, true)]
+        [InlineData(4, 4400, true)]
+        [InlineData(99, 99, false)]
+        [InlineData(0.0 / 0.0, 0.0 / 0.0, false)]
+        [InlineData(0.0 / 0.0, 6, false)]
+        [InlineData(-6, 0.0 / 0.0, false)]
+        public void TestLowerThanForDouble(double a, double b, bool expectedResult) {
+            var actualResult = _numericOperations.LowerThan(a, b);
+
+            Assert.Equal(expectedResult, actualResult);
+        }
+
+        [Theory]
+        [InlineData(8, 17, true)]
+        [InlineData(4, 4400, true)]
+        [InlineData(99, 99, false)]
+        [InlineData(0.0 / 0.0, 0.0 / 0.0, false)]
+        [InlineData(0.0 / 0.0, 6, false)]
+        [InlineData(-6, 0.0 / 0.0, false)]
+        public void TestLowerThanForFloat(float a, float b, bool expectedResult) {
+            var actualResult = _numericOperations.LowerThan(a, b);
 
             Assert.Equal(expectedResult, actualResult);
         }
@@ -95,7 +127,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [InlineData(12, 3, 4)]
         [InlineData(121, 11, 11)]
         [InlineData(100, 0, int.MaxValue)]
-        public void TestDivie(int a, int b, int expectedResult) {
+        public void TestDivide(int a, int b, int expectedResult) {
             var actualResult = _numericOperations.Divide(a, b);
             Assert.Equal(expectedResult, actualResult);
         }
@@ -103,23 +135,45 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [Theory]
         [InlineData(1.0, 2.5, 1.0)]
         [InlineData(2.0, 1.5, 1.5)]
-        [InlineData(1.0, 0.0/0.0, 1.0)]
-        public void TestCgtUnDouble(double a, double x, double expectedResult){
+        [InlineData(1.0, 0.0 / 0.0, 1.0)]
+        public void TestCgtUnDouble(double a, double x, double expectedResult) {
             var actualResult = _numericOperations.CgtUnDouble(a, x);
             Assert.Equal(expectedResult, actualResult);
         }
-        
+
         [Theory]
-        [InlineData(0.0/0.0, 1.5, 0.0/0.0)]
-        public void TestCgtUnNAN(double a, double x, double expectedResult){
+        [InlineData(0.0 / 0.0, 1.5)]
+        public void TestCgtUnNan(double a, double x) {
             var actualResult = _numericOperations.CgtUnDouble(a, x);
             Assert.True(double.IsNaN(actualResult));
         }
 
         [Theory]
         [InlineData(-1.0, 0)]
-        public void TestThrows(double a, double x){
+        public void TestThrows(double a, double x) {
             Assert.Throws<Exception>(() => _numericOperations.CgtUnDouble(a, x));
+        }
+
+        [Theory]
+        [InlineData(1.0, 2.5, false)]
+        [InlineData(666, 666, true)]
+        [InlineData(0.0 / 0.0, 1.5, false)]
+        [InlineData(0.0 / 0.0, 0.0 / 0.0, false)] //compare NaN with NaN
+        [InlineData(89, 0.0 / 0.0, false)]
+        public void TestAreEqual_Double(double a, double b, bool expectedResult) {
+            var actualResult = _numericOperations.AreEqual(a, b);
+            Assert.Equal(expectedResult, actualResult);
+        }
+
+        [Theory]
+        [InlineData(1.0, 2.5, false)]
+        [InlineData(666, 666, true)]
+        [InlineData(0.0 / 0.0, 1.5, false)]
+        [InlineData(0.0 / 0.0, 0.0 / 0.0, false)] //compare NaN with NaN
+        [InlineData(89, 0.0 / 0.0, false)]
+        public void TestAreEqual_Float(float a, float b, bool expectedResult) {
+            var actualResult = _numericOperations.AreEqual(a, b);
+            Assert.Equal(expectedResult, actualResult);
         }
     }
 }
