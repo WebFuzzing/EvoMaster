@@ -103,14 +103,23 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [Theory]
         [InlineData(1.0, 2.5, 1.0)]
         [InlineData(2.0, 1.5, 1.5)]
+        [InlineData(1.0, 0.0/0.0, 1.0)]
         public void TestCgtUnDouble(double a, double x, double expectedResult){
             var actualResult = _numericOperations.CgtUnDouble(a, x);
             Assert.Equal(expectedResult, actualResult);
         }
         
-        [Fact]
-        public void TestThrows(){
-            Assert.Throws<Exception>(() => _numericOperations.CgtUnDouble(-1.0, 0.0));
+        [Theory]
+        [InlineData(0.0/0.0, 1.5, 0.0/0.0)]
+        public void TestCgtUnNAN(double a, double x, double expectedResult){
+            var actualResult = _numericOperations.CgtUnDouble(a, x);
+            Assert.True(double.IsNaN(actualResult));
+        }
+
+        [Theory]
+        [InlineData(-1.0, 0)]
+        public void TestThrows(double a, double x){
+            Assert.Throws<Exception>(() => _numericOperations.CgtUnDouble(a, x));
         }
     }
 }
