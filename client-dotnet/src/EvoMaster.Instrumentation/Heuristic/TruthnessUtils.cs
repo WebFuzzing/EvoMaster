@@ -3,6 +3,11 @@ using System.Diagnostics;
 using EvoMaster.Instrumentation.Heuristic;
 
 public class TruthnessUtils{
+
+    //https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/floating-point-numeric-types
+    //15 digits
+    private const double CLOSE_TO_ONE = 0.999999999999999;
+    
     ///<summary>scales to a positive double value to the [0,1] range</summary>
     /// <param name="v">A non-negative double value</param>
     public static double NormalizeValue(double v){
@@ -52,8 +57,14 @@ public class TruthnessUtils{
     public static Truthness GetEqualityTruthness(double a, double b){
         var distance = DistanceHelper.GetDistanceToEquality(a, b);
         var normalizedDistance = NormalizeValue(distance);
+        var valueOfTrue = 1d - normalizedDistance;
+        
+        // handle precision problem due to small value
+        if (valueOfTrue == 1d && a!=b){
+            valueOfTrue = CLOSE_TO_ONE;
+        }
         return new Truthness(
-            1d - normalizedDistance,
+            valueOfTrue,
             a != b ? 1d : 0d
         );
     }
