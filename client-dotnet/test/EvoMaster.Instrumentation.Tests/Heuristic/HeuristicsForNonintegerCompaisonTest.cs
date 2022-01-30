@@ -14,11 +14,14 @@ namespace EvoMaster.Instrumentation.Tests.Heuristic{
             Assert.False(t0.IsFalse());    
         }
         
-        [Fact]
-        public void testCeqDouble(){
+        [Theory]
+        [InlineData(0.42d, 0.42d)]
+        [InlineData(1.0/0.0, 1.0/0.0)]
+        [InlineData(-1.0/0.0, -1.0/0.0)]
+        public void testCeqDouble(double a, double b){
             Code code = Code.Ceq;
 
-            Truthness t0 = HeuristicsForNonintegerComparisons.GetForFloatAndDoubleComparison(0.42d, 0.42d, code);
+            Truthness t0 = HeuristicsForNonintegerComparisons.GetForFloatAndDoubleComparison(a, b, code);
             Assert.True(t0.IsTrue());
             Assert.False(t0.IsFalse());    
         }
