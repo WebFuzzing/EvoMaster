@@ -67,7 +67,7 @@ def replaceInMvn():
         exit(1)
 
 
-# replaceInMakeExecutable()
-# replaceInCI()
+replaceInMakeExecutable()
+replaceInCI()
 replaceInJS()
-# replaceInMvn()
+replaceInMvn()
