@@ -141,10 +141,11 @@ namespace EvoMaster.Instrumentation {
             }
 
             if (_lastExecutingThread == null || stack == null || stack.IsEmpty()) {
-                return _noExceptionStatement.StatementId;
+                return _noExceptionStatement?.StatementId;
             }
 
-            return stack.PeekFront().StatementId;
+            var peeked = stack.PeekFront();
+            return peeked != null ? stack.PeekFront().StatementId : null;
         }
 
         public void PushLastExecutedStatement(string statementId, string lastMethod) {
