@@ -1,13 +1,23 @@
 {
   "name": "evomaster-client-js",
   "version": "1.3.1-SNAPSHOT",
-  "description": "Client library for EvoMaster for JavaScript",
+  "description": "JavaScript Client library for EvoMaster",
+  "keywords": [
+    "fuzzer",
+    "test",
+    "sbst",
+    "sbse"
+  ],
+  "homepage": "https://www.evomaster.org",
   "main": "dist/index.js",
   "files": [
     "dist",
     "package.json"
   ],
-  "repository": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EMResearch/EvoMaster.git"
+  },
   "author": "EvoMaster Team",
   "license": "LGPL-3.0-only",
   "dependencies": {
