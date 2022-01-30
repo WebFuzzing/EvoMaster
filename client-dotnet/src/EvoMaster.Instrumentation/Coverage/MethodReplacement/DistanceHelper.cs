@@ -123,6 +123,9 @@ public class DistanceHelper{
     }
 
     public static double GetDistanceToEquality(double a, double b){
+        if ((double.IsPositiveInfinity(a) && double.IsPositiveInfinity(b)) || (double.IsNegativeInfinity(a) && double.IsNegativeInfinity(b))){
+            return 0;
+        }
         if (!double.IsFinite(a) || !double.IsFinite(b)){
             // one of the values is not finite
             return double.MaxValue;

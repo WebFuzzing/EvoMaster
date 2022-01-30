@@ -15,6 +15,10 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [InlineData(0.0 / 0.0, 0.0 / 0.0, false)]
         [InlineData(0.0 / 0.0, 6, false)]
         [InlineData(-6, 0.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 1.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 6, true)]
+        [InlineData(-1.0 / 0.0, 6, false)]
+        [InlineData(-6, 1.0 / 0.0, false)]
         public void TestGreaterThanForDouble(double a, double b, bool expectedResult) {
             var actualResult = _numericOperations.GreaterThan(a, b);
 
@@ -28,6 +32,10 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [InlineData(0.0 / 0.0, 0.0 / 0.0, false)]
         [InlineData(0.0 / 0.0, 6, false)]
         [InlineData(-6, 0.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 1.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 6, true)]
+        [InlineData(-1.0 / 0.0, 6, false)]
+        [InlineData(-6, 1.0 / 0.0, false)]
         public void TestGreaterThanForFloat(float a, float b, bool expectedResult) {
             var actualResult = _numericOperations.GreaterThan(a, b);
 
@@ -41,6 +49,10 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [InlineData(0.0 / 0.0, 0.0 / 0.0, false)]
         [InlineData(0.0 / 0.0, 6, false)]
         [InlineData(-6, 0.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 0.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 6, false)]
+        [InlineData(-6, 1.0 / 0.0, true)]
+        [InlineData(-6, -1.0 / 0.0, false)]
         public void TestLowerThanForDouble(double a, double b, bool expectedResult) {
             var actualResult = _numericOperations.LowerThan(a, b);
 
@@ -54,6 +66,10 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [InlineData(0.0 / 0.0, 0.0 / 0.0, false)]
         [InlineData(0.0 / 0.0, 6, false)]
         [InlineData(-6, 0.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 1.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 6, false)]
+        [InlineData(-6, 1.0 / 0.0, true)]
+        [InlineData(-6, -1.0 / 0.0, false)]
         public void TestLowerThanForFloat(float a, float b, bool expectedResult) {
             var actualResult = _numericOperations.LowerThan(a, b);
 
@@ -136,6 +152,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [InlineData(1.0, 2.5, 1.0)]
         [InlineData(2.0, 1.5, 1.5)]
         [InlineData(1.0, 0.0 / 0.0, 1.0)]
+        [InlineData(1.0, 1.0 / 0.0, 1.0)]
         public void TestCgtUnDouble(double a, double x, double expectedResult) {
             var actualResult = _numericOperations.CgtUnDouble(a, x);
             Assert.Equal(expectedResult, actualResult);
@@ -147,12 +164,20 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
             var actualResult = _numericOperations.CgtUnDouble(a, x);
             Assert.True(double.IsNaN(actualResult));
         }
+        
+        [Theory]
+        [InlineData(1.0 / 0.0, 1.5)]
+        public void TestCgtUnInfinity(double a, double x) {
+            var actualResult = _numericOperations.CgtUnDouble(a, x);
+            Assert.True(double.IsFinite(actualResult));
+        }
 
         [Theory]
         [InlineData(-1.0, 0)]
         public void TestThrows(double a, double x) {
             Assert.Throws<Exception>(() => _numericOperations.CgtUnDouble(a, x));
         }
+        
 
         [Theory]
         [InlineData(1.0, 2.5, false)]
@@ -160,6 +185,11 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [InlineData(0.0 / 0.0, 1.5, false)]
         [InlineData(0.0 / 0.0, 0.0 / 0.0, false)] //compare NaN with NaN
         [InlineData(89, 0.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 1.5, false)]
+        [InlineData(89, 1.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 1.0 / 0.0, true)] //note that compare positive infinity with positive infinity, result in true
+        [InlineData(-1.0 / 0.0, -1.0 / 0.0, true)] //note that compare negative infinity with negative infinity, result in true
+        [InlineData(-1.0 / 0.0, 1.0 / 0.0, false)] //note that compare negative infinity with positive infinity, result in true
         public void TestAreEqual_Double(double a, double b, bool expectedResult) {
             var actualResult = _numericOperations.AreEqual(a, b);
             Assert.Equal(expectedResult, actualResult);
@@ -171,6 +201,11 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Numbers {
         [InlineData(0.0 / 0.0, 1.5, false)]
         [InlineData(0.0 / 0.0, 0.0 / 0.0, false)] //compare NaN with NaN
         [InlineData(89, 0.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 1.5, false)]
+        [InlineData(89, 1.0 / 0.0, false)]
+        [InlineData(1.0 / 0.0, 1.0 / 0.0, true)] //note that compare positive infinity with positive infinity, result in true
+        [InlineData(-1.0 / 0.0, -1.0 / 0.0, true)] //note that compare negative infinity with negative infinity, result in true
+        [InlineData(-1.0 / 0.0, 1.0 / 0.0, false)] //note that compare negative infinity with positive infinity, result in true
         public void TestAreEqual_Float(float a, float b, bool expectedResult) {
             var actualResult = _numericOperations.AreEqual(a, b);
             Assert.Equal(expectedResult, actualResult);
