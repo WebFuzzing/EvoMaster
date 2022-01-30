@@ -8,7 +8,6 @@ using EvoMaster.Instrumentation_Shared;
 using EvoMaster.Instrumentation_Shared.Collections;
 
 namespace EvoMaster.Instrumentation {
-
     public class AdditionalInfo {
         /**
      * In REST APIs, it can happen that some query parameters do not
@@ -50,13 +49,13 @@ namespace EvoMaster.Instrumentation {
      *
      * Furthermore, we need a stack per execution thread, based on their name.
      */
-        private readonly IDictionary<string, Deque<string>> _lastExecutedStatementStacks =
-            new ConcurrentDictionary<string, Deque<string>>();
+        private readonly ConcurrentDictionary<string, Deque<StatementMethod>> _lastExecutedStatementStacks =
+            new ConcurrentDictionary<string, Deque<StatementMethod>>();
 
         /**
      * In case we pop all elements from stack, keep track of last one separately.
      */
-        private string _noExceptionStatement;
+        private StatementMethod _noExceptionStatement;
 
 
         /**
@@ -136,28 +135,42 @@ namespace EvoMaster.Instrumentation {
                 interested into... would need to check if there are cases in which this is not the case
              */
 
-            Deque<string> stack = null;
+            Deque<StatementMethod> stack = null;
             if (_lastExecutingThread != null) {
                 stack = _lastExecutedStatementStacks[_lastExecutingThread];
             }
 
             if (_lastExecutingThread == null || stack == null || stack.IsEmpty()) {
-                return _noExceptionStatement;
+                return _noExceptionStatement.StatementId;
             }
 
-            return stack.PeekFront();
+            return stack.PeekFront().StatementId;
         }
 
-        public void PushLastExecutedStatement(string statementId) {
+        public void PushLastExecutedStatement(string statementId, string lastMethod) {
             var key = GetThreadIdentifier();
             _lastExecutingThread = key;
             _lastExecutedStatementStacks.TryAdd(key,
-                new Deque<string>()); //TODO: check TryAdd(putIfAbsent) and Deque(ArrayDeque_
+                new Deque<StatementMethod>()); //TODO: check TryAdd(putIfAbsent) and Deque(ArrayDeque_
             var stack = _lastExecutedStatementStacks[key];
 
             _noExceptionStatement = null;
 
-            stack.PushFront(statementId);
+            StatementMethod current;
+
+            try {
+                current = stack.PeekFront();
+            }
+            catch (InvalidOperationException e) {
+                current = null;
+            }
+
+            //if some method, then replace top of stack
+            if (current != null && lastMethod.Equals(current.Method)) {
+                stack.PopFront();
+            }
+
+            stack.PushFront(new StatementMethod {Method = lastMethod, StatementId = statementId});
         }
 
         private string GetThreadIdentifier() => Thread.CurrentThread.ManagedThreadId.ToString();
@@ -187,5 +200,10 @@ namespace EvoMaster.Instrumentation {
                 _noExceptionStatement = statementDescription;
             }
         }
+    }
+
+    internal class StatementMethod {
+        public string StatementId { get; set; }
+        public string Method { get; set; }
     }
 }

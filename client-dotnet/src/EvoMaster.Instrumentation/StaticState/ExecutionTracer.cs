@@ -161,8 +161,8 @@ namespace EvoMaster.Instrumentation.StaticState {
         //     var lastMethod = className + "_" + methodName + "_" + descriptor;
         //     MarkLastExecutedStatement(statementId);
         // }
-        public static void MarkLastExecutedStatement(string statementId) {
-            GetCurrentAdditionalInfo().PushLastExecutedStatement(statementId);
+        public static void MarkLastExecutedStatement(string statementId, string lastMethod) {
+            GetCurrentAdditionalInfo().PushLastExecutedStatement(statementId, lastMethod);
         }
 
         ///<returns>the number of objectives that have been encountered during the test execution</returns>
@@ -173,7 +173,7 @@ namespace EvoMaster.Instrumentation.StaticState {
 
         public static IDictionary<string, TargetInfo> GetInternalReferenceToObjectiveCoverage() => ObjectiveCoverage;
 
-        public static void EnteringStatement(string className, int lineNo, int index) {
+        public static void EnteringStatement(string className, string method, int lineNo, int index) {
             var lineId = ObjectiveNaming.LineObjectiveName(className, lineNo);
             var classId = ObjectiveNaming.ClassObjectiveName(className);
             var statementId = ObjectiveNaming.StatementObjectiveName(className, lineNo, index);
@@ -182,15 +182,15 @@ namespace EvoMaster.Instrumentation.StaticState {
             UpdateObjective(classId, 1);
             UpdateObjective(statementId, 0.5);
 
-            MarkLastExecutedStatement(statementId);
+            MarkLastExecutedStatement(statementId, method);
         }
 
-        public static void CompletedStatement(string className, int lineNo, int index) {
+        public static void CompletedStatement(string className, string method, int lineNo, int index) {
             var statementId = ObjectiveNaming.StatementObjectiveName(className, lineNo, index);
 
             UpdateObjective(statementId, 1);
 
-            MarkLastExecutedStatement(statementId);
+            MarkLastExecutedStatement(statementId, method);
 
             //HeuristicsForBooleans.clearLastEvaluation();
         }

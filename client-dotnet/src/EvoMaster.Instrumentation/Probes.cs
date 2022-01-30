@@ -47,12 +47,12 @@ namespace EvoMaster.Instrumentation {
 
 
         //This method is called by the probe inserted after each covered statement in the instrumented SUT
-        public static void CompletedStatement(string className, int lineNo, int columnNo) {
-            ExecutionTracer.CompletedStatement(className, lineNo, columnNo);
+        public static void CompletedStatement(string className, string method, int lineNo, int columnNo) {
+            ExecutionTracer.CompletedStatement(className, method, lineNo, columnNo);
         }
 
-        public static void EnteringStatement(string className, int lineNo, int columnNo) {
-            ExecutionTracer.EnteringStatement(className, lineNo, columnNo);
+        public static void EnteringStatement(string className, string method, int lineNo, int columnNo) {
+            ExecutionTracer.EnteringStatement(className, method, lineNo, columnNo);
         }
 
         //This method (and its other overloadings below) imitate comparison instructions.

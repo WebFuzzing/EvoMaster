@@ -54,12 +54,12 @@ namespace EvoMaster.Instrumentation {
             _completedStatementProbe =
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.CompletedStatement),
-                        new[] {typeof(string), typeof(int), typeof(int)}));
+                        new[] {typeof(string), typeof(string), typeof(int), typeof(int)}));
 
             _enteringStatementProbe =
                 module.ImportReference(
                     typeof(Probes).GetMethod(nameof(Probes.EnteringStatement),
-                        new[] {typeof(string), typeof(int), typeof(int)}));
+                        new[] {typeof(string), typeof(string), typeof(int), typeof(int)}));
 
             _compareAndComputeDistanceProbeForInt =
                 module.ImportReference(
@@ -203,20 +203,21 @@ namespace EvoMaster.Instrumentation {
 
                         if (lastEnteredLine != 0 && lastEnteredColumn != 0) {
                             i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
+                                method.Name,
                                 lastEnteredLine,
                                 lastEnteredColumn);
                         }
 
                         if (sequencePoint != null) {
                             i = InsertEnteringStatementProbe(instruction, method.Body, ilProcessor,
-                                i, type.Name, sequencePoint.StartLine, sequencePoint.StartColumn);
+                                i, type.Name, method.Name, sequencePoint.StartLine, sequencePoint.StartColumn);
 
                             lastEnteredColumn = sequencePoint.StartColumn;
                             lastEnteredLine = sequencePoint.StartLine;
 
                             if (method.Body.Instructions.Last().Equals(instruction) &&
                                 instruction.OpCode == OpCodes.Ret) {
-                                i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name,
+                                i = InsertCompletedStatementProbe(instruction, ilProcessor, i, type.Name, method.Name,
                                     lastEnteredLine, lastEnteredColumn);
                             }
                         }
@@ -239,19 +240,19 @@ namespace EvoMaster.Instrumentation {
         }
 
         private int InsertCompletedStatementProbe(Instruction instruction,
-            ILProcessor ilProcessor, int byteCodeIndex, string className, int lineNo, int columnNo) {
+            ILProcessor ilProcessor, int byteCodeIndex, string className, string methodName, int lineNo, int columnNo) {
             if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
 
             if (instruction.IsUnConditionalJumpOrExitInstruction()) {
                 return InsertCompletedStatementProbe(instruction.Previous, ilProcessor, byteCodeIndex,
-                    className, lineNo, columnNo);
+                    className, methodName, lineNo, columnNo);
             }
 
             if (instruction.OpCode == OpCodes.Call &&
                 instruction.Operand.ToString()!.Contains("EvoMaster.Instrumentation.Probes::ComputingBranchDistance")) {
                 return InsertCompletedStatementProbe(instruction.Previous.Previous.Previous.Previous, ilProcessor,
                     byteCodeIndex,
-                    className, lineNo, columnNo);
+                    className, methodName, lineNo, columnNo);
             }
 
             //TODO: check if we should register statements or not
@@ -262,6 +263,7 @@ namespace EvoMaster.Instrumentation {
             _alreadyCompletedPoints.Add(new CodeCoordinate(lineNo, columnNo));
 
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
+            var methodNameInstruction = ilProcessor.Create(OpCodes.Ldstr, methodName);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _completedStatementProbe);
@@ -272,6 +274,8 @@ namespace EvoMaster.Instrumentation {
             byteCodeIndex++;
             ilProcessor.InsertAfter(instruction, lineNumberInstruction);
             byteCodeIndex++;
+            ilProcessor.InsertAfter(instruction, methodNameInstruction);
+            byteCodeIndex++;
             ilProcessor.InsertAfter(instruction, classNameInstruction);
             byteCodeIndex++;
 
@@ -279,7 +283,7 @@ namespace EvoMaster.Instrumentation {
         }
 
         private int InsertEnteringStatementProbe(Instruction instruction, MethodBody methodBody,
-            ILProcessor ilProcessor, int byteCodeIndex, string className, int lineNo, int columnNo) {
+            ILProcessor ilProcessor, int byteCodeIndex, string className, string methodName, int lineNo, int columnNo) {
             //Do not add inserted probe if the statement is already covered by completed probe
             if (_alreadyCompletedPoints.Contains(new CodeCoordinate(lineNo, columnNo))) return byteCodeIndex;
 
@@ -313,15 +317,19 @@ namespace EvoMaster.Instrumentation {
             if (instruction.Previous != null && instruction.Previous.OpCode == OpCodes.Leave &&
                 instruction.Next.OpCode == OpCodes.Leave) {
                 return InsertEnteringStatementProbe(instruction.Next, methodBody, ilProcessor, byteCodeIndex, className,
+                    methodName,
                     lineNo, columnNo);
             }
 
             var classNameInstruction = ilProcessor.Create(OpCodes.Ldstr, className);
+            var methodNameInstruction = ilProcessor.Create(OpCodes.Ldstr, methodName);
             var lineNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, lineNo);
             var columnNumberInstruction = ilProcessor.Create(OpCodes.Ldc_I4, columnNo);
             var methodCallInstruction = ilProcessor.Create(OpCodes.Call, _enteringStatementProbe);
 
             ilProcessor.InsertBefore(instruction, classNameInstruction);
+            byteCodeIndex++;
+            ilProcessor.InsertBefore(instruction, methodNameInstruction);
             byteCodeIndex++;
             ilProcessor.InsertBefore(instruction, lineNumberInstruction);
             byteCodeIndex++;
