@@ -83,12 +83,12 @@ namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
         }
 
 
-        private static bool StartsWith(string caller, string prefix, StringComparison comparisonType, int toffset,
+        private static bool StartsOrEndWith(string caller, string prefix, StringComparison comparisonType, bool doStartWith ,int toffset,
             string idTemplate){
             ObjectExtensions.RequireNonNull<string>(caller);
-
+            
             bool result;
-            if (toffset == 0){
+            if (doStartWith){
                 result = caller.StartsWith(prefix, comparisonType);
             } else{
                 result = caller.EndsWith(prefix, comparisonType);
@@ -132,25 +132,29 @@ namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
         }
 
         public static bool StartsWith(string caller, string prefix, StringComparison comparisonType, string idTemplate){
-            return StartsWith(caller, prefix, comparisonType, 0, idTemplate);
+            return StartsOrEndWith(caller, prefix, comparisonType, true, 0, idTemplate);
         }
 
         public static bool StartsWith(string caller, string prefix, string idTemplate){
             ObjectExtensions.RequireNonNull<string>(caller);
 
-            return StartsWith(caller, prefix, StringComparison.Ordinal, 0, idTemplate);
+            return StartsOrEndWith(caller, prefix, StringComparison.Ordinal, true ,0, idTemplate);
         }
 
         public static bool EndsWith(string caller, string suffix, string idTemplate){
             ObjectExtensions.RequireNonNull<string>(caller);
 
-            return StartsWith(caller, suffix, StringComparison.Ordinal, caller.Length - suffix.Length, idTemplate);
+            // handle null suffix here to make exception consistent 
+            var offset = suffix == null ? -1 : caller.Length - suffix.Length;
+            return StartsOrEndWith(caller, suffix, StringComparison.Ordinal, false, offset, idTemplate);
         }
 
         public static bool EndsWith(string caller, string suffix, StringComparison comparisonType, string idTemplate){
             ObjectExtensions.RequireNonNull<string>(caller);
-
-            return StartsWith(caller, suffix, comparisonType, caller.Length - suffix.Length, idTemplate);
+            
+            // handle null suffix here to make exception consistent 
+            var offset = suffix == null ? -1 : caller.Length - suffix.Length;
+            return StartsOrEndWith(caller, suffix, comparisonType, false, offset, idTemplate);
         }
 
 
