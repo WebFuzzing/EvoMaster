@@ -223,5 +223,17 @@ namespace EvoMaster.Instrumentation {
             int branchId) {
             HeuristicsForBooleans.ComputeDistanceForSingleJump(className, lineNo, branchId, val, opCode);
         }
+
+        public static bool StringEquality(string val1, string val2, string className, int lineNo, int branchId) {
+            //TODO: compute distance
+
+            return val1 == val2;
+        }
+        
+        public static bool StringEquals(string val1, string val2, int comparison, string className, int lineNo, int branchId) {
+            //TODO: compute distance
+
+            return val1.Equals(val2, (StringComparison) comparison);
+        }
     }
 }

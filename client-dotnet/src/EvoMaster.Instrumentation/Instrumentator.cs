@@ -31,6 +31,11 @@ namespace EvoMaster.Instrumentation {
         private MethodReference _computeDistanceForOneArgJumpsProbeForFloat;
         private MethodReference _computeDistanceForOneArgJumpsProbeForLong;
         private MethodReference _computeDistanceForOneArgJumpsProbeForShort;
+
+        private MethodReference _stringEquality;
+        private MethodReference _stringEquals;
+        private MethodReference _stringEqualsWithStringComparison;
+
         private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
 
         private readonly List<CodeCoordinate> _alreadyCompletedPoints = new List<CodeCoordinate>();
@@ -117,6 +122,16 @@ namespace EvoMaster.Instrumentation {
                 typeof(Probes).GetMethod(nameof(Probes.ComputeDistanceForOneArgJumps),
                     new[] {typeof(short), typeof(string), typeof(string), typeof(int), typeof(int)}));
 
+            _stringEquality = module.ImportReference(
+                typeof(Probes).GetMethod(nameof(Probes.StringEquality),
+                    new[] {typeof(string), typeof(string), typeof(string), typeof(int), typeof(int)}));
+            // _stringEquals = module.ImportReference(
+            //     typeof(Probes).GetMethod(nameof(Probes.StringEquality),
+            //         new[] {typeof(string), typeof(string), typeof(string), typeof(int), typeof(int)}));
+            _stringEqualsWithStringComparison = module.ImportReference(
+                typeof(Probes).GetMethod(nameof(Probes.StringEquals),
+                    new[] {typeof(string), typeof(string), typeof(int), typeof(string), typeof(int), typeof(int)}));
+
             foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
                 _alreadyCompletedPoints.Clear();
 
@@ -143,6 +158,39 @@ namespace EvoMaster.Instrumentation {
                         }
                         catch (ArgumentOutOfRangeException) {
                             break;
+                        }
+
+                        if (instruction.OpCode.Equals(OpCodes.Call) &&
+                            instruction.Operand.ToString().Contains("String::op_Equality")) {
+                            mapping.TryGetValue(instruction, out var sp);
+
+                            var l = lastEnteredLine;
+
+                            if (sp != null) {
+                                l = sp.StartLine;
+                            }
+
+                            if (l != lastEnteredLine) lastBranch = 0;
+
+                            i = ReplaceStringEquality(instruction, ilProcessor, i, type.Name, l, lastBranch);
+                        }
+                        
+                        if (instruction.OpCode.Equals(OpCodes.Callvirt) &&
+                            instruction.Operand.ToString().Contains("String::Equals")) {
+                            mapping.TryGetValue(instruction, out var sp);
+
+                            var l = lastEnteredLine;
+
+                            if (sp != null) {
+                                l = sp.StartLine;
+                            }
+
+                            if (l != lastEnteredLine) lastBranch = 0;
+
+                            var checksComparison = instruction.Operand.ToString().Contains("StringComparison");
+
+                            i = ReplaceStringEquals(instruction, ilProcessor, i, type.Name, l, lastBranch,
+                                checksComparison);
                         }
 
                         if (instruction.IsStoreLocalVariable()) {
@@ -608,6 +656,45 @@ namespace EvoMaster.Instrumentation {
             byteCodeIndex++;
 
             branchInstruction.UpdateJumpsToTheCurrentInstruction(dupInstruction, methodDefinition.Body.Instructions);
+            return byteCodeIndex;
+        }
+
+        private int ReplaceStringEquality(Instruction instruction, ILProcessor ilProcessor, int byteCodeIndex,
+            string className, int lineNo, int branchId) {
+            RegisterBranchTarget(instruction.OpCode, className, lineNo, branchId);
+
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, className));
+            byteCodeIndex++;
+
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, lineNo));
+            byteCodeIndex++;
+
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, branchId));
+            byteCodeIndex++;
+
+            ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Call, _stringEquality));
+
+            return byteCodeIndex;
+        }
+
+        private int ReplaceStringEquals(Instruction instruction, ILProcessor ilProcessor, int byteCodeIndex,
+            string className, int lineNo, int branchId, bool checkStringComparison = false) {
+            RegisterBranchTarget(instruction.OpCode, className, lineNo, branchId);
+
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, className));
+            byteCodeIndex++;
+
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, lineNo));
+            byteCodeIndex++;
+
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, branchId));
+            byteCodeIndex++;
+
+            ilProcessor.Replace(instruction,
+                checkStringComparison
+                    ? ilProcessor.Create(OpCodes.Call, _stringEqualsWithStringComparison)
+                    : ilProcessor.Create(OpCodes.Call, _stringEquality));
+
             return byteCodeIndex;
         }
     }

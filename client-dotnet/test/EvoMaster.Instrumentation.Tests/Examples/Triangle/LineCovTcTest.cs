@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using EvoMaster.Instrumentation.Examples.Branches;
 using EvoMaster.Instrumentation.Examples.Numbers;
+using EvoMaster.Instrumentation.Examples.Strings;
 using EvoMaster.Instrumentation.Examples.Triangle;
 using EvoMaster.Instrumentation.StaticState;
 using EvoMaster.Instrumentation_Shared;
@@ -120,6 +121,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
                 nameof(TriangleClassificationImpl),
                 nameof(BranchesImp),
                 nameof(NumericOperations),
+                nameof(StringOperations),
                 nameof(Instrumentation.Examples.Program)
             };
 
