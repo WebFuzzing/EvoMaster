@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using EvoMaster.Instrumentation.Heuristic;
 using EvoMaster.Instrumentation_Shared;
 
-namespace EvoMaster.Instrumentation.StaticState {
-    public static class ExecutionTracer {
+namespace EvoMaster.Instrumentation.StaticState{
+    public static class ExecutionTracer{
         /*
          * Key -> the unique descriptive id of the coverage objective
          *
@@ -54,13 +55,13 @@ namespace EvoMaster.Instrumentation.StaticState {
          */
         private static volatile bool _killSwitch;
 
-        static ExecutionTracer() {
+        static ExecutionTracer(){
             Reset();
         }
 
 
-        public static void Reset() {
-            lock (Lock) {
+        public static void Reset(){
+            lock (Lock){
                 ObjectiveCoverage.Clear();
                 _actionIndex = 0;
                 AdditionalInfoList.Clear();
@@ -71,26 +72,26 @@ namespace EvoMaster.Instrumentation.StaticState {
             }
         }
 
-        public static bool IsKillSwitch() {
+        public static bool IsKillSwitch(){
             return _killSwitch;
         }
 
-        public static void SetAction(Action action) {
-            lock (Lock) {
+        public static void SetAction(Action action){
+            lock (Lock){
                 SetKillSwitch(false);
                 _expensiveOperation = 0;
-                if (action.GetIndex() != _actionIndex) {
+                if (action.GetIndex() != _actionIndex){
                     _actionIndex = action.GetIndex();
                     AdditionalInfoList.Add(new AdditionalInfo());
                 }
 
-                if (action.GetInputVariables() != null && action.GetInputVariables().Count != 0) {
+                if (action.GetInputVariables() != null && action.GetInputVariables().Count != 0){
                     _inputVariables = action.GetInputVariables();
                 }
             }
         }
 
-        public static void SetKillSwitch(bool killSwitch) {
+        public static void SetKillSwitch(bool killSwitch){
             _killSwitch = killSwitch;
         }
 
@@ -102,28 +103,28 @@ namespace EvoMaster.Instrumentation.StaticState {
         /// </summary>
         /// <param name="input"></param>
         /// <returns>bool</returns>
-        public static bool IsTaintInput(string input) {
+        public static bool IsTaintInput(string input){
             return TaintInputName.IsTaintInput(input) || _inputVariables.Contains(input);
         }
 
-        public static TaintType GetTaintType(string input) {
-            if (input == null) {
+        public static TaintType GetTaintType(string input){
+            if (input == null){
                 return TaintType.NONE;
             }
 
-            if (IsTaintInput(input)) {
+            if (IsTaintInput(input)){
                 return TaintType.FULL_MATCH;
             }
 
             if (TaintInputName.IncludesTaintInput(input)
-                || _inputVariables.ToList().Any(input.Contains)) {
+                || _inputVariables.ToList().Any(input.Contains)){
                 return TaintType.PARTIAL_MATCH;
             }
 
             return TaintType.NONE;
         }
 
-        public static IEnumerable<AdditionalInfo> ExposeAdditionalInfoList() {
+        public static IEnumerable<AdditionalInfo> ExposeAdditionalInfoList(){
             return AdditionalInfoList;
         }
 
@@ -161,7 +162,7 @@ namespace EvoMaster.Instrumentation.StaticState {
         //     var lastMethod = className + "_" + methodName + "_" + descriptor;
         //     MarkLastExecutedStatement(statementId);
         // }
-        public static void MarkLastExecutedStatement(string statementId, string lastMethod) {
+        public static void MarkLastExecutedStatement(string statementId, string lastMethod){
             GetCurrentAdditionalInfo().PushLastExecutedStatement(statementId, lastMethod);
         }
 
@@ -173,7 +174,7 @@ namespace EvoMaster.Instrumentation.StaticState {
 
         public static IDictionary<string, TargetInfo> GetInternalReferenceToObjectiveCoverage() => ObjectiveCoverage;
 
-        public static void EnteringStatement(string className, string method, int lineNo, int index) {
+        public static void EnteringStatement(string className, string method, int lineNo, int index){
             var lineId = ObjectiveNaming.LineObjectiveName(className, lineNo);
             var classId = ObjectiveNaming.ClassObjectiveName(className);
             var statementId = ObjectiveNaming.StatementObjectiveName(className, lineNo, index);
@@ -185,7 +186,7 @@ namespace EvoMaster.Instrumentation.StaticState {
             MarkLastExecutedStatement(statementId, method);
         }
 
-        public static void CompletedStatement(string className, string method, int lineNo, int index) {
+        public static void CompletedStatement(string className, string method, int lineNo, int index){
             var statementId = ObjectiveNaming.StatementObjectiveName(className, lineNo, index);
 
             UpdateObjective(statementId, 1);
@@ -195,20 +196,19 @@ namespace EvoMaster.Instrumentation.StaticState {
             //HeuristicsForBooleans.clearLastEvaluation();
         }
 
-        private static void UpdateObjective(string id, double value) {
-            if (value < 0d || value > 1d) {
+        private static void UpdateObjective(string id, double value){
+            if (value < 0d || value > 1d){
                 throw new ArgumentException("Invalid value " + value + " out of range [0,1]");
             }
 
             //In the same execution, a target could be reached several times, so we should keep track of the best value found so far
-            lock (Lock) {
-                if (ObjectiveCoverage.ContainsKey(id)) {
+            lock (Lock){
+                if (ObjectiveCoverage.ContainsKey(id)){
                     var previous = ObjectiveCoverage[id].Value;
-                    if (value > previous) {
+                    if (value > previous){
                         ObjectiveCoverage[id] = new TargetInfo(null, id, value, _actionIndex);
                     }
-                }
-                else {
+                } else{
                     ObjectiveCoverage.Add(id, new TargetInfo(null, id, value, _actionIndex));
                 }
             }
@@ -219,14 +219,14 @@ namespace EvoMaster.Instrumentation.StaticState {
         /**
          * get fitness value of target with given id
          */
-        public static double GetValue(string id) {
-             ObjectiveCoverage.TryGetValue(id, out var value);
-             
-             if (value is {Value: { }}) return value.Value.Value;
-             
-             return 0;
+        public static double GetValue(string id){
+            ObjectiveCoverage.TryGetValue(id, out var value);
+
+            if (value is{Value:{ }}) return value.Value.Value;
+
+            return 0;
         }
-        
+
         // public static void ExecutedNumericComparison(string idTemplate, double lt, double eq, double gt) {
         //
         //     UpdateObjective(ObjectiveNaming.NumericComparisonObjectiveName(idTemplate, -1), lt);
@@ -240,7 +240,6 @@ namespace EvoMaster.Instrumentation.StaticState {
 
             UpdateObjective(forThen, t.GetOfTrue());
             UpdateObjective(forElse, t.GetOfFalse());
-            
         }
 
         /**
@@ -254,17 +253,85 @@ namespace EvoMaster.Instrumentation.StaticState {
          * return a set of description of targets which are not covered
          */
         public static ISet<string> GetNonCoveredObjectives(string prefix){
-
             return ObjectiveCoverage
                 .Where(e => prefix == null || e.Key.StartsWith(prefix))
                 .Where(e => e.Value.Value < 1)
                 .Select(e => e.Key).ToHashSet();
         }
-        
-        private static AdditionalInfo GetCurrentAdditionalInfo() {
-            lock (Lock) {
+
+        private static AdditionalInfo GetCurrentAdditionalInfo(){
+            lock (Lock){
                 return AdditionalInfoList[_actionIndex];
             }
+        }
+        
+
+        public static void AddStringSpecialization(string taintInputName, StringSpecializationInfo info){
+            GetCurrentAdditionalInfo().AddSpecialization(taintInputName, info);
+        }
+
+        public static void HandleTaintForStringEquals(string left, string right, StringComparison comparisonType){
+            if (left == null || right == null){
+                //nothing to do?
+                return;
+            }
+
+            bool taintedLeft = IsTaintInput(left);
+            bool taintedRight = IsTaintInput(right);
+
+            var ignoreCase = comparisonType == StringComparison.OrdinalIgnoreCase 
+                             || comparisonType == StringComparison.CurrentCultureIgnoreCase 
+                             || comparisonType == StringComparison.InvariantCultureIgnoreCase;
+            
+            if (taintedLeft && taintedRight){
+                if (ignoreCase ? left.Equals(right, StringComparison.OrdinalIgnoreCase) : left.Equals(right)){
+                    //tainted, but compared to itself. so shouldn't matter
+                    return;
+                }
+
+                /*
+                    We consider binding only for base versions of taint, ie we ignore
+                    the special strings provided by the Core, as it would lead to nasty
+                    side-effects
+                 */
+                if (!TaintInputName.IsTaintInput(left) || !TaintInputName.IsTaintInput(right)){
+                    return;
+                }
+
+                //TODO could have EQUAL_IGNORE_CASE
+                string id = left + "___" + right;
+                AddStringSpecialization(left, new StringSpecializationInfo(StringSpecialization.EQUAL, id));
+                AddStringSpecialization(right, new StringSpecializationInfo(StringSpecialization.EQUAL, id));
+                return;
+            }
+
+            StringSpecialization type = ignoreCase
+                ? StringSpecialization.CONSTANT_IGNORE_CASE
+                : StringSpecialization.CONSTANT;
+
+
+            if (taintedLeft || taintedRight){
+                if (taintedLeft){
+                    AddStringSpecialization(left, new StringSpecializationInfo(type, right));
+                } else{
+                    AddStringSpecialization(right, new StringSpecializationInfo(type, left));
+                }
+            }
+        }
+        
+        public static void ExecutedReplacedMethod(string idTemplate, ReplacementType type, Truthness t) {
+
+            /*
+                Considering the fact that the method has been executed, and so reached, cannot happen
+                that any of the heuristic values is 0
+             */
+            Trace.Assert(t.GetOfTrue() != 0 && t.GetOfFalse() !=0);
+            
+            string idTrue = ObjectiveNaming.MethodReplacementObjectiveName(idTemplate, true, type);
+            string idFalse = ObjectiveNaming.MethodReplacementObjectiveName(idTemplate, false, type);
+
+            UpdateObjective(idTrue, t.GetOfTrue());
+            UpdateObjective(idFalse, t.GetOfFalse());
         }
     }
 }
