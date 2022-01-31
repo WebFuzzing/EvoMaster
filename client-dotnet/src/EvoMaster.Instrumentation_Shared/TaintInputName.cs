@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using EvoMaster.Client.Util.Extensions;
 
 namespace EvoMaster.Instrumentation_Shared {
     public class TaintInputName {
@@ -25,7 +26,7 @@ namespace EvoMaster.Instrumentation_Shared {
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public static bool IsTaintInput(string value) => value != null && Pattern.IsMatch(value);
+        public static bool IsTaintInput(string value) => value != null && Pattern.IsEntirelyMatch(value);
 
 
         public static bool IncludesTaintInput(string value) => value != null && Pattern.IsMatch(value);
