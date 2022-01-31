@@ -41,7 +41,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EvoMaster.Instrumentation_S
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EvoMaster.Client.Util.Tests", "client-dotnet\test\EvoMaster.Client.Util.Tests\EvoMaster.Client.Util.Tests.csproj", "{6C2CC8C2-CF24-442B-A77A-AC1A6C2EBDF3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvoMaster.Instrumentation.Examples", "client-dotnet\test\EvoMaster.Instrumentation.Examples\EvoMaster.Instrumentation.Examples.csproj", "{1054495C-0550-4C60-A44A-D873F99317DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EvoMaster.Instrumentation.Examples", "client-dotnet\test\EvoMaster.Instrumentation.Examples\EvoMaster.Instrumentation.Examples.csproj", "{1054495C-0550-4C60-A44A-D873F99317DB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RestApis.StringEquals", "e2e-tests\dotnet-rest\src\RestApis.StringEquals\RestApis.StringEquals.csproj", "{00F24DBE-E677-44EE-87DC-37138758FE99}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestApis.Tests.StringEquals", "e2e-tests\dotnet-rest\test\RestApis.Tests.StringEquals\RestApis.Tests.StringEquals.csproj", "{DC9939DF-6C94-453D-A397-C6866BBA7543}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -281,6 +285,30 @@ Global
 		{1054495C-0550-4C60-A44A-D873F99317DB}.Release|x64.Build.0 = Release|Any CPU
 		{1054495C-0550-4C60-A44A-D873F99317DB}.Release|x86.ActiveCfg = Release|Any CPU
 		{1054495C-0550-4C60-A44A-D873F99317DB}.Release|x86.Build.0 = Release|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Debug|x64.Build.0 = Debug|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Debug|x86.Build.0 = Debug|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Release|x64.ActiveCfg = Release|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Release|x64.Build.0 = Release|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Release|x86.ActiveCfg = Release|Any CPU
+		{00F24DBE-E677-44EE-87DC-37138758FE99}.Release|x86.Build.0 = Release|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Debug|x64.Build.0 = Debug|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Debug|x86.Build.0 = Debug|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Release|x64.ActiveCfg = Release|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Release|x64.Build.0 = Release|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Release|x86.ActiveCfg = Release|Any CPU
+		{DC9939DF-6C94-453D-A397-C6866BBA7543}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -294,6 +322,8 @@ Global
 		{24AEA586-3C16-494E-8C4D-61FEC22D38DE} = {C7482DD5-AD81-49FE-9395-80C952893534}
 		{7202DC0F-F4A8-4BAD-95A5-5E79081CDCE0} = {C7482DD5-AD81-49FE-9395-80C952893534}
 		{255D26A1-4213-4206-891B-D9280350BC42} = {C7482DD5-AD81-49FE-9395-80C952893534}
+		{00F24DBE-E677-44EE-87DC-37138758FE99} = {C7482DD5-AD81-49FE-9395-80C952893534}
+		{DC9939DF-6C94-453D-A397-C6866BBA7543} = {C7482DD5-AD81-49FE-9395-80C952893534}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FC853D6D-A64F-4069-9CDF-646677D77CC8}
