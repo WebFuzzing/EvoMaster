@@ -115,6 +115,10 @@ namespace EvoMaster.Instrumentation_Shared {
             return name; //.intern();
         }
 
+        public static string MethodReplacementObjectiveNameForBoolean(string template, bool result){
+            return MethodReplacementObjectiveName(template, result, ReplacementType.BOOLEAN);
+        }
+        
         public static string MethodReplacementObjectiveName(string template, bool result, ReplacementType type) {
             if (template == null || !template.StartsWith(MethodReplacement)) {
                 throw new ArgumentException($"Invalid template for bool method replacement: {template}");
