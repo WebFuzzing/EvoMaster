@@ -426,6 +426,14 @@ namespace EvoMaster.Instrumentation {
             _registeredTargets.Branches.Add(
                 ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, branchOpCode.ToString(), false));
         }
+        
+        private void RegisterReplacementTarget(string className, int lineNo, int branchId){
+            var idTemplate = ObjectiveNaming.MethodReplacementObjectiveNameTemplate(className, lineNo, branchId);
+            _registeredTargets.Branches.Add(
+                ObjectiveNaming.MethodReplacementObjectiveNameForBoolean(idTemplate, true));
+            _registeredTargets.Branches.Add(
+                ObjectiveNaming.MethodReplacementObjectiveNameForBoolean(idTemplate, false));
+        }
 
         //There are comparison instructions such as ceq and branch instructions such as bgt which pop two values from the evaluation stack
         //To calculate branch distance, we have to duplicate those two values and give them to a method to do that

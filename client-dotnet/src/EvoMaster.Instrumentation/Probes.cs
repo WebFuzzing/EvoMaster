@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using EvoMaster.Client.Util;
+using EvoMaster.Instrumentation.Coverage.MethodReplacement;
 using EvoMaster.Instrumentation.Heuristic;
 using EvoMaster.Instrumentation.StaticState;
 using EvoMaster.Instrumentation_Shared;
@@ -225,15 +226,15 @@ namespace EvoMaster.Instrumentation {
         }
 
         public static bool StringEquality(string val1, string val2, string className, int lineNo, int branchId) {
-            //TODO: compute distance
-
-            return val1 == val2;
+            
+            var templateId = ObjectiveNaming.MethodReplacementObjectiveNameTemplate(className, lineNo, branchId);
+            return StringClassReplacement.Equals(val1, val2, templateId);
+            //return val1 == val2;
         }
 
         public static bool StringCompareWithComparison(string val1, string val2, int comparison, string operand, string className,
             int lineNo, int branchId) {
-            //TODO: compute distance
-
+            
             StringComparison c;
             try {
                 c = (StringComparison) comparison;
@@ -242,30 +243,41 @@ namespace EvoMaster.Instrumentation {
                 throw new Exception($"Not able to convert {comparison} to a StringComparison enum");
             }
 
+            var templateId = ObjectiveNaming.MethodReplacementObjectiveNameTemplate(className, lineNo, branchId);
+
             if (operand.Contains("Equals"))
-                return val1.Equals(val2, c);
+                return StringClassReplacement.Equals(val1, val2, c, templateId);
+                //return val1.Equals(val2, c);
             if (operand.Contains("Contains"))
-                return val1.Contains(val2, c);
+                return StringClassReplacement.Contains(val1, val2, c, templateId);
+                //return val1.Contains(val2, c);
             if (operand.Contains("StartsWith"))
-                return val1.StartsWith(val2, c);
+                return StringClassReplacement.StartsWith(val1, val2, c, templateId);
+                //return val1.StartsWith(val2, c);
             if (operand.Contains("EndsWith"))
-                return val1.EndsWith(val2, c);
+                return StringClassReplacement.EndsWith(val1, val2, c, templateId);
+                // return val1.EndsWith(val2, c);
 
             throw new Exception($"No string method found for {operand}");
         }
 
         public static bool StringCompare(string val1, string val2, string operand, string className, int lineNo,
             int branchId) {
-            //TODO: compute distance
+            
+            var templateId = ObjectiveNaming.MethodReplacementObjectiveNameTemplate(className, lineNo, branchId);
 
             if (operand.Contains("Equals"))
-                return val1.Equals(val2);
+                return StringClassReplacement.Equals(val1, val2, templateId);
+                //return val1.Equals(val2);
             if (operand.Contains("Contains"))
-                return val1.Contains(val2);
+                return StringClassReplacement.Contains(val1, val2, templateId);
+                //return val1.Contains(val2);
             if (operand.Contains("StartsWith"))
-                return val1.StartsWith(val2);
+                return StringClassReplacement.StartsWith(val1, val2, templateId);
+                //return val1.StartsWith(val2);
             if (operand.Contains("EndsWith"))
-                return val1.EndsWith(val2);
+                return StringClassReplacement.EndsWith(val1, val2, templateId);
+                //return val1.EndsWith(val2);
 
             throw new Exception($"No string method found for {operand}");
         }

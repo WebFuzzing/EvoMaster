@@ -46,7 +46,8 @@ namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
             string idTemplate){
             ObjectExtensions.RequireNonNull<string>(caller);
 
-            //TODO update ignore case
+            //TODO update ignore case (from java)
+            //TODO handle various comparison type
             ExecutionTracer.HandleTaintForStringEquals(caller, anotherString, comparisonType);
 
             //not important if NPE
@@ -86,7 +87,13 @@ namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
             string idTemplate){
             ObjectExtensions.RequireNonNull<string>(caller);
 
-            bool result = caller.StartsWith(prefix, comparisonType);
+            bool result;
+            if (toffset == 0){
+                result = caller.StartsWith(prefix, comparisonType);
+            } else{
+                result = caller.EndsWith(prefix, comparisonType);
+            }
+            
 
             if (idTemplate == null){
                 return result;
@@ -116,7 +123,7 @@ namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
                 t = new Truthness(1d / (1d + dist), 1d);
             } else{
                 int len = Math.Min(prefix.Length, caller.Length);
-                String sub = caller.Substring(toffset, Math.Min(toffset + len, caller.Length));
+                String sub = caller.Substring(toffset, Math.Min(toffset + len, caller.Length)-toffset);
                 return Equals(sub, prefix, comparisonType, idTemplate);
             }
 
@@ -175,11 +182,15 @@ namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
         //     return equals(caller, sb.toString(), idTemplate);
         // }
 
+        public static bool Contains(string caller, string s, string idTemplate){
+            ObjectExtensions.RequireNonNull<string>(caller);
+            return Contains(caller, s, StringComparison.Ordinal, idTemplate);
+        }
 
-        public static bool Contains(string caller, string s, StringComparison comparisonType, String idTemplate){
+        public static bool Contains(string caller, string s, StringComparison comparisonType, string idTemplate){
             ObjectExtensions.RequireNonNull<string>(caller);
 
-            bool result = caller.Contains(s);
+            bool result = caller.Contains(s, comparisonType);
 
             if (idTemplate == null){
                 return result;
@@ -187,7 +198,7 @@ namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
 
             string k = s;
             if (caller.Length <= k.Length){
-                return Equals(caller, k, idTemplate);
+                return Equals(caller, k, comparisonType,idTemplate);
             }
 
             Truthness t;
@@ -199,7 +210,8 @@ namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
                 long best = long.MaxValue;
 
                 for (int i = 0; i < (caller.Length - k.Length) + 1; i++){
-                    string sub = caller.Substring(i, i + k.Length);
+                    // substring in dotnet is specified with startIndex and length
+                    string sub = caller.Substring(i, k.Length);
                     // TODO comparisonType
                     long h = DistanceHelper.GetLeftAlignmentDistance(sub, k, comparisonType);
                     if (h < best){
