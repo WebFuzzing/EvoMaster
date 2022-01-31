@@ -226,9 +226,13 @@ namespace EvoMaster.Instrumentation {
         }
 
         public static bool ObjectEquality(object val1, object val2, string className, int lineNo, int branchId) {
-            
-            var templateId = ObjectiveNaming.MethodReplacementObjectiveNameTemplate(className, lineNo, branchId);
-            //TODO
+
+            if (val1!= null && val1 is string sval1){
+                // we only compute distance for string.equals(object)
+                // https://docs.microsoft.com/en-us/dotnet/api/system.string.equals?view=netcore-3.1#system-string-equals(system-object)
+                var templateId = ObjectiveNaming.MethodReplacementObjectiveNameTemplate(className, lineNo, branchId);
+                return StringClassReplacement.EqualsObject(sval1, val2, templateId);
+            }
             return val1.Equals(val2);
         }
         

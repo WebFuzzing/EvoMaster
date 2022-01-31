@@ -8,12 +8,12 @@ using EvoMaster.Instrumentation_Shared;
 namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
     
     public class StringClassReplacement{
-        public static bool Equals(string caller, object anObject, string idTemplate){
+        public static bool EqualsObject(string caller, object anObject, string idTemplate){
             ObjectExtensions.RequireNonNull<string>(caller);
 
             string left = caller;
             string right = anObject == null ? null : anObject.ToString();
-            ExecutionTracer.HandleTaintForStringEquals(left, right, StringComparison.CurrentCulture);
+            ExecutionTracer.HandleTaintForStringEquals(left, right, StringComparison.Ordinal);
 
             //not important if NPE
             bool result = caller.Equals(anObject);
@@ -40,6 +40,10 @@ namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
             ExecutionTracer.ExecutedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
 
             return result;
+        }
+
+        public static bool Equals(string caller, string anotherString, string idTemplate){
+            return Equals(caller, anotherString, StringComparison.Ordinal, idTemplate);
         }
 
         public static bool Equals(string caller, string anotherString, StringComparison comparisonType,
