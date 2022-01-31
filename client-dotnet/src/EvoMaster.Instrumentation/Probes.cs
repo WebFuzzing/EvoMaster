@@ -229,11 +229,45 @@ namespace EvoMaster.Instrumentation {
 
             return val1 == val2;
         }
-        
-        public static bool StringEquals(string val1, string val2, int comparison, string className, int lineNo, int branchId) {
+
+        public static bool StringCompareWithComparison(string val1, string val2, int comparison, string operand, string className,
+            int lineNo, int branchId) {
             //TODO: compute distance
 
-            return val1.Equals(val2, (StringComparison) comparison);
+            StringComparison c;
+            try {
+                c = (StringComparison) comparison;
+            }
+            catch (Exception e) {
+                throw new Exception($"Not able to convert {comparison} to a StringComparison enum");
+            }
+
+            if (operand.Contains("Equals"))
+                return val1.Equals(val2, c);
+            if (operand.Contains("Contains"))
+                return val1.Contains(val2, c);
+            if (operand.Contains("StartsWith"))
+                return val1.StartsWith(val2, c);
+            if (operand.Contains("EndsWith"))
+                return val1.EndsWith(val2, c);
+
+            throw new Exception($"No string method found for {operand}");
+        }
+
+        public static bool StringCompare(string val1, string val2, string operand, string className, int lineNo,
+            int branchId) {
+            //TODO: compute distance
+
+            if (operand.Contains("Equals"))
+                return val1.Equals(val2);
+            if (operand.Contains("Contains"))
+                return val1.Contains(val2);
+            if (operand.Contains("StartsWith"))
+                return val1.StartsWith(val2);
+            if (operand.Contains("EndsWith"))
+                return val1.EndsWith(val2);
+
+            throw new Exception($"No string method found for {operand}");
         }
     }
 }

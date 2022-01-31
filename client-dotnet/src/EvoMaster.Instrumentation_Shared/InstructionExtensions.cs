@@ -110,15 +110,15 @@ namespace EvoMaster.Instrumentation_Shared {
             if (instruction.Operand is FieldDefinition fieldDefinition) {
                 return GetCSharpTypeByName(fieldDefinition.FieldType.Name);
             }
-            
+
             if (instruction.Operand is VariableDefinition variableDefinition) {
                 return GetCSharpTypeByName(variableDefinition.VariableType.Name);
             }
-            
+
             if (instruction.Operand is MethodReference methodReference) {
                 return GetCSharpTypeByName(methodReference.ReturnType.Name);
             }
-            
+
             //get the type based on the associated stloc instruction
             if (instruction.IsLoadLocalVariable()) {
                 var isTypeInferred = localVarTypes.TryGetValue(instruction.Operand.ToString(), out var typeName);
@@ -177,5 +177,11 @@ namespace EvoMaster.Instrumentation_Shared {
         private static bool IsLoadLocalVariable(this Instruction instruction) =>
             instruction.OpCode.ToString().StartsWith("ldloc", StringComparison.OrdinalIgnoreCase) &&
             !instruction.OpCode.ToString().StartsWith("ldloca", StringComparison.OrdinalIgnoreCase);
+
+        public static bool IsStringComparison(this Instruction instruction) {
+            var operand = instruction.Operand.ToString();
+            return operand.Contains("String::Equals") || operand.Contains("String::Contains") ||
+                   operand.Contains("String::StartsWith") || operand.Contains("String::EndsWith");
+        }
     }
 }

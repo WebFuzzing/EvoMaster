@@ -33,8 +33,8 @@ namespace EvoMaster.Instrumentation {
         private MethodReference _computeDistanceForOneArgJumpsProbeForShort;
 
         private MethodReference _stringEquality;
-        private MethodReference _stringEquals;
-        private MethodReference _stringEqualsWithStringComparison;
+        private MethodReference _stringCompareWithStringComparison;
+        private MethodReference _stringCompare;
 
         private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
 
@@ -125,12 +125,17 @@ namespace EvoMaster.Instrumentation {
             _stringEquality = module.ImportReference(
                 typeof(Probes).GetMethod(nameof(Probes.StringEquality),
                     new[] {typeof(string), typeof(string), typeof(string), typeof(int), typeof(int)}));
-            // _stringEquals = module.ImportReference(
-            //     typeof(Probes).GetMethod(nameof(Probes.StringEquality),
-            //         new[] {typeof(string), typeof(string), typeof(string), typeof(int), typeof(int)}));
-            _stringEqualsWithStringComparison = module.ImportReference(
-                typeof(Probes).GetMethod(nameof(Probes.StringEquals),
-                    new[] {typeof(string), typeof(string), typeof(int), typeof(string), typeof(int), typeof(int)}));
+
+            _stringCompareWithStringComparison = module.ImportReference(
+                typeof(Probes).GetMethod(nameof(Probes.StringCompareWithComparison),
+                    new[] {
+                        typeof(string), typeof(string), typeof(int), typeof(string), typeof(string), typeof(int),
+                        typeof(int)
+                    }));
+
+            _stringCompare = module.ImportReference(
+                typeof(Probes).GetMethod(nameof(Probes.StringCompare),
+                    new[] {typeof(string), typeof(string), typeof(string), typeof(string), typeof(int), typeof(int)}));
 
             foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
                 _alreadyCompletedPoints.Clear();
@@ -174,9 +179,9 @@ namespace EvoMaster.Instrumentation {
 
                             i = ReplaceStringEquality(instruction, ilProcessor, i, type.Name, l, lastBranch);
                         }
-                        
+
                         if (instruction.OpCode.Equals(OpCodes.Callvirt) &&
-                            instruction.Operand.ToString().Contains("String::Equals")) {
+                            instruction.IsStringComparison()) {
                             mapping.TryGetValue(instruction, out var sp);
 
                             var l = lastEnteredLine;
@@ -187,7 +192,7 @@ namespace EvoMaster.Instrumentation {
 
                             if (l != lastEnteredLine) lastBranch = 0;
 
-                            var checksComparison = instruction.Operand.ToString().Contains("StringComparison");
+                            bool checksComparison = instruction.Operand.ToString().Contains("StringComparison");
 
                             i = ReplaceStringEquals(instruction, ilProcessor, i, type.Name, l, lastBranch,
                                 checksComparison);
@@ -681,6 +686,9 @@ namespace EvoMaster.Instrumentation {
             string className, int lineNo, int branchId, bool checkStringComparison = false) {
             RegisterBranchTarget(instruction.OpCode, className, lineNo, branchId);
 
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, instruction.Operand.ToString()));
+            byteCodeIndex++;
+            
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, className));
             byteCodeIndex++;
 
@@ -692,8 +700,8 @@ namespace EvoMaster.Instrumentation {
 
             ilProcessor.Replace(instruction,
                 checkStringComparison
-                    ? ilProcessor.Create(OpCodes.Call, _stringEqualsWithStringComparison)
-                    : ilProcessor.Create(OpCodes.Call, _stringEquality));
+                    ? ilProcessor.Create(OpCodes.Call, _stringCompareWithStringComparison)
+                    : ilProcessor.Create(OpCodes.Call, _stringCompare));
 
             return byteCodeIndex;
         }
