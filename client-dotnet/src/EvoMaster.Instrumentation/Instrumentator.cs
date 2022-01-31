@@ -194,7 +194,7 @@ namespace EvoMaster.Instrumentation {
 
                             bool checksComparison = instruction.Operand.ToString().Contains("StringComparison");
 
-                            i = ReplaceStringEquals(instruction, ilProcessor, i, type.Name, l, lastBranch,
+                            i = ReplaceStringComparisons(instruction, ilProcessor, i, type.Name, l, lastBranch,
                                 checksComparison);
                         }
 
@@ -426,8 +426,8 @@ namespace EvoMaster.Instrumentation {
             _registeredTargets.Branches.Add(
                 ObjectiveNaming.BranchObjectiveName(className, lineNo, branchId, branchOpCode.ToString(), false));
         }
-        
-        private void RegisterReplacementTarget(string className, int lineNo, int branchId){
+
+        private void RegisterReplacementTarget(string className, int lineNo, int branchId) {
             var idTemplate = ObjectiveNaming.MethodReplacementObjectiveNameTemplate(className, lineNo, branchId);
             _registeredTargets.Branches.Add(
                 ObjectiveNaming.MethodReplacementObjectiveNameForBoolean(idTemplate, true));
@@ -674,7 +674,7 @@ namespace EvoMaster.Instrumentation {
 
         private int ReplaceStringEquality(Instruction instruction, ILProcessor ilProcessor, int byteCodeIndex,
             string className, int lineNo, int branchId) {
-            RegisterBranchTarget(instruction.OpCode, className, lineNo, branchId);
+            RegisterReplacementTarget(className, lineNo, branchId);
 
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, className));
             byteCodeIndex++;
@@ -690,13 +690,13 @@ namespace EvoMaster.Instrumentation {
             return byteCodeIndex;
         }
 
-        private int ReplaceStringEquals(Instruction instruction, ILProcessor ilProcessor, int byteCodeIndex,
+        private int ReplaceStringComparisons(Instruction instruction, ILProcessor ilProcessor, int byteCodeIndex,
             string className, int lineNo, int branchId, bool checkStringComparison = false) {
-            RegisterBranchTarget(instruction.OpCode, className, lineNo, branchId);
+            RegisterReplacementTarget(className, lineNo, branchId);
 
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, instruction.Operand.ToString()));
             byteCodeIndex++;
-            
+
             ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, className));
             byteCodeIndex++;
 
