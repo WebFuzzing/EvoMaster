@@ -2,7 +2,8 @@ using EvoMaster.Instrumentation.Examples.Strings;
 using Xunit;
 
 namespace EvoMaster.Instrumentation.Tests.Examples.Strings{
-    public class IStringsExampleTest{
+    [Collection("Sequential")]
+    public class StringsExampleTest{
         //protected abstract IStringsExample getInstance() ;
 
         private IStringsExample getInstance() => new StringsExampleImp();
