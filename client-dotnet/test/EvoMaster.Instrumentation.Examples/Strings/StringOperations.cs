@@ -17,6 +17,14 @@ namespace EvoMaster.Instrumentation.Examples.Strings {
 
             return false;
         }
+        
+        public bool CheckEquals(string a, string b, StringComparison comparison) {
+            if (a.Equals(b, comparison)) {
+                return true;
+            }
+
+            return false;
+        }
 
         public bool CheckEqualsWithOrdinalIgnoreCase(string a, string b) {
             if (a.Equals(b, StringComparison.OrdinalIgnoreCase)) {
