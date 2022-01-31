@@ -35,6 +35,7 @@ namespace EvoMaster.Instrumentation {
         private MethodReference _stringEquality;
         private MethodReference _stringCompareWithStringComparison;
         private MethodReference _stringCompare;
+        private MethodReference _objectEquals;
 
         private readonly RegisteredTargets _registeredTargets = new RegisteredTargets();
 
@@ -136,6 +137,10 @@ namespace EvoMaster.Instrumentation {
             _stringCompare = module.ImportReference(
                 typeof(Probes).GetMethod(nameof(Probes.StringCompare),
                     new[] {typeof(string), typeof(string), typeof(string), typeof(string), typeof(int), typeof(int)}));
+            
+            _objectEquals = module.ImportReference(
+                typeof(Probes).GetMethod(nameof(Probes.ObjectEquality),
+                    new[] {typeof(object), typeof(object), typeof(string), typeof(int), typeof(int)}));
 
             foreach (var type in module.Types.Where(type => type.Name != "<Module>")) {
                 _alreadyCompletedPoints.Clear();
@@ -197,7 +202,22 @@ namespace EvoMaster.Instrumentation {
                             i = ReplaceStringComparisons(instruction, ilProcessor, i, type.Name, l, lastBranch,
                                 checksComparison);
                         }
+                        
+                        if (instruction.OpCode.Equals(OpCodes.Callvirt) &&
+                            instruction.IsObjectEqualsComparison()) {
+                            mapping.TryGetValue(instruction, out var sp);
 
+                            var l = lastEnteredLine;
+
+                            if (sp != null) {
+                                l = sp.StartLine;
+                            }
+
+                            if (l != lastEnteredLine) lastBranch = 0;
+
+                            i = ReplaceObjectComparisons(instruction, ilProcessor, i, type.Name, l, lastBranch);
+                        }
+                        
                         if (instruction.IsStoreLocalVariable()) {
                             switch (instruction.Operand) {
                                 case VariableDefinition definition:
@@ -710,6 +730,24 @@ namespace EvoMaster.Instrumentation {
                 checkStringComparison
                     ? ilProcessor.Create(OpCodes.Call, _stringCompareWithStringComparison)
                     : ilProcessor.Create(OpCodes.Call, _stringCompare));
+
+            return byteCodeIndex;
+        }
+        
+        private int ReplaceObjectComparisons(Instruction instruction, ILProcessor ilProcessor, int byteCodeIndex,
+            string className, int lineNo, int branchId) {
+            RegisterReplacementTarget(className, lineNo, branchId);
+
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldstr, className));
+            byteCodeIndex++;
+
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, lineNo));
+            byteCodeIndex++;
+
+            ilProcessor.InsertBefore(instruction, ilProcessor.Create(OpCodes.Ldc_I4, branchId));
+            byteCodeIndex++;
+
+            ilProcessor.Replace(instruction, ilProcessor.Create(OpCodes.Call, _objectEquals));
 
             return byteCodeIndex;
         }

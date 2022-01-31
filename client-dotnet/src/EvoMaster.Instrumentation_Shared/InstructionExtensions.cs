@@ -180,8 +180,13 @@ namespace EvoMaster.Instrumentation_Shared {
 
         public static bool IsStringComparison(this Instruction instruction) {
             var operand = instruction.Operand.ToString();
-            return operand.Contains("String::Equals") || operand.Contains("String::Contains") ||
-                   operand.Contains("String::StartsWith") || operand.Contains("String::EndsWith");
+            return operand.Contains("System.String::Equals") || operand.Contains("System.String::Contains") ||
+                   operand.Contains("System.String::StartsWith") || operand.Contains("System.String::EndsWith");
+        }
+
+        public static bool IsObjectEqualsComparison(this Instruction instruction) {
+            var operand = instruction.Operand.ToString();
+            return operand.Contains("System.Object::Equals");
         }
     }
 }

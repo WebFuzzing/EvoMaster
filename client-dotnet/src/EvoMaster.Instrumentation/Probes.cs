@@ -225,6 +225,13 @@ namespace EvoMaster.Instrumentation {
             HeuristicsForBooleans.ComputeDistanceForSingleJump(className, lineNo, branchId, val, opCode);
         }
 
+        public static bool ObjectEquality(object val1, object val2, string className, int lineNo, int branchId) {
+            
+            var templateId = ObjectiveNaming.MethodReplacementObjectiveNameTemplate(className, lineNo, branchId);
+            //TODO
+            return val1.Equals(val2);
+        }
+        
         public static bool StringEquality(string val1, string val2, string className, int lineNo, int branchId) {
             
             var templateId = ObjectiveNaming.MethodReplacementObjectiveNameTemplate(className, lineNo, branchId);

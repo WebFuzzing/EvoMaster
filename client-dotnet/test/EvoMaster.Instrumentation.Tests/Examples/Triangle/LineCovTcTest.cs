@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using EvoMaster.Instrumentation.Examples.Branches;
 using EvoMaster.Instrumentation.Examples.Numbers;
+using EvoMaster.Instrumentation.Examples.Objects;
 using EvoMaster.Instrumentation.Examples.Strings;
 using EvoMaster.Instrumentation.Examples.Triangle;
 using EvoMaster.Instrumentation.StaticState;
@@ -122,6 +123,8 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
                 nameof(BranchesImp),
                 nameof(NumericOperations),
                 nameof(StringOperations),
+                nameof(ObjectOperations),
+                nameof(Student),
                 nameof(Instrumentation.Examples.Program)
             };
 
@@ -130,7 +133,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
             expectedClassNames.ForEach(x => expectedClasses.Add(ObjectiveNaming.ClassObjectiveName(x)));
 
             var targets = GetRegisteredTargets();
-
+            
             Assert.Equal(expectedClasses.OrderBy(x => x), targets.Classes.OrderBy(x => x));
         }
 
