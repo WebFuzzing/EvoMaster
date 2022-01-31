@@ -284,8 +284,11 @@ namespace EvoMaster.Instrumentation.StaticState{
                              || comparisonType == StringComparison.InvariantCultureIgnoreCase;
             
             if (taintedLeft && taintedRight){
-                if (ignoreCase ? left.Equals(right, StringComparison.OrdinalIgnoreCase) : left.Equals(right)){
-                    //tainted, but compared to itself. so shouldn't matter
+                // if (ignoreCase ? left.Equals(right, StringComparison.OrdinalIgnoreCase) : left.Equals(right)){
+                //     //tainted, but compared to itself. so shouldn't matter
+                //     return;
+                // }
+                if (left.Equals(right, comparisonType)){
                     return;
                 }
 
@@ -305,6 +308,10 @@ namespace EvoMaster.Instrumentation.StaticState{
                 return;
             }
 
+            /*
+              TODO need to consider string comparison
+              https://docs.microsoft.com/en-us/dotnet/api/system.stringcomparison?view=netcore-3.1
+             */
             StringSpecialization type = ignoreCase
                 ? StringSpecialization.CONSTANT_IGNORE_CASE
                 : StringSpecialization.CONSTANT;

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 
 public class DistanceHelper{
     public static readonly double H_REACHED_BUT_NULL = 0.05d;
@@ -93,6 +94,37 @@ public class DistanceHelper{
 
         for (var i = 0; i < Math.Min(a.Length, b.Length); i++){
             dist += Math.Abs(a[i] - b[i]);
+        }
+
+        if (dist < 0){
+            dist = long.MaxValue; // overflow
+        }
+        
+        return dist;
+    }
+    
+    /**
+     * Need to handle the five string comparison, but now only consider ignore case
+     * https://docs.microsoft.com/en-us/dotnet/api/system.stringcomparison?view=netcore-3.1
+     */
+    public static long GetLeftAlignmentDistance(string a, string b, StringComparison comparisonType){
+        long diff = Math.Abs(a.Length - b.Length);
+        var dist = diff * MAX_CHAR_DISTANCE;
+        
+        var ca = a;
+        var cb = b;
+
+        switch (comparisonType){
+            case StringComparison.CurrentCultureIgnoreCase:
+            case StringComparison.OrdinalIgnoreCase:
+            case StringComparison.InvariantCultureIgnoreCase:
+                ca = ca.ToLower();
+                cb = cb.ToLower();
+                break;
+        }
+
+        for (var i = 0; i < Math.Min(a.Length, b.Length); i++){
+            dist += Math.Abs(ca[i] - cb[i]);
         }
 
         if (dist < 0){
