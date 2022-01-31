@@ -24,5 +24,15 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Objects {
             var res = _objectOperations.CheckEqual(a, b);
             Assert.False(res);
         }
+
+        [Fact]
+        public void CheckEqualStringWithObjectTest() {
+            string str = "abc";
+            object obj = "abc";
+
+            var res = _objectOperations.CheckEqualStringWithObject(str, obj);
+            
+            Assert.True(res);
+        }
     }
 }

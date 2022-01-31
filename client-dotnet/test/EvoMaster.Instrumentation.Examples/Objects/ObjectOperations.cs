@@ -6,7 +6,11 @@ namespace EvoMaster.Instrumentation.Examples.Objects {
         public bool CheckEqual(Student student1, Student student2) {
             return student1.Equals(student2);
         }
-
+        
+        public bool CheckEqualStringWithObject(string str, object obj) {
+            return str.Equals(obj);
+        }
+        
         public bool CheckStudentListEquality(List<Student> list1, List<Student> list2) {
             return list1.Equals(list2);
         }
