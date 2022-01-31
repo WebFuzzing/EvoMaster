@@ -1,6 +1,5 @@
 {
   "name": "evomaster-client-js-e2e-tests",
-  "version": "0.4.1",
   "description": "E2E tests for EvoMaster support for JavaScript",
   "main": "index.js",
   "repository": {},
