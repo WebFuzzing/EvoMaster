@@ -18,7 +18,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         public LineCovTcTest(ITestOutputHelper testOutputHelper) {
             _testOutputHelper = testOutputHelper;
             ExecutionTracer.Reset();
-            ObjectiveRecorder.Reset(false);//TODO
+            ObjectiveRecorder.Reset(false); //TODO
         }
 
         [Fact]
@@ -63,16 +63,16 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         [InlineData(7, 6, 5)]
         public void TestLastLineCoverage(int a, int b, int c) {
             ITriangleClassification tc = new TriangleClassificationImpl();
-        
+
             ExecutionTracer.Reset();
             ObjectiveRecorder.Reset(false);
-            
+
             Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
-        
+
             tc.Classify(a, b, c);
-        
+
             //assert that the last line of the method is reached
-        
+
             Assert.Equal(1.0, ExecutionTracer.GetValue("Line_at_TriangleClassificationImpl_00027"));
         }
 
@@ -80,10 +80,10 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         [Fact]
         public void TestAllTargetsGettingRegistered() {
             ITriangleClassification tc = new TriangleClassificationImpl();
-            
+
             ExecutionTracer.Reset();
             ObjectiveRecorder.Reset(false);
-            
+
             tc.Classify(3, 4, 5);
 
             var expectedLineNumbers = new List<int> {
@@ -116,8 +116,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         }
 
         [Fact]
-        public void TestAllClassesGettingRegistered() {
-
+        public void TestClassesGettingRegistered() {
             var expectedClassNames = new List<string> {
                 nameof(TriangleClassificationImpl),
                 nameof(BranchesImp),
@@ -133,8 +132,7 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
             expectedClassNames.ForEach(x => expectedClasses.Add(ObjectiveNaming.ClassObjectiveName(x)));
 
             var targets = GetRegisteredTargets();
-            
-            Assert.Equal(expectedClasses.OrderBy(x => x), targets.Classes.OrderBy(x => x));
+            expectedClasses.ForEach(x => Assert.True(targets.Classes.Contains(x)));
         }
 
         //This test is added in order to make sure everything works as before after the instrumentation
