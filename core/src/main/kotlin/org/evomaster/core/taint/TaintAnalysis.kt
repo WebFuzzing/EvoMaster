@@ -85,7 +85,7 @@ object TaintAnalysis {
                     .filterIsInstance<StringGene>()
                     .filter {
                         specsMap.entries
-                                .filter { e -> e.key.contains(it.getValueAsRawString()) }
+                                .filter { e -> e.key.contains(it.getValueAsRawString(), true) }
                                 .any { e -> e.value.any { d -> d == s } }
                     }
 
