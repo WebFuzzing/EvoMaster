@@ -7,7 +7,7 @@ using EvoMaster.Instrumentation_Shared;
 namespace EvoMaster.Instrumentation.Coverage.MethodReplacement{
     public class ObjectClassReplacement{
         public static bool EqualsObject(object left, object right, string idTemplate){
-            ObjectExtensions.RequireNonNull<string>(left);
+            ObjectExtensions.RequireNonNull<object>(left);
             
             bool result = left.Equals(right);
 
