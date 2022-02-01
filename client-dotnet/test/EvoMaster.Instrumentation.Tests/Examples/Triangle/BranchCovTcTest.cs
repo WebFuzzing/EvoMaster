@@ -5,6 +5,7 @@ using EvoMaster.Instrumentation_Shared;
 using Xunit;
 
 namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
+    [Collection("Sequential")]
     public class BranchCovTcTest : CovTcTestBase {
         [Fact]
         public void TestAllBranchesGettingRegistered() {
@@ -14,35 +15,47 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
             int lineNo;
 
             var expectedBranchTargets = new List<string>();
-            for (var i = 0; i < 4; i++) {
+            for (var i = 0; i < 5; i++) {
                 lineNo = 6;
-                opCode = "ble";
-                if (i > 1 && i < 3)
-                    opCode = "cgt";
-                else if (i > 2)
-                    opCode = "ceq";
+                
+                switch (i) {
+                    case 0:
+                    case 1:
+                        opCode = "ble";
+                        break;
+                    case 2:
+                        opCode = "cgt";
+                        break;
+                    case 3:
+                        opCode = "ceq";
+                        break;
+                    case 4:
+                        opCode = "brfalse";
+                        break;
+                }
 
                 RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
-
-                if (i == 3) {
-                    opCode = "brfalse";
-                    RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
-                }
             }
 
-            for (var i = 0; i < 2; i++) {
+            for (var i = 0; i < 3; i++) {
                 lineNo = 10;
-                opCode = "bne.un";
-                if (i == 1) {
-                    opCode = "brfalse";
-                    RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
-                    opCode = "ceq";
+                
+                switch (i) {
+                    case 0:
+                        opCode = "bne.un";
+                        break;
+                    case 1:
+                        opCode = "ceq";
+                        break;
+                    case 2:
+                        opCode = "brfalse";
+                        break;
                 }
 
                 RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
             }
 
-            for (var i = 0; i < 7; i++) {
+            for (var i = 0; i < 8; i++) {
                 lineNo = 16;
                 switch (i) {
                     case 0:
@@ -60,23 +73,28 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
                     case 6:
                         opCode = "ceq";
                         break;
+                    case 7:
+                        opCode = "brfalse";
+                        break;
                 }
 
                 RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
-
-                if (i == 6) {
-                    opCode = "brfalse";
-                    RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
-                }
             }
 
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < 4; i++) {
                 lineNo = 22;
-                opCode = "beq";
-                if (i == 2) {
-                    opCode = "brfalse";
-                    RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);
-                    opCode = "ceq";
+                
+                switch (i) {
+                    case 0:
+                    case 1:
+                        opCode = "beq";
+                        break;
+                    case 2:
+                        opCode = "ceq";
+                        break;
+                    case 3:
+                        opCode = "brfalse";
+                        break;
                 }
 
                 RegisterBothBranchTargets(expectedBranchTargets, className, lineNo, i, opCode);

@@ -2,6 +2,7 @@ using EvoMaster.Instrumentation.Examples.Strings;
 using Xunit;
 
 namespace EvoMaster.Instrumentation.Tests.Examples.Strings{
+    [Collection("Sequential")]
     public class SwitchStringTest{
         
         private SwitchString getInstance() => new SwitchString();

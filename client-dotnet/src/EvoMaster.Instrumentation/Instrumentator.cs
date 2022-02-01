@@ -137,7 +137,7 @@ namespace EvoMaster.Instrumentation {
             _stringCompare = module.ImportReference(
                 typeof(Probes).GetMethod(nameof(Probes.StringCompare),
                     new[] {typeof(string), typeof(string), typeof(string), typeof(string), typeof(int), typeof(int)}));
-            
+
             _objectEquals = module.ImportReference(
                 typeof(Probes).GetMethod(nameof(Probes.ObjectEquality),
                     new[] {typeof(object), typeof(object), typeof(string), typeof(int), typeof(int)}));
@@ -154,10 +154,11 @@ namespace EvoMaster.Instrumentation {
 
                     var lastEnteredLine = 0;
                     var lastEnteredColumn = 0;
+                    var lastEnteredLineForBranches = 0;
 
                     method.Body.SimplifyMacros(); //This is to prevent overflow of short branch opcodes
 
-                    var lastBranch = 0; //jumps per line counter
+                    var branchPerLineCounter = 0;
 
                     var localVariableTypes = new Dictionary<string, string>();
 
@@ -180,12 +181,14 @@ namespace EvoMaster.Instrumentation {
                                 l = sp.StartLine;
                             }
 
-                            if (l != lastEnteredLine) lastBranch = 0;
+                            //if (l != lastEnteredLine) branchPerLineCounter = 0;
 
-                            i = ReplaceStringEquality(instruction, ilProcessor, i, type.Name, l, lastBranch);
+                            i = ReplaceStringEquality(instruction, ilProcessor, i, type.Name, l, branchPerLineCounter);
+                            branchPerLineCounter++;
                         }
 
-                        if (instruction.OpCode.Equals(OpCodes.Callvirt) &&
+                        if ((instruction.OpCode.Equals(OpCodes.Callvirt) ||
+                             instruction.OpCode.Equals(OpCodes.Call)) &&
                             instruction.IsStringComparison()) {
                             mapping.TryGetValue(instruction, out var sp);
 
@@ -195,14 +198,14 @@ namespace EvoMaster.Instrumentation {
                                 l = sp.StartLine;
                             }
 
-                            if (l != lastEnteredLine) lastBranch = 0;
+                            var checksComparison = instruction.Operand.ToString().Contains("StringComparison");
 
-                            bool checksComparison = instruction.Operand.ToString().Contains("StringComparison");
-
-                            i = ReplaceStringComparisons(instruction, ilProcessor, i, type.Name, l, lastBranch,
+                            i = ReplaceStringComparisons(instruction, ilProcessor, i, type.Name, l,
+                                branchPerLineCounter,
                                 checksComparison);
+                            branchPerLineCounter++;
                         }
-                        
+
                         if (instruction.OpCode.Equals(OpCodes.Callvirt) &&
                             instruction.IsObjectEqualsComparison()) {
                             mapping.TryGetValue(instruction, out var sp);
@@ -213,11 +216,11 @@ namespace EvoMaster.Instrumentation {
                                 l = sp.StartLine;
                             }
 
-                            if (l != lastEnteredLine) lastBranch = 0;
-
-                            i = ReplaceObjectComparisons(instruction, ilProcessor, i, type.Name, l, lastBranch);
+                            i = ReplaceObjectComparisons(instruction, ilProcessor, i, type.Name, l,
+                                branchPerLineCounter);
+                            branchPerLineCounter++;
                         }
-                        
+
                         if (instruction.IsStoreLocalVariable()) {
                             switch (instruction.Operand) {
                                 case VariableDefinition definition:
@@ -241,13 +244,11 @@ namespace EvoMaster.Instrumentation {
                                     l = sp.StartLine;
                                 }
 
-                                if (l != lastEnteredLine) lastBranch = 0;
-
                                 i = EnteringBranch(instruction.Next.Next, method, localVariableTypes, i,
                                     type.Name, l,
-                                    lastBranch, true);
-
-                                lastBranch++;
+                                    branchPerLineCounter, true);
+                                lastEnteredLineForBranches = l;
+                                branchPerLineCounter++;
                             }
                         }
 
@@ -265,14 +266,17 @@ namespace EvoMaster.Instrumentation {
 
                             i = EnteringBranch(instruction, method, localVariableTypes,
                                 i,
-                                type.Name, l, lastBranch - 1, false);
+                                type.Name, l, branchPerLineCounter, false);
+                            lastEnteredLineForBranches = l;
+                            branchPerLineCounter++;
                         }
 
                         mapping.TryGetValue(instruction, out var sequencePoint);
 
                         // skip non-return instructions which do not have any sequence point info
-                        if ((sequencePoint == null || sequencePoint.IsHidden) && instruction.OpCode != OpCodes.Ret)
+                        if ((sequencePoint == null || sequencePoint.IsHidden) && instruction.OpCode != OpCodes.Ret) {
                             continue;
+                        }
 
                         if (lastEnteredLine != 0 && lastEnteredColumn != 0) {
                             i = InsertCompletedStatementProbe(instruction.Previous, ilProcessor, i, type.Name,
@@ -284,6 +288,9 @@ namespace EvoMaster.Instrumentation {
                         if (sequencePoint != null) {
                             i = InsertEnteringStatementProbe(instruction, method.Body, ilProcessor,
                                 i, type.Name, method.Name, sequencePoint.StartLine, sequencePoint.StartColumn);
+
+                            if (lastEnteredLineForBranches != sequencePoint.StartLine)
+                                branchPerLineCounter = 0;
 
                             lastEnteredColumn = sequencePoint.StartColumn;
                             lastEnteredLine = sequencePoint.StartLine;
@@ -733,7 +740,7 @@ namespace EvoMaster.Instrumentation {
 
             return byteCodeIndex;
         }
-        
+
         private int ReplaceObjectComparisons(Instruction instruction, ILProcessor ilProcessor, int byteCodeIndex,
             string className, int lineNo, int branchId) {
             RegisterReplacementTarget(className, lineNo, branchId);
