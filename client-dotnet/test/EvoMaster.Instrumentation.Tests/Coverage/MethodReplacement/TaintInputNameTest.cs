@@ -52,5 +52,20 @@ namespace EvoMaster.Instrumentation.Tests.Coverage.MethodReplacement {
             Assert.False(TaintInputName.IsTaintInput(text));
             Assert.True(TaintInputName.IncludesTaintInput(text));
         }
+        
+        [Fact]
+        public void TestUpperLowerCase(){
+
+            String name = TaintInputName.GetTaintName(0);
+
+            Assert.True(TaintInputName.IsTaintInput(name));
+            Assert.True(TaintInputName.IncludesTaintInput(name));
+
+
+            Assert.True(TaintInputName.IsTaintInput(name.ToLower()));
+            Assert.True(TaintInputName.IncludesTaintInput(name.ToLower()));
+            Assert.True(TaintInputName.IsTaintInput(name.ToUpper()));
+            Assert.True(TaintInputName.IncludesTaintInput(name.ToUpper()));
+        }
     }
 }
