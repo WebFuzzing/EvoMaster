@@ -76,7 +76,7 @@ class TestSuiteWriterTest{
 
 
         //write the test suite
-        writer.writeTests(solution, FakeController::class.qualifiedName!!)
+        writer.writeTests(solution, FakeController::class.qualifiedName!!, null)
 
         //the .kt file should exist, but .class not yet
         assertFalse(expectedCompiledFile.exists())

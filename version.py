@@ -51,18 +51,23 @@ def replaceInCI():
     replacement = '  evomaster-version: '+reducedVersion+'\n'
     replace(".github/workflows/ci.yml", regex, replacement)
 
-
-replaceInMakeExecutable()
-replaceInCI()
+def replaceInJS():
+    regex = re.compile(r'\s*"version"\s*:.*')
+    replacement = '  "version": "'+version+'",\n'
+    replace("client-js/evomaster-client-js/package.json", regex, replacement)
 
 SHELL = platform.system() == 'Windows'
 
-mvnres = run(["mvn", "versions:set", "-DnewVersion="+version], shell=SHELL)
-mvnres = mvnres.returncode
+def replaceInMvn():
+    mvnres = run(["mvn", "versions:set", "-DnewVersion="+version], shell=SHELL)
+    mvnres = mvnres.returncode
 
-if mvnres != 0:
-    print("\nERROR: Maven command failed")
-    exit(1)
+    if mvnres != 0:
+        print("\nERROR: Maven command failed")
+        exit(1)
 
 
-
+replaceInMakeExecutable()
+replaceInCI()
+replaceInJS()
+replaceInMvn()

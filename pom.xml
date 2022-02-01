@@ -132,6 +132,7 @@
         <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
         <netty.http.version>4.1.48.Final</netty.http.version>
         <micronaut.http.server.netty.version>1.3.4</micronaut.http.server.netty.version>
+        <thrift.libthrift.version>0.15.0</thrift.libthrift.version>
     </properties>
 
 
@@ -705,6 +706,8 @@
                 <version>${jetbrains.annotations.version}</version>
                 <scope>test</scope>
             </dependency>
+          
+            <!-- micronaut support -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
@@ -716,6 +719,13 @@
                 <artifactId>micronaut-http-server-netty</artifactId>
                 <version>${micronaut.http.server.netty.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- RPC-->
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${thrift.libthrift.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -951,6 +961,13 @@
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>0.8.7</version>
+                    <configuration>
+                        <excludes>
+                            <!--  Prevent SUTs in E2E to be part of coverage report -->
+                            <exclude>com/foo/**/*</exclude>
+                            <exclude>com/thrift/example/**/*</exclude>
+                        </excludes>
+                    </configuration>
                     <executions>
                         <execution>
                             <id>default-prepare-agent</id>

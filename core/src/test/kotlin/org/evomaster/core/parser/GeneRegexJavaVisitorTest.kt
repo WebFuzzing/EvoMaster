@@ -59,4 +59,17 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testCharEscapeRegex(){
         checkSameAsJava("\\s\\S\\d\\D\\w\\W")
     }
+
+    @Test
+    fun testIncreasingRange(){
+        checkSameAsJava("[1-9]")
+        checkSameAsJava("[ -!]")
+    }
+
+    @Test
+    fun testDecreasingRange(){
+        //checkSameAsJava("[!- ]") //not valid in Java
+        //checkSameAsJava("[9-1]") //not valid in Java
+        checkCanSample("[9-1]", listOf("1","5","9"),200)
+    }
 }

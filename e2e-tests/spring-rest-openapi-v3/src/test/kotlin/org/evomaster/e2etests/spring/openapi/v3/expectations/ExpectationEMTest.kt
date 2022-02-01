@@ -142,10 +142,10 @@ class ExpectationEMTest : SpringTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/basicResponsesString/{s}", "Success!")
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/basicResponsesNumeric/{s}", "42")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/expectations/basicResponsesNumeric/{s}", "")
+            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/expectations/basicResponsesNumeric/{s}", null)
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/basicInput/{s}", "42")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/expectations/basicInput/{s}", "")
+            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/expectations/basicInput/{s}", null)
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/responseObj/{s}", "successes")
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/responseObj/{s}", "{")

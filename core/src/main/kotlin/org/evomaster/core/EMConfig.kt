@@ -340,6 +340,10 @@ class EMConfig {
                     "The option has been deactivated for this run, to prevent a crash.")
             //throw IllegalArgumentException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
         }
+
+        if (enablePureRPCTestGeneration && outputFormat != OutputFormat.DEFAULT && !outputFormat.isJava()){
+            throw IllegalArgumentException("when generating pure RPC tests, outputFormat only supports JAVA now")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -723,6 +727,7 @@ class EMConfig {
         DEFAULT(experimental = false),
         REST(experimental = false),
         GRAPHQL(experimental = true),
+        RPC(experimental = true),
         WEB(experimental = true);
         override fun isExperimental() = experimental
     }
@@ -1537,6 +1542,26 @@ class EMConfig {
     @Cfg("Specify a path to save all executed sql commands to a file (default is 'sql.txt')")
     var saveExecutedSQLToFile : String = "sql.txt"
 
+    @Experimental
+    @Cfg("Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null")
+    var enableRPCExtraResponseTargets = false
+
+    @Experimental
+    @Cfg("Whether to enable customized responses indicating business logic")
+    var enableRPCCustomizedResponseTargets = false
+
+    @Experimental
+    @Cfg("Whether to generate RPC endpoint invocation which is independent from EM driver.")
+    var enablePureRPCTestGeneration = false
+
+    @Experimental
+    @Cfg("Whether to generate RPC Assertions based on response instance")
+    var enableRPCAssertionWithInstance = false
+
+    @Experimental
+    @Cfg("Specify a maximum number of data in a collection to be asserted in generated tests." +
+            "Note that zero means tht only size of the collection would be asserted and a negative value means all data in the collection should be asserted.")
+    var maxAssertionForDataInCollection = -1
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {

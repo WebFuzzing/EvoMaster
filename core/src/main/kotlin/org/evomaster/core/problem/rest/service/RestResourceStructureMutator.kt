@@ -3,13 +3,12 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
+import org.evomaster.core.problem.httpws.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter.*
@@ -23,7 +22,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.roundToInt
 
-class RestResourceStructureMutator : HttpWsStructureMutator() {
+class RestResourceStructureMutator : ApiWsStructureMutator() {
 
     @Inject
     private lateinit var rm : ResourceManageService
@@ -516,41 +515,11 @@ class RestResourceStructureMutator : HttpWsStructureMutator() {
         }
     }
 
-    /**
-     * for ResourceRestIndividual, dbaction(s) has been distributed to each resource call [ResourceRestCalls]
-     */
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
-        if (!config.shouldGenerateSqlData()) {
-            return
-        }
-
-        val ind = individual.individual as? RestIndividual
-            ?: throw IllegalArgumentException("Invalid individual type")
-
-        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
-            //TODO likely to remove/change once we ll support VIEWs
-            .filter { sampler.canInsertInto(it.key) }
-
-        if (fw.isEmpty()) {
-            return
-        }
-
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
-
-        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
-
-        ind.repairInitializationActions(randomness)
-        // update impact based on added genes
-        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                mutatedGenes,
-                old,
-                addedInsertions
-            )
-        }
+        addInitializingActions(individual, mutatedGenes, sampler)
     }
 
-    private fun maintainAuth(authInfo: AuthenticationInfo?, mutated: RestResourceCalls){
+    private fun maintainAuth(authInfo: HttpWsAuthenticationInfo?, mutated: RestResourceCalls){
         authInfo?.let { auth->
             mutated.seeActions(NO_SQL).forEach { if(it is RestCallAction) it.auth = auth }
         }

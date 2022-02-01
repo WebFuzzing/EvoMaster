@@ -6,7 +6,7 @@ import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.graphql.schema.*
 import org.evomaster.core.problem.graphql.schema.__TypeKind.*
-import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*

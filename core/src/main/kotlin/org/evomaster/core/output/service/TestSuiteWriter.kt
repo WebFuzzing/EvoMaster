@@ -23,7 +23,10 @@ class TestSuiteWriter {
     companion object {
         const val jsImport = "EM"
 
-        private const val controller = "controller"
+        /**
+         * variable name of Sut handler
+         */
+        const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
         private const val fixtureClass = "ControllerFixture"
@@ -50,11 +53,12 @@ class TestSuiteWriter {
     fun writeTests(
         solution: Solution<*>,
         controllerName: String?,
+        controllerInput: String?,
         snapshotTimestamp: String = ""
     ) {
 
         val name = TestSuiteFileName(solution.getFileName())
-        val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName)
+        val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName, controllerInput)
         saveToDisk(content, config, name)
     }
 
@@ -63,7 +67,8 @@ class TestSuiteWriter {
         solution: Solution<*>,
         testSuiteFileName: TestSuiteFileName,
         timestamp: String = "",
-        controllerName: String?
+        controllerName: String?,
+        controllerInput: String?
     ): String {
 
         val lines = Lines()
@@ -82,7 +87,7 @@ class TestSuiteWriter {
 
         classFields(lines, config.outputFormat)
 
-        beforeAfterMethods(controllerName, lines, config.outputFormat, testSuiteFileName)
+        beforeAfterMethods(controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
 
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
@@ -271,9 +276,12 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaOrKotlin()) {
-            addImport("io.restassured.RestAssured", lines)
-            addImport("io.restassured.RestAssured.given", lines, true)
-            addImport("io.restassured.response.ValidatableResponse", lines)
+            if (useRestAssured()){
+                addImport("io.restassured.RestAssured", lines)
+                addImport("io.restassured.RestAssured.given", lines, true)
+                addImport("io.restassured.response.ValidatableResponse", lines)
+            }
+
             addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
             addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
@@ -286,18 +294,24 @@ class TestSuiteWriter {
             if (config.enableBasicAssertions) {
                 addImport("org.hamcrest.Matchers.*", lines, true)
                 //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
-                addImport("io.restassured.config.JsonConfig", lines)
-                addImport("io.restassured.path.json.config.JsonPathConfig", lines)
-                addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
+                if (useRestAssured()){
+                    addImport("io.restassured.config.JsonConfig", lines)
+                    addImport("io.restassured.path.json.config.JsonPathConfig", lines)
+                    addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
+                }
+
                 addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
                 addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
                 addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
             }
 
+
             if (config.expectationsActive) {
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
-                addImport("io.restassured.path.json.JsonPath", lines)
+
+                if (useRestAssured())
+                    addImport("io.restassured.path.json.JsonPath", lines)
                 addImport("java.util.Arrays", lines)
             }
         }
@@ -351,18 +365,21 @@ class TestSuiteWriter {
     }
 
 
-    private fun staticVariables(controllerName: String?, lines: Lines) {
+    private fun staticVariables(controllerName: String?, controllerInput: String?, lines: Lines) {
+
+        val executable = if(controllerInput.isNullOrBlank()) ""
+            else "\"$controllerInput\"".replace("\\","\\\\")
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
-                lines.add("private static final SutHandler $controller = new $controllerName();")
+                lines.add("private static final SutHandler $controller = new $controllerName($executable);")
                 lines.add("private static String $baseUrlOfSut;")
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
             }
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
-                lines.add("private val $controller : SutHandler = $controllerName()")
+                lines.add("private val $controller : SutHandler = $controllerName($executable)")
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\"")
@@ -431,6 +448,13 @@ class TestSuiteWriter {
                     config.outputFormat.isJavaOrKotlin() -> {
                         addStatement("$controller.setupForGeneratedTest()", lines)
                         addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                        /*
+                            now only support white-box
+                            TODO remove this later if we do not use test generation with driver
+                         */
+                        if (config.problemType == EMConfig.ProblemType.RPC){
+                            addStatement("$controller.extractRPCSchema()", lines)
+                        }
                     }
                 }
 
@@ -440,20 +464,23 @@ class TestSuiteWriter {
                 }
             }
 
-            if (format.isJavaOrKotlin()) {
-                addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
-                addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
-                addStatement("RestAssured.urlEncodingEnabled = false", lines)
+            if (config.problemType != EMConfig.ProblemType.RPC){
+                if (format.isJavaOrKotlin()) {
+                    addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
+                    addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
+                    addStatement("RestAssured.urlEncodingEnabled = false", lines)
+                }
+
+                if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
+                    lines.add("RestAssured.config = RestAssured.config()")
+                    lines.indented {
+                        lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
+                        lines.add(".redirect(redirectConfig().followRedirects(false))")
+                    }
+                    appendSemicolon(lines)
+                }
             }
 
-            if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
-                lines.add("RestAssured.config = RestAssured.config()")
-                lines.indented {
-                    lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
-                    lines.add(".redirect(redirectConfig().followRedirects(false))")
-                }
-                appendSemicolon(lines)
-            }
         }
 
         if (format.isJavaScript()) {
@@ -542,6 +569,7 @@ class TestSuiteWriter {
 
     private fun beforeAfterMethods(
         controllerName: String?,
+        controllerInput: String?,
         lines: Lines,
         format: OutputFormat,
         testSuiteFileName: TestSuiteFileName
@@ -550,7 +578,7 @@ class TestSuiteWriter {
         lines.addEmpty()
 
         val staticInit = {
-            staticVariables(controllerName, lines)
+            staticVariables(controllerName, controllerInput, lines)
 
             if (!format.isCsharp()) {
                 lines.addEmpty(2)
@@ -644,4 +672,5 @@ class TestSuiteWriter {
     }
 
 
+    private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
 }

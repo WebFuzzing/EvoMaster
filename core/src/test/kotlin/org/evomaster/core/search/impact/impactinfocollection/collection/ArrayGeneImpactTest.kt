@@ -44,7 +44,7 @@ class ArrayGeneImpactTest : GeneImpactTest(){
                 }
             }
             mutationTag == 2 || (mutationTag == 0 && !p)->{
-                if (geneToMutate.getAllElements().size + 1 > geneToMutate.maxSize)
+                if (geneToMutate.getAllElements().size + 1 > (geneToMutate.getMaxSizeOrDefault()))
                     geneToMutate.getAllElements().removeAt(0)
                 else{
                     val key = generateKey()
