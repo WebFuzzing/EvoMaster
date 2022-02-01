@@ -8,7 +8,8 @@ namespace RestApis.Tests.StringEquals {
 
 
         [Theory]
-        [InlineData("Equals/getConstant/abc", 200)]
+        [InlineData("Equals/getConstant/abc", 400)]
+        [InlineData("Equals/getConstant/Hello world!!! Even if this is a long string, it will be trivial to cover with taint analysis", 200)]
         [InlineData("swagger", 200)]
         [InlineData("wrongUri", 404)]
         public async Task StartApi_RetrunExpectedStatusCode(string uri, int expectedStatusCode) {
