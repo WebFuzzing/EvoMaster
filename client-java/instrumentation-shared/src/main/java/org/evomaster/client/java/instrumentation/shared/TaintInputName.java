@@ -15,7 +15,7 @@ public class TaintInputName {
 
     private static final String POSTFIX = "_XYZ_";
 
-    private static final Pattern pattern = Pattern.compile("\\Q"+PREFIX+"\\E\\d+\\Q"+POSTFIX+"\\E");
+    private static final Pattern pattern = Pattern.compile("(?i)\\Q"+PREFIX+"\\E\\d+\\Q"+POSTFIX+"\\E");
 
     /**
      * Check if a given string value is a tainted value

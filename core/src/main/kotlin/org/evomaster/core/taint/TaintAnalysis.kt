@@ -85,7 +85,7 @@ object TaintAnalysis {
                     .filterIsInstance<StringGene>()
                     .filter {
                         specsMap.entries
-                                .filter { e -> e.key.contains(it.getValueAsRawString()) }
+                                .filter { e -> e.key.contains(it.getValueAsRawString(), true) }
                                 .any { e -> e.value.any { d -> d == s } }
                     }
 
@@ -156,7 +156,7 @@ object TaintAnalysis {
                 val genes = action.seeGenes()
                         .flatMap { it.flatView() }
                         .filterIsInstance<StringGene>()
-                        .filter { it.getValueAsRawString() == taintedInput }
+                        .filter { it.getValueAsRawString().equals(taintedInput, true) }
 
                 if (genes.isEmpty()) {
                     /*
@@ -176,7 +176,7 @@ object TaintAnalysis {
                 val genes = action.seeGenes()
                         .flatMap { it.flatView() }
                         .filterIsInstance<StringGene>()
-                        .filter { taintedInput.contains(it.getValueAsRawString()) }
+                        .filter { taintedInput.contains(it.getValueAsRawString(), true) }
 
                 if (genes.isEmpty()) {
                     /*
