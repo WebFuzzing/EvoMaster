@@ -50,7 +50,7 @@ public abstract class WsTestBase {
     public final static String TESTS_OUTPUT_ROOT_FOLDER = "target/em-tests/";
 
     @BeforeAll
-    public static void init(){
+    public static void initInstrumentation(){
         /*
             Make sure we init agent immediately... this is to avoid classes (eg kotlin library)
             being not instrumented when tests start (as controllers might load them)
