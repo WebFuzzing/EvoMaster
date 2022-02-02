@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
+import org.evomaster.client.java.instrumentation.InstrumentingAgent;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -19,6 +20,7 @@ import org.evomaster.core.problem.api.service.ApiWsIndividual;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
@@ -47,6 +49,14 @@ public abstract class WsTestBase {
 
     public final static String TESTS_OUTPUT_ROOT_FOLDER = "target/em-tests/";
 
+    @BeforeAll
+    public static void init(){
+        /*
+            Make sure we init agent immediately... this is to avoid classes (eg kotlin library)
+            being not instrumented when tests start (as controllers might load them)
+         */
+        InstrumentedSutStarter.loadAgent();
+    }
 
     @AfterAll
     public static void tearDown() {
