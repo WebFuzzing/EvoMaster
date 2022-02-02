@@ -33,7 +33,7 @@ public class DistanceHelper{
             throw new ArgumentException("Meaningless 0 delta");
         }
 
-        if (double.IsFinite(distance) || distance == double.MaxValue){
+        if (double.IsInfinity(distance)|| distance == double.MaxValue){
             return distance;
         }
 
@@ -59,7 +59,7 @@ public class DistanceHelper{
             throw new ArgumentException("Negative distance: " + distance);
         }
 
-        if (double.IsFinite(distance) || distance == double.MaxValue){
+        if (double.IsInfinity(distance) || distance == double.MaxValue){
             return baseVale;
         }
 
