@@ -21,6 +21,7 @@
         <module>spring-graphql</module>
         <module>spring-rest-mysql</module>
         <module>spring-rpc</module>
+        <module>wiremock</module>
     </modules>
 
 
