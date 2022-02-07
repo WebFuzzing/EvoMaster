@@ -25,7 +25,7 @@ public class TcpPortMicronautEMTest extends RestTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        runTestHandlingFlaky("TcpPortMicronautEMTest", "com.foo.TcpPortMicronautEMTest", 100, false, (args) -> {
+        runTestHandlingFlaky("TcpPortMicronautEMTest", "com.foo.TcpPortMicronautEMTest", 100, true, (args) -> {
             args.add("--killSwitch");
             args.add("false");
 
