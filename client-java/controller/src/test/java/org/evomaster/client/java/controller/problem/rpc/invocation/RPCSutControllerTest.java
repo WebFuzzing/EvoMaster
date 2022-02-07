@@ -54,6 +54,37 @@ public class RPCSutControllerTest {
     }
 
     @Test
+    public void testLocalAuth(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("authorizedEndpoint")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        RPCActionDto localDto = rpcController.getLocalAuthSetupSchemaMap().get(0).getDto();
+
+        localDto.responseVariable = "res1_auth";
+        localDto.doGenerateTestScript = true;
+        localDto.controllerVariable = "controller";
+        ActionResponseDto authResponseDto = new ActionResponseDto();
+        rpcController.executeHandleLocalAuthenticationSetup(localDto, authResponseDto);
+        assertNotNull(authResponseDto.testScript);
+        assertEquals(4, authResponseDto.testScript.size());
+        assertEquals("{", authResponseDto.testScript.get(0));
+        assertEquals(" java.lang.String arg0 = \"local_foo\";", authResponseDto.testScript.get(1));
+        assertEquals(" controller.handleLocalAuthenticationSetup(arg0);", authResponseDto.testScript.get(2));
+        assertEquals("}", authResponseDto.testScript.get(3));
+
+
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "controller";
+        dto.responseVariable = "res1";
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.assertionScript);
+        assertEquals("assertEquals(\"local\", res1);", responseDto.assertionScript.get(0));
+
+    }
+
+    @Test
     public void testSutInfoAndSchema(){
         assertEquals(1, interfaceSchemas.size());
     }

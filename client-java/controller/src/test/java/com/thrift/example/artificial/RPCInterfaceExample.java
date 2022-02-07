@@ -44,4 +44,6 @@ public interface RPCInterfaceExample {
     public PrivateFieldInResponseDto accessFieldDtoCheck(PrivateFieldInRequestDto dto);
 
     public ByteResponse byteResponse(byte arg1, Byte arg2);
+
+    public String authorizedEndpoint();
 }
