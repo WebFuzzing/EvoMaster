@@ -1,9 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
-import com.thrift.example.artificial.AuthLoginDto;
-import com.thrift.example.artificial.PrivateFieldInRequestDto;
-import com.thrift.example.artificial.PrivateFieldInResponseDto;
-import com.thrift.example.artificial.RPCInterfaceExample;
+import com.thrift.example.artificial.*;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
@@ -294,7 +291,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertTrue(p1.getType() instanceof ObjectType);
 
         List<NamedTypedValue> fs = ((ObjectType) p1.getType()).getFields();
-        assertEquals(3, fs.size());
+        assertEquals(5, fs.size());
 
         for (NamedTypedValue f: fs){
             if (f.getName().equals("pubField")){
@@ -307,6 +304,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 assertFalse(f.accessibleSchema.isAccessible);
                 assertEquals("setStringList", f.accessibleSchema.setterMethodName);
                 assertEquals("getStringList", f.accessibleSchema.getterMethodName);
+            } else if (f.getName().equals("priEnum")){
+                assertFalse(f.accessibleSchema.isAccessible);
+                assertEquals("setPriEnum", f.accessibleSchema.setterMethodName);
+                assertEquals("getPriEnum", f.accessibleSchema.getterMethodName);
+            } else if (f.getName().equals("priBoolean")){
+                assertFalse(f.accessibleSchema.isAccessible);
+                assertEquals("setPriBoolean", f.accessibleSchema.setterMethodName);
+                assertEquals("getPriBoolean", f.accessibleSchema.getterMethodName);
             }
         }
 
@@ -314,13 +319,15 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
             pubField = "foo";
             setPriField("bar");
             setStringList(Arrays.asList("1","2","3"));
+            setPriEnum(EnumKind.ONE);
+            setPriBoolean(true);
         }};
 
         p1.setValueBasedOnInstance(p1Instance);
 
         List<String> javaCodes = p1.newInstanceWithJava(0);
 
-        assertEquals(17, javaCodes.size());
+        assertEquals(19, javaCodes.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInRequestDto arg0 = null;", javaCodes.get(0));
         assertEquals("{", javaCodes.get(1));
         assertEquals(" arg0 = new com.thrift.example.artificial.PrivateFieldInRequestDto();", javaCodes.get(2));
@@ -337,14 +344,21 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("  arg0_stringList.add(arg0_stringList_e_2);", javaCodes.get(13));
         assertEquals(" }", javaCodes.get(14));
         assertEquals(" arg0.setStringList(arg0_stringList);", javaCodes.get(15));
-        assertEquals("}", javaCodes.get(16));
+        assertEquals(" arg0.setPriEnum(((com.thrift.example.artificial.EnumKind)(com.thrift.example.artificial.EnumKind.ONE)));", javaCodes.get(16));
+        assertEquals(" arg0.setPriBoolean(((java.lang.Boolean)(true)));", javaCodes.get(17));
+        assertEquals("}", javaCodes.get(18));
 
 
         List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
-        assertEquals(6, assertionJavaCode.size());
+        assertEquals(8, assertionJavaCode.size());
         assertEquals("assertEquals(\"foo\", res1.pubField);", assertionJavaCode.get(0));
         assertEquals("assertEquals(\"bar\", res1.getPriField());", assertionJavaCode.get(1));
-
+        assertEquals("assertEquals(3, res1.getStringList().size());", assertionJavaCode.get(2));
+        assertEquals("assertEquals(\"1\", res1.getStringList().get(0));", assertionJavaCode.get(3));
+        assertEquals("assertEquals(\"2\", res1.getStringList().get(1));", assertionJavaCode.get(4));
+        assertEquals("assertEquals(\"3\", res1.getStringList().get(2));", assertionJavaCode.get(5));
+        assertEquals("assertEquals(com.thrift.example.artificial.EnumKind.ONE, res1.getPriEnum());", assertionJavaCode.get(6));
+        assertEquals("assertEquals(true, res1.getPriBoolean().booleanValue());", assertionJavaCode.get(7));
 
         NamedTypedValue res = endpoint.getResponse();
         PrivateFieldInResponseDto resInstance = new PrivateFieldInResponseDto(){{
@@ -354,7 +368,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         res.setValueBasedOnInstance(resInstance);
         List<String> javaCodesForResponse = res.newInstanceWithJava(true, true, "tmp", 0);
-        assertEquals(23, javaCodesForResponse.size());
+        assertEquals(25, javaCodesForResponse.size());
         assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
         assertEquals("{", javaCodesForResponse.get(1));
         assertEquals(" tmp = new com.thrift.example.artificial.PrivateFieldInResponseDto();", javaCodesForResponse.get(2));
@@ -375,16 +389,121 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("   tmp_priRequest_stringList.add(tmp_priRequest_stringList_e_2);", javaCodesForResponse.get(17));
         assertEquals("  }", javaCodesForResponse.get(18));
         assertEquals("  tmp_priRequest.setStringList(tmp_priRequest_stringList);", javaCodesForResponse.get(19));
-        assertEquals(" }", javaCodesForResponse.get(20));
-        assertEquals(" tmp.setPriRequest(tmp_priRequest);", javaCodesForResponse.get(21));
-        assertEquals("}", javaCodesForResponse.get(22));
+        assertEquals("  tmp_priRequest.setPriEnum(((com.thrift.example.artificial.EnumKind)(com.thrift.example.artificial.EnumKind.ONE)));", javaCodesForResponse.get(20));
+        assertEquals("  tmp_priRequest.setPriBoolean(((java.lang.Boolean)(true)));", javaCodesForResponse.get(21));
+        assertEquals(" }", javaCodesForResponse.get(22));
+        assertEquals(" tmp.setPriRequest(tmp_priRequest);", javaCodesForResponse.get(23));
+        assertEquals("}", javaCodesForResponse.get(24));
 
         List<String> assertionJavaCodeForResponse = res.newAssertionWithJava(0, "res1", -1);
-        assertEquals(7, assertionJavaCodeForResponse.size());
+        assertEquals(9, assertionJavaCodeForResponse.size());
         assertEquals("assertEquals(42, res1.pubField);", assertionJavaCodeForResponse.get(0));
         assertEquals("assertEquals(\"foo\", res1.getPriRequest().pubField);", assertionJavaCodeForResponse.get(1));
         assertEquals("assertEquals(\"bar\", res1.getPriRequest().getPriField());", assertionJavaCodeForResponse.get(2));
+        assertEquals("assertEquals(3, res1.getPriRequest().getStringList().size());", assertionJavaCodeForResponse.get(3));
+        assertEquals("assertEquals(\"1\", res1.getPriRequest().getStringList().get(0));", assertionJavaCodeForResponse.get(4));
+        assertEquals("assertEquals(\"2\", res1.getPriRequest().getStringList().get(1));", assertionJavaCodeForResponse.get(5));
+        assertEquals("assertEquals(\"3\", res1.getPriRequest().getStringList().get(2));", assertionJavaCodeForResponse.get(6));
+        assertEquals("assertEquals(com.thrift.example.artificial.EnumKind.ONE, res1.getPriRequest().getPriEnum());", assertionJavaCodeForResponse.get(7));
+        assertEquals("assertEquals(true, res1.getPriRequest().getPriBoolean().booleanValue());", assertionJavaCodeForResponse.get(8));
     }
+
+
+    @Test
+    public void testAccessFieldDtoWithNullCheck(){
+
+        EndpointSchema endpoint = getOneEndpoint("accessFieldDtoCheck");
+        assertNotNull(endpoint.getResponse());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+
+
+        PrivateFieldInRequestDto p1Instance = new PrivateFieldInRequestDto();
+
+        p1.setValueBasedOnInstance(p1Instance);
+
+        List<String> javaCodes = p1.newInstanceWithJava(0);
+
+        assertEquals(10, javaCodes.size());
+        assertEquals("com.thrift.example.artificial.PrivateFieldInRequestDto arg0 = null;", javaCodes.get(0));
+        assertEquals("{", javaCodes.get(1));
+        assertEquals(" arg0 = new com.thrift.example.artificial.PrivateFieldInRequestDto();", javaCodes.get(2));
+        assertEquals(" arg0.pubField = null;", javaCodes.get(3));
+        assertEquals(" arg0.setPriField(null);", javaCodes.get(4));
+        assertEquals(" java.util.List<java.lang.String> arg0_stringList = null;", javaCodes.get(5));
+        assertEquals(" arg0.setStringList(arg0_stringList);", javaCodes.get(6));
+        assertEquals(" arg0.setPriEnum(null);", javaCodes.get(7));
+        assertEquals(" arg0.setPriBoolean(null);", javaCodes.get(8));
+        assertEquals("}", javaCodes.get(9));
+
+
+        List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
+        assertEquals(5, assertionJavaCode.size());
+        assertEquals("assertNull(res1.pubField);", assertionJavaCode.get(0));
+        assertEquals("assertNull(res1.getPriField());", assertionJavaCode.get(1));
+        assertEquals("assertNull(res1.getStringList());", assertionJavaCode.get(2));
+        assertEquals("assertNull(res1.getPriEnum());", assertionJavaCode.get(3));
+        assertEquals("assertNull(res1.getPriBoolean());", assertionJavaCode.get(4));
+
+        NamedTypedValue res = endpoint.getResponse();
+        PrivateFieldInResponseDto resInstance = new PrivateFieldInResponseDto(){{
+            pubField = 42;
+        }};
+
+        res.setValueBasedOnInstance(resInstance);
+        List<String> javaCodesForResponse = res.newInstanceWithJava(true, true, "tmp", 0);
+        assertEquals(7, javaCodesForResponse.size());
+        assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
+        assertEquals("{", javaCodesForResponse.get(1));
+        assertEquals(" tmp = new com.thrift.example.artificial.PrivateFieldInResponseDto();", javaCodesForResponse.get(2));
+        assertEquals(" tmp.pubField = 42;", javaCodesForResponse.get(3));
+        assertEquals(" com.thrift.example.artificial.PrivateFieldInRequestDto tmp_priRequest = null;", javaCodesForResponse.get(4));
+        assertEquals(" tmp.setPriRequest(tmp_priRequest);", javaCodesForResponse.get(5));
+        assertEquals("}", javaCodesForResponse.get(6));
+
+        List<String> assertionJavaCodeForResponse = res.newAssertionWithJava(0, "res1", -1);
+        assertEquals(2, assertionJavaCodeForResponse.size());
+        assertEquals("assertEquals(42, res1.pubField);", assertionJavaCodeForResponse.get(0));
+        assertEquals("assertNull(res1.getPriRequest());", assertionJavaCodeForResponse.get(1));
+
+        PrivateFieldInResponseDto resInstance2 = new PrivateFieldInResponseDto(){{
+            pubField = 42;
+            setPriRequest(new PrivateFieldInRequestDto());
+        }};
+
+        res.setValueBasedOnInstance(resInstance2);
+
+        javaCodesForResponse = res.newInstanceWithJava(true, true, "tmp", 0);
+        assertEquals(16, javaCodesForResponse.size());
+        assertEquals("com.thrift.example.artificial.PrivateFieldInResponseDto tmp = null;", javaCodesForResponse.get(0));
+        assertEquals("{", javaCodesForResponse.get(1));
+        assertEquals(" tmp = new com.thrift.example.artificial.PrivateFieldInResponseDto();", javaCodesForResponse.get(2));
+        assertEquals(" tmp.pubField = 42;", javaCodesForResponse.get(3));
+        assertEquals(" com.thrift.example.artificial.PrivateFieldInRequestDto tmp_priRequest = null;", javaCodesForResponse.get(4));
+        assertEquals(" {", javaCodesForResponse.get(5));
+        assertEquals("  tmp_priRequest = new com.thrift.example.artificial.PrivateFieldInRequestDto();", javaCodesForResponse.get(6));
+        assertEquals("  tmp_priRequest.pubField = null;", javaCodesForResponse.get(7));
+        assertEquals("  tmp_priRequest.setPriField(null);", javaCodesForResponse.get(8));
+        assertEquals("  java.util.List<java.lang.String> tmp_priRequest_stringList = null;", javaCodesForResponse.get(9));
+        assertEquals("  tmp_priRequest.setStringList(tmp_priRequest_stringList);", javaCodesForResponse.get(10));
+        assertEquals("  tmp_priRequest.setPriEnum(null);", javaCodesForResponse.get(11));
+        assertEquals("  tmp_priRequest.setPriBoolean(null);", javaCodesForResponse.get(12));
+        assertEquals(" }", javaCodesForResponse.get(13));
+        assertEquals(" tmp.setPriRequest(tmp_priRequest);", javaCodesForResponse.get(14));
+        assertEquals("}", javaCodesForResponse.get(15));
+
+        assertionJavaCodeForResponse = res.newAssertionWithJava(0, "res1", -1);
+        assertEquals(6, assertionJavaCodeForResponse.size());
+        assertEquals("assertEquals(42, res1.pubField);", assertionJavaCodeForResponse.get(0));
+        assertEquals("assertNull(res1.getPriRequest().pubField);", assertionJavaCodeForResponse.get(1));
+        assertEquals("assertNull(res1.getPriRequest().getPriField());", assertionJavaCodeForResponse.get(2));
+        assertEquals("assertNull(res1.getPriRequest().getStringList());", assertionJavaCodeForResponse.get(3));
+        assertEquals("assertNull(res1.getPriRequest().getPriEnum());", assertionJavaCodeForResponse.get(4));
+        assertEquals("assertNull(res1.getPriRequest().getPriBoolean());", assertionJavaCodeForResponse.get(5));
+    }
+
     @Test
     public void testDateToString() throws ClassNotFoundException, ParseException {
         EndpointSchema endpoint = getOneEndpoint("dateToString");
