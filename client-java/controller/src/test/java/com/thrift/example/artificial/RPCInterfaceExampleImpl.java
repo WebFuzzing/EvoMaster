@@ -1,7 +1,5 @@
 package com.thrift.example.artificial;
 
-import org.omg.CORBA.SystemException;
-
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Arrays;
 import java.util.Date;
