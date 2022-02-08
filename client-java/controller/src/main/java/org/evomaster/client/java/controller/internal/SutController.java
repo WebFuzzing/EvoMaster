@@ -462,33 +462,35 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
         }
 
-        if (endpointSchema.getResponse() != null){
-            if (response instanceof Exception){
-                try{
-                    RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
-                } catch (Exception e){
-                    throw new RuntimeException("ERROR: fail to handle exception instance to dto "+ e.getMessage());
-                }
-            }else{
-                if (response != null){
-                    try{
-                        // successful execution
-                        NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
-                        resSchema.setValueBasedOnInstance(response);
-                        responseDto.rpcResponse = resSchema.getDto();
-                        if (dto.doGenerateAssertions && dto.responseVariable != null)
-                            responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
-                        else
-                            responseDto.jsonResponse = objectMapper.writeValueAsString(response);
-                    } catch (Exception e){
-                        throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
-                    }
+        //handle exception
+        if (response instanceof Exception){
+            try{
+                RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
+                return;
+            } catch (Exception e){
+                throw new RuntimeException("ERROR: fail to handle exception instance to dto "+ e.getMessage());
+            }
+        }
 
-                    try {
-                        responseDto.customizedCallResultCode = categorizeBasedOnResponse(response);
-                    } catch (Exception e){
-                        throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
-                    }
+        if (endpointSchema.getResponse() != null){
+            if (response != null){
+                try{
+                    // successful execution
+                    NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
+                    resSchema.setValueBasedOnInstance(response);
+                    responseDto.rpcResponse = resSchema.getDto();
+                    if (dto.doGenerateAssertions && dto.responseVariable != null)
+                        responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
+                    else
+                        responseDto.jsonResponse = objectMapper.writeValueAsString(response);
+                } catch (Exception e){
+                    throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
+                }
+
+                try {
+                    responseDto.customizedCallResultCode = categorizeBasedOnResponse(response);
+                } catch (Exception e){
+                    throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
                 }
             }
         }

@@ -11,6 +11,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.UndeclaredThrowableException;
 
 /**
  * handle RPC exception, for instance
@@ -30,27 +31,45 @@ public class RPCExceptionHandler {
      */
     public static void handle(Object e, ActionResponseDto dto, EndpointSchema endpointSchema, RPCType type){
 
+        Object exceptionToHandle = e;
+        boolean isCause = false;
+        // handle undeclared throwable exception
+        if (UndeclaredThrowableException.class.isAssignableFrom(e.getClass())){
+            Object cause = getExceptionCause(e);
+            if (cause != null){
+                exceptionToHandle = cause;
+                isCause = true;
+            }
+
+        }
+
         try {
-            dto.exceptionInfoDto = handleDefinedException(e, endpointSchema, type);
-            if (dto.exceptionInfoDto != null) return;
+            dto.exceptionInfoDto = handleDefinedException(exceptionToHandle, endpointSchema, type);
+            if (dto.exceptionInfoDto != null) {
+                dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
+                return;
+            }
         } catch (ClassNotFoundException ex) {
             throw new RuntimeException("ERROR: fail to handle defined exception for "+type+" with error msg:"+ ex);
         }
 
         // handling defined exception for each RPC
         switch (type){
-            case THRIFT: dto.exceptionInfoDto = handleThrift(e, endpointSchema); break;
+            case THRIFT: dto.exceptionInfoDto = handleThrift(exceptionToHandle, endpointSchema); break;
             case GENERAL: break; // do nothing
             default: throw new RuntimeException("ERROR: NOT SUPPORT exception handling for "+type);
         }
-        if (dto.exceptionInfoDto != null) return;
+        if (dto.exceptionInfoDto == null) {
+            dto.exceptionInfoDto = handleUnexpectedException(exceptionToHandle);
+        }
 
-        dto.exceptionInfoDto = handleUnexpectedException(e);
+        dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
     }
 
     private static RPCExceptionInfoDto handleUnexpectedException(Object e){
         RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
         dto.type = RPCExceptionType.UNEXPECTED_EXCEPTION;
+
         if (Exception.class.isAssignableFrom(e.getClass())){
             dto.exceptionName = e.getClass().getName();
             dto.exceptionMessage = getExceptionMessage(e);
@@ -131,6 +150,24 @@ public class RPCExceptionHandler {
             getMessage = e.getClass().getMethod("getMessage");
             getMessage.setAccessible(true);
             return (String) getMessage.invoke(e);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
+            SimpleLogger.error("Error: fail to get message of the exception with "+ex.getMessage());
+            return null;
+        }
+    }
+
+
+    private static Object getExceptionCause(Object e)  {
+        Method getCause = null;
+        try {
+            getCause = e.getClass().getMethod("getCause");
+            getCause.setAccessible(true);
+            Object exp = getCause.invoke(e);
+            if (exp != null) return exp;
+
+            getCause = e.getClass().getMethod("getUndeclaredThrowable");
+            getCause.setAccessible(true);
+            return getCause.invoke(e);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
             SimpleLogger.error("Error: fail to get message of the exception with "+ex.getMessage());
             return null;

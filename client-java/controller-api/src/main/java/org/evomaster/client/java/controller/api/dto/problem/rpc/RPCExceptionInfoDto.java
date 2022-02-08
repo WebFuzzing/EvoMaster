@@ -26,4 +26,9 @@ public class RPCExceptionInfoDto {
      * a dto of the exception defined by the RPC service
      */
     public ParamDto exceptionDto;
+
+    /**
+     * if the exception is a cause of java.lang.UndeclaredThrowableException
+     */
+    public boolean isCauseOfUndeclaredThrowable;
 }
