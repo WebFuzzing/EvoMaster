@@ -34,7 +34,7 @@ namespace EvoMaster.DatabaseController {
                     new Uri(dockerUri))
                 .CreateClient();
 
-            DockerContainerBase.CleanupOrphanedContainersAsync(_dockerClient).Wait(Timeout * 500);
+            //DockerContainerBase.CleanupOrphanedContainersAsync(_dockerClient).Wait(Timeout * 500);
 
             _sqlServerContainer = new SqlServerContainer(Port, Password, ImageName);
 

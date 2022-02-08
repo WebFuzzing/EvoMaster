@@ -1,8 +1,9 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
+using EvoMaster.Instrumentation.Examples.Branches;
+using EvoMaster.Instrumentation.Examples.Numbers;
+using EvoMaster.Instrumentation.Examples.Objects;
+using EvoMaster.Instrumentation.Examples.Strings;
 using EvoMaster.Instrumentation.Examples.Triangle;
 using EvoMaster.Instrumentation.StaticState;
 using EvoMaster.Instrumentation_Shared;
@@ -10,19 +11,21 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
-    public class LineCovTcTest {
+    [Collection("Sequential")]
+    public class LineCovTcTest : CovTcTestBase {
         private readonly ITestOutputHelper _testOutputHelper;
 
         public LineCovTcTest(ITestOutputHelper testOutputHelper) {
             _testOutputHelper = testOutputHelper;
+            ExecutionTracer.Reset();
+            ObjectiveRecorder.Reset(false); //TODO
         }
 
         [Fact]
         public void TestLineCoverage() {
             ITriangleClassification tc = new TriangleClassificationImpl();
-
             ExecutionTracer.Reset();
-
+            ObjectiveRecorder.Reset(false);
             Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
 
             tc.Classify(-1, 0, 0);
@@ -41,10 +44,8 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
         public void TestSpecificLineCoverage(int a, int b, int c, string returnLine) {
             _testOutputHelper.WriteLine("Test " + a);
             ITriangleClassification tc = new TriangleClassificationImpl();
-
             ExecutionTracer.Reset();
             ObjectiveRecorder.Reset(false);
-
             Assert.Equal(0, ExecutionTracer.GetNumberOfObjectives());
 
             tc.Classify(a, b, c);
@@ -71,7 +72,6 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
             tc.Classify(a, b, c);
 
             //assert that the last line of the method is reached
-            // Assert.Contains("Line_at_TriangleClassificationImpl_00027", ObjectiveRecorder.AllTargets);
 
             Assert.Equal(1.0, ExecutionTracer.GetValue("Line_at_TriangleClassificationImpl_00027"));
         }
@@ -79,10 +79,10 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
 
         [Fact]
         public void TestAllTargetsGettingRegistered() {
+            ITriangleClassification tc = new TriangleClassificationImpl();
+
             ExecutionTracer.Reset();
             ObjectiveRecorder.Reset(false);
-
-            ITriangleClassification tc = new TriangleClassificationImpl();
 
             tc.Classify(3, 4, 5);
 
@@ -112,13 +112,19 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
 
             var targets = GetRegisteredTargets();
 
-            Assert.Equal(expectedLines, targets.Lines);
+            Assert.Equal(expectedLines, targets.Lines.Where(x => x.Contains("TriangleClassification")));
         }
 
         [Fact]
-        public void TestAllClassesGettingRegistered() {
+        public void TestClassesGettingRegistered() {
             var expectedClassNames = new List<string> {
-                "TriangleClassificationImpl"
+                nameof(TriangleClassificationImpl),
+                nameof(BranchesImp),
+                nameof(NumericOperations),
+                nameof(StringOperations),
+                nameof(ObjectOperations),
+                nameof(Student),
+                nameof(Instrumentation.Examples.Program)
             };
 
             var expectedClasses = new List<string>();
@@ -126,18 +132,22 @@ namespace EvoMaster.Instrumentation.Tests.Examples.Triangle {
             expectedClassNames.ForEach(x => expectedClasses.Add(ObjectiveNaming.ClassObjectiveName(x)));
 
             var targets = GetRegisteredTargets();
-
-            Assert.Equal(expectedClasses, targets.Classes);
+            expectedClasses.ForEach(x => Assert.True(targets.Classes.Contains(x)));
         }
 
-        private RegisteredTargets GetRegisteredTargets() {
-            var bin = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        //This test is added in order to make sure everything works as before after the instrumentation
+        [Theory]
+        [InlineData(-1, 0, 0, Classification.NOT_A_TRIANGLE)]
+        [InlineData(10, 11, 1, Classification.NOT_A_TRIANGLE)]
+        [InlineData(6, 6, 6, Classification.EQUILATERAL)]
+        [InlineData(7, 6, 7, Classification.ISOSCELES)]
+        [InlineData(7, 6, 5, Classification.SCALENE)]
+        public void TestFunctionality(int a, int b, int c, Classification expectedOutcome) {
+            ITriangleClassification tc = new TriangleClassificationImpl();
 
-            if (bin == null) throw new Exception("Executing directory not found");
+            var res = tc.Classify(a, b, c);
 
-            var json = File.ReadAllText(Path.Combine(bin, "Targets.json"));
-
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<RegisteredTargets>(json);
+            Assert.Equal(expectedOutcome, res);
         }
     }
 }

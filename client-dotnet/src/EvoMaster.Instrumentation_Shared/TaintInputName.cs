@@ -14,7 +14,11 @@ namespace EvoMaster.Instrumentation_Shared {
 
         private const string Postfix = "_XYZ_";
 
-        private static readonly Regex Pattern = new Regex("\\Q" + Prefix + "\\E\\d+\\Q" + Postfix + "\\E");
+        private static readonly Regex Pattern = new Regex($"{Regex.Escape(Prefix)}\\d+{Regex.Escape(Postfix)}", RegexOptions.IgnoreCase);
+
+        static TaintInputName(){
+            
+        }
 
 
         /// <summary>
