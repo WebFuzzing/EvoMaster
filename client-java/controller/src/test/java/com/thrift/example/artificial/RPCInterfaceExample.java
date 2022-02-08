@@ -46,4 +46,8 @@ public interface RPCInterfaceExample {
     public ByteResponse byteResponse(byte arg1, Byte arg2);
 
     public String authorizedEndpoint();
+
+    public void throwRuntimeException();
+
+    public void throwUndeclaredThrowableException();
 }

@@ -1,5 +1,8 @@
 package com.thrift.example.artificial;
 
+import org.omg.CORBA.SystemException;
+
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -131,5 +134,15 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         if (authorized)
             return "local";
         return null;
+    }
+
+    @Override
+    public void throwRuntimeException() {
+        throw new RuntimeException("runtime exception");
+    }
+
+    @Override
+    public void throwUndeclaredThrowableException() {
+        throw new UndeclaredThrowableException(new IllegalStateException("undeclared"));
     }
 }

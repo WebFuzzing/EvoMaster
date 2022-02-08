@@ -53,6 +53,33 @@ public class RPCSutControllerTest {
         rpcController.stopSut();
     }
 
+
+    @Test
+    public void testRuntimeException(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("throwRuntimeException")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals("java.lang.RuntimeException", responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("runtime exception", responseDto.exceptionInfoDto.exceptionMessage);
+        assertFalse(responseDto.exceptionInfoDto.isCauseOfUndeclaredThrowable);
+    }
+
+    @Test
+    public void testUndeclaredThrowableException(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("throwUndeclaredThrowableException")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals("java.lang.IllegalStateException", responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("undeclared", responseDto.exceptionInfoDto.exceptionMessage);
+        assertTrue(responseDto.exceptionInfoDto.isCauseOfUndeclaredThrowable);
+    }
+
     @Test
     public void testLocalAuth(){
         List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("authorizedEndpoint")).collect(Collectors.toList());
