@@ -11,6 +11,7 @@
         <ProjectReference Include="..\EvoMaster.Client.Util\EvoMaster.Client.Util.csproj" />
         <ProjectReference Include="..\EvoMaster.Controller.Api\EvoMaster.Controller.Api.csproj" />
         <ProjectReference Include="..\EvoMaster.Instrumentation\EvoMaster.Instrumentation.csproj" />
+        <ProjectReference Include="..\EvoMaster.DatabaseController\EvoMaster.DatabaseController.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.0" />
