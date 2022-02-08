@@ -10,6 +10,12 @@ import java.util.stream.Collectors;
  * created by manzhang on 2021/11/27
  */
 public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
+    private boolean authorized = false;
+
+    public void setAuthorized(boolean authorized) {
+        this.authorized = authorized;
+    }
+
     @Override
     public String simplePrimitive(int argInt, float argfloat, long arglong, double argdouble, char argchar, byte argbyte, boolean argboolean, short argshort) {
         return "int:"+argInt+",float:"+argfloat+",long:"+arglong+",double:"+argdouble+",char:"+argchar+",byte:"+argbyte+",boolean:"+argboolean+",short:"+argshort;
@@ -118,5 +124,12 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         res.byteValue = arg2;
         res.pbyteValue = arg1;
         return res;
+    }
+
+    @Override
+    public String authorizedEndpoint() {
+        if (authorized)
+            return "local";
+        return null;
     }
 }

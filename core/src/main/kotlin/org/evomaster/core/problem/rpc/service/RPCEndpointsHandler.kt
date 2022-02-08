@@ -276,24 +276,32 @@ class RPCEndpointsHandler {
             }
         }
 
-        // check generation configuration, might be removed later
-        rpcAction.doGenerateTestScript = config.enablePureRPCTestGeneration && (index != -1)
-        rpcAction.doGenerateAssertions = config.enableRPCAssertionWithInstance
-
-        if (rpcAction.doGenerateTestScript){
-            rpcAction.controllerVariable = TestSuiteWriter.controller
-        }
-        if (rpcAction.doGenerateTestScript || rpcAction.doGenerateAssertions){
-            rpcAction.responseVariable = generateResponseVariable(index)
-            rpcAction.maxAssertionForDataInCollection = config.maxAssertionForDataInCollection
-        }
-
         if (action.auth !is RPCNoAuth){
             rpcAction.authSetup = authEndpointCluster[action.auth.authIndex]?.copy()
                 ?: throw IllegalStateException("cannot specified auth index ${action.auth.authIndex} from the authEndpointCluster")
         }
 
+        setGenerationConfiguration(rpcAction, index, generateResponseVariable(index))
+
         return rpcAction
+    }
+
+    private fun setGenerationConfiguration(action: RPCActionDto, index: Int, responseVarName: String){
+        // check generation configuration, might be removed later
+        action.doGenerateTestScript = config.enablePureRPCTestGeneration && (index != -1)
+        action.doGenerateAssertions = config.enableRPCAssertionWithInstance
+
+        if (action.doGenerateTestScript){
+            action.controllerVariable = TestSuiteWriter.controller
+        }
+        if (action.doGenerateTestScript || action.doGenerateAssertions){
+            action.responseVariable = responseVarName
+            action.maxAssertionForDataInCollection = config.maxAssertionForDataInCollection
+        }
+
+        if (action.authSetup != null){
+            setGenerationConfiguration(action.authSetup, index, responseVarName+"_auth")
+        }
     }
 
 
