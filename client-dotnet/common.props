@@ -1,0 +1,8 @@
+<!-- Common properties for all submodules-->
+<Project>
+    <PropertyGroup>
+         <TargetFramework>netcoreapp3.1</TargetFramework>
+         <Version>1.1.1-SNAPSHOT</Version>
+         <Authors>EvoMaster Team</Authors>
+     </PropertyGroup>
+</Project>
