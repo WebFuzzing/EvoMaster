@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.CustomizationHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
+import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
 import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
@@ -337,6 +338,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
         try {
             RPCEndpointsBuilder.validateCustomizedValueInRequests(getCustomizedValueInRequests());
+            RPCEndpointsBuilder.validateCustomizedNotNullAnnotationForRPCDto(specifyCustomizedNotNullAnnotation());
             RPCProblem rpcp = (RPCProblem) getProblemInfo();
             for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
                 InterfaceSchema schema = RPCEndpointsBuilder.build(interfaceName, rpcp.getType(), rpcp.getClient(interfaceName),
@@ -345,7 +347,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         rpcp.involveEndpointsByName!=null? rpcp.involveEndpointsByName.get(interfaceName):null,
                         rpcp.involveEndpointsByAnnotation!=null? rpcp.involveEndpointsByAnnotation.get(interfaceName):null,
                         getInfoForAuthentication(),
-                        getCustomizedValueInRequests());
+                        getCustomizedValueInRequests(),
+                        specifyCustomizedNotNullAnnotation());
                 rpcInterfaceSchema.put(interfaceName, schema);
             }
             localAuthSetupSchemaMap.clear();
@@ -765,6 +768,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     @Override
     public List<CustomizedRequestValueDto> getCustomizedValueInRequests() {
+        return null;
+    }
+
+    @Override
+    public List<CustomizedNotNullAnnotationForRPCDto> specifyCustomizedNotNullAnnotation() {
         return null;
     }
 }

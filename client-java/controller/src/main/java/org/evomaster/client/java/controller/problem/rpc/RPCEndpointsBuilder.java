@@ -61,6 +61,20 @@ public class RPCEndpointsBuilder {
         validateKeyValues(customizedRequestValueDtos);
     }
 
+    /**
+     * validate specified notNullAnnotations
+     * @param notNullAnnotations are specified customized annotation representing if any field of RPC dto is required
+     */
+    public static void validateCustomizedNotNullAnnotationForRPCDto(List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations){
+        if (notNullAnnotations == null || notNullAnnotations.isEmpty()) return;
+        notNullAnnotations.forEach(s->{
+            if (s.annotationType == null)
+                throw new IllegalArgumentException("Driver Config Error: annotationType should not be null");
+            if ((s.annotationMethod == null) ^ (s.equalsTo == null))
+                throw new IllegalArgumentException("Driver Config Error: annotationMethod and equalsTo should be specified at the same time");
+        });
+    }
+
 
     private static void validateKeyValues(List<CustomizedRequestValueDto> customizedRequestValueDtos){
         List<String> handled = new ArrayList<>();
@@ -130,7 +144,8 @@ public class RPCEndpointsBuilder {
                                         List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
                                         List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation,
                                         List<AuthenticationDto> authenticationDtoList,
-                                        List<CustomizedRequestValueDto> customizedRequestValueDtos) {
+                                        List<CustomizedRequestValueDto> customizedRequestValueDtos,
+                                        List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations) {
         List<EndpointSchema> endpoints = new ArrayList<>();
         List<EndpointSchema> endpointsForAuth = new ArrayList<>();
         List<String> skippedEndpoints = new ArrayList<>();
@@ -141,7 +156,7 @@ public class RPCEndpointsBuilder {
 
             for (Method m : interfaze.getDeclaredMethods()) {
                 if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation))
-                    endpoints.add(build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos));
+                    endpoints.add(build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos, notNullAnnotations));
                 else {
                     skippedEndpoints.add(m.getName());
                 }
@@ -149,7 +164,7 @@ public class RPCEndpointsBuilder {
                 List<AuthenticationDto> auths = getAuthEndpointInInterface(authenticationDtoList, interfaceName, m);
                 if (auths != null && !auths.isEmpty()){
                     // handle endpoint which is for auth setup
-                    EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos);
+                    EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos,notNullAnnotations);
                     endpointsForAuth.add(authEndpoint);
                     for (AuthenticationDto auth: auths){
                         EndpointSchema copy = authEndpoint.copyStructure();
@@ -313,7 +328,8 @@ public class RPCEndpointsBuilder {
     }
 
     private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType, List<AuthenticationDto> authenticationDtoList,
-                                        List<CustomizedRequestValueDto> customizedRequestValueDtos) {
+                                        List<CustomizedRequestValueDto> customizedRequestValueDtos,
+                                        List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations) {
         List<NamedTypedValue> requestParams = new ArrayList<>();
 
         List<AuthenticationDto> authAnnotationDtos = getSpecificRelatedAuth(authenticationDtoList, method);
@@ -324,14 +340,14 @@ public class RPCEndpointsBuilder {
         Set<String> relatedCustomization = new HashSet<>();
 
         for (Parameter p : method.getParameters()) {
-            requestParams.add(buildInputParameter(schema, p, rpcType, getRelatedCustomization(customizedRequestValueDtos, method), relatedCustomization));
+            requestParams.add(buildInputParameter(schema, p, rpcType, getRelatedCustomization(customizedRequestValueDtos, method), relatedCustomization, notNullAnnotations));
         }
 
 
 
         NamedTypedValue response = null;
         if (!method.getReturnType().equals(Void.TYPE)) {
-            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null, null, null);
+            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null, null, null, null);
         }
 
         List<NamedTypedValue> exceptions = null;
@@ -339,7 +355,7 @@ public class RPCEndpointsBuilder {
             exceptions = new ArrayList<>();
             for (int i = 0; i < method.getExceptionTypes().length; i++){
                 NamedTypedValue exception = build(schema, method.getExceptionTypes()[i],
-                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>(), null, null, null);
+                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>(), null, null, null, null);
                 exceptions.add(exception);
             }
         }
@@ -373,20 +389,22 @@ public class RPCEndpointsBuilder {
     }
 
     private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type,
-                                                       Map<Integer,CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization) {
+                                                       Map<Integer,CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization,
+                                                       List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations) {
         String name = parameter.getName();
         Class<?> clazz = parameter.getType();
         List<String> depth = new ArrayList<>();
-        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, customizationDtos, relatedCustomization, null);
+        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, customizationDtos, relatedCustomization, null, notNullAnnotations);
 
         for (Annotation annotation: parameter.getAnnotations()){
-            handleConstraint(namedTypedValue, annotation);
+            handleConstraint(namedTypedValue, annotation, notNullAnnotations);
         }
         return namedTypedValue;
     }
 
     private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth,
-                                         Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization, AccessibleSchema accessibleSchema) {
+                                         Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization, AccessibleSchema accessibleSchema,
+                                         List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations) {
         depth.add(getObjectTypeNameWithFlag(clazz, clazz.getName()));
         NamedTypedValue namedValue = null;
 
@@ -414,7 +432,7 @@ public class RPCEndpointsBuilder {
                     templateClazz = clazz.getComponentType();
                 }
 
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
@@ -428,7 +446,7 @@ public class RPCEndpointsBuilder {
                     throw new RuntimeException("genericType should not be null for List and Set class");
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 Class<?> templateClazz = getTemplateClass(type);
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth);
@@ -443,11 +461,11 @@ public class RPCEndpointsBuilder {
                 Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
                 Class<?> keyTemplateClazz = getTemplateClass(keyType);
-                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizationDtos, relatedCustomization, null);
+                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations);
                 keyTemplate.setNullable(false);
 
                 Class<?> valueTemplateClazz = getTemplateClass(valueType);
-                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos, relatedCustomization, null);
+                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate), null), clazz);
                 mtype.depth = getDepthLevel(clazz, depth);
                 namedValue = new MapParam(name, mtype, accessibleSchema);
@@ -485,9 +503,9 @@ public class RPCEndpointsBuilder {
                             // find getter and setter
                             faccessSchema = new AccessibleSchema(false, findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
                         }
-                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, objRelatedCustomizationDtos, relatedCustomization, faccessSchema);
+                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations);
                         for (Annotation annotation : f.getAnnotations()){
-                            handleConstraint(field, annotation);
+                            handleConstraint(field, annotation, notNullAnnotations);
                         }
                         fields.add(field);
                     }
@@ -634,14 +652,32 @@ public class RPCEndpointsBuilder {
         return true;
     }
 
-    private static void handleConstraint(NamedTypedValue namedTypedValue, Annotation annotation){
+    private static void handleConstraint(NamedTypedValue namedTypedValue, Annotation annotation, List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations){
         if (annotation.annotationType().getName().startsWith("javax.validation.constraints")){
             JavaXConstraintHandler.handleParam(namedTypedValue, annotation);
+        } else if (notNullAnnotations != null && !notNullAnnotations.isEmpty()){
+            boolean isRequired = notNullAnnotations.stream().anyMatch(a-> isRequired(annotation, a));
+            namedTypedValue.setNullable(!isRequired);
         }
         // remove the log for the moment, might need it later
 //        else {
 //            SimpleLogger.info("annotation with "+ annotation.annotationType().getName()+" is not handled");
 //        }
+    }
+
+    private static boolean isRequired(Annotation annotation, CustomizedNotNullAnnotationForRPCDto notNullAnnotations){
+        if (annotation.annotationType().getName().equals(notNullAnnotations.annotationType)){
+            if (notNullAnnotations.annotationMethod != null && notNullAnnotations.equalsTo !=null){
+                try {
+                    return annotation.annotationType().getDeclaredMethod(notNullAnnotations.annotationMethod).invoke(annotation).equals(notNullAnnotations.equalsTo);
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                    SimpleLogger.uniqueWarn("Error: fail to invoke the specified method in the annotation with the error msg:"+e.getMessage());
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     private static Class<?> getTemplateClass(Type type){
