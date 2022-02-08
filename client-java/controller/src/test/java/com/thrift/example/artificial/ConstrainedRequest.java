@@ -25,6 +25,9 @@ public class ConstrainedRequest {
     @Size(min= 1, max = 10)
     public List<Integer> listSize;
 
+    @CustomAnnotation(name = "kind", necessity = Necessity.REQUIRED)
+    public EnumKind kind;
+
     //TODO eg, @DecimalMin(value = "0.1", inclusive = false)
 
     /*

@@ -239,7 +239,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         NamedTypedValue p1 = endpoint.getRequestParams().get(0);
         assertTrue(p1 instanceof ObjectParam);
         assertTrue(p1.isNullable());
-        assertEquals(7, ((ObjectParam) p1).getType().getFields().size());
+        assertEquals(8, ((ObjectParam) p1).getType().getFields().size());
         for (NamedTypedValue f : ((ObjectParam) p1).getType().getFields()) {
             if (f.getName().equals("list")) {
                 assertTrue(f instanceof ListParam);
@@ -268,7 +268,10 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 assertTrue(f instanceof StringParam);
                 assertEquals(2, ((StringParam) f).getMinSize());
                 assertEquals(10, ((StringParam) f).getMaxSize());
-            } else
+            } else if(f.getName().equals("kind")){
+                assertTrue(f instanceof EnumParam);
+                assertFalse(f.isNullable());
+            }else
                 fail("do not handle param " + f.getName());
         }
 
