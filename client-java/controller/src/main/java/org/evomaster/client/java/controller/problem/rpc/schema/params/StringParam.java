@@ -117,17 +117,14 @@ public class StringParam extends NamedTypedValue<StringType, String> {
 
     @Override
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        String value = null;
-        if (getValue() != null)
-            value = getValueAsJavaString();
 
         String code;
         if (accessibleSchema == null || accessibleSchema.isAccessible)
-            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value);
+            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
         else{
             if (accessibleSchema.setterMethodName == null)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, value);
+            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString());
         }
         return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
     }
@@ -146,7 +143,7 @@ public class StringParam extends NamedTypedValue<StringType, String> {
 
     @Override
     public String getValueAsJavaString() {
-        return "\""+CodeJavaGenerator.handleEscapeCharInString(getValue())+"\"";
+        return getValue() == null? null:"\""+CodeJavaGenerator.handleEscapeCharInString(getValue())+"\"";
     }
 
 }
