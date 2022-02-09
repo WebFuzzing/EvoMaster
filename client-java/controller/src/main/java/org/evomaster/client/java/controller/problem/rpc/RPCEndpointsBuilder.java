@@ -706,37 +706,6 @@ public class RPCEndpointsBuilder {
         return name.equals("$jacocoData");
     }
 
-    private final static List<String> THRIFT_SKIP = Arrays.asList(
-            "org.apache.thrift.protocol.TStruct",
-            "org.apache.thrift.protocol.TField",
-            "org.apache.thrift.TFieldIdEnum",
-            "org.apache.thrift.scheme.SchemeFactory"
-    );
-
-    private static boolean doSkipField(Field field, RPCType type){
-        switch (type){
-            case THRIFT: {
-                return THRIFT_SKIP.contains(field.getType().getName()) || doSkipFieldByName(field.getName(), type) || doSkipFieldsInOldThrift(field);
-            }
-            default: return false;
-        }
-    }
-
-    // old version of thrift for ind1 case study
-    private static boolean doSkipFieldsInOldThrift(Field field){
-        if (!field.getName().equals("schemes") && !field.getName().equals("optionals")) return false;
-
-        return Map.class.isAssignableFrom(field.getType())
-                && getTemplateClass(((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]).isAssignableFrom(Class.class);
-    }
-
-    private static boolean doSkipFieldByName(String name, RPCType type){
-        switch (type){
-            case THRIFT: return name.equals("__isset_bitfield") || name.equals("__isset_bit_vector") || name.matches("^__(.+)_ISSET_ID$");
-            default: return false;
-        }
-    }
-
     private static boolean isMetaMap(Field field){
         boolean result = field.getName().equals("metaDataMap")
                 && Map.class.isAssignableFrom(field.getType());
