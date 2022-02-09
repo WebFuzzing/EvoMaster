@@ -742,7 +742,7 @@ public class RPCEndpointsBuilder {
             }
 
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
+            SimpleLogger.uniqueWarn("Error: fail to get the metaDataMap field in native dto");
         }
 
     }
@@ -754,7 +754,7 @@ public class RPCEndpointsBuilder {
                 if (isMetaMap(metaMap_field))
                     handleMetaMap(metaMap_field, fields);
             } catch (NoSuchFieldException e) {
-                e.printStackTrace();
+                SimpleLogger.uniqueWarn("Error: fail to get the metaDataMap field in native dto");
             }
         }
 
