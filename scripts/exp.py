@@ -571,6 +571,12 @@ def createJobs():
 
     CONFIGS = getConfigs()
 
+    ## filter config if specified
+    if CONFIGFILTER is not None and CONFIGFILTER.lower() != "all":
+            filtered = list(filter(lambda x: x.filterKey is None or x.filterKey.lower() == CONFIGFILTER.lower(), CONFIGS))
+            if len(filtered) > 0:
+                CONFIGS = filtered
+
     NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * len(CONFIGS)
     SUT_WEIGHTS = sum(map(lambda x: x.timeWeight, SUTS))
     # For example, if we have 30 runs and 5 SUTs, the total budget
@@ -723,11 +729,6 @@ def getConfigs():
    bar = Config([ALGO_RANDOM, PR], "bar")
    CONFIGS.append(foo)
    CONFIGS.append(bar)
-
-   if CONFIGFILTER is not None and CONFIGFILTER.lower() != "all":
-        filtered = list(filter(lambda x: x.filterKey is None or x.filterKey.lower() == CONFIGFILTER.lower(), CONFIGS))
-        if len(filtered) > 0:
-            CONFIGS = filtered
 
    return CONFIGS
 
