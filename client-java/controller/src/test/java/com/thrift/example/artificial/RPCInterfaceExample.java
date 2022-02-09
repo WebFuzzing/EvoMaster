@@ -51,5 +51,9 @@ public interface RPCInterfaceExample {
 
     void throwUndeclaredThrowableException();
 
-    ChildDto handledInheritedDto(ChildDto dto);
+    StringChildDto handledInheritedGenericStringDto(StringChildDto dto);
+
+    IntChildDto handledInheritedGenericIntDto(IntChildDto dto);
+
+    ListChildDto handledInheritedGenericListDto(ListChildDto dto);
 }

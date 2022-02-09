@@ -1,14 +1,14 @@
 package com.thrift.example.artificial;
 
-public class ParentDto extends  ParentParentDto{
+public class ParentDto<T, U> extends ParentParentDto<T>{
 
-    private String message;
+    private U message;
 
-    public String getMessage() {
+    public U getMessage() {
         return message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(U message) {
         this.message = message;
     }
 }

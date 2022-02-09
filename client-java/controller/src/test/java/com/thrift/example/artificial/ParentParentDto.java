@@ -1,14 +1,14 @@
 package com.thrift.example.artificial;
 
-public class ParentParentDto {
+public class ParentParentDto<T> {
 
-    private String code;
+    private T code;
 
-    public String getCode() {
+    public T getCode() {
         return code;
     }
 
-    public void setCode(String code) {
+    public void setCode(T code) {
         this.code = code;
     }
 }

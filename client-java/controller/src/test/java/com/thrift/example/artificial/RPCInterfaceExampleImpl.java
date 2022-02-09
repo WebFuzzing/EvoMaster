@@ -144,11 +144,26 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         throw new UndeclaredThrowableException(new IllegalStateException("undeclared"));
     }
 
-    private String child_mark = "child";
+    private final String child_mark = "child";
+
     @Override
-    public ChildDto handledInheritedDto(ChildDto dto) {
+    public StringChildDto handledInheritedGenericStringDto(StringChildDto dto) {
         dto.setCode(dto.getCode()!= null? child_mark+dto.getCode(): child_mark);
         dto.setMessage(dto.getMessage()!=null? child_mark+ dto.getMessage(): child_mark);
+        return dto;
+    }
+
+    @Override
+    public IntChildDto handledInheritedGenericIntDto(IntChildDto dto) {
+        dto.setCode(dto.getCode()!= null? 1+dto.getCode(): 0);
+        dto.setMessage(dto.getMessage()!=null? 1+ dto.getMessage(): 0);
+        return dto;
+    }
+
+    @Override
+    public ListChildDto handledInheritedGenericListDto(ListChildDto dto) {
+        dto.setCode(dto.getCode()!= null? dto.getCode().stream().map(x-> x+1).collect(Collectors.toList()): Arrays.asList(0));
+        dto.setMessage(dto.getMessage()!=null? dto.getCode().stream().map(x-> x+1).collect(Collectors.toList()): Arrays.asList(0));
         return dto;
     }
 }
