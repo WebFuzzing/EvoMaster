@@ -488,7 +488,11 @@ public class RPCEndpointsBuilder {
 
                     Map<Integer, CustomizedRequestValueDto> objRelatedCustomizationDtos = getCustomizationBasedOnSpecifiedType(customizationDtos, clazz.getName());
 
-                    for(Field f: clazz.getDeclaredFields()){
+                    // field list
+                    List<Field> fieldList = new ArrayList<>();
+                    getAllFields(clazz, fieldList);
+
+                    for(Field f: fieldList){
                         if (doSkipReflection(f.getName()) || doSkipField(f, rpcType))
                             continue;
                         if (rpcType == RPCType.THRIFT && isMetaMap(f)){
@@ -537,6 +541,12 @@ public class RPCEndpointsBuilder {
         }
 
         return namedValue;
+    }
+
+    public static void getAllFields(Class<?> clazz, List<Field> fieldList){
+        fieldList.addAll(0, Arrays.asList(clazz.getDeclaredFields()));
+        if (clazz.getSuperclass() != null && clazz.getSuperclass() != Object.class)
+            getAllFields(clazz.getSuperclass(), fieldList);
     }
 
     private static Map<Integer, CustomizedRequestValueDto> getCustomizationBasedOnSpecifiedType(Map<Integer, CustomizedRequestValueDto> customizationDtos, String objTypeName){
