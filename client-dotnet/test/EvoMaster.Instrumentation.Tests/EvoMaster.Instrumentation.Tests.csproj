@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>netcoreapp3.1</TargetFramework>
+    <Import Project="../../common.props" />
 
+	<PropertyGroup>
 		<IsPackable>false</IsPackable>
 		<StartupObject>EvoMaster.Instrumentation.Tests.Program</StartupObject>
 	</PropertyGroup>
@@ -12,8 +12,6 @@
 		<PackageReference Include="xunit" Version="2.4.0" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
 		<PackageReference Include="coverlet.collector" Version="1.0.1" />
-		<!-- in a project outside this solution, the EvoMaster.Instrumentation must be added as a package reference -->
-		<!--        <PackageReference Include="EvoMaster.Instrumentation" Version="1.1.1-SNAPSHOT"/>-->
 	</ItemGroup>
 
 	<ItemGroup>

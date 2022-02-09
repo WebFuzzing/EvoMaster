@@ -56,6 +56,14 @@ def replaceInJS():
     replacement = '  "version": "'+version+'",\n'
     replace("client-js/evomaster-client-js/package.json", regex, replacement)
 
+
+def replaceInCS():
+    regex = re.compile(r'\s*<Version>.*</Version>\s*')
+    replacement = '         <Version>'+version+'</Version>\n'
+    replace("client-dotnet/common.props", regex, replacement)
+
+
+
 SHELL = platform.system() == 'Windows'
 
 def replaceInMvn():
@@ -71,3 +79,4 @@ replaceInMakeExecutable()
 replaceInCI()
 replaceInJS()
 replaceInMvn()
+replaceInCS()
