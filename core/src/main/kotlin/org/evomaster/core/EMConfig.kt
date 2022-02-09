@@ -236,7 +236,7 @@ class EMConfig {
             eg, could handle specially in Markdown all the deprecated fields
          */
         if(testSuiteFileName.isNotBlank()){
-            log.warn("Using deprecated option 'testSuiteFileName'")
+            LoggingUtil.uniqueUserWarn("Using deprecated option 'testSuiteFileName'")
             outputFilePrefix = testSuiteFileName
             outputFileSuffix = ""
             testSuiteFileName = ""
@@ -254,8 +254,8 @@ class EMConfig {
         if (blackBox && !bbExperiments) {
 
             if(problemType == ProblemType.DEFAULT){
-                LoggingUtil.uniqueWarn(log, AnsiColor.inRed("WARNING: you are doing Black-Box testing, but you did not specify the" +
-                        " 'problemType'. The system will default to RESTful API testing."))
+                LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
+                        " 'problemType'. The system will default to RESTful API testing.")
                 problemType = ProblemType.REST
             }
 
@@ -282,7 +282,7 @@ class EMConfig {
         }
 
         if(blackBox && ratePerMinute <=0){
-            LoggingUtil.getInfoLogger().warn("You have not setup 'ratePerMinute'. If you are doing testing of" +
+            LoggingUtil.uniqueUserWarn("You have not setup 'ratePerMinute'. If you are doing testing of" +
                     " a remote service which you do not own, you might want to put a rate-limiter to prevent" +
                     " EvoMaster from bombarding such service with HTTP requests.")
         }
@@ -336,7 +336,7 @@ class EMConfig {
         // Clustering constraints: the executive summary is not really meaningful without the clustering
         if(executiveSummary && testSuiteSplitType != TestSuiteSplitType.CLUSTER){
             executiveSummary = false
-            LoggingUtil.getInfoLogger().warn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
+            LoggingUtil.uniqueUserWarn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
                     "The option has been deactivated for this run, to prevent a crash.")
             //throw IllegalArgumentException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
         }
