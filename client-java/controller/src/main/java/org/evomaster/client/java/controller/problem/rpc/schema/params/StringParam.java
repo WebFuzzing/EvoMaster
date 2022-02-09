@@ -39,6 +39,10 @@ public class StringParam extends NamedTypedValue<StringType, String> {
      */
     private Long max;
 
+    public StringParam(String name, StringType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
+    }
+
     public StringParam(String name, AccessibleSchema accessibleSchema) {
         super(name, new StringType(), accessibleSchema);
     }
@@ -85,7 +89,7 @@ public class StringParam extends NamedTypedValue<StringType, String> {
 
     @Override
     public StringParam copyStructure() {
-        return new StringParam(getName(), accessibleSchema);
+        return new StringParam(getName(), getType(),accessibleSchema);
     }
 
     @Override

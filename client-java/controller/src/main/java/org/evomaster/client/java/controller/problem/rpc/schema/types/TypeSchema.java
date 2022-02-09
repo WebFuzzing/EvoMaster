@@ -21,6 +21,8 @@ public class TypeSchema {
      */
     private final Class<?> clazz;
 
+    private Class<?> originalType;
+
     /**
      * a depth of the type that are used by other types
      * eg, A contains B, and B contains C, then the depth for A is 2
@@ -33,6 +35,9 @@ public class TypeSchema {
         this.clazz = clazz;
     }
 
+    public void setOriginalType(Class<?> originalType) {
+        this.originalType = originalType;
+    }
 
     public String getType() {
         return type;
@@ -58,7 +63,7 @@ public class TypeSchema {
     }
 
     public Class<?> getClazz() {
-        return clazz;
+        return originalType!= null? originalType: clazz;
     }
 
     public String getTypeNameForInstance(){
