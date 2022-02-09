@@ -545,7 +545,7 @@ public class RPCEndpointsBuilder {
 
     public static void getAllFields(Class<?> clazz, List<Field> fieldList){
         fieldList.addAll(0, Arrays.asList(clazz.getDeclaredFields()));
-        if (clazz.getSuperclass() != null && clazz.getSuperclass() != Object.class)
+        if (!Exception.class.isAssignableFrom(clazz) && clazz.getSuperclass() != null && clazz.getSuperclass() != Object.class)
             getAllFields(clazz.getSuperclass(), fieldList);
     }
 

@@ -1,8 +1,11 @@
 package org.evomaster.client.java.controller.problem.rpc.invocation;
 
+import com.thrift.example.artificial.ChildDto;
 import io.restassured.RestAssured;
+import org.checkerframework.checker.units.qual.C;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
@@ -11,6 +14,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import javax.security.sasl.SaslServer;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,6 +55,62 @@ public class RPCSutControllerTest {
     @AfterAll
     public static void tearDown() {
         rpcController.stopSut();
+    }
+
+
+    @Test
+    public void testInheritedDto(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("handledInheritedDto")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "controller";
+        dto.responseVariable = "res1";
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        assertEquals(10, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.ChildDto res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" com.thrift.example.artificial.ChildDto arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" {", responseDto.testScript.get(3));
+        assertEquals("  arg0 = new com.thrift.example.artificial.ChildDto();", responseDto.testScript.get(4));
+        assertEquals("  arg0.setCode(null);", responseDto.testScript.get(5));
+        assertEquals("  arg0.setMessage(null);", responseDto.testScript.get(6));
+        assertEquals(" }", responseDto.testScript.get(7));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handledInheritedDto(arg0);", responseDto.testScript.get(8));
+        assertEquals("}", responseDto.testScript.get(9));
+
+        assertEquals(2, responseDto.assertionScript.size());
+        assertEquals("assertEquals(\"child\", res1.getCode());", responseDto.assertionScript.get(0));
+        assertEquals("assertEquals(\"child\", res1.getMessage());", responseDto.assertionScript.get(1));
+
+        ParamDto request = dto.requestParams.get(0);
+        assertEquals(2, request.innerContent.size());
+        request.innerContent.get(0).stringValue = "ppcode";
+        request.innerContent.get(1).stringValue = "pmsg";
+
+        responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        assertEquals(10, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.ChildDto res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" com.thrift.example.artificial.ChildDto arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" {", responseDto.testScript.get(3));
+        assertEquals("  arg0 = new com.thrift.example.artificial.ChildDto();", responseDto.testScript.get(4));
+        assertEquals("  arg0.setCode(((java.lang.String)(\"ppcode\")));", responseDto.testScript.get(5));
+        assertEquals("  arg0.setMessage(((java.lang.String)(\"pmsg\")));", responseDto.testScript.get(6));
+        assertEquals(" }", responseDto.testScript.get(7));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handledInheritedDto(arg0);", responseDto.testScript.get(8));
+        assertEquals("}", responseDto.testScript.get(9));
+
+        assertEquals(2, responseDto.assertionScript.size());
+        assertEquals("assertEquals(\"childppcode\", res1.getCode());", responseDto.assertionScript.get(0));
+        assertEquals("assertEquals(\"childpmsg\", res1.getMessage());", responseDto.assertionScript.get(1));
     }
 
 

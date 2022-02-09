@@ -143,4 +143,12 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     public void throwUndeclaredThrowableException() {
         throw new UndeclaredThrowableException(new IllegalStateException("undeclared"));
     }
+
+    private String child_mark = "child";
+    @Override
+    public ChildDto handledInheritedDto(ChildDto dto) {
+        dto.setCode(dto.getCode()!= null? child_mark+dto.getCode(): child_mark);
+        dto.setMessage(dto.getMessage()!=null? child_mark+ dto.getMessage(): child_mark);
+        return dto;
+    }
 }
