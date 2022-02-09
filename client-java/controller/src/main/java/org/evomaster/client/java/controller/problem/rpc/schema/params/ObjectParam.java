@@ -7,6 +7,8 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,11 +30,16 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         try {
             Object instance = clazz.newInstance();
             for (NamedTypedValue v: getValue()){
-                Field f = clazz.getDeclaredField(v.getName());
-                f.setAccessible(true);
-                Object vins = v.newInstance();
-                if (vins != null)
-                    f.set(instance, vins);
+                if (v.accessibleSchema == null || v.accessibleSchema.isAccessible){
+                    Field f = clazz.getDeclaredField(v.getName());
+                    f.setAccessible(true);
+                    Object vins = v.newInstance();
+                    if (vins != null)
+                        f.set(instance, vins);
+                } else if(v.accessibleSchema.setterMethodName != null){
+                    Method m = clazz.getMethod(v.accessibleSchema.setterMethodName, v.getType().getClazz());
+                    m.invoke(instance, v.newInstance());
+                }
             }
             return instance;
         } catch (InstantiationException e) {
@@ -41,8 +48,14 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             throw new RuntimeException("fail to access the class:"+clazzName+" with error msg:"+e.getMessage());
         } catch (NoSuchFieldException e) {
             throw new RuntimeException("fail to access the field:"+clazzName+" with error msg:"+e.getMessage());
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("fail to access the method:"+clazzName+" with error msg:"+e.getMessage());
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException("fail to invoke the setter method:"+clazzName+" with error msg:"+e.getMessage());
         }
     }
+
+
 
     @Override
     public ObjectParam copyStructure() {
@@ -91,12 +104,20 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         for (NamedTypedValue f: fields){
             NamedTypedValue copy = f.copyStructure();
             try {
-                Field fi = clazz.getDeclaredField(f.getName());
-                fi.setAccessible(true);
-                Object fiv = fi.get(instance);
-                copy.setValueBasedOnInstance(fiv);
+                if (f.accessibleSchema == null || f.accessibleSchema.isAccessible){
+                    Field fi = clazz.getDeclaredField(f.getName());
+                    fi.setAccessible(true);
+                    Object fiv = fi.get(instance);
+                    copy.setValueBasedOnInstance(fiv);
+                } else if(f.accessibleSchema.getterMethodName != null){
+                    Method m = clazz.getMethod(f.accessibleSchema.getterMethodName);
+                    copy.setValueBasedOnInstance(m.invoke(instance));
+                }
+
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new RuntimeException("ERROR: fail to get value of the field with the name ("+ f.getName()+ ") and error Msg:"+e.getMessage());
+            } catch (NoSuchMethodException | InvocationTargetException e) {
+                throw new RuntimeException("ERROR: fail to get/invoke getter method for the field with the name ("+ f.getName()+ ") and error Msg:"+e.getMessage());
             }
 
             values.add(copy);
