@@ -495,6 +495,10 @@ public class RPCEndpointsBuilder {
                     handleGenericType(clazz, genericTypeMap);
 
                     for(Field f: fieldList){
+                        // skip final field
+                        if (Modifier.isFinal(f.getModifiers()))
+                            continue;
+
                         if (doSkipReflection(f.getName()))
                             continue;
 
@@ -505,6 +509,10 @@ public class RPCEndpointsBuilder {
                         } else{
                             // find getter and setter
                             faccessSchema = new AccessibleSchema(false, findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
+                            if (faccessSchema.getterMethodName == null || faccessSchema.setterMethodName == null){
+                                SimpleLogger.warn("Error: skip the field "+f.getName()+" since its setter/getter is not found");
+                                continue;
+                            }
                         }
 
                         Class<?> fType = f.getType();
