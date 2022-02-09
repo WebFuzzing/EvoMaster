@@ -484,21 +484,16 @@ public class RPCEndpointsBuilder {
                 if (cycleSize == 1){
                     List<NamedTypedValue> fields = new ArrayList<>();
 
-                    Field thrift_metamap = null;
-
                     Map<Integer, CustomizedRequestValueDto> objRelatedCustomizationDtos = getCustomizationBasedOnSpecifiedType(customizationDtos, clazz.getName());
 
                     // field list
                     List<Field> fieldList = new ArrayList<>();
-                    getAllFields(clazz, fieldList);
+                    getAllFields(clazz, fieldList, rpcType);
 
                     for(Field f: fieldList){
-                        if (doSkipReflection(f.getName()) || doSkipField(f, rpcType))
+                        if (doSkipReflection(f.getName()))
                             continue;
-                        if (rpcType == RPCType.THRIFT && isMetaMap(f)){
-                            thrift_metamap = f;
-                            continue;
-                        }
+
                         AccessibleSchema faccessSchema = null;
                         //check accessible
                         if (Modifier.isPublic(f.getModifiers())){
@@ -514,9 +509,7 @@ public class RPCEndpointsBuilder {
                         fields.add(field);
                     }
 
-                    if (thrift_metamap!=null){
-                        handleMetaMap(thrift_metamap, fields);
-                    }
+                    handleNativeRPCConstraints(clazz, fields, rpcType);
 
                     ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz);
                     otype.depth = getDepthLevel(clazz, depth);
@@ -543,10 +536,15 @@ public class RPCEndpointsBuilder {
         return namedValue;
     }
 
-    public static void getAllFields(Class<?> clazz, List<Field> fieldList){
+    public static void getAllFields(Class<?> clazz, List<Field> fieldList, RPCType type){
+        if (type == RPCType.THRIFT && isNativeThriftDto(clazz)){
+            getFieldForNativeThriftDto(clazz, fieldList);
+            return;
+        }
+
         fieldList.addAll(0, Arrays.asList(clazz.getDeclaredFields()));
         if (!Exception.class.isAssignableFrom(clazz) && clazz.getSuperclass() != null && clazz.getSuperclass() != Object.class)
-            getAllFields(clazz.getSuperclass(), fieldList);
+            getAllFields(clazz.getSuperclass(), fieldList, type);
     }
 
     private static Map<Integer, CustomizedRequestValueDto> getCustomizationBasedOnSpecifiedType(Map<Integer, CustomizedRequestValueDto> customizationDtos, String objTypeName){
@@ -718,15 +716,15 @@ public class RPCEndpointsBuilder {
     private static boolean doSkipField(Field field, RPCType type){
         switch (type){
             case THRIFT: {
-                return THRIFT_SKIP.contains(field.getType().getName()) || doSkipFieldByName(field.getName(), type) || doSkipSchemas(field);
+                return THRIFT_SKIP.contains(field.getType().getName()) || doSkipFieldByName(field.getName(), type) || doSkipFieldsInOldThrift(field);
             }
             default: return false;
         }
     }
 
     // old version of thrift for ind1 case study
-    private static boolean doSkipSchemas(Field field){
-        if (!field.getName().equals("schemes")) return false;
+    private static boolean doSkipFieldsInOldThrift(Field field){
+        if (!field.getName().equals("schemes") && !field.getName().equals("optionals")) return false;
 
         return Map.class.isAssignableFrom(field.getType())
                 && getTemplateClass(((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]).isAssignableFrom(Class.class);
@@ -748,6 +746,48 @@ public class RPCEndpointsBuilder {
         Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
         return valueType.getTypeName().equals("org.apache.thrift.meta_data.FieldMetaData");
+
+    }
+
+    private final static String NATIVE_THRIFT_DTO_INTERFACE = "org.apache.thrift.TBase";
+    private final static String NATIVE_THRIFT_FIELD_SCHEMA = "metaDataMap";
+
+    private static boolean isNativeThriftDto(Class<?> clazz){
+        return clazz.getInterfaces().length > 0 && Arrays.stream(clazz.getInterfaces()).anyMatch(i-> i.getName().equals(NATIVE_THRIFT_DTO_INTERFACE));
+    }
+
+    private static void getFieldForNativeThriftDto(Class<?> clazz, List<Field> fields){
+        try {
+            Field metaMap_field = clazz.getDeclaredField(NATIVE_THRIFT_FIELD_SCHEMA);
+            if (isMetaMap(metaMap_field)){
+                Object metaMap = metaMap_field.get(null);
+
+                if (metaMap instanceof Map){
+                    for (Object f : ((Map)metaMap).values()){
+                        Field fname = f.getClass().getDeclaredField("fieldName");
+                        fname.setAccessible(true);
+                        String name = (String) fname.get(f);
+                        fields.add(clazz.getDeclaredField(name));
+                    }
+                }
+            }
+
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private static void handleNativeRPCConstraints(Class<?> clazz, List<NamedTypedValue> fields, RPCType type){
+        if (type == RPCType.THRIFT && isNativeThriftDto(clazz)){
+            try {
+                Field metaMap_field = clazz.getDeclaredField(NATIVE_THRIFT_FIELD_SCHEMA);
+                if (isMetaMap(metaMap_field))
+                    handleMetaMap(metaMap_field, fields);
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+        }
 
     }
 
