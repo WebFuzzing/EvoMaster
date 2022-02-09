@@ -86,9 +86,9 @@ EXP_ID = "evomaster"
 
 
 
-if len(sys.argv) != 9:
+if len(sys.argv) < 9:
     print(
-        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <maxActions> <minutesPerRun> <nJobs>")
+        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <maxActions> <minutesPerRun> <nJobs> <configFilter> <sutFilter>")
     exit(1)
 
 ### input parameters
@@ -126,6 +126,19 @@ MINUTES_PER_RUN = int(sys.argv[7])
 # Also not that in the same .sh script there can be experiments only for a single SUT.
 NJOBS = int(sys.argv[8])
 
+# Specify a string to filter CONFIGS to be included
+# None or `all` represents all CONFIGS should be included
+# Default is None
+CONFIGFILTER = None
+if len(sys.argv) > 9:
+    CONFIGFILTER = str(sys.argv[9])
+
+# Specify a string to filter suts to be included based on their names
+# None or `all` represents all Suts should be included
+# Default is None
+SUTFILTER = None
+if len(sys.argv) > 10:
+    SUTFILTER = str(sys.argv[10])
 
 # input parameter validation
 if MIN_SEED > MAX_SEED:
@@ -176,7 +189,7 @@ SUTS = [
         # GRAPHQL
         Sut("petclinic", 1, JDK_8),
         Sut("patio-api", 1, JDK_11),
-        Sut("timbuctoo", 1, JDK11),
+        Sut("timbuctoo", 1, JDK_11),
         Sut("graphql-ncs", 1, JDK_8),
         Sut("graphql-scs", 1, JDK_8),
         # Sut("ind0", 1, JDK_8),
@@ -189,6 +202,9 @@ SUTS = [
         Sut("sampleproject",1,DOTNET_3),
         Sut("menu-api",1,DOTNET_3)
 ]
+
+if SUTFILTER is not None and SUTFILTER.lower() != "all":
+    SUTS = list(filter(lambda x: x.name.lower() == SUTFILTER.lower(), SUTS))
 
 # Specify if using any industrial case study
 USING_IND = False
@@ -628,8 +644,8 @@ def createJobs():
 
 
 class Config:
-    i=42
-    # def __init__(self):
+    def __init__(self, filterKey=None):
+        self.filterKey = filterKey
 
 
 
@@ -656,10 +672,11 @@ def getConfigs():
     # these configurations
    CONFIGS = []
 
-   CONFIGS.append(Config())
-
+   if CONFIGFILTER is not None and CONFIGFILTER.lower() != "all":
+        CONFIGS = list(filter(lambda x: x.filterKey is None or x.filterKey.lower() == CONFIGFILTER.lower(), CONFIGS))
 #    if CLUSTER:
 #    else:
+
 
    return CONFIGS
 
