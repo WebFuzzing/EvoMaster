@@ -237,10 +237,20 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(2, endpoint.getRequestParams().size());
 
         NamedTypedValue p1 = endpoint.getRequestParams().get(0);
-        assertTrue(p1 instanceof ObjectParam);
-        assertTrue(p1.isNullable());
-        assertEquals(8, ((ObjectParam) p1).getType().getFields().size());
-        for (NamedTypedValue f : ((ObjectParam) p1).getType().getFields()) {
+        checkConstrainedRequest(p1);
+        checkConstrainedRequest(p1.copyStructureWithProperties()
+        );
+
+        NamedTypedValue p2 = endpoint.getRequestParams().get(1);
+        assertTrue(p2 instanceof StringParam);
+        assertFalse(p2.isNullable());
+    }
+
+    private void checkConstrainedRequest(NamedTypedValue p){
+        assertTrue(p instanceof ObjectParam);
+        assertTrue(p.isNullable());
+        assertEquals(8, ((ObjectParam) p).getType().getFields().size());
+        for (NamedTypedValue f : ((ObjectParam) p).getType().getFields()) {
             if (f.getName().equals("list")) {
                 assertTrue(f instanceof ListParam);
                 assertFalse(f.isNullable());
@@ -278,11 +288,6 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
             }else
                 fail("do not handle param " + f.getName());
         }
-
-
-        NamedTypedValue p2 = endpoint.getRequestParams().get(1);
-        assertTrue(p2 instanceof StringParam);
-        assertFalse(p2.isNullable());
     }
 
     @Test
