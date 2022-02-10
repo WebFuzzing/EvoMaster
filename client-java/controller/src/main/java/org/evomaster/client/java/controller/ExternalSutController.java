@@ -448,10 +448,6 @@ public abstract class ExternalSutController extends SutController {
 
                         String line = scanner.nextLine();
 
-//                        if(line.startsWith(P6SpyFormatter.PREFIX)){
-//                            StandardOutputTracker.handleSqlLine(this, line);
-//                        }
-
                         if(!muted) {
                             SimpleLogger.info("SUT: " + line);
                         } else if(errorBuffer != null){
@@ -471,13 +467,17 @@ public abstract class ExternalSutController extends SutController {
                         this could happen if it was started with some misconfiguration, or
                         if it has been stopped
                      */
-                    if(process == null){
+                    if (process == null) {
                         SimpleLogger.warn("SUT was manually terminated ('process' reference is null)");
-                    } else if(! process.isAlive()){
-                        SimpleLogger.warn("SUT was terminated before initialization. Exit code: " + process.exitValue());
+                    } else if(!initialized) {
+                        if (!process.isAlive()) {
+                            SimpleLogger.warn("SUT was terminated before initialization. Exit code: " + process.exitValue());
+                        } else {
+                            SimpleLogger.warn("SUT is still alive, but its output was closed before" +
+                                    " producing the initialization message.");
+                        }
                     } else {
-                        SimpleLogger.warn("SUT is still alive, but its output was closed before" +
-                                " producing the initialization message.");
+                        SimpleLogger.info("Process output has been closed");
                     }
 
                     latch.countDown();

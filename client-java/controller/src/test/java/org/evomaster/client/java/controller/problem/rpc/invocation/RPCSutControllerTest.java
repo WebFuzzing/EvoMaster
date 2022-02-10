@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,37 @@ public class RPCSutControllerTest {
     @AfterAll
     public static void tearDown() {
         rpcController.stopSut();
+    }
+
+    @Test
+    public void testLocalAuth(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("authorizedEndpoint")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        RPCActionDto localDto = rpcController.getLocalAuthSetupSchemaMap().get(0).getDto();
+
+        localDto.responseVariable = "res1_auth";
+        localDto.doGenerateTestScript = true;
+        localDto.controllerVariable = "controller";
+        ActionResponseDto authResponseDto = new ActionResponseDto();
+        rpcController.executeHandleLocalAuthenticationSetup(localDto, authResponseDto);
+        assertNotNull(authResponseDto.testScript);
+        assertEquals(4, authResponseDto.testScript.size());
+        assertEquals("{", authResponseDto.testScript.get(0));
+        assertEquals(" java.lang.String arg0 = \"local_foo\";", authResponseDto.testScript.get(1));
+        assertEquals(" controller.handleLocalAuthenticationSetup(arg0);", authResponseDto.testScript.get(2));
+        assertEquals("}", authResponseDto.testScript.get(3));
+
+
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "controller";
+        dto.responseVariable = "res1";
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.assertionScript);
+        assertEquals("assertEquals(\"local\", res1);", responseDto.assertionScript.get(0));
+
     }
 
     @Test
@@ -99,4 +131,35 @@ public class RPCSutControllerTest {
         assertEquals("int:42,float:4.2,long:42,double:4.2,char:x,byte:42,boolean:false,short:42", responseDto.rpcResponse.stringValue);
     }
 
+
+    @Test
+    public void testByteResponse(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("byteResponse")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        dto.requestParams.get(0).stringValue = "" + Byte.parseByte("0");
+        dto.requestParams.get(1).stringValue = "" + Byte.parseByte("42");
+        assertEquals(2, dto.requestParams.size());
+        ActionResponseDto responseDto = new ActionResponseDto();
+        dto.doGenerateTestScript = true;
+        dto.doGenerateAssertions = true;
+        dto.controllerVariable = "controller";
+        dto.responseVariable = "res1";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.rpcResponse);
+        assertEquals(RPCSupportedDataType.CUSTOM_OBJECT, responseDto.rpcResponse.type.type);
+        assertEquals(6, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.ByteResponse res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" byte arg0 = 0;", responseDto.testScript.get(2));
+        assertEquals(" java.lang.Byte arg1 = 42;", responseDto.testScript.get(3));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).byteResponse(arg0,arg1);", responseDto.testScript.get(4));
+        assertEquals("}", responseDto.testScript.get(5));
+        assertEquals(2, responseDto.assertionScript.size());
+        assertEquals("assertEquals(42, res1.byteValue.byteValue());", responseDto.assertionScript.get(0));
+        assertEquals("assertEquals(0, res1.pbyteValue);", responseDto.assertionScript.get(1));
+        responseDto.testScript.forEach(System.out::println);
+        responseDto.assertionScript.forEach(System.out::println);
+
+    }
 }

@@ -2,6 +2,8 @@ package org.evomaster.client.java.instrumentation.shared;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Locale;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TaintInputNameTest {
@@ -54,5 +56,20 @@ public class TaintInputNameTest {
 
         assertFalse(TaintInputName.isTaintInput(text));
         assertTrue(TaintInputName.includesTaintInput(text));
+    }
+
+    @Test
+    public void testUpperLowerCase(){
+
+        String name = TaintInputName.getTaintName(0);
+
+        assertTrue(TaintInputName.isTaintInput(name));
+        assertTrue(TaintInputName.includesTaintInput(name));
+
+
+        assertTrue(TaintInputName.isTaintInput(name.toLowerCase()));
+        assertTrue(TaintInputName.includesTaintInput(name.toLowerCase()));
+        assertTrue(TaintInputName.isTaintInput(name.toUpperCase()));
+        assertTrue(TaintInputName.includesTaintInput(name.toUpperCase()));
     }
 }

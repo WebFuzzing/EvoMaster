@@ -102,7 +102,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("java.lang.String res1 = null;", endpointJavaCode.get(0));
         assertEquals("{", endpointJavaCode.get(1));
         assertEquals(" java.lang.String arg0 = \"foo\";", endpointJavaCode.get(2));
-        assertEquals(" res1 = ((org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilderTestBase.FakeClient)(controller.getRPCClient(\"com.thrift.example.real.thrift.test.ThriftTest$Iface\"))).testString(arg0);", endpointJavaCode.get(3));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.real.thrift.test.ThriftTest$Iface\"))).testString(arg0);", endpointJavaCode.get(3));
         assertEquals("}", endpointJavaCode.get(4));
 
         List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
@@ -541,10 +541,10 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
         assertEquals(5, assertionJavaCode.size());
         assertEquals("assertEquals(4, res1.size());", assertionJavaCode.get(0));
-        assertEquals("assertEquals(2, res1.get(1));", assertionJavaCode.get(1));
-        assertEquals("assertEquals(3, res1.get(2));", assertionJavaCode.get(2));
-        assertEquals("assertEquals(101, res1.get(100));", assertionJavaCode.get(3));
-        assertEquals("assertEquals(43, res1.get(42));", assertionJavaCode.get(4));
+        assertEquals("assertEquals(2, res1.get(1).intValue());", assertionJavaCode.get(1));
+        assertEquals("assertEquals(3, res1.get(2).intValue());", assertionJavaCode.get(2));
+        assertEquals("assertEquals(101, res1.get(100).intValue());", assertionJavaCode.get(3));
+        assertEquals("assertEquals(43, res1.get(42).intValue());", assertionJavaCode.get(4));
 
         assertionJavaCode = p1.newAssertionWithJava(0, "res1", 2);
         assertEquals(1+2, assertionJavaCode.size());
@@ -735,9 +735,9 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
         assertEquals(4, assertionJavaCode.size());
         assertEquals("assertEquals(3, res1.size());", assertionJavaCode.get(0));
-        assertEquals("assertEquals(1, res1.get(0));", assertionJavaCode.get(1));
-        assertEquals("assertEquals(2, res1.get(1));", assertionJavaCode.get(2));
-        assertEquals("assertEquals(3, res1.get(2));", assertionJavaCode.get(3));
+        assertEquals("assertEquals(1, res1.get(0).intValue());", assertionJavaCode.get(1));
+        assertEquals("assertEquals(2, res1.get(1).intValue());", assertionJavaCode.get(2));
+        assertEquals("assertEquals(3, res1.get(2).intValue());", assertionJavaCode.get(3));
 
         assertionJavaCode = p1.newAssertionWithJava(0, "res1", 2);
         assertEquals(1+2, assertionJavaCode.size());
@@ -889,12 +889,12 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(8, assertionJavaCode.size());
         assertEquals("assertEquals(2, res1.size());", assertionJavaCode.get(0));
         assertEquals("assertEquals(2, res1.get(1).size());", assertionJavaCode.get(1));
-        assertEquals("assertEquals(1, res1.get(1).get(1));", assertionJavaCode.get(2));
-        assertEquals("assertEquals(2, res1.get(1).get(2));", assertionJavaCode.get(3));
+        assertEquals("assertEquals(1, res1.get(1).get(1).intValue());", assertionJavaCode.get(2));
+        assertEquals("assertEquals(2, res1.get(1).get(2).intValue());", assertionJavaCode.get(3));
         assertEquals("assertEquals(3, res1.get(2).size());", assertionJavaCode.get(4));
-        assertEquals("assertEquals(2, res1.get(2).get(1));", assertionJavaCode.get(5));
-        assertEquals("assertEquals(4, res1.get(2).get(2));", assertionJavaCode.get(6));
-        assertEquals("assertEquals(6, res1.get(2).get(3));", assertionJavaCode.get(7));
+        assertEquals("assertEquals(2, res1.get(2).get(1).intValue());", assertionJavaCode.get(5));
+        assertEquals("assertEquals(4, res1.get(2).get(2).intValue());", assertionJavaCode.get(6));
+        assertEquals("assertEquals(6, res1.get(2).get(3).intValue());", assertionJavaCode.get(7));
 
         assertionJavaCode = response.newAssertionWithJava(0, "res1", 1);
         // 2 set size + at most 1 check for value (there is no value at index 0)

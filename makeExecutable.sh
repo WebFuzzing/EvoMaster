@@ -38,4 +38,5 @@ COPYRIGHT="Copyright 2016-$YEAR EvoMaster Team"
 VENDOR="EvoMaster Team"
 
 $JPACKAGE --main-jar $JAR --input $BUILD --dest $RELEASE --name evomaster \
-  --copyright "$COPYRIGHT" --license-file ./LICENSE --vendor "$VENDOR" --app-version $VERSION $OS
+  --copyright "$COPYRIGHT" --license-file ./LICENSE --vendor "$VENDOR" --app-version $VERSION $OS \
+  --java-options "--add-opens java.base/java.net=ALL-UNNAMED"

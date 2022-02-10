@@ -248,7 +248,7 @@ class ArrayGene<T>(
      */
     fun addElement(element: T){
         if (maxSize!= null && elements.size == maxSize)
-            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements for the gene $name")
 
         elements.add(element)
         addChild(element)
@@ -264,7 +264,7 @@ class ArrayGene<T>(
     fun addElement(element: Gene) : Boolean{
         element as? T ?: return false
         if (maxSize!= null && elements.size == maxSize)
-            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements")
+            throw IllegalStateException("maxSize is ${maxSize}, cannot add more elements for the gene $name")
 
         elements.add(element)
         addChild(element)

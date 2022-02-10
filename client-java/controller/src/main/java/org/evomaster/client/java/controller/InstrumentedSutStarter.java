@@ -31,16 +31,19 @@ public class InstrumentedSutStarter {
 
     private final SutController sutController;
 
+    public static void loadAgent(){
+        if(! alreadyLoaded){
+            alreadyLoaded = true;
+            AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), "foobar_packagenameshouldnotexist.");
+        }
+    }
 
     public InstrumentedSutStarter(SutController sutController) {
 
         this.sutController = sutController;
 
         if (sutController instanceof EmbeddedSutController) {
-            if(! alreadyLoaded){
-                alreadyLoaded = true;
-                AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), "foobar_packagenameshouldnotexist.");
-            }
+            loadAgent();
             InstrumentingAgent.changePackagesToInstrument(sutController.getPackagePrefixesToCover());
 
         } else if(sutController instanceof ExternalSutController){

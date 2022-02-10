@@ -1,6 +1,5 @@
 {
   "name": "evomaster-client-js-integration-tests",
-  "version": "0.4.1",
   "description": "Integration tests for EvoMaster support for JavaScript",
   "main": "index.js",
   "repository": {},

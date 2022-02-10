@@ -62,4 +62,11 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
     public boolean isValidInstance(Object instance) {
         return instance instanceof Short;
     }
+
+    @Override
+    public String getPrimitiveValue(String responseVarName) {
+        if (getType().isWrapper)
+            return responseVarName+".shortValue()";
+        return responseVarName;
+    }
 }

@@ -36,7 +36,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 16;
+        return 18;
     }
 
     @Override
@@ -79,7 +79,6 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                         );
                     }};
                 }}
-
         );
     }
 
@@ -120,6 +119,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                     }};
                 }}
         );
+    }
+
+    @Test
+    public void testLocalAuthSetup(){
+        EndpointSchema endpoint = getOneEndpoint("authorizedEndpoint");
+        assertTrue(endpoint.getRequestParams() == null || endpoint.getRequestParams().isEmpty());
+        assertNotNull(endpoint.getResponse());
+        RPCActionDto dto = endpoint.getDto();
     }
 
     @Test

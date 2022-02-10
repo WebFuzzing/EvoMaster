@@ -72,4 +72,11 @@ public class IntParam extends PrimitiveOrWrapperParam<Integer> {
     public boolean isValidInstance(Object instance) {
         return instance instanceof Integer;
     }
+
+    @Override
+    public String getPrimitiveValue(String responseVarName) {
+        if (getType().isWrapper)
+            return responseVarName+".intValue()";
+        return responseVarName;
+    }
 }

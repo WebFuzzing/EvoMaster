@@ -102,7 +102,7 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         if (getValue() == null)
             sb.append(CodeJavaGenerator.junitAssertNull(responseVarName));
         else
-            sb.append(CodeJavaGenerator.junitAssertEquals(getValueAsJavaString(), responseVarName));
+            sb.append(CodeJavaGenerator.junitAssertEquals(getValueAsJavaString(), getPrimitiveValue(responseVarName)));
 
         return Collections.singletonList(sb.toString());
     }
@@ -113,5 +113,13 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     }
 
     abstract public void setValueBasedOnStringValue(String stringValue);
+
+    /**
+     *
+     * @param responseVarName refers to the variable name in response
+     * @return a string to get its primitive value if the param is Wrapper class
+     *          eg, res.byteValue() for byte with a response variable name res
+     */
+    abstract public String getPrimitiveValue(String responseVarName);
 
 }

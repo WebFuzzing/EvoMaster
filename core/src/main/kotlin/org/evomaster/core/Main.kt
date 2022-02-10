@@ -91,8 +91,8 @@ class Main {
                                 "\n  Make sure the EvoMaster Driver for the system under test is running correctly.")
 
                     is SutProblemException ->
-                        logError("ERROR in the Remote EvoMaster Driver: ${cause.message}" +
-                                "\n  Look at the logs of the EvoMaster Driver to help debugging this problem.")
+                        logError("ERROR related to the system under test: ${cause.message}" +
+                                "\n  For white-box testing, look at the logs of the EvoMaster Driver to help debugging this problem.")
 
                     else ->
                         LoggingUtil.getInfoLogger().error(inRed("[ERROR] ") +
