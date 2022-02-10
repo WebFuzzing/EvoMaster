@@ -15,9 +15,7 @@ public class MicronautConfigurationReplacement extends ThirdPartyMethodReplaceme
     private static final MicronautConfigurationReplacement singleton = new MicronautConfigurationReplacement();
 
     @Override
-    protected String getNameOfThirdPartyTargetClass() {
-        return "io.micronaut.http.server.netty.configuration.NettyHttpServerConfiguration";
-    }
+    protected String getNameOfThirdPartyTargetClass() { return "io.micronaut.http.server.netty.configuration.NettyHttpServerConfiguration"; }
 
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,

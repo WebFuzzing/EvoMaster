@@ -34,7 +34,6 @@ public class ReplacementList {
                 new MicronautConfigurationReplacement(),
                 new MicronautNettyHttpServerReplacement(),
                 new NettyClassReplacement(),
-                new NettyHttpUtilClassReplacement(),
                 new ObjectsClassReplacement(),
                 new PatternClassReplacement(),
                 new PreparedStatementClassReplacement(),
