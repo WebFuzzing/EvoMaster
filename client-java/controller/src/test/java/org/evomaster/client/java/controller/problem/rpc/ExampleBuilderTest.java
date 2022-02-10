@@ -249,14 +249,17 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 assertTrue(f instanceof ListParam);
                 assertEquals(1, ((ListParam) f).getMinSize());
                 assertEquals(10, ((ListParam) f).getMaxSize());
+                assertFalse(f.isNullable());
             } else if (f.getName().equals("intWithMinMax")) {
                 assertTrue(f instanceof IntParam);
                 assertEquals(0, ((IntParam) f).getMin().intValue());
                 assertEquals(100, ((IntParam) f).getMax().intValue());
+                assertFalse(f.isNullable());
             } else if (f.getName().equals("longWithMinMax")) {
                 assertTrue(f instanceof LongParam);
                 assertEquals(-100L, ((LongParam) f).getMin());
                 assertEquals(1000L, ((LongParam) f).getMax());
+                assertFalse(f.isNullable());
             } else if (f.getName().equals("notBlankString")) {
                 assertTrue(f instanceof StringParam);
                 assertFalse(f.isNullable());
@@ -268,6 +271,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 assertTrue(f instanceof StringParam);
                 assertEquals(2, ((StringParam) f).getMinSize());
                 assertEquals(10, ((StringParam) f).getMaxSize());
+                assertTrue(f.isNullable());
             } else if(f.getName().equals("kind")){
                 assertTrue(f instanceof EnumParam);
                 assertFalse(f.isNullable());
