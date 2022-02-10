@@ -345,4 +345,10 @@ class SqlMultidimensionalArrayGene<T>(
         elements.clear()
     }
 
+    /**
+     * 1 is for 'remove' or 'add' element
+     */
+    override fun mutationWeight(): Double {
+        return 1.0 + getAllGenes(elements).map { it.mutationWeight() }.sum()
+    }
 }
