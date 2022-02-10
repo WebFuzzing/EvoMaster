@@ -5,7 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
@@ -372,13 +372,12 @@ class RestResourceCalls(
         }
     }
 
+    /**
+     * removing all binding which refers to [this] RestResourceCalls
+     */
     fun removeThisFromItsBindingGenes(){
         (dbActions.plus(actions)).forEach { a->
-            a.seeGenes().forEach { g->
-                g.flatView().forEach { r->
-                    r.removeThisFromItsBindingGenes()
-                }
-            }
+            a.removeThisFromItsBindingGenes()
         }
     }
 

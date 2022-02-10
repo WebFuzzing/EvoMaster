@@ -39,6 +39,13 @@ public class InstrumentingClassLoader extends ClassLoader {
     private final Map<String, Class<?>> classes;
 
     /**
+     * By default, when we fail to instrument a class, we simple load its original version.
+     * However, during testing, we might want to crash on purpose when we cannot instrument
+     * a class
+     */
+    private boolean crashWhenFailedInstrumentation = false;
+
+    /**
      * Classloader needed to bootstrap the execution of your application.
      * This is needed because it will apply bytecode instrumentation to keep
      * track of which parts of the code is executed, and to inject heuristics
@@ -89,6 +96,14 @@ public class InstrumentingClassLoader extends ClassLoader {
         return result;
     }
 
+    public boolean isCrashWhenFailedInstrumentation() {
+        return crashWhenFailedInstrumentation;
+    }
+
+    public void setCrashWhenFailedInstrumentation(boolean crashWhenFailedInstrumentation) {
+        this.crashWhenFailedInstrumentation = crashWhenFailedInstrumentation;
+    }
+
     private Class<?> instrumentClass(ClassName className) throws ClassNotFoundException {
 
         try (InputStream is = classLoader.getResourceAsStream(className.getAsResourcePath())) {
@@ -108,6 +123,9 @@ public class InstrumentingClassLoader extends ClassLoader {
             return result;
         } catch (Throwable t) {
             error("Error while loading class " + className.getFullNameWithDots(), t);
+            if(crashWhenFailedInstrumentation){
+                throw new RuntimeException(t);
+            }
             return null;
         }
     }

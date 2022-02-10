@@ -20,6 +20,7 @@
         <module>spring-rest-openapi-v3</module>
         <module>spring-graphql</module>
         <module>spring-rest-mysql</module>
+        <module>spring-rpc</module>
     </modules>
 
 

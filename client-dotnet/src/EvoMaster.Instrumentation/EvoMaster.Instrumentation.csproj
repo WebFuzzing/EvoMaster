@@ -1,14 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="../../common.props" />
+
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
         <IsPackable>true</IsPackable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-
         <PackageId>EvoMaster.Instrumentation</PackageId>
-        <Version>1.1.1-SNAPSHOT</Version>
-        <Authors>EvoMaster Team</Authors>
     </PropertyGroup>
 
     <ItemGroup>

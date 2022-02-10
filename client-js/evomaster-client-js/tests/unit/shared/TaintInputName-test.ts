@@ -30,3 +30,17 @@ test("test includes", () => {
 
 });
 
+test("test upper/lower cases", () => {
+    const name = TaintInputName.getTaintName(0);
+
+    expect(TaintInputName.isTaintInput(name)).toBe(true);
+    expect(TaintInputName.includesTaintInput(name)).toBe(true);
+
+    expect(TaintInputName.isTaintInput(name.toLowerCase())).toBe(true);
+    expect(TaintInputName.includesTaintInput(name.toLowerCase())).toBe(true);
+
+    expect(TaintInputName.isTaintInput(name.toUpperCase())).toBe(true);
+    expect(TaintInputName.includesTaintInput(name.toUpperCase())).toBe(true);
+
+});
+

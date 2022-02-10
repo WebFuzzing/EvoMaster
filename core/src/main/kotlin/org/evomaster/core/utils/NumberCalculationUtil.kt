@@ -16,9 +16,15 @@ object NumberCalculationUtil {
      * the maximum delta should be less than [maxRange]
      */
     fun calculateIncrement(min: Double, max: Double, maxRange: Double = Long.MAX_VALUE.toDouble()) : Double{
+        if (!validNumber(min) || !validNumber(max))
+            throw IllegalStateException("invalid number")
         val result = BigDecimal(max).subtract(BigDecimal(min)).toDouble()
         if (result.isInfinite() || result.isNaN() || result > maxRange) return maxRange
         return result
+    }
+
+    private fun validNumber(value: Double) : Boolean{
+        return !(value.isInfinite() || value.isNaN())
     }
 
 

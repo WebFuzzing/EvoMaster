@@ -1,0 +1,142 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Basic Expectation Test",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Basic exp"
+    }
+  ],
+  "paths": {
+    "/api/basic/exp/okString/{s}":{
+      "get": {
+        "tags": [
+          "expectations-test"
+        ],
+        "summary": "get-string",
+        "operationId": "getOkString",
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "schema": {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+      },
+    "/api/basic/exp/badString/{s}":{
+      "get": {
+        "tags": [
+          "expectations-test"
+        ],
+        "summary": "get-string",
+        "operationId": "getOkString",
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "schema": {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/basic/exp/failString/{s}":{
+      "get": {
+        "tags": [
+          "expectations-test"
+        ],
+        "summary": "get-string",
+        "operationId": "getOkString",
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "schema": {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  }
+
+}

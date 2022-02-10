@@ -1,7 +1,14 @@
 package org.evomaster.client.java.controller.internal.db;
 
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.Statement;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,5 +48,16 @@ public class ParserUtilsTest {
         boolean parsed = ParserUtils.canParseSqlStatement(sql);
 
         assertTrue(parsed);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SELECT 1", "SELECT 1;", "Select    1;", "Select 1 ; "})
+    public void testSelectOne(String sql) throws JSQLParserException {
+        Statement s = CCJSqlParserUtil.parse(sql);
+        assertNotNull(s);
+        Expression where = ParserUtils.getWhere(s);
+        assertNull(where);
+        boolean isSelectOne = ParserUtils.isSelectOne(sql);
+        assertTrue(isSelectOne);
     }
 }

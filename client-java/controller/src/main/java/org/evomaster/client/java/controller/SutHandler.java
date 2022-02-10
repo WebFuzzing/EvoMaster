@@ -79,6 +79,63 @@ public interface SutHandler {
      * Execute the given data insertions into the database (if any)
      *
      * @param insertions DTOs for each insertion to execute
+     * @param previous an array of insertion results which were executed before this execution
+     * @return insertion execution results
      */
     InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous);
+
+
+    /**
+     * <p>
+     * return an instance of a client of an RPC service.
+     * </p>
+     *
+     * <p>
+     * This method must be blocking until the SUT is initialized.
+     * </p>
+     *
+     * <p>
+     * This method is only required when the problem is RPC for the moment,
+     * otherwise return null
+     * </p>
+     *
+     * might change string interfaceName to class interface
+     *
+     * @param interfaceName a full name of an interface
+     * @return a client which could send requests to the interface
+     */
+    default Object getRPCClient(String interfaceName){return null;}
+
+    /**
+     * <p>
+     * execute an RPC endpoint with evomaster driver
+     * </p>
+     *
+     *
+     * @param json contains info of an RPC endpoint
+     * @return value returned by this execution. it is nullable.
+     */
+    default Object executeRPCEndpoint(String json) throws Exception {return null;}
+
+    /**
+     * <p>
+     * execute an RPC endpoint with evomaster driver
+     * </p>
+     *
+     * TODO remove this later if we do not use test generation with driver
+     */
+    default void extractRPCSchema(){}
+
+
+    /**
+     * <p>
+     *     authentication setup might be handled locally.
+     *     then we provide this interface to define it.
+     * </p>
+     *
+     * @param authenticationInfo info for the authentication setup
+     * @return if the authentication is set up successfully
+     */
+    default boolean handleLocalAuthenticationSetup(String authenticationInfo){return true;}
+
 }

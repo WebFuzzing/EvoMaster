@@ -45,7 +45,7 @@ class StringGene(
          */
         val specializationGenes: MutableList<Gene> = mutableListOf()
 
-) : Gene(name, specializationGenes) {
+) : ComparableGene(name, specializationGenes) {
 
     companion object {
 
@@ -669,6 +669,14 @@ class StringGene(
             }
         }
         return true
+    }
+
+    // need to check with Andrea if there is any further impact
+    override fun compareTo(other: ComparableGene): Int {
+        if (other !is StringGene) {
+            throw ClassCastException("Expected StringGene instance but ${other::javaClass} was found")
+        }
+        return getValueAsRawString().compareTo(other.getValueAsRawString())
     }
 
 }

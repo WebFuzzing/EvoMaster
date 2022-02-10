@@ -4,9 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.httpws.service.HttpWsStructureMutator
+import org.evomaster.core.problem.httpws.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.SampleType
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -18,7 +17,7 @@ import org.slf4j.LoggerFactory
     TODO: here there is quite bit of code that is similar to REST.
     Once this is stable, should refactoring to avoid duplication
  */
-class GraphQLStructureMutator : HttpWsStructureMutator() {
+class GraphQLStructureMutator : ApiWsStructureMutator() {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(GraphQLStructureMutator::class.java)
@@ -50,41 +49,8 @@ class GraphQLStructureMutator : HttpWsStructureMutator() {
         if (config.trackingEnabled()) tag(individual, time.evaluatedIndividuals)
     }
 
-    /*
-        TODO
-        Man: this might be put into [HttpWsStructureMutator] as it is same with [RestStructureMutator],
-            but there exist some problems to return sampler when handing generic type
-     */
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
-
-        if (!config.shouldGenerateSqlData()) {
-            return
-        }
-
-        val ind = individual.individual as? GraphQLIndividual
-            ?: throw IllegalArgumentException("Invalid individual type")
-
-        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
-            //TODO likely to remove/change once we ll support VIEWs
-            .filter { sampler.canInsertInto(it.key) }
-
-        if (fw.isEmpty()) {
-            return
-        }
-
-        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
-
-        val addedInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
-        ind.repairInitializationActions(randomness)
-
-        // update impact based on added genes
-        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
-            individual.updateImpactGeneDueToAddedInitializationGenes(
-                mutatedGenes,
-                old,
-                addedInsertions
-            )
-        }
+        addInitializingActions(individual, mutatedGenes, sampler)
     }
 
     private fun mutateForRandomType(ind: GraphQLIndividual, mutatedGenes: MutatedGeneSpecification?) {

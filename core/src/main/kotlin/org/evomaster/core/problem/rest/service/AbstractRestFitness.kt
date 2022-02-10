@@ -359,15 +359,29 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 /*
                     FIXME should read as byte[]
                  */
-                val body = response.readEntity(String::class.java)
+                try {
+                    val body = response.readEntity(String::class.java)
 
-                if (body.length < configuration.maxResponseByteSize) {
-                    rcr.setBody(body)
-                } else {
+                    if (body.length < configuration.maxResponseByteSize) {
+                        rcr.setBody(body)
+                    } else {
+                        LoggingUtil.uniqueWarn(log,
+                                "A very large response body was retrieved from the endpoint '${a.path}'." +
+                                        " If that was expected, increase the 'maxResponseByteSize' threshold" +
+                                        " in the configurations.")
+                        rcr.setTooLargeBody(true)
+                    }
+                } catch (e: OutOfMemoryError){
+                    /*
+                        internal classes in JVM can throw this error directly, like
+                        jdk.internal.util.ArraysSupport.hugeLength(...)
+                        see:
+                        https://github.com/EMResearch/EvoMaster/issues/449
+                     */
                     LoggingUtil.uniqueWarn(log,
-                            "A very large response body was retrieved from the endpoint '${a.path}'." +
-                            " If that was expected, increase the 'maxResponseByteSize' threshold" +
-                            " in the configurations.")
+                        "An extremely large response body was retrieved from the endpoint '${a.path}'." +
+                                " So large that it cannot be handled inside the JVM in which EvoMaster is running."
+                    )
                     rcr.setTooLargeBody(true)
                 }
             }

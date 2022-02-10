@@ -31,6 +31,7 @@ public class ReplacementList {
                 new MapClassReplacement(),
                 new MatcherClassReplacement(),
                 new MethodClassReplacement(),
+                new ObjectClassReplacement(),
                 new ObjectsClassReplacement(),
                 new PatternClassReplacement(),
                 new PreparedStatementClassReplacement(),

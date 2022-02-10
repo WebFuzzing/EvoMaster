@@ -11,11 +11,13 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.LoggerFactory
+import kotlin.math.max
+import kotlin.math.min
 
 
 class CharacterRangeRxGene(
         val negated: Boolean,
-        val ranges: List<Pair<Char,Char>>
+        ranges: List<Pair<Char,Char>>
 ) : RxAtom(".", listOf()){
 
     companion object{
@@ -31,9 +33,20 @@ class CharacterRangeRxGene(
         if(ranges.isEmpty()){
             throw IllegalArgumentException("No defined ranges")
         }
+
+        ranges.forEach {
+            if(it.first.code > it.second.code){
+                LoggingUtil.uniqueWarn(log, "Issue with Regex range, where '${it.first}' is greater than '${it.second}'")
+            }
+        }
     }
 
     var value : Char = ranges[0].first
+
+    /**
+     * As inputs might be unsorted, we make sure first <= second
+     */
+    val ranges = ranges.map { Pair(min(it.first.code,it.second.code).toChar(), max(it.first.code, it.second.code).toChar()) }
 
     override fun getChildren(): List<Gene> = listOf()
 
