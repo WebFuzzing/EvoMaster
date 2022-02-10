@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.db;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
+import org.evomaster.client.java.controller.internal.db.ParserUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.StatementClassReplacement;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -348,13 +349,25 @@ public class SqlScriptRunner {
      * @param conn a connection to db
      * @param script represents a sql script
      * @throws SQLException if the execution of the command fails
+     * @return a map of table to a set of commands which are to insert data into the table
      */
-    public static void execScript(Connection conn, String script) throws SQLException {
+    public static Map<String, Set<String>> execScript(Connection conn, String script) throws SQLException {
+        Map<String, Set<String>> tableSqlMap = new HashMap<>();
         String[] commands = script.split(";");
         for (String command : commands){
+            QueryResult result = null;
             if (!command.replaceAll("\n","").isEmpty())
-                execCommand(conn, command+";");
+                result = execCommand(conn, command+";");
+
+            if (ParserUtils.isInsert(command) && result != null){
+                result.getAllTables().forEach(t->{
+                    tableSqlMap.putIfAbsent(t, new HashSet<>());
+                    tableSqlMap.get(t).add(command+";");
+                });
+            }
         }
+
+        return tableSqlMap;
     }
 
     public static QueryResult execCommand(Connection conn, String command) throws SQLException {
