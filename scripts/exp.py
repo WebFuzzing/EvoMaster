@@ -86,10 +86,11 @@ EXP_ID = "evomaster"
 
 
 
-if len(sys.argv) < 9:
+if len(sys.argv) < 9 or len(sys.argv) > 11:
     print(
-        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <maxActions> <minutesPerRun> <nJobs> <configFilter> <sutFilter>")
+        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <maxActions> <minutesPerRun> <nJobs> <configFilter?> <sutFilter? eg a,b>")
     exit(1)
+
 
 ### input parameters
 
@@ -204,7 +205,7 @@ SUTS = [
 ]
 
 if SUTFILTER is not None and SUTFILTER.lower() != "all":
-    filteredsut = list(filter(lambda x: x.name.lower() == SUTFILTER.lower(), SUTS))
+    filteredsut = list(filter(lambda x: x.name.lower() in (f.lower() for f in SUTFILTER.split(",")), SUTS))
     if len(filteredsut) > 0:
         SUTS = filteredsut
 
@@ -706,11 +707,27 @@ def customParameters(seed, setting):
 
     params = ""
 
+    label = ""
+
     ### set parameter based on the setting
     for ps in setting:
         params += " --" + str(ps[0]) + "=" + str(ps[1])
+        ### set label based on each value of the parameter
+        if is_float(str(ps[1])) and float(ps[1]) <= 1.0:
+            label += "_" + str(int(float(ps[1]) * 100))
+        else:
+            label += "_" + str(ps[1])
+
+    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
 
     return params
+
+def is_float(input):
+    try:
+        float(input)
+    except ValueError:
+        return False
+    return True
 
 def getConfigs():
 
