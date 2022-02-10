@@ -31,13 +31,13 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean) {
-        clearDatabase(getDefaultReties(DatabaseType.H2), connection, schemaName, tableToSkip, tableToClean, DatabaseType.H2, false);
+        clearDatabase(getDefaultReties(DatabaseType.H2), connection, schemaName, tableToSkip, tableToClean, DatabaseType.H2, false, true);
     }
 
     /*
         [non-determinism-source] Man: retries might lead to non-determinate logs
      */
-    private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean, DatabaseType type, boolean doDropTable) {
+    private static void clearDatabase(int retries, Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean, DatabaseType type, boolean doDropTable, boolean doResetSequence) {
 
         /*
             Code based on
@@ -56,7 +56,8 @@ public class DbCleaner {
 
             cleanDataInTables(tableToSkip, tableToClean, statement, type, schemaName, isSingleCleanCommand(type), doDropTable);
 
-            resetSequences(statement, type, schemaName);
+            if (doResetSequence)
+                resetSequences(statement, type, schemaName);
 
             enableReferentialIntegrity(statement, type);
             statement.close();
@@ -75,7 +76,7 @@ public class DbCleaner {
                     } catch (InterruptedException interruptedException) {
                     }
                     retries--;
-                    clearDatabase(retries, connection, schemaName, tableToSkip, tableToClean, type, doDropTable);
+                    clearDatabase(retries, connection, schemaName, tableToSkip, tableToClean, type, doDropTable, doResetSequence);
                 } else {
                     SimpleLogger.error("Giving up cleaning the DB. There are still timeouts.");
                 }
@@ -84,27 +85,40 @@ public class DbCleaner {
             throw new RuntimeException(e);
         }
     }
-
+    public static void clearDatabase(Connection connection, List<String> tablesToSkip, DatabaseType type, boolean doResetSequence){
+        clearDatabase(connection, getDefaultSchema(type), tablesToSkip, type, doResetSequence);
+    }
     public static void clearDatabase(Connection connection, List<String> tablesToSkip, DatabaseType type){
-        clearDatabase(connection, getDefaultSchema(type), tablesToSkip, type);
+        clearDatabase(connection, tablesToSkip, type, true);
+    }
+    public static void clearDatabase(Connection connection, List<String> tableToSkip, List<String> tableToClean, DatabaseType type){
+        clearDatabase(connection, tableToSkip, tableToClean, type, true);
     }
 
-    public static void clearDatabase(Connection connection, List<String> tableToSkip, List<String> tableToClean, DatabaseType type){
-        clearDatabase(connection, getDefaultSchema(type), tableToSkip, tableToClean, type);
+    public static void clearDatabase(Connection connection, List<String> tableToSkip, List<String> tableToClean, DatabaseType type, boolean doResetSequence){
+        clearDatabase(connection, getDefaultSchema(type), tableToSkip, tableToClean, type, doResetSequence);
     }
 
     public static void clearDatabase(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type){
-        clearDatabase(connection, schemaName, tablesToSkip, null, type);
+        clearDatabase(connection, schemaName, tablesToSkip, type, true);
+    }
+
+    public static void clearDatabase(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type, boolean doResetSequence){
+        clearDatabase(connection, schemaName, tablesToSkip, null, type, doResetSequence);
     }
 
     public static void clearDatabase(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean, DatabaseType type){
-        clearDatabase(getDefaultReties(type), connection, schemaName, tableToSkip, tableToClean, type, false);
+        clearDatabase(connection, schemaName, tableToSkip, tableToClean, type, true);
+    }
+
+    public static void clearDatabase(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean, DatabaseType type, boolean doResetSequence){
+        clearDatabase(getDefaultReties(type), connection, schemaName, tableToSkip, tableToClean, type, false, doResetSequence);
     }
 
     public static void dropDatabaseTables(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type){
         if (type != DatabaseType.MYSQL && type != DatabaseType.MARIADB)
             throw new IllegalArgumentException("Dropping tables are not supported by "+type);
-        clearDatabase(getDefaultReties(type), connection, schemaName, tablesToSkip, null, type, true);
+        clearDatabase(getDefaultReties(type), connection, schemaName, tablesToSkip, null, type, true, true);
     }
 
 
@@ -113,7 +127,7 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean ) {
-        clearDatabase(getDefaultReties(DatabaseType.POSTGRES), connection, schemaName, tableToSkip, tableToClean, DatabaseType.POSTGRES, false);
+        clearDatabase(getDefaultReties(DatabaseType.POSTGRES), connection, schemaName, tableToSkip, tableToClean, DatabaseType.POSTGRES, false, true);
     }
 
     /**
