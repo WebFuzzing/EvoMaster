@@ -71,9 +71,9 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
         if (config.enableBasicAssertions){
             if (rpcCallAction.response!=null && varName != null){
                 if (rpcCallResult.hasResponse())
-                    handleAssertions(lines, resVarName, rpcCallResult)
+                    handleAssertions(lines, varName, rpcCallResult)
                 else{
-                    handleAssertNull(lines, resVarName)
+                    handleAssertNull(lines, varName)
                 }
             }
         }
